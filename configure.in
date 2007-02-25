@@ -1,0 +1,12 @@
+AC_INIT(configure.in)
+
+AM_CONFIG_HEADER(config.h)
+AM_INIT_AUTOMAKE(csql, 0.1)
+
+AC_LANG_CPLUSPLUS
+AC_PROG_CXX
+AM_PROG_LIBTOOL
+AC_C_BIGENDIAN
+AC_CANONICAL_HOST
+
+AC_OUTPUT(Makefile src/Makefile include/Makefile src/server/Makefile test/Makefile test/storage/Makefile)
