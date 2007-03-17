@@ -87,7 +87,7 @@ class Logger
     public:
     int log(LogLevel level, char* filename, int lineNo, char *format, ...);
     int createLogRecord(LogLevel level, char* filename, int lineNo, char* message, char **in);
-    void startLogger(char *filename, bool isCreate = false);
+    DbRetVal startLogger(char *filename, bool isCreate = false);
     void stopLogger();
 };
 

@@ -64,15 +64,20 @@ int Logger::log(LogLevel level, char* filename,
     return 0;
 }
 
-void Logger::startLogger(char *filename, bool isCreate)
+DbRetVal Logger::startLogger(char *filename, bool isCreate)
 {
     if (isCreate) 
         fdLog = os::openFile(filename, fileOpenCreat,0);
     else
         fdLog = os::openFile(filename, fileOpenAppend,0);
-    if (fdLog == -1) printf("Logger failed\n");
+    if (fdLog == -1)
+    {
+        printError(ErrSysInit,"Unable to create log file. Check whether server started\n");
+        return ErrSysInit;
+    }
     //TODO::get this value from configuration file
     configLevel= LogFinest;
+    return OK;
 }
 
 void Logger::stopLogger()

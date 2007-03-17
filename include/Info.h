@@ -15,14 +15,19 @@
   ***************************************************************************/
 #ifndef INFO_H
 #define INFO_H
-//USER EXPOSED
 #include<ErrorType.h>
 #include<DataType.h>
 #include<Field.h>
 
 
 class FieldNameNode;
-//Used to specify fields for creating the index(composite key index)
+
+/**
+* @class FieldNameList
+*
+* @brief Field name list used to specify composite key while creating index. <br/>
+* @author Prabakaran Thirumalai
+*/
 class FieldNameList
 {
     FieldNameNode *head;
@@ -30,16 +35,36 @@ class FieldNameList
     public:
     FieldNameList() { head = iter = NULL; }
     ~FieldNameList() { } //TODO::Remove all elements from the list
-    DbRetVal append(const char *name);
-    DbRetVal remove(const char *name);
     char *nextFieldName();
     void resetIter(){ iter = head; }
     int size();
+
+    /** appends field name to the list
+    *   @param name field name 
+    *   @return int
+    */
+    DbRetVal append(const char *name);
+
+    /** removes field name from the list
+    *   @param name field name 
+    *   @return int
+    */
+    DbRetVal remove(const char *name);
 };
 
 class FieldList;
 class FieldIterator;
-//user exposed class to specify table definition for the table
+
+
+/**
+* @class TableDef
+*
+* @brief Represents table definition used to create the table.
+* Encapsulates the information or schema definition of a table.For Example say if <br/>
+* we need to create table with two fields, call addField method with necessary parameters<br/>
+* twice. Passed as argument to createTable method of DatabaseManager to create table.<br/>
+* @author Prabakaran Thirumalai
+*/
 class TableDef
 {
     private:
@@ -47,12 +72,33 @@ class TableDef
     int fldCount;
 
     public:
-
+    /** adds a field to the schema definition.
+    *   @param name field name 
+    *   @param type data type of the field
+    *   @param length size of the field. used in case of char and binary data types.
+    *   @param defaultValue default value for the field. It is currently limited to 32 bytes.
+    *   @param notNull whether the field can be null
+    *   @param isPrimary whether the field is primary key( not null + unique)
+    *   @return int
+    */
     int addField(const char *name,  DataType type = typeUnknown, size_t
                  length = 0, const void *defaultValue = 0, bool notNull = false,
                  bool isPrimary = false);
+
+    /** removes a field from the schema definition
+    *   @param name field name 
+    *   @return int
+    */
     int dropField(const char *name);
+
+    /** returns the total number of fields in this table definition
+    *   @return int no of fields
+    */
     int getFieldCount();
+
+    /** returns the total tuple size in bytes.
+    *   @return size_t tuple size
+    */
     size_t getTupleSize();
 
     //Internal method used to iterate and get information stored
@@ -60,26 +106,41 @@ class TableDef
     FieldIterator getFieldIterator(){ return fldList.getIterator(); }
 
 };
-
+/** A Enum value
+*/
 enum IndexType
 {
-    hashIndex = 0,
-    treeIndex
+    hashIndex = 0, /**<hash index*/
+    treeIndex      /**<tree index*/
 };
 
+/**
+* @class IndexInitInfo
+*
+* @brief Represents index definition used to create index.
+* Encapsulates the information or definition of an index.<br/>
+* @author Prabakaran Thirumalai
+*/
 class IndexInitInfo
 {
     public:
-    char tableName[IDENTIFIER_LENGTH];
-    FieldNameList list;
-    IndexType indType;
+    char tableName[IDENTIFIER_LENGTH]; /**<tablename*/
+    FieldNameList list;               /**<field name list*/
+    IndexType indType;                /**<index type*/
     IndexInitInfo() {  indType = hashIndex; }
 };
 
+/**
+* @class HashIndexInitInfo
+*
+* @brief Represents hash index definition used to create index.
+* Encapsulates the information or definition of hash index.<br/>
+* @author Prabakaran Thirumalai
+*/
 class HashIndexInitInfo : public IndexInitInfo
 {
     public:
-    int bucketSize;
+    int bucketSize; /**<bucket size*/
     HashIndexInitInfo() { bucketSize = 1009; }
 };
 #endif

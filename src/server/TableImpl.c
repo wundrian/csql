@@ -45,6 +45,16 @@ void TableImpl::markFldNull(int fldpos)
     return;
 }
 
+/*
+void TableImpl::clearFldNull(const char *name)
+{
+    return;
+}
+void TableImpl::clearFldNull(int colpos)
+{
+    return;
+}
+*/
 
 DbRetVal TableImpl::execute()
 {

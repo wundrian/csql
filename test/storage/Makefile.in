@@ -36,7 +36,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = DMLTest$(EXEEXT)
+bin_PROGRAMS = DMLTest$(EXEEXT) UserAuthTest$(EXEEXT) \
+	CreateTable$(EXEEXT)
 subdir = test/storage
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -49,9 +50,15 @@ CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
+am_CreateTable_OBJECTS = CreateTable.$(OBJEXT)
+CreateTable_OBJECTS = $(am_CreateTable_OBJECTS)
+CreateTable_DEPENDENCIES = $(top_builddir)/src/server/libcsql.la
 am_DMLTest_OBJECTS = DMLTest.$(OBJEXT)
 DMLTest_OBJECTS = $(am_DMLTest_OBJECTS)
 DMLTest_DEPENDENCIES = $(top_builddir)/src/server/libcsql.la
+am_UserAuthTest_OBJECTS = UserAuthTest.$(OBJEXT)
+UserAuthTest_OBJECTS = $(am_UserAuthTest_OBJECTS)
+UserAuthTest_DEPENDENCIES = $(top_builddir)/src/server/libcsql.la
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -63,8 +70,10 @@ LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(DMLTest_SOURCES)
-DIST_SOURCES = $(DMLTest_SOURCES)
+SOURCES = $(CreateTable_SOURCES) $(DMLTest_SOURCES) \
+	$(UserAuthTest_SOURCES)
+DIST_SOURCES = $(CreateTable_SOURCES) $(DMLTest_SOURCES) \
+	$(UserAuthTest_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -173,6 +182,12 @@ INCLUDES =
 METASOURCES = AUTO
 DMLTest_SOURCES = DMLTest.c
 DMLTest_LDADD = $(top_builddir)/src/server/libcsql.la -lcrypt -lrt -lpthread
+UserAuthTest_SOURCES = UserAuthTest.c
+UserAuthTest_LDADD = $(top_builddir)/src/server/libcsql.la -lcrypt -lrt\
+	-lpthread
+
+CreateTable_LDADD = $(top_builddir)/src/server/libcsql.la -lcrypt -lrt -lpthread
+CreateTable_SOURCES = CreateTable.c
 all: all-am
 
 .SUFFIXES:
@@ -234,9 +249,15 @@ clean-binPROGRAMS:
 	  echo " rm -f $$p $$f"; \
 	  rm -f $$p $$f ; \
 	done
+CreateTable$(EXEEXT): $(CreateTable_OBJECTS) $(CreateTable_DEPENDENCIES) 
+	@rm -f CreateTable$(EXEEXT)
+	$(LINK) $(CreateTable_LDFLAGS) $(CreateTable_OBJECTS) $(CreateTable_LDADD) $(LIBS)
 DMLTest$(EXEEXT): $(DMLTest_OBJECTS) $(DMLTest_DEPENDENCIES) 
 	@rm -f DMLTest$(EXEEXT)
 	$(LINK) $(DMLTest_LDFLAGS) $(DMLTest_OBJECTS) $(DMLTest_LDADD) $(LIBS)
+UserAuthTest$(EXEEXT): $(UserAuthTest_OBJECTS) $(UserAuthTest_DEPENDENCIES) 
+	@rm -f UserAuthTest$(EXEEXT)
+	$(LINK) $(UserAuthTest_LDFLAGS) $(UserAuthTest_OBJECTS) $(UserAuthTest_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -244,7 +265,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CreateTable.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DMLTest.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UserAuthTest.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

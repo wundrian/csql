@@ -15,11 +15,13 @@
   ***************************************************************************/
 #include<SessionImpl.h>
 #include<Debug.h>
+#include<os.h>
 
 DbRetVal Connection::open(const char *username, const char *password)
 {
     if (session == NULL) session = new SessionImpl();
-    logger.startLogger("/tmp/praba");
+    DbRetVal rv = logger.startLogger(LOGFILE);
+    if (rv != OK) { delete session; session = NULL; return rv; }
     logFinest(logger, "User logged in %s",username);
     return session->open(username, password);
 }

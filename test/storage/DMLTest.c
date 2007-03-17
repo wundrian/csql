@@ -4,23 +4,31 @@ int main()
 {
 
     Connection conn;
-    conn.open("praba", "manager");
+    DbRetVal rv = conn.open("praba", "manager");
+    if (rv != OK)
+    {
+       printf("Error during connection %d\n", rv);
+       return -1;
+    }
+
 
     DatabaseManager *dbMgr = conn.getDatabaseManager();
-    if (dbMgr == NULL) { printf("Auth failed\n"); return 0;}
+    if (dbMgr == NULL) { printf("Auth failed\n"); return -1;}
     TableDef tabDef;
     tabDef.addField("f1", typeInt, 0, NULL, true, true);
     tabDef.addField("f2", typeString, 196);
-    dbMgr->createTable("t1", tabDef);
+    rv = dbMgr->createTable("t1", tabDef);
+    if (rv != OK) { printf("Table creation failed\n"); return -1; }
     printf("Table created\n");
     HashIndexInitInfo *idxInfo = new HashIndexInitInfo();
     strcpy(idxInfo->tableName, "t1");
     idxInfo->list.append("f1");
     idxInfo->indType = hashIndex;
-    dbMgr->createIndex("indx1", idxInfo);
+    rv = dbMgr->createIndex("indx1", idxInfo);
+    if (rv != OK) { printf("Index creation failed\n"); return -1; }
     printf("Index created\n");
     Table *table = dbMgr->openTable("t1");
-
+    if (table == NULL) { printf("Unable to open table\n"); return -1; }
     int id = 0;
     char name[196] = "PRABAKARAN";
     table->bindFld("f1", &id);

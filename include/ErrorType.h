@@ -15,11 +15,18 @@
   ***************************************************************************/
 #ifndef ERROR_TYPE_H
 #define ERROR_TYPE_H
+/**
+* @class DbRetVal
+* Database Return Value.
+* This contains all the error codes returned by all the exposed APIs<br>
+* <br/>
+* @author Prabakaran Thirumalai
+*/
 
 enum DbRetVal
 {
-    OK = 0,
-    ErrSysFatal      = -1,
+    OK               =  0, /**< OK. No error. Operation succeded. */
+    ErrSysFatal      = -1, 
     ErrSysInit       = -2,
     ErrNoPrivilege   = -3,
     ErrSysInternal   = -4,

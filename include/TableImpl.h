@@ -131,6 +131,10 @@ class TableImpl:public Table
     bool isFldNull(const char *name);
     bool isFldNull(int colpos);
 
+/*
+    void clearFldNull(const char *name);
+    void clearFldNull(int colpos);
+*/
 
     DbRetVal insertTuple();
     DbRetVal updateTuple();

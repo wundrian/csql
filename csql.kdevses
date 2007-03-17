@@ -2,29 +2,29 @@
 <!DOCTYPE KDevPrjSession>
 <KDevPrjSession>
  <DocsAndViews NumberOfDocuments="8" >
-  <Doc0 NumberOfViews="1" URL="file:///root/csql/include/UserManagerImpl.h" >
+  <Doc0 NumberOfViews="1" URL="file:///root/cvs/csql/test/storage/UserAuthTest.c" >
    <View0 Type="Source" />
   </Doc0>
-  <Doc1 NumberOfViews="1" URL="file:///root/csql/include/os.h" >
+  <Doc1 NumberOfViews="1" URL="file:///root/cvs/csql/test/storage/DMLTest.c" >
    <View0 Type="Source" />
   </Doc1>
-  <Doc2 NumberOfViews="1" URL="file:///root/csql/src/server/Mutex.c" >
+  <Doc2 NumberOfViews="1" URL="file:///root/cvs/csql/test/storage/CreateTable.c" >
    <View0 Type="Source" />
   </Doc2>
-  <Doc3 NumberOfViews="1" URL="file:///root/csql/src/server/Server.c" >
+  <Doc3 NumberOfViews="1" URL="file:///root/cvs/csql/include/ErrorType.h" >
    <View0 Type="Source" />
   </Doc3>
-  <Doc4 NumberOfViews="1" URL="file:///root/csql/include/Mutex.h" >
+  <Doc4 NumberOfViews="1" URL="file:///root/cvs/csql/src/server/DatabaseManagerImpl.c" >
    <View0 Type="Source" />
   </Doc4>
-  <Doc5 NumberOfViews="1" URL="file:///root/csql/test/storage/DMLTest.c" >
-   <View0 line="6" Type="Source" />
+  <Doc5 NumberOfViews="1" URL="file:///root/cvs/csql/src/server/TableDef.c" >
+   <View0 Type="Source" />
   </Doc5>
-  <Doc6 NumberOfViews="1" URL="file:///root/csql/src/server/SessionImpl.c" >
-   <View0 line="0" Type="Source" />
+  <Doc6 NumberOfViews="1" URL="file:///root/cvs/csql/src/server/Connection.c" >
+   <View0 Type="Source" />
   </Doc6>
-  <Doc7 NumberOfViews="1" URL="file:///root/csql/src/server/Database.c" >
-   <View0 line="301" Type="Source" />
+  <Doc7 NumberOfViews="1" URL="file:///root/cvs/csql/src/server/Database.c" >
+   <View0 line="0" Type="Source" />
   </Doc7>
  </DocsAndViews>
  <pluginList>

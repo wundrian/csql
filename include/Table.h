@@ -18,26 +18,112 @@
 #include<ErrorType.h>
 class Predicate;
 class Condition;
+/**
+* @class Table
+*
+* @brief Handle to the database table.
+* Table is a set of data values organized using a model of horizontal rows and columns.<br>
+* Columns are identified by name and rows by values. It shall be visualized as a linked <br/>
+* list of related data<br/>
+* Functionality: <br/>
+*     1.insert <br/>
+*     2.update <br/>
+*     3.delete <br/>
+*     4.select with predicate or condition<br/>
+* <br/>
+* @author Prabakaran Thirumalai
+*/
+
 class Table
 {
     public:
-    // search predicate
+    /** sets condition for the select, update and delete operations
+    *   @param c condition
+    */
     virtual void setCondition(Condition c)=0;
 
-    //binding
+    /** binds application buffer to the specified field of the table.
+    * Before doing any DML operations required fields are binded first.
+    * Below are the candidates for this: <br/>
+    * 1.All the fields in the projection list of select statement. <br/>
+    * 2.Field list in the insert statement.<br/>
+    * 3.Fields in the assignment list of update statement.<br/>
+    * <br/>
+    *   @param name field name in the table
+    *   @param val  address of the application buffer. Memory should be allocated by
+    *               the application before binding the buffer.
+    */
+
     virtual void bindFld(const char *name, void *val)=0;
+    /** marks the specified field to insert null when insert method is called.
+    *   @param name field name in the table
+    */
+
     virtual void markFldNull(const char *name)=0;
+    /** marks the specified field to insert null when insert method is called.
+    *   @param colpos field position
+    */
+
     virtual void markFldNull(int colpos)=0;
+
+    /** checks whether the field value is null.
+    *   @param name field name
+    */
     virtual bool isFldNull(const char *name)=0;
+
+    /** checks whether the field value is null for the specified field position.
+    *   @param colpos field position
+    */
     virtual bool isFldNull(int colpos)=0;
+/*
+    virtual void clearFldNull(const char *name)=0;
+    virtual void clearFldNull(int colpos) =0;
+*/
 
     //DML operations
+    /** executes the select statement. Based on the predicate(condition), respective index is
+    * chosen for the select. Application should call execute before they start fetching
+    * the values from the table.This starts scan on the table.
+    * @returns DbRetVal
+    */
     virtual DbRetVal execute()=0;
+
+    /** insert the tuple into the table. Prior to this, the binded buffer should be updated
+    *  Values present in the binded buffers of all the fields are taken and stored in
+    *  the table.<br/>
+    * @returns DbRetVal
+    */
     virtual DbRetVal insertTuple()=0;
+
+    /**update values in the current tuple of the table. It works only on top of select
+    *  using fetch go to the tuple to be updated, then update the binded buffer value and
+    *  then call this method to updates the field values in the tuple.
+    * @returns DbRetVal
+    */
     virtual DbRetVal updateTuple()=0;
+
+    /**deletes the current tuple of the table. It works only on top of select.
+    *  using fetch first go to the tuple to be deleted, then call this method to delete.<br/>
+    *  To delete all the tuples, do not set any condition and call fetch followed by delete
+    *  in a loop till fetch exhausts.
+    * @returns DbRetVal
+    */
+
     virtual DbRetVal deleteTuple()=0;
+
     //scan
+
+    /**fetches the next tuple in the table which satisfies the condition specified.
+    * execute should be called before calling this method.
+    * @returns void* NULL if there is no tuple.
+    */
     virtual void* fetch()=0;
+    
+    /**closes the scan. Needs to be called before calling execute again on the same table handle. It releases the resources
+ acquired during the scan.
+    * @returns DbRetVal
+    */
+
     virtual DbRetVal close()=0;
 
     virtual ~Table() { }

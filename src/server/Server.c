@@ -29,7 +29,13 @@ int main()
     SessionImpl session;
     os::signal(SIGINT, sigTermHandler);
     os::signal(SIGTERM, sigTermHandler);
-    logger.startLogger("/tmp/praba", true);
+    DbRetVal rv = logger.startLogger(LOGFILE, true);
+    if (rv != OK)
+    {
+        printf("Unable to start the logger\n");
+        return -1;
+    }
+
     logFinest(logger, "Server Started");
     int ret  = session.initSystemDatabase();
     if (0  != ret)

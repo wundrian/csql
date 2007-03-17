@@ -95,6 +95,7 @@ enum MapMode
 #define SYSTEM_DB_SIZE 104857600
 #define SYSTEMDB_KEY   2222
 #define USERDB_KEY     5555
+#define LOGFILE "log.out"
 typedef key_t shared_memory_key;
 typedef int   shared_memory_id;
 

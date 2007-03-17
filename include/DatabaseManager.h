@@ -15,21 +15,59 @@
   ***************************************************************************/
 #ifndef DATABASE_MANAGER_H
 #define DATABASE_MANAGER_H
-//USER EXPOSED
 #include<Info.h>
 class Table;
-//User exposed class who provides interface to manage all database objects
-//which include create/drop table/index
+/**
+* @class DatabaseManager
+*
+* @brief Interface for database management operations.
+* This manages all the database objects. Currently it supports two database <br>
+* objects namely table and index.<br/>
+* <br/>
+* Functionality: <br/>
+*     1.Table Management (create, drop, open and close) <br/>
+*     2.Index Management (create and drop) <br/>
+* <br/>
+* @author Prabakaran Thirumalai
+*/
 class DatabaseManager
 {
     public:
+    /** creates a table in the database
+    *   @param name name of the table
+    *   @param def table definition
+    *   @return DbRetVal
+    */
     virtual DbRetVal createTable(const char *name, TableDef &def)=0;
+
+    /** deletes a table from the database
+    *   @param name name of the table
+    *   @return DbRetVal
+    */
     virtual DbRetVal dropTable(const char *name)=0;
+
+    /** opens a table for processing
+    *   @param name name of the table
+    *   @return DbRetVal
+    */
     virtual Table* openTable(const char *name)=0;
+ 
+    /** closes the table handle passed
+    *   @param table handle to the table
+    */
     virtual void closeTable(Table *table)=0;
 
-    //Pass appropriate IndexInitInfo derived class object.
+    /** creates an index on the specified table. <br/>
+    *   Create appropriate derived class object of IndexInitInfo based on the type of <br/>
+    *   the index created and pass it to this method.
+    *   @param indName index name
+    *   @param info IndexInitInfo 
+    */
     virtual DbRetVal createIndex(const char *indName, IndexInitInfo *info)=0;
+
+    /** deletes the index object
+    *   @param name index name
+    */
     virtual DbRetVal dropIndex(const char *name)=0;
     virtual ~DatabaseManager(){ }
 };

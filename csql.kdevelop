@@ -18,7 +18,7 @@
   </general>
   <kdevautoproject>
     <general>
-      <activetarget>test/storage/DMLTest</activetarget>
+      <activetarget>test/storage/CreateTable</activetarget>
       <useconfiguration>debug</useconfiguration>
     </general>
     <run>
@@ -27,6 +27,7 @@
       <directoryradio>executable</directoryradio>
       <runarguments>
         <csqlserver/>
+        <CreateTable/>
       </runarguments>
     </run>
     <configurations>
