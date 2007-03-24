@@ -3,6 +3,8 @@ Introduction
 CSQL is a fast, multi-threaded SQL main memory database engine. It is a free software, licensed with the GNU GENERAL PUBLIC LICENSE http://www.gnu.org/
 It aids in the development of high performance, fault-resilent applications requiring concurrent access to the shared data.
 
+Check www.databasecache.com for more details about its usage.
+
 Platforms Supported
 -------------------
 Linux and Solaris
@@ -25,7 +27,7 @@ This will create "install" directory under the current directory and places all 
 Available Documentation
 -----------------------
 1.User Manual is available under the docs directory
-2.HTML API Reference for DB API under the docs/html directory
+2.HTML API Reference for DB API under the docs/html directory (Refer next section)
 3.DB API example programs under the examples directory
 
 Generating API Reference
@@ -37,6 +39,11 @@ This will create "docs/html" directory under which API Reference html files are 
 
 Starting the Server
 -------------------
+Note: kernel.shmmax should be set to more than 500 MB before starting the server
+
+In linux for setting 1GB enter
+$sysctl -w kernel.shmmax=1000000000
+
 You should find csqlserver executable under the bin directory of the installation.
 
 $./csqlserver
