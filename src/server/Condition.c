@@ -22,7 +22,8 @@ Condition::Condition()
 }
 Condition::~Condition()
 {
-//    delete pred;
+    delete pred;
+    pred = NULL;
 }
 void Condition::setTerm(const char* fName1, ComparisionOp op,
                         const char *fName2)

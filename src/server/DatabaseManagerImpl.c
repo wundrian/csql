@@ -84,19 +84,28 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
     caddr_t rtnAddr = (caddr_t) NULL;
     shared_memory_id shm_id = 0;
 
+    char *startaddr = (char*)START_ADDR;
     shared_memory_key key = 0;
     if (0 == strcmp(name, SYSTEMDB))
+    {
+        
         key = SYSTEMDB_KEY;
+    }
     else
+    {
+        startaddr = startaddr + size;
         key = USERDB_KEY;
-
+    }
     shm_id = os::shm_create(key, size, 0666);
-    //TODO::Need to check success of shm_create
+    if (-1 == shm_id)
+    {
+        printError(ErrOS, "Shared memory create failed");
+        return ErrOS;
+    }
 
-    void *shm_ptr = os::shm_attach(shm_id);
-
+    void *shm_ptr = os::shm_attach(shm_id, startaddr, SHM_RND);
     rtnAddr  = (caddr_t) shm_ptr;
-    //memset(shm_ptr, 0, size );
+    memset(shm_ptr, 0, size );
     if (rtnAddr < 0)
     {
         printError(ErrOS, "Shared memory attach returned -ve value %d", rtnAddr);
@@ -168,6 +177,7 @@ DbRetVal DatabaseManagerImpl::deleteDatabase(const char *name)
 DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
 {
     size_t size = SYSTEM_DB_SIZE;
+    char *startaddr = (char*)START_ADDR;
     if (0 == strcmp(name , SYSTEMDB))
     {
         if (NULL !=systemDatabase_)
@@ -178,11 +188,14 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
     }
     else
     {
+        
         if (NULL ==systemDatabase_)
         {
             printError(ErrNotOpen, "System Database not open");
             return ErrNotOpen;
         }
+        size = USER_DB_SIZE;
+        startaddr = startaddr + size;
     }
     if (NULL != db_)
     {
@@ -200,9 +213,13 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
     else
         key = USERDB_KEY;
     shm_id = os::shm_open(key, size, 0666);
-    //TODO::return status of shm_open
+    if (shm_id == -1)
+    {
+         printError(ErrOS, "Shared memory open failed");
+         return ErrOS;
+    }
 
-    void *shm_ptr = os::shm_attach(shm_id);
+    void *shm_ptr = os::shm_attach(shm_id, startaddr, SHM_RND);
 
     rtnAddr  = (caddr_t) shm_ptr;
 
@@ -506,7 +523,6 @@ void DatabaseManagerImpl::closeTable(Table *table)
 {
     printDebug(DM_Database,"Closing table handle: %x", table);
     if (NULL == table) return;
-    //delete[] table->indexPtr_;
     delete table;
     logFinest(logger, "Closing Table");
 }

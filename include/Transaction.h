@@ -17,6 +17,7 @@
 #define TXN_H
 #include<os.h>
 #include<Debug.h>
+#include<Session.h> //PRABA added now
 class LockHashNode;
 
 enum TransStatus
@@ -53,6 +54,9 @@ class Transaction
 {
     public:
     int status_;
+
+    IsolationLevel isoLevel_;
+
     TransHasNode *hasLockList_;
 
     UndoLogInfo *firstUndoLog_;
@@ -87,7 +91,7 @@ class TransactionManager
 
     void setFirstTrans(Transaction *trans);
 
-    DbRetVal startTransaction();
+    DbRetVal startTransaction(IsolationLevel level);
     DbRetVal commit(LockManager *lManager_);
     DbRetVal rollback(LockManager *lManager_);
 

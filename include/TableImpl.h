@@ -121,7 +121,7 @@ class TableImpl:public Table
         { return fldList_.getFieldLength(name); }
 
     // search predicate
-    void setCondition(Condition p) { pred_ = p.getPredicate(); }
+     void setCondition(Condition *p) { pred_ = p->getPredicate(); }
 
     //binding
     void bindFld(const char *name, void *val);
@@ -144,6 +144,12 @@ class TableImpl:public Table
 
     void* fetch();
     DbRetVal close();
+
+
+    long spaceUsed();
+
+    long numTuples();
+
 
     void setTableInfo(char *name, int tblid, size_t  length,
                        int numFld, int numIdx, void *chunk);

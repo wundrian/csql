@@ -38,6 +38,7 @@ class SessionImpl : public Session
     ~SessionImpl()
     {
         close();
+    
     }
     //This is used by the server process to initialize and create
     //system and user database->create shared memory segment
@@ -51,7 +52,7 @@ class SessionImpl : public Session
     DatabaseManager* getDatabaseManager();
     UserManager* getUserManager();
 
-    DbRetVal startTransaction();
+    DbRetVal startTransaction(IsolationLevel level);
     DbRetVal commit();
     DbRetVal rollback();
 

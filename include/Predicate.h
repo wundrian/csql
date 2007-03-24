@@ -91,6 +91,7 @@ class Predicate
     virtual void setTerm(const char* fName1, ComparisionOp op, void *opnd)=0;
 
     virtual void setTerm(Predicate *p1, LogicalOp op, Predicate *p2 = NULL)=0;
+    virtual ~Predicate(){}
 };
 
 

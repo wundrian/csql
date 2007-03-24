@@ -69,6 +69,7 @@ class Index
     static HashIndex *hIdx;
     public:
     static Index* getIndex(IndexType type);
+    static void destroy() { delete hIdx; }
     virtual DbRetVal insert(TableImpl *tbl, Transaction *tr, void *indexPtr, void *tuple)=0;
     virtual DbRetVal remove(TableImpl *tbl, Transaction *tr, void *indexPtr, void *tuple)=0; 
     virtual DbRetVal update(TableImpl *tbl, Transaction *tr, void *indexPtr, void *tuple)=0;

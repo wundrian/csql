@@ -4,9 +4,36 @@ AM_CONFIG_HEADER(config.h)
 AM_INIT_AUTOMAKE(csql, 0.1)
 
 AC_LANG_CPLUSPLUS
+AC_PROG_CC
 AC_PROG_CXX
 AM_PROG_LIBTOOL
 AC_C_BIGENDIAN
 AC_CANONICAL_HOST
+AM_PROG_LEX
+AC_PROG_YACC
+
+case "${host_os}" in
+  *linux* )
+   OSTYPE=linux
+    ;;
+esac
+case "${host_cpu}" in
+  i686 | i386 )
+    CPUTYPE=i686
+    ;;
+esac
+echo "#ifndef BUILD_H" >build.h
+echo "#define BUILD_H" >>build.h
+echo "#define CSQL" >>build.h
+echo "#define ${OSTYPE}" >>build.h
+echo "#define ${CPUTYPE}" >>build.h
+echo "#endif " >>build.h
+cp build.h include
+
+AC_CHECK_HEADERS(stdio.h sys/mman.h sys/shm.h sys/errno.h crypt.h unistd.h \
+        string.h sys/types.h sys/stat.h fcntl.h pthread.h math.h  \
+        signal.h)
+
+
 
 AC_OUTPUT(Makefile src/Makefile include/Makefile src/server/Makefile test/Makefile test/storage/Makefile)

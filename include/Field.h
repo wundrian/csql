@@ -86,6 +86,8 @@ class FieldList
 
     DbRetVal remove(const char* fldName);
 
+    DbRetVal removeAll();
+
     DbRetVal updateBindVal(const char *fldName, void *val);
 
     int getFieldOffset(const char *fldName);

@@ -41,9 +41,9 @@ int os::shmctl(int shmid, int cmd)
     return ::shmctl(shmid, cmd, NULL);
 }
 
-void*  os::shm_attach(shared_memory_id id)
+void*  os::shm_attach(shared_memory_id id, const void *ptr, int flag)
 {
-    return ::shmat(id, NULL, 0);
+    return ::shmat(id, ptr, flag);
 }
 
 int os::shm_detach (void* addr)

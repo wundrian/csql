@@ -26,7 +26,7 @@ class Mutex
 
     #if defined(sparc) || defined(i686)
     Lock lock;
-    #elif
+    #else
     pthread_mutex_t mutex_;
     #endif
     public:

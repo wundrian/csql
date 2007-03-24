@@ -40,7 +40,7 @@ class Table
     /** sets condition for the select, update and delete operations
     *   @param c condition
     */
-    virtual void setCondition(Condition c)=0;
+    virtual void setCondition(Condition *c)=0;
 
     /** binds application buffer to the specified field of the table.
     * Before doing any DML operations required fields are binded first.
@@ -125,6 +125,16 @@ class Table
     */
 
     virtual DbRetVal close()=0;
+
+    /**Retrieves the total space used for this table in bytes
+    * @returns DbRetVal
+    */
+    virtual long spaceUsed()=0;
+
+    /**Retrieves the total number of tuples present in this table
+    * @returns DbRetVal
+    */
+    virtual long numTuples()=0;
 
     virtual ~Table() { }
 };

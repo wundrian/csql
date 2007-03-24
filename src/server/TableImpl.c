@@ -134,11 +134,43 @@ void* TableImpl::fetch()
     {
         return NULL;
     }
-    DbRetVal lockRet = lMgr_->getSharedLock(curTuple_, trans);
-    if (OK != lockRet)
+    DbRetVal lockRet = OK;
+    if ((*trans)->isoLevel_ == READ_REPEATABLE) {
+        lockRet = lMgr_->getSharedLock(curTuple_, trans);
+        if (OK != lockRet)
+        { 
+            printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
+            return NULL;
+        }
+
+    }
+    else if ((*trans)->isoLevel_ == READ_COMMITTED)
     {
-        printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
-        return NULL;
+        //if iso level is read committed, operation duration lock is sufficent 
+        //so release it here itself.
+        int tries = 5;
+        struct timeval timeout;
+        timeout.tv_sec = MUTEX_TIMEOUT_SECS;
+        timeout.tv_usec = MUTEX_TIMEOUT_USECS;
+        bool status = false;
+        while(true) { 
+            lockRet = lMgr_->isExclusiveLocked( curTuple_, status);
+            if (OK != lockRet)
+            { 
+                printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
+                return NULL;
+            }
+            if (!status) break; 
+            tries--;
+            if (tries == 0) break;
+            os::select(0, 0, 0, 0, &timeout);
+
+        }
+        if (tries == 0) 
+        { 
+            printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
+            return NULL;
+        }
     }
     copyValuesToBindBuffer(curTuple_);
     return curTuple_;
@@ -372,6 +404,8 @@ TableImpl::~TableImpl()
 {
     if (NULL != iter ) { delete iter; iter = NULL; }
     if (NULL != idxInfo) { delete idxInfo; idxInfo = NULL; }
+    if (NULL != indexPtr_) { delete[] indexPtr_; indexPtr_ = NULL; }
+    fldList_.removeAll();
 
 }
 void TableImpl::setTableInfo(char *name, int tblid, size_t  length,
@@ -383,4 +417,17 @@ void TableImpl::setTableInfo(char *name, int tblid, size_t  length,
     numFlds_ = numFld;
     numIndexes_ = numIdx;
     chunkPtr_ = chunk;
+}
+
+long TableImpl::spaceUsed()
+{
+    Chunk *chk = (Chunk*)chunkPtr_;
+    long totSize = chk->getTotalDataNodes() * chk->getSize();
+    totSize = totSize + (chk->totalPages() * sizeof (PageInfo));
+    return totSize;
+}
+
+long TableImpl::numTuples()
+{
+    return ((Chunk*)chunkPtr_)->getTotalDataNodes();
 }

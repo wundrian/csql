@@ -19,8 +19,18 @@
 #include<Allocator.h>
 #include<CatalogTables.h>
 #include<Debug.h>
-DbRetVal TransactionManager::startTransaction()
+DbRetVal TransactionManager::startTransaction(IsolationLevel level)
 {
+    if (NULL != trans)
+    {
+        if (trans->status_ == TransNotUsed)
+        {
+            //the previous transaction shall be used again
+            trans->status_ = TransRunning;
+            trans->isoLevel_ = level;
+            return OK;
+        }
+    }
     Transaction *iter = firstTrans;
     //get free slot from transaction table
     for (int i =0 ; i < MAX_TRANS; i++)
@@ -32,6 +42,7 @@ DbRetVal TransactionManager::startTransaction()
     //set the state
     trans = iter;
     trans->status_ = TransRunning;
+    trans->isoLevel_ = level;
     return OK;
 }
 

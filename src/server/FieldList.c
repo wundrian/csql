@@ -76,6 +76,21 @@ DbRetVal FieldList::remove(const char* fldName)
     return ErrNotFound;
 }
 
+DbRetVal FieldList::removeAll()
+{
+    if (NULL == head) return OK;
+    FieldNode *iter = head, *next = head;
+    while (iter->next != NULL)
+    {
+        next = iter->next;
+        delete iter;
+        iter = next;
+    }
+    delete iter;  //deleting the last element
+    head = NULL;
+    return OK;
+}
+
 //-1->if val is passed NULL
 //-2->if fld is not present
 DbRetVal FieldList::updateBindVal(const char *fldName, void *val )
@@ -235,6 +250,21 @@ DbRetVal FieldNameList::remove(const char* name)
     }
         printError(ErrNotFound, "Field name %s not present in the list", name);
         return ErrNotFound;
+}
+
+DbRetVal FieldNameList::removeAll()
+{
+    if (NULL == head) return OK;
+    FieldNameNode *iter = head, *next = head;
+    while (iter->next != NULL)
+    {
+        next = iter->next;
+        delete iter;
+        iter = next;
+    }
+    delete iter;  //deleting the last element
+    head = NULL;
+    return OK;
 }
 
 char* FieldNameList::nextFieldName()

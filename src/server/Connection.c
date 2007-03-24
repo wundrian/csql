@@ -16,6 +16,12 @@
 #include<SessionImpl.h>
 #include<Debug.h>
 #include<os.h>
+#include<Index.h>
+Connection::~Connection()
+{ 
+    delete session; 
+    Index::destroy();
+}
 
 DbRetVal Connection::open(const char *username, const char *password)
 {
@@ -31,7 +37,10 @@ DbRetVal Connection::close()
     if (session == NULL) return ErrNoConnection;
     logFinest(logger, "User logged out");
     logger.stopLogger();
-    return session->close();
+    DbRetVal rv= session->close();
+    delete session; 
+    session = NULL;
+    return rv;
 }
 
 DatabaseManager* Connection::getDatabaseManager()
@@ -46,10 +55,10 @@ UserManager* Connection::getUserManager()
     return session->getUserManager();
 }
 
-DbRetVal Connection::startTransaction()
+DbRetVal Connection::startTransaction(IsolationLevel level)
 {
     if (session == NULL) return ErrNoConnection;
-    return session->startTransaction();
+    return session->startTransaction(level);
 }
 
 

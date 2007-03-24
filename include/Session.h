@@ -20,6 +20,13 @@
 #include<ErrorType.h>
 class Session;
 
+enum IsolationLevel
+{
+    READ_UNCOMMITTED,
+    READ_COMMITTED,
+    READ_REPEATABLE
+};
+
 /**
 * @class Connection
 *
@@ -51,7 +58,7 @@ class Connection
     Session *session;
     public:
     Connection() { session = NULL; }
-    ~Connection() { delete session; }
+    ~Connection(); 
 
     /** opens connection to the database
     *   @param username username for authentication
@@ -83,7 +90,7 @@ class Connection
     *   database operation.
     *   @return DbRetVal
     */
-    DbRetVal startTransaction();
+    DbRetVal startTransaction(IsolationLevel level = READ_COMMITTED);
 
     /** Commits active transaction. 
     *   It makes all the changes made in the current transaction permanent and <br/>
@@ -114,7 +121,7 @@ class Session
     virtual DatabaseManager* getDatabaseManager()=0;
     virtual UserManager* getUserManager()=0;
 
-    virtual DbRetVal startTransaction()=0;
+    virtual DbRetVal startTransaction(IsolationLevel level)=0;
     virtual DbRetVal commit()=0;
     virtual DbRetVal rollback()=0;
     //TODO:: virtual int setAutoCommit(bool flag)=0;

@@ -50,6 +50,7 @@ class FieldNameList
     *   @return int
     */
     DbRetVal remove(const char *name);
+    DbRetVal removeAll();
 };
 
 class FieldList;
@@ -72,6 +73,7 @@ class TableDef
     int fldCount;
 
     public:
+    ~TableDef();
     /** adds a field to the schema definition.
     *   @param name field name 
     *   @param type data type of the field
@@ -128,6 +130,7 @@ class IndexInitInfo
     FieldNameList list;               /**<field name list*/
     IndexType indType;                /**<index type*/
     IndexInitInfo() {  indType = hashIndex; }
+    ~IndexInitInfo() {list.removeAll();}
 };
 
 /**

@@ -8,5 +8,5 @@ libcsql_la_SOURCES = BucketIter.c BucketList.c CatalogTables.c Chunk.c \
 	PageInfo.c PredicateImpl.c SessionImpl.c TableDef.c TableImpl.c Transaction.c \
 	TransactionManager.c TupleIterator.c UserManagerImpl.c HashIndex.c
 bin_PROGRAMS = csqlserver
-csqlserver_SOURCES = Server.c
+csqlserver_SOURCES = Server.c 
 csqlserver_LDADD = $(top_builddir)/src/server/libcsql.la -lrt -lpthread -lcrypt

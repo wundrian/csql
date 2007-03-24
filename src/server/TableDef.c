@@ -17,6 +17,11 @@
 #include<Index.h>
 #include<CatalogTables.h>
 #include<Lock.h>
+
+TableDef::~TableDef()
+{
+    fldList.removeAll();
+}
 int TableDef::addField(const char *name,  DataType type, size_t length,
                  const void *defaultValue, bool notNull, bool isPrimary)
 

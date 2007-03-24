@@ -55,7 +55,7 @@ void* Chunk::allocate(Database *db)
     char *data = ((char*)curPage_) + sizeof(PageInfo);
     printDebug(DM_Alloc, "Chunk::allocate id:%d curPage:%x noOfDataNodes:%d",
                          chunkID_, curPage_, noOfDataNodes);
-
+    
     //1.scan through data list and find if any is free to use in current page
     //2.If there is none then
     //    a) get new free page from db. set the prev->next to point
@@ -410,6 +410,62 @@ PageInfo* Chunk::getPageInfo(Database *db, void *ptr)
         pageInfo = (PageInfo*)(((PageInfo*)pageInfo)->nextPage_) ;
     }
     return NULL;
+}
+
+long Chunk::getTotalDataNodes()
+{
+    int ret = getChunkMutex();
+    if (ret != 0)
+    {
+        printError(ErrLockTimeOut,"Unable to acquire chunk Mutex");
+        return NULL;
+    }
+
+    //TODO:: for variable size allocator
+    if (0 == allocSize_) //->variable size allocator
+        return 0;
+
+    //TODO::for large size allocator
+    if (allocSize_ >PAGE_SIZE)//->each page has only one data node
+        return 0;
+
+    int noOfDataNodes=os::floor((PAGE_SIZE - sizeof(PageInfo))/allocSize_);
+    PageInfo* pageInfo = ((PageInfo*)firstPage_);
+    char *data = ((char*)firstPage_) + sizeof(PageInfo);
+    long totalNodes = 0; 
+    int i=0;
+    while( pageInfo != NULL )
+    {
+        data = ((char*)pageInfo) + sizeof(PageInfo);
+        for (i = 0; i< noOfDataNodes; i++)
+        {
+            if (*((int*)data) == 1) { totalNodes++;}
+            data = data + allocSize_;
+        }        
+        pageInfo = (PageInfo*)(((PageInfo*)pageInfo)->nextPage_) ;
+    }
+    releaseChunkMutex();
+    return totalNodes;
+}
+
+int Chunk::totalPages()
+{
+    int ret = getChunkMutex();
+    if (ret != 0)
+    {
+        printError(ErrLockTimeOut,"Unable to acquire chunk Mutex");
+        return NULL;
+    }
+    //logic is same for variable size and for large data node allocator. 
+    PageInfo* pageInfo = ((PageInfo*)firstPage_);
+    int totPages=0;
+    while( pageInfo != NULL )
+    {
+        totPages++;
+        pageInfo = (PageInfo*)(((PageInfo*)pageInfo)->nextPage_) ;
+    }
+    releaseChunkMutex();
+    return totPages;
 }
 
 int Chunk::initMutex()

@@ -38,6 +38,7 @@ class PredicateImpl:public Predicate
 
     public:
     PredicateImpl(){ operand = NULL; lhs = rhs = NULL; }
+    ~PredicateImpl(){}
 
     void setTerm(const char* fName1, ComparisionOp op, const char *fName2);
 

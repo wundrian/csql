@@ -130,6 +130,9 @@ class Chunk
     ChunkIterator getIterator();
     void print(){}
 
+    long getTotalDataNodes();
+    int totalPages();
+
     private:
 
     int initMutex();

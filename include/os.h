@@ -15,9 +15,9 @@
   ***************************************************************************/
 #ifndef OS_H
 #define OS_H
-
-#define linux 1
-#define i686 1
+#include<build.h>
+//#define linux 1
+//#define i686 1
 //#define solaris 
 //#define sparc
 
@@ -93,14 +93,17 @@ enum MapMode
 #define DBAUSER "dba"
 #define DBAPASS "manager"
 #define SYSTEM_DB_SIZE 104857600
+#define USER_DB_SIZE 104857600
 #define SYSTEMDB_KEY   2222
 #define USERDB_KEY     5555
 #define LOGFILE "log.out"
+#define START_ADDR 400000000
 typedef key_t shared_memory_key;
 typedef int   shared_memory_id;
 
 #define LOCK_BUCKET_SIZE 2048
-
+#define MUTEX_TIMEOUT_SECS 0
+#define MUTEX_TIMEOUT_USECS 10
 #endif
 
 
@@ -126,7 +129,7 @@ class os
 
     static shared_memory_id shm_create(shared_memory_key key, size_t size, int flag);
     static shared_memory_id shm_open(shared_memory_key key, size_t size, int flag);
-    static void*  shm_attach(shared_memory_id id);
+    static void*  shm_attach(shared_memory_id id, const void *ptr, int flag);
     static int shm_detach (void*);
     static int shmctl(int shmid, int cmd);
     static double floor(double val);

@@ -64,7 +64,7 @@ DbRetVal SessionImpl::initSystemDatabase()
     db->releaseDatabaseMutex();
 
     //create user database
-    rv = dbMgr->createDatabase("praba", SYSTEM_DB_SIZE);
+    rv = dbMgr->createDatabase("praba", USER_DB_SIZE);
     if (OK != rv) return rv;
     return OK;
 }
@@ -132,7 +132,7 @@ DbRetVal SessionImpl::close()
         dbMgr->closeDatabase();
         dbMgr->closeSystemDatabase();
         delete dbMgr;
-            dbMgr = NULL;
+        dbMgr = NULL;
     }
     //pMgr->deregisterProcess();
     //delete pMgr;
@@ -173,7 +173,7 @@ UserManager* SessionImpl::getUserManager()
     return userMgr;
 }
 
-DbRetVal SessionImpl::startTransaction()
+DbRetVal SessionImpl::startTransaction(IsolationLevel level)
 {
     if (NULL == dbMgr || NULL == dbMgr->txnMgr())
     {
@@ -187,7 +187,7 @@ DbRetVal SessionImpl::startTransaction()
         printError(rv,"Unable to get TransTable mutex\n");
         return rv;
     }
-    rv = dbMgr->txnMgr()->startTransaction();
+    rv = dbMgr->txnMgr()->startTransaction(level);
     dbMgr->sysDb()->releaseTransTableMutex();
     return rv;
 }
