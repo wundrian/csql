@@ -59,7 +59,7 @@ int main()
     Condition p1;
     int val1 = 0;
     p1.setTerm("f1", OpEquals, &val1);
-    table->setCondition(p1);
+    table->setCondition(&p1);
     icount=0;
     timer.reset();
     for(i = 0; i< 100; i++)

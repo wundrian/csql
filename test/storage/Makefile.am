@@ -1,4 +1,4 @@
-INCLUDES = 
+INCLUDES = -I../../include
 METASOURCES = AUTO
 bin_PROGRAMS = DMLTest UserAuthTest CreateTable
 DMLTest_SOURCES = DMLTest.c
