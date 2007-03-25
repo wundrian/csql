@@ -67,7 +67,7 @@ am_libcsql_la_OBJECTS = BucketIter.lo BucketList.lo CatalogTables.lo \
 libcsql_la_OBJECTS = $(am_libcsql_la_OBJECTS)
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
-am_csqlserver_OBJECTS = Server.$(OBJEXT) 
+am_csqlserver_OBJECTS = Server.$(OBJEXT)
 csqlserver_OBJECTS = $(am_csqlserver_OBJECTS)
 csqlserver_DEPENDENCIES = $(top_builddir)/src/server/libcsql.la
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
@@ -202,7 +202,7 @@ libcsql_la_SOURCES = BucketIter.c BucketList.c CatalogTables.c Chunk.c \
 	PageInfo.c PredicateImpl.c SessionImpl.c TableDef.c TableImpl.c Transaction.c \
 	TransactionManager.c TupleIterator.c UserManagerImpl.c HashIndex.c
 
-csqlserver_SOURCES = Server.c
+csqlserver_SOURCES = Server.c 
 csqlserver_LDADD = $(top_builddir)/src/server/libcsql.la -lrt -lpthread -lcrypt
 all: all-am
 
@@ -333,7 +333,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TupleIterator.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UserManagerImpl.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/os.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

@@ -1,6 +1,6 @@
 /***************************************************************************
- *   Copyright (C) 2007 by Prabakaran Thirumalai   *
- *   praba_tuty@yahoo.com   *
+ *   Copyright (C) 2007 by www.databasecache.com                           *
+ *   Contact: praba_tuty@databasecache.com                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -101,7 +101,7 @@ DbRetVal TableImpl::createPlan()
     }
     if (NULL != indexPtr_)
     {
-        useIndex_ = 0;
+        //Note:numIndexes_ == 0 is handled above. for this case indexPtr_ is null
         if (numIndexes_ == 1) {
            //check predicate, whether it has field name and == operator
            //and does not have OR, NOT operator
@@ -113,8 +113,17 @@ DbRetVal TableImpl::createPlan()
                useIndex_ = 0;
                return OK;
            }
-            }
+           else
+           {
+               scanType_ = fullTableScan;
+               return OK;
+           }
+        }
+        else
+        {
+        
             return ErrNotYet;
+        }
     }
     scanType_ = fullTableScan;
     return OK;

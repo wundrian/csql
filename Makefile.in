@@ -527,6 +527,12 @@ all-am: Makefile config.h
 installdirs: installdirs-recursive
 installdirs-am:
 install: install-recursive
+	cp -R $(top_srcdir)/examples $(prefix) 
+	cp -R $(top_srcdir)/Doxyfile $(prefix) 
+	cp -R $(top_srcdir)/README.INSTALL $(prefix)/README
+	cp -R $(top_srcdir)/AUTHORS $(prefix) 
+	cp -R $(top_srcdir)/COPYING $(prefix) 
+	cp -R $(top_srcdir)/ChangeLog $(prefix) 
 install-exec: install-exec-recursive
 install-data: install-data-recursive
 uninstall: uninstall-recursive

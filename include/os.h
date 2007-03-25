@@ -1,6 +1,6 @@
 /***************************************************************************
- *   Copyright (C) 2007 by Prabakaran Thirumalai   *
- *   praba_tuty@yahoo.com   *
+ *   Copyright (C) 2007 by www.databasecache.com                           *
+ *   Contact: praba_tuty@databasecache.com                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -96,7 +96,7 @@ enum MapMode
 #define USER_DB_SIZE 104857600
 #define SYSTEMDB_KEY   2222
 #define USERDB_KEY     5555
-#define LOGFILE "log.out"
+#define LOGFILE "/tmp/log.out"
 #define START_ADDR 400000000
 typedef key_t shared_memory_key;
 typedef int   shared_memory_id;

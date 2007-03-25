@@ -1,6 +1,7 @@
 /***************************************************************************
- *   Copyright (C) 2007 by Prabakaran Thirumalai   *
- *   praba_tuty@yahoo.com   *
+ *   Copyright (C) 2007 by www.databasecache.com                           *
+ *   Contact:  *   Contact: praba_tuty@databasecache.com                                 *
+                                     *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *

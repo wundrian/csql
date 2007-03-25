@@ -14,15 +14,26 @@ Compilers Supported
 g++ in linux,
 CC in solaris
 
-Compiling the source
---------------------
+Untar the distribution
+----------------------
 Go to the root directory and enter the following commands.
+$gunzip csql-linux-i686-1.0Beta.tar.gz
+$tar xvf sql-linux-i686-1.0Beta.tar
 
-$./configure --prefix=`pwd`/install
-$make
-$make install
+This will create the following directories,
+  1. include
+  2. lib
+  3. bin
+  4. docs
+  5. examples
+and following files,
+  1. Doxyfile
+  2. COPYING
+  3. AUTHORS
+  4. ChangeLog
+  5. README 
 
-This will create "install" directory under the current directory and places all the executables created in bin directory and libraries in lib directory.
+under sql-linux-i686-1.0Beta directory.
 
 Available Documentation
 -----------------------

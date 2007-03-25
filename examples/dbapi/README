@@ -1,0 +1,43 @@
+----------------------------------README---------------------------------------
+This contains an example program that demonstates usage of dbapi interface.
+
+What it does?
+-------------
+It creates table t1 with two fields f1 integer and f2 string.
+Creates hash index on f1 field of t1 table.
+Inserts 10 rows into the table t1
+select all rows which satisfy the condition f1 >=5 and displays
+Delete all the rows in the table 
+Drop the table
+
+How to compile
+--------------
+1. Make a copy of this directory in a writable area
+2. Edit the Makefile and set the CPlus variable to point to the C++
+   compiler on your system.
+3. Set the INSTALLROOT environment variable to point to your installation 
+   directory or change INCL and LIB variable in the Makefile to point to
+   installation directory
+4. Use the make command to compile
+	$make
+
+How to run
+----------
+Run the executable created by make
+	$./dbapiexample
+
+Output of example:
+------------------
+Table created
+Index created
+Total rows inserted 10
+Selection f1 >= 5 starts on table t1
+Tuple values:
+    f1=5 f2=Shekar
+    f1=6 f2=Pramod
+    f1=7 f2=Rakesh
+    f1=8 f2=Murthy
+    f1=9 f2=Amit
+Total Rows selected: 5
+Total Deleted Rows 10
+Table dropped

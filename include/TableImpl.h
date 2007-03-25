@@ -1,6 +1,6 @@
 /***************************************************************************
- *   Copyright (C) 2007 by Prabakaran Thirumalai   *
- *   praba_tuty@yahoo.com   *
+ *   Copyright (C) 2007 by www.databasecache.com                           *
+ *   Contact: praba_tuty@databasecache.com                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -105,7 +105,7 @@ class TableImpl:public Table
 
     public:
     TableImpl() { db_ = NULL; chunkPtr_ = NULL; iter = NULL;
-        idxInfo = NULL; indexPtr_ = NULL; scanType_ = unknownScan;}
+        idxInfo = NULL; indexPtr_ = NULL; scanType_ = unknownScan; pred_ = NULL;}
     ~TableImpl();
 
     void setDB(Database *db) { db_ = db; }
@@ -121,7 +121,8 @@ class TableImpl:public Table
         { return fldList_.getFieldLength(name); }
 
     // search predicate
-     void setCondition(Condition *p) { pred_ = p->getPredicate(); }
+     void setCondition(Condition *p) 
+     { if (p) pred_ = p->getPredicate(); else pred_ = NULL;}
 
     //binding
     void bindFld(const char *name, void *val);

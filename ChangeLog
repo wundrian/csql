@@ -1,0 +1,12 @@
+CSQL - Version 1.0 - Beta(Latest)
+----------------------------------
+1.Support for Atomicity, rollback for trasactions using undo logs
+2.Support for three isolation levels: READ_UNCOMMITED, READ_COMMITED, READ_REPEATABLE.
+3.Support for hash index with single key
+4.Support for multiple users
+5.Support for DML operations through table interface
+6.Support for Predicates which involves only single table field names and constants
+7.Debug Module, that prints additional messages on debug build
+8.Configuration Module to load system paramaters from config file
+9.Logger to log events of the system to log file
+10.DBAPI for accessing the storage engine directly

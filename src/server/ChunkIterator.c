@@ -1,6 +1,6 @@
 /***************************************************************************
- *   Copyright (C) 2007 by Prabakaran Thirumalai   *
- *   praba_tuty@yahoo.com   *
+ *   Copyright (C) 2007 by www.databasecache.com                           *
+ *   Contact: praba_tuty@databasecache.com                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -60,9 +60,10 @@ void* ChunkIterator::nextElement()
     {
         if (*((int*)data) == 0)
         {
-           //not used, so skip it
+          //not used, so skip it
            data = data + allocSize_;
            nodeOffset_++;
+           if (data >= (char*)iterPage_ + PAGE_SIZE) break; 
         }
         else
         {
