@@ -18,7 +18,7 @@ Untar the distribution
 ----------------------
 Go to the root directory and enter the following commands.
 $gunzip csql-linux-i686-1.0Beta.tar.gz
-$tar xvf sql-linux-i686-1.0Beta.tar
+$tar xvf csql-linux-i686-1.0Beta.tar
 
 This will create the following directories,
   1. include
