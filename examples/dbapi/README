@@ -15,7 +15,7 @@ How to compile
 1. Make a copy of this directory in a writable area
 2. Edit the Makefile and set the CPlus variable to point to the C++
    compiler on your system.
-3. Set the INSTALLROOT environment variable to point to your installation 
+3. Set the CSQL_INSTALL_ROOT environment variable to point to your installation 
    directory or change INCL and LIB variable in the Makefile to point to
    installation directory
 4. Use the make command to compile

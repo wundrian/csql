@@ -182,7 +182,7 @@ target_alias = @target_alias@
 # not a GNU package. You can remove this line, if
 # have all needed files, that a GNU package needs
 AUTOMAKE_OPTIONS = foreign 1.4
-SUBDIRS = src include test
+SUBDIRS = src include 
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
@@ -527,13 +527,6 @@ all-am: Makefile config.h
 installdirs: installdirs-recursive
 installdirs-am:
 install: install-recursive
-	cp -R $(top_srcdir)/examples $(prefix) 
-	cp -R $(top_srcdir)/docs $(prefix) 
-	cp $(top_srcdir)/Doxyfile $(prefix) 
-	cp $(top_srcdir)/README.INSTALL $(prefix)/README
-	cp $(top_srcdir)/AUTHORS $(prefix) 
-	cp $(top_srcdir)/COPYING $(prefix) 
-	cp $(top_srcdir)/ChangeLog $(prefix) 
 install-exec: install-exec-recursive
 install-data: install-data-recursive
 uninstall: uninstall-recursive

@@ -21111,7 +21111,7 @@ done
 
 
 
-ac_config_files="$ac_config_files Makefile src/Makefile include/Makefile src/server/Makefile test/Makefile test/storage/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile include/Makefile src/server/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -21696,8 +21696,6 @@ do
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
     "include/Makefile") CONFIG_FILES="$CONFIG_FILES include/Makefile" ;;
     "src/server/Makefile") CONFIG_FILES="$CONFIG_FILES src/server/Makefile" ;;
-    "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
-    "test/storage/Makefile") CONFIG_FILES="$CONFIG_FILES test/storage/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}

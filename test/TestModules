@@ -2,3 +2,5 @@
 #Note:Do not add any unnecessary information in this file and no blank lines. 
 #Any line which has "#" symbol is considered as comment and negleted
 dbapi/Connection
+dbapi/UserManager
+dbapi/Table

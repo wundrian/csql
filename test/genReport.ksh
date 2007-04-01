@@ -15,8 +15,9 @@ fi
 ROOT_DIR=`pwd`
 TOTALPASSED=0
 TOTALFAILED=0
-echo "MODULE		TESTPASSED		TESTFAILED"
-echo "====================================================="
+echo "===================================================================="
+echo "           MODULE                       TESTPASSED     TESTFAILED   "
+echo "===================================================================="
 while read MODULE
 do
     echo $MODULE | grep "#" >/dev/null
@@ -28,12 +29,16 @@ do
     TEST_LOG=$TEST_RUN_DIR/testlog
     TESTPASSED=`grep PASSED $TEST_LOG | wc -l`
     TESTFAILED=`grep FAILED $TEST_LOG | wc -l`
-    echo "$MODULE    $TESTPASSED    $TESTFAILED"
+    printf "%25s\t\t %5d\t\t %5d\t\t\n" $MODULE $TESTPASSED $TESTFAILED
     (( TOTALPASSED = TOTALPASSED + TESTPASSED ))
     (( TOTALFAILED = TOTALFAILED + TESTFAILED ))
 
 done < TestModules
-echo "TOTAL    $TOTALPASSED    $TOTALFAILED"
+
+TOTSTRING=TOTAL
+echo "===================================================================="
+printf "%25s\t\t %5d\t\t %5d\t\t\n" $TOTSTRING $TOTALPASSED $TOTALFAILED
+echo "===================================================================="
 (( TOTALEXECUTED= TOTALPASSED + TOTALFAILED ))
 echo "TOTAL Executed: $TOTALEXECUTED"
 exit 0

@@ -22,9 +22,7 @@ do
     then
        continue
     fi
-    echo "MODULE READ is $MODULE"
-
-
+    #echo "MODULE READ is $MODULE"
 
 TEST_SCRIPT_DIR=${ROOT_DIR}/${MODULE}
 TEST_RUN_DIR=${TEST_RUN_ROOT}/${MODULE}
@@ -62,7 +60,7 @@ echo "Test started at : `date` " >>$TEST_LOG
 
 expPresent="no"
 EXP_FILE=exp.`basename ${test}`
-echo "PRABA::EXP_FILE is $EXP_FILE"
+#echo "EXP_FILE is $EXP_FILE"
 if [ -s "${TEST_SCRIPT_DIR}/${EXP_FILE}" ]
 then
     expPresent="yes"
