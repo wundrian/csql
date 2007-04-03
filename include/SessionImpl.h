@@ -56,6 +56,7 @@ class SessionImpl : public Session
     DbRetVal commit();
     DbRetVal rollback();
 
+    DbRetVal readConfigFile();
 };
 
 #endif

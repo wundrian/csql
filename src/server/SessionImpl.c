@@ -22,17 +22,40 @@
 #include<UserManagerImpl.h>
 #include<Transaction.h>
 #include<Debug.h>
+#include<Config.h>
 
+//Before calling this method, application is required to call readConfigValues
 DbRetVal SessionImpl::initSystemDatabase()
 
 {
     DbRetVal rv = OK;
+    rv = readConfigFile();
+    if (rv != OK) 
+    {
+       printError(ErrSysInit, "Configuration file read failed\n");
+       return ErrSysInit;
+    }
+    printf("ConfigValues\n");
+    printf(" getPageSize %d\n", config.getPageSize());
+    printf(" getMaxTrans %d\n", config.getMaxTrans());
+    printf(" getMaxProcs %d\n", config.getMaxProcs());
+    printf(" getMaxSysDbSize %ld\n", config.getMaxSysDbSize());
+    printf(" getMaxDbSize %ld\n", config.getMaxDbSize());
+    printf(" getSysDbKey %d\n", config.getSysDbKey());
+    printf(" getUserDbKey %d\n", config.getUserDbKey());
+    printf(" getLogFile %s\n", config.getLogFile());
+    printf(" getMapAddress %ld\n", config.getMapAddress());
+    printf(" getMutexSecs %d\n", config.getMutexSecs());
+    printf(" getMutexUSecs %d\n", config.getMutexUSecs());
+
+
     dbMgr = new DatabaseManagerImpl();
+
     //TODO:Size of system database 100 MB ->config parameter
 
     //TODO:No of chunks of system database->config parameter
     //This limits the total number of catalog tables system shall support.
-    rv = dbMgr->createDatabase(SYSTEMDB, SYSTEM_DB_SIZE);
+    rv = dbMgr->createDatabase(SYSTEMDB, config.getMaxSysDbSize());
     if (OK != rv) return rv;
     dbMgr->setSysDb(dbMgr->db());
     dbMgr->setDb(NULL);
@@ -64,7 +87,7 @@ DbRetVal SessionImpl::initSystemDatabase()
     db->releaseDatabaseMutex();
 
     //create user database
-    rv = dbMgr->createDatabase("praba", USER_DB_SIZE);
+    rv = dbMgr->createDatabase("praba", config.getMaxDbSize());
     if (OK != rv) return rv;
     return OK;
 }
@@ -82,6 +105,12 @@ DbRetVal SessionImpl::destroySystemDatabase()
 DbRetVal SessionImpl::open(const char *username, const char *password)
 {
     DbRetVal rv = OK;
+    rv = readConfigFile();
+    if (rv != OK)
+    {
+       printError(ErrSysFatal, "Configuration file read failed\n");
+       return ErrSysFatal;
+    }
     if ( NULL == dbMgr)
     {
         dbMgr = new DatabaseManagerImpl();
@@ -227,3 +256,16 @@ DbRetVal SessionImpl::rollback()
     }
     return OK;
 }
+
+DbRetVal SessionImpl::readConfigFile()
+{
+    char *confFilename = os::getenv("CSQL_CONFIG_FILE");
+    if (confFilename == NULL)
+    {
+        printError(ErrSysInit, "CSQL_CONFIG_FILE environment variable should be set.");
+        return ErrSysInit;
+    }
+    int  rv = config.readAllValues(confFilename);
+    if (rv == OK) return OK; else return ErrSysInit;
+}
+

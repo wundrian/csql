@@ -17,6 +17,7 @@
 #include<Database.h>
 #include<os.h>
 #include<Debug.h>
+#include<Config.h>
 
 //No iterators for variable size allocators
 ChunkIterator Chunk::getIterator()

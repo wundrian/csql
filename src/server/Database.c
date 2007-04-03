@@ -19,6 +19,7 @@
 #include<Transaction.h>
 #include<Lock.h>
 #include<Debug.h>
+#include<Config.h>
 
 const char* Database::getName()
 {

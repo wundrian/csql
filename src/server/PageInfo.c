@@ -15,6 +15,7 @@
   ***************************************************************************/
 #include<Allocator.h>
 #include<os.h>
+#include<Config.h>
 
 void PageInfo::setPageAsUsed(size_t offset)
 {

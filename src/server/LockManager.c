@@ -19,6 +19,7 @@
 #include<CatalogTables.h>
 #include<Transaction.h>
 #include<Debug.h>
+#include<Config.h>
 
 Bucket* LockManager::getLockBucket(void *tuple)
 {
@@ -169,8 +170,8 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
    int tries = 0;
    int ret = 0;
    struct timeval timeout;
-   timeout.tv_sec = MUTEX_TIMEOUT_SECS;
-   timeout.tv_usec = MUTEX_TIMEOUT_USECS;
+   timeout.tv_sec = config.getMutexSecs();
+   timeout.tv_usec = config.getMutexUSecs();
 
    //printDebug(DM_Lock, "Trying to get mutex: for bucket %x\n", bucket);
    while (tries < 100)
@@ -311,8 +312,8 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
    int tries = 0;
    int ret = 0;
    struct timeval timeout;
-   timeout.tv_sec = MUTEX_TIMEOUT_SECS;
-   timeout.tv_usec = MUTEX_TIMEOUT_USECS;
+   timeout.tv_sec = config.getMutexSecs();
+   timeout.tv_usec = config.getMutexUSecs();
 
    while (tries < 100)
    {

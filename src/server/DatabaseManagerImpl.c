@@ -24,6 +24,7 @@
 #include<Index.h>
 #include<Lock.h>
 #include<Debug.h>
+#include<Config.h>
 
 DatabaseManagerImpl::~DatabaseManagerImpl()
 {
@@ -84,17 +85,17 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
     caddr_t rtnAddr = (caddr_t) NULL;
     shared_memory_id shm_id = 0;
 
-    char *startaddr = (char*)START_ADDR;
+    char *startaddr = (char*)config.getMapAddress();
     shared_memory_key key = 0;
     if (0 == strcmp(name, SYSTEMDB))
     {
         
-        key = SYSTEMDB_KEY;
+        key = config.getSysDbKey();
     }
     else
     {
         startaddr = startaddr + size;
-        key = USERDB_KEY;
+        key = config.getUserDbKey();
     }
     shm_id = os::shm_create(key, size, 0666);
     if (-1 == shm_id)
@@ -131,8 +132,8 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
     if (0 == strcmp(name, SYSTEMDB))
     {
         offset = offset + os::alignLong( MAX_CHUNKS  * sizeof (Chunk));
-        offset = offset + os::alignLong( MAX_TRANS   * sizeof(Transaction));
-        offset = offset + os::alignLong( MAX_PROCESS * sizeof(int));
+        offset = offset + os::alignLong( config.getMaxTrans()   * sizeof(Transaction));
+        offset = offset + os::alignLong( config.getMaxProcs() * sizeof(int));
     }
     int multiple = os::floor(offset / PAGE_SIZE);
     char *curPage = (((char*)rtnAddr) + ((multiple + 1) * PAGE_SIZE));
@@ -163,10 +164,10 @@ DbRetVal DatabaseManagerImpl::deleteDatabase(const char *name)
     shared_memory_id shm_id = 0;
     if (0 == strcmp(name, SYSTEMDB))
     {
-        shm_id = os::shm_open(SYSTEMDB_KEY, 100, 0666);
+        shm_id = os::shm_open(config.getSysDbKey(), 100, 0666);
         os::shmctl(shm_id, IPC_RMID);
     } else {
-        shm_id = os::shm_open(USERDB_KEY, 100, 0666);
+        shm_id = os::shm_open(config.getUserDbKey(), 100, 0666);
         os::shmctl(shm_id, IPC_RMID);
     }
     logFinest(logger, "Deleted database %s" , name);
@@ -176,8 +177,8 @@ DbRetVal DatabaseManagerImpl::deleteDatabase(const char *name)
 
 DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
 {
-    size_t size = SYSTEM_DB_SIZE;
-    char *startaddr = (char*)START_ADDR;
+    size_t size = config.getMaxSysDbSize();
+    char *startaddr = (char*)config.getMapAddress();
     if (0 == strcmp(name , SYSTEMDB))
     {
         if (NULL !=systemDatabase_)
@@ -194,7 +195,7 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
             printError(ErrNotOpen, "System Database not open");
             return ErrNotOpen;
         }
-        size = USER_DB_SIZE;
+        size = config.getMaxDbSize();
         startaddr = startaddr + size;
     }
     if (NULL != db_)
@@ -209,9 +210,9 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
 
     shared_memory_key key = 0;
     if (0 == strcmp(name, SYSTEMDB))
-        key = SYSTEMDB_KEY;
+        key = config.getSysDbKey();
     else
-        key = USERDB_KEY;
+        key = config.getUserDbKey();
     shm_id = os::shm_open(key, size, 0666);
     if (shm_id == -1)
     {

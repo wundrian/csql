@@ -161,3 +161,9 @@ int os::select(int nfds, fd_set *readfds, fd_set *writefds,
 }
 
 
+char* os::getenv(const char *envVarName)
+{
+    char *retVal;
+    retVal = ::getenv(envVarName);
+    return retVal;
+}

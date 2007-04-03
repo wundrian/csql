@@ -17,6 +17,7 @@
 #include<Database.h>
 #include<os.h>
 #include<Debug.h>
+#include<Config.h>
 
 // sets the size of the Chunk allocator for fixed size
 // allocator

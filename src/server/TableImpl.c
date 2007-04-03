@@ -22,6 +22,7 @@
 #include<Predicate.h>
 #include<PredicateImpl.h>
 #include<Index.h>
+#include<Config.h>
 
 void TableImpl::bindFld(const char *name, void *val)
 {
@@ -159,8 +160,9 @@ void* TableImpl::fetch()
         //so release it here itself.
         int tries = 5;
         struct timeval timeout;
-        timeout.tv_sec = MUTEX_TIMEOUT_SECS;
-        timeout.tv_usec = MUTEX_TIMEOUT_USECS;
+        timeout.tv_sec = config.getMutexSecs();
+        timeout.tv_usec = config.getMutexUSecs();
+
         bool status = false;
         while(true) { 
             lockRet = lMgr_->isExclusiveLocked( curTuple_, status);

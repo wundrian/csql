@@ -17,6 +17,7 @@
 #include<Debug.h>
 #include<os.h>
 #include<Index.h>
+#include<Config.h>
 Connection::~Connection()
 { 
     delete session; 
@@ -26,7 +27,7 @@ Connection::~Connection()
 DbRetVal Connection::open(const char *username, const char *password)
 {
     if (session == NULL) session = new SessionImpl();
-    DbRetVal rv = logger.startLogger(LOGFILE);
+    DbRetVal rv = logger.startLogger(config.getLogFile());
     if (rv != OK) { delete session; session = NULL; return rv; }
     logFinest(logger, "User logged in %s",username);
     return session->open(username, password);

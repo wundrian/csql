@@ -30,6 +30,7 @@
 #include <crypt.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -83,27 +84,19 @@ enum MapMode
 };
 
 #define MAX_FILE_LEN 1024
-#define PAGE_SIZE 8192
 #define IDENTIFIER_LENGTH 128
 #define DEFAULT_VALUE_BUF_LENGTH 32
-#define MAX_CHUNKS 100
-#define MAX_TRANS 100
-#define MAX_PROCESS 100
 #define SYSTEMDB "SYSTEMDB"
 #define DBAUSER "dba"
 #define DBAPASS "manager"
-#define SYSTEM_DB_SIZE 104857600
-#define USER_DB_SIZE 104857600
-#define SYSTEMDB_KEY   2222
-#define USERDB_KEY     5555
-#define LOGFILE "/tmp/log.out"
-#define START_ADDR 400000000
+#define LOCK_BUCKET_SIZE 2048
+#define MAX_CHUNKS 20
+#define PAGE_SIZE config.getPageSize()
+
+
 typedef key_t shared_memory_key;
 typedef int   shared_memory_id;
 
-#define LOCK_BUCKET_SIZE 2048
-#define MUTEX_TIMEOUT_SECS 0
-#define MUTEX_TIMEOUT_USECS 10
 #endif
 
 
@@ -139,6 +132,7 @@ class os
     static struct tm* localtime(long *secs);
     static int getpid();
     static int getthrid();
+    static char* getenv(const char *envVarName);
 
 };
 

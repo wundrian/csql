@@ -22,6 +22,6 @@
 #include<Predicate.h>
 #include<DataType.h>
 #include<ErrorType.h>
-
+#include<Config.h>
 #endif
 

@@ -27,9 +27,15 @@ static void sigTermHandler(int sig)
 int main()
 {
     SessionImpl session;
+    DbRetVal rv = session.readConfigFile();
+    if (rv != OK)
+    {
+        printf("Unable to read the configuration file \n");
+        return -1;
+    }
     os::signal(SIGINT, sigTermHandler);
     os::signal(SIGTERM, sigTermHandler);
-    DbRetVal rv = logger.startLogger(LOGFILE, true);
+    rv = logger.startLogger(config.getLogFile(), true);
     if (rv != OK)
     {
         printf("Unable to start the logger\n");
