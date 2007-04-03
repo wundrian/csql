@@ -45,7 +45,12 @@ In linux for setting 1GB enter
 $sysctl -w kernel.shmmax=1000000000
 
 You should find csqlserver executable under the bin directory of the installation.
+Change csql.conf file under the installation root directory if necessary.
+Set the CSQL_CONFIG_FILE environment variable to absolute path of csql.conf file.
 
+$export CSQL_CONFIG_FILE=/tmp/csql.conf
+
+Start the server using csqlserver executable
 $./csqlserver
 
 This starts the server and creates the database file.

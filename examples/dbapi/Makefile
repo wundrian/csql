@@ -34,4 +34,4 @@ dbapiexample: dbapiexample.o
 	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) $(SYSLIBS)
 
 clean:
-	rm *.o dbapiexample
+	rm -f *.o dbapiexample

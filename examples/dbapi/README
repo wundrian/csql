@@ -23,6 +23,9 @@ How to compile
 
 How to run
 ----------
+Set the CSQL_CONFIG_FILE environment variable to absolute path of csql.conf file.
+	$export CSQL_CONFIG_FILE=/tmp/csql.conf
+
 Run the executable created by make
 	$./dbapiexample
 

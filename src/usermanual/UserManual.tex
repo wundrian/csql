@@ -86,6 +86,15 @@ This will create "docs/html" directory under which API Reference html files are 
 \subsection{Starting the Server}
 \label{startserver}
 You should find csqlserver executable under the bin directory of the installation.
+Change csql.conf file under the installation root directory if necessary.
+
+Set the \begin{verbatim} CSQL_CONFIG_FILE \end{verbatim} environment variable to absolute path of csql.conf file.
+
+\begin{verbatim}
+$export CSQL_CONFIG_FILE=/tmp/csql.conf
+\end{verbatim}
+
+You should find csqlserver executable under the bin directory of the installation.
 \begin{verbatim}
 $./csqlserver
 \end{verbatim}

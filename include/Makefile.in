@@ -37,7 +37,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 subdir = include
-DIST_COMMON = README $(include_HEADERS) $(srcdir)/Makefile.am \
+DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.in
@@ -171,7 +171,7 @@ METASOURCES = AUTO
 include_SOURCES = 
 include_HEADERS = Allocator.h CatalogTables.h CSql.h Database.h \
 	DatabaseManager.h DatabaseManagerImpl.h DataType.h Debug.h ErrorType.h Field.h Index.h \
-	Info.h Lock.h Mutex.h NanoTimer.h os.h Predicate.h PredicateImpl.h README \
+	Info.h Lock.h Mutex.h NanoTimer.h os.h Predicate.h PredicateImpl.h \
 	Session.h SessionImpl.h Table.h TableImpl.h Transaction.h UserManager.h \
 	UserManagerImpl.h build.h Config.h
 
