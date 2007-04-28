@@ -31,6 +31,7 @@ DbRetVal TupleIterator::open()
     {
         SingleFieldHashIndexInfo *hIdxInfo = (SingleFieldHashIndexInfo*)info;
         PredicateImpl *predImpl = (PredicateImpl*) pred_;
+        bool isPtr = false;
         void *keyPtr = (void*)predImpl->valPtrForIndexField(hIdxInfo->fldName);
 
         int bucketNo = HashIndex::computeHashBucket(hIdxInfo->type,
@@ -45,6 +46,7 @@ DbRetVal TupleIterator::open()
         HashIndexNode *head = (HashIndexNode*) bucket->bucketList_;
         if (!head)
         {
+            bucket->mutex_.releaseLock();
             bIter = NULL ;
             return OK;
         }
@@ -59,6 +61,7 @@ void* TupleIterator::next()
 {
     PredicateImpl *predImpl = (PredicateImpl*) pred_;
     void *tuple = NULL;
+    DbRetVal rv = OK;
     if (fullTableScan == scanType_)
     {
 
@@ -76,7 +79,8 @@ void* TupleIterator::next()
                 tuple = cIter->nextElement();
                 if(NULL == tuple) return NULL;
                 predImpl->setTuple(tuple);
-                predImpl->evaluate(result);
+                rv = predImpl->evaluate(result);
+                if (rv != OK) return NULL;
             }
         }
     }else if (hashIndexScan == scanType_)
@@ -95,7 +99,8 @@ void* TupleIterator::next()
             tuple = node->ptrToTuple_;
             if(NULL == tuple) return NULL;
             predImpl->setTuple(tuple);
-            predImpl->evaluate(result);
+            rv = predImpl->evaluate(result);
+            if (rv != OK) return NULL;
         }
 
     }

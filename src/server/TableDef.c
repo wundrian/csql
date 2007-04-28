@@ -79,7 +79,7 @@ size_t TableDef::getTupleSize()
 {
     size_t length = 0;
     FieldIterator iter = getFieldIterator();
-    while (0 == iter.hasElement())
+    while (iter.hasElement())
     {
         FieldDef def = iter.nextElement();
         length = length + os::align(def.length_);

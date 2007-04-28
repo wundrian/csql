@@ -130,9 +130,15 @@ DbRetVal TableImpl::createPlan()
     return OK;
 }
 
-
-
 void* TableImpl::fetch()
+{
+    fetchNoBind();
+    if (NULL == curTuple_) return curTuple_;
+    copyValuesToBindBuffer(curTuple_);
+    return curTuple_;
+}
+
+void* TableImpl::fetchNoBind()
 {
     if (NULL == iter)
     {
@@ -183,7 +189,6 @@ void* TableImpl::fetch()
             return NULL;
         }
     }
-    copyValuesToBindBuffer(curTuple_);
     return curTuple_;
 }
 
@@ -313,7 +318,7 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr)
     //Iterate through the bind list and copy the value here
     FieldIterator fIter = fldList_.getIterator();
     char *colPtr = (char*) tuplePtr;
-    while (0 == fIter.hasElement())
+    while (fIter.hasElement())
     {
         FieldDef def = fIter.nextElement();
         switch(def.type_)
@@ -341,7 +346,7 @@ DbRetVal TableImpl::copyValuesToBindBuffer(void *tuplePtr)
     //Iterate through the bind list and copy the value here
     FieldIterator fIter = fldList_.getIterator();
     char *colPtr = (char*) tuplePtr;
-    while (0 == fIter.hasElement())
+    while (fIter.hasElement())
     {
         FieldDef def = fIter.nextElement();
         switch(def.type_)
@@ -441,4 +446,16 @@ long TableImpl::spaceUsed()
 long TableImpl::numTuples()
 {
     return ((Chunk*)chunkPtr_)->getTotalDataNodes();
+}
+
+FieldNameList TableImpl::getFieldNameList()
+{
+    FieldNameList fieldNameList;
+    FieldIterator fIter = fldList_.getIterator();
+    while (fIter.hasElement())
+    {
+        FieldDef def = fIter.nextElement();
+        fieldNameList.append(def.fldName_);
+    } 
+    return fieldNameList;
 }

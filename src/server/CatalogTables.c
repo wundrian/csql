@@ -95,7 +95,7 @@ DbRetVal CatalogTableTABLE::getChunkAndTblPtr(const char *name,
 DbRetVal CatalogTableFIELD::insert(FieldIterator &iter, int tblID, void *tptr)
 {
     Chunk *fChunk = systemDatabase_->getSystemDatabaseChunk(FieldTableId);
-    while (0 == iter.hasElement())
+    while (iter.hasElement())
     {
         void *fptr = fChunk->allocate(systemDatabase_);
         if (NULL == fptr)

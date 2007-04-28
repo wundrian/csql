@@ -21,7 +21,13 @@
 #include<PredicateImpl.h>
 #include<Table.h>
 #include<TableImpl.h>
-
+void PredicateImpl::print()
+{
+    printf("FieldName1 %s, FieldName2 %s", fldName1, fldName2);
+    printf("CompOp %d, operand %x operandPtr%x", compOp, operand);
+    printf("lhs %x, rhs %x", lhs, rhs);
+    
+}
 
 void PredicateImpl::setTerm(const char* fName1, ComparisionOp op,
                         const char *fName2)
@@ -30,6 +36,7 @@ void PredicateImpl::setTerm(const char* fName1, ComparisionOp op,
     strcpy(fldName2, fName2);
     compOp = op;
     operand = NULL;
+    operandPtr = NULL;
     lhs = rhs = NULL;
 }
 
@@ -39,8 +46,19 @@ void PredicateImpl::setTerm(const char* fName1, ComparisionOp op, void *opnd)
     strcpy(fldName1, fName1);
     compOp = op;
     operand = opnd;
+    operandPtr = NULL;
     lhs = rhs = NULL;
 }
+
+void PredicateImpl::setTerm(const char* fName1, ComparisionOp op, void **opnd)
+{
+    strcpy(fldName1, fName1);
+    compOp = op;
+    operand = NULL;
+    operandPtr = opnd;
+    lhs = rhs = NULL;
+}
+
 
 void PredicateImpl::setTerm(Predicate *p1, LogicalOp op, Predicate *p2 )
 {
@@ -68,19 +86,19 @@ void PredicateImpl::setTuple(void *tpl)
     tuple = tpl;
 }
 
-int PredicateImpl::evaluate(bool &result)
+DbRetVal PredicateImpl::evaluate(bool &result)
 {
     bool rhsResult, lhsResult;
-    int retCode =0;
+    DbRetVal retCode =OK;
     if (NULL != lhs)
     {
         retCode = lhs->evaluate(lhsResult);
-        if (retCode != 0) return -1;
+        if (retCode != OK) return ErrInvalidExpr;
     }
     if (NULL != rhs)
     {
         retCode = rhs->evaluate(rhsResult);
-        if (retCode != 0) return -1;
+        if (retCode != OK) return ErrInvalidExpr;
     }
     if (NULL != lhs)
     {
@@ -97,10 +115,10 @@ int PredicateImpl::evaluate(bool &result)
                     if (lhsResult)  result = false; else result = true;
                     break;
                 default:
-                    return -1;
+                    return ErrInvalidExpr;
 
         }
-        return 0;
+        return OK;
     }
     //Means it is relational expression
     //first operand is always field identifier
@@ -111,21 +129,30 @@ int PredicateImpl::evaluate(bool &result)
     //Assumes that fldName2 data type is also same for expr f1 <f2
     DataType srcType = table->getFieldType(fldName1);
     val1 = ((char*) tuple) + offset1;
-    if (operand == NULL)
+    if (operand == NULL && operandPtr == NULL)
     {
-        offset2 = table->getFieldOffset(fldName2);
-        val2 = ((char*)tuple) + offset2;
-    } else val2 = (char*) operand;
+        if (fldName2) {
+            offset2 = table->getFieldOffset(fldName2);
+            val2 = ((char*)tuple) + offset2; 
+        }
+    } 
+    else if(operand != NULL && operandPtr == NULL)
+    { 
+        val2 = (char*) operand;
+    }
+    else if(operand == NULL && operandPtr != NULL)
+    { 
+        val2 = *(char**)operandPtr;
+    }
     int ret = 0;
     result = AllDataType::compareVal(val1, val2, compOp, srcType,
                               table->getFieldLength(fldName1));
-    return 0;
+    return OK;
 }
 
 bool PredicateImpl::pointLookupInvolved(const char *fname)
 {
     bool rhsResult, lhsResult;
-    int retCode =0;
     if (NULL != lhs)
     {
         lhsResult = lhs->pointLookupInvolved(fname);
@@ -140,7 +167,7 @@ bool PredicateImpl::pointLookupInvolved(const char *fname)
             switch(logicalOp)
             {
                 case OpAnd:
-                     return true;
+                     return lhsResult;
                      break;
                 case OpOr:
                      return false;
@@ -156,8 +183,11 @@ bool PredicateImpl::pointLookupInvolved(const char *fname)
     if (OpEquals == compOp)
     {
         //for expressions f1 == f2 use full scan, so return false
-        if(NULL == operand) return false;
-        if(0 == strcmp(fldName1, fname)) return true;
+        if(NULL == operand && NULL == operandPtr) return false;
+        if(0 == strcmp(fldName1, fname)) 
+        {
+            return true;
+        }
     }
     return false;
 }
@@ -183,7 +213,10 @@ void* PredicateImpl::valPtrForIndexField(const char *fname)
     //first operand is always field identifier
     if (OpEquals == compOp)
     {
-        if(0 == strcmp(fldName1, fname)) return operand;
+        if(0 == strcmp(fldName1, fname)) 
+        {
+            if (operand) return operand; else return *(void**)operandPtr;
+        }
     }
     return NULL;
 }

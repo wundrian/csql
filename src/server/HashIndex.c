@@ -269,7 +269,7 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, void
     //Iterate through the bind list and check
     FieldIterator fldIter = tbl->fldList_.getIterator();
     void *newKey = NULL;
-    while (0 == fldIter.hasElement())
+    while (fldIter.hasElement())
     {
         FieldDef def = fldIter.nextElement();
         if (0 == strcmp(def.fldName_, name))

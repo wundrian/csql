@@ -350,7 +350,7 @@ long AllDataType::size(DataType type)
     return size;
 }
 
-void AllDataType::copyVal(void* dest, void *src, DataType type)
+void AllDataType::copyVal(void* dest, void *src, DataType type, int length)
 {
     switch(type)
     {
@@ -385,6 +385,14 @@ void AllDataType::copyVal(void* dest, void *src, DataType type)
             break;
         case typeTimeStamp:
             *(TimeStamp*)dest = *(TimeStamp*)src;
+            break;
+        case typeString:
+            strncpy((char*)dest, (char*)src, length);
+            char *d =(char*)dest;
+            d[length] = '\0';
+            break;
+        case typeBinary:
+            os::memcpy((char*)dest, (char*)src, length);
             break;
         default:
             break;
@@ -828,5 +836,153 @@ bool AllDataType::compareBinaryVal(void* src1, void *src2,
    return result;
 }
 
+
+
+ComparisionOp AllDataType::getComparisionOperator(char *str)
+{
+    ComparisionOp op;
+    if (strcmp(str, "<=") == 0)
+        op = OpLessThanEquals;
+    else if (strcmp(str, ">=") == 0)
+        op = OpGreaterThanEquals;
+    else if (strcmp(str, "<") == 0)
+        op = OpLessThan;
+    else if (strcmp(str, ">") == 0)
+        op = OpGreaterThan;
+    else if (strcmp(str, "=") == 0)
+        op = OpEquals;
+    else if (strcmp(str, "!=") == 0)
+        op = OpNotEquals;
+    else
+        op = OpInvalidComparision;
+    return op;
+}
+
+void* AllDataType::alloc(DataType type)
+{
+    void *dest;
+    switch(type)
+    {
+        case typeInt:
+            dest = malloc(sizeof(int));
+            break;
+        case typeLong:
+            dest = malloc(sizeof(long));
+            break;
+        case typeLongLong:
+            dest = malloc(sizeof(long long));
+            break;
+        case typeShort:
+            dest = malloc(sizeof(short));
+            break;
+        case typeByteInt:
+            dest = malloc(sizeof(char));
+            break;
+        case typeDouble:
+            dest = malloc(sizeof(double));
+            break;
+        case typeFloat:
+            dest = malloc(sizeof(float));
+            break;
+        case typeDecimal:
+            //TODO::for porting
+            //fldDef.length_ = sizeof(long double);
+            break;
+        case typeDate:
+            dest = malloc(sizeof(Date));
+            break;
+        case typeTime:
+            dest = malloc(sizeof(Time));
+            break;
+        case typeTimeStamp:
+            dest = malloc(sizeof(TimeStamp));
+            break;
+    }
+    return dest;
+}
+void AllDataType::strToValue(void* dest, char *src, DataType type)
+{
+    switch(type)
+    {
+        case typeInt: {
+            int val;
+            sscanf( src, "%d",  &val);
+            *(int*)dest = val;
+            break; }
+        case typeLong: {
+            long val;
+            sscanf( src, "%ld",  &val);
+            *(long*)dest = val;
+            break; }
+        case typeLongLong: {
+            long long val;
+            sscanf( src, "%lld",  &val);
+            *(long long*)dest = val;
+            break; }
+        case typeShort: {
+            short val;
+            sscanf( src, "%hd",  &val);
+            *(short*)dest = val;
+            break; }
+        case typeByteInt: {
+            char val;
+            sscanf( src, "%c",  &val);
+            *(char*)dest = val;
+            break; }
+        case typeDouble: {
+            double val;
+            sscanf( src, "%g",  &val);
+            *(double*)dest = val;
+            break; }
+        case typeFloat: {
+            float val;
+            sscanf( src, "%f",  &val);
+            *(float*)dest = val;
+            break; }
+        case typeDecimal:
+            //TODO::for porting
+        case typeDate: {
+            int d,m,y,res=0;
+            res = sscanf( src, "%d-%d-%d", &d, &m, &y );
+            if( res != 3 )
+                 res = sscanf( src, "%d/%d/%d", &d, &m, &y );
+            if( res != 3 )
+            {
+           fprintf(stderr,"Error reading date. dd{-/}mm{-/}yyyy is the valid format.");
+                d=m=y=0;
+            }
+            Date dateObj(y,m,d);
+            *(Date*)dest = dateObj;
+            break; }
+        case typeTime: {
+            int h,m,s,res=0;
+            res = sscanf( src, "%d:%d:%d", &h, &m, &s );
+            if( res != 3 )
+            {
+                fprintf(stderr, "Error reading time, hh:mm:ss is the valid format.");
+                h=m=s=0;
+            }
+            Time timeObj(h,m,s);
+            *(Time*)dest = timeObj;
+            break; }
+        case typeTimeStamp: {
+            int d,m,y, h,mn,s, res=0;
+            res = sscanf( src, "%d-%d-%d %d:%d:%d", &d, &m, &y, &h, &mn, &s );
+            if( res != 6 )
+                res = sscanf( src, "%d/%d/%d %d:%d:%d", &d, &m, &y, &h, &mn, &s );
+            if( res != 6 )
+                res = sscanf( src, "%d/%d/%d, %d:%d:%d", &d, &m, &y, &h, &mn, &s );
+            if( res != 6 )
+            {
+                fprintf(stderr, "Error reading timestamp, dd{-/}mm{-/}yyyy[,] hh:mm:ss is the valid format.");
+                d=m=y=h=mn=s=0;
+            }
+            TimeStamp timeStampObj(y,m,d,h,mn,s);
+            *(TimeStamp*)dest = timeStampObj;
+            break; }
+        default:
+            break;
+        }
+}
 
 
