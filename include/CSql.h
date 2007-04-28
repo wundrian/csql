@@ -23,5 +23,6 @@
 #include<DataType.h>
 #include<ErrorType.h>
 #include<Config.h>
+#include<Info.h>
 #endif
 

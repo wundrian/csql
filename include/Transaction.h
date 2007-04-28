@@ -17,7 +17,7 @@
 #define TXN_H
 #include<os.h>
 #include<Debug.h>
-#include<Session.h> //PRABA added now
+#include<Session.h>
 class LockHashNode;
 
 enum TransStatus

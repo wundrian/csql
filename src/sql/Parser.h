@@ -99,14 +99,16 @@ class ParsedData
     char* getTableName() { return tblName; }
     void insertValue(char *value);
     void** insertCondValueAndGetPtr(char *fName, char *value);
-    void insertField(char *fName);
     void insertUpdateValue(char *fldName, char *value);
+
+    void insertField(char *fName);
+    void clearFieldNameList();
+
 
     Predicate* insertPredicate(char *fldName, ComparisionOp op, void** value);
     Predicate* insertPredicate(Predicate *p1, LogicalOp op, Predicate *p2 = NULL);
     void setCondition(Predicate *pred) { predicate.setPredicate(pred); }
     Condition* getCondition() { return &predicate; }
-
 
     void insertFieldValue(FieldValue *newVal) { fieldValueList.append(newVal); }
 

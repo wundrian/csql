@@ -19,6 +19,9 @@ Compiling the source
 Go to the root directory and enter the following commands.
 
 $./configure --prefix=`pwd`/install
+
+Note: in src/sql/Makefile, change "YACC = bison -y" to "YACC = yacc -vd"
+
 $make
 $make install
 

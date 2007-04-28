@@ -60,9 +60,9 @@ class FieldIterator
     public:
     FieldNode *iter;
     FieldIterator(FieldNode *ptr) { iter = ptr; }
-    int hasElement()
+    bool hasElement()
     {
-        if (iter == NULL) return -1; else return 0;
+        if (iter == NULL) return false; else return true;
     }
     FieldDef nextElement()
     {
@@ -72,6 +72,8 @@ class FieldIterator
         return node->fldDef;
     }
 };
+
+class FieldInfo;
 
 //Internal class used to implement the field list information
 //to create the table
@@ -96,6 +98,8 @@ class FieldList
     DataType getFieldType(const char *fldName);
 
     size_t getFieldLength(const char *fldName);
+
+    DbRetVal getFieldInfo(const char *fldName, FieldInfo *&info);
 
     int getTupleSize();
 

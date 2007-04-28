@@ -19,7 +19,7 @@
  ***************************************************************************/
 #ifndef SQLSTATEMENT_H
 #define SQLSTATEMENT_H
-#include<CSql.h>
+#include <CSql.h>
 #include "Statement.h"
 #include "SqlConnection.h"
 
@@ -37,6 +37,12 @@ class SqlStatement
     DbRetVal bindField(int, void*);
     DbRetVal free();
  
+
+    int noOfProjFields();
+    int noOfParamFields();
+    DbRetVal getProjFldInfo(int projPos, FieldInfo *&info);
+    DbRetVal getParamFldInfo(int paramPos, FieldInfo *&info);
+
     private:
     SqlConnection *con;
     Statement *stmt;

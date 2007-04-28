@@ -50,6 +50,13 @@ class Condition
     *   @return Predicate* predicate
     */ 
     Predicate* getPredicate() { return pred; }
+
+    /** sets the current predicate. This is set after creating the logical expression and used in the table interface for setting the condition.
+    *   @param Predicate* predicate
+    */ 
+    void setPredicate(Predicate * predicate) {  pred = predicate; }
+
+
     /** sets the predicate term of form f1 = f2.
     *   @param fName1* field name
     *   @param op comparision operator
@@ -63,6 +70,14 @@ class Condition
     *   @param opnd* pointer to the  value
     */ 
     void setTerm(const char* fName1, ComparisionOp op, void *opnd);
+
+    /** sets the predicate term of form f1 =10, using pointer semantics
+    *   @param fName1* field name
+    *   @param op comparision operator(=,!=, >,<,>=,<=)
+    *   @param opnd** pointer to pointer to the  value
+    */ 
+    void setTerm(const char* fName1, ComparisionOp op, void **opnd);
+
 
     /** sets the predicate term of form f1 = f2 && f1 = 100.
     *   @param p1* predicate
@@ -91,7 +106,12 @@ class Predicate
     //Operand should be of the same type of the field. This is must
     virtual void setTerm(const char* fName1, ComparisionOp op, void *opnd)=0;
 
+    //Operand should be of the same type of the field. This is must
+    virtual void setTerm(const char* fName1, ComparisionOp op, void **opnd)=0;
+
     virtual void setTerm(Predicate *p1, LogicalOp op, Predicate *p2 = NULL)=0;
+
+    virtual void print()=0;
     virtual ~Predicate(){}
 };
 

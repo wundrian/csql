@@ -1,27 +1,26 @@
 <?xml version = '1.0' encoding = 'UTF-8'?>
 <!DOCTYPE KDevPrjSession>
 <KDevPrjSession>
- <DocsAndViews NumberOfDocuments="3" >
-  <Doc0 NumberOfViews="1" URL="file:///root/cvs/latest/csql/include/DatabaseManager.h" >
-   <View0 line="0" Type="Source" />
+ <DocsAndViews NumberOfDocuments="4" >
+  <Doc0 NumberOfViews="1" URL="file:///root/cvs/latest/csql/src/server/TableImpl.c" >
+   <View0 Type="Source" />
   </Doc0>
-  <Doc1 NumberOfViews="1" URL="file:///root/cvs/latest/csql/include/CSql.h" >
-   <View0 line="0" Type="Source" />
+  <Doc1 NumberOfViews="1" URL="file:///root/cvs/latest/csql/src/server/TupleIterator.c" >
+   <View0 Type="Source" />
   </Doc1>
-  <Doc2 NumberOfViews="1" URL="file:///root/cvs/latest/csql/include/Allocator.h" >
-   <View0 line="0" Type="Source" />
+  <Doc2 NumberOfViews="1" URL="file:///root/cvs/latest/csql/src/server/Chunk.c" >
+   <View0 line="21" Type="Source" />
   </Doc2>
+  <Doc3 NumberOfViews="1" URL="file:///root/cvs/latest/csql/src/tools/isql.c" >
+   <View0 line="0" Type="Source" />
+  </Doc3>
  </DocsAndViews>
  <pluginList>
   <kdevdebugger>
    <breakpointList/>
   </kdevdebugger>
   <kdevbookmarks>
-   <bookmarks>
-    <bookmark url="/root/csql/src/server/HashIndex.c" >
-     <mark line="140" />
-    </bookmark>
-   </bookmarks>
+   <bookmarks/>
   </kdevbookmarks>
   <kdevvalgrind>
    <executable path="" params="" />

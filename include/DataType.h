@@ -60,7 +60,8 @@ enum ComparisionOp {
     OpLessThan,
     OpLessThanEquals,
     OpGreaterThan,
-    OpGreaterThanEquals
+    OpGreaterThanEquals,
+    OpInvalidComparision
 };
 
 /**
@@ -80,7 +81,7 @@ class AllDataType
 {
     public:
     static long size(DataType type);
-    static void copyVal(void* dest, void *src, DataType type);
+    static void copyVal(void* dest, void *src, DataType type, int length = 0);
 
     static bool compareVal(void *src1, void *src2, ComparisionOp op,
                            DataType type, long length = 0);
@@ -97,6 +98,11 @@ class AllDataType
     static bool compareStringVal(void* src1, void* src2, ComparisionOp op);
     static bool compareBinaryVal(void* src1, void* src2,
                                  ComparisionOp op, int length);
+
+    static ComparisionOp getComparisionOperator(char *str);
+
+    static void* alloc(DataType type);
+    static void strToValue(void *dest, char *src, DataType type);
 
 
 };

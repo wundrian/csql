@@ -64,6 +64,7 @@ class BucketList
 
 };
 class HashIndex;
+
 class Index
 {
     static HashIndex *hIdx;

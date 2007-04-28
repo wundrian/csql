@@ -18,6 +18,7 @@
 #include<ErrorType.h>
 class Predicate;
 class Condition;
+class FieldNameList;
 /**
 * @class Table
 *
@@ -34,6 +35,7 @@ class Condition;
 * @author Prabakaran Thirumalai
 */
 
+class FieldInfo;
 class Table
 {
     public:
@@ -114,10 +116,19 @@ class Table
     //scan
 
     /**fetches the next tuple in the table which satisfies the condition specified.
-    * execute should be called before calling this method.
+    * execute should be called before calling this method. Application buffer should be 
+    * binded to get the tuple values.
     * @returns void* NULL if there is no tuple.
     */
     virtual void* fetch()=0;
+
+    /**fetches the next tuple in the table which satisfies the condition specified.
+    * execute should be called before calling this method. Application buffer need not be 
+    * binded to call this method.
+    * @returns void* NULL if there is no tuple.
+    */
+    virtual void* fetchNoBind()=0;
+
     
     /**closes the scan. Needs to be called before calling execute again on the same table handle. It releases the resources
  acquired during the scan.
@@ -135,6 +146,10 @@ class Table
     * @returns DbRetVal
     */
     virtual long numTuples()=0;
+
+
+    virtual DbRetVal getFieldInfo(const char *fieldName, FieldInfo *&info)=0;
+    virtual FieldNameList getFieldNameList()=0;
 
     virtual ~Table() { }
 };

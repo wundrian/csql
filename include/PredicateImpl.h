@@ -17,6 +17,7 @@
 #define PREDICATE_IMPL_H
 #include<DataType.h>
 #include<Predicate.h>
+#include<ErrorType.h>
 class TableImpl;
 class Table;
 class PredicateImpl:public Predicate
@@ -26,6 +27,7 @@ class PredicateImpl:public Predicate
     char fldName2[IDENTIFIER_LENGTH];
     ComparisionOp compOp;
     void *operand;
+    void **operandPtr;
     LogicalOp logicalOp;
     PredicateImpl *lhs;
     PredicateImpl *rhs;
@@ -45,11 +47,14 @@ class PredicateImpl:public Predicate
     //Operand should be of the same type of the field.This is must
     void setTerm(const char* fName1, ComparisionOp op, void *opnd);
 
+    void setTerm(const char* fName1, ComparisionOp op, void **opnd);
+
+
     void setTerm(Predicate *p1, LogicalOp op, Predicate *p2 = NULL);
 
     void* valPtrForIndexField(const char *name);
 
-    int evaluate(bool &result);
+    DbRetVal evaluate(bool &result);
 
     void setTable(Table *tbl);
     void setTuple(void *tpl);
@@ -58,6 +63,8 @@ class PredicateImpl:public Predicate
     //and does not have OR, NOT operator
     // TODO:: expression like !(f1 !=100) wont be optimized for now
     bool pointLookupInvolved(const char *fName);
+
+   void print();
 
 };
 

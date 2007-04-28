@@ -120,9 +120,14 @@ class TableImpl:public Table
     size_t getFieldLength(const char *name)
         { return fldList_.getFieldLength(name); }
 
+    DbRetVal getFieldInfo(const char *fieldName,  FieldInfo *&info)
+        { return fldList_.getFieldInfo(fieldName, info); }
+
+    FieldNameList getFieldNameList();
+
     // search predicate
      void setCondition(Condition *p) 
-     { if (p) pred_ = p->getPredicate(); else pred_ = NULL;}
+     { if (p) { pred_ = p->getPredicate(); }else pred_ = NULL;}
 
     //binding
     void bindFld(const char *name, void *val);
@@ -144,6 +149,8 @@ class TableImpl:public Table
     DbRetVal execute();
 
     void* fetch();
+    void* fetchNoBind();
+
     DbRetVal close();
 
 

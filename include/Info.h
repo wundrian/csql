@@ -108,6 +108,22 @@ class TableDef
     FieldIterator getFieldIterator(){ return fldList.getIterator(); }
 
 };
+
+class FieldInfo
+{
+    public:
+    char fldName[IDENTIFIER_LENGTH];
+    DataType type;
+    size_t length;
+    int offset;
+    char defaultValueBuf[DEFAULT_VALUE_BUF_LENGTH];
+    bool isNull;
+    bool isPrimary;
+    bool isDefault;
+};
+
+
+
 /** A Enum value
 */
 enum IndexType

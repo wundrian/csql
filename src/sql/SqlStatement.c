@@ -84,6 +84,38 @@ DbRetVal SqlStatement::bindField(int pos, void* value)
     return rv;
 }
 
+int SqlStatement::noOfProjFields()
+{
+    if (pData.getStmtType() != SelectStatement) return 0;
+    SelStatement *selStmt = (SelStatement*) stmt; 
+    return selStmt->noOfProjFields();
+}
+
+int SqlStatement::noOfParamFields()
+{
+    if (pData.getStmtType() != SelectStatement) return 0;
+    SelStatement *selStmt = (SelStatement*) stmt; 
+    return selStmt->noOfParamFields();
+}
+
+DbRetVal SqlStatement::getProjFldInfo (int projpos, FieldInfo *&fInfo)
+{
+    DbRetVal rv = OK;
+    if (pData.getStmtType() != SelectStatement) return ErrBadCall;
+    SelStatement *selStmt = (SelStatement*) stmt; 
+    rv = selStmt->getProjFldInfo(projpos, fInfo);
+    return rv;
+}
+
+DbRetVal SqlStatement::getParamFldInfo (int parampos, FieldInfo *&fInfo)
+{
+    DbRetVal rv = OK;
+    if (pData.getStmtType() != SelectStatement) return ErrBadCall;
+    SelStatement *selStmt = (SelStatement*) stmt; 
+    rv = selStmt->getParamFldInfo(parampos, fInfo);
+    return rv;
+}
+
 DbRetVal SqlStatement::free()
 {
     delete stmt;

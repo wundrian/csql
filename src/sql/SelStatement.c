@@ -112,6 +112,9 @@ DbRetVal SelStatement::resolve()
         {
             rv = resolveStar();
             if (rv != OK) { delete fInfo; return rv; }
+            //as soon as it encounters *, it breaks the loop negleting other field names
+            //as they all are deleted during resolveStar method.
+            break;
         } else {
             rv = table->getFieldInfo(name->fldName, fInfo);
             if (ErrNotFound == rv)
@@ -152,6 +155,7 @@ DbRetVal SelStatement::resolve()
 DbRetVal SelStatement::resolveStar()
 {
     DbRetVal rv = OK;
+    parsedData->clearFieldNameList();
     FieldNameList fNameList = table->getFieldNameList();
     FieldValue *newVal = NULL;
     fNameList.resetIter(); //do not remove this.
@@ -175,6 +179,7 @@ DbRetVal SelStatement::resolveStar()
         newVal->length = fInfo->length;
         newVal->value = AllDataType::alloc(fInfo->type);
         parsedData->insertFieldValue(newVal);
+        parsedData->insertField(fName);
         table->bindFld(fName, newVal->value);
     }
     delete fInfo;
@@ -286,3 +291,31 @@ void* SelStatement::fetch()
     return tuple;
 }
 
+
+int SelStatement::noOfProjFields()
+{
+    return totalFields;
+}
+
+DbRetVal SelStatement::getProjFldInfo (int projpos, FieldInfo *&fInfo)
+{
+    //TODO::if not yet prepared return error
+    //TODO::check the upper limit for projpos
+    ListIterator iter = parsedData->getFieldNameList().getIterator();
+    FieldName *name = NULL;
+    DbRetVal rv = OK;
+    int position =0;
+    while (iter.hasElement())
+    {
+        name = (FieldName*)iter.nextElement();
+        if (NULL == name) 
+        {
+            printError(ErrSysFatal, "Should never happen. Field Name list has NULL");
+            return ErrSysFatal;
+        }
+        position++;
+        if (position == projpos) break;
+    }
+
+    rv = table->getFieldInfo(name->fldName, fInfo);
+}

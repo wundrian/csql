@@ -25,13 +25,23 @@ class Statement
     ParsedData *parsedData;
     DatabaseManager *dbMgr;
     Table *table;
-    void **params;  //used to store FieldValue* or ConditionValue*
+
+    void **params;  
+    //used to store FieldValue* for insert or ConditionValue* for other stmts
+
     char **paramValues;
     int totalParams;
 
     public:
     void setParsedData(ParsedData *pData) {  parsedData = pData; }
     void setDbMgr(DatabaseManager *dbmgr) { dbMgr = dbmgr; }
+
+    int noOfParamFields() { return totalParams; }
+    DbRetVal getParamFldInfo(int paramPos, FieldInfo *&info) 
+    { 
+        //TODO
+    }
+
     virtual DbRetVal execute(int &rowsAffected)=0;
     virtual DbRetVal setParam(int paramNo, void *value)=0;
     virtual DbRetVal resolve()=0;
@@ -68,6 +78,10 @@ class SelStatement : public Statement
 
 
     DbRetVal setBindField(int pos, void* value);
+
+    int noOfProjFields();
+    DbRetVal getProjFldInfo (int projpos, FieldInfo *&fInfo);
+
     void *fetch();
 
 };

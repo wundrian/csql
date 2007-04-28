@@ -16,12 +16,8 @@
 #ifndef OS_H
 #define OS_H
 #include<build.h>
-//#define linux 1
-//#define i686 1
-//#define solaris 
-//#define sparc
 
-#if defined(solaris) || defined(linux)
+#if defined(solaris) || defined(LINUX)
 
 #include <stdio.h>
 #include <sys/mman.h>
@@ -37,10 +33,11 @@
 #include <pthread.h>
 #include <math.h>
 #include <signal.h>
+#include <ctype.h>
 #if defined(solaris)
     #include <sys/varargs.h>
 #endif
-#if defined(linux)
+#if defined(LINUX)
     #include <sys/time.h>
     #include <stdarg.h>
 #endif

@@ -85,3 +85,7 @@ void ParsedData::reset()
     }
     fieldValueList.reset();
 }
+void ParsedData::clearFieldNameList()
+{
+    fieldNameList.reset();
+}

@@ -44,6 +44,8 @@ enum DbRetVal
     ErrBadArg        = -16,
     ErrNotYet        = -17,
     ErrNoConnection  = -18,
+    ErrSyntaxError   = -19,
+    ErrInvalidExpr   = -20,
     SplCase          = -100
 };
 #endif
