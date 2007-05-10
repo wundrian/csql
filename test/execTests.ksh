@@ -1,11 +1,20 @@
 #!/bin/ksh
 
+################### Settings ########################################
+#Timeout value for the hanging scripts
+HANG_TIMEOUT=60
 
+################### TIMEOUT HANDLER #################################
+timeout_handler() {
+if [ $CMD_PID != "" ]
+then
+    HANG_FLAG=Yes
+    echo "HANG_FLAG is set here"
+    kill $CMD_PID 2>/dev/null
+fi
+}
 
-
-
-
-######################Test Executor main starts here###################
+##################### Test Executor main starts here ##################
 
 #TEST_RUN_DIR should be set before running this
 if [ ! "$TEST_RUN_ROOT" ]
@@ -66,16 +75,37 @@ then
     expPresent="yes"
 fi
 
+HANG_FLAG=No
+trap timeout_handler USR1
+sleep ${HANG_TIMEOUT} && kill -s USR1 $$ &
+SLEEP_PID=$!
+
 if [ "$expPresent" = "yes" ]
 then
     cp ${TEST_SCRIPT_DIR}/${EXP_FILE} ${TEST_EXEC_DIR}
-    ${test} > ${TEST_EXEC_DIR}/cur.${EXP_FILE} 2>&1
+    ${test} > ${TEST_EXEC_DIR}/cur.${EXP_FILE} 2>&1 &
 else
-    ${test} >> ${TEST_LOG} 2>&1
+    ${test} >> ${TEST_LOG} 2>&1 &
 fi
+CMD_PID=$!
+wait ${CMD_PID} 2>/dev/null
 ret=$?
 echo "Test Ended at : `date` " 
 echo "Test Ended at : `date` " >>$TEST_LOG
+unset CMD_PID
+trap "" USR1
+kill ${SLEEP_PID} 2>/dev/null
+
+if [ "$HANG_FLAG" = "Yes" ]
+then
+   echo "Test Hung. so it is killed." >>$TEST_LOG
+   echo "FAILED:Test $test failed" >>$TEST_LOG
+   #TODO::Reinitalize the database, as it may be in corrupted state.
+   continue
+fi
+
+HANG_FLAG=No
+
 if [ $ret -eq 0 ]
 then
    if [ "$expPresent" = "yes" ]
