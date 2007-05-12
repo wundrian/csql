@@ -168,7 +168,6 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 INCLUDES = 
 METASOURCES = AUTO
-include_SOURCES = 
 include_HEADERS = Allocator.h CatalogTables.h CSql.h Database.h \
 	DatabaseManager.h DatabaseManagerImpl.h DataType.h Debug.h ErrorType.h Field.h Index.h \
 	Info.h Lock.h Mutex.h NanoTimer.h os.h Predicate.h PredicateImpl.h \
@@ -187,9 +186,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  include/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  include/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  include/Makefile
+	  $(AUTOMAKE) --foreign  include/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
