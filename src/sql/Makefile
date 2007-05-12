@@ -23,7 +23,7 @@ pkglibdir = $(libdir)/csql
 pkgincludedir = $(includedir)/csql
 top_builddir = ../..
 am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
-INSTALL = /usr/bin/ginstall -c
+INSTALL = /usr/bin/install -c
 install_sh_DATA = $(install_sh) -c -m 644
 install_sh_PROGRAM = $(install_sh) -c
 install_sh_SCRIPT = $(install_sh) -c
@@ -39,7 +39,7 @@ build_triplet = i686-pc-linux-gnu
 host_triplet = i686-pc-linux-gnu
 subdir = src/sql
 DIST_COMMON = README $(noinst_HEADERS) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in dmllex.c dmlyacc.c
+	$(srcdir)/Makefile.in dmllex.cxx dmlyacc.cxx
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.in
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -64,6 +64,19 @@ libcsqlsql_la_OBJECTS = $(am_libcsqlsql_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+LTCXXCOMPILE = $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) \
+	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+	$(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(LIBTOOL) --tag=CXX --mode=link $(CXXLD) $(AM_CXXFLAGS) \
+	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+LEXCOMPILE = $(LEX) $(LFLAGS) $(AM_LFLAGS)
+LTLEXCOMPILE = $(LIBTOOL) --mode=compile $(LEX) $(LFLAGS) $(AM_LFLAGS)
+YACCCOMPILE = $(YACC) $(YFLAGS) $(AM_YFLAGS)
+LTYACCCOMPILE = $(LIBTOOL) --mode=compile $(YACC) $(YFLAGS) \
+	$(AM_YFLAGS)
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
@@ -72,33 +85,28 @@ LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-LEXCOMPILE = $(LEX) $(LFLAGS) $(AM_LFLAGS)
-LTLEXCOMPILE = $(LIBTOOL) --mode=compile $(LEX) $(LFLAGS) $(AM_LFLAGS)
-YACCCOMPILE = $(YACC) $(YFLAGS) $(AM_YFLAGS)
-LTYACCCOMPILE = $(LIBTOOL) --mode=compile $(YACC) $(YFLAGS) \
-	$(AM_YFLAGS)
 SOURCES = $(libcsqlsql_la_SOURCES)
 DIST_SOURCES = $(libcsqlsql_la_SOURCES)
 HEADERS = $(noinst_HEADERS)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /root/cvs/latest/csql/missing --run aclocal-1.9
+ACLOCAL = ${SHELL} /home/gopals/work/csql/testbuild/csql/missing --run aclocal-1.9
 AMDEP_FALSE = #
 AMDEP_TRUE = 
-AMTAR = ${SHELL} /root/cvs/latest/csql/missing --run tar
+AMTAR = ${SHELL} /home/gopals/work/csql/testbuild/csql/missing --run tar
 AR = ar
-AUTOCONF = ${SHELL} /root/cvs/latest/csql/missing --run autoconf
-AUTOHEADER = ${SHELL} /root/cvs/latest/csql/missing --run autoheader
-AUTOMAKE = ${SHELL} /root/cvs/latest/csql/missing --run automake-1.9
+AUTOCONF = ${SHELL} /home/gopals/work/csql/testbuild/csql/missing --run autoconf
+AUTOHEADER = ${SHELL} /home/gopals/work/csql/testbuild/csql/missing --run autoheader
+AUTOMAKE = ${SHELL} /home/gopals/work/csql/testbuild/csql/missing --run automake-1.9
 AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
 CFLAGS = -g -O2
-CPP = gcc -E
+CPP = /usr/bin/cpp
 CPPFLAGS = 
-CXX = g++
-CXXCPP = g++ -E
+CXX = /usr/bin/g++
+CXXCPP = /usr/bin/g++ -E
 CXXDEPMODE = depmode=gcc3
 CXXFLAGS = -g -O2
 CYGPATH_W = echo
@@ -108,25 +116,25 @@ ECHO = echo
 ECHO_C = 
 ECHO_N = -n
 ECHO_T = 
-EGREP = /usr/bin/grep -E
+EGREP = /bin/grep -E
 EXEEXT = 
-F77 = g77
+F77 = gfortran
 FFLAGS = -g -O2
-GREP = /usr/bin/grep
+GREP = /bin/grep
 INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
 INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = ${SHELL} $(install_sh) -c -s
 LDFLAGS = 
 LEX = flex
-LEXLIB = -lfl
+LEXLIB = 
 LEX_OUTPUT_ROOT = lex.yy
 LIBOBJS = 
 LIBS = 
 LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LN_S = ln -s
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} /root/cvs/latest/csql/missing --run makeinfo
+MAKEINFO = ${SHELL} /home/gopals/work/csql/testbuild/csql/missing --run makeinfo
 OBJEXT = o
 PACKAGE = csql
 PACKAGE_BUGREPORT = 
@@ -140,11 +148,11 @@ SET_MAKE =
 SHELL = /bin/sh
 STRIP = strip
 VERSION = 0.1
-YACC = yacc -vd 
+YACC = yacc -vd
 YFLAGS = 
 ac_ct_CC = gcc
-ac_ct_CXX = g++
-ac_ct_F77 = g77
+ac_ct_CXX = 
+ac_ct_F77 = gfortran
 am__fastdepCC_FALSE = #
 am__fastdepCC_TRUE = 
 am__fastdepCXX_FALSE = #
@@ -173,7 +181,7 @@ host_vendor = pc
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = /root/cvs/latest/csql/install-sh
+install_sh = /home/gopals/work/csql/testbuild/csql/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -182,7 +190,7 @@ mandir = ${datarootdir}/man
 mkdir_p = mkdir -p --
 oldincludedir = /usr/include
 pdfdir = ${docdir}
-prefix = /root/cvs/latest/csql/install
+prefix = /home/gopals/work/csql/testbuild/csql/install
 program_transform_name = s,x,x,
 psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
@@ -193,16 +201,16 @@ INCLUDES = -I$(top_srcdir)/include $(all_includes)
 METASOURCES = AUTO
 lib_LTLIBRARIES = libcsqlsql.la
 libcsqlsql_la_LDFLAGS = -module
-libcsqlsql_la_SOURCES = dmlyacc.y dmllex.l ParsedData.c SelStatement.c \
-	InsStatement.c UpdStatement.c DelStatement.c \
-	SqlStatement.c  StatementFactory.c
+libcsqlsql_la_SOURCES = dmlyacc.yxx dmllex.lxx ParsedData.cxx SelStatement.cxx \
+	InsStatement.cxx UpdStatement.cxx DelStatement.cxx \
+	SqlStatement.cxx  StatementFactory.cxx
 
 noinst_HEADERS = Parser.h Statement.h SqlStatement.h SqlConnection.h
 libcsqlsql_a_LIBADD = $(top_builddir)/src/server/libcsql.la
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .l .lo .o .obj .y
+.SUFFIXES: .cxx .lo .lxx .o .obj .yxx
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -212,9 +220,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  src/sql/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  src/sql/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  src/sql/Makefile
+	  $(AUTOMAKE) --foreign  src/sql/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -260,7 +268,7 @@ clean-libLTLIBRARIES:
 	  rm -f "$${dir}/so_locations"; \
 	done
 libcsqlsql.la: $(libcsqlsql_la_OBJECTS) $(libcsqlsql_la_DEPENDENCIES) 
-	$(LINK) -rpath $(libdir) $(libcsqlsql_la_LDFLAGS) $(libcsqlsql_la_OBJECTS) $(libcsqlsql_la_LIBADD) $(LIBS)
+	$(CXXLINK) -rpath $(libdir) $(libcsqlsql_la_LDFLAGS) $(libcsqlsql_la_OBJECTS) $(libcsqlsql_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -278,33 +286,33 @@ include ./$(DEPDIR)/UpdStatement.Plo
 include ./$(DEPDIR)/dmllex.Plo
 include ./$(DEPDIR)/dmlyacc.Plo
 
-.c.o:
-	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
+.cxx.o:
+	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
 	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
 #	source='$<' object='$@' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(COMPILE) -c $<
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(CXXCOMPILE) -c -o $@ $<
 
-.c.obj:
-	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
+.cxx.obj:
+	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
 	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
 #	source='$<' object='$@' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(COMPILE) -c `$(CYGPATH_W) '$<'`
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-.c.lo:
-	if $(LTCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
+.cxx.lo:
+	if $(LTCXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
 	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Plo"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
 #	source='$<' object='$@' libtool=yes \
-#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(LTCOMPILE) -c -o $@ $<
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(LTCXXCOMPILE) -c -o $@ $<
 
-.l.c:
+.lxx.cxx:
 	$(LEXCOMPILE) $<
 	sed '/^#/ s|$(LEX_OUTPUT_ROOT)\.c|$@|' $(LEX_OUTPUT_ROOT).c >$@
 	rm -f $(LEX_OUTPUT_ROOT).c
 
-.y.c:
+.yxx.cxx:
 	$(YACCCOMPILE) $<
 	if test -f y.tab.h; then \
 	  to=`echo "$*_H" | sed \
@@ -441,8 +449,8 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-	-rm -f dmllex.c
-	-rm -f dmlyacc.c
+	-rm -f dmllex.cxx
+	-rm -f dmlyacc.cxx
 clean: clean-am
 
 clean-am: clean-generic clean-libLTLIBRARIES clean-libtool \
