@@ -14,6 +14,8 @@
  *                                                                         *
   ***************************************************************************/
 #include<Config.h>
+#include<Debug.h>
+
 int Config::readLine(FILE *fp, char * buffer)
 {
   char c =0;
@@ -57,7 +59,13 @@ int Config::storeKeyVal(char *key, char *value)
 int Config::readAllValues(char *fileName)
 {
     FILE *fp;
+
     fp = fopen(fileName,"r");
+    if( fp == NULL ) {
+        printError(ErrSysInit, "Invalid path/filename in CSQL_CONFIG_FILE.");
+	return !OK;
+    }
+
     int hasData = 1;
     char buffer[1024];
     char key[1024];

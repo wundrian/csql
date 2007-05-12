@@ -259,13 +259,19 @@ DbRetVal SessionImpl::rollback()
 
 DbRetVal SessionImpl::readConfigFile()
 {
+    // Check if env variable is set or not
     char *confFilename = os::getenv("CSQL_CONFIG_FILE");
     if (confFilename == NULL)
     {
         printError(ErrSysInit, "CSQL_CONFIG_FILE environment variable should be set.");
         return ErrSysInit;
     }
+
     int  rv = config.readAllValues(confFilename);
-    if (rv == OK) return OK; else return ErrSysInit;
+    if (rv != OK)  {
+        return ErrSysInit;
+    }
+
+    return OK;
 }
 
