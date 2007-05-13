@@ -268,10 +268,7 @@ DbRetVal SessionImpl::readConfigFile()
     }
 
     int  rv = config.readAllValues(confFilename);
-    if (rv != OK)  {
-        return ErrSysInit;
-    }
-
+    if (rv != 0) return ErrSysInit;
     return OK;
 }
 
