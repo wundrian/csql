@@ -55,13 +55,15 @@ int main()
     printf("Database server started\n");
     bool end = false;
 
-    struct timeval timeout;
+    struct timeval timeout, tval;
     timeout.tv_sec = 5;
     timeout.tv_usec = 0;
 
     while(!srvStop)
     {
-        os::select(0, 0, 0, 0, &timeout);
+        tval.tv_sec = timeout.tv_sec;
+        tval.tv_usec = timeout.tv_usec;
+        os::select(0, 0, 0, 0, &tval);
     }
     printf("Server Exiting\n");
     session.destroySystemDatabase();
