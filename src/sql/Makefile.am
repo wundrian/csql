@@ -7,5 +7,5 @@ libcsqlsql_la_SOURCES = dmlyacc.yxx dmllex.lxx ParsedData.cxx SelStatement.cxx \
 	InsStatement.cxx UpdStatement.cxx DelStatement.cxx \
 	SqlStatement.cxx  StatementFactory.cxx
 
-noinst_HEADERS = Parser.h Statement.h SqlStatement.h SqlConnection.h
+noinst_HEADERS = Parser.h Statement.h 
 libcsqlsql_a_LIBADD = $(top_builddir)/src/server/libcsql.la
