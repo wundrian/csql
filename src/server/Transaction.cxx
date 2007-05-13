@@ -130,15 +130,28 @@ void Transaction::addAtEnd(UndoLogInfo* logInfo)
 UndoLogInfo* Transaction::popUndoLog()
 {
     UndoLogInfo *iter = firstUndoLog_, *prev = firstUndoLog_;
-    if (NULL == iter) return NULL;
-    while(NULL != iter->next_)
+    if(NULL != iter)
     {
         prev = iter;
         iter = iter->next_;
     }
-    prev->next_ = NULL;
-    return iter;
+    firstUndoLog_ = iter;
+    return prev;
+
 }
+
+DbRetVal Transaction::removeUndoLogs(Database *sysdb)
+{
+    Chunk *chunk = sysdb->getSystemDatabaseChunk(UndoLogTableID);
+    UndoLogInfo *logInfo = NULL;
+    while(NULL != (logInfo = popUndoLog()))
+    {
+        chunk->free(sysdb, logInfo);
+    }
+    return OK;
+}
+
+
 DbRetVal Transaction::applyUndoLogs(Database *sysdb)
 {
     Chunk *chunk = sysdb->getSystemDatabaseChunk(UndoLogTableID);

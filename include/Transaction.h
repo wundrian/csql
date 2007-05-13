@@ -79,6 +79,7 @@ class Transaction
     void addAtEnd(UndoLogInfo* logInfo);
 
     UndoLogInfo* popUndoLog();
+    DbRetVal removeUndoLogs(Database *sysdb);
     DbRetVal applyUndoLogs(Database *sysdb);
 };
 

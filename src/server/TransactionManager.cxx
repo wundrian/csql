@@ -72,7 +72,7 @@ DbRetVal TransactionManager::commit(LockManager *lockManager_)
     }
     //TODO::flush all redo logs to disk
     //TODO::remove all the logs in memory
-
+    trans->removeUndoLogs(sysdb);
     sysdb->getTransTableMutex();
     trans->status_ = TransNotUsed;
     sysdb->releaseTransTableMutex();
