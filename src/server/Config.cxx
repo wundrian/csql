@@ -108,8 +108,7 @@ int Config::validateValues()
     }
     if ( cVal.sysDbKey == cVal.userDbKey)
     {
-        printError(ErrBadArg,  "USER_DB_KEY and SYS_DB_KEY have same value %d", cVal.user
-DbKey);
+        printError(ErrBadArg,  "USER_DB_KEY and SYS_DB_KEY have same value %d", cVal.userDbKey);
         return 1;
     }
     if (0 == strcmp(cVal.logFile,""))
