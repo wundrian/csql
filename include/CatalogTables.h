@@ -39,12 +39,6 @@ enum CatalogTableID
     // chunk id 15->INDEX
     // chunk id 16->INDEXFIELD
 
-    // chunk id 30->hash index on tblName_ of TABLE
-    // chunk id 31->hash index on fldName_ of FIELD
-    // chunk id 32->hash index on userName_ of ACCESS
-    // chunk id 33->hash index on userName_ of USER
-    // chunk id 34->hash index on dbName_ of DATABASE
-    // chunk id 35->hash index on tblID_ of FIELD
     UserChunkTableId      =  0,
     LockTableHashBucketId =  1,
     LockTableMutexId      =  2,
