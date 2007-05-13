@@ -38,8 +38,8 @@ class ConfigValues
         pageSize = 8192;
         maxTrans = 20;
         maxProcs = 20;
-        maxSysSize = 104857600;
-        maxDbSize = 104857600;
+        maxSysSize = 1048576;
+        maxDbSize = 1048576;
         sysDbKey = 2222;
         userDbKey = 5555;
         strcpy(logFile, "/tmp/log.out");
