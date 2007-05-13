@@ -31,7 +31,7 @@ int main()
     if (rv != OK)
     {
         printf("Unable to read the configuration file \n");
-        return -1;
+        return 1;
     }
     os::signal(SIGINT, sigTermHandler);
     os::signal(SIGTERM, sigTermHandler);
@@ -39,7 +39,7 @@ int main()
     if (rv != OK)
     {
         printf("Unable to start the logger\n");
-        return -1;
+        return 2;
     }
 
     logFinest(logger, "Server Started");
@@ -47,7 +47,7 @@ int main()
     if (0  != ret)
     {
         printf(" System Database Initialization failed\n");
-        return -1;
+        return 3;
     }
     printf("System Database initialized\n");
 
