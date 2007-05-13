@@ -50,22 +50,6 @@ class LockListIter
     friend class LockList;
 };
 
-/*class LockList
-{
-    LockHashNode *head;
-    public:
-    LockList(){ head = NULL;}
-    LockList(LockHashNode *h){ head = h; }
-    int insert(Chunk *chunk, Database *db, void *key, void *tuple);
-    int remove(Chunk *chunk, Database *db, void *key);
-    LockListIter getIterator()
-    {
-        LockListIter it;
-        it.iter = head;
-        return it;
-    }
-};*/
-
 class TransHasNode
 {
     public:
