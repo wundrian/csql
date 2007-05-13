@@ -60,6 +60,7 @@ int main()
        }
      //  printf("Updated tuple value is %d %s",id,name);
     }
+    table->close();
     conn.rollback();
     table->setCondition(NULL);
     table->execute();

@@ -44,7 +44,6 @@ int main()
     p.setTerm("f1", OpEquals, &val);
     table->setCondition(&p);
     table->execute();
-printf("AAA\n");
     void *tuple;
     while(true)
     {
@@ -52,7 +51,6 @@ printf("AAA\n");
        if (tuple == NULL) break;
        strcpy(name,"Kanchana");
        rv = table->updateTuple(); 
-printf("AAB\n");
        if (rv != OK)
        {
            printf("Updation failed ");
@@ -62,9 +60,8 @@ printf("AAB\n");
        }
        printf("Updated tuple value is %d %s",id,name);
     }
-printf("ABB\n");
+    table->close();
     conn.rollback();
-printf("ABC\n");
     table->setCondition(NULL);
     table->execute();
     while(true)
