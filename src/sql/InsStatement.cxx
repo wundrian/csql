@@ -123,6 +123,7 @@ DbRetVal InsStatement::resolve()
     }
     delete fInfo;
     totalParams = paramPos -1;
+    if (0 == totalParams) return OK;
     params = (void**) malloc ( totalParams * sizeof(FieldValue*));
     paramValues = (char**) malloc( totalParams * sizeof(char*));
     valIter.reset();
