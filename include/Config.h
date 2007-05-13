@@ -54,6 +54,7 @@ class Config
     ConfigValues cVal;
     int readLine(FILE *fp, char * buffer);
     int storeKeyVal(char *key, char *val);
+    int validateValues();
 
     public:
     int readAllValues(char *filename);
