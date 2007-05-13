@@ -94,7 +94,7 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
     }
     else
     {
-        startaddr = startaddr + size;
+        startaddr = startaddr + config.getMaxSysDbSize();
         key = config.getUserDbKey();
     }
     shm_id = os::shm_create(key, size, 0666);
@@ -106,12 +106,12 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
 
     void *shm_ptr = os::shm_attach(shm_id, startaddr, SHM_RND);
     rtnAddr  = (caddr_t) shm_ptr;
-    memset(shm_ptr, 0, size );
-    if (rtnAddr < 0)
+    if (rtnAddr < 0 || shm_ptr == (char*)0xffffffff)
     {
         printError(ErrOS, "Shared memory attach returned -ve value %d", rtnAddr);
         return ErrOS;
     }
+    memset(shm_ptr, 0, size );
     db_ = new Database();
     printDebug(DM_Database, "Creating database:%s",name);
 
@@ -177,7 +177,7 @@ DbRetVal DatabaseManagerImpl::deleteDatabase(const char *name)
 
 DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
 {
-    size_t size = config.getMaxSysDbSize();
+    long size = config.getMaxSysDbSize();
     char *startaddr = (char*)config.getMapAddress();
     if (0 == strcmp(name , SYSTEMDB))
     {
@@ -196,7 +196,7 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
             return ErrNotOpen;
         }
         size = config.getMaxDbSize();
-        startaddr = startaddr + size;
+        startaddr = startaddr +  config.getMaxSysDbSize();
     }
     if (NULL != db_)
     {
@@ -240,6 +240,7 @@ void DatabaseManagerImpl::closeDatabase()
 {
     printDebug(DM_Database, "Closing database: %s",(char*)db_->getName());
     logFinest(logger, "Closed database");
+    if (NULL == db_) return;
     os::shm_detach((char*)db_->getMetaDataPtr());
     delete db_;
     db_ = NULL;
