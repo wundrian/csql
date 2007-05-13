@@ -22,8 +22,19 @@ then
     echo "TEST_RUN_ROOT should be set before running the tests"
     exit 1
 fi
+if [ ! "$CSQL_INSTALL_ROOT" ]
+then
+    echo "CSQL_INSTALL_ROOT should be set before running the tests"
+    exit 1
+fi
 ROOT_DIR=`pwd`
-
+mkdir -p $TEST_RUN_ROOT
+SERVOUT=$TEST_RUN_ROOT/serv.out
+touch $SERVOUT
+$CSQL_INSTALL_ROOT/bin/csqlserver >$SERVOUT 2>$SERVOUT &
+SERVER_PID=$!
+echo "Starting Server"
+sleep 5
 while read MODULE
 do
     echo $MODULE | grep "#" >/dev/null
@@ -101,6 +112,15 @@ then
    echo "Test Hung. so it is killed." >>$TEST_LOG
    echo "FAILED:Test $test failed" >>$TEST_LOG
    #TODO::Reinitalize the database, as it may be in corrupted state.
+   CURTIME=`date +%s`
+   mv ${SERVOUT} ${SERVOUT}.${SERVER_PID}.${CURTIME}
+   kill -9 ${SERVER_PID}
+   echo "csqlserver killed PID=${SERVER_PID}" >>$TEST_LOG
+   $CSQL_INSTALL_ROOT/bin/csqlserver >$SERVOUT 2>$SERVOUT &
+   SERVER_PID=$!
+   echo "csqlserver restarted with PID=${SERVER_PID}" >>$TEST_LOG
+   echo "Restarting Server"
+   sleep 5
    continue
 fi
 
@@ -127,7 +147,17 @@ then
            echo "Test $test failed"  
            echo "Exp and current output not matched." >>$TEST_LOG
            echo "FAILED:Test $test failed" >>$TEST_LOG
-           #TODO:get all the trace files from server and store it in a folder
+           #TODO::Reinitalize the database, as it may be in corrupted state.
+           CURTIME=`date +%s`
+           mv ${SERVOUT} ${SERVOUT}.${SERVER_PID}.${CURTIME}
+           echo "Refer ${SERVOUT}.${SERVER_PID}.${CURTIME} file for server log" >>$TEST_LOG
+           kill -9 ${SERVER_PID}
+           echo "csqlserver killed PID=${SERVER_PID}" >>$TEST_LOG
+           $CSQL_INSTALL_ROOT/bin/csqlserver >$SERVOUT 2>$SERVOUT &
+           SERVER_PID=$!
+           echo "csqlserver restarted with PID=${SERVER_PID}" >>$TEST_LOG
+           echo "Restarting Server"
+           sleep 5
         fi
    else
            echo "Returned 0."
@@ -141,9 +171,23 @@ else
    echo "Test $test failed"  
    echo "Returned $ret " >>$TEST_LOG
    echo "FAILED:Test $test failed" >>$TEST_LOG
-   #TODO:get all the trace files from server and store it in a folder
+   #TODO::Reinitalize the database, as it may be in corrupted state.
+   CURTIME=`date +%s`
+   mv ${SERVOUT} ${SERVOUT}.${SERVER_PID}.${CURTIME}
+   echo "Refer ${SERVOUT}.${SERVER_PID}.${CURTIME} file for server log" >>$TEST_LOG
+   kill -9 ${SERVER_PID}
+   echo "csqlserver killed PID=${SERVER_PID}" >>$TEST_LOG
+   $CSQL_INSTALL_ROOT/bin/csqlserver >$SERVOUT 2>$SERVOUT &
+   SERVER_PID=$!
+   echo "csqlserver restarted with PID=${SERVER_PID}" >>$TEST_LOG
+   echo "Restarting Server"
+   sleep 5
 fi
 
 done
 done < TestModules
+
+kill -9 ${SERVER_PID}
+echo "csqlserver killed PID=${SERVER_PID}" >>$TEST_LOG
+
 exit 0
