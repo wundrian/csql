@@ -20,22 +20,71 @@
 #ifndef SQLCONNECTION_H
 #define SQLCONNECTION_H
 #include<CSql.h>
+
+/**
+* @class SqlConnection
+*
+* @brief Represents a database connection to sql engine.
+* All database operations shall be done within the context of the connection. <br>
+* Application should first create object of this class for accessing the database.<br/>
+* Each connection has only one active transaction at any given point of time, all <br/>
+* operations which happen using this connection object will be done as part of that <br/>
+* transaction.<br/>
+* <br/>
+* Functionality: <br/>
+*     1.Connection Management (connect and disconnect) <br/>
+*     2.Transaction Management (start, commit, abort) <br/>
+* <br/>
+*  Note: <br/>
+*  SERIALIZABLE isolation level is not supported.
+* @author Prabakaran Thirumalai
+*/
 class SqlConnection
 {
     Connection conn;
     public:
 
-    // Connection handling.
+    /** opens connection to the sql engine
+    *   @param user username for authentication
+    *   @param pass password for authentication
+    *   @return DbRetVal
+    */
     DbRetVal connect (char *user, char * pass) 
         { return conn.open(user, pass); }
+
+    /** closes connection to the database and releases all the resources
+    *   @return DbRetVal 
+    */
     DbRetVal disconnect () { return conn.close(); }
 
-    // Transaction handling.
+    /** Commits active transaction. 
+    *   It makes all the changes made in the current transaction permanent and <br/>
+    *   it also releases the locks held by the current transaction.<br/>
+    *   After a transaction commits, application is required to start another <br/>
+    *   transaction for further database operations.
+    *   @return DbRetVal 
+    */
     DbRetVal commit() { return conn.commit(); }
+
+    /** Aborts the active transaction. 
+    *   undo all the changes made in the current transaction and it also <br/>
+    *   releases the locks held by the current transaction.<br/>
+    *   After a transaction rollback, application is required to start another <br/>
+    *   transaction for further database operations.
+    *   @return DbRetVal 
+    */
     DbRetVal rollback() { return conn.rollback(); }
+
+    /** Starts a transaction.
+    *   The previous transaction should be either committed or rollback <br/> 
+    *   before beginTrans is called. <br/>
+    *   Applications are required to start transaction before they attempt any <br>
+    *   database operation.
+    *   @param isoLevel isolation level. Default is read committed.
+    *   @return DbRetVal
+    */
     DbRetVal beginTrans (IsolationLevel isoLevel = READ_COMMITTED) 
         { return conn.startTransaction(isoLevel); }
-
 
     Connection& getConnObject(){  return conn; }
 };
