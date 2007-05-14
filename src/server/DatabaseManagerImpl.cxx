@@ -49,7 +49,8 @@ void DatabaseManagerImpl::createTransactionManager()
 
 DbRetVal DatabaseManagerImpl::openSystemDatabase()
 {
-    openDatabase(SYSTEMDB);
+    DbRetVal rv = openDatabase(SYSTEMDB);
+    if (rv != OK) return rv;
     systemDatabase_ = db_;
     db_ = NULL;
     if (NULL == systemDatabase_)
@@ -189,7 +190,6 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
     }
     else
     {
-        
         if (NULL ==systemDatabase_)
         {
             printError(ErrNotOpen, "System Database not open");
@@ -214,21 +214,23 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
     else
         key = config.getUserDbKey();
     shm_id = os::shm_open(key, size, 0666);
-    if (shm_id == -1)
+    if (shm_id == -1 )
     {
          printError(ErrOS, "Shared memory open failed");
          return ErrOS;
     }
 
-    void *shm_ptr = os::shm_attach(shm_id, startaddr, SHM_RND);
+    void *shm_ptr = os::shm_attach(shm_id, startaddr, SHM_RND|SHM_REMAP);
 
     rtnAddr  = (caddr_t) shm_ptr;
 
-    if (rtnAddr < 0)
+    if (rtnAddr < 0 || shm_ptr == (char*)0xffffffff)
     {
-         printError(ErrOS, "Shared memory attach returned -ve value %d", rtnAddr);
-         return ErrOS;
+        
+        printError(ErrOS, "Shared memory attach returned -ve value %x %d", shm_ptr, errno);
+        return ErrOS;
     }
+    printf("Shared memory attach %x\n", shm_ptr);
     db_ = new Database();
     printDebug(DM_Database, "Opening database: %s", name);
     db_->setMetaDataPtr((DatabaseMetaData*)rtnAddr);
