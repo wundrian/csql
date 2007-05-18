@@ -26,8 +26,19 @@ int TableDef::addField(const char *name,  DataType type, size_t length,
                  const void *defaultValue, bool notNull, bool isPrimary)
 
 {
-    if (isPrimary && !notNull) return -1;
-    if (name == NULL) return -1;
+    if (isPrimary && !notNull) return (int)ErrBadArg;
+    if (name == NULL) return (int)ErrBadArg;
+
+    // The following code checks for duplicates
+    FieldIterator iter = getFieldIterator();
+    while (iter.hasElement())
+    {
+        FieldDef def = iter.nextElement();
+        if (! strcmp(def.fldName_, name)) {
+            printError(ErrAlready, "Field %s already Exists", name);
+            return (int) ErrAlready;
+        }
+    }
 
     FieldDef fldDef;
     strcpy(fldDef.fldName_, name);
