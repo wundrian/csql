@@ -100,8 +100,8 @@ int Database::initAllocDatabaseMutex()
 }
 DbRetVal Database::getAllocDatabaseMutex()
 {
-    metaData_->dbAllocMutex_.tryLock();
-    return OK;
+    int ret= metaData_->dbAllocMutex_.tryLock();
+    if (ret) return ErrSysInternal; else return OK;
 }
 DbRetVal Database::releaseAllocDatabaseMutex()
 {
@@ -117,8 +117,8 @@ int Database::initTransTableMutex()
 }
 DbRetVal Database::getTransTableMutex()
 {
-    metaData_->dbTransTableMutex_.tryLock();
-    return OK;
+    int ret = metaData_->dbTransTableMutex_.tryLock();
+    if (ret) return ErrSysInternal; else return OK;
 }
 DbRetVal Database::releaseTransTableMutex()
 {
@@ -134,8 +134,8 @@ int Database::initProcessTableMutex()
 }
 DbRetVal Database::getProcessTableMutex()
 {
-    metaData_->dbProcTableMutex_.tryLock();
-    return OK;
+    int ret = metaData_->dbProcTableMutex_.tryLock();
+    if (ret) return ErrSysInternal; else return OK;
 }
 DbRetVal Database::releaseProcessTableMutex()
 {
@@ -151,8 +151,8 @@ int Database::initDatabaseMutex()
 }
 DbRetVal Database::getDatabaseMutex()
 {
-    metaData_->dbMutex_.tryLock();
-    return OK;
+    int ret = metaData_->dbMutex_.tryLock();
+    if (ret) return ErrSysInternal; else return OK;
 }
 DbRetVal Database::releaseDatabaseMutex()
 {
@@ -264,6 +264,7 @@ DbRetVal Database::createSystemDatabaseChunk(AllocType type, size_t size, int id
     }
     chunk = getSystemDatabaseChunk(id);
 
+    if (FixedSizeAllocator == type) chunk->setSize(size);
     //getDatabaseMutex();
     if (size > PAGE_SIZE)
         chunk->curPage_ = getFreePage(chunk->allocSize_);
@@ -284,7 +285,6 @@ DbRetVal Database::createSystemDatabaseChunk(AllocType type, size_t size, int id
     firstPageInfo->nextPage_ = NULL;
     chunk->setChunkID(id);
     chunk->setAllocType(type);
-    chunk->setSize(size);
     printDebug(DM_Database, "Creating System Database Chunk:%d Size:%d",id, size);
     if (size > PAGE_SIZE)
     {
@@ -389,7 +389,7 @@ Chunk* Database::getSystemDatabaseChunk(int id)
 Transaction* Database::getSystemDatabaseTrans(int slot)
 {
     size_t offset = os::alignLong(sizeof (DatabaseMetaData)) +
-                        MAX_CHUNKS * sizeof (Chunk) +
+                    os::alignLong(MAX_CHUNKS * sizeof (Chunk)) +
                         slot  * sizeof (Transaction);
     return (Transaction*)(((char*) metaData_) +  offset);
 }

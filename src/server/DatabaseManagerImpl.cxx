@@ -410,10 +410,15 @@ DbRetVal DatabaseManagerImpl::dropTable(const char *name)
 {
     void *chunk = NULL;
     void *tptr =NULL;
-    systemDatabase_->getDatabaseMutex();
+    DbRetVal rv = systemDatabase_->getDatabaseMutex();
+    if (OK != rv) {
+        printError(ErrSysInternal, "Unable to get database mutex");
+        return ErrSysInternal;
+    }
+
     //remove the entry in TABLE
     CatalogTableTABLE cTable(systemDatabase_);
-    DbRetVal rv = cTable.remove(name, chunk, tptr);
+    rv = cTable.remove(name, chunk, tptr);
     if (OK != rv) {
         systemDatabase_->releaseDatabaseMutex();
         printError(ErrSysInternal, "Unable to update catalog table TABLE");
@@ -475,7 +480,11 @@ Table* DatabaseManagerImpl::openTable(const char *name)
     //all ddl operation will be denied on that table
     //which includes index creation, alter table
 
-    systemDatabase_->getDatabaseMutex();
+    rv = systemDatabase_->getDatabaseMutex();
+    if (OK != rv) {
+        printError(ErrSysInternal, "Unable to get database mutex");
+        return ErrSysInternal;
+    }
     CatalogTableTABLE cTable(systemDatabase_);
     ret = cTable.getChunkAndTblPtr(name, chunk, tptr);
     if ( OK != ret)
@@ -563,7 +572,12 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
     }
     void *tptr =NULL;
     void *chunk = NULL;
-    systemDatabase_->getDatabaseMutex();
+    DbRetVal rv = systemDatabase_->getDatabaseMutex();
+    if (OK != rv)
+    {
+        printError(ErrSysInternal, "Unable to get database mutex");
+        return ErrSysInternal;
+    }
 
     //check whether table exists
     CatalogTableTABLE cTable(systemDatabase_);
@@ -579,7 +593,7 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
     //check whether field exists
     char **fptr = new char* [totFlds];
     CatalogTableFIELD cField(systemDatabase_);
-    DbRetVal rv = cField.getFieldPtrs(fldList, tptr, fptr);
+    rv = cField.getFieldPtrs(fldList, tptr, fptr);
     if (OK != rv)
     {
         delete[] fptr;
@@ -679,7 +693,13 @@ DbRetVal DatabaseManagerImpl::dropIndex(const char *name)
     void *chunk = NULL, *hchunk = NULL;
     void *tptr =NULL;
     int ret = 0;
-    systemDatabase_->getDatabaseMutex();
+    rv = systemDatabase_->getDatabaseMutex();
+    if (OK != rv)
+    {
+        printError(ErrSysInternal, "Unable to get database mutex");
+        return ErrSysInternal;
+    }
+
     //remove the entry in INDEX
     CatalogTableINDEX cIndex(systemDatabase_);
     rv = cIndex.remove(name, chunk, hchunk, tptr);

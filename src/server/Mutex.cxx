@@ -58,7 +58,7 @@ int TSL(Lock *lock)
     } else
     {
         __asm(".L1000:");
-        return -1;
+        return 1;
     }
 */
 /*Was Working in linux
@@ -119,7 +119,7 @@ int Mutex::tryLock()
         tries++;
     }
     printError(ErrLockTimeOut, "Unable to get the mutex");
-    return -1;
+    return 1;
 }
 
 
@@ -133,7 +133,7 @@ int Mutex::getLock()
 #endif
     if (ret == 0) return 0;
     else
-        return -1;
+        return 1;
 }
 
 int Mutex::releaseLock()
@@ -153,7 +153,7 @@ int Mutex::releaseLock()
 #endif
     if (ret == 0) return 0;
     else
-        return -1;
+        return 1;
 }
 
 int Mutex::destroy()

@@ -62,7 +62,13 @@ DbRetVal SessionImpl::initSystemDatabase()
 
     Database *db = dbMgr->sysDb();
 
-    db->getDatabaseMutex();
+    rv = db->getDatabaseMutex();
+    if (OK != rv)
+    {
+        printError(ErrLockTimeOut, "Unable to get Database Mutex");
+        return rv;
+    }
+
 
     db->createAllCatalogTables();
 
