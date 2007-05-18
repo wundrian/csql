@@ -38,7 +38,7 @@ DbRetVal TransactionManager::startTransaction(IsolationLevel level)
     {
             if (iter->status_ == TransNotUsed) break;
             iter++;
-        }
+    }
     //Make this free slot, as the current transaction and
     //set the state
     trans = iter;
@@ -55,7 +55,18 @@ void TransactionManager::setFirstTrans(Transaction *trans)
 DbRetVal TransactionManager::commit(LockManager *lockManager_)
 {
     Database *sysdb = lockManager_->systemDatabase_;
-    sysdb->getTransTableMutex();
+    DbRetVal rv = sysdb->getTransTableMutex();
+    if (OK != rv)
+    {
+        printError(ErrSysInternal, "Unable to acquire transtable mutex");
+        return ErrSysInternal;
+    }
+    if (NULL == trans) 
+    {
+        sysdb->releaseTransTableMutex(); 
+        printError(ErrNotOpen, "Transaction Not open");
+        return ErrNotOpen;
+    }
     if (trans->status_ != TransRunning)
     {
         printError(ErrBadCall, "Transaction is not in running state\n");
@@ -73,7 +84,12 @@ DbRetVal TransactionManager::commit(LockManager *lockManager_)
     //TODO::flush all redo logs to disk
     //TODO::remove all the logs in memory
     trans->removeUndoLogs(sysdb);
-    sysdb->getTransTableMutex();
+    rv = sysdb->getTransTableMutex();
+    if (OK != rv)
+    {
+        printError(ErrSysInternal, "Unable to acquire transtable mutex");
+        return ErrSysInternal;
+    }
     trans->status_ = TransNotUsed;
     sysdb->releaseTransTableMutex();
     printDebug(DM_Transaction, "Committed transaction:%x",trans);
@@ -83,7 +99,18 @@ DbRetVal TransactionManager::commit(LockManager *lockManager_)
 DbRetVal TransactionManager::rollback(LockManager *lockManager_)
 {
     Database *sysdb = lockManager_->systemDatabase_;
-    sysdb->getTransTableMutex();
+    DbRetVal rv= sysdb->getTransTableMutex();
+    if (OK != rv)
+    {
+        printError(ErrSysInternal, "Unable to acquire transtable mutex");
+        return ErrSysInternal;
+    }
+    if (NULL == trans) 
+    {
+        sysdb->releaseTransTableMutex(); 
+        printError(ErrNotOpen, "Transaction Not open");
+        return ErrNotOpen;
+    }
     if (trans->status_ != TransRunning)
     {
         printError(ErrBadCall, "Transaction is not in running state\n");
