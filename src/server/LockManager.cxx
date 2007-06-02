@@ -485,7 +485,7 @@ DbRetVal LockManager::isExclusiveLocked(void *tuple, bool &status)
    {
        if(iter->ptrToTuple_ == tuple)
        {
-           if (iter->lInfo_.noOfReaders_ == 1) {
+           if (iter->lInfo_.noOfReaders_ == -1) {
                bucket->mutex_.releaseLock();
                status = true;
                return OK;
@@ -524,6 +524,7 @@ void LockManager::deallocLockNode(LockHashNode *node, Bucket *bucket)
     if (nodeList == node)
     {
        bucket->bucketList_ = NULL;
+       chunk->free(systemDatabase_, node);
        return;
     }
     while(iter != node)
