@@ -145,7 +145,7 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
     if (0 == strcmp(name, SYSTEMDB)) return OK;
 
     //Allocate new chunk to store hash index nodes
-    Chunk *chunkInfo = createUserChunk(sizeof(HashIndexNode));
+    Chunk *chunkInfo = h
     if (NULL == chunkInfo)
     {
         printError(ErrSysInternal, "Failed to allocate hash index nodes chunk");
@@ -261,7 +261,8 @@ Chunk* DatabaseManagerImpl::createUserChunk(size_t size)
     }
     Chunk *chunkInfo = (Chunk*)ptr;
     chunkInfo->initMutex();
-    if (size > PAGE_SIZE)
+    if (0 != size) chunkInfo->setSize(size);
+    if (chunkInfo->allocSize_ > PAGE_SIZE)
         chunkInfo->curPage_ = db_->getFreePage(size);
     else
         chunkInfo->curPage_ = db_->getFreePage();
@@ -273,7 +274,7 @@ Chunk* DatabaseManagerImpl::createUserChunk(size_t size)
         return NULL;
     }
     PageInfo* firstPageInfo = ((PageInfo*)chunkInfo->curPage_);
-    if (size > PAGE_SIZE)
+    if (chunkInfo->allocSize_ > PAGE_SIZE)
     {
         int multiple = os::floor(size / PAGE_SIZE);
         int offset = ((multiple + 1) * PAGE_SIZE);
@@ -294,7 +295,6 @@ Chunk* DatabaseManagerImpl::createUserChunk(size_t size)
         chunkInfo->setAllocType(VariableSizeAllocator);
     else
         chunkInfo->setAllocType(FixedSizeAllocator);
-    chunkInfo->setSize(size);
 
     //TODO::Generate chunkid::use tableid
     chunkInfo->setChunkID(-1);

@@ -285,8 +285,8 @@ DbRetVal Database::createSystemDatabaseChunk(AllocType type, size_t size, int id
     firstPageInfo->nextPage_ = NULL;
     chunk->setChunkID(id);
     chunk->setAllocType(type);
-    printDebug(DM_Database, "Creating System Database Chunk:%d Size:%d",id, size);
-    if (size > PAGE_SIZE)
+    printDebug(DM_Database, "Creating System Database Chunk:%d Size:%d",id, chunk->allocSize_);
+    if (chunk->allocSize_ > PAGE_SIZE)
     {
         int multiple = os::floor(chunk->allocSize_ / PAGE_SIZE);
         int offset = ((multiple + 1) * PAGE_SIZE);
