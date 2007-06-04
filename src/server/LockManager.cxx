@@ -521,9 +521,16 @@ void LockManager::deallocLockNode(LockHashNode *node, Bucket *bucket)
     Chunk *chunk = systemDatabase_->getSystemDatabaseChunk(LockTableId);
     LockHashNode *nodeList = (LockHashNode*) bucket->bucketList_;
     LockHashNode *iter = nodeList, *prev = nodeList;
+    if (NULL == nodeList)
+    {
+        printError(ErrSysFatal, "Lock Bucket corrupted");
+        return;
+    }
+    //If it is the first node, then make the bucket point to the next node 
+    //in the list
     if (nodeList == node)
     {
-       bucket->bucketList_ = NULL;
+       bucket->bucketList_ = node->next_;
        chunk->free(systemDatabase_, node);
        return;
     }
@@ -532,7 +539,9 @@ void LockManager::deallocLockNode(LockHashNode *node, Bucket *bucket)
         prev = iter;
         iter = iter->next_;
     }
-    prev = iter->next_;
+    //delete the node by making previous element point to the next element 
+    //of the deleted element in the list
+    prev->next_ = iter->next_;
     chunk->free(systemDatabase_, node);
     return ;
 }
