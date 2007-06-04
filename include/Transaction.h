@@ -76,7 +76,7 @@ class Transaction
                        size_t size, void* indexPtr);
     UndoLogInfo* createUndoLog(Database *sysdb, OperationType type, void *data,
                        size_t size);
-    void addAtEnd(UndoLogInfo* logInfo);
+    void addAtBegin(UndoLogInfo* logInfo);
 
     UndoLogInfo* popUndoLog();
     DbRetVal removeUndoLogs(Database *sysdb);

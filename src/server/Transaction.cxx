@@ -80,7 +80,7 @@ void Transaction::appendUndoLog(Database *sysdb, OperationType type,
 {
     UndoLogInfo *logInfo = createUndoLog(sysdb, type, data, size);
     os::memcpy((char*)logInfo + sizeof(UndoLogInfo), data, size);
-    addAtEnd(logInfo);
+    addAtBegin(logInfo);
     printDebug(DM_Transaction, "creating undo log and append %x optype:%d",
                                                logInfo, type);
     return;
@@ -94,7 +94,7 @@ void Transaction::appendLogicalUndoLog(Database *sysdb, OperationType type, void
     UndoLogInfo *logInfo = createUndoLog(sysdb, type, data, size);
     char **indPtr = (char**)((char*)logInfo + sizeof(UndoLogInfo));
     *indPtr = (char*)  indexPtr;
-    addAtEnd(logInfo);
+    addAtBegin(logInfo);
     printDebug(DM_Transaction, "creating logical undo log and append %x optype:%d",
                                                logInfo, type);
     return;
@@ -113,17 +113,11 @@ UndoLogInfo* Transaction::createUndoLog(Database *sysdb, OperationType type, voi
     return logInfo;
 }
 
-void Transaction::addAtEnd(UndoLogInfo* logInfo)
+void Transaction::addAtBegin(UndoLogInfo* logInfo)
 {
-    //add it to the end of the log list
-    UndoLogInfo *iter = firstUndoLog_;
-    if (NULL == iter)
-    {
-        firstUndoLog_ = logInfo;
-        return;
-    }
-    while(NULL != iter->next_) iter = iter->next_;
-    iter->next_ = logInfo;
+    //add it to the begin of the log list
+    logInfo->next_ = firstUndoLog_;
+    firstUndoLog_ = logInfo;
     return;
 }
 
