@@ -145,7 +145,7 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
     if (0 == strcmp(name, SYSTEMDB)) return OK;
 
     //Allocate new chunk to store hash index nodes
-    Chunk *chunkInfo = h
+    Chunk *chunkInfo = createUserChunk(sizeof(HashIndexNode));
     if (NULL == chunkInfo)
     {
         printError(ErrSysInternal, "Failed to allocate hash index nodes chunk");
@@ -480,10 +480,10 @@ Table* DatabaseManagerImpl::openTable(const char *name)
     //all ddl operation will be denied on that table
     //which includes index creation, alter table
 
-    rv = systemDatabase_->getDatabaseMutex();
+    DbRetVal rv = systemDatabase_->getDatabaseMutex();
     if (OK != rv) {
         printError(ErrSysInternal, "Unable to get database mutex");
-        return ErrSysInternal;
+        return NULL;
     }
     CatalogTableTABLE cTable(systemDatabase_);
     ret = cTable.getChunkAndTblPtr(name, chunk, tptr);
