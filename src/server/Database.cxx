@@ -266,7 +266,7 @@ DbRetVal Database::createSystemDatabaseChunk(AllocType type, size_t size, int id
 
     if (FixedSizeAllocator == type) chunk->setSize(size);
     //getDatabaseMutex();
-    if (size > PAGE_SIZE)
+    if (chunk->allocSize_ > PAGE_SIZE)
         chunk->curPage_ = getFreePage(chunk->allocSize_);
     else
          chunk->curPage_ = getFreePage();

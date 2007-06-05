@@ -263,7 +263,7 @@ Chunk* DatabaseManagerImpl::createUserChunk(size_t size)
     chunkInfo->initMutex();
     if (0 != size) chunkInfo->setSize(size);
     if (chunkInfo->allocSize_ > PAGE_SIZE)
-        chunkInfo->curPage_ = db_->getFreePage(size);
+        chunkInfo->curPage_ = db_->getFreePage(chunkInfo->allocSize_);
     else
         chunkInfo->curPage_ = db_->getFreePage();
     if ( NULL == chunkInfo->curPage_)
@@ -276,12 +276,12 @@ Chunk* DatabaseManagerImpl::createUserChunk(size_t size)
     PageInfo* firstPageInfo = ((PageInfo*)chunkInfo->curPage_);
     if (chunkInfo->allocSize_ > PAGE_SIZE)
     {
-        int multiple = os::floor(size / PAGE_SIZE);
+        int multiple = os::floor(chunkInfo->allocSize_ / PAGE_SIZE);
         int offset = ((multiple + 1) * PAGE_SIZE);
         firstPageInfo->setPageAsUsed(offset);
     }
     else
-        firstPageInfo->setPageAsUsed(size);
+        firstPageInfo->setPageAsUsed(chunkInfo->allocSize_);
     if (0 == size)
     {
         VarSizeInfo *varInfo = (VarSizeInfo*)(((char*)firstPageInfo) + sizeof(PageInfo));
@@ -299,7 +299,7 @@ Chunk* DatabaseManagerImpl::createUserChunk(size_t size)
     //TODO::Generate chunkid::use tableid
     chunkInfo->setChunkID(-1);
     printDebug(DM_Database, "Creating new User chunk chunkID:%d size: %d firstPage:%x",
-                               -1, size, firstPageInfo);
+                               -1, chunkInfo->allocSize_, firstPageInfo);
 
     return chunkInfo;
 }
