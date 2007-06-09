@@ -20,9 +20,9 @@
 #ifndef SQLSTATEMENT_H
 #define SQLSTATEMENT_H
 #include <SqlConnection.h>
-//#include "Statement.h"
+#include "Statement.h"
 //#include<CSql.h>
-class Statement;
+//class Statement;
 class ParsedData;
 
 /**

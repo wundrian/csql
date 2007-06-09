@@ -274,7 +274,6 @@ DbRetVal DatabaseManagerImpl::closeDatabase()
     //check if this is the last thread to be deregistered. 
     if (db_->isLastThread())
     {
-        printf("Called last thread and detached db file\n");
         //os::shm_detach((char*)db_->getMetaDataPtr());
         //csqlProcInfo.sysDbAttachAddr = NULL;
         //csqlProcInfo.userDbAttachAddr = NULL;

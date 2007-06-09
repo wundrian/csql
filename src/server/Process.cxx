@@ -42,7 +42,6 @@ DbRetVal ProcessManager::registerThread()
         pid = appPid;
     }
     pthread_t thrid = os::getthrid();
-    printf("global pid is %d\n", appPid);
     ProcInfo* pInfo = systemDatabase->getProcInfo(0);
     int i=0;
     ProcInfo* freeSlot = NULL;
@@ -50,7 +49,6 @@ DbRetVal ProcessManager::registerThread()
     bool freeSlotSelected = false;
     for (; i < config.getMaxProcs(); i++)
     {
-        //printf("Reg: Address %x, pid %d lpid %d:\n", pInfo, pInfo->pid_, pid);
         if (pInfo->pid_ == pid ) break;
         if (!freeSlotSelected && 0 == pInfo->pid_) 
         { 
@@ -63,12 +61,10 @@ DbRetVal ProcessManager::registerThread()
     if (i == config.getMaxProcs()) 
     {
         //First thread to register.
-        printf("Register: First thread to register pid %d\n", freeSlotPos);
         ThreadInfo *tInfo =systemDatabase->getThreadInfo(freeSlotPos, 0);
         tInfo->thrid_ = thrid;
         tInfo->pid_ = pid;
         freeSlot->pid_ = pid;
-        //printf("Address:: %x\n", freeSlot);
         freeSlot->numThreads_ = 1;
     } else
     {
@@ -76,7 +72,6 @@ DbRetVal ProcessManager::registerThread()
         int j =0;
         for (; j < config.getMaxThreads(); j++)
         {
-        printf("Reg: Address %x, tid %d :\n", tInfo, tInfo->thrid_);
 
             if (0 == tInfo->thrid_)
             {
@@ -92,7 +87,6 @@ DbRetVal ProcessManager::registerThread()
             printError(ErrNoResource, "No free thread slot. Limit reached");
             return ErrNoResource;
         }
-        printf("Register:pid slot taken is %d and thrslot %d\n", i, j);
 
         pInfo->numThreads_++;
     }
@@ -120,7 +114,6 @@ DbRetVal ProcessManager::deregisterThread()
     int i=0;
     for (; i < config.getMaxProcs(); i++)
     {
-        //printf("Address %x, pid %d :", pInfo, pInfo->pid_);
         if (pInfo->pid_ == pid ) break;
         pInfo++;
     }
@@ -131,7 +124,6 @@ DbRetVal ProcessManager::deregisterThread()
         return ErrNoResource;
     }
     ThreadInfo *tInfo = systemDatabase->getThreadInfo(i, 0);
-    printf("Deregister: pid slot taken is %d ", i);
 
     i=0;
     for (; i < config.getMaxThreads(); i++)
@@ -153,7 +145,6 @@ DbRetVal ProcessManager::deregisterThread()
         return ErrNoResource;
     }
     pInfo->numThreads_--;
-    printf("and thrslot %d nothreads %d\n", i ,pInfo->numThreads_ );
 
     if (0 == pInfo->numThreads_) pInfo->pid_ = 0;
 

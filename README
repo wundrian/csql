@@ -58,4 +58,3 @@ This starts the server and creates the database file.
 Shutting down the Server
 ------------------------
 Pressing Ctrl-C on the terminal where csqlserver is running, is safe and will stop the server gracefully by removing the database file.
-

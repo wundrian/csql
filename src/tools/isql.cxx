@@ -14,6 +14,7 @@
  *                                                                         *
  ***************************************************************************/
 #include<CSql.h>
+#include <Statement.h>
 #include <SqlStatement.h>
 #define SQL_STMT_LEN 1024
 SqlConnection *conn;
