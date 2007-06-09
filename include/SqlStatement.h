@@ -75,8 +75,10 @@ class SqlStatement
     void* fetch();
     
     /** binds application buffer to the specified parameter position in the sql statement. 
-    * This method should be called for all the parameters in the sql statement.If not
-    * execute will return error.
+    * This method should be called for all the parameters in the sql statement.
+    * Parameters shall be specified for predicate for select, update, delete statements.
+    * Parameters shall be specified for field list value in SET of update statements. 
+    * If value is not set for all parameters, execute will return error.
     * <br/>
     *   @param pos  position of the parameter in the statement
     *   @param val  address of the application buffer. Memory should be allocated by
@@ -85,8 +87,12 @@ class SqlStatement
     DbRetVal bindParam(int pos, void*);
 
     /** binds application buffer to the specified field position of the projection list 
-    *  in the select query. This method should be called only for select queries.
-    * Before executing select queries, required fields must be binded first.
+    *  in the select query or for fields in the insert statement. 
+    *  This method should be called for select queries, insert, update statements.
+    *  Before executing select queries, required fields must be binded first.
+    *  Before executing insert statement, required fields must be binded first.
+    *  Before executing update statement, required fields to be updated must be 
+    *  binded first.
     * <br/>
     *   @param pos  position in the projection list
     *   @param val  address of the application buffer. Memory should be allocated by
@@ -94,7 +100,7 @@ class SqlStatement
     */
     DbRetVal bindField(int pos, void* val);
 
-    /**Fres all the resources held for the sql statement. Needs to be called before calling prepare again on the same statement handle.
+    /**Frees all the resources held for the sql statement. Needs to be called before calling prepare again on the same statement handle.
     * @returns DbRetVal
     */
     DbRetVal free();
