@@ -24,6 +24,7 @@ LIBS= -L$(CSQL_INSTALL_ROOT)/lib -L.. -lcsql -lcsqlsql
 TARGETS = \
         test \
         create\
+        upd\
         del\
 	select
        
@@ -35,6 +36,8 @@ endif
 test: test.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 del: del.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+upd: upd.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 
 create: create.c

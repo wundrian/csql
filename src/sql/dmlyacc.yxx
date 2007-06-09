@@ -81,7 +81,7 @@ delete_statement: DELETE FROM ident where_clause_opt semicolon_opt
 	}
         ;
         
-update_statement: UPDATE ident SET assign_list where_clause semicolon_opt
+update_statement: UPDATE ident SET assign_list where_clause_opt semicolon_opt
 	{
             parsedData->setStmtType(UpdateStatement);
             parsedData->setTableName($2); 

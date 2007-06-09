@@ -324,16 +324,21 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr)
         switch(def.type_)
         {
             case typeString:
-                strcpy((char*)colPtr, (char*)def.bindVal_);
-                *(((char*)colPtr) + def.length_) = '\0';
+                if (NULL != def.bindVal_)
+                {
+                    strcpy((char*)colPtr, (char*)def.bindVal_);
+                    *(((char*)colPtr) + def.length_) = '\0';
+                }
                 colPtr = colPtr + os::align(def.length_);
                 break;
             case typeBinary:
-                os::memcpy((char*)colPtr, (char*)def.bindVal_, def.length_);
+                if (NULL != def.bindVal_)
+                    os::memcpy((char*)colPtr, (char*)def.bindVal_, def.length_);
                 colPtr = colPtr + os::align(def.length_);
                 break;
             default:
-                AllDataType::copyVal(colPtr, def.bindVal_, def.type_);
+                if (NULL != def.bindVal_)
+                    AllDataType::copyVal(colPtr, def.bindVal_, def.type_);
                 colPtr = colPtr + os::align(AllDataType::size(def.type_));
                 break;
         }
@@ -352,15 +357,18 @@ DbRetVal TableImpl::copyValuesToBindBuffer(void *tuplePtr)
         switch(def.type_)
         {
             case typeString:
-                strcpy((char*)def.bindVal_, (char*)colPtr);
+                if (NULL != def.bindVal_)
+                    strcpy((char*)def.bindVal_, (char*)colPtr);
                 colPtr = colPtr + os::align(def.length_);
                 break;
             case typeBinary:
-                os::memcpy((char*)def.bindVal_, (char*)colPtr, def.length_);
+                if (NULL != def.bindVal_)
+                    os::memcpy((char*)def.bindVal_, (char*)colPtr, def.length_);
                 colPtr = colPtr + os::align(def.length_);
                 break;
             default:
-                AllDataType::copyVal(def.bindVal_, colPtr, def.type_);
+                if (NULL != def.bindVal_)
+                    AllDataType::copyVal(def.bindVal_, colPtr, def.type_);
                 colPtr = colPtr + os::align(AllDataType::size(def.type_));
                 break;
         }

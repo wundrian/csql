@@ -28,7 +28,7 @@ class Statement
     DatabaseManager *dbMgr;
     Table *table;
 
-    void **params;  
+    void **params;
     //used to store FieldValue* for insert or ConditionValue* for other stmts
 
     char **paramValues;
@@ -93,8 +93,11 @@ class UpdStatement : public Statement
     DbRetVal execute(int &rowsAffected);
     DbRetVal setParam(int paramNo, void *value);
     DbRetVal resolve();
-    UpdStatement(){ parsedData = NULL; dbMgr = NULL; table = NULL; }
+    UpdStatement();
     ~UpdStatement();
+
+    int totalAssignParams;
+    DbRetVal resolveForAssignment();
 };
 class DelStatement : public Statement
 {

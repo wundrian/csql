@@ -31,6 +31,12 @@ class FieldNameNode
 class FieldDef
 {
     public:
+    FieldDef()
+    {
+        type_ = typeUnknown;
+        length_ = 0;
+        bindVal_ = NULL;
+    }
     char fldName_[IDENTIFIER_LENGTH];
     DataType type_;
     size_t length_;

@@ -58,9 +58,11 @@ struct FieldName
 
 struct UpdateFieldValue
 {
-    char *fldName;
+    char fldName[IDENTIFIER_LENGTH];
     char *parsedString;
     void *value;
+    DataType type;
+    int length;
     int paramNo;
 };
 

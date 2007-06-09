@@ -51,7 +51,7 @@ void ParsedData::insertField(char *fName)
 void ParsedData::insertUpdateValue(char *fName, char *val)
 {
     UpdateFieldValue *newVal = new UpdateFieldValue();
-    newVal->fldName = strdup(fName);
+    strcpy(newVal->fldName, fName);
     newVal->parsedString = strdup(val);
     newVal->value = NULL;
     newVal->paramNo = 0;

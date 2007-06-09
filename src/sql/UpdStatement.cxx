@@ -16,12 +16,79 @@
 #include "Statement.h"
 #include <Info.h>
 
+UpdStatement::UpdStatement()
+{
+    parsedData = NULL; 
+    dbMgr = NULL; 
+    table = NULL;
+    params = NULL;
+    paramValues = NULL;
+    totalParams = 0;
+    totalAssignParams =0;
+}
+
+UpdStatement::~UpdStatement() {
+    if (totalParams) {
+        //TODO::below free cause memory corruption.
+        //free(params);
+        params =  NULL;
+        //free(paramValues);
+        //paramValues = NULL;
+    }
+}
 DbRetVal UpdStatement::execute(int &rowsAffected)
 {
+    DbRetVal rv = OK;
+    //copy param values to binded buffer
+    ConditionValue *cValue;
+    UpdateFieldValue *uValue;
+
+    for (int i = 0; i < totalParams; i ++)
+    {
+        if (i < totalAssignParams) {
+            uValue = (UpdateFieldValue*) params[i];
+            if (paramValues[i] == NULL) 
+            {
+                printError(ErrBadCall, "param values not set");
+                return ErrBadCall;
+            }
+            AllDataType::copyVal(uValue->value, paramValues[i], uValue->type, uValue->length);
+        } else {
+            cValue = (ConditionValue*) params[i];
+            if (paramValues[i] == NULL) 
+            {
+                printError(ErrBadCall, "param values not set");
+                return ErrBadCall;
+            }
+            AllDataType::copyVal(cValue->value, paramValues[i], cValue->type, cValue->length);
+        }
+    }
+    rv = table->execute();
+    if (rv != OK) return rv;
+    rowsAffected = 0;
+    void *tuple;
+    while(true)
+    {
+        tuple = (char*)table->fetchNoBind();
+        if (tuple == NULL) {break;}
+        rv = table->updateTuple();
+        if (rv != OK) return rv;
+        rowsAffected++;
+    }
+
+    return rv;
 }
+
+
 DbRetVal UpdStatement::setParam(int paramNo, void *value)
 {
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    if (NULL == value) return ErrBadArg;
+    paramValues[paramNo -1] = (char*) value; 
+    return OK;
 }
+
+
 DbRetVal UpdStatement::resolve()
 {
     if (dbMgr == NULL) return ErrNoConnection;
@@ -32,10 +99,128 @@ DbRetVal UpdStatement::resolve()
         printError(ErrNotExists, "Unable to open the table:Table not exists");
         return ErrNotExists;
     }
-    return OK;
-}
-    
 
-UpdStatement::~UpdStatement()
+    table->setCondition(parsedData->getCondition());
+
+    DbRetVal rv = resolveForAssignment();
+    if (rv != OK) 
+    {
+        //TODO::free memory allocated for params
+        table->setCondition(NULL);
+    }
+    return rv;
+}
+
+DbRetVal UpdStatement::resolveForAssignment()
 {
+    //get the fieldname list and validate field names
+    ListIterator iter = parsedData->getUpdateFieldValueList().getIterator();
+
+    UpdateFieldValue *value;
+    FieldInfo *fInfo = new FieldInfo();
+    int paramPos =1;
+    DbRetVal rv = OK;
+    while (iter.hasElement())
+    {
+        value = (UpdateFieldValue*) iter.nextElement();
+        if (NULL == value) 
+        {
+            dbMgr->closeTable(table);
+            delete fInfo;
+            printError(ErrSysFatal, "Should never happen.");
+            return ErrSysFatal;
+        }
+        rv = table->getFieldInfo(value->fldName, fInfo);
+        if (ErrNotFound == rv)
+        {
+            dbMgr->closeTable(table);
+            delete fInfo;
+            printError(ErrSyntaxError, "Field %s does not exist in table", 
+                                        value->fldName);
+            return ErrSyntaxError;
+        }
+        value->type = fInfo->type;
+        value->length = fInfo->length;
+        value->value = AllDataType::alloc(fInfo->type);
+        table->bindFld(value->fldName, value->value);
+        if (value->parsedString[0] == '?')
+        {
+            value->paramNo = paramPos++;
+        }
+        if (!value->paramNo) 
+            AllDataType::strToValue(value->value, value->parsedString, fInfo->type);
+    }
+    totalAssignParams = paramPos -1;
+
+
+    //get the fieldname list and validate field names
+    ListIterator cIter = parsedData->getConditionValueList().getIterator();
+    ConditionValue *cValue = NULL;
+    while (cIter.hasElement())
+    {
+        cValue = (ConditionValue*) cIter.nextElement();
+        if (NULL == cValue) 
+        {
+            dbMgr->closeTable(table);
+            delete fInfo;
+            printError(ErrSysFatal, "Should never happen.");
+            return ErrSysFatal;
+        }
+        rv = table->getFieldInfo(cValue->fName, fInfo);
+        if (ErrNotFound == rv)
+        {
+            dbMgr->closeTable(table);
+            delete fInfo;
+            printError(ErrSyntaxError, "Field %s does not exist in table", 
+                                        cValue->fName);
+            return ErrSyntaxError;
+        }
+        cValue->type = fInfo->type;
+        cValue->length = fInfo->length;
+        cValue->value = AllDataType::alloc(fInfo->type);
+        if (cValue->parsedString[0] == '?')
+        {
+            cValue->paramNo = paramPos++;
+        }
+        if (!cValue->paramNo) 
+            AllDataType::strToValue(cValue->value, cValue->parsedString, fInfo->type);
+    }
+
+
+    delete fInfo;
+    totalParams = paramPos -1;
+    if (0 == totalParams) return OK;
+    params = (void**) malloc ( totalParams * sizeof(FieldValue*));
+    paramValues = (char**) malloc( totalParams * sizeof(char*));
+
+    iter.reset();
+    while(iter.hasElement())
+    {
+        value = (UpdateFieldValue*) iter.nextElement();
+        if (value == NULL) 
+        {
+            dbMgr->closeTable(table);
+            free(params); params = NULL;
+            free(paramValues); paramValues = NULL;
+            printError(ErrSysFatal, "Should never happen. value NULL after iteration");
+            return ErrSysFatal;
+        }
+        params[value->paramNo -1 ] = value;
+    }
+
+    cIter.reset();
+    while(cIter.hasElement())
+    {
+        cValue = (ConditionValue*) cIter.nextElement();
+        if (cValue == NULL) 
+        {
+            dbMgr->closeTable(table);
+            free(params); params = NULL;
+            free(paramValues); paramValues = NULL;
+            printError(ErrSysFatal, "Should never happen. value NULL after iteration");
+            return ErrSysFatal;
+        }
+        params[cValue->paramNo -1 ] = cValue;
+    }
+    return OK;
 }

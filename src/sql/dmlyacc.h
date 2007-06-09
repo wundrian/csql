@@ -20,7 +20,6 @@
 #define UPDATE 276
 #define SET 277
 #define NULL_VALUE 278
-#define where_clause 279
 typedef union
 {
    char *stringval;
