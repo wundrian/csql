@@ -20,6 +20,8 @@
 #include<Lock.h>
 #include<Debug.h>
 #include<Config.h>
+#include<Process.h>
+extern pid_t appPid;
 
 const char* Database::getName()
 {
@@ -393,6 +395,49 @@ Transaction* Database::getSystemDatabaseTrans(int slot)
                         slot  * sizeof (Transaction);
     return (Transaction*)(((char*) metaData_) +  offset);
 }
+
+//used in case of system database
+ProcInfo* Database::getProcInfo(int pidSlot)
+{
+    size_t offset = os::alignLong(sizeof (DatabaseMetaData));
+    offset = offset + os::alignLong( MAX_CHUNKS  * sizeof (Chunk));
+    offset = offset + os::alignLong( config.getMaxTrans()   * sizeof(Transaction));
+    offset = offset + pidSlot * sizeof (ProcInfo);
+    return (ProcInfo*)(((char*) metaData_) +  offset);
+}
+//used in case of system database
+ThreadInfo* Database::getThreadInfo(int pidSlot, int thrSlot)
+{
+    size_t offset = os::alignLong(sizeof (DatabaseMetaData));
+    offset = offset + os::alignLong( MAX_CHUNKS  * sizeof (Chunk));
+    offset = offset + os::alignLong( config.getMaxTrans()   * sizeof(Transaction));
+    offset = offset + os::alignLong( config.getMaxProcs() * sizeof(ProcInfo));
+    offset = offset + pidSlot * thrSlot  * sizeof (ThreadInfo);
+    return (ThreadInfo*)(((char*) metaData_) +  offset);
+}
+
+bool Database::isLastThread()
+{
+    DbRetVal rv = getProcessTableMutex();
+    if (OK != rv)
+    {
+        printError(rv, "Unable to get process table mutex from Database::isLastThread()");
+        return false;
+    }
+    pid_t pid = appPid;
+
+    ThreadInfo *tInfo = getThreadInfo(pid, 0);
+    int regThr = 0;
+    for (int i=0; i < config.getMaxThreads(); i++)
+    {
+        if (0 != tInfo->thrid_) regThr++;
+        tInfo++;
+    }
+    releaseProcessTableMutex();
+    if (regThr < 1) return true;
+    return false;
+}
+
 
 bool Database::isValidAddress(void* addr)
 {

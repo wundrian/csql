@@ -63,7 +63,8 @@ am_libcsql_la_OBJECTS = BucketIter.lo BucketList.lo CatalogTables.lo \
 	FieldList.lo Index.lo LockListIter.lo LockManager.lo Logger.lo \
 	Mutex.lo os.lo PageInfo.lo PredicateImpl.lo SessionImpl.lo \
 	TableDef.lo TableImpl.lo Transaction.lo TransactionManager.lo \
-	TupleIterator.lo UserManagerImpl.lo HashIndex.lo Config.lo
+	TupleIterator.lo UserManagerImpl.lo HashIndex.lo Config.lo \
+	Process.lo
 libcsql_la_OBJECTS = $(am_libcsql_la_OBJECTS)
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
@@ -86,14 +87,14 @@ DIST_SOURCES = $(libcsql_la_SOURCES) $(csqlserver_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /home/praba/kishore/csql/missing --run aclocal-1.9
+ACLOCAL = ${SHELL} /home/praba/latest/csql/missing --run aclocal-1.9
 AMDEP_FALSE = #
 AMDEP_TRUE = 
-AMTAR = ${SHELL} /home/praba/kishore/csql/missing --run tar
+AMTAR = ${SHELL} /home/praba/latest/csql/missing --run tar
 AR = ar
-AUTOCONF = ${SHELL} /home/praba/kishore/csql/missing --run autoconf
-AUTOHEADER = ${SHELL} /home/praba/kishore/csql/missing --run autoheader
-AUTOMAKE = ${SHELL} /home/praba/kishore/csql/missing --run automake-1.9
+AUTOCONF = ${SHELL} /home/praba/latest/csql/missing --run autoconf
+AUTOHEADER = ${SHELL} /home/praba/latest/csql/missing --run autoheader
+AUTOMAKE = ${SHELL} /home/praba/latest/csql/missing --run automake-1.9
 AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
@@ -129,7 +130,7 @@ LIBS =
 LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LN_S = ln -s
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} /home/praba/kishore/csql/missing --run makeinfo
+MAKEINFO = ${SHELL} /home/praba/latest/csql/missing --run makeinfo
 OBJEXT = o
 PACKAGE = csql
 PACKAGE_BUGREPORT = 
@@ -176,7 +177,7 @@ host_vendor = pc
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = /home/praba/kishore/csql/install-sh
+install_sh = /home/praba/latest/csql/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -185,7 +186,7 @@ mandir = ${datarootdir}/man
 mkdir_p = mkdir -p --
 oldincludedir = /usr/include
 pdfdir = ${docdir}
-prefix = /home/praba/kishore/csql/install
+prefix = /home/praba/latest/csql/install
 program_transform_name = s,x,x,
 psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
@@ -200,7 +201,7 @@ libcsql_la_SOURCES = BucketIter.cxx BucketList.cxx CatalogTables.cxx Chunk.cxx \
 	ChunkIterator.cxx Condition.cxx Connection.cxx Database.cxx DatabaseManagerImpl.cxx DataType.cxx \
 	Debug.cxx FieldList.cxx Index.cxx LockListIter.cxx LockManager.cxx Logger.cxx Mutex.cxx os.cxx \
 	PageInfo.cxx PredicateImpl.cxx SessionImpl.cxx TableDef.cxx TableImpl.cxx Transaction.cxx \
-	TransactionManager.cxx TupleIterator.cxx UserManagerImpl.cxx HashIndex.cxx Config.cxx
+	TransactionManager.cxx TupleIterator.cxx UserManagerImpl.cxx HashIndex.cxx Config.cxx Process.cxx
 
 csqlserver_SOURCES = Server.cxx 
 csqlserver_LDADD = $(top_builddir)/src/server/libcsql.la -lrt -lpthread -lcrypt
@@ -325,6 +326,7 @@ include ./$(DEPDIR)/Logger.Plo
 include ./$(DEPDIR)/Mutex.Plo
 include ./$(DEPDIR)/PageInfo.Plo
 include ./$(DEPDIR)/PredicateImpl.Plo
+include ./$(DEPDIR)/Process.Plo
 include ./$(DEPDIR)/Server.Po
 include ./$(DEPDIR)/SessionImpl.Plo
 include ./$(DEPDIR)/TableDef.Plo

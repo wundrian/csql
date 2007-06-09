@@ -68,13 +68,13 @@ struct tm* os::localtime(long *secs)
     return ::localtime(secs);
 }
 
-int os::getpid()
+pid_t os::getpid()
 {
-        return ::getpid();
+    return ::getpid();
 }
-int os::getthrid()
+pthread_t os::getthrid()
 {
-        return pthread_self();
+    return ::pthread_self();
 }
 
 

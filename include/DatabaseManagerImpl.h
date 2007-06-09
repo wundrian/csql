@@ -19,6 +19,7 @@
 #include<CatalogTables.h>
 #include<Lock.h>
 #include<DatabaseManager.h>
+#include<Process.h>
 
 class Database;
 class SessionImpl;
@@ -28,7 +29,16 @@ class FieldNameList;
 class ChunkIterator;
 class Chunk;
 class TransactionManager;
+class CSqlProcInfo
+{
+    public:
+    CSqlProcInfo() { sysDbAttachAddr = userDbAttachAddr = NULL;}
+    void *sysDbAttachAddr;
+    void *userDbAttachAddr;
+};
 
+//Global object
+static CSqlProcInfo csqlProcInfo;
 
 class DatabaseManagerImpl : public DatabaseManager
 {
@@ -43,8 +53,13 @@ class DatabaseManagerImpl : public DatabaseManager
 
     TransactionManager *tMgr_;
 
+
+    ProcessManager *pMgr_;
+
+
     //only SessionImpl creates object of this class
-    DatabaseManagerImpl() { systemDatabase_ = NULL; tMgr_ = NULL; lMgr_ =  NULL; db_ = NULL; }
+    DatabaseManagerImpl() { systemDatabase_ = NULL; tMgr_ = NULL; lMgr_ =  NULL; 
+                            pMgr_ = NULL; db_ = NULL; }
     ~DatabaseManagerImpl();
 
     DbRetVal openSystemDatabase();
@@ -80,7 +95,7 @@ class DatabaseManagerImpl : public DatabaseManager
     DbRetVal deleteDatabase(const char *name);
 
     DbRetVal openDatabase(const char *name);
-    void closeDatabase();
+    DbRetVal closeDatabase();
 
 
 
@@ -91,6 +106,8 @@ class DatabaseManagerImpl : public DatabaseManager
     DbRetVal createIndex(const char *indName, IndexInitInfo *info);
     DbRetVal dropIndex(const char *name);
 
+    DbRetVal registerThread();
+    DbRetVal deregisterThread();
 
     friend class SessionImpl;
 };

@@ -13,49 +13,46 @@
  *   GNU General Public License for more details.                          *
  *                                                                         *
   ***************************************************************************/
-#ifndef SESSION_IMPL_H
-#define SESSION_IMPL_H
-#include<DatabaseManager.h>
-#include<UserManager.h>
-#include<Session.h>
+#ifndef PROCESS_H
+#define PROCESS_H
 
-class DatabaseManagerImpl;
+#include<os.h>
+#include<ErrorType.h>
 
-class SessionImpl : public Session
+class ProcInfo
 {
-    DatabaseManagerImpl *dbMgr;
-    UserManager *uMgr;
-
-    char userName[IDENTIFIER_LENGTH];
-    bool isAuthenticated;
-    bool isDba;
-
     public:
-    SessionImpl()
-    {
-        dbMgr = NULL; uMgr = NULL; 
-    }
-    ~SessionImpl()
-    {
-        close();
-    }
-    //This is used by the server process to initialize and create
-    //system and user database->create shared memory segment
-    DbRetVal initSystemDatabase();
-    //Removes the shared memory segment->deletes both the databases
-    DbRetVal destroySystemDatabase();
 
-    DbRetVal open(const char*username, const char*password);
-    DbRetVal close();
+    pid_t pid_;
 
-    DatabaseManager* getDatabaseManager();
-    UserManager* getUserManager();
+    int numThreads_;
 
-    DbRetVal startTransaction(IsolationLevel level);
-    DbRetVal commit();
-    DbRetVal rollback();
+};
 
-    DbRetVal readConfigFile();
+class ThreadInfo
+{
+    public:
+
+    pid_t pid_;
+
+    pthread_t thrid_;
+
+    void *want_;  //single mutex which we are waiting for.
+
+    void *has_;   //list of mutexes held
+
+};
+class Database;
+
+class ProcessManager
+{
+    public:
+    Database *systemDatabase;
+    ProcInfo *procInfo;
+    ThreadInfo *thrInfo;
+    ProcessManager(Database *sysdb) { systemDatabase = sysdb; procInfo = NULL; thrInfo = NULL; }
+    DbRetVal registerThread();
+    DbRetVal deregisterThread();
 };
 
 #endif

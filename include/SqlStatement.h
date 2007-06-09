@@ -19,9 +19,11 @@
  ***************************************************************************/
 #ifndef SQLSTATEMENT_H
 #define SQLSTATEMENT_H
-#include <CSql.h>
-#include "Statement.h"
-#include "SqlConnection.h"
+#include <SqlConnection.h>
+//#include "Statement.h"
+//#include<CSql.h>
+class Statement;
+class ParsedData;
 
 /**
 * @class SqlStatement

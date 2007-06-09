@@ -127,8 +127,8 @@ class os
 
     static int gettimeofday(struct timeval *tp);
     static struct tm* localtime(long *secs);
-    static int getpid();
-    static int getthrid();
+    static pid_t getpid();
+    static pthread_t getthrid();
     static char* getenv(const char *envVarName);
 
 };

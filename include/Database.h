@@ -64,6 +64,9 @@ class DatabaseMetaData
 
 class DatabaseManagerImpl;
 class Table;
+class ProcInfo;
+class ThreadInfo;
+
 class Database
 {
     private:
@@ -82,6 +85,10 @@ class Database
 
     Chunk* getSystemDatabaseChunk(int id);
     Transaction* getSystemDatabaseTrans(int slot);
+
+    ProcInfo* getProcInfo(int pidSlot);
+    ThreadInfo* getThreadInfo(int pidSlot, int thrSlot);
+    bool isLastThread();
 
     void createAllCatalogTables();
 

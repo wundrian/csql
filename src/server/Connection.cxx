@@ -26,7 +26,12 @@ Connection::~Connection()
 
 DbRetVal Connection::open(const char *username, const char *password)
 {
-    if (session == NULL) session = new SessionImpl();
+    if (session == NULL) session = new SessionImpl(); 
+    else
+    {
+       printError(ErrAlready, "User already logged in");
+       return ErrAlready;
+    }
     DbRetVal rv = logger.startLogger(config.getLogFile());
     if (rv != OK) { delete session; session = NULL; return rv; }
     logFinest(logger, "User logged in %s",username);

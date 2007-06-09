@@ -25,6 +25,8 @@
 #include<Lock.h>
 #include<Debug.h>
 #include<Config.h>
+#include<Process.h>
+
 
 DatabaseManagerImpl::~DatabaseManagerImpl()
 {
@@ -134,7 +136,9 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
     {
         offset = offset + os::alignLong( MAX_CHUNKS  * sizeof (Chunk));
         offset = offset + os::alignLong( config.getMaxTrans()   * sizeof(Transaction));
-        offset = offset + os::alignLong( config.getMaxProcs() * sizeof(int));
+        offset = offset + os::alignLong( config.getMaxProcs() * sizeof(ProcInfo));
+        offset = offset + os::alignLong( config.getMaxProcs() * 
+                                         config.getMaxThreads() * sizeof(ThreadInfo));
     }
     int multiple = os::floor(offset / PAGE_SIZE);
     char *curPage = (((char*)rtnAddr) + ((multiple + 1) * PAGE_SIZE));
@@ -204,10 +208,9 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
         return ErrAlready;
     }
     //system db should be opened before user database files
-
     caddr_t rtnAddr = (caddr_t) NULL;
-    shared_memory_id shm_id = 0;
 
+    shared_memory_id shm_id = 0;
     shared_memory_key key = 0;
     if (0 == strcmp(name, SYSTEMDB))
         key = config.getSysDbKey();
@@ -220,33 +223,64 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
          return ErrOS;
     }
 
-    void *shm_ptr = os::shm_attach(shm_id, startaddr, SHM_RND|SHM_REMAP);
+    void *shm_ptr = os::shm_attach(shm_id, startaddr, SHM_RND);
 
     rtnAddr  = (caddr_t) shm_ptr;
 
     if (rtnAddr < 0 || shm_ptr == (char*)0xffffffff)
     {
-        
-        printError(ErrOS, "Shared memory attach returned -ve value %x %d", shm_ptr, errno);
-        return ErrOS;
+        //check if is the first thread to be registered.
+        if ( NULL == csqlProcInfo.sysDbAttachAddr)
+        {
+            printError(ErrOS, "Shared memory attach returned -ve value %x %d", shm_ptr, errno);
+            return ErrOS;
+        } 
+        else 
+        {
+            db_ = new Database();
+            if (0 == strcmp(name, SYSTEMDB)) 
+                db_->setMetaDataPtr((DatabaseMetaData*)csqlProcInfo.sysDbAttachAddr);
+            else
+                db_->setMetaDataPtr((DatabaseMetaData*)csqlProcInfo.userDbAttachAddr);
+            printDebug(DM_Database, "Opening database: %s", name);
+            logFinest(logger, "Opened database %s" , name);
+            return OK;
+        }
     }
-    printf("Shared memory attach %x\n", shm_ptr);
+
+    //store it in the global static object.
+    if (0 == strcmp(name, SYSTEMDB))
+        csqlProcInfo.sysDbAttachAddr = rtnAddr;
+    else
+        csqlProcInfo.userDbAttachAddr = rtnAddr;
+
     db_ = new Database();
     printDebug(DM_Database, "Opening database: %s", name);
     db_->setMetaDataPtr((DatabaseMetaData*)rtnAddr);
+
     logFinest(logger, "Opened database %s" , name);
     return OK;
 }
 
-void DatabaseManagerImpl::closeDatabase()
+DbRetVal DatabaseManagerImpl::closeDatabase()
 {
     printDebug(DM_Database, "Closing database: %s",(char*)db_->getName());
     logFinest(logger, "Closed database");
-    if (NULL == db_) return;
-    os::shm_detach((char*)db_->getMetaDataPtr());
+    if (NULL == db_) 
+    {
+        printError(ErrAlready, "Database is already closed\n");
+        return ErrAlready;
+    }
+    //check if this is the last thread to be deregistered. 
+    if (db_->isLastThread())
+    {
+        printf("Called last thread and detached db file\n");
+        //os::shm_detach((char*)db_->getMetaDataPtr());
+        //csqlProcInfo.sysDbAttachAddr = NULL;
+        //csqlProcInfo.userDbAttachAddr = NULL;
+    }
     delete db_;
     db_ = NULL;
-
 }
 //Assumes that system database mutex is taken before calling this.
 Chunk* DatabaseManagerImpl::createUserChunk(size_t size)
@@ -747,7 +781,30 @@ DbRetVal DatabaseManagerImpl::dropIndex(const char *name)
     return OK;
 }
 
+DbRetVal DatabaseManagerImpl::registerThread()
+{
+    DbRetVal rv = OK;
+    if (pMgr_ != NULL) 
+    {
+        printError(ErrAlready, "Process already registered\n");
+        return ErrAlready;
+    }
+    pMgr_ = new ProcessManager(sysDb());
+    return pMgr_->registerThread();
+}
 
+DbRetVal DatabaseManagerImpl::deregisterThread()
+{
+    if (pMgr_ == NULL) 
+    {
+        printError(ErrBadCall, "Process already deregistered or never registered\n");
+        return ErrBadCall;
+    }
+    DbRetVal rv = pMgr_->deregisterThread();
+    delete pMgr_;
+    pMgr_ = NULL;
+    return rv;
+}
 
 ChunkIterator DatabaseManagerImpl::getSystemTableIterator(CatalogTableID id)
 {

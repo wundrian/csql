@@ -128,9 +128,12 @@ DbRetVal SessionImpl::open(const char *username, const char *password)
         return rv;
     }
 
-    //TODO::process registration
-    //pMgr = new ProcessManager();
-    //pMgr->registerProcess();
+    rv = dbMgr->registerThread();
+    if (OK != rv)
+    {
+        printError(rv,"Unable to register to csql server");
+        return rv;
+    }
 
     rv = dbMgr->sysDb()->getDatabaseMutex();
     if (OK != rv)
@@ -162,16 +165,18 @@ DbRetVal SessionImpl::open(const char *username, const char *password)
 
 DbRetVal SessionImpl::close()
 {
+    DbRetVal rv = OK;
     if (dbMgr)
     {
-        dbMgr->closeDatabase();
-        dbMgr->closeSystemDatabase();
+        rv = dbMgr->deregisterThread();
+        if (rv != OK) return ErrBadCall;
+        rv = dbMgr->closeDatabase();
+        if (rv != OK) return ErrBadCall;
+        rv = dbMgr->closeSystemDatabase();
+        if (rv != OK) return ErrBadCall;
         delete dbMgr;
         dbMgr = NULL;
     }
-    //pMgr->deregisterProcess();
-    //delete pMgr;
-    //pMgr = NULL;
     if (uMgr)
     {
         delete uMgr;
