@@ -56,7 +56,7 @@ class Table
     *               the application before binding the buffer.
     */
 
-    virtual void bindFld(const char *name, void *val)=0;
+    virtual DbRetVal bindFld(const char *name, void *val)=0;
     /** marks the specified field to insert null when insert method is called.
     *   @param name field name in the table
     */

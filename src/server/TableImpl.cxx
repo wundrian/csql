@@ -24,11 +24,15 @@
 #include<Index.h>
 #include<Config.h>
 
-void TableImpl::bindFld(const char *name, void *val)
+DbRetVal TableImpl::bindFld(const char *name, void *val)
 {
     //set it in the field list
-    fldList_.updateBindVal(name, val);
-    return ;
+    DbRetVal rv = fldList_.updateBindVal(name, val);
+    if (OK != rv) {
+        printError(ErrNotExists, "Field %s does not exist", name);
+        return  rv;
+    }
+    return OK;
 }
 bool TableImpl::isFldNull(const char *name){
     return true;
@@ -467,3 +471,4 @@ FieldNameList TableImpl::getFieldNameList()
     } 
     return fieldNameList;
 }
+

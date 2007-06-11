@@ -130,7 +130,7 @@ class TableImpl:public Table
      { if (p) { pred_ = p->getPredicate(); }else pred_ = NULL;}
 
     //binding
-    void bindFld(const char *name, void *val);
+    DbRetVal bindFld(const char *name, void *val);
 
     void markFldNull(const char *name);
     void markFldNull(int colpos);
