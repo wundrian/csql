@@ -32,7 +32,6 @@ DbRetVal TableImpl::bindFld(const char *name, void *val)
         printError(ErrNotExists, "Field %s does not exist", name);
         return  rv;
     }
-    return OK;
 }
 bool TableImpl::isFldNull(const char *name){
     return true;
