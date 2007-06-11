@@ -39,6 +39,12 @@ DbRetVal TransactionManager::startTransaction(IsolationLevel level)
             if (iter->status_ == TransNotUsed) break;
             iter++;
     }
+    // if Transaction table is full return error
+    if (i == config.getMaxTrans()) {
+        printError(ErrNoResource, "Transaction slots are full");
+        return ErrNoResource;
+    }
+
     //Make this free slot, as the current transaction and
     //set the state
     trans = iter;
