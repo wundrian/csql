@@ -258,14 +258,20 @@ void* Chunk::allocate(Database *db, size_t size)
         {
             if (0 == varInfo->isUsed_)
             {
-                if( alignedSize < varInfo->size_)
-                 {
+                if( alignedSize + sizeof(VarSizeInfo) < varInfo->size_)
+                {
                     splitDataBucket(varInfo, alignedSize);
                     releaseChunkMutex();
                     printDebug(DM_VarAlloc, "Chunkid:%d splitDataBucket: Size: %d Item:%x ",
                                                          chunkID_, alignedSize, varInfo);
                     return (char*)varInfo + sizeof(VarSizeInfo);
                 }
+                else if (alignedSize == varInfo->size_) {
+                    varInfo->isUsed_ = 1;
+                    releaseChunkMutex();
+                    return (char *) varInfo + sizeof(VarSizeInfo);
+                }
+
             }
             varInfo = (VarSizeInfo*)((char*)varInfo + sizeof(VarSizeInfo)
                                     +varInfo->size_);
