@@ -143,14 +143,15 @@ DbRetVal SessionImpl::open(const char *username, const char *password)
     }
 
     CatalogTableUSER cUser(dbMgr->sysDb());
-    //cUser.authenticate(username, password, isAuthenticated, isDba );
-    isAuthenticated=true;
+    cUser.authenticate(username, password, isAuthenticated, isDba);
+    //isAuthenticated=true;
     dbMgr->sysDb()->releaseDatabaseMutex();
     if (!isAuthenticated)
     {
+        dbMgr->deregisterThread();
         dbMgr->closeSystemDatabase();
         delete dbMgr;
-        //delete pMgr;
+        dbMgr = NULL;
         printError(ErrNoPrivilege,"User Authentication failed");
         return ErrNoPrivilege;
     }

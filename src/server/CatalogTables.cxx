@@ -408,15 +408,18 @@ DbRetVal CatalogTableUSER::authenticate(const char *name, const char *pass,
     void *data = NULL;
     while (NULL != (data = iter.nextElement()))
     {
+        printf("PRABA::user %s: \n", ((USER*)data)->userName_);
+
         if (strcmp(((USER*)data)->userName_, name) == 0)
         {
             //verify the password
             char * enpass = os::encrypt(pass,"A0");
+            printf("PRABA::user %s: en password: %s\n", enpass);
             if (0 == strcmp(enpass, ((USER*)data)->password_))
             {
                 isAuthenticated = true;
                 if (0 == strcmp(((USER*)data)->userName_, DBAUSER))
-                    isDba = true;
+                    isDba = true; else isDba = false;
                 return OK;
             }
         }

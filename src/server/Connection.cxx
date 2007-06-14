@@ -41,7 +41,8 @@ DbRetVal Connection::open(const char *username, const char *password)
     DbRetVal rv = logger.startLogger(config.getLogFile());
     if (rv != OK) { delete session; session = NULL; return rv; }
     logFinest(logger, "User logged in %s",username);
-    return session->open(username, password);
+    rv = session->open(username, password);
+    if (rv != OK) { delete session; session = NULL; return rv; }
 }
 
 DbRetVal Connection::close()
