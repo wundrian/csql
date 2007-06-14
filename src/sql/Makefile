@@ -99,7 +99,6 @@ AR = ar
 AUTOCONF = ${SHELL} /home/praba/kishore/csql/missing --run autoconf
 AUTOHEADER = ${SHELL} /home/praba/kishore/csql/missing --run autoheader
 AUTOMAKE = ${SHELL} /home/praba/kishore/csql/missing --run automake-1.9
->>>>>>> 1.5
 AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
