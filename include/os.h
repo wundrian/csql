@@ -84,7 +84,7 @@ enum MapMode
 #define IDENTIFIER_LENGTH 128
 #define DEFAULT_VALUE_BUF_LENGTH 32
 #define SYSTEMDB "SYSTEMDB"
-#define DBAUSER "dba"
+#define DBAUSER "praba"
 #define DBAPASS "manager"
 #define LOCK_BUCKET_SIZE 2048
 #define MAX_CHUNKS 20
