@@ -33,8 +33,8 @@ DbRetVal TransactionManager::startTransaction(IsolationLevel level)
         }
     }
     Transaction *iter = firstTrans;
-    //get free slot from transaction table
-    for (int i =0 ; i < config.getMaxTrans(); i++)
+    int i;
+    for (i =0 ; i < config.getMaxTrans(); i++)
     {
             if (iter->status_ == TransNotUsed) break;
             iter++;

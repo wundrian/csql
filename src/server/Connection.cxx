@@ -20,7 +20,13 @@
 #include<Config.h>
 Connection::~Connection()
 { 
+    if (NULL != session) {
+       session ->rollback();
+       session->close();
+    }
+    
     delete session; 
+    session = NULL;
     Index::destroy();
 }
 
@@ -43,6 +49,7 @@ DbRetVal Connection::close()
     if (session == NULL) return ErrNoConnection;
     logFinest(logger, "User logged out");
     logger.stopLogger();
+    session ->rollback();
     DbRetVal rv= session->close();
     delete session; 
     session = NULL;

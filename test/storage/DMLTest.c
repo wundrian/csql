@@ -41,7 +41,8 @@ int main()
     for(i = 0; i< 100; i++)
     {
         timer.start();
-        conn.startTransaction();
+        rv = conn.startTransaction();
+        if (rv != OK) exit(1);
         id= i;
         strcpy(name, "PRABAKARAN0123456750590");
         //printf("%d\n ", i);
@@ -65,7 +66,8 @@ int main()
     for(i = 0; i< 100; i++)
     {    
         timer.start();
-        conn.startTransaction();
+        rv =conn.startTransaction();
+        if (rv != OK) exit(1);
         val1 = i;
         table->execute();
         tuple = (char*)table->fetch() ;
@@ -82,7 +84,8 @@ int main()
     for(i = 0; i< 100; i++)
     {
         timer.start();
-        conn.startTransaction();
+        rv  = conn.startTransaction();
+        if (rv != OK) exit (1);
         val1 = i;
         table->execute();
         tuple = (char*)table->fetch() ;
@@ -99,7 +102,8 @@ int main()
     for(i = 0; i< 100; i++)
     {
         timer.start();
-        conn.startTransaction();
+        rv = conn.startTransaction();
+        if (rv != OK) exit (1);
         val1 = i;
         table->execute();
         tuple = (char*)table->fetch() ;
@@ -116,7 +120,8 @@ int main()
     timer.reset();
     for(i = 0; i< 100; i++)
     {    
-        conn.startTransaction();
+        rv = conn.startTransaction();
+        if (rv != OK) exit (1);
         val1 = i;
         table->execute();
         tuple = (char*)table->fetch() ;

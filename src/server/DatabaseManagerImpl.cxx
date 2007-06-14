@@ -483,7 +483,7 @@ DbRetVal DatabaseManagerImpl::dropTable(const char *name)
     char *idxName;
     for (int i =1 ; i<= noIndexes; i++) {
         idxName = cIndex.getIndexName(tptr, i);
-        dropIndex(idxName);
+        dropIndexInt(idxName, false);
     }
     systemDatabase_->releaseDatabaseMutex();
     printDebug(DM_Database, "Deleted Table %s" , name);
@@ -722,15 +722,22 @@ void DatabaseManagerImpl::initHashBuckets(Bucket *buck, int bucketSize)
 
 DbRetVal DatabaseManagerImpl::dropIndex(const char *name)
 {
+    return dropIndexInt(name, true);
+}
+
+DbRetVal DatabaseManagerImpl::dropIndexInt(const char *name, bool takeLock)
+{
     DbRetVal rv = OK;
     void *chunk = NULL, *hchunk = NULL;
     void *tptr =NULL;
     int ret = 0;
-    rv = systemDatabase_->getDatabaseMutex();
-    if (OK != rv)
-    {
-        printError(ErrSysInternal, "Unable to get database mutex");
-        return ErrSysInternal;
+    if (takeLock) {
+        rv = systemDatabase_->getDatabaseMutex();
+        if (OK != rv)
+        {
+            printError(ErrSysInternal, "Unable to get database mutex");
+            return ErrSysInternal;
+        }
     }
 
     //remove the entry in INDEX
@@ -738,7 +745,7 @@ DbRetVal DatabaseManagerImpl::dropIndex(const char *name)
     rv = cIndex.remove(name, chunk, hchunk, tptr);
     if (OK != rv)
     {
-        systemDatabase_->releaseDatabaseMutex();
+        if (takeLock) systemDatabase_->releaseDatabaseMutex();
         printError(ErrSysInternal, "Catalog table updation failed for INDEX table");
         return ErrSysInternal;
     }
@@ -748,7 +755,7 @@ DbRetVal DatabaseManagerImpl::dropIndex(const char *name)
     rv = cIndexField.remove(tptr);
     if (OK != rv)
     {
-        systemDatabase_->releaseDatabaseMutex();
+        if (takeLock) systemDatabase_->releaseDatabaseMutex();
         printError(ErrSysInternal, "Catalog table updation failed for INDEX table");
         return ErrSysInternal;
     }
@@ -758,7 +765,7 @@ DbRetVal DatabaseManagerImpl::dropIndex(const char *name)
     rv = deleteUserChunk((Chunk*)chunk);
     if (OK != rv)
     {
-        systemDatabase_->releaseDatabaseMutex();
+        if (takeLock) systemDatabase_->releaseDatabaseMutex();
         printError(ErrSysInternal, "Unable to delete the index chunk");
         return ErrSysInternal;
     }
@@ -766,11 +773,11 @@ DbRetVal DatabaseManagerImpl::dropIndex(const char *name)
     rv = deleteUserChunk((Chunk*)hchunk);
     if (OK != rv)
     {
-        systemDatabase_->releaseDatabaseMutex();
+        if (takeLock) systemDatabase_->releaseDatabaseMutex();
         printError(ErrSysInternal, "Unable to delete the index hash node chunk");
         return ErrSysInternal;
     }
-    systemDatabase_->releaseDatabaseMutex();
+    if (takeLock) systemDatabase_->releaseDatabaseMutex();
     //TODO::If tuples present in this table, then
     //free all hash index nodes for this table.
     //free all nodes in list of all buckets

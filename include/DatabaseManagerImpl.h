@@ -78,6 +78,7 @@ class DatabaseManagerImpl : public DatabaseManager
                         FieldNameList &fldList, int bucketSize);
     void initHashBuckets(Bucket *buck, int bucketSize);
 
+    DbRetVal dropIndexInt(const char *name, bool takeLock);
 
     public:
 
@@ -108,6 +109,7 @@ class DatabaseManagerImpl : public DatabaseManager
 
     DbRetVal registerThread();
     DbRetVal deregisterThread();
+
 
     friend class SessionImpl;
 };

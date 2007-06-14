@@ -87,6 +87,7 @@ class TransactionManager
 {
     public:
     TransactionManager() { trans = NULL; }
+    ~TransactionManager() {}
     Transaction *trans;
     Transaction *firstTrans;
 
