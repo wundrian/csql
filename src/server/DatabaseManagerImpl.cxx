@@ -485,6 +485,8 @@ DbRetVal DatabaseManagerImpl::dropTable(const char *name)
         idxName = cIndex.getIndexName(tptr, i);
         dropIndexInt(idxName, false);
     }
+    Chunk *chunkNode = systemDatabase_->getSystemDatabaseChunk(UserChunkTableId);
+    chunkNode->free(systemDatabase_, (Chunk *) chunk);
     systemDatabase_->releaseDatabaseMutex();
     printDebug(DM_Database, "Deleted Table %s" , name);
     logFinest(logger, "Deleted Table %s" , name);
@@ -778,10 +780,15 @@ DbRetVal DatabaseManagerImpl::dropIndexInt(const char *name, bool takeLock)
         return ErrSysInternal;
     }
     if (takeLock) systemDatabase_->releaseDatabaseMutex();
+    Chunk *chunkNode = systemDatabase_->getSystemDatabaseChunk(UserChunkTableId);
+    chunkNode->free(systemDatabase_, (Chunk *) chunk);
+    chunkNode->free(systemDatabase_, (Chunk *) hchunk);
+
     //TODO::If tuples present in this table, then
     //free all hash index nodes for this table.
     //free all nodes in list of all buckets
     //Take table lock
+
     printDebug(DM_Database, "Dropped hash index %s",name);
     logFinest(logger, "Deleted Index %s", name);
     return OK;
