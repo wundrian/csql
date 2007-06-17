@@ -47,6 +47,9 @@ class Database;
 class ProcessManager
 {
     public:
+    static int noThreads;
+    static caddr_t sysAddr;
+    static caddr_t usrAddr;
     Database *systemDatabase;
     ProcInfo *procInfo;
     ThreadInfo *thrInfo;
