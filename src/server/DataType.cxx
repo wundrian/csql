@@ -386,11 +386,13 @@ void AllDataType::copyVal(void* dest, void *src, DataType type, int length)
         case typeTimeStamp:
             *(TimeStamp*)dest = *(TimeStamp*)src;
             break;
-        case typeString:
-            strncpy((char*)dest, (char*)src, length);
-            char *d =(char*)dest;
-            d[length] = '\0';
-            break;
+        case typeString: 
+            {
+                strncpy((char*)dest, (char*)src, length);
+                char *d =(char*)dest;
+                d[length] = '\0';
+                break;
+            }
         case typeBinary:
             os::memcpy((char*)dest, (char*)src, length);
             break;
