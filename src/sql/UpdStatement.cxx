@@ -101,7 +101,7 @@ DbRetVal UpdStatement::setShortParam(int paramNo, short value)
 
     ConditionValue *cValue;
     UpdateFieldValue *uValue;
-    if (paramNo < totalAssignParams) {
+    if (paramNo <= totalAssignParams) {
         uValue = (UpdateFieldValue*) params[paramNo-1];
         *(short*)uValue->value = value; 
     } else {
@@ -120,10 +120,10 @@ DbRetVal UpdStatement::setIntParam(int paramNo, int value)
         printError(ErrSysFatal, "param not set. Should never happen");
         return ErrSysFatal;
     }
-
+    printf("PRABA::totalAssignParams %d\n", totalAssignParams);
     ConditionValue *cValue;
     UpdateFieldValue *uValue;
-    if (paramNo < totalAssignParams) {
+    if (paramNo <= totalAssignParams) {
         uValue = (UpdateFieldValue*) params[paramNo-1];
         *(int*)uValue->value = value; 
     } else {
@@ -144,7 +144,7 @@ DbRetVal UpdStatement::setLongParam(int paramNo, long value)
 
     ConditionValue *cValue;
     UpdateFieldValue *uValue;
-    if (paramNo < totalAssignParams) {
+    if (paramNo <= totalAssignParams) {
         uValue = (UpdateFieldValue*) params[paramNo-1];
         *(long*)uValue->value = value; 
     } else {
@@ -165,7 +165,7 @@ DbRetVal UpdStatement::setLongLongParam(int paramNo, long long value)
 
     ConditionValue *cValue;
     UpdateFieldValue *uValue;
-    if (paramNo < totalAssignParams) {
+    if (paramNo <= totalAssignParams) {
         uValue = (UpdateFieldValue*) params[paramNo-1];
         *(long long*)uValue->value = value; 
     } else {
@@ -186,7 +186,7 @@ DbRetVal UpdStatement::setByteIntParam(int paramNo, ByteInt value)
 
     ConditionValue *cValue;
     UpdateFieldValue *uValue;
-    if (paramNo < totalAssignParams) {
+    if (paramNo <= totalAssignParams) {
         uValue = (UpdateFieldValue*) params[paramNo-1];
         *(ByteInt*)uValue->value = value; 
     } else {
@@ -207,7 +207,7 @@ DbRetVal UpdStatement::setFloatParam(int paramNo, float value)
 
     ConditionValue *cValue;
     UpdateFieldValue *uValue;
-    if (paramNo < totalAssignParams) {
+    if (paramNo <= totalAssignParams) {
         uValue = (UpdateFieldValue*) params[paramNo-1];
         *(float*)uValue->value = value; 
     } else {
@@ -229,7 +229,7 @@ DbRetVal UpdStatement::setDoubleParam(int paramNo, double value)
 
     ConditionValue *cValue;
     UpdateFieldValue *uValue;
-    if (paramNo < totalAssignParams) {
+    if (paramNo <= totalAssignParams) {
         uValue = (UpdateFieldValue*) params[paramNo-1];
         *(double*)uValue->value = value; 
     } else {
@@ -250,7 +250,7 @@ DbRetVal UpdStatement::setStringParam(int paramNo, char *value)
 
     ConditionValue *cValue;
     UpdateFieldValue *uValue;
-    if (paramNo < totalAssignParams) {
+    if (paramNo <= totalAssignParams) {
         uValue = (UpdateFieldValue*) params[paramNo-1];
         strcpy((char*)uValue->value, value); 
     } else {
@@ -272,7 +272,7 @@ DbRetVal UpdStatement::setDateParam(int paramNo, Date value)
 
     ConditionValue *cValue;
     UpdateFieldValue *uValue;
-    if (paramNo < totalAssignParams) {
+    if (paramNo <= totalAssignParams) {
         uValue = (UpdateFieldValue*) params[paramNo-1];
         *(Date*)uValue->value = value; 
     } else {
@@ -293,7 +293,7 @@ DbRetVal UpdStatement::setTimeParam(int paramNo, Time value)
 
     ConditionValue *cValue;
     UpdateFieldValue *uValue;
-    if (paramNo < totalAssignParams) {
+    if (paramNo <= totalAssignParams) {
         uValue = (UpdateFieldValue*) params[paramNo-1];
         *(Time*)uValue->value = value; 
     } else {
@@ -315,7 +315,7 @@ DbRetVal UpdStatement::setTimeStampParam(int paramNo, TimeStamp value)
 
     ConditionValue *cValue;
     UpdateFieldValue *uValue;
-    if (paramNo < totalAssignParams) {
+    if (paramNo <= totalAssignParams) {
         uValue = (UpdateFieldValue*) params[paramNo-1];
         *(TimeStamp*)uValue->value = value; 
     } else {
