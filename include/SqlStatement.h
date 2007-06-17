@@ -129,10 +129,72 @@ class SqlStatement
     */
     DbRetVal getParamFldInfo(int paramPos, FieldInfo *&info);
 
+    /**Sets the value for the required parameter position in statement
+    * @param paramPos int - parameter position
+    * @param value short - value to be set 
+    */
+    void setShortParam(int paramPos, short value);
+    /**Sets the value for the required parameter position in statement
+    * @param paramPos int - parameter position
+    * @param value int - value to be set 
+    */
+    void setIntParam(int paramPos, int value);
+    /**Sets the value for the required parameter position in statement
+    * @param paramPos int - parameter position
+    * @param value long - value to be set 
+    */
+    void setLongParam(int paramPos, long value);
+    /**Sets the value for the required parameter position in statement
+    * @param paramPos int - parameter position
+    * @param value long long - value to be set 
+    */
+    void setLongLongParam(int paramPos, long long value);
+    /**Sets the value for the required parameter position in statement
+    * @param paramPos int - parameter position
+    * @param value ByteInt - value to be set 
+    */
+    void setByteIntParam(int paramPos, ByteInt value);
+    /**Sets the value for the required parameter position in statement
+    * @param paramPos int - parameter position
+    * @param value float - value to be set 
+    */
+    void setFloatParam(int paramPos, float value);
+    /**Sets the value for the required parameter position in statement
+    * @param paramPos int - parameter position
+    * @param value double - value to be set 
+    */
+    void setDoubleParam(int paramPos, double value);
+    /**Sets the value for the required parameter position in statement
+    * @param paramPos int - parameter position
+    * @param value char* - value to be set 
+    */
+    void setStringParam(int paramPos, char *value);
+    /**Sets the value for the required parameter position in statement
+    * @param paramPos int - parameter position
+    * @param value Date - value to be set 
+    */
+    void setDateParam(int paramPos, Date value);
+    /**Sets the value for the required parameter position in statement
+    * @param paramPos int - parameter position
+    * @param value Time - value to be set 
+    */
+    void setTimeParam(int paramPos, Time value);
+    /**Sets the value for the required parameter position in statement
+    * @param paramPos int - parameter position
+    * @param value TimeStamp - value to be set 
+    */
+    void setTimeStampParam(int paramPos, TimeStamp value);
+
+    /**Returns whether the statement prepared is select statement
+    * @return bool true if it is select stmt, false otherwise
+    */
+    bool isSelect();
+
     private:
     SqlConnection *con;
     Statement *stmt;
     ParsedData pData;
+
 };
 
 #endif

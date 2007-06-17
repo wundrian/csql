@@ -986,3 +986,266 @@ void AllDataType::strToValue(void* dest, char *src, DataType type)
 }
 
 
+void AllDataType::convert(DataType srcType, void *src, 
+                          DataType destType, void *dest)
+{
+    switch ((DataType) destType )
+    {
+        case typeInt:        convertToInt(dest, src, srcType); break;
+        case typeLong:       convertToLong(dest, src, srcType); break;
+        case typeLongLong:   convertToLongLong(dest, src, srcType); break;
+        case typeShort:      convertToShort(dest, src, srcType); break;
+        case typeByteInt:    convertToByteInt(dest, src, srcType); break;
+
+        case typeFloat:      convertToFloat(dest, src, srcType); break;
+        case typeDouble:     convertToDouble(dest, src, srcType); break;
+
+        //TODO 
+        case typeDecimal:    convertToDouble(dest, src, srcType); break;
+
+        case typeString:     convertToString(dest, src, srcType); break;
+
+        case typeBinary:
+        case typeDate:
+        case typeTime:
+        case typeTimeStamp:
+        default: return;
+    }
+}
+
+void AllDataType::convertToInt( void* dest, void* src, DataType srcType )
+{
+    switch(srcType)
+    {
+        case typeInt:        *(int *)dest = *(int *)src; break;
+        case typeLong:       *(int *)dest =(int) *(long *)src; break;
+        case typeLongLong:   *(int *)dest =(int) *(long long *)src; break;
+        case typeShort:      *(int *)dest =(int) *(short *)src; break;
+        case typeByteInt:    *(int *)dest =(int) *(char *)src; break;
+
+        case typeFloat:      *(int *)dest = (int) *(float *)src; break;
+        case typeDouble:     *(int *)dest =(int) *(double *)src; break;
+
+        case typeString:     sscanf((const char*)src, "%d", (int*) dest); break;
+
+        case typeDate:
+        case typeTime:
+        case typeTimeStamp:
+        case typeBinary:
+        default:             *(int *)dest = (int) 0;
+    }
+}
+
+void AllDataType::convertToLong( void* dest, void* src, DataType srcType )
+{
+    switch(srcType)
+    {
+        case typeInt:        *(long *)dest =(long) *(int *)src; break;
+        case typeLong:       *(long *)dest = *(long *)src; break;
+        case typeLongLong:   *(long *)dest =(long) *(long long *)src; break;
+        case typeShort:      *(long *)dest =(long) *(short *)src; break;
+        case typeByteInt:    *(long *)dest =(long) *(char *)src; break;
+
+        case typeFloat:      *(long *)dest = (long) *(float *)src; break;
+        case typeDouble:     *(long *)dest =(long) *(double *)src; break;
+
+        case typeString:     sscanf((const char*)src, "%ld", (long*) dest); break;
+
+        case typeDate:
+        case typeTime:
+        case typeTimeStamp:
+        case typeBinary:
+        default:             *(long *)dest = (long) 0;
+    }
+}
+
+
+void AllDataType::convertToLongLong( void* dest, void* src, DataType srcType )
+{
+    switch(srcType)
+    {
+        case typeInt:        *(long long *)dest =(long long) *(int *)src; break;
+        case typeLong:       *(long long *)dest = (long long) *(long *)src; break;
+        case typeLongLong:   *(long long *)dest = *(long long *)src; break;
+        case typeShort:      *(long long *)dest =(long long) *(short *)src; break;
+        case typeByteInt:    *(long long *)dest =(long long) *(char *)src; break;
+
+        case typeFloat:      *(long long *)dest = (long long) *(float *)src; break;
+        case typeDouble:     *(long long *)dest =(long long) *(double *)src; break;
+
+        case typeString:     sscanf((const char*)src, "%lld", (long long*) dest); break;
+
+        case typeDate:
+        case typeTime:
+        case typeTimeStamp:
+        case typeBinary:
+        default:             *(long long *)dest = (long long) 0;
+    }
+}
+
+void AllDataType::convertToShort( void* dest, void* src, DataType srcType )
+{
+    switch(srcType)
+    {
+        case typeInt:        *(short*)dest =(short) *(int*)src; break;
+        case typeLong:       *(short*)dest = (short) *(long*)src; break;
+        case typeLongLong:   *(short*)dest = (short) *(long long*)src; break;
+        case typeShort:      *(short*)dest = *(short*)src; break;
+        case typeByteInt:    *(short*)dest =(short) *(char *)src; break;
+
+        case typeFloat:      *(short*)dest = (short) *(float *)src; break;
+        case typeDouble:     *(short*)dest =(short) *(double *)src; break;
+
+        case typeString:     sscanf((const char*)src, "%hd", (short*) dest); break;
+
+        case typeDate:
+        case typeTime:
+        case typeTimeStamp:
+        case typeBinary:
+        default:             *(short*)dest = (short) 0;
+    }
+}
+
+void AllDataType::convertToByteInt( void* dest, void* src, DataType srcType )
+{
+    switch(srcType)
+    {
+        case typeInt:        *(char*)dest = (char) *(int*)src; break;
+        case typeLong:       *(char*)dest = (char) *(long*)src; break;
+        case typeLongLong:   *(char*)dest = (char) *(long long*)src; break;
+        case typeShort:      *(char*)dest = (char) *(short*)src; break;
+        case typeByteInt:    *(char*)dest = *(char *)src; break;
+
+        case typeFloat:      *(char*)dest = (char) *(float *)src; break;
+        case typeDouble:     *(char*)dest =(char) *(double *)src; break;
+
+        case typeString:     sscanf((const char*)src, "%c", (char*) dest); break;
+
+        case typeDate:
+        case typeTime:
+        case typeTimeStamp:
+        case typeBinary:
+        default:             *(char*)dest = (char) 0;
+    }
+}
+
+void AllDataType::convertToFloat( void* dest, void* src, DataType srcType )
+{
+    switch(srcType)
+    {
+        case typeInt:        *(float *)dest =(float) *(int *)src; break;
+        case typeLong:       *(float *)dest =(float) *(long *)src; break;
+        case typeLongLong:   *(float *)dest =(float) *(long long *)src; break;
+        case typeShort:      *(float *)dest =(float) *(short *)src; break;
+        case typeByteInt:    *(float *)dest =(float) *(char *)src; break;
+
+        case typeFloat:      *(float *)dest = *(float *)src; break;
+        case typeDouble:     *(float *)dest =(float) *(double *)src; break;
+
+        case typeString:     sscanf((const char*)src, "%f", (float*) dest); break;
+
+        case typeDate:
+        case typeTime:
+        case typeTimeStamp:
+        case typeBinary:
+        default:             *(float *)dest = (float) 0;
+    }
+}
+
+void AllDataType::convertToDouble( void* dest, void* src, DataType srcType )
+{
+    switch(srcType)
+    {
+        case typeInt:        *(double *)dest =(double) *(int *)src; break;
+        case typeLong:       *(double *)dest =(double) *(long *)src; break;
+        case typeLongLong:   *(double *)dest =(double) *(long long *)src; break;
+        case typeShort:      *(double *)dest =(double) *(short *)src; break;
+        case typeByteInt:    *(double *)dest =(double) *(char *)src; break;
+
+        case typeFloat:      *(double *)dest =(double) *(float *)src; break;
+        case typeDouble:     *(double *)dest = *(double *)src; break;
+
+        case typeString:     sscanf((const char*)src, "%lf", (double*) dest); break;
+
+        case typeDate:
+        case typeTime:
+        case typeTimeStamp:
+        case typeBinary:
+        default:             *(double *)dest = (double) 0;
+    }
+}
+
+void AllDataType::convertToString( void* dest, void* src, DataType srcType )
+{
+    switch(srcType)
+    {
+        case typeInt:
+        {
+            sprintf ((char *)dest, "%d", *(int *)src); 
+            break;
+        }
+        case typeLong:
+        {
+            sprintf ((char *)dest, "%ld", *(long *)src);
+            break;
+        }
+        case typeLongLong:
+        {
+            sprintf ((char *)dest, "%lld", *(long long *)src); 
+            break;
+        }
+        case typeShort:
+        {
+            sprintf ((char *)dest, "%hd", *(short *)src); 
+            break;
+        }
+        case typeByteInt:
+        {
+            sprintf ((char *)dest, "%hd", *(char *)src); 
+            break;
+        }
+
+        case typeFloat:
+        {
+            sprintf ((char *)dest, "%f", *(float *)src);
+            break;
+        }
+        case typeDouble:
+        {
+            sprintf ((char *) dest, "%lf", *(double *)src); 
+            break;
+        }
+
+        case typeString:
+        {
+            strcpy((char*)dest, (char*)src);
+            break;
+        }
+        case typeDate:
+        {
+            Date* dt = (Date*)src;
+            sprintf((char*) dest, "%d/%d/%d", dt->dayOfMonth(),
+                                  dt->month(), dt->year());
+            break;
+        }
+        case typeTime:
+        {
+            Time* tm = (Time*)src;
+            sprintf((char*)dest,"%d:%d:%d.%d", tm->hours(), tm->minutes(), tm->seconds(), 0);
+            break;
+        }
+        case typeTimeStamp:
+        {
+            TimeStamp* tm = (TimeStamp*)src;
+            sprintf((char*)dest, "%d/%d/%d %d:%d:%d.%d", tm->dayOfMonth(),
+                                tm->month(), tm->year(), tm->hours(),
+                                tm->minutes(), tm->seconds(), 0 );
+            break;
+        }
+        default: ((char*)dest)[0] = '\0';
+    }
+
+}
+
+
+

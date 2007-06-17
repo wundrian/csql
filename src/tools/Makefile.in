@@ -51,8 +51,8 @@ binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am_csql_OBJECTS = isql.$(OBJEXT)
 csql_OBJECTS = $(am_csql_OBJECTS)
-csql_DEPENDENCIES = $(top_builddir)/src/server/libcsql.la \
-	$(top_builddir)/src/sql/libcsqlsql.la
+csql_DEPENDENCIES = $(top_builddir)/src/server/.libs/libcsql \
+	$(top_builddir)/src/sql/.libs/libcsqlsql
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -178,7 +178,7 @@ target_alias = @target_alias@
 INCLUDES = -I$(top_srcdir)/include $(all_includes) -I$(top_srcdir)/src/sql
 METASOURCES = AUTO
 csql_SOURCES = isql.cxx
-csql_LDADD = $(top_builddir)/src/server/libcsql.la $(top_builddir)/src/sql/libcsqlsql.la -lrt -lpthread -lcrypt
+csql_LDADD = $(top_builddir)/src/server/.libs/libcsql $(top_builddir)/src/sql/.libs/libcsqlsql -lrt -lpthread -lcrypt
 all: all-am
 
 .SUFFIXES:

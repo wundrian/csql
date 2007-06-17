@@ -46,6 +46,20 @@ class Statement
 
     virtual DbRetVal execute(int &rowsAffected)=0;
     virtual DbRetVal setParam(int paramNo, void *value)=0;
+
+    virtual DbRetVal setShortParam(int paramNo, short value)=0;
+    virtual DbRetVal setIntParam(int paramNo, int value)=0;
+    virtual DbRetVal setLongParam(int paramNo, long value)=0;
+    virtual DbRetVal setLongLongParam(int paramNo, long long value)=0;
+    virtual DbRetVal setByteIntParam(int paramNo, ByteInt value)=0;
+    virtual DbRetVal setFloatParam(int paramNo, float value)=0;
+    virtual DbRetVal setDoubleParam(int paramNo, double value)=0;
+    virtual DbRetVal setStringParam(int paramNo, char *value)=0;
+    virtual DbRetVal setDateParam(int paramNo, Date value)=0;
+    virtual DbRetVal setTimeParam(int paramNo, Time value)=0;
+    virtual DbRetVal setTimeStampParam(int paramNo, TimeStamp value)=0;
+
+
     virtual DbRetVal resolve()=0;
     virtual ~Statement(){}
 };
@@ -54,6 +68,19 @@ class InsStatement : public Statement
     public:
     DbRetVal execute(int &rowsAffected);
     DbRetVal setParam(int paramNo, void *value);
+
+    DbRetVal setShortParam(int paramNo, short value);
+    DbRetVal setIntParam(int paramNo, int value);
+    DbRetVal setLongParam(int paramNo, long value);
+    DbRetVal setLongLongParam(int paramNo, long long value);
+    DbRetVal setByteIntParam(int paramNo, ByteInt value);
+    DbRetVal setFloatParam(int paramNo, float value);
+    DbRetVal setDoubleParam(int paramNo, double value);
+    DbRetVal setStringParam(int paramNo, char *value);
+    DbRetVal setDateParam(int paramNo, Date value);
+    DbRetVal setTimeParam(int paramNo, Time value);
+    DbRetVal setTimeStampParam(int paramNo, TimeStamp value);
+
     DbRetVal resolve();
     InsStatement();
     ~InsStatement();
@@ -74,6 +101,20 @@ class SelStatement : public Statement
 
     DbRetVal execute(int &rowsAffected);
     DbRetVal setParam(int paramNo, void *value);
+
+    DbRetVal setShortParam(int paramNo, short value);
+    DbRetVal setIntParam(int paramNo, int value);
+    DbRetVal setLongParam(int paramNo, long value);
+    DbRetVal setLongLongParam(int paramNo, long long value);
+    DbRetVal setByteIntParam(int paramNo, ByteInt value);
+    DbRetVal setFloatParam(int paramNo, float value);
+    DbRetVal setDoubleParam(int paramNo, double value);
+    DbRetVal setStringParam(int paramNo, char *value);
+    DbRetVal setDateParam(int paramNo, Date value);
+    DbRetVal setTimeParam(int paramNo, Time value);
+    DbRetVal setTimeStampParam(int paramNo, TimeStamp value);
+
+
     DbRetVal resolve();
     SelStatement();
     ~SelStatement();
@@ -92,6 +133,21 @@ class UpdStatement : public Statement
     public:
     DbRetVal execute(int &rowsAffected);
     DbRetVal setParam(int paramNo, void *value);
+
+    DbRetVal setShortParam(int paramNo, short value);
+    DbRetVal setIntParam(int paramNo, int value);
+    DbRetVal setLongParam(int paramNo, long value);
+    DbRetVal setLongLongParam(int paramNo, long long value);
+    DbRetVal setByteIntParam(int paramNo, ByteInt value);
+    DbRetVal setFloatParam(int paramNo, float value);
+    DbRetVal setDoubleParam(int paramNo, double value);
+    DbRetVal setStringParam(int paramNo, char *value);
+    DbRetVal setDateParam(int paramNo, Date value);
+    DbRetVal setTimeParam(int paramNo, Time value);
+    DbRetVal setTimeStampParam(int paramNo, TimeStamp value);
+
+
+
     DbRetVal resolve();
     UpdStatement();
     ~UpdStatement();
@@ -104,6 +160,20 @@ class DelStatement : public Statement
     public:
     DbRetVal execute(int &rowsAffected);
     DbRetVal setParam(int paramNo, void *value);
+
+    DbRetVal setShortParam(int paramNo, short value);
+    DbRetVal setIntParam(int paramNo, int value);
+    DbRetVal setLongParam(int paramNo, long value);
+    DbRetVal setLongLongParam(int paramNo, long long value);
+    DbRetVal setByteIntParam(int paramNo, ByteInt value);
+    DbRetVal setFloatParam(int paramNo, float value);
+    DbRetVal setDoubleParam(int paramNo, double value);
+    DbRetVal setStringParam(int paramNo, char *value);
+    DbRetVal setDateParam(int paramNo, Date value);
+    DbRetVal setTimeParam(int paramNo, Time value);
+    DbRetVal setTimeStampParam(int paramNo, TimeStamp value);
+
+
     DbRetVal resolve();
     DelStatement();
     ~DelStatement();

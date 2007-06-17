@@ -22,9 +22,9 @@ class Session;
 
 enum IsolationLevel
 {
-    READ_UNCOMMITTED,
-    READ_COMMITTED,
-    READ_REPEATABLE
+    READ_UNCOMMITTED = 1,
+    READ_COMMITTED = 2,
+    READ_REPEATABLE = 3
 };
 
 /**

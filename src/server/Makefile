@@ -70,7 +70,7 @@ binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am_csqlserver_OBJECTS = Server.$(OBJEXT)
 csqlserver_OBJECTS = $(am_csqlserver_OBJECTS)
-csqlserver_DEPENDENCIES = $(top_builddir)/src/server/libcsql.la
+csqlserver_DEPENDENCIES = $(top_builddir)/src/server/.libs/libcsql
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -196,7 +196,7 @@ target_alias =
 INCLUDES = -I$(top_srcdir)/include $(all_includes)
 METASOURCES = AUTO
 lib_LTLIBRARIES = libcsql.la
-libcsql_la_LDFLAGS = -module
+libcsql_la_LDFLAGS = -avoid-version -module
 libcsql_la_SOURCES = BucketIter.cxx BucketList.cxx CatalogTables.cxx Chunk.cxx \
 	ChunkIterator.cxx Condition.cxx Connection.cxx Database.cxx DatabaseManagerImpl.cxx DataType.cxx \
 	Debug.cxx FieldList.cxx Index.cxx LockListIter.cxx LockManager.cxx Logger.cxx Mutex.cxx os.cxx \
@@ -204,7 +204,7 @@ libcsql_la_SOURCES = BucketIter.cxx BucketList.cxx CatalogTables.cxx Chunk.cxx \
 	TransactionManager.cxx TupleIterator.cxx UserManagerImpl.cxx HashIndex.cxx Config.cxx Process.cxx
 
 csqlserver_SOURCES = Server.cxx 
-csqlserver_LDADD = $(top_builddir)/src/server/libcsql.la -lrt -lpthread -lcrypt
+csqlserver_LDADD = $(top_builddir)/src/server/.libs/libcsql -lrt -lpthread -lcrypt
 all: all-am
 
 .SUFFIXES:

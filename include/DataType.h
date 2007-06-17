@@ -99,6 +99,18 @@ class AllDataType
     static bool compareBinaryVal(void* src1, void* src2,
                                  ComparisionOp op, int length);
 
+
+    static void convert(DataType srcType, void *src, DataType destType, void *dest);
+    static void convertToInt(void* dest, void* src, DataType srcType);
+    static void convertToLong(void* dest, void* src, DataType srcType);
+    static void convertToLongLong(void* dest, void* src, DataType srcType);
+    static void convertToShort(void* dest, void* src, DataType srcType);
+    static void convertToByteInt(void* dest, void* src, DataType srcType);
+    static void convertToFloat(void* dest, void* src, DataType srcType);
+    static void convertToDouble(void* dest, void* src, DataType srcType);
+    static void convertToString(void* dest, void* src, DataType srcType);
+
+
     static ComparisionOp getComparisionOperator(char *str);
 
     static void* alloc(DataType type);

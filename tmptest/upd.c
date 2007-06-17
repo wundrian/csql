@@ -9,7 +9,7 @@ int main()
     stmt->setConnection(con);
     char statement[1024];
     //strcpy(statement, "UPDATE t1 SET f2 = 299 WHERE f1 >97");
-    strcpy(statement, "UPDATE t1 SET f2=? WHERE f1 > ?");
+    strcpy(statement, "UPDATE t1 SET f1=? WHERE f2 > ?");
     int rows =0;
     rv = stmt->prepare(statement);
     if (rv != OK) {delete stmt; delete con; return 1; }

@@ -49,16 +49,18 @@ DbRetVal UpdStatement::execute(int &rowsAffected)
             uValue = (UpdateFieldValue*) params[i];
             if (paramValues[i] == NULL) 
             {
-                printError(ErrBadCall, "param values not set");
-                return ErrBadCall;
+                continue;
+                //printError(ErrBadCall, "param values not set");
+                //return ErrBadCall;
             }
             AllDataType::copyVal(uValue->value, paramValues[i], uValue->type, uValue->length);
         } else {
             cValue = (ConditionValue*) params[i];
             if (paramValues[i] == NULL) 
             {
-                printError(ErrBadCall, "param values not set");
-                return ErrBadCall;
+                continue;
+                //printError(ErrBadCall, "param values not set");
+                //return ErrBadCall;
             }
             AllDataType::copyVal(cValue->value, paramValues[i], cValue->type, cValue->length);
         }
@@ -88,6 +90,240 @@ DbRetVal UpdStatement::setParam(int paramNo, void *value)
     return OK;
 }
 
+DbRetVal UpdStatement::setShortParam(int paramNo, short value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    if (NULL == params[paramNo-1])
+    {
+        printError(ErrSysFatal, "param not set. Should never happen");
+        return ErrSysFatal;
+    }
+
+    ConditionValue *cValue;
+    UpdateFieldValue *uValue;
+    if (paramNo < totalAssignParams) {
+        uValue = (UpdateFieldValue*) params[paramNo-1];
+        *(short*)uValue->value = value; 
+    } else {
+        cValue = (ConditionValue*) params[paramNo-1];
+        *(short*)cValue->value = value;
+    }
+    return OK;
+}
+
+
+DbRetVal UpdStatement::setIntParam(int paramNo, int value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    if (NULL == params[paramNo-1])
+    {
+        printError(ErrSysFatal, "param not set. Should never happen");
+        return ErrSysFatal;
+    }
+
+    ConditionValue *cValue;
+    UpdateFieldValue *uValue;
+    if (paramNo < totalAssignParams) {
+        uValue = (UpdateFieldValue*) params[paramNo-1];
+        *(int*)uValue->value = value; 
+    } else {
+        cValue = (ConditionValue*) params[paramNo-1];
+        *(int*)cValue->value = value;
+    }
+    return OK;
+}
+
+DbRetVal UpdStatement::setLongParam(int paramNo, long value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    if (NULL == params[paramNo-1])
+    {
+        printError(ErrSysFatal, "param not set. Should never happen");
+        return ErrSysFatal;
+    }
+
+    ConditionValue *cValue;
+    UpdateFieldValue *uValue;
+    if (paramNo < totalAssignParams) {
+        uValue = (UpdateFieldValue*) params[paramNo-1];
+        *(long*)uValue->value = value; 
+    } else {
+        cValue = (ConditionValue*) params[paramNo-1];
+        *(long*)cValue->value = value;
+    }
+    return OK;
+}
+
+DbRetVal UpdStatement::setLongLongParam(int paramNo, long long value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    if (NULL == params[paramNo-1])
+    {
+        printError(ErrSysFatal, "param not set. Should never happen");
+        return ErrSysFatal;
+    }
+
+    ConditionValue *cValue;
+    UpdateFieldValue *uValue;
+    if (paramNo < totalAssignParams) {
+        uValue = (UpdateFieldValue*) params[paramNo-1];
+        *(long long*)uValue->value = value; 
+    } else {
+        cValue = (ConditionValue*) params[paramNo-1];
+        *(long long*)cValue->value = value;
+    }
+    return OK;
+}
+
+DbRetVal UpdStatement::setByteIntParam(int paramNo, ByteInt value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    if (NULL == params[paramNo-1])
+    {
+        printError(ErrSysFatal, "param not set. Should never happen");
+        return ErrSysFatal;
+    }
+
+    ConditionValue *cValue;
+    UpdateFieldValue *uValue;
+    if (paramNo < totalAssignParams) {
+        uValue = (UpdateFieldValue*) params[paramNo-1];
+        *(ByteInt*)uValue->value = value; 
+    } else {
+        cValue = (ConditionValue*) params[paramNo-1];
+        *(ByteInt*)cValue->value = value;
+    }
+    return OK;
+}
+
+DbRetVal UpdStatement::setFloatParam(int paramNo, float value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    if (NULL == params[paramNo-1])
+    {
+        printError(ErrSysFatal, "param not set. Should never happen");
+        return ErrSysFatal;
+    }
+
+    ConditionValue *cValue;
+    UpdateFieldValue *uValue;
+    if (paramNo < totalAssignParams) {
+        uValue = (UpdateFieldValue*) params[paramNo-1];
+        *(float*)uValue->value = value; 
+    } else {
+        cValue = (ConditionValue*) params[paramNo-1];
+        *(float*)cValue->value = value;
+    }
+    return OK;
+}
+
+
+DbRetVal UpdStatement::setDoubleParam(int paramNo, double value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    if (NULL == params[paramNo-1])
+    {
+        printError(ErrSysFatal, "param not set. Should never happen");
+        return ErrSysFatal;
+    }
+
+    ConditionValue *cValue;
+    UpdateFieldValue *uValue;
+    if (paramNo < totalAssignParams) {
+        uValue = (UpdateFieldValue*) params[paramNo-1];
+        *(double*)uValue->value = value; 
+    } else {
+        cValue = (ConditionValue*) params[paramNo-1];
+        *(double*)cValue->value = value;
+    }
+    return OK;
+}
+
+DbRetVal UpdStatement::setStringParam(int paramNo, char *value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    if (NULL == params[paramNo-1])
+    {
+        printError(ErrSysFatal, "param not set. Should never happen");
+        return ErrSysFatal;
+    }
+
+    ConditionValue *cValue;
+    UpdateFieldValue *uValue;
+    if (paramNo < totalAssignParams) {
+        uValue = (UpdateFieldValue*) params[paramNo-1];
+        strcpy((char*)uValue->value, value); 
+    } else {
+        cValue = (ConditionValue*) params[paramNo-1];
+        strcpy((char*)cValue->value, value);
+    }
+    return OK;
+}
+
+
+DbRetVal UpdStatement::setDateParam(int paramNo, Date value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    if (NULL == params[paramNo-1])
+    {
+        printError(ErrSysFatal, "param not set. Should never happen");
+        return ErrSysFatal;
+    }
+
+    ConditionValue *cValue;
+    UpdateFieldValue *uValue;
+    if (paramNo < totalAssignParams) {
+        uValue = (UpdateFieldValue*) params[paramNo-1];
+        *(Date*)uValue->value = value; 
+    } else {
+        cValue = (ConditionValue*) params[paramNo-1];
+        *(Date*)cValue->value = value;
+    }
+    return OK;
+}
+
+DbRetVal UpdStatement::setTimeParam(int paramNo, Time value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    if (NULL == params[paramNo-1])
+    {
+        printError(ErrSysFatal, "param not set. Should never happen");
+        return ErrSysFatal;
+    }
+
+    ConditionValue *cValue;
+    UpdateFieldValue *uValue;
+    if (paramNo < totalAssignParams) {
+        uValue = (UpdateFieldValue*) params[paramNo-1];
+        *(Time*)uValue->value = value; 
+    } else {
+        cValue = (ConditionValue*) params[paramNo-1];
+        *(Time*)cValue->value = value;
+    }
+    return OK;
+}
+
+
+DbRetVal UpdStatement::setTimeStampParam(int paramNo, TimeStamp value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    if (NULL == params[paramNo-1])
+    {
+        printError(ErrSysFatal, "param not set. Should never happen");
+        return ErrSysFatal;
+    }
+
+    ConditionValue *cValue;
+    UpdateFieldValue *uValue;
+    if (paramNo < totalAssignParams) {
+        uValue = (UpdateFieldValue*) params[paramNo-1];
+        *(TimeStamp*)uValue->value = value; 
+    } else {
+        cValue = (ConditionValue*) params[paramNo-1];
+        *(TimeStamp*)cValue->value = value;
+    }
+    return OK;
+}
 
 DbRetVal UpdStatement::resolve()
 {
@@ -192,6 +428,9 @@ DbRetVal UpdStatement::resolveForAssignment()
     if (0 == totalParams) return OK;
     params = (void**) malloc ( totalParams * sizeof(FieldValue*));
     paramValues = (char**) malloc( totalParams * sizeof(char*));
+
+    memset(params, 0, totalParams * sizeof(FieldValue*));
+    memset(paramValues, 0, totalParams * sizeof(char*));
 
     iter.reset();
     while(iter.hasElement())

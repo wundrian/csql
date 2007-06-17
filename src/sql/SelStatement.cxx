@@ -56,8 +56,9 @@ DbRetVal SelStatement::execute(int &rowsAffected)
         value = (ConditionValue*) params[i];
         if (paramValues[i] == NULL) 
         {
-            printError(ErrBadCall, "param values not set");
-            return ErrBadCall;
+            continue;
+            //printError(ErrBadCall, "param values not set");
+            //return ErrBadCall;
         }
         AllDataType::copyVal(value->value, paramValues[i], value->type, value->length);
     }
@@ -70,6 +71,141 @@ DbRetVal SelStatement::setParam(int paramNo, void *value)
     if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
     if (NULL == value) return ErrBadArg;
     paramValues[paramNo -1] = (char*) value; 
+    return OK;
+}
+
+DbRetVal SelStatement::setShortParam(int paramNo, short value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    ConditionValue *cValue = (ConditionValue*) params [paramNo-1];
+    if (NULL == cValue)
+    {
+        printError(ErrSysFatal, "field value is null. Should never happen");
+        return ErrSysFatal;
+    }
+    *(short*)cValue->value = value; 
+    return OK;
+}
+
+DbRetVal SelStatement::setIntParam(int paramNo, int value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    ConditionValue *cValue = (ConditionValue*) params [paramNo-1];
+    if (NULL == cValue)
+    {
+        printError(ErrSysFatal, "condition value is null. Should never happen");
+        return ErrSysFatal;
+    }
+    *(int*)cValue->value = value; 
+    return OK;
+}
+DbRetVal SelStatement::setLongParam(int paramNo, long value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    ConditionValue *cValue = (ConditionValue*) params [paramNo-1];
+    if (NULL == cValue)
+    {
+        printError(ErrSysFatal, "condition value is null. Should never happen");
+        return ErrSysFatal;
+    }
+    *(long*)cValue->value = value; 
+    return OK;
+}
+
+DbRetVal SelStatement::setLongLongParam(int paramNo, long long value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    ConditionValue *cValue = (ConditionValue*) params [paramNo-1];
+    if (NULL == cValue)
+    {
+        printError(ErrSysFatal, "condition value is null. Should never happen");
+        return ErrSysFatal;
+    }
+    *(long long*)cValue->value = value; 
+    return OK;
+}
+DbRetVal SelStatement::setByteIntParam(int paramNo, ByteInt value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    ConditionValue *cValue = (ConditionValue*) params [paramNo-1];
+    if (NULL == cValue)
+    {
+        printError(ErrSysFatal, "condition value is null. Should never happen");
+        return ErrSysFatal;
+    }
+    *(ByteInt*)cValue->value = value; 
+    return OK;
+}
+DbRetVal SelStatement::setFloatParam(int paramNo, float value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    ConditionValue *cValue = (ConditionValue*) params [paramNo-1];
+    if (NULL == cValue)
+    {
+        printError(ErrSysFatal, "condition value is null. Should never happen");
+        return ErrSysFatal;
+    }
+    *(float*)cValue->value = value; 
+    return OK;
+}
+DbRetVal SelStatement::setDoubleParam(int paramNo, double value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    ConditionValue *cValue = (ConditionValue*) params [paramNo-1];
+    if (NULL == cValue)
+    {
+        printError(ErrSysFatal, "condition value is null. Should never happen");
+        return ErrSysFatal;
+    }
+    *(double*)cValue->value = value; 
+    return OK;
+}
+DbRetVal SelStatement::setStringParam(int paramNo, char *value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    ConditionValue *cValue = (ConditionValue*) params [paramNo-1];
+    if (NULL == cValue)
+    {
+        printError(ErrSysFatal, "condition value is null. Should never happen");
+        return ErrSysFatal;
+    }
+    strcpy((char*)cValue->value, value);
+    return OK;
+}
+DbRetVal SelStatement::setDateParam(int paramNo, Date value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    ConditionValue *cValue = (ConditionValue*) params [paramNo-1];
+    if (NULL == cValue)
+    {
+        printError(ErrSysFatal, "condition value is null. Should never happen");
+        return ErrSysFatal;
+    }
+    *(Date*)cValue->value = value; 
+    return OK;
+}
+DbRetVal SelStatement::setTimeParam(int paramNo, Time value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    ConditionValue *cValue = (ConditionValue*) params [paramNo-1];
+    if (NULL == cValue)
+    {
+        printError(ErrSysFatal, "condition value is null. Should never happen");
+        return ErrSysFatal;
+    }
+    *(Time*)cValue->value = value; 
+    return OK;
+}
+DbRetVal SelStatement::setTimeStampParam(int paramNo, TimeStamp value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    ConditionValue *cValue = (ConditionValue*) params [paramNo-1];
+    if (NULL == cValue)
+    {
+        printError(ErrSysFatal, "condition value is null. Should never happen");
+        return ErrSysFatal;
+    }
+    *(TimeStamp*)cValue->value = value;
     return OK;
 }
 
@@ -191,6 +327,8 @@ DbRetVal SelStatement::setBindFieldAndValues()
     totalFields = table->getFieldNameList().size();
     bindFields = (FieldValue**) malloc ( totalFields * sizeof(FieldValue*));
     bindFieldValues = (char**) malloc( totalFields * sizeof(char*));
+    memset(bindFields, 0, totalFields * sizeof(FieldValue*));
+    memset(bindFieldValues, 0, totalFields * sizeof(char*));
     ListIterator valIter = parsedData->getFieldValueList().getIterator();
     int colNo =0;
     FieldValue *value = NULL;
@@ -256,6 +394,8 @@ DbRetVal SelStatement::resolveForCondition()
     if (0 == totalParams) return OK;
     params = (void**) malloc ( totalParams * sizeof(FieldValue*));
     paramValues = (char**) malloc( totalParams * sizeof(char*));
+    memset(params, 0, totalParams * sizeof(FieldValue*));
+    memset(paramValues, 0, totalParams * sizeof(char*));
     iter.reset();
     while(iter.hasElement())
     {

@@ -42,17 +42,26 @@ DbRetVal SqlStatement::prepare(char *stmtstr)
     if (rc != 0) 
     {
         free();
+        parsedData = NULL;
         return ErrSyntaxError;
     }
     stmt = StatementFactory::getStatement(parsedData);
     stmt->setDbMgr(con->getConnObject().getDatabaseManager());
     rv = stmt->resolve();
-    if (rv == ErrSyntaxError)
+    if (rv != OK)
     {
         free();
+        parsedData = NULL;
+        return rv;
     }
     parsedData = NULL;
-    return rv;
+    return OK;
+}
+
+bool SqlStatement::isSelect()
+{
+    if (pData.getStmtType() == SelectStatement) return true;
+    return false;
 }
 
 DbRetVal SqlStatement::execute(int &rowsAffected)
@@ -123,3 +132,49 @@ DbRetVal SqlStatement::free()
     stmt = NULL;
     pData.reset();
 }
+
+void SqlStatement::setShortParam(int paramPos, short value)
+{
+    stmt->setShortParam(paramPos, value);
+}
+void SqlStatement::setIntParam(int paramPos, int value)
+{
+    stmt->setIntParam(paramPos, value);
+}
+void SqlStatement::setLongParam(int paramPos, long value)
+{
+    stmt->setLongParam(paramPos, value);
+}
+void SqlStatement::setLongLongParam(int paramPos, long long value)
+{
+    stmt->setLongLongParam(paramPos, value);
+}
+void SqlStatement::setByteIntParam(int paramPos, ByteInt value)
+{
+    stmt->setByteIntParam(paramPos, value);
+}
+void SqlStatement::setFloatParam(int paramPos, float value)
+{
+    stmt->setFloatParam(paramPos, value);
+}
+void SqlStatement::setDoubleParam(int paramPos, double value)
+{
+    stmt->setDoubleParam(paramPos, value);
+}
+void SqlStatement::setStringParam(int paramPos, char *value)
+{
+    stmt->setStringParam(paramPos, value);
+}
+void SqlStatement::setDateParam(int paramPos, Date value)
+{
+    stmt->setDateParam(paramPos, value);
+}
+void SqlStatement::setTimeParam(int paramPos, Time value)
+{
+    stmt->setTimeParam(paramPos, value);
+}
+void SqlStatement::setTimeStampParam(int paramPos, TimeStamp value)
+{
+    stmt->setTimeStampParam(paramPos, value);
+}
+

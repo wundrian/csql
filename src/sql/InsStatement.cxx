@@ -46,8 +46,9 @@ DbRetVal InsStatement::execute(int &rowsAffected)
         value = (FieldValue*) params[i];
         if (paramValues[i] == NULL) 
         {
-            printError(ErrBadCall, "param values not set");
-            return ErrBadCall;
+            continue;
+            //printError(ErrBadCall, "param values not set");
+            //return ErrBadCall;
         }
         AllDataType::copyVal(value->value, paramValues[i], value->type, value->length);
     }
@@ -60,6 +61,141 @@ DbRetVal InsStatement::setParam(int paramNo, void *value)
     if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
     if (NULL == value) return ErrBadArg;
     paramValues[paramNo -1] = (char*) value; 
+    return OK;
+}
+
+DbRetVal InsStatement::setShortParam(int paramNo, short value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    FieldValue *fValue = (FieldValue*) params [paramNo-1];
+    if (NULL == fValue)
+    {
+        printError(ErrSysFatal, "field value is null. Should never happen");
+        return ErrSysFatal;
+    }
+    *(short*)fValue->value = value; 
+    return OK;
+}
+
+DbRetVal InsStatement::setIntParam(int paramNo, int value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    FieldValue *cValue = (FieldValue*) params [paramNo-1];
+    if (NULL == cValue)
+    {
+        printError(ErrSysFatal, "condition value is null. Should never happen");
+        return ErrSysFatal;
+    }
+    *(int*)cValue->value = value; 
+    return OK;
+}
+DbRetVal InsStatement::setLongParam(int paramNo, long value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    FieldValue *cValue = (FieldValue*) params [paramNo-1];
+    if (NULL == cValue)
+    {
+        printError(ErrSysFatal, "condition value is null. Should never happen");
+        return ErrSysFatal;
+    }
+    *(long*)cValue->value = value; 
+    return OK;
+}
+
+DbRetVal InsStatement::setLongLongParam(int paramNo, long long value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    FieldValue *cValue = (FieldValue*) params [paramNo-1];
+    if (NULL == cValue)
+    {
+        printError(ErrSysFatal, "condition value is null. Should never happen");
+        return ErrSysFatal;
+    }
+    *(long long*)cValue->value = value; 
+    return OK;
+}
+DbRetVal InsStatement::setByteIntParam(int paramNo, ByteInt value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    FieldValue *cValue = (FieldValue*) params [paramNo-1];
+    if (NULL == cValue)
+    {
+        printError(ErrSysFatal, "condition value is null. Should never happen");
+        return ErrSysFatal;
+    }
+    *(ByteInt*)cValue->value = value; 
+    return OK;
+}
+DbRetVal InsStatement::setFloatParam(int paramNo, float value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    FieldValue *cValue = (FieldValue*) params [paramNo-1];
+    if (NULL == cValue)
+    {
+        printError(ErrSysFatal, "condition value is null. Should never happen");
+        return ErrSysFatal;
+    }
+    *(float*)cValue->value = value; 
+    return OK;
+}
+DbRetVal InsStatement::setDoubleParam(int paramNo, double value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    FieldValue *cValue = (FieldValue*) params [paramNo-1];
+    if (NULL == cValue)
+    {
+        printError(ErrSysFatal, "condition value is null. Should never happen");
+        return ErrSysFatal;
+    }
+    *(double*)cValue->value = value; 
+    return OK;
+}
+DbRetVal InsStatement::setStringParam(int paramNo, char *value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    FieldValue *cValue = (FieldValue*) params [paramNo-1];
+    if (NULL == cValue)
+    {
+        printError(ErrSysFatal, "condition value is null. Should never happen");
+        return ErrSysFatal;
+    }
+    strcpy((char*)cValue->value, value);
+    return OK;
+}
+DbRetVal InsStatement::setDateParam(int paramNo, Date value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    FieldValue *cValue = (FieldValue*) params [paramNo-1];
+    if (NULL == cValue)
+    {
+        printError(ErrSysFatal, "condition value is null. Should never happen");
+        return ErrSysFatal;
+    }
+    *(Date*)cValue->value = value; 
+    return OK;
+}
+DbRetVal InsStatement::setTimeParam(int paramNo, Time value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    FieldValue *cValue = (FieldValue*) params [paramNo-1];
+    if (NULL == cValue)
+    {
+        printError(ErrSysFatal, "condition value is null. Should never happen");
+        return ErrSysFatal;
+    }
+    *(Time*)cValue->value = value; 
+    return OK;
+}
+DbRetVal InsStatement::setTimeStampParam(int paramNo, TimeStamp value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    FieldValue *cValue = (FieldValue*) params [paramNo-1];
+    if (NULL == cValue)
+    {
+        printError(ErrSysFatal, "condition value is null. Should never happen");
+        return ErrSysFatal;
+    }
+    *(TimeStamp*)cValue->value = value;
     return OK;
 }
 
@@ -126,6 +262,8 @@ DbRetVal InsStatement::resolve()
     if (0 == totalParams) return OK;
     params = (void**) malloc ( totalParams * sizeof(FieldValue*));
     paramValues = (char**) malloc( totalParams * sizeof(char*));
+    memset(params, 0, totalParams * sizeof(FieldValue*));
+    memset(paramValues, 0, totalParams * sizeof(char*));
     valIter.reset();
     while(valIter.hasElement())
     {

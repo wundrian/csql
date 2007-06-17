@@ -3,4 +3,4 @@
 INCLUDES= $(all_includes)
 
 # the library search path.
-SUBDIRS = server sql tools
+SUBDIRS = server sql tools jdbc

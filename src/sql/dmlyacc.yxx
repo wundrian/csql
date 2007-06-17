@@ -6,6 +6,7 @@
 class Predicate;
 
 ParsedData *parsedData;
+extern char yytext[];
 int yylex( void );
 void yyerror(const char* Msg);
 %}
@@ -186,7 +187,7 @@ value:    STRING { $$ = $1; }
 extern int lexEof;
 void yyerror(const char* Msg) { 
     if( lexEof == 0 )
-        fprintf(stderr, "[Parser: %s]\n", Msg);
+        fprintf(stderr, "[Parser: %s] %s\n", Msg, yytext);
 
     return;
 }

@@ -9,8 +9,8 @@ SYSLIBS=-ldl -lnsl -lsocket  -lposix4
 else
 ifeq ($(OSNAME), Linux)
 CPlus = g++
-CPlusFlags = -g
-SYSLIBS= -rdynamic -lrt -lpthread -lcrypt
+CPlusFlags = -g -rdynamic
+SYSLIBS= -lrt -lpthread -lcrypt
 else
 PlatForm=notsupported
 all:
