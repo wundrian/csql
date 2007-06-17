@@ -32,6 +32,7 @@ DbRetVal TableImpl::bindFld(const char *name, void *val)
         printError(ErrNotExists, "Field %s does not exist", name);
         return  rv;
     }
+    return OK;
 }
 bool TableImpl::isFldNull(const char *name){
     return true;
@@ -169,8 +170,8 @@ void* TableImpl::fetchNoBind()
         //so release it here itself.
         int tries = 5;
         struct timeval timeout;
-        timeout.tv_sec = config.getMutexSecs();
-        timeout.tv_usec = config.getMutexUSecs();
+        timeout.tv_sec = Conf::config.getMutexSecs();
+        timeout.tv_usec = Conf::config.getMutexUSecs();
 
         bool status = false;
         while(true) { 

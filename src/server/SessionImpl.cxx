@@ -36,17 +36,17 @@ DbRetVal SessionImpl::initSystemDatabase()
        return ErrSysInit;
     }
     printf("ConfigValues\n");
-    printf(" getPageSize %d\n", config.getPageSize());
-    printf(" getMaxTrans %d\n", config.getMaxTrans());
-    printf(" getMaxProcs %d\n", config.getMaxProcs());
-    printf(" getMaxSysDbSize %ld\n", config.getMaxSysDbSize());
-    printf(" getMaxDbSize %ld\n", config.getMaxDbSize());
-    printf(" getSysDbKey %d\n", config.getSysDbKey());
-    printf(" getUserDbKey %d\n", config.getUserDbKey());
-    printf(" getLogFile %s\n", config.getLogFile());
-    printf(" getMapAddress %ld\n", config.getMapAddress());
-    printf(" getMutexSecs %d\n", config.getMutexSecs());
-    printf(" getMutexUSecs %d\n", config.getMutexUSecs());
+    printf(" getPageSize %d\n", Conf::config.getPageSize());
+    printf(" getMaxTrans %d\n", Conf::config.getMaxTrans());
+    printf(" getMaxProcs %d\n", Conf::config.getMaxProcs());
+    printf(" getMaxSysDbSize %ld\n", Conf::config.getMaxSysDbSize());
+    printf(" getMaxDbSize %ld\n", Conf::config.getMaxDbSize());
+    printf(" getSysDbKey %d\n", Conf::config.getSysDbKey());
+    printf(" getUserDbKey %d\n", Conf::config.getUserDbKey());
+    printf(" getLogFile %s\n", Conf::config.getLogFile());
+    printf(" getMapAddress %ld\n", Conf::config.getMapAddress());
+    printf(" getMutexSecs %d\n", Conf::config.getMutexSecs());
+    printf(" getMutexUSecs %d\n", Conf::config.getMutexUSecs());
 
 
     dbMgr = new DatabaseManagerImpl();
@@ -55,7 +55,7 @@ DbRetVal SessionImpl::initSystemDatabase()
 
     //TODO:No of chunks of system database->config parameter
     //This limits the total number of catalog tables system shall support.
-    rv = dbMgr->createDatabase(SYSTEMDB, config.getMaxSysDbSize());
+    rv = dbMgr->createDatabase(SYSTEMDB, Conf::config.getMaxSysDbSize());
     if (OK != rv) return rv;
     dbMgr->setSysDb(dbMgr->db());
     dbMgr->setDb(NULL);
@@ -93,7 +93,7 @@ DbRetVal SessionImpl::initSystemDatabase()
     db->releaseDatabaseMutex();
 
     //create user database
-    rv = dbMgr->createDatabase("praba", config.getMaxDbSize());
+    rv = dbMgr->createDatabase("praba", Conf::config.getMaxDbSize());
     if (OK != rv) return rv;
     return OK;
 }
@@ -279,7 +279,7 @@ DbRetVal SessionImpl::readConfigFile()
         return ErrSysInit;
     }
 
-    int  rv = config.readAllValues(confFilename);
+    int  rv = Conf::config.readAllValues(confFilename);
     if (rv != 0) return ErrSysInit;
     return OK;
 }

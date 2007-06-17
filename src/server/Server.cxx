@@ -35,7 +35,7 @@ int main()
     }
     os::signal(SIGINT, sigTermHandler);
     os::signal(SIGTERM, sigTermHandler);
-    rv = logger.startLogger(config.getLogFile(), true);
+    rv = logger.startLogger(Conf::config.getLogFile(), true);
     if (rv != OK)
     {
         printf("Unable to start the logger\n");

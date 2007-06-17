@@ -75,9 +75,11 @@ class Config
     inline int getMutexUSecs() { return cVal.mutexUSecs; }
 };
 
-
-//Global object
-static Config config;
+class Conf
+{
+    public:
+    static Config config;
+};
 
 
 #endif

@@ -88,17 +88,17 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
     caddr_t rtnAddr = (caddr_t) NULL;
     shared_memory_id shm_id = 0;
 
-    char *startaddr = (char*)config.getMapAddress();
+    char *startaddr = (char*)Conf::config.getMapAddress();
     shared_memory_key key = 0;
     if (0 == strcmp(name, SYSTEMDB))
     {
         
-        key = config.getSysDbKey();
+        key = Conf::config.getSysDbKey();
     }
     else
     {
-        startaddr = startaddr + config.getMaxSysDbSize();
-        key = config.getUserDbKey();
+        startaddr = startaddr + Conf::config.getMaxSysDbSize();
+        key = Conf::config.getUserDbKey();
     }
     shm_id = os::shm_create(key, size, 0666);
     if (-1 == shm_id)
@@ -135,10 +135,10 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
     if (0 == strcmp(name, SYSTEMDB))
     {
         offset = offset + os::alignLong( MAX_CHUNKS  * sizeof (Chunk));
-        offset = offset + os::alignLong( config.getMaxTrans()   * sizeof(Transaction));
-        offset = offset + os::alignLong( config.getMaxProcs() * sizeof(ProcInfo));
-        offset = offset + os::alignLong( config.getMaxProcs() * 
-                                         config.getMaxThreads() * sizeof(ThreadInfo));
+        offset = offset + os::alignLong( Conf::config.getMaxTrans()   * sizeof(Transaction));
+        offset = offset + os::alignLong( Conf::config.getMaxProcs() * sizeof(ProcInfo));
+        offset = offset + os::alignLong( Conf::config.getMaxProcs() * 
+                                         Conf::config.getMaxThreads() * sizeof(ThreadInfo));
     }
     int multiple = os::floor(offset / PAGE_SIZE);
     char *curPage = (((char*)rtnAddr) + ((multiple + 1) * PAGE_SIZE));
@@ -169,10 +169,10 @@ DbRetVal DatabaseManagerImpl::deleteDatabase(const char *name)
     shared_memory_id shm_id = 0;
     if (0 == strcmp(name, SYSTEMDB))
     {
-        shm_id = os::shm_open(config.getSysDbKey(), 100, 0666);
+        shm_id = os::shm_open(Conf::config.getSysDbKey(), 100, 0666);
         os::shmctl(shm_id, IPC_RMID);
     } else {
-        shm_id = os::shm_open(config.getUserDbKey(), 100, 0666);
+        shm_id = os::shm_open(Conf::config.getUserDbKey(), 100, 0666);
         os::shmctl(shm_id, IPC_RMID);
     }
     logFinest(logger, "Deleted database %s" , name);
@@ -182,8 +182,8 @@ DbRetVal DatabaseManagerImpl::deleteDatabase(const char *name)
 
 DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
 {
-    long size = config.getMaxSysDbSize();
-    char *startaddr = (char*)config.getMapAddress();
+    long size = Conf::config.getMaxSysDbSize();
+    char *startaddr = (char*)Conf::config.getMapAddress();
     if (0 == strcmp(name , SYSTEMDB))
     {
         if (NULL !=systemDatabase_)
@@ -199,8 +199,8 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
             printError(ErrNotOpen, "System Database not open");
             return ErrNotOpen;
         }
-        size = config.getMaxDbSize();
-        startaddr = startaddr +  config.getMaxSysDbSize();
+        size = Conf::config.getMaxDbSize();
+        startaddr = startaddr +  Conf::config.getMaxSysDbSize();
     }
     if (NULL != db_)
     {
@@ -222,9 +222,9 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
         shared_memory_key key = 0;
 
         if (0 == strcmp(name, SYSTEMDB))
-            key = config.getSysDbKey();
+            key = Conf::config.getSysDbKey();
         else
-            key = config.getUserDbKey();
+            key = Conf::config.getUserDbKey();
         shm_id = os::shm_open(key, size, 0666);
         if (shm_id == -1 )
         {

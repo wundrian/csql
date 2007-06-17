@@ -17,6 +17,8 @@
 #include<ErrorType.h>
 #include<Debug.h>
 
+Config Conf::config;
+
 int Config::readLine(FILE *fp, char * buffer)
 {
   char c =0;

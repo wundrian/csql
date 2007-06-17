@@ -88,7 +88,7 @@ enum MapMode
 #define DBAPASS "manager"
 #define LOCK_BUCKET_SIZE 2048
 #define MAX_CHUNKS 20
-#define PAGE_SIZE config.getPageSize()
+#define PAGE_SIZE Conf::config.getPageSize()
 
 
 typedef key_t shared_memory_key;

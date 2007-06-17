@@ -401,7 +401,7 @@ ProcInfo* Database::getProcInfo(int pidSlot)
 {
     size_t offset = os::alignLong(sizeof (DatabaseMetaData));
     offset = offset + os::alignLong( MAX_CHUNKS  * sizeof (Chunk));
-    offset = offset + os::alignLong( config.getMaxTrans()   * sizeof(Transaction));
+    offset = offset + os::alignLong( Conf::config.getMaxTrans()   * sizeof(Transaction));
     offset = offset + pidSlot * sizeof (ProcInfo);
     return (ProcInfo*)(((char*) metaData_) +  offset);
 }
@@ -410,8 +410,8 @@ ThreadInfo* Database::getThreadInfo(int pidSlot, int thrSlot)
 {
     size_t offset = os::alignLong(sizeof (DatabaseMetaData));
     offset = offset + os::alignLong( MAX_CHUNKS  * sizeof (Chunk));
-    offset = offset + os::alignLong( config.getMaxTrans()   * sizeof(Transaction));
-    offset = offset + os::alignLong( config.getMaxProcs() * sizeof(ProcInfo));
+    offset = offset + os::alignLong( Conf::config.getMaxTrans()   * sizeof(Transaction));
+    offset = offset + os::alignLong( Conf::config.getMaxProcs() * sizeof(ProcInfo));
     offset = offset + pidSlot * thrSlot  * sizeof (ThreadInfo);
     return (ThreadInfo*)(((char*) metaData_) +  offset);
 }
@@ -428,7 +428,7 @@ bool Database::isLastThread()
 
     ThreadInfo *tInfo = getThreadInfo(pid, 0);
     int regThr = 0;
-    for (int i=0; i < config.getMaxThreads(); i++)
+    for (int i=0; i < Conf::config.getMaxThreads(); i++)
     {
         if (0 != tInfo->thrid_) regThr++;
         tInfo++;

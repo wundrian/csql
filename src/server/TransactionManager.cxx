@@ -34,13 +34,13 @@ DbRetVal TransactionManager::startTransaction(IsolationLevel level)
     }
     Transaction *iter = firstTrans;
     int i;
-    for (i =0 ; i < config.getMaxTrans(); i++)
+    for (i =0 ; i < Conf::config.getMaxTrans(); i++)
     {
             if (iter->status_ == TransNotUsed) break;
             iter++;
     }
     // if Transaction table is full return error
-    if (i == config.getMaxTrans()) {
+    if (i == Conf::config.getMaxTrans()) {
         printError(ErrNoResource, "Transaction slots are full");
         return ErrNoResource;
     }
