@@ -7,12 +7,11 @@ Check www.databasecache.com for more details about its usage.
 
 Platforms Supported
 -------------------
-Linux and Solaris
+Linux 
 
 Compilers Supported
 -------------------
-g++ in linux,
-CC in solaris
+g++ in linux
 
 Compiling the source
 --------------------
@@ -20,7 +19,7 @@ Go to the root directory and enter the following commands.
 
 $./configure --prefix=`pwd`/install
 $make
-$make install
+$./csqlinstall.ksh
 
 This will create "install" directory under the current directory and places all the executables created in bin directory and libraries in lib directory.
 
@@ -48,6 +47,7 @@ You should find csqlserver executable under the bin directory of the installatio
 Change csql.conf file under the installation root directory if necessary.
 Set the CSQL_CONFIG_FILE environment variable to absolute path of csql.conf file.
 
+For example, if csql.conf is available at /tmp directory, then
 $export CSQL_CONFIG_FILE=/tmp/csql.conf
 
 Start the server using csqlserver executable
@@ -57,4 +57,5 @@ This starts the server and creates the database file.
 
 Shutting down the Server
 ------------------------
-Pressing Ctrl-C on the terminal where csqlserver is running, is safe and will stop the server gracefully by removing the database file.
+Pressing Ctrl-C on the terminal where csqlserver is running, 
+is safe and will stop the server gracefully by removing the database file.

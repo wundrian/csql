@@ -1,5 +1,5 @@
-CSQL - Version 1.0 - Beta(Latest)
-----------------------------------
+CSQL - Version 1.0 - Beta
+-------------------------
 1.Support for Atomicity, rollback for trasactions using undo logs
 2.Support for three isolation levels: READ_UNCOMMITED, READ_COMMITED, READ_REPEATABLE.
 3.Support for hash index with single key
@@ -10,3 +10,16 @@ CSQL - Version 1.0 - Beta(Latest)
 8.Configuration Module to load system paramaters from config file
 9.Logger to log events of the system to log file
 10.DBAPI for accessing the storage engine directly
+
+CSQL - Version 1.1 - Beta
+-------------------------
+1.Primitive SQL Engine
+2.SQL API for accessing SQL Engine
+3.SQL Support for INSERT, UPDATE, SELECT, DELETE on single tables
+
+CSQL - Version 1.2 - Beta
+-------------------------
+1.Primitive JDBC Type II Driver
+2.Procmgmt- process registration and deregistration, support for multi threads
+3.deleteAll support for Table Interface
+4.NULL value support 

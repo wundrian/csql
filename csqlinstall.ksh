@@ -19,4 +19,16 @@ cd ${install_dir}/lib
 cp libcsql libcsql.so
 cp libcsqlsql libcsqlsql.so
 cp libcsqljdbc libcsqljdbc.so
+cp ${root_dir}/README.INSTALL ${install_dir}/README
+cp ${root_dir}/Doxyfile ${install_dir}
+cp ${root_dir}/COPYING ${install_dir}
+cp ${root_dir}/AUTHORS ${install_dir}
+cp ${root_dir}/ChangeLog ${install_dir}
+cp -R ${root_dir}/examples ${install_dir}
+find ${install_dir}/examples -name "CVS" -exec rm -rf {} \;
+cp -R ${root_dir}/docs ${install_dir}
+find ${install_dir}/docs -name "CVS" -exec rm -rf {} \;
+
+
+
 cd ${root_dir}

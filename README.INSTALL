@@ -7,12 +7,11 @@ Check www.databasecache.com for more details about its usage.
 
 Platforms Supported
 -------------------
-Linux and Solaris
+Linux
 
 Compilers Supported
 -------------------
-g++ in linux,
-CC in solaris
+g++ in linux
 
 Untar the distribution
 ----------------------
@@ -33,7 +32,7 @@ and following files,
   4. ChangeLog
   5. README 
 
-under sql-linux-i686-1.0Beta directory.
+under csql-linux-i686-1.0Beta directory.
 
 Available Documentation
 -----------------------
