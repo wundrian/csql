@@ -128,12 +128,6 @@ DbRetVal SessionImpl::open(const char *username, const char *password)
         return rv;
     }
 
-    rv = dbMgr->registerThread();
-    if (OK != rv)
-    {
-        printError(rv,"Unable to register to csql server");
-        return rv;
-    }
 
     rv = dbMgr->sysDb()->getDatabaseMutex();
     if (OK != rv)
@@ -161,6 +155,12 @@ DbRetVal SessionImpl::open(const char *username, const char *password)
     rv = dbMgr->openDatabase("praba");
     if (OK != rv) return rv;
 
+    rv = dbMgr->registerThread();
+    if (OK != rv)
+    {
+        printError(rv,"Unable to register to csql server");
+        return rv;
+    }
     return OK;
 }
 
@@ -169,11 +169,11 @@ DbRetVal SessionImpl::close()
     DbRetVal rv = OK;
     if (dbMgr)
     {
-        rv = dbMgr->deregisterThread();
-        if (rv != OK) return ErrBadCall;
         rv = dbMgr->closeDatabase();
         if (rv != OK) return ErrBadCall;
         rv = dbMgr->closeSystemDatabase();
+        if (rv != OK) return ErrBadCall;
+        rv = dbMgr->deregisterThread();
         if (rv != OK) return ErrBadCall;
         delete dbMgr;
         dbMgr = NULL;

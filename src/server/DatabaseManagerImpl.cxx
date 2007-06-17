@@ -207,30 +207,36 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
         printError(ErrAlready, "User Database already open");
         return ErrAlready;
     }
-    //system db should be opened before user database files
-    caddr_t rtnAddr = (caddr_t) NULL;
-
-    shared_memory_id shm_id = 0;
-    shared_memory_key key = 0;
+    caddr_t attAddr;
     if (0 == strcmp(name, SYSTEMDB))
-        key = config.getSysDbKey();
+          attAddr = ProcessManager::sysAddr;
     else
-        key = config.getUserDbKey();
-    shm_id = os::shm_open(key, size, 0666);
-    if (shm_id == -1 )
+          attAddr = ProcessManager::usrAddr;
+
+    if (ProcessManager::noThreads == 0) 
     {
-         printError(ErrOS, "Shared memory open failed");
-         return ErrOS;
-    }
+        //system db should be opened before user database files 
+        caddr_t rtnAddr = (caddr_t) NULL;
 
-    void *shm_ptr = os::shm_attach(shm_id, startaddr, SHM_RND);
+        shared_memory_id shm_id = 0;
+        shared_memory_key key = 0;
 
-    rtnAddr  = (caddr_t) shm_ptr;
+        if (0 == strcmp(name, SYSTEMDB))
+            key = config.getSysDbKey();
+        else
+            key = config.getUserDbKey();
+        shm_id = os::shm_open(key, size, 0666);
+        if (shm_id == -1 )
+        {
+            printError(ErrOS, "Shared memory open failed");
+            return ErrOS;
+        }
 
-    if (rtnAddr < 0 || shm_ptr == (char*)0xffffffff)
-    {
-        //check if is the first thread to be registered.
-        if ( NULL == csqlProcInfo.sysDbAttachAddr)
+        void *shm_ptr = os::shm_attach(shm_id, startaddr, SHM_RND);
+
+        rtnAddr  = (caddr_t) shm_ptr;
+
+        if (rtnAddr < 0 || shm_ptr == (char*)0xffffffff)
         {
             printError(ErrOS, "Shared memory attach returned -ve value %x %d", shm_ptr, errno);
             return ErrOS;
@@ -238,26 +244,21 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
         else 
         {
             db_ = new Database();
-            if (0 == strcmp(name, SYSTEMDB)) 
-                db_->setMetaDataPtr((DatabaseMetaData*)csqlProcInfo.sysDbAttachAddr);
+            db_->setMetaDataPtr((DatabaseMetaData*)rtnAddr);
+            if (0 == strcmp(name, SYSTEMDB))
+                  ProcessManager::sysAddr = rtnAddr;
             else
-                db_->setMetaDataPtr((DatabaseMetaData*)csqlProcInfo.userDbAttachAddr);
+                  ProcessManager::usrAddr = rtnAddr;
+
             printDebug(DM_Database, "Opening database: %s", name);
             logFinest(logger, "Opened database %s" , name);
             return OK;
         }
     }
 
-    //store it in the global static object.
-    if (0 == strcmp(name, SYSTEMDB))
-        csqlProcInfo.sysDbAttachAddr = rtnAddr;
-    else
-        csqlProcInfo.userDbAttachAddr = rtnAddr;
-
     db_ = new Database();
     printDebug(DM_Database, "Opening database: %s", name);
-    db_->setMetaDataPtr((DatabaseMetaData*)rtnAddr);
-
+    db_->setMetaDataPtr((DatabaseMetaData*)attAddr);
     logFinest(logger, "Opened database %s" , name);
     return OK;
 }
@@ -272,11 +273,9 @@ DbRetVal DatabaseManagerImpl::closeDatabase()
         return ErrAlready;
     }
     //check if this is the last thread to be deregistered. 
-    if (db_->isLastThread())
+    if (ProcessManager::noThreads == 1)
     {
-        //os::shm_detach((char*)db_->getMetaDataPtr());
-        //csqlProcInfo.sysDbAttachAddr = NULL;
-        //csqlProcInfo.userDbAttachAddr = NULL;
+        os::shm_detach((char*)db_->getMetaDataPtr());
     }
     delete db_;
     db_ = NULL;

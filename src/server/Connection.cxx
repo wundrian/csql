@@ -21,10 +21,9 @@
 Connection::~Connection()
 { 
     if (NULL != session) {
-       session ->rollback();
+       session->rollback();
        session->close();
     }
-    
     delete session; 
     session = NULL;
     Index::destroy();

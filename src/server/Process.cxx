@@ -20,11 +20,16 @@
 #include <ErrorType.h>
 #include <Globals.h>
 
-
+int ProcessManager::noThreads=0;
+caddr_t ProcessManager::sysAddr=0;
+caddr_t ProcessManager::usrAddr=0;
 //It does not check for re registering as well as deregistering unregistered threads.
 //as it is handled in the connection class open and close methods.
 DbRetVal ProcessManager::registerThread()
 {
+#ifdef LINUX
+    noThreads++;
+#else
     DbRetVal rv = systemDatabase->getProcessTableMutex();
     if (OK != rv)
     {
@@ -91,10 +96,14 @@ DbRetVal ProcessManager::registerThread()
         pInfo->numThreads_++;
     }
     systemDatabase->releaseProcessTableMutex();
+#endif
     return OK;
 }
 DbRetVal ProcessManager::deregisterThread()
 {
+#ifdef LINUX
+    noThreads--;
+#else
     DbRetVal rv = systemDatabase->getProcessTableMutex();
     if (OK != rv)
     {
@@ -149,6 +158,7 @@ DbRetVal ProcessManager::deregisterThread()
     if (0 == pInfo->numThreads_) pInfo->pid_ = 0;
 
     systemDatabase->releaseProcessTableMutex();
+#endif
     return OK;
 }
 
