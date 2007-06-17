@@ -75,6 +75,7 @@ DbRetVal TransactionManager::commit(LockManager *lockManager_)
     }
     if (trans->status_ != TransRunning)
     {
+        sysdb->releaseTransTableMutex(); 
         printError(ErrBadCall, "Transaction is not in running state\n");
         return ErrBadCall;
     }
@@ -114,13 +115,13 @@ DbRetVal TransactionManager::rollback(LockManager *lockManager_)
     if (NULL == trans) 
     {
         sysdb->releaseTransTableMutex(); 
-        printError(ErrNotOpen, "Transaction Not open");
-        return ErrNotOpen;
+        return OK;
     }
     if (trans->status_ != TransRunning)
     {
-        printError(ErrBadCall, "Transaction is not in running state\n");
-        return ErrBadCall;
+        sysdb->releaseTransTableMutex(); 
+        //will be called during connection disconnect without starting transaction.
+        return OK;
     }
     trans->status_ = TransAborting;
     sysdb->releaseTransTableMutex();
