@@ -39,7 +39,12 @@ class PredicateImpl:public Predicate
     TableImpl *table;
 
     public:
-    PredicateImpl(){ operand = NULL; lhs = rhs = NULL; }
+    PredicateImpl()
+    {
+        strcpy(fldName1, ""); strcpy(fldName2, ""); 
+        operand = NULL; operandPtr = NULL; lhs = rhs = NULL; 
+        tuple = NULL; table = NULL; 
+    }
     ~PredicateImpl(){}
 
     void setTerm(const char* fName1, ComparisionOp op, const char *fName2);

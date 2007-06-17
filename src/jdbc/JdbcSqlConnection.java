@@ -45,7 +45,6 @@ public final class JdbcSqlConnection extends JSqlError implements Connection, JS
             throw getException(CSQL_TRANS_NOT_STARTED);
         }
         stmtList = new LinkedList();
-        System.out.println("stmtList is initialized");
     }
 
     protected void finalize ()

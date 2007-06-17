@@ -61,7 +61,7 @@ DbRetVal DelStatement::execute(int &rowsAffected)
         if (rv != OK) return rv;
         rowsAffected++;
     }
-
+    table->close();
     return rv;
 }
 
