@@ -138,6 +138,7 @@ DbRetVal SessionImpl::open(const char *username, const char *password)
 
     CatalogTableUSER cUser(dbMgr->sysDb());
     cUser.authenticate(username, password, isAuthenticated, isDba);
+    strcpy(userName, username);
     //isAuthenticated=true;
     dbMgr->sysDb()->releaseDatabaseMutex();
     if (!isAuthenticated)

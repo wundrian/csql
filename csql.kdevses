@@ -1,56 +1,7 @@
 <?xml version = '1.0' encoding = 'UTF-8'?>
 <!DOCTYPE KDevPrjSession>
 <KDevPrjSession>
- <DocsAndViews NumberOfDocuments="16" >
-  <Doc0 NumberOfViews="1" URL="file:///home/praba/csql/include/SqlConnection.h" >
-   <View0 line="0" Type="Source" />
-  </Doc0>
-  <Doc1 NumberOfViews="1" URL="file:///home/praba/csql/include/SqlStatement.h" >
-   <View0 line="188" Type="Source" />
-  </Doc1>
-  <Doc2 NumberOfViews="1" URL="file:///home/praba/csql/src/sql/SqlStatement.cxx" >
-   <View0 line="63" Type="Source" />
-  </Doc2>
-  <Doc3 NumberOfViews="1" URL="file:///home/praba/csql/src/sql/dmlyacc.h" >
-   <View0 line="0" Type="Source" />
-  </Doc3>
-  <Doc4 NumberOfViews="1" URL="file:///home/praba/csql/src/sql/Statement.h" >
-   <View0 line="0" Type="Source" />
-  </Doc4>
-  <Doc5 NumberOfViews="1" URL="file:///home/praba/csql/src/sql/Parser.h" >
-   <View0 line="0" Type="Source" />
-  </Doc5>
-  <Doc6 NumberOfViews="1" URL="file:///home/praba/csql/src/sql/DelStatement.cxx" >
-   <View0 line="0" Type="Source" />
-  </Doc6>
-  <Doc7 NumberOfViews="1" URL="file:///home/praba/csql/src/sql/InsStatement.cxx" >
-   <View0 line="0" Type="Source" />
-  </Doc7>
-  <Doc8 NumberOfViews="1" URL="file:///home/praba/csql/src/sql/ParsedData.cxx" >
-   <View0 line="0" Type="Source" />
-  </Doc8>
-  <Doc9 NumberOfViews="1" URL="file:///home/praba/csql/src/sql/SelStatement.cxx" >
-   <View0 line="0" Type="Source" />
-  </Doc9>
-  <Doc10 NumberOfViews="1" URL="file:///home/praba/csql/include/CSql.h" >
-   <View0 line="0" Type="Source" />
-  </Doc10>
-  <Doc11 NumberOfViews="1" URL="file:///home/praba/csql/include/Allocator.h" >
-   <View0 line="0" Type="Source" />
-  </Doc11>
-  <Doc12 NumberOfViews="1" URL="file:///home/praba/csql/include/CatalogTables.h" >
-   <View0 line="0" Type="Source" />
-  </Doc12>
-  <Doc13 NumberOfViews="1" URL="file:///home/praba/csql/include/Config.h" >
-   <View0 line="79" Type="Source" />
-  </Doc13>
-  <Doc14 NumberOfViews="1" URL="file:///home/praba/csql/include/DataType.h" >
-   <View0 line="0" Type="Source" />
-  </Doc14>
-  <Doc15 NumberOfViews="1" URL="file:///home/praba/csql/include/Process.h" >
-   <View0 line="0" Type="Source" />
-  </Doc15>
- </DocsAndViews>
+ <DocsAndViews NumberOfDocuments="0" />
  <pluginList>
   <kdevdebugger>
    <breakpointList/>

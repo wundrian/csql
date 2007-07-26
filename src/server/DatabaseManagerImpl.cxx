@@ -272,8 +272,8 @@ DbRetVal DatabaseManagerImpl::closeDatabase()
         printError(ErrAlready, "Database is already closed\n");
         return ErrAlready;
     }
-    //check if this is the last thread to be deregistered. 
-    if (ProcessManager::noThreads == 1)
+    //check if this is the last thread to be deregistered
+    //if (ProcessManager::noThreads == 1)
     {
         os::shm_detach((char*)db_->getMetaDataPtr());
     }

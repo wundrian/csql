@@ -448,7 +448,7 @@ long Chunk::getTotalDataNodes()
         {
             if (*((int*)data) == 1) { totalNodes++;}
             data = data + allocSize_;
-        }        
+        }
         pageInfo = (PageInfo*)(((PageInfo*)pageInfo)->nextPage_) ;
     }
     releaseChunkMutex();
