@@ -22,7 +22,9 @@ INCL= -I$(CSQL_INSTALL_ROOT)/include
 LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsql
 
 TARGETS = \
-        test001
+        test001 \
+        test002 \
+        test003
        
 
 ifeq ($(PlatForm), supported)
@@ -30,6 +32,10 @@ all: $(TARGETS)
 endif
 
 test001: inserttest1.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test002: inserttest2.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test003: inserttest3.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 
 clean:
