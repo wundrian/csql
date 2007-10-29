@@ -36,7 +36,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = csql$(EXEEXT)
+bin_PROGRAMS = csql$(EXEEXT) catalog$(EXEEXT)
 subdir = src/tools
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -49,6 +49,9 @@ CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
+am_catalog_OBJECTS = catalog.$(OBJEXT)
+catalog_OBJECTS = $(am_catalog_OBJECTS)
+catalog_DEPENDENCIES = $(top_builddir)/src/server/libcsql.la
 am_csql_OBJECTS = isql.$(OBJEXT)
 csql_OBJECTS = $(am_csql_OBJECTS)
 csql_DEPENDENCIES = $(top_builddir)/src/server/.libs/libcsql \
@@ -64,8 +67,8 @@ LTCXXCOMPILE = $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) \
 CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --tag=CXX --mode=link $(CXXLD) $(AM_CXXFLAGS) \
 	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(csql_SOURCES)
-DIST_SOURCES = $(csql_SOURCES)
+SOURCES = $(catalog_SOURCES) $(csql_SOURCES)
+DIST_SOURCES = $(catalog_SOURCES) $(csql_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -179,6 +182,9 @@ INCLUDES = -I$(top_srcdir)/include $(all_includes) -I$(top_srcdir)/src/sql
 METASOURCES = AUTO
 csql_SOURCES = isql.cxx
 csql_LDADD = $(top_builddir)/src/server/.libs/libcsql $(top_builddir)/src/sql/.libs/libcsqlsql -lrt -lpthread -lcrypt
+catalog_SOURCES = catalog.cxx
+catalog_LDADD = $(top_builddir)/src/server/libcsql.la
+catalog_LDFLAGS = -lcrypt
 all: all-am
 
 .SUFFIXES:
@@ -240,6 +246,9 @@ clean-binPROGRAMS:
 	  echo " rm -f $$p $$f"; \
 	  rm -f $$p $$f ; \
 	done
+catalog$(EXEEXT): $(catalog_OBJECTS) $(catalog_DEPENDENCIES) 
+	@rm -f catalog$(EXEEXT)
+	$(CXXLINK) $(catalog_LDFLAGS) $(catalog_OBJECTS) $(catalog_LDADD) $(LIBS)
 csql$(EXEEXT): $(csql_OBJECTS) $(csql_DEPENDENCIES) 
 	@rm -f csql$(EXEEXT)
 	$(CXXLINK) $(csql_LDFLAGS) $(csql_OBJECTS) $(csql_LDADD) $(LIBS)
@@ -250,6 +259,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/catalog.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/isql.Po@am__quote@
 
 .cxx.o:

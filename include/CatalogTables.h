@@ -21,6 +21,7 @@
 #include<os.h>
 #include<Index.h>
 #include<Debug.h>
+#include<Util.h>
 
 class FieldList;
 class FieldNameList;
@@ -88,6 +89,8 @@ class CatalogTableTABLE
     DbRetVal remove(const char *name, void *&chunk, void *&tptr);
 
     DbRetVal getChunkAndTblPtr(const char *name, void *&chunk, void *&tptr);
+
+    List getTableList();
 };
 
 

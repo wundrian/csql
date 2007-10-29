@@ -193,7 +193,7 @@ Page* Database::getFreePage()
         }
         if (!isValidAddress((char*) pageInfo))
         {
-            printError(ErrSysInternal,"Invalid address %x",pageInfo);
+            //printError(ErrSysInternal,"Invalid address %x",pageInfo);
             return NULL;
         }
 

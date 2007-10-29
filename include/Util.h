@@ -53,6 +53,11 @@ class ListIterator
     }
 };
 
+class Identifier
+{
+    public:
+    char name[IDENTIFIER_LENGTH];
+};
 
 class List
 {

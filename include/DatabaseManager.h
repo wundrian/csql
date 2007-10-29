@@ -16,6 +16,7 @@
 #ifndef DATABASE_MANAGER_H
 #define DATABASE_MANAGER_H
 #include<Info.h>
+#include<Util.h>
 class Table;
 /**
 * @class DatabaseManager
@@ -56,6 +57,11 @@ class DatabaseManager
     *   @param table handle to the table
     */
     virtual void closeTable(Table *table)=0;
+
+    /** Returns all the tables as list
+    *   @return List of table names
+    */
+    virtual List getAllTableNames()=0;
 
     /** creates an index on the specified table. <br/>
     *   Create appropriate derived class object of IndexInitInfo based on the type of <br/>

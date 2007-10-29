@@ -91,6 +91,20 @@ DbRetVal CatalogTableTABLE::getChunkAndTblPtr(const char *name,
     return ErrNotFound;
 }
 
+List CatalogTableTABLE::getTableList()
+{
+    List tableList;
+    Chunk *chk = systemDatabase_->getSystemDatabaseChunk(TableTableId);
+    ChunkIterator iter = chk->getIterator();
+    void *tptr;
+    while (NULL != (tptr = iter.nextElement()))
+    {
+         Identifier *elem = new Identifier();
+         strcpy(elem->name, ((TABLE*)tptr)->tblName_);
+         tableList.append(elem);
+    }
+    return tableList;
+}
 
 DbRetVal CatalogTableFIELD::insert(FieldIterator &iter, int tblID, void *tptr)
 {

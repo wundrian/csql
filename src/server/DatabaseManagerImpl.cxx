@@ -565,6 +565,29 @@ Table* DatabaseManagerImpl::openTable(const char *name)
     return table;
 }
 
+
+
+List DatabaseManagerImpl::getAllTableNames()
+{
+    DbRetVal ret = OK;
+    //to store the tuple pointer of the table
+    void *tptr =NULL;
+
+    DbRetVal rv = systemDatabase_->getDatabaseMutex();
+    if (OK != rv) {
+        printError(ErrSysInternal, "Unable to get database mutex");
+        List tableList;
+        return tableList;
+    }
+    CatalogTableTABLE cTable(systemDatabase_);
+    List tableList = cTable.getTableList();
+    systemDatabase_->releaseDatabaseMutex();
+    return tableList;
+}
+
+
+
+
 //Return values: -1 for table not found
 void DatabaseManagerImpl::closeTable(Table *table)
 {

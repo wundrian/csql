@@ -106,6 +106,7 @@ class DatabaseManagerImpl : public DatabaseManager
     void closeTable(Table *table);
     DbRetVal createIndex(const char *indName, IndexInitInfo *info);
     DbRetVal dropIndex(const char *name);
+    List getAllTableNames();
 
     DbRetVal registerThread();
     DbRetVal deregisterThread();
