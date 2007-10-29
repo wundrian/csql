@@ -23,6 +23,8 @@
 char *lexInput;
 extern ParsedData *parsedData;
 int yyparse ();
+void yyrestart (FILE *input_file  );
+extern FILE *yyin;
 SqlStatement::SqlStatement()
 {
     con = NULL;
@@ -55,6 +57,7 @@ DbRetVal SqlStatement::prepare(char *stmtstr)
         return rv;
     }
     parsedData = NULL;
+    yyrestart(yyin);
     return OK;
 }
 
