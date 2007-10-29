@@ -45,6 +45,7 @@ DbRetVal SqlStatement::prepare(char *stmtstr)
     {
         free();
         parsedData = NULL;
+        yyrestart(yyin);
         return ErrSyntaxError;
     }
     stmt = StatementFactory::getStatement(parsedData);
@@ -54,6 +55,7 @@ DbRetVal SqlStatement::prepare(char *stmtstr)
     {
         free();
         parsedData = NULL;
+        yyrestart(yyin);
         return rv;
     }
     parsedData = NULL;
