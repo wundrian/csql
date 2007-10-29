@@ -460,15 +460,17 @@ long TableImpl::numTuples()
     return ((Chunk*)chunkPtr_)->getTotalDataNodes();
 }
 
-FieldNameList TableImpl::getFieldNameList()
+List TableImpl::getFieldNameList()
 {
-    FieldNameList fieldNameList;
+    List fldNameList;
     FieldIterator fIter = fldList_.getIterator();
     while (fIter.hasElement())
     {
         FieldDef def = fIter.nextElement();
-        fieldNameList.append(def.fldName_);
+        Identifier *elem = new Identifier();
+        strcpy(elem->name, def.fldName_);
+        fldNameList.append(elem);
     } 
-    return fieldNameList;
+    return fldNameList;
 }
 

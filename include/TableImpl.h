@@ -123,7 +123,7 @@ class TableImpl:public Table
     DbRetVal getFieldInfo(const char *fieldName,  FieldInfo *&info)
         { return fldList_.getFieldInfo(fieldName, info); }
 
-    FieldNameList getFieldNameList();
+    List getFieldNameList();
 
     // search predicate
      void setCondition(Condition *p) 

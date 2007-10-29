@@ -16,9 +16,9 @@
 #ifndef TABLE_H
 #define TABLE_H
 #include<ErrorType.h>
+#include<Util.h>
 class Predicate;
 class Condition;
-class FieldNameList;
 /**
 * @class Table
 *
@@ -149,7 +149,7 @@ class Table
 
 
     virtual DbRetVal getFieldInfo(const char *fieldName, FieldInfo *&info)=0;
-    virtual FieldNameList getFieldNameList()=0;
+    virtual List getFieldNameList()=0;
 
     virtual ~Table() { }
 };

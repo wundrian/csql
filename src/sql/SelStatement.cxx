@@ -292,19 +292,20 @@ DbRetVal SelStatement::resolveStar()
 {
     DbRetVal rv = OK;
     parsedData->clearFieldNameList();
-    FieldNameList fNameList = table->getFieldNameList();
+    List fNameList = table->getFieldNameList();
+    ListIterator fNameIter = fNameList.getIterator();
     FieldValue *newVal = NULL;
-    fNameList.resetIter(); //do not remove this.
+    //fNameList.resetIter(); //do not remove this.
     FieldInfo *fInfo = new FieldInfo();
     for (int i = 0; i < fNameList.size() ; i++)
     {
-        char *fName = fNameList.nextFieldName();
+        char *fName = ((Identifier*)(fNameIter.nextElement()))->name;
         rv = table->getFieldInfo(fName, fInfo);
         if (ErrNotFound == rv)
         {
             dbMgr->closeTable(table);
             delete fInfo;
-            fNameList.removeAll();
+            fNameList.reset();
             printError(ErrSysFatal, "Should never happen.");
             return ErrSysFatal;
         }
