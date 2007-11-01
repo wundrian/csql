@@ -331,7 +331,7 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr)
                 if (NULL != def.bindVal_)
                 {
                     strcpy((char*)colPtr, (char*)def.bindVal_);
-                    *(((char*)colPtr) + def.length_) = '\0';
+                    *(((char*)colPtr) + (def.length_-1)) = '\0';
                 }
                 colPtr = colPtr + os::align(def.length_);
                 break;
