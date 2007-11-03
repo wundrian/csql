@@ -74,6 +74,15 @@ class SqlStatement
     */
     void* fetch();
     
+
+    /**fetches the next tuple from the result of the execution of sql select query 
+    * and prints it to stdout.
+    * execute should be called before calling this method.
+    * @returns void* NULL if there is no tuple.
+    */
+    void* fetchAndPrint();
+
+
     /** binds application buffer to the specified parameter position in the sql statement. 
     * This method should be called for all the parameters in the sql statement.
     * Parameters shall be specified for predicate for select, update, delete statements.

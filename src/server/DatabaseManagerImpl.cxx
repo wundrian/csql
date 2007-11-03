@@ -179,7 +179,6 @@ DbRetVal DatabaseManagerImpl::deleteDatabase(const char *name)
     return OK;
 }
 
-
 DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
 {
     long size = Conf::config.getMaxSysDbSize();

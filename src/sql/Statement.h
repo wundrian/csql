@@ -126,6 +126,7 @@ class SelStatement : public Statement
     DbRetVal getProjFldInfo (int projpos, FieldInfo *&fInfo);
 
     void *fetch();
+    void *fetchAndPrint();
 
 };
 class UpdStatement : public Statement

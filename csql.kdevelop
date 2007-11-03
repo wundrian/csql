@@ -28,6 +28,7 @@
       <runarguments>
         <csqlserver/>
         <CreateTable/>
+        <catalog/>
       </runarguments>
     </run>
     <configurations>

@@ -22,17 +22,25 @@ int main(int argc, char **argv)
     char password[IDENTIFIER_LENGTH];
     password [0] = '\0';
     int c = 0, opt = 0;
-    while ((c = getopt(argc, argv, "u:p:l")) != EOF) 
+    while ((c = getopt(argc, argv, "u:p:li?")) != EOF) 
     {
         switch (c)
         {
-            case 'u' : strcpy(username , argv[optind - 1]); break;
-            case 'p' : strcpy(password , argv[optind - 1]); break;
-            case 'l' : opt = 2; break; //list all the table with field info
+            case 'u' : { strcpy(username , argv[optind - 1]); break; }
+            case 'p' : { strcpy(password , argv[optind - 1]); break; }
+            case 'l' : { opt = 2; break; } //list all the table with field info
+            case 'i' : { opt = 3; break;  }//reinitialize the catalog table
+            case '?' : { opt = 4; break; } //print help 
             default: opt=1; //list all the tables
 
         }
     }//while options
+    if (opt == 4) {
+        printf("Usage: catalog [-u username] [-p passwd] [-l] [-i]\n");
+        printf("       l -> list all table with field information\n");
+        printf("       i -> reinitialize all the catalog tables\n");
+    }
+
     printf("%s %s \n", username, password);
     if (username[0] == '\0' )
     {
@@ -78,6 +86,14 @@ int main(int argc, char **argv)
             }
             delete info;
             dbMgr->closeTable(table);
+        }
+    }else if (opt == 3)
+    {
+        while (iter.hasElement())
+        {
+            elem = (Identifier*) iter.nextElement();
+            printf("Dropping Table %s\n", elem->name);
+            dbMgr->dropTable(elem->name);
         }
     }
     tableList.reset();

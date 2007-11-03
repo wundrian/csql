@@ -1,13 +1,25 @@
 <?xml version = '1.0' encoding = 'UTF-8'?>
 <!DOCTYPE KDevPrjSession>
 <KDevPrjSession>
- <DocsAndViews NumberOfDocuments="2" >
-  <Doc0 NumberOfViews="1" URL="file:///home/praba/csql/include/Allocator.h" >
-   <View0 line="0" Type="Source" />
+ <DocsAndViews NumberOfDocuments="6" >
+  <Doc0 NumberOfViews="1" URL="file:///home/praba/csql/src/tools/isql.cxx" >
+   <View0 line="117" Type="Source" />
   </Doc0>
-  <Doc1 NumberOfViews="1" URL="file:///home/praba/csql/src/server/Chunk.cxx" >
-   <View0 line="0" Type="Source" />
+  <Doc1 NumberOfViews="1" URL="file:///home/praba/csql/src/sql/SelStatement.cxx" >
+   <View0 line="435" Type="Source" />
   </Doc1>
+  <Doc2 NumberOfViews="1" URL="file:///home/praba/csql/src/server/DataType.cxx" >
+   <View0 line="1318" Type="Source" />
+  </Doc2>
+  <Doc3 NumberOfViews="1" URL="file:///home/praba/csql/src/sql/Statement.h" >
+   <View0 line="0" Type="Source" />
+  </Doc3>
+  <Doc4 NumberOfViews="1" URL="file:///home/praba/csql/include/SqlStatement.h" >
+   <View0 line="119" Type="Source" />
+  </Doc4>
+  <Doc5 NumberOfViews="1" URL="file:///home/praba/csql/src/sql/SqlStatement.cxx" >
+   <View0 line="88" Type="Source" />
+  </Doc5>
  </DocsAndViews>
  <pluginList>
   <kdevdebugger>
@@ -22,7 +34,7 @@
      <mark line="16" />
     </bookmark>
     <bookmark url="/home/praba/csql/include/SqlStatement.h" >
-     <mark line="200" />
+     <mark line="209" />
     </bookmark>
    </bookmarks>
   </kdevbookmarks>

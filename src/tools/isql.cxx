@@ -103,20 +103,17 @@ char getQuery(char *buf)
     }
     *buf++ = ';';
     *buf = '\0';
-    if(c==EOF)
-        return c;
-
-    //while( (c=getchar()) != EOF && c != '\n');
-
     return c;
 }
 
 bool getInputFromUser()
 {
-    char buf [SQL_STMT_LEN + 1];
+    char buffer [SQL_STMT_LEN + 1];
 
-    char eof = getQuery(buf);
-    printf("PRABA== %s\n", buf);
+    char eof = getQuery(buffer);
+    char *buf = buffer;
+    while(*buf == ' ' || *buf == '\t' || *buf == '\n') buf++;
+    printf("PRABA== %d %s\n", strlen(buf), buf);
     if (eof == EOF || strncasecmp (buf, "quit", 4) == 0)
         return false;
     if (handleTransaction(buf)) return true;
@@ -143,7 +140,22 @@ bool getInputFromUser()
     }
     else
     {
-        printf("Currently not supported\n");
+        FieldInfo *info = new FieldInfo();
+        printf("\t");
+        for (int i = 0 ; i < stmt->noOfProjFields() ; i++)
+        {
+            stmt->getProjFldInfo(i, info);
+            printf("%s\t", info->fldName);
+        }
+        delete info;
+        printf("\n"); void *tuple = NULL;
+        while(true)
+        {
+            printf("\t");
+            tuple = (char*)stmt->fetchAndPrint();
+            printf("\n");
+            if (tuple == NULL) { break; }
+        }
     }
     stmt->free();
     return true;

@@ -433,6 +433,18 @@ void* SelStatement::fetch()
     return tuple;
 }
 
+void* SelStatement::fetchAndPrint()
+{
+    void *tuple = table->fetch();
+    if (NULL == tuple) return NULL;
+    FieldValue *value;
+    for (int i = 0; i < totalFields; i++)
+    {
+        value = bindFields[i];
+        AllDataType::printVal(value->value, value->type, value->length);
+    }
+    return tuple;
+}
 
 int SelStatement::noOfProjFields()
 {

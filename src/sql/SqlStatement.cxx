@@ -23,7 +23,7 @@
 char *lexInput;
 extern ParsedData *parsedData;
 int yyparse ();
-void yyrestart (FILE *input_file  );
+void yyrestart (FILE *inp);
 extern FILE *yyin;
 SqlStatement::SqlStatement()
 {
@@ -81,6 +81,13 @@ void* SqlStatement::fetch()
     if (pData.getStmtType() != SelectStatement) return NULL;
     SelStatement *selStmt = (SelStatement*) stmt; 
     return selStmt->fetch();
+}
+
+void* SqlStatement::fetchAndPrint()
+{
+    if (pData.getStmtType() != SelectStatement) return NULL;
+    SelStatement *selStmt = (SelStatement*) stmt; 
+    return selStmt->fetchAndPrint();
 }
 
 DbRetVal SqlStatement::bindParam(int pos, void* value)

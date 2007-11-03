@@ -1249,5 +1249,77 @@ void AllDataType::convertToString( void* dest, void* src, DataType srcType )
 
 }
 
+void AllDataType::printVal(void* src, DataType srcType, int length )
+{
+    switch(srcType)
+    {
+        case typeInt:
+        {
+            printf ("%d\t", *(int *)src); 
+            break;
+        }
+        case typeLong:
+        {
+            printf ("%ld\t", *(long *)src);
+            break;
+        }
+        case typeLongLong:
+        {
+            printf ("%lld\t", *(long long *)src); 
+            break;
+        }
+        case typeShort:
+        {
+            printf("%hd\t", *(short *)src); 
+            break;
+        }
+        case typeByteInt:
+        {
+            printf("%hd\t", *(char *)src); 
+            break;
+        }
+
+        case typeFloat:
+        {
+            printf("%f\t", *(float *)src);
+            break;
+        }
+        case typeDouble:
+        {
+            printf("%lf\t", *(double *)src); 
+            break;
+        }
+
+        case typeString:
+        {
+            printf("%s\t", (char*)src);
+            break;
+        }
+        case typeDate:
+        {
+            Date* dt = (Date*)src;
+            printf("%d/%d/%d\t", dt->dayOfMonth(),
+                                  dt->month(), dt->year());
+            break;
+        }
+        case typeTime:
+        {
+            Time* tm = (Time*)src;
+            printf("%d:%d:%d.%d\t", tm->hours(), tm->minutes(), tm->seconds(), 0);
+            break;
+        }
+        case typeTimeStamp:
+        {
+            TimeStamp* tm = (TimeStamp*)src;
+            printf("%d/%d/%d %d:%d:%d.%d\t", tm->dayOfMonth(),
+                                tm->month(), tm->year(), tm->hours(),
+                                tm->minutes(), tm->seconds(), 0 );
+            break;
+        }
+        default: { printf("DataType not supported\n"); break; }
+    }
+
+}
+
 
 
