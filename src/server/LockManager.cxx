@@ -457,7 +457,7 @@ DbRetVal LockManager::releaseLock(void *tuple)
    return ErrSysFatal;
 }
 
-DbRetVal LockManager::isExclusiveLocked(void *tuple, bool &status)
+DbRetVal LockManager::isExclusiveLocked(void *tuple, Transaction **trans, bool &status)
 {
    Bucket *bucket = getLockBucket(tuple);
    printDebug(DM_Lock,"Bucket is %x", bucket);
@@ -485,9 +485,16 @@ DbRetVal LockManager::isExclusiveLocked(void *tuple, bool &status)
    {
        if(iter->ptrToTuple_ == tuple)
        {
-           if (iter->lInfo_.noOfReaders_ == -1) {
+           if (iter->lInfo_.noOfReaders_ == -1)
+           {
+               if ((*trans)->findInHasList(systemDatabase_, iter))
+               {
+                   printDebug(DM_LOCK, "You already have exclusive Lock: %x", iter);
+                   status = false;
+               }
+               else 
+                   status = true;
                bucket->mutex_.releaseLock();
-               status = true;
                return OK;
            }
        }

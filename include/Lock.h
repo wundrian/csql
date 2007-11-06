@@ -77,7 +77,7 @@ class LockManager
     DbRetVal getSharedLock(void *tuple, Transaction **trans);
     DbRetVal getExclusiveLock(void * tuple, Transaction **trans);
     DbRetVal releaseLock(void *tuple);
-    DbRetVal isExclusiveLocked(void *tuple, bool &status);
+    DbRetVal isExclusiveLocked(void *tuple, Transaction **trans, bool &status);
 };
 
 

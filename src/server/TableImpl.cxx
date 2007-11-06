@@ -175,7 +175,7 @@ void* TableImpl::fetchNoBind()
 
         bool status = false;
         while(true) { 
-            lockRet = lMgr_->isExclusiveLocked( curTuple_, status);
+            lockRet = lMgr_->isExclusiveLocked( curTuple_, trans, status);
             if (OK != lockRet)
             { 
                 printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
