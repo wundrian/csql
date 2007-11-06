@@ -105,6 +105,8 @@ DbRetVal SessionImpl::destroySystemDatabase()
     if (OK != rv) return rv;
     rv = dbMgr->deleteDatabase("praba");
     if (OK != rv) return rv;
+    delete dbMgr;
+    dbMgr = NULL;
     return OK;
 }
 
