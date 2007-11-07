@@ -17,6 +17,6 @@
 #define GLOBAL_H
 #ifndef APP_PID
 #define APP_PID
-pid_t appPid = 0;
+
 #endif
 #endif

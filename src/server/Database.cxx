@@ -21,7 +21,6 @@
 #include<Debug.h>
 #include<Config.h>
 #include<Process.h>
-extern pid_t appPid;
 
 const char* Database::getName()
 {
@@ -397,14 +396,15 @@ Transaction* Database::getSystemDatabaseTrans(int slot)
 }
 
 //used in case of system database
-ProcInfo* Database::getProcInfo(int pidSlot)
+ThreadInfo* Database::getThreadInfo(int slot)
 {
     size_t offset = os::alignLong(sizeof (DatabaseMetaData));
     offset = offset + os::alignLong( MAX_CHUNKS  * sizeof (Chunk));
     offset = offset + os::alignLong( Conf::config.getMaxTrans()   * sizeof(Transaction));
-    offset = offset + pidSlot * sizeof (ProcInfo);
-    return (ProcInfo*)(((char*) metaData_) +  offset);
+    offset = offset + slot * sizeof (ThreadInfo);
+    return (ThreadInfo*)(((char*) metaData_) +  offset);
 }
+/*
 //used in case of system database
 ThreadInfo* Database::getThreadInfo(int pidSlot, int thrSlot)
 {
@@ -437,7 +437,7 @@ bool Database::isLastThread()
     if (regThr < 1) return true;
     return false;
 }
-
+*/
 
 bool Database::isValidAddress(void* addr)
 {

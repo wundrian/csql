@@ -23,6 +23,7 @@
 #include<Transaction.h>
 #include<Debug.h>
 #include<Config.h>
+#include<Process.h>
 
 //Before calling this method, application is required to call readConfigValues
 DbRetVal SessionImpl::initSystemDatabase()
@@ -51,10 +52,6 @@ DbRetVal SessionImpl::initSystemDatabase()
 
     dbMgr = new DatabaseManagerImpl();
 
-    //TODO:Size of system database 100 MB ->config parameter
-
-    //TODO:No of chunks of system database->config parameter
-    //This limits the total number of catalog tables system shall support.
     rv = dbMgr->createDatabase(SYSTEMDB, Conf::config.getMaxSysDbSize());
     if (OK != rv) return rv;
     dbMgr->setSysDb(dbMgr->db());
@@ -119,6 +116,7 @@ DbRetVal SessionImpl::open(const char *username, const char *password)
        printError(ErrSysFatal, "Configuration file read failed\n");
        return ErrSysFatal;
     }
+
     if ( NULL == dbMgr)
     {
         dbMgr = new DatabaseManagerImpl();
@@ -129,7 +127,6 @@ DbRetVal SessionImpl::open(const char *username, const char *password)
         printError(rv,"Unable to open the system database");
         return rv;
     }
-
 
     rv = dbMgr->sysDb()->getDatabaseMutex();
     if (OK != rv)
@@ -145,7 +142,6 @@ DbRetVal SessionImpl::open(const char *username, const char *password)
     dbMgr->sysDb()->releaseDatabaseMutex();
     if (!isAuthenticated)
     {
-        dbMgr->deregisterThread();
         dbMgr->closeSystemDatabase();
         delete dbMgr;
         dbMgr = NULL;
@@ -155,8 +151,10 @@ DbRetVal SessionImpl::open(const char *username, const char *password)
 
     dbMgr->createTransactionManager();
     dbMgr->createLockManager();
-    rv = dbMgr->openDatabase("praba");
-    if (OK != rv) return rv;
+        rv = dbMgr->openDatabase("praba");
+    if (OK != rv) {
+        return rv;
+    }
 
     rv = dbMgr->registerThread();
     if (OK != rv)
@@ -172,12 +170,12 @@ DbRetVal SessionImpl::close()
     DbRetVal rv = OK;
     if (dbMgr)
     {
-        rv = dbMgr->closeDatabase();
-        if (rv != OK) return ErrBadCall;
-        rv = dbMgr->closeSystemDatabase();
-        if (rv != OK) return ErrBadCall;
         rv = dbMgr->deregisterThread();
-        if (rv != OK) return ErrBadCall;
+        if (rv != OK) {  return ErrBadCall;  }
+        rv = dbMgr->closeDatabase();
+        if (rv != OK) { return ErrBadCall;  }
+        rv = dbMgr->closeSystemDatabase();
+        if (rv != OK) { return ErrBadCall;  }
         delete dbMgr;
         dbMgr = NULL;
     }

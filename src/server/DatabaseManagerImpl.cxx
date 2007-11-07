@@ -136,9 +136,9 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
     {
         offset = offset + os::alignLong( MAX_CHUNKS  * sizeof (Chunk));
         offset = offset + os::alignLong( Conf::config.getMaxTrans()   * sizeof(Transaction));
-        offset = offset + os::alignLong( Conf::config.getMaxProcs() * sizeof(ProcInfo));
-        offset = offset + os::alignLong( Conf::config.getMaxProcs() * 
-                                         Conf::config.getMaxThreads() * sizeof(ThreadInfo));
+        offset = offset + os::alignLong( Conf::config.getMaxProcs() * sizeof(ThreadInfo));
+        //offset = offset + os::alignLong( Conf::config.getMaxProcs() * 
+        //                                 Conf::config.getMaxThreads() * sizeof(ThreadInfo));
     }
     int multiple = os::floor(offset / PAGE_SIZE);
     char *curPage = (((char*)rtnAddr) + ((multiple + 1) * PAGE_SIZE));
@@ -212,49 +212,63 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
     else
           attAddr = ProcessManager::usrAddr;
 
-    if (ProcessManager::noThreads == 0) 
+    //system db should be opened before user database files 
+    caddr_t rtnAddr = (caddr_t) NULL;
+
+    shared_memory_id shm_id = 0;
+    shared_memory_key key = 0;
+
+    if (0 == strcmp(name, SYSTEMDB))
+        key = Conf::config.getSysDbKey();
+    else
+       key = Conf::config.getUserDbKey();
+
+
+    int ret = ProcessManager::mutex.tryLock();
+    //If you are not getting lock ret !=0, it means somebody else is there.
+    //he will close the database.
+    if (ret != 0)
     {
-        //system db should be opened before user database files 
-        caddr_t rtnAddr = (caddr_t) NULL;
-
-        shared_memory_id shm_id = 0;
-        shared_memory_key key = 0;
-
-        if (0 == strcmp(name, SYSTEMDB))
-            key = Conf::config.getSysDbKey();
-        else
-            key = Conf::config.getUserDbKey();
-        shm_id = os::shm_open(key, size, 0666);
-        if (shm_id == -1 )
-        {
-            printError(ErrOS, "Shared memory open failed");
-            return ErrOS;
-        }
-
-        void *shm_ptr = os::shm_attach(shm_id, startaddr, SHM_RND);
-
-        rtnAddr  = (caddr_t) shm_ptr;
-
-        if (rtnAddr < 0 || shm_ptr == (char*)0xffffffff)
-        {
-            printError(ErrOS, "Shared memory attach returned -ve value %x %d", shm_ptr, errno);
-            return ErrOS;
-        } 
-        else 
-        {
-            db_ = new Database();
-            db_->setMetaDataPtr((DatabaseMetaData*)rtnAddr);
-            if (0 == strcmp(name, SYSTEMDB))
-                  ProcessManager::sysAddr = rtnAddr;
-            else
-                  ProcessManager::usrAddr = rtnAddr;
-
-            printDebug(DM_Database, "Opening database: %s", name);
-            logFinest(logger, "Opened database %s" , name);
-            return OK;
-        }
+        printError(ErrSysInternal, "Another thread calling open:Wait and then Retry\n");
+        return ErrSysInternal;
     }
+    void *shm_ptr = NULL;
+    if (ProcessManager::noThreads == 0 ) {
+       shm_id = os::shm_open(key, size, 0666);
+       if (shm_id == -1 )
+       {
+            printError(ErrOS, "Shared memory open failed");
+           return ErrOS;
+       }
+       shm_ptr = os::shm_attach(shm_id, startaddr, SHM_RND);
+        if (0 == strcmp(name, SYSTEMDB))
+              ProcessManager::sysAddr = (char*) shm_ptr;
+        else
+              ProcessManager::usrAddr = (char*) shm_ptr;
+    } else {
+        if (0 == strcmp(name, SYSTEMDB))
+              shm_ptr = ProcessManager::sysAddr;
+        else
+              shm_ptr = ProcessManager::usrAddr;
+    }
+    ProcessManager::mutex.releaseLock();
 
+
+    rtnAddr  = (caddr_t) shm_ptr;
+
+    if (rtnAddr < 0 || shm_ptr == (char*)0xffffffff)
+    {
+        printError(ErrOS, "Shared memory attach returned -ve value %x %d", shm_ptr, errno);
+        return ErrOS;
+    } 
+    else 
+    {
+        db_ = new Database();
+        db_->setMetaDataPtr((DatabaseMetaData*)rtnAddr);
+        printDebug(DM_Database, "Opening database: %s", name);
+        logFinest(logger, "Opened database %s" , name);
+        return OK;
+    }
     db_ = new Database();
     printDebug(DM_Database, "Opening database: %s", name);
     db_->setMetaDataPtr((DatabaseMetaData*)attAddr);
@@ -264,18 +278,22 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
 
 DbRetVal DatabaseManagerImpl::closeDatabase()
 {
-    printDebug(DM_Database, "Closing database: %s",(char*)db_->getName());
-    logFinest(logger, "Closed database");
+
     if (NULL == db_) 
     {
         printError(ErrAlready, "Database is already closed\n");
         return ErrAlready;
     }
+    printDebug(DM_Database, "Closing database: %s",(char*)db_->getName());
     //check if this is the last thread to be deregistered
-    //if (ProcessManager::noThreads == 1)
-    {
+    int ret = ProcessManager::mutex.getLock();
+    //If you are not getting lock ret !=0, it means somebody else is there.
+    //he will close the database.
+    if (ret == 0 && ProcessManager::noThreads == 0)
         os::shm_detach((char*)db_->getMetaDataPtr());
-    }
+    ProcessManager::mutex.releaseLock();
+    logFinest(logger, "Closed database");
+
     delete db_;
     db_ = NULL;
 }

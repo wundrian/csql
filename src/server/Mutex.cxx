@@ -105,6 +105,7 @@ int Mutex::tryLock()
     struct timeval timeout;
     timeout.tv_sec = 0;
     timeout.tv_usec = 1;
+    //TODO::Mutex timeout should come from csql.conf
 
     while (tries < 5)
     {

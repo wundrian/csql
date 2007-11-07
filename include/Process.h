@@ -18,6 +18,7 @@
 
 #include<os.h>
 #include<ErrorType.h>
+#include<Mutex.h>
 
 class ProcInfo
 {
@@ -48,12 +49,14 @@ class ProcessManager
 {
     public:
     static int noThreads;
+    static Mutex mutex;
     static caddr_t sysAddr;
     static caddr_t usrAddr;
     Database *systemDatabase;
-    ProcInfo *procInfo;
-    ThreadInfo *thrInfo;
-    ProcessManager(Database *sysdb) { systemDatabase = sysdb; procInfo = NULL; thrInfo = NULL; }
+    //ProcInfo *procInfo;
+    //ThreadInfo *thrInfo;
+    ProcessManager(Database *sysdb) { systemDatabase = sysdb; //procInfo = NULL; thrInfo = NULL; 
+    }
     DbRetVal registerThread();
     DbRetVal deregisterThread();
 };

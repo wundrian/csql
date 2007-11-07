@@ -86,8 +86,8 @@ class Database
     Chunk* getSystemDatabaseChunk(int id);
     Transaction* getSystemDatabaseTrans(int slot);
 
-    ProcInfo* getProcInfo(int pidSlot);
-    ThreadInfo* getThreadInfo(int pidSlot, int thrSlot);
+    ThreadInfo* getThreadInfo(int slot);
+    //ThreadInfo* getThreadInfo(int pidSlot, int thrSlot);
     bool isLastThread();
 
     void createAllCatalogTables();
