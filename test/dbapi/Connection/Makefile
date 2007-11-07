@@ -37,7 +37,8 @@ TARGETS = \
 	test013 \
 	test014 \
 	test015 \
-	test016
+	test016 \
+	test101
        
 
 ifeq ($(PlatForm), supported)
@@ -75,6 +76,8 @@ test014: conntest14.c
 test015: conntest15.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test016: conntest16.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test101: threadtest1.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 
 clean:
