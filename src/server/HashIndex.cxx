@@ -152,6 +152,9 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, void
         //TODO::change below to fldPos.Currently it returns -1.check value of fldPos.
         //offset = fldList_.getFieldOffset(hIdxInfo->fldPos);
         offset = tbl->fldList_.getFieldOffset(name);
+        type = tbl->fldList_.getFieldType(name);
+        //TODO:: Remove the above code. it iterates again and again.
+        //instead get all the info in one iteration. change name to fldpos
     } else {
         CatalogTableINDEXFIELD cIndexField(tbl->sysDB_);
         cIndexField.getFieldNameAndType(indexPtr, name, type);

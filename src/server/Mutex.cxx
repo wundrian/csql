@@ -98,16 +98,16 @@ int TSL(Lock *lock)
 }
 #endif
 
-int Mutex::tryLock()
+int Mutex::tryLock(int tryTimes, int waitmsecs)
 {
     int tries = 0;
     int ret = 0;
     struct timeval timeout;
     timeout.tv_sec = 0;
-    timeout.tv_usec = 1;
+    timeout.tv_usec = waitmsecs;
     //TODO::Mutex timeout should come from csql.conf
 
-    while (tries < 5)
+    while (tries < tryTimes)
     {
 #if defined(sparc) || defined(i686)
     if (TSL(&lock) == 0) return 0; 
@@ -119,7 +119,7 @@ int Mutex::tryLock()
         os::select(0, 0, 0, 0, &timeout);
         tries++;
     }
-    printError(ErrLockTimeOut, "Unable to get the mutex");
+    printError(ErrLockTimeOut, "Unable to get the mutex , tried %d times", tries);
     return 1;
 }
 

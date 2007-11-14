@@ -125,6 +125,7 @@ DbRetVal PredicateImpl::evaluate(bool &result)
     //get the value in the tuple
     int offset1, offset2;
     offset1 = table->getFieldOffset(fldName1);
+    //TODO::do not call getFieldXXX many times, instead get it using getFieldInfo
     char *val1, *val2 ;
     //Assumes that fldName2 data type is also same for expr f1 <f2
     DataType srcType = table->getFieldType(fldName1);

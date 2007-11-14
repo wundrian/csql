@@ -49,7 +49,10 @@ int Logger::log(LogLevel level, char* filename,
         } 
         char *buffer = new char[MAX_TRACE_LOG_LENGTH];
         createLogRecord(level, filename, lineNo, mesgBuf, &buffer);
-        int ret = mutex_.tryLock();
+        //TODO::There is some issue in locking. Need to look into this and then
+        //uncomment the below lines
+        //int ret = mutex_.tryLock(5, 100000);
+        int ret = 0;
         if (ret != 0)
         {
             printError(ErrLockTimeOut,"Unable to acquire logger Mutex");
@@ -58,7 +61,7 @@ int Logger::log(LogLevel level, char* filename,
         }        
         os::write(fdLog, buffer, strlen(buffer));
         os::fsync(fdLog);
-        mutex_.releaseLock();
+        //mutex_.releaseLock();
         delete[] buffer;
     }
     return 0;

@@ -15,8 +15,8 @@
   ***************************************************************************/
 #include<Debug.h>
 
-int DebugDM_Alloc = 1;
-int DebugDM_VarAlloc = 1;
+int DebugDM_Alloc = 0;
+int DebugDM_VarAlloc = 0;
 int DebugDM_Lock = 0;
 int DebugDM_Transaction = 0;
 int DebugDM_UndoLog = 0;
@@ -33,7 +33,7 @@ int printError1(DbRetVal val, char* fname, int lno, char *format, ...)
   va_list ap;
   char mesgBuf[1024];
 
-  sprintf(mesgBuf, "%d:%d:%s:%d:",
+  sprintf(mesgBuf, "%d:%lu:%s:%d:",
            os::getpid(), os::getthrid(), fname, lno);
   os::write(1, mesgBuf, strlen(mesgBuf));
 
@@ -71,7 +71,7 @@ int printDebug1(int module, char *fname, int lno, char *format, ...)
   va_list ap;
   char mesgBuf[1024];
 
-  sprintf(mesgBuf, "D:%s:%d:%d:%s:%d:", moduleNames[module],
+  sprintf(mesgBuf, "D:%s:%d:%lu:%s:%d:", moduleNames[module],
            os::getpid(), os::getthrid(), fname, lno);
   os::write(1, mesgBuf, strlen(mesgBuf));
 

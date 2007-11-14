@@ -386,6 +386,7 @@ DbRetVal TableImpl::insertIndexNode(Transaction *tr, void *indexPtr, void *tuple
     INDEX *iptr = (INDEX*)indexPtr;
     DbRetVal ret = OK;
     Index* idx = Index::getIndex(iptr->indexType_);
+    if (idx == NULL) printf("It is here :PRABA\n");
     ret = idx->insert(this, tr, indexPtr, tuple);
     return ret;
 }

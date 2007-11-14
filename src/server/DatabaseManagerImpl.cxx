@@ -281,8 +281,8 @@ DbRetVal DatabaseManagerImpl::closeDatabase()
 
     if (NULL == db_) 
     {
-        printError(ErrAlready, "Database is already closed\n");
-        return ErrAlready;
+        //Database is already closed
+        return OK;
     }
     printDebug(DM_Database, "Closing database: %s",(char*)db_->getName());
     //check if this is the last thread to be deregistered
@@ -847,14 +847,13 @@ DbRetVal DatabaseManagerImpl::registerThread()
 
 DbRetVal DatabaseManagerImpl::deregisterThread()
 {
-    if (pMgr_ == NULL) 
+    DbRetVal rv = OK;
+    if (pMgr_ != NULL) 
     {
-        printError(ErrBadCall, "Process already deregistered or never registered\n");
-        return ErrBadCall;
+        rv = pMgr_->deregisterThread();
+        delete pMgr_;
+        pMgr_ = NULL;
     }
-    DbRetVal rv = pMgr_->deregisterThread();
-    delete pMgr_;
-    pMgr_ = NULL;
     return rv;
 }
 

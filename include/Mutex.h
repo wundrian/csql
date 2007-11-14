@@ -33,7 +33,7 @@ class Mutex
     Mutex();
     int init();
     int getLock();
-    int tryLock();
+    int tryLock(int tries=5, int waitmsecs=10);
     int releaseLock();
     int destroy();
 };
