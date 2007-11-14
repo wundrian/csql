@@ -22,7 +22,9 @@ INCL= -I$(CSQL_INSTALL_ROOT)/include
 LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsql
 
 TARGETS = \
-        DMLTest
+        DMLTest \
+        DMLThreadTest \
+	Range
        
 
 ifeq ($(PlatForm), supported)
@@ -30,6 +32,10 @@ all: $(TARGETS)
 endif
 
 DMLTest: DMLTest.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+DMLThreadTest: DMLThreadTest.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+Range: Range.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 
 clean:
