@@ -10,8 +10,6 @@ int main()
        printf("Error during connection %d\n", rv);
        return -1;
     }
-
-
     DatabaseManager *dbMgr = conn.getDatabaseManager();
     if (dbMgr == NULL) { printf("Auth failed\n"); return -1;}
     TableDef tabDef;

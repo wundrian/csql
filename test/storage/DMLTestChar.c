@@ -1,5 +1,6 @@
 #include<CSql.h>
 #include<NanoTimer.h>
+#define ITERATIONS 100
 int main()
 {
 
@@ -22,9 +23,9 @@ int main()
     strcpy(idxInfo->tableName, "t1");
     idxInfo->list.append("f1");
     idxInfo->indType = hashIndex;
-    //rv = dbMgr->createIndex("indx1", idxInfo);
-    //if (rv != OK) { printf("Index creation failed\n"); return -1; }
-    //printf("Index created\n");
+    rv = dbMgr->createIndex("indx1", idxInfo);
+    if (rv != OK) { printf("Index creation failed\n"); return -1; }
+    printf("Index created\n");
     Table *table = dbMgr->openTable("t1");
     if (table == NULL) { printf("Unable to open table\n"); return -1; }
     int id = 0;
@@ -37,7 +38,7 @@ int main()
     int i;
     int icount =0;
     NanoTimer timer;
-    for(i = 0; i< 100; i++)
+    for(i = 0; i< ITERATIONS; i++)
     {
         sprintf(f1, "PRABAKARAN%d", i);
         timer.start();
@@ -54,14 +55,14 @@ int main()
    sprintf(msgBuf,"Total rows inserted %d %lld %lld %lld\n",icount, timer.min(), timer.max(), timer.avg());
    os::write(1,msgBuf,strlen(msgBuf));
 
-    int offset1= os::align(50);
+    int offset= os::align(50);
     Condition p1;
     char val1[50];
     p1.setTerm("f1", OpEquals, &val1);
     table->setCondition(&p1);
     icount=0;
     timer.reset();
-    for(i = 0; i< 100; i++)
+    for(i = 0; i< ITERATIONS; i++)
     {    
         sprintf(val1, "PRABAKARAN%d", i);
         timer.start();
@@ -70,6 +71,7 @@ int main()
         table->execute();
         tuple = (char*)table->fetch();
         if (tuple == NULL) {printf("loop break in %d\n", i);table->close();break;}
+        //printf("Select f1 = %s, f2=%s\n", tuple, tuple + offset);
         table->close();
         icount++;
         conn.commit();
@@ -78,7 +80,7 @@ int main()
     sprintf(msgBuf,"%d rows selected %lld %lld %lld\n", icount, timer.min(), timer.max(), timer.avg());
     os::write(1,msgBuf,strlen(msgBuf));
     timer.reset();
-    for(i = 0; i< 100; i++)
+    for(i = 0; i< ITERATIONS; i++)
     {
         sprintf(val1, "PRABAKARAN%d", i);
         timer.start();
@@ -96,7 +98,7 @@ int main()
     sprintf(msgBuf,"%d rows updated %lld %lld %lld\n", i, timer.min(), timer.max(), timer.avg());
     os::write(1,msgBuf,strlen(msgBuf));
     icount=0;
-    for(i = 0; i< 100; i++)
+    for(i = 0; i< ITERATIONS; i++)
     {
         sprintf(val1, "PRABAKARAN%d", i);
         timer.start();
@@ -105,6 +107,7 @@ int main()
         table->execute();
         tuple = (char*)table->fetch() ;
         if (tuple == NULL) {printf("loop break in %d\n", i);table->close();break;}
+        //printf("Before delete f1 = %s, f2=%s\n", tuple, tuple + offset);
         table->deleteTuple();
         icount++;
         table->close();
@@ -114,7 +117,7 @@ int main()
     printf("%d rows deleted %lld %lld %lld\n", icount, timer.min(), timer.max(), timer.avg());
     int count =0;
     timer.reset();
-    for(i = 0; i< 100; i++)
+    for(i = 0; i< ITERATIONS; i++)
     {
         sprintf(val1, "PRABAKARAN%d", i);
         rv = conn.startTransaction();
@@ -122,7 +125,7 @@ int main()
         table->execute();
         tuple = (char*)table->fetch() ;
         if (tuple == NULL) {printf("loop break in %d\n", i);table->close();break;}
-        //printf("tuple value is %d %s \n", *((int*)tuple), tuple+offset1);
+        //printf("tuple value is %d %s \n", *((int*)tuple), tuple+offset);
         count++;
         table->close();
         conn.commit();

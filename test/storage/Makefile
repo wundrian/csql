@@ -4,12 +4,12 @@ PlatForm=supported
 
 ifeq ($(OSNAME), SunOS)
 CPlus = CC
-CPlusFlags = -O2 -w -mt -xarch=v8 -rdynamic
+CPlusFlags = -O2 -w -mt -xarch=v8
 SYSLIBS=-ldl -lnsl -lsocket  -lposix4
 else
 ifeq ($(OSNAME), Linux)
 CPlus = g++
-CPlusFlags = -g -w
+CPlusFlags = -g -w 
 SYSLIBS= -rdynamic -lrt -lpthread -lcrypt
 else
 PlatForm=notsupported
@@ -19,7 +19,7 @@ endif
 endif
 
 INCL= -I$(CSQL_INSTALL_ROOT)/include
-LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsql
+LIBS= -L$(CSQL_INSTALL_ROOT)/lib -rdynamic -lcsql
 
 TARGETS = \
         DMLTest \
