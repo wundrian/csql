@@ -4,7 +4,7 @@ PlatForm=supported
 
 ifeq ($(OSNAME), SunOS)
 CPlus = CC
-CPlusFlags = -O2 -w -mt -xarch=v8
+CPlusFlags = -O2 -w -mt -xarch=v8 -rdynamic
 SYSLIBS=-ldl -lnsl -lsocket  -lposix4
 else
 ifeq ($(OSNAME), Linux)
@@ -23,6 +23,7 @@ LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsql
 
 TARGETS = \
         DMLTest \
+        DMLTestChar \
         DMLThreadTest \
 	Range
        
@@ -32,6 +33,8 @@ all: $(TARGETS)
 endif
 
 DMLTest: DMLTest.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+DMLTestChar: DMLTestChar.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 DMLThreadTest: DMLThreadTest.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
