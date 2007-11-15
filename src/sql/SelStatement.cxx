@@ -467,8 +467,8 @@ DbRetVal SelStatement::getProjFldInfo (int projpos, FieldInfo *&fInfo)
             printError(ErrSysFatal, "Should never happen. Field Name list has NULL");
             return ErrSysFatal;
         }
-        position++;
         if (position == projpos) break;
+        position++;
     }
 
     rv = table->getFieldInfo(name->fldName, fInfo);
