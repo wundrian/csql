@@ -294,6 +294,7 @@ DbRetVal DatabaseManagerImpl::closeDatabase()
 
     delete db_;
     db_ = NULL;
+    return OK;
 }
 //Assumes that system database mutex is taken before calling this.
 Chunk* DatabaseManagerImpl::createUserChunk(size_t size)

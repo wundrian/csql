@@ -8,7 +8,7 @@ int main()
    DbRetVal rv=conn.open("praba","manager");
    if(rv!=OK) return 1;
    rv=conn.rollback();
-   if(rv==OK)
+   if(rv!=OK)
    {
       printf("Test script failed");
       return 2;
