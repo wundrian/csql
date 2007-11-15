@@ -36,19 +36,8 @@ DbRetVal SessionImpl::initSystemDatabase()
        printError(ErrSysInit, "Configuration file read failed\n");
        return ErrSysInit;
     }
-    printf("ConfigValues\n");
-    printf(" getPageSize %d\n", Conf::config.getPageSize());
-    printf(" getMaxTrans %d\n", Conf::config.getMaxTrans());
-    printf(" getMaxProcs %d\n", Conf::config.getMaxProcs());
-    printf(" getMaxSysDbSize %ld\n", Conf::config.getMaxSysDbSize());
-    printf(" getMaxDbSize %ld\n", Conf::config.getMaxDbSize());
-    printf(" getSysDbKey %d\n", Conf::config.getSysDbKey());
-    printf(" getUserDbKey %d\n", Conf::config.getUserDbKey());
-    printf(" getLogFile %s\n", Conf::config.getLogFile());
-    printf(" getMapAddress %ld\n", Conf::config.getMapAddress());
-    printf(" getMutexSecs %d\n", Conf::config.getMutexSecs());
-    printf(" getMutexUSecs %d\n", Conf::config.getMutexUSecs());
 
+    Conf::config.print();
 
     dbMgr = new DatabaseManagerImpl();
 
@@ -128,31 +117,20 @@ DbRetVal SessionImpl::open(const char *username, const char *password)
         return rv;
     }
 
-    rv = dbMgr->sysDb()->getDatabaseMutex();
+    rv = authenticate(username, password);
     if (OK != rv)
     {
-        printError(rv,"Unable to get database mutex");
-        return rv;
-    }
-
-    CatalogTableUSER cUser(dbMgr->sysDb());
-    cUser.authenticate(username, password, isAuthenticated, isDba);
-    strcpy(userName, username);
-    //isAuthenticated=true;
-    dbMgr->sysDb()->releaseDatabaseMutex();
-    if (!isAuthenticated)
-    {
         dbMgr->closeSystemDatabase();
-        delete dbMgr;
-        dbMgr = NULL;
-        printError(ErrNoPrivilege,"User Authentication failed");
-        return ErrNoPrivilege;
+        delete dbMgr; dbMgr = NULL;
+        return rv;
     }
 
     dbMgr->createTransactionManager();
     dbMgr->createLockManager();
-        rv = dbMgr->openDatabase("praba");
+    rv = dbMgr->openDatabase("praba");
     if (OK != rv) {
+        dbMgr->closeSystemDatabase();
+        delete dbMgr; dbMgr = NULL;
         return rv;
     }
 
@@ -160,11 +138,32 @@ DbRetVal SessionImpl::open(const char *username, const char *password)
     if (OK != rv)
     {
         printError(rv,"Unable to register to csql server");
+        dbMgr->closeDatabase();
+        dbMgr->closeSystemDatabase();
+        delete dbMgr; dbMgr = NULL;
         return rv;
     }
     return OK;
 }
-
+DbRetVal SessionImpl::authenticate(const char *username, const char *password)
+{
+    DbRetVal rv = dbMgr->sysDb()->getDatabaseMutex();
+    if (OK != rv)
+    {
+        printError(rv,"Unable to get database mutex");
+        return rv;
+    }
+    CatalogTableUSER cUser(dbMgr->sysDb());
+    cUser.authenticate(username, password, isAuthenticated, isDba);
+    strcpy(userName, username);
+    dbMgr->sysDb()->releaseDatabaseMutex();
+    if (!isAuthenticated)
+    {
+        printError(ErrNoPrivilege,"User Authentication failed");
+        return ErrNoPrivilege;
+    }
+    return OK;
+}
 DbRetVal SessionImpl::close()
 {
     DbRetVal rv = OK;

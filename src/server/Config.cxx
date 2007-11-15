@@ -58,6 +58,14 @@ int Config::storeKeyVal(char *key, char *value)
            { cVal.mutexSecs = atoi(value);  }
     else if (strcasestr(key, "MUTEX_TIMEOUT_USECS") != NULL)
            { cVal.mutexUSecs = atoi(value);  }
+    else if (strcasestr(key, "MUTEX_TIMEOUT_RETRIES") != NULL)
+           { cVal.mutexRetries = atoi(value);  }
+    else if (strcasestr(key, "LOCK_TIMEOUT_SECS") != NULL)
+           { cVal.lockSecs = atoi(value);  }
+    else if (strcasestr(key, "LOCK_TIMEOUT_USECS") != NULL)
+           { cVal.lockUSecs = atoi(value);  }
+    else if (strcasestr(key, "LOCK_TIMEOUT_RETRIES") != NULL)
+           { cVal.lockRetries = atoi(value);  }
     else  return 1;
     return 0;
 }
@@ -141,6 +149,26 @@ int Config::validateValues()
         printError(ErrBadArg,  "MUTEX_TIMEOUT_USECS should be >= 0 and <= 1000000");
         return 1;
     }
+    if (cVal.mutexRetries < 0 || cVal.mutexRetries > 100)
+    {
+        printError(ErrBadArg,  "MUTEX_TIMEOUT_RETRY should be >= 0 and <= 100");
+        return 1;
+    }
+    if (cVal.lockSecs < 0 || cVal.lockSecs > 360)
+    {
+        printError(ErrBadArg,  "LOCK_TIMEOUT_SECS should be >= 0 and <= 360");
+        return 1;
+    }
+    if (cVal.lockUSecs < 0 || cVal.lockUSecs > 1000000)
+    {
+        printError(ErrBadArg,  "LOCK_TIMEOUT_USECS should be >= 0 and <= 1000000");
+        return 1;
+    }
+    if (cVal.lockRetries < 0 || cVal.lockRetries > 100)
+    {
+        printError(ErrBadArg,  "LOCK_TIMEOUT_RETRY should be >= 0 and <= 100");
+        return 1;
+    }
     return 0;
 }
 
@@ -189,7 +217,22 @@ int Config::readAllValues(char *fileName)
 
     return 0;
 }
-
-
-
-
+void Config::print()
+{
+    printf("ConfigValues\n");
+    printf(" getPageSize %d\n", getPageSize());
+    printf(" getMaxTrans %d\n", getMaxTrans());
+    printf(" getMaxProcs %d\n", getMaxProcs());
+    printf(" getMaxSysDbSize %ld\n", getMaxSysDbSize());
+    printf(" getMaxDbSize %ld\n", getMaxDbSize());
+    printf(" getSysDbKey %d\n", getSysDbKey());
+    printf(" getUserDbKey %d\n", getUserDbKey());
+    printf(" getLogFile %s\n", getLogFile());
+    printf(" getMapAddress %ld\n", getMapAddress());
+    printf(" getMutexSecs %d\n", getMutexSecs());
+    printf(" getMutexUSecs %d\n", getMutexUSecs());
+    printf(" getMutexRetries %d\n", getMutexRetries());
+    printf(" getLockSecs %d\n", getLockSecs());
+    printf(" getLockUSecs %d\n", getLockUSecs());
+    printf(" getLockRetries %d\n", getLockRetries());
+}

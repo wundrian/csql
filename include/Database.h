@@ -91,6 +91,8 @@ class Database
     bool isLastThread();
 
     void createAllCatalogTables();
+    void createSystemTables();
+    void createMetaDataTables();
 
     void* allocLockHashBuckets();
     Bucket* getLockHashBuckets();

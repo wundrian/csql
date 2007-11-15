@@ -67,6 +67,7 @@ class HashIndex;
 
 class Index
 {
+    //create (one) object for each indexing mechanisms here
     static HashIndex *hIdx;
     public:
     static Index* getIndex(IndexType type);

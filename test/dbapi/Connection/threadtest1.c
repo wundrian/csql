@@ -30,7 +30,7 @@ int main (int argc, char **argv)
 
 void* print_message_function(void *ptr)
 {
-    if (flag == 0) {flag =1; sleep(2); }
+    //if (flag == 0) {flag =1; sleep(2); }
     Connection conn;
     DbRetVal rv=conn.open("praba","manager");
     if(rv!=OK)

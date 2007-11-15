@@ -170,11 +170,11 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
    int tries = 0;
    int ret = 0;
    struct timeval timeout;
-   timeout.tv_sec = Conf::config.getMutexSecs();
-   timeout.tv_usec = Conf::config.getMutexUSecs();
+   timeout.tv_sec = Conf::config.getLockSecs();
+   timeout.tv_usec = Conf::config.getLockUSecs();
 
    //printDebug(DM_Lock, "Trying to get mutex: for bucket %x\n", bucket);
-   while (tries < 100)
+   while (tries < Conf::config.getLockRetries())
    {
        lockRet = bucket->mutex_.tryLock();
        if (lockRet != 0)
@@ -312,10 +312,10 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
    int tries = 0;
    int ret = 0;
    struct timeval timeout;
-   timeout.tv_sec = Conf::config.getMutexSecs();
-   timeout.tv_usec = Conf::config.getMutexUSecs();
+   timeout.tv_sec = Conf::config.getLockSecs();
+   timeout.tv_usec = Conf::config.getLockUSecs();
 
-   while (tries < 100)
+   while (tries < Conf::config.getLockRetries())
    {
        lockRet = bucket->mutex_.tryLock();
        if (lockRet != 0)

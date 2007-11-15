@@ -17,6 +17,7 @@
 #include <Mutex.h>
 #include <Debug.h>
 #include <NanoTimer.h>
+#include <Config.h>
 Mutex::Mutex()
 {
 #if defined(sparc) || defined(i686)
@@ -105,8 +106,12 @@ int Mutex::tryLock(int tryTimes, int waitmsecs)
     struct timeval timeout;
     timeout.tv_sec = 0;
     timeout.tv_usec = waitmsecs;
-    //TODO::Mutex timeout should come from csql.conf
-
+    if (tryTimes == 0 && waitmsecs == 0)
+    {
+        timeout.tv_sec = Conf::config.getMutexSecs();
+        timeout.tv_usec = Conf::config.getMutexUSecs();
+        tryTimes = Conf::config.getMutexRetries();
+    }
     while (tries < tryTimes)
     {
 #if defined(sparc) || defined(i686)

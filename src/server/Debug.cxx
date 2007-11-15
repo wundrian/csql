@@ -15,7 +15,7 @@
   ***************************************************************************/
 #include<Debug.h>
 
-int DebugDM_Alloc = 0;
+int DebugDM_Alloc = 1;
 int DebugDM_VarAlloc = 0;
 int DebugDM_Lock = 0;
 int DebugDM_Transaction = 0;

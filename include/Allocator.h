@@ -55,6 +55,7 @@ class PageInfo
 
      Page *nextPage_; //next page in the same chunk
      void setPageAsUsed(size_t offset);
+     void setFirstPageAsUsed();
 
 
 };
@@ -142,6 +143,17 @@ class Chunk
     void createDataBucket(Page *page, size_t totalSize, size_t needSize);
     void splitDataBucket(VarSizeInfo *varInfo, size_t needSize);
     void* varSizeFirstFitAllocate(size_t size);
+    void freeForLargeAllocator(void *ptr);
+    void freeForVarSizeAllocator(void *ptr);
+
+    void* allocateForLargeDataSize(Database *db);
+    void* allocateFromFirstPage(Database *db, int noOfDataNodes);
+    void* allocateFromNewPage(Database *db);
+
+    void* allocateForLargeDataSize(Database *db, size_t size);
+    void* allocFromNewPageForVarSize(Database *db, size_t size);
+    void* allocateFromCurPageForVarSize(size_t size);
+
 
     friend class Database;
     friend class DatabaseManagerImpl;

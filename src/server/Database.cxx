@@ -280,10 +280,7 @@ DbRetVal Database::createSystemDatabaseChunk(AllocType type, size_t size, int id
 
     chunk->firstPage_ = chunk->curPage_;
     PageInfo* firstPageInfo = ((PageInfo*)chunk->firstPage_);
-    firstPageInfo->isUsed_ = 1;
-    firstPageInfo->hasFreeSpace_ = 1;
-    firstPageInfo->nextPageAfterMerge_ = NULL;
-    firstPageInfo->nextPage_ = NULL;
+    firstPageInfo->setFirstPageAsUsed();
     chunk->setChunkID(id);
     chunk->setAllocType(type);
     printDebug(DM_Database, "Creating System Database Chunk:%d Size:%d",id, chunk->allocSize_);
@@ -305,7 +302,7 @@ DbRetVal Database::createSystemDatabaseChunk(AllocType type, size_t size, int id
     return OK;
 }
 
-//This will never be called. If situation arises will be coded later.
+//This is never called currently. If situation arises will be coded later.
 DbRetVal Database::deleteSystemDatabaseChunk(int id)
 {
     Chunk *chunk = getSystemDatabaseChunk(id);
@@ -337,13 +334,11 @@ void Database::createAllCatalogTables()
     // chunk id 13->FIELD
     // chunk id 14->ACCESS
 
-    // chunk id 30->hash index on tblName_ of TABLE
-    // chunk id 31->hash index on fldName_ of FIELD
-    // chunk id 32->hash index on userName_ of ACCESS
-    // chunk id 33->hash index on userName_ of USER
-    // chunk id 34->hash index on dbName_ of DATABASE
-    // chunk id 35->hash index on tblID_ of FIELD
-    //
+    createSystemTables();
+    createMetaDataTables();
+}
+void Database::createSystemTables()
+{
     createSystemDatabaseChunk(FixedSizeAllocator,
                                   sizeof(Chunk), UserChunkTableId);
     createSystemDatabaseChunk(FixedSizeAllocator,
@@ -359,7 +354,9 @@ void Database::createAllCatalogTables()
 
     createSystemDatabaseChunk(VariableSizeAllocator,
                                   0, UndoLogTableID);
-
+}
+void Database::createMetaDataTables()
+{
     createSystemDatabaseChunk(FixedSizeAllocator,
                                   sizeof(DATABASEFILE), DatabaseTableId);
     createSystemDatabaseChunk(FixedSizeAllocator,
@@ -374,7 +371,6 @@ void Database::createAllCatalogTables()
                                   sizeof(INDEX), IndexTableId);
     createSystemDatabaseChunk(FixedSizeAllocator,
                                   sizeof(INDEXFIELD), IndexFieldTableId);
-    
 }
 
 //used in case of system database
@@ -404,40 +400,6 @@ ThreadInfo* Database::getThreadInfo(int slot)
     offset = offset + slot * sizeof (ThreadInfo);
     return (ThreadInfo*)(((char*) metaData_) +  offset);
 }
-/*
-//used in case of system database
-ThreadInfo* Database::getThreadInfo(int pidSlot, int thrSlot)
-{
-    size_t offset = os::alignLong(sizeof (DatabaseMetaData));
-    offset = offset + os::alignLong( MAX_CHUNKS  * sizeof (Chunk));
-    offset = offset + os::alignLong( Conf::config.getMaxTrans()   * sizeof(Transaction));
-    offset = offset + os::alignLong( Conf::config.getMaxProcs() * sizeof(ProcInfo));
-    offset = offset + pidSlot * thrSlot  * sizeof (ThreadInfo);
-    return (ThreadInfo*)(((char*) metaData_) +  offset);
-}
-
-bool Database::isLastThread()
-{
-    DbRetVal rv = getProcessTableMutex();
-    if (OK != rv)
-    {
-        printError(rv, "Unable to get process table mutex from Database::isLastThread()");
-        return false;
-    }
-    pid_t pid = appPid;
-
-    ThreadInfo *tInfo = getThreadInfo(pid, 0);
-    int regThr = 0;
-    for (int i=0; i < Conf::config.getMaxThreads(); i++)
-    {
-        if (0 != tInfo->thrid_) regThr++;
-        tInfo++;
-    }
-    releaseProcessTableMutex();
-    if (regThr < 1) return true;
-    return false;
-}
-*/
 
 bool Database::isValidAddress(void* addr)
 {

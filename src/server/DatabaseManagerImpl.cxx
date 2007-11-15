@@ -137,8 +137,6 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
         offset = offset + os::alignLong( MAX_CHUNKS  * sizeof (Chunk));
         offset = offset + os::alignLong( Conf::config.getMaxTrans()   * sizeof(Transaction));
         offset = offset + os::alignLong( Conf::config.getMaxProcs() * sizeof(ThreadInfo));
-        //offset = offset + os::alignLong( Conf::config.getMaxProcs() * 
-        //                                 Conf::config.getMaxThreads() * sizeof(ThreadInfo));
     }
     int multiple = os::floor(offset / PAGE_SIZE);
     char *curPage = (((char*)rtnAddr) + ((multiple + 1) * PAGE_SIZE));

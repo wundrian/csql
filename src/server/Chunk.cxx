@@ -28,12 +28,115 @@ void Chunk::setSize(size_t size)
 {
 
     size_t needSize = size + sizeof(int);
-    size_t multiple = os::floor(needSize / sizeof(size_t));
+    size_t multiple = (size_t) os::floor(needSize / sizeof(size_t));
     size_t rem = needSize % sizeof(size_t);
     if (0 == rem)
         allocSize_ = needSize;
     else
         allocSize_  = (multiple + 1) * sizeof(size_t);
+}
+
+void* Chunk::allocateForLargeDataSize(Database *db)
+{
+    PageInfo* pageInfo = ((PageInfo*)curPage_);
+    DbRetVal ret = db->getAllocDatabaseMutex();
+    if (ret != 0)
+    {
+        printError(ErrLockTimeOut,"Unable to acquire alloc database Mutex");
+        return NULL;
+    }
+    pageInfo = (PageInfo*)db->getFreePage(allocSize_);
+    if (NULL == pageInfo)
+    {
+        db->releaseAllocDatabaseMutex();
+        printError(ErrNoMemory,"No more free pages in the database");
+        return NULL;
+    }
+    printDebug(DM_Alloc, "Chunk ID:%d Large Data Item newPage:%x",
+                                       chunkID_, pageInfo);
+    int multiple = os::floor(allocSize_ / PAGE_SIZE);
+    int offset = ((multiple + 1) * PAGE_SIZE);
+
+    pageInfo->setPageAsUsed(offset);
+
+    //create the link
+   ((PageInfo*)curPage_)->nextPage_ = (Page*) pageInfo;
+    //Make this as current page
+    curPage_ = (Page*) pageInfo;
+    char* data = ((char*)curPage_) + sizeof(PageInfo);
+    //TODO::check whether it is locked
+    *((int*)data) = 1;
+    db->releaseAllocDatabaseMutex();
+    return data + sizeof(int);
+
+}
+
+void* Chunk::allocateFromFirstPage(Database *db, int noOfDataNodes)
+{
+    PageInfo *pageIter = ((PageInfo*)firstPage_);
+    printDebug(DM_Alloc, "Chunk ID:%d. No free page in database",
+                                                       chunkID_);
+    printDebug(DM_Alloc, "Scan from firstPage:%x for free nodes",
+                                                     firstPage_);
+    char *data = NULL;
+    int i = 0;
+    //scan from first page to locate a free node available
+    while(NULL != pageIter)
+    {
+        data = ((char*)pageIter) + sizeof(PageInfo);
+        if (pageIter->hasFreeSpace_ == 1)
+        {
+            for (i = 0; i< noOfDataNodes -1; i++)
+            {
+                if (1 == *((int*)data))
+                    data = data + allocSize_;
+                else break;
+            }
+            if (i != noOfDataNodes -1) break;
+        }
+        printDebug(DM_Alloc, "Chunk ID: %d Page :%x does not have free nodes",
+                                                           chunkID_, pageIter);
+        pageIter = (PageInfo*)((PageInfo*) pageIter)->nextPage_;
+    }
+    if (NULL == pageIter) return NULL;
+    printDebug(DM_Alloc,"ChunkID:%d Scan for free node End:Page :%x",
+                                                  chunkID_, pageIter);
+    *((int*)data) = 1;
+    return data + sizeof(int);
+
+}
+
+void* Chunk::allocateFromNewPage(Database *db)
+{
+    DbRetVal ret = db->getAllocDatabaseMutex();
+    if (ret != 0)
+    {
+        printError(ErrLockTimeOut,"Unable to acquire alloc database Mutex");
+        return NULL;
+    }
+    //get a new page from db
+    Page *page = db->getFreePage();
+    if (page == NULL)
+    {
+        return NULL;
+    }
+    printDebug(DM_Alloc, "ChunkID:%d Normal Data Item newPage:%x",
+                                                  chunkID_, page);
+    //Initialize pageInfo for this new page
+    PageInfo *pInfo = (PageInfo*)page;
+    pInfo->setPageAsUsed(0);
+
+    //create the link between old page and the newly created page
+    PageInfo* pageInfo = ((PageInfo*)curPage_);
+    pageInfo->nextPage_ = page;
+
+    //make this new page as the current page
+    curPage_ = page;
+
+    char* data = ((char*)page) + sizeof(PageInfo);
+    *((int*)data) = 1;
+    db->releaseAllocDatabaseMutex();
+    return data + sizeof(int);
 }
 
 //Allocates memory to store data
@@ -44,12 +147,6 @@ void Chunk::setSize(size_t size)
 
 void* Chunk::allocate(Database *db)
 {
-    int ret = getChunkMutex();
-    if (ret != 0)
-    {
-        printError(ErrLockTimeOut,"Unable to acquire chunk Mutex");
-        return NULL;
-    }
     PageInfo* pageInfo = ((PageInfo*)curPage_);
 
     int noOfDataNodes=os::floor((PAGE_SIZE - sizeof(PageInfo))/allocSize_);
@@ -67,40 +164,16 @@ void* Chunk::allocate(Database *db)
     //For allocation more than PAGE_SIZE
     if (0 == noOfDataNodes)
     {
-        ret = db->getAllocDatabaseMutex();
-        if (ret != 0)
-        {
-            printError(ErrLockTimeOut,"Unable to acquire alloc database Mutex");
-            return NULL;
-        }
-        pageInfo = (PageInfo*)db->getFreePage(allocSize_);
-        if (NULL == pageInfo)
-        {
-            releaseChunkMutex();
-            db->releaseAllocDatabaseMutex();
-            printError(ErrNoMemory,"No more free pages in the database");
-            return NULL;
-        }
-        printDebug(DM_Alloc, "Chunk ID:%d Large Data Item newPage:%x",
-                                           chunkID_, pageInfo);
-        int multiple = os::floor(allocSize_ / PAGE_SIZE);
-        int offset = ((multiple + 1) * PAGE_SIZE);
-
-        pageInfo->setPageAsUsed(offset);
-
-        //create the link
-        ((PageInfo*)curPage_)->nextPage_ = (Page*) pageInfo;
-        //Make this as current page
-        curPage_ = (Page*) pageInfo;
-        data = ((char*)curPage_) + sizeof(PageInfo);
-        //TODO::check whether it is locked
-        *((int*)data) = 1;
-        releaseChunkMutex();
-        db->releaseAllocDatabaseMutex();
-        return data + sizeof(int);
-
+        data = (char*) allocateForLargeDataSize(db);
+        return data;
     }
 
+    int ret = getChunkMutex();
+    if (ret != 0)
+    {
+        printError(ErrLockTimeOut,"Unable to acquire chunk Mutex");
+        return NULL;
+    }
     int i = noOfDataNodes;
     if (pageInfo->hasFreeSpace_ == 1)
     {
@@ -117,84 +190,136 @@ void* Chunk::allocate(Database *db)
     //or there are no free data space in this page
     if (i == noOfDataNodes && *((int*)data) == 1)
     {
-        ret = db->getAllocDatabaseMutex();
-        if (ret != 0)
-        {
-            printError(ErrLockTimeOut,"Unable to acquire chunk Mutex");
-            return NULL;
-        } 
 
-       //there are no free data space in this page
-        pageInfo->hasFreeSpace_ = 0;
-        //get a new page from db
         printDebug(DM_Alloc, "ChunkID:%d curPage does not have free nodes.", chunkID_);
-        Page *page = db->getFreePage();
-        if (page == NULL)
+        //there are no free data space in this page
+        pageInfo->hasFreeSpace_ = 0;
+
+        data = (char*) allocateFromNewPage(db);
+        if (NULL == data)
         {
-            PageInfo *pageIter = ((PageInfo*)firstPage_);
-            printDebug(DM_Alloc, "Chunk ID:%d. No free page in database",
-                                                               chunkID_);
-            printDebug(DM_Alloc, "Scan from firstPage:%x for free nodes",
-                                                             firstPage_);
-            //scan from first page to locate a free node available
-            while(NULL != pageIter)
+            data = (char*) allocateFromFirstPage(db, noOfDataNodes);
+            if (data == NULL)
             {
-                data = ((char*)pageIter) + sizeof(PageInfo);
-                if (pageIter->hasFreeSpace_ == 1)
-                {
-                    for (i = 0; i< noOfDataNodes -1; i++)
-                    {
-                        if (1 == *((int*)data))
-                            data = data + allocSize_;
-                        else break;
-                    }
-                    if (i != noOfDataNodes -1) break;
-                }
-                printDebug(DM_Alloc, "Chunk ID: %d Page :%x does not have free nodes",
-                                                           chunkID_, pageIter);
-                pageIter = (PageInfo*)((PageInfo*) pageIter)->nextPage_;
+                printError(ErrNoMemory, "No memory in any of the pages:Increase db size\n");
             }
-            if (NULL == pageIter)
-            {
-                releaseChunkMutex();
-                db->releaseAllocDatabaseMutex();
-                printError(ErrNoMemory,"No more free pages in the database:Increase db size");
-                return NULL;
-            }
-            printDebug(DM_Alloc,"ChunkID:%d Scan for free node End:Page :%x",
-                                                          chunkID_, pageIter);
-            *((int*)data) = 1;
-            releaseChunkMutex();
-            db->releaseAllocDatabaseMutex();
-            return data + sizeof(int);
         }
-        db->releaseAllocDatabaseMutex();
-        //os::memset(page, 0, PAGE_SIZE);
-        printDebug(DM_Alloc, "ChunkID:%d Normal Data Item newPage:%x",
-                                                      chunkID_, page);
-        //Initialize pageInfo for this new page
-        PageInfo *pInfo = (PageInfo*)page;
-        pInfo->setPageAsUsed(0);
-
-        //create the link between old page and the newly created page
-        data = ((char*)page) + sizeof(PageInfo);
-        pageInfo->nextPage_ = page;
-
-        //make this new page as the current page
-        curPage_ = page;
-
+        releaseChunkMutex();
+        return data;
     }
     *((int*)data) = 1;
     releaseChunkMutex();
     return data + sizeof(int);
 }
 
-//Allocates memory to store data
+
+void* Chunk::allocateForLargeDataSize(Database *db, size_t size)
+{
+    //no need to take chunk mutexes for this, as we are taking alloc database mutex
+    int multiple = os::floor(size / PAGE_SIZE);
+    int offset = ((multiple + 1) * PAGE_SIZE);
+    PageInfo* pageInfo = ((PageInfo*)curPage_);
+    DbRetVal ret = db->getAllocDatabaseMutex();
+    if (ret != 0)
+    {
+        printError(ErrLockTimeOut,"Unable to acquire alloc database Mutex");
+        return NULL;
+    }
+    pageInfo = (PageInfo*)db->getFreePage(allocSize_);
+    if (NULL == pageInfo)
+    {
+        db->releaseAllocDatabaseMutex();
+        printError(ErrNoMemory,"No more free pages in the database:Increase db size");
+        return NULL;
+    }
+    printDebug(DM_VarAlloc,"Chunk::allocate Large Data Item id:%d Size:%d curPage:%x ",
+                                            chunkID_, size, curPage_);
+    //TODO:: logic pending
+
+
+    //REDESIGN MAY BE REQUIRED:Lets us live with this for now.
+    //what happens to the space lets say 10000 bytes is allocated
+    //it needs 2 pages,= 16000 bytes, 6000 bytes should not be wasted
+    //in this case.So need to take of this.
+    //Will be coded at later stage as this is developed to support
+    //undo logging and currently we shall assume that the logs generated
+    //wont be greater than PAGE_SIZE.
+    db->releaseAllocDatabaseMutex();
+    return NULL;
+
+}
+
+
+
+void* Chunk::allocFromNewPageForVarSize(Database *db, size_t size)
+{
+    //Should be called only for data items <PAGE_SIZE
+    DbRetVal ret = db->getAllocDatabaseMutex();
+    if (ret != 0)
+    {
+        printError(ErrLockTimeOut,"Unable to acquire alloc database Mutex");
+        return NULL;
+    }
+    Page *newPage = db->getFreePage();
+    if (NULL == newPage)
+    {
+        void *data = varSizeFirstFitAllocate(size);
+        db->releaseAllocDatabaseMutex();
+        if (NULL == data)
+            printError(ErrNoMemory,"Logical Error::should never happen");
+        return data;
+    }
+    db->releaseAllocDatabaseMutex();
+
+    printDebug(DM_VarAlloc, "ChunkID:%d New Page: %x ", chunkID_, newPage);
+    PageInfo *pInfo = (PageInfo*) newPage;
+    pInfo->setPageAsUsed(0);
+    createDataBucket(newPage, PAGE_SIZE, size);
+
+    ((PageInfo*)curPage_)->nextPage_ = newPage;
+    curPage_ = newPage;
+    char *data= ((char*)newPage) + sizeof(PageInfo) + sizeof(VarSizeInfo);
+    return data;
+}
+
+//Allocates from the current page of the chunk.
+//Scans through the VarSizeInfo objects in the page and gets the free slot
+void* Chunk::allocateFromCurPageForVarSize(size_t size)
+{
+    //Should be called only for data items <PAGE_SIZE
+    Page *page = ((PageInfo*)curPage_);
+    printDebug(DM_VarAlloc, "Chunk::allocate Normal Data Item id:%d Size:%d curPage:%x ",
+                                               chunkID_, size, curPage_);
+    VarSizeInfo *varInfo = (VarSizeInfo*)(((char*)page) +
+                                                sizeof(PageInfo));
+    while ((char*) varInfo < ((char*)page + PAGE_SIZE))
+    {
+        if (0 == varInfo->isUsed_)
+        {
+            if( size + sizeof(VarSizeInfo) < varInfo->size_)
+            {
+                splitDataBucket(varInfo, size);
+                printDebug(DM_VarAlloc, "Chunkid:%d splitDataBucket: Size: %d Item:%x ",
+                                                         chunkID_, size, varInfo);
+                return (char*)varInfo + sizeof(VarSizeInfo);
+            }
+            else if (size == varInfo->size_) {
+                varInfo->isUsed_ = 1;
+                return (char *) varInfo + sizeof(VarSizeInfo);
+            }
+
+        }
+        varInfo = (VarSizeInfo*)((char*)varInfo + sizeof(VarSizeInfo)
+                                    +varInfo->size_);
+    }
+    return NULL;
+}
+
+//Allocates memory to store data of variable size
 void* Chunk::allocate(Database *db, size_t size)
 {
 
     if (0 == size) return NULL;
-    //align the size first
     //check if the size is more than PAGE_SIZE
     //if it is more than the PAGE_SIZE, then allocate new
     //page using database and then link the curPage to the
@@ -206,107 +331,30 @@ void* Chunk::allocate(Database *db, size_t size)
 
     //TODO::During the scan, merge nearby nodes if both are free
     //if not available then allocate new page
+
+    size_t alignedSize = os::align(size);
+    void *data = NULL;
     int ret = getChunkMutex();
     if (ret != 0)
     {
         printError(ErrLockTimeOut,"Unable to acquire chunk Mutex");
         return NULL;
     }
-    size_t alignedSize = os::align(size);
-
-    if (size > PAGE_SIZE)
+    if (alignedSize > PAGE_SIZE)
     {
-        int multiple = os::floor(alignedSize / PAGE_SIZE);
-        int offset = ((multiple + 1) * PAGE_SIZE);
-        PageInfo* pageInfo = ((PageInfo*)curPage_);
-        ret = db->getAllocDatabaseMutex();
-        if (ret != 0)
-        {
-            printError(ErrLockTimeOut,"Unable to acquire alloc database Mutex");
-            return NULL;
-        } 
-        pageInfo = (PageInfo*)db->getFreePage(allocSize_);
-        if (NULL == pageInfo)
-        {
-            releaseChunkMutex();
-            db->releaseAllocDatabaseMutex();
-            printError(ErrNoMemory,"No more free pages in the database:Increase db size");
-            return NULL;
-        }
-        printDebug(DM_VarAlloc,"Chunk::allocate Large Data Item id:%d Size:%d curPage:%x ",
-                                            chunkID_, alignedSize, curPage_);
-        //TODO:: logic pending
-        //what happens to the space lets say 10000 bytes is allocated
-        //it needs 2 pages,= 16000 bytes, 6000 bytes should not be wasted
-        //in this case.So need to take of this.
-        //Will be coded at later stage as this is developed to support
-        //undo logging and currently we shall assume that the logs generated
-        //wont be greater than PAGE_SIZE.
-        printf("data size greater than page size\n");
-        releaseChunkMutex();
-        db->releaseAllocDatabaseMutex();
-        return NULL;
+        data =  allocateForLargeDataSize(db, alignedSize);
     }
     else
     {
-        Page *page = ((PageInfo*)curPage_);
-        printDebug(DM_VarAlloc, "Chunk::allocate Normal Data Item id:%d Size:%d curPage:%x ",
-                                               chunkID_, alignedSize, curPage_);
-        VarSizeInfo *varInfo = (VarSizeInfo*)(((char*)page) +
-                                                    sizeof(PageInfo));
-        while ((char*) varInfo < ((char*)page + PAGE_SIZE))
-        {
-            if (0 == varInfo->isUsed_)
-            {
-                if( alignedSize + sizeof(VarSizeInfo) < varInfo->size_)
-                {
-                    splitDataBucket(varInfo, alignedSize);
-                    releaseChunkMutex();
-                    printDebug(DM_VarAlloc, "Chunkid:%d splitDataBucket: Size: %d Item:%x ",
-                                                         chunkID_, alignedSize, varInfo);
-                    return (char*)varInfo + sizeof(VarSizeInfo);
-                }
-                else if (alignedSize == varInfo->size_) {
-                    varInfo->isUsed_ = 1;
-                    releaseChunkMutex();
-                    return (char *) varInfo + sizeof(VarSizeInfo);
-                }
-
-            }
-            varInfo = (VarSizeInfo*)((char*)varInfo + sizeof(VarSizeInfo)
-                                    +varInfo->size_);
+        data = allocateFromCurPageForVarSize(alignedSize);
+        if (NULL == data) {
+            //No available spaces in the current page.
+            //allocate new page
+            data= allocFromNewPageForVarSize(db, alignedSize);
         }
-        //No available spaces in the current page.
-        //allocate new page
-        ret = db->getAllocDatabaseMutex();
-        if (ret != 0)
-        {
-            printError(ErrLockTimeOut,"Unable to acquire alloc database Mutex");
-            return NULL;
-        }
-        Page *newPage = db->getFreePage();
-        if (NULL == newPage)
-        {
-            void *data = varSizeFirstFitAllocate(size);
-            releaseChunkMutex();
-            db->releaseAllocDatabaseMutex();
-            if (NULL == data)
-                printError(ErrNoMemory,"No more free space in the database:Increase db size");
-            return data;
-        }
-        db->releaseAllocDatabaseMutex();
-
-        printDebug(DM_VarAlloc, "ChunkID:%d New Page: %x ", chunkID_, newPage);
-        PageInfo *pInfo = (PageInfo*) newPage;
-        pInfo->setPageAsUsed(0);
-        createDataBucket(newPage, PAGE_SIZE, alignedSize);
-
-        ((PageInfo*)curPage_)->nextPage_ = newPage;
-        curPage_ = newPage;
-        releaseChunkMutex();
-        char *data= ((char*)newPage) + sizeof(PageInfo) + sizeof(VarSizeInfo);
-        return data;
     }
+    releaseChunkMutex();
+    return data;
 }
 
 //Assumes chunk mutex is already taken, before calling this
@@ -335,10 +383,7 @@ void* Chunk::varSizeFirstFitAllocate(size_t size)
     return NULL;
 }
 
-
-
-//Frees the memory pointed by ptr
-void Chunk::free(Database *db, void *ptr)
+void Chunk::freeForVarSizeAllocator(void *ptr)
 {
     int ret = getChunkMutex();
     if (ret != 0)
@@ -346,46 +391,74 @@ void Chunk::free(Database *db, void *ptr)
         printError(ErrLockTimeOut,"Unable to acquire chunk Mutex");
         return;
     }
-    if (0 == allocSize_)
+    VarSizeInfo *varInfo = (VarSizeInfo*)((char*)ptr- sizeof(VarSizeInfo));
+    varInfo->isUsed_ = 0;
+    printDebug(DM_VarAlloc,"chunkID:%d Unset isUsed for %x", chunkID_, varInfo);
+    releaseChunkMutex();
+    return;
+
+}
+
+void Chunk::freeForLargeAllocator(void *ptr)
+{
+    //There will be max only one data element in a page.
+    //PageInfo is stored just before the data.
+    int ret = getChunkMutex();
+    if (ret != 0)
     {
-        VarSizeInfo *varInfo = (VarSizeInfo*)((char*)ptr- sizeof(VarSizeInfo));
-        varInfo->isUsed_ = 0;
-        printDebug(DM_VarAlloc,"chunkID:%d Unset isUsed for %x", chunkID_, varInfo);
-        //return from here for variable size allocator
-        releaseChunkMutex();
+        printError(ErrLockTimeOut,"Unable to acquire chunk Mutex");
         return;
     }
-     //unset the used flag
-    *((int*)ptr -1 ) = 0;
+    PageInfo *pageInfo = (PageInfo*)(((char*)
+                         ptr) - (sizeof(PageInfo) + sizeof(int)));
+    PageInfo *pInfo = (PageInfo*)firstPage_, *prev = (PageInfo*)firstPage_;
+    bool found = false;
+    while(!found)
+    {
+        if (pInfo == pageInfo) {found = true;  break; }
+        prev = pInfo;
+        pInfo = (PageInfo*)pInfo->nextPage_;
+    }
+    if (!found)
+    {
+        printError(ErrSysFatal,"Page %x not found in page list:Logical error", pageInfo );
+        releaseChunkMutex();
+        return ;
+    }
+    prev->nextPage_ = pageInfo->nextPage_;
+    pageInfo->nextPageAfterMerge_ = NULL;
+    pageInfo->isUsed_ = 0;
+    os::memset(pageInfo,  0 , allocSize_);
+    pageInfo->hasFreeSpace_ = 1;
+    releaseChunkMutex();
+    return;
+}
+
+//Frees the memory pointed by ptr
+void Chunk::free(Database *db, void *ptr)
+{
+    if (0 == allocSize_)
+    {
+        freeForVarSizeAllocator(ptr);
+        return;
+    }
     int noOfDataNodes =os::floor((PAGE_SIZE - sizeof(PageInfo)) / allocSize_);
 
     if (0 == noOfDataNodes)
     {
-        //means tuple larger than PAGE_SIZE
-        PageInfo *pageInfo = (PageInfo*)(((char*)
-                             ptr) - (sizeof(PageInfo) + sizeof(int)));
-        PageInfo *pInfo = (PageInfo*)firstPage_, *prev = (PageInfo*)firstPage_;
-        bool found = false;
-        while(!found)
-        {
-            if (pInfo == pageInfo) {found = true;  break; }
-            prev = pInfo;
-            pInfo = (PageInfo*)pInfo->nextPage_;
-        }
-        if (!found)
-        {
-            printError(ErrSysFatal,"Page %x not found in page list:Logic error", pageInfo );
-            releaseChunkMutex();
-            return ;
-        }
-        prev->nextPage_ = pageInfo->nextPage_;
-        pageInfo->nextPageAfterMerge_ = NULL;
-        pageInfo->isUsed_ = 0;
-        os::memset(pageInfo,  0 , allocSize_);
-        pageInfo->hasFreeSpace_ = 1;
-        releaseChunkMutex();
+        freeForLargeAllocator(ptr);
         return;
     }
+    int ret = getChunkMutex();
+    if (ret != 0)
+    {
+        printError(ErrLockTimeOut,"Unable to acquire chunk Mutex");
+        return;
+    }
+     //below is the code for freeing in fixed size allocator
+
+     //unset the used flag
+    *((int*)ptr -1 ) = 0;
     PageInfo *pageInfo;
     pageInfo = getPageInfo(db, ptr);
     if (NULL == pageInfo)
@@ -419,6 +492,8 @@ PageInfo* Chunk::getPageInfo(Database *db, void *ptr)
     return NULL;
 }
 
+//If called on chunk used to store tuples, it returns the total number of rows
+//present in the table
 long Chunk::getTotalDataNodes()
 {
     int ret = getChunkMutex();

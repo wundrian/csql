@@ -56,6 +56,8 @@ class SessionImpl : public Session
     DbRetVal rollback();
 
     DbRetVal readConfigFile();
+    private:
+    DbRetVal authenticate(const char *username, const char *password);
 };
 
 #endif

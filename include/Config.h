@@ -32,6 +32,10 @@ class ConfigValues
     long mapAddr;
     int mutexSecs;
     int mutexUSecs;
+    int mutexRetries;
+    int lockSecs;
+    int lockUSecs;
+    int lockRetries;
 
 
     ConfigValues()
@@ -48,6 +52,10 @@ class ConfigValues
         mapAddr=400000000;
         mutexSecs=0;
         mutexUSecs=10;
+        mutexRetries = 10;
+        lockSecs =0;
+        lockUSecs = 10;
+        lockRetries = 10;
     }
 };
 
@@ -60,6 +68,7 @@ class Config
 
     public:
     int readAllValues(char *filename);
+    void print();
 
     inline int getPageSize() { return cVal.pageSize; }
     inline int getMaxTrans() { return cVal.maxTrans; }
@@ -73,6 +82,10 @@ class Config
     inline long getMapAddress() { return cVal.mapAddr; }
     inline int getMutexSecs() { return cVal.mutexSecs; }
     inline int getMutexUSecs() { return cVal.mutexUSecs; }
+    inline int getMutexRetries() { return cVal.mutexRetries; }
+    inline int getLockSecs() { return cVal.lockSecs; }
+    inline int getLockUSecs() { return cVal.lockUSecs; }
+    inline int getLockRetries() { return cVal.lockRetries; }
 };
 
 class Conf

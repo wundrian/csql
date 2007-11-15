@@ -27,3 +27,10 @@ void PageInfo::setPageAsUsed(size_t offset)
     else
         nextPageAfterMerge_ = ((char*)this)+ offset;
 }
+void PageInfo::setFirstPageAsUsed()
+{
+    isUsed_ = 1;
+    hasFreeSpace_ = 1;
+    nextPageAfterMerge_ = NULL;
+    nextPage_ = NULL;
+}
