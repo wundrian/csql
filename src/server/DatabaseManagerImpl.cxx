@@ -569,6 +569,7 @@ Table* DatabaseManagerImpl::openTable(const char *name)
                                                       hIdxInfo->type);
         ChunkIterator citer = CatalogTableINDEX::getIterator(table->indexPtr_[0]);
         hIdxInfo->noOfBuckets = CatalogTableINDEX::getNoOfBuckets(table->indexPtr_[0]);
+        hIdxInfo->isUnique = CatalogTableINDEX::getUnique(table->indexPtr_[0]);
         hIdxInfo->buckets = (Bucket*)citer.nextElement();
 
         table->idxInfo = (IndexInfo*) hIdxInfo;
@@ -620,7 +621,8 @@ DbRetVal DatabaseManagerImpl::createIndex(const char *indName, IndexInitInfo *in
     {
         //Assumes info is of type HashIndexInitInfo
         HashIndexInitInfo *hInfo = (HashIndexInitInfo*) info;
-        rv = createHashIndex(indName, info->tableName, info->list, hInfo->bucketSize);
+        rv = createHashIndex(indName, info->tableName, info->list, hInfo->bucketSize,
+                             info->isUnique);
     }
     else
     {
@@ -634,7 +636,7 @@ DbRetVal DatabaseManagerImpl::createIndex(const char *indName, IndexInitInfo *in
 //-2 -> Field does not exists
 //-3 -> bucketSize is not valid
 DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *tblName,
-                      FieldNameList &fldList, int bucketSize)
+                      FieldNameList &fldList, int bucketSize, bool isUnique)
 {
     //validate the bucket size
     if (bucketSize < 100 || bucketSize > 200000)
@@ -713,7 +715,7 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
     //add row to INDEX
     void *tupleptr = NULL;
     CatalogTableINDEX cIndex(systemDatabase_);
-    DbRetVal ret = cIndex.insert(indName, tptr, fldList.size(),
+    DbRetVal ret = cIndex.insert(indName, tptr, fldList.size(), isUnique,
                         chunkInfo, bucketSize, hChunk, tupleptr);
     if (OK != rv)
     {

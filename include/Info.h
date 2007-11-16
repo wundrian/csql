@@ -145,7 +145,8 @@ class IndexInitInfo
     char tableName[IDENTIFIER_LENGTH]; /**<tablename*/
     FieldNameList list;               /**<field name list*/
     IndexType indType;                /**<index type*/
-    IndexInitInfo() {  indType = hashIndex; }
+    bool isUnique;                    /**<unique values*/
+    IndexInitInfo() {  indType = hashIndex;  isUnique = true;}
     ~IndexInitInfo() {list.removeAll();}
 };
 

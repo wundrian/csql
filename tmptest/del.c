@@ -8,7 +8,7 @@ int main()
     SqlStatement *stmt = new SqlStatement();
     stmt->setConnection(con);
     char statement[1024];
-    strcpy(statement, "DELETE FROM t1 WHERE f1 >97");
+    strcpy(statement, "DELETE FROM t1 WHERE f1 =0");
     int rows =0;
     rv = stmt->prepare(statement);
     if (rv != OK) {delete stmt; delete con; return 1; }

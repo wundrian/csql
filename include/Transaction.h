@@ -68,7 +68,7 @@ class Transaction
     void updateWaitLock(LockHashNode *node) { waitLock_ = node; }
     void removeWaitLock() { waitLock_ = NULL; }
     DbRetVal insertIntoHasList(Database *sysdb, LockHashNode *node);
-
+    DbRetVal removeFromHasList(Database *sysdb, void *tuple);
     bool findInHasList(Database *sysdb, LockHashNode *node);
 
     void appendUndoLog(Database *sysdb, OperationType type, void *data, size_t size);

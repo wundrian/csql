@@ -48,6 +48,49 @@ DbRetVal Transaction::insertIntoHasList(Database *sysdb, LockHashNode *node)
     return OK;
 }
 
+DbRetVal Transaction::removeFromHasList(Database *sysdb, void *tuple)
+{
+    Chunk *chunk = sysdb->getSystemDatabaseChunk(TransHasTableId);
+    TransHasNode *iter = hasLockList_, *prev = hasLockList_;
+    if (NULL == iter)
+    {
+        printError(ErrNotExists, "There are no tuple lock in has list.");
+        return ErrNotExists;
+    }
+    while (iter->next_ != NULL)
+    {
+        if (tuple == iter->node_->ptrToTuple_)
+        {
+            prev->next_ = iter->next_;
+            chunk->free(sysdb, iter);
+            return OK;
+        }
+        prev = iter;
+        iter = iter->next_;
+    }
+    if( iter == hasLockList_) // there is only one node in the list
+    {
+       if (tuple == iter->node_->ptrToTuple_)
+       {
+           chunk->free(sysdb, hasLockList_);
+           hasLockList_ = NULL;
+           return OK;
+       }
+
+    }
+    if( prev == hasLockList_) // there are only two node in the list
+    {
+        if (tuple == iter->node_->ptrToTuple_)
+        {
+            hasLockList_->next_ = NULL;
+            chunk->free(sysdb, iter);
+            return OK;
+        }
+   }
+   return OK;
+}
+
+
 DbRetVal Transaction::releaseAllLocks(LockManager *lockManager_)
 {
     Database *sysdb =lockManager_->systemDatabase_;

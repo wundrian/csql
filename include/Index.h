@@ -111,6 +111,7 @@ class SingleFieldHashIndexInfo :public IndexInfo
     int noOfBuckets;
     Bucket* buckets;
     int fldPos;
+    bool isUnique;
 };
 #endif
 

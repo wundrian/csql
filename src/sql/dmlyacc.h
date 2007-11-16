@@ -1,7 +1,3 @@
-#ifndef YYERRCODE
-#define YYERRCODE 256
-#endif
-
 #define STRING 257
 #define FIELD 258
 #define NUMBER_STRING 259

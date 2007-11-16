@@ -142,6 +142,7 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, void
     int offset = 0;
     DataType type = typeUnknown ;
     char *name = NULL;
+    bool isUnique = true;
     //TODO:: the below code assumes that there is only one index on the 
     //table
     if (tbl->numIndexes_ == 1) 
@@ -149,6 +150,7 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, void
         SingleFieldHashIndexInfo *hIdxInfo = (SingleFieldHashIndexInfo*)tbl->idxInfo;
         type = hIdxInfo->type;
         name = hIdxInfo->fldName;
+        isUnique = hIdxInfo->isUnique;
         //TODO::change below to fldPos.Currently it returns -1.check value of fldPos.
         //offset = fldList_.getFieldOffset(hIdxInfo->fldPos);
         offset = tbl->fldList_.getFieldOffset(name);
@@ -169,7 +171,7 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, void
     int bucketNo = computeHashBucket(type,
                         keyPtr, noOfBuckets);
     Bucket *bucket =  &(buckets[bucketNo]);
-
+    
     int ret = bucket->mutex_.tryLock();
     if (ret != 0)
     {
@@ -177,6 +179,26 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, void
         return ErrLockTimeOut;
     }
     HashIndexNode *head = (HashIndexNode*) bucket->bucketList_;
+    //TODO::store this in INDEX catalog table and get it here
+    if (isUnique)
+    {
+        BucketList list(head); 
+        BucketIter iter = list.getIterator();
+        HashIndexNode *node;
+        void *bucketTuple;
+        while((node = iter.next()) != NULL)
+        {
+            bucketTuple = node->ptrToTuple_;
+            //TODO::make compareVal to work with string and binary (pass length)
+            if (AllDataType::compareVal((void*)((char*)bucketTuple +offset), 
+                   (void*)((char*)tuple +offset), OpEquals,type)) 
+            {
+                printError(ErrUnique, "Unique key violation");
+                bucket->mutex_.releaseLock();
+                return ErrUnique;
+            }
+        }
+    }
 
     if (!head)
     {

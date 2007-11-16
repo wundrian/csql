@@ -19,7 +19,8 @@ endif
 endif
 
 INCL= -I$(CSQL_INSTALL_ROOT)/include -I../src/sql
-LIBS= -L$(CSQL_INSTALL_ROOT)/lib -L.. -lcsql -lcsqlsql
+#LIBS= -L$(CSQL_INSTALL_ROOT)/lib -L.. -lcsql -lcsqlsql
+LIBS= -L$(CSQL_INSTALL_ROOT)/lib -L.. -lcsql 
 
 TARGETS = \
         test \

@@ -217,7 +217,7 @@ DbRetVal CatalogTableFIELD::getFieldPtrs(FieldNameList &fldList,void *tptr, char
     return OK;
 }
 
-DbRetVal CatalogTableINDEX::insert(const char *name, void *tptr, int numFlds,
+DbRetVal CatalogTableINDEX::insert(const char *name, void *tptr, int numFlds, bool isUnique,
                           void* chunk, int bucketSize, void *hChunk, void *&tupleptr)
 {
     Chunk *tChunk = systemDatabase_->getSystemDatabaseChunk(IndexTableId);
@@ -237,7 +237,7 @@ DbRetVal CatalogTableINDEX::insert(const char *name, void *tptr, int numFlds,
     indexInfo->chunkPtr_ = chunk;
     indexInfo->hashNodeChunk_ = hChunk;
     indexInfo->noOfBuckets_ = bucketSize;
-    indexInfo->isPrimary_ = false;
+    indexInfo->isUnique_ = isUnique;
     printDebug(DM_SystemDatabase,"One Row inserted into INDEX %x %s",tupleptr, name);
     return OK;
 }
@@ -330,6 +330,12 @@ int CatalogTableINDEX::getNoOfBuckets(void *iptr)
 {
     INDEX *index = (INDEX*)iptr;
     return index->noOfBuckets_;
+}
+
+int CatalogTableINDEX::getUnique(void *iptr)
+{
+    INDEX *index = (INDEX*)iptr;
+    return index->isUnique_;
 }
 
 DbRetVal CatalogTableINDEXFIELD::insert(FieldNameList &fldList, void *indexPtr,

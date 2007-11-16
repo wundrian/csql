@@ -18,9 +18,6 @@ int main()
     printf("Prepeared\n");
     int id1 =100, id2 = 100;
     if (rv != OK) {delete stmt; delete con; return -1; }
-    rv = stmt->prepare(statement);
-    if (rv != OK) {delete stmt; delete con; return -1; }
-    printf("Prepeared\n");
     NanoTimer timer;
     for (int i = 0 ;  i < 10 ; i++)
     {

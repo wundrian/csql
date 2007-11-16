@@ -219,6 +219,7 @@ DbRetVal TableImpl::insertTuple()
     {
         printError(ret, "Unable to copy values from bind buffer");
         lMgr_->releaseLock(tptr);
+        (*trans)->removeFromHasList(db_, tptr);
         ((Chunk*)chunkPtr_)->free(db_, tptr);
         return ret;
     }
@@ -236,11 +237,11 @@ DbRetVal TableImpl::insertTuple()
             for (int j = 0; j < i ; j++)
                 deleteIndexNode(*trans, indexPtr_[j], tptr);
             lMgr_->releaseLock(tptr);
+            (*trans)->removeFromHasList(db_, tptr);
             ((Chunk*)chunkPtr_)->free(db_, tptr);
             printError(ret, "Unable to insert index node for tuple %x", tptr);
             return ret;
         }
-        
     }
     (*trans)->appendUndoLog(sysDB_, InsertOperation, tptr, tupleSize);
     return OK;
@@ -274,6 +275,7 @@ DbRetVal TableImpl::deleteTuple()
             for (int j = 0; j < i ; j++)
                 insertIndexNode(*trans, indexPtr_[j], curTuple_);
             lMgr_->releaseLock(curTuple_);
+            (*trans)->removeFromHasList(db_, curTuple_);
             printError(ret, "Unable to insert index node for tuple %x", curTuple_);
             return ret;
         }
@@ -308,6 +310,7 @@ DbRetVal TableImpl::updateTuple()
             if (ret != OK)
             {
                 lMgr_->releaseLock(curTuple_);
+                (*trans)->removeFromHasList(db_, curTuple_);
                 printError(ret, "Unable to update index node for tuple %x", curTuple_);
                 return ret;
             }

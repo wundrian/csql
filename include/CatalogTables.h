@@ -185,7 +185,7 @@ class INDEX
     void* chunkPtr_; //pointer to the index chunk
     int numFlds_;
     int noOfBuckets_;
-    bool isPrimary_;
+    bool isUnique_;
     void *hashNodeChunk_;
 
 };
@@ -199,7 +199,7 @@ class CatalogTableINDEX
 
     //last arg is OUT parameter which will give the pointer to
     //the index tuple
-    DbRetVal insert(const char *name, void *tblPtr, int numFlds,
+    DbRetVal insert(const char *name, void *tblPtr, int numFlds, bool isUnique,
                      void* chunk, int bucketSize, void *hChunk, void *&tupleptr);
 
     //Second argument is OUT parameter which will contain the
@@ -218,6 +218,8 @@ class CatalogTableINDEX
 
     static ChunkIterator getIterator(void *iptr);
     static int getNoOfBuckets(void *iptr);
+    static int getUnique(void *iptr);
+
 };
 
 
