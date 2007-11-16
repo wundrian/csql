@@ -325,7 +325,7 @@ DbRetVal SelStatement::resolveStar()
 
 DbRetVal SelStatement::setBindFieldAndValues()
 {
-    totalFields = table->getFieldNameList().size();
+    totalFields = parsedData->getFieldNameList().size();
     bindFields = (FieldValue**) malloc ( totalFields * sizeof(FieldValue*));
     bindFieldValues = (char**) malloc( totalFields * sizeof(char*));
     memset(bindFields, 0, totalFields * sizeof(FieldValue*));
