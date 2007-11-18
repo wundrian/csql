@@ -108,6 +108,7 @@ class FIELD
     char defaultValueBuf_[DEFAULT_VALUE_BUF_LENGTH];
     bool isNull_;
     bool isPrimary_;
+    bool isUnique_;
     bool isDefault_;
     int width_;
     int scale_;

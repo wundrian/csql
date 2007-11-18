@@ -87,6 +87,12 @@ class TableImpl:public Table
     Database *db_;
     Database *sysDB_;
 
+    //Either one of the below is populated based on the no of fields and 
+    //is used for tuple insertions
+    bool isIntUsedForNULL;
+    int iNullInfo;
+    char *cNullInfo;
+
     private:
 
     //copy Values from binded buffer to tuple pointed by arg
@@ -105,7 +111,8 @@ class TableImpl:public Table
 
     public:
     TableImpl() { db_ = NULL; chunkPtr_ = NULL; iter = NULL;
-        idxInfo = NULL; indexPtr_ = NULL; scanType_ = unknownScan; pred_ = NULL;}
+        idxInfo = NULL; indexPtr_ = NULL; scanType_ = unknownScan; pred_ = NULL;
+        iNullInfo = 0; cNullInfo = NULL; isIntUsedForNULL = true;}
     ~TableImpl();
 
     void setDB(Database *db) { db_ = db; }
@@ -137,10 +144,10 @@ class TableImpl:public Table
     bool isFldNull(const char *name);
     bool isFldNull(int colpos);
 
-/*
+
     void clearFldNull(const char *name);
     void clearFldNull(int colpos);
-*/
+
 
     DbRetVal insertTuple();
     DbRetVal updateTuple();

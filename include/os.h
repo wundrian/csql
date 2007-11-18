@@ -91,6 +91,14 @@ enum MapMode
 #define PAGE_SIZE Conf::config.getPageSize()
 
 
+#define BIT(x) (1 << (x))
+#define SETBITS(x,y) ((x) |= (y))
+#define CLEARBITS(x,y) ((x) &= (~(y)))
+#define SETBIT(x,y) SETBITS((x), (BIT((y))))
+#define CLEARBIT(x,y) CLEARBITS((x), (BIT((y))))
+#define BITSET(x,y) ((x) & (BIT(y))) 
+
+
 typedef key_t shared_memory_key;
 typedef int   shared_memory_id;
 
@@ -130,7 +138,6 @@ class os
     static pid_t getpid();
     static pthread_t getthrid();
     static char* getenv(const char *envVarName);
-
 };
 
 #endif

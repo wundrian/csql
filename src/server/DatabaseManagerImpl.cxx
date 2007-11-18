@@ -400,7 +400,14 @@ DbRetVal DatabaseManagerImpl::deleteUserChunk(Chunk *chunk)
 DbRetVal DatabaseManagerImpl::createTable(const char *name, TableDef &def)
 {
     DbRetVal rv = OK;
-    size_t sizeofTuple = def.getTupleSize();
+    int fldCount = def.getFieldCount();
+    //If total field count is less than 32, then 1 integer is used to store all null
+    //information, if it is more then 1 char is used to store null information 
+    //of each field
+    //This is to done to reduce cpu cycles for small tables
+    int addSize = 0;
+    if (fldCount > 31) addSize = 4; else addSize = os::align(fldCount);
+    size_t sizeofTuple = os::align(def.getTupleSize())+addSize;
     rv = systemDatabase_->getDatabaseMutex();
     if (OK != rv ) {
         printError(rv, "Unable to get Database mutex");
@@ -575,6 +582,18 @@ Table* DatabaseManagerImpl::openTable(const char *name)
         table->idxInfo = (IndexInfo*) hIdxInfo;
     }
     systemDatabase_->releaseDatabaseMutex();
+    if (tTuple->numFlds_ > 31) 
+    { 
+        table->isIntUsedForNULL = true;
+        table->iNullInfo = 0;
+    }
+    else
+    {
+        table->isIntUsedForNULL = false;
+        int noFields = os::align(tTuple->numFlds_);
+        table->cNullInfo = (char*) malloc(noFields);
+        for (int i =0 ; i < noFields; i++) table->cNullInfo[i] =0;
+    }
     printDebug(DM_Database,"Opening table handle name:%s chunk:%x numIndex:%d",
                                          name, chunk, table->numIndexes_);
     logFinest(logger, "Opening Table %s" , name);

@@ -65,8 +65,17 @@ class Table
     /** marks the specified field to insert null when insert method is called.
     *   @param colpos field position
     */
-
     virtual void markFldNull(int colpos)=0;
+
+    /** clears the null mark which is set before.
+    *   @param name field name
+    */
+    virtual void clearFldNull(const char *name)=0;
+
+    /** clears the null mark which is set before.
+    *   @param colpos field position
+    */
+    virtual void clearFldNull(int colpos)=0;
 
     /** checks whether the field value is null.
     *   @param name field name

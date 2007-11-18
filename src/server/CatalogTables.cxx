@@ -130,6 +130,7 @@ DbRetVal CatalogTableFIELD::insert(FieldIterator &iter, int tblID, void *tptr)
                                         DEFAULT_VALUE_BUF_LENGTH);
         fldInfo->isNull_ = fDef.isNull_;
         fldInfo->isPrimary_ = fDef.isPrimary_;
+        fldInfo->isUnique_ = fDef.isUnique_;
         fldInfo->isDefault_ = fDef.isDefault_;
         fldInfo->width_ = 0; //TODO
         fldInfo->scale_ = 0; //TODO
@@ -176,6 +177,7 @@ void CatalogTableFIELD::getFieldInfo(void* tptr, FieldList &list)
             os::memcpy(fldDef.defaultValueBuf_, fTuple->defaultValueBuf_,
                                          DEFAULT_VALUE_BUF_LENGTH);
             fldDef.isNull_ = fTuple->isNull_;
+            fldDef.isUnique_ = fTuple->isUnique_;
             fldDef.isPrimary_ = fTuple->isPrimary_;
             list.append(fldDef);
         }

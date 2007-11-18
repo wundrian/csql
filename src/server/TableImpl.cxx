@@ -35,31 +35,57 @@ DbRetVal TableImpl::bindFld(const char *name, void *val)
     return OK;
 }
 bool TableImpl::isFldNull(const char *name){
+    //TODO::find the fldpos and call the other function
     return true;
 }
+
 bool TableImpl::isFldNull(int colpos)
 {
-    return true;
+    if (!curTuple_) return false;
+    if (colpos <0 || colpos > numFlds_) return false;
+    char *nullOffset = (char*)curTuple_ - 4;
+    if (isIntUsedForNULL) {
+        int nullVal = *(int*)((char*)curTuple_ + (length_ - 4));
+        if (BITSET(nullVal, colpos)) return true;
+    }
+    else {
+        char *nullOffset = (char*)curTuple_ - os::align(numFlds_);
+        if (nullOffset[colpos-1]) return true;
+    }
+    return false;
 }
 void TableImpl::markFldNull(char const* name)
 {
+    //TODO::find the fldpos and call the other function
     return;
 }
 void TableImpl::markFldNull(int fldpos)
 {
+    if (fldpos <0 || fldpos > numFlds_) return;
+    if (isIntUsedForNULL) {
+        SETBIT(iNullInfo, fldpos);
+    }
+    else
+        cNullInfo[fldpos-1] = 1;
     return;
 }
 
-/*
 void TableImpl::clearFldNull(const char *name)
 {
+    //TODO::find the fldpos and call the other function
     return;
 }
 void TableImpl::clearFldNull(int colpos)
 {
+    if (colpos <0 || colpos > numFlds_) return;
+    if (isIntUsedForNULL) { 
+        CLEARBIT(iNullInfo, colpos);
+    }
+    else
+        cNullInfo[colpos-1] = 0;
     return;
 }
-*/
+
 
 DbRetVal TableImpl::execute()
 {
@@ -211,7 +237,6 @@ DbRetVal TableImpl::insertTuple()
         printError(ret, "Could not get lock for the insert tuple %x", tptr);
         return ret;
     }
-    int tupleSize = fldList_.getTupleSize ();
 
 
     ret = copyValuesFromBindBuffer(tptr);
@@ -223,6 +248,20 @@ DbRetVal TableImpl::insertTuple()
         ((Chunk*)chunkPtr_)->free(db_, tptr);
         return ret;
     }
+
+    int addSize = 0;
+    if (numFlds_ > 31) 
+    {
+        addSize = 4; 
+        *(int*)((char*)(tptr) + (length_-addSize)) = iNullInfo;
+    }
+    else 
+    {
+        addSize = os::align(numFlds_);
+        os::memcpy(((char*)(tptr) + (length_-addSize)), cNullInfo, addSize);
+
+    }
+    //int tupleSize = length_ + addSize;
     if (NULL != indexPtr_)
     {
         int i;
@@ -243,7 +282,7 @@ DbRetVal TableImpl::insertTuple()
             return ret;
         }
     }
-    (*trans)->appendUndoLog(sysDB_, InsertOperation, tptr, tupleSize);
+    (*trans)->appendUndoLog(sysDB_, InsertOperation, tptr, length_);
     return OK;
 }
 
@@ -281,7 +320,7 @@ DbRetVal TableImpl::deleteTuple()
         }
     }
     ((Chunk*)chunkPtr_)->free(db_, curTuple_);
-    (*trans)->appendUndoLog(sysDB_, DeleteOperation, curTuple_, fldList_.getTupleSize());
+    (*trans)->appendUndoLog(sysDB_, DeleteOperation, curTuple_, length_);
     return OK;
 }
 
@@ -316,7 +355,7 @@ DbRetVal TableImpl::updateTuple()
             }
         }
     }
-    (*trans)->appendUndoLog(sysDB_, UpdateOperation, curTuple_, fldList_.getTupleSize());
+    (*trans)->appendUndoLog(sysDB_, UpdateOperation, curTuple_, length_);
     return copyValuesFromBindBuffer(curTuple_);
 }
 
@@ -437,6 +476,8 @@ TableImpl::~TableImpl()
     if (NULL != iter ) { delete iter; iter = NULL; }
     if (NULL != idxInfo) { delete idxInfo; idxInfo = NULL; }
     if (NULL != indexPtr_) { delete[] indexPtr_; indexPtr_ = NULL; }
+    if (numFlds_ > 31 && cNullInfo != NULL) { free(cNullInfo); cNullInfo = NULL; }
+
     fldList_.removeAll();
 
 }

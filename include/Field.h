@@ -50,6 +50,7 @@ class FieldDef
     bool isNull_;
     bool isPrimary_;
     bool isDefault_;
+    bool isUnique_;
     //TODO::width and scale
 };
 

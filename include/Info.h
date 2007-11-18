@@ -79,13 +79,14 @@ class TableDef
     *   @param type data type of the field
     *   @param length size of the field. used in case of char and binary data types.
     *   @param defaultValue default value for the field. It is currently limited to 32 bytes.
-    *   @param notNull whether the field can be null
     *   @param isPrimary whether the field is primary key( not null + unique)
+    *   @param notNull whether the field can be null
+    *   @param unique whether the field values are unique
     *   @return int
     */
     int addField(const char *name,  DataType type = typeUnknown, size_t
-                 length = 0, const void *defaultValue = 0, bool notNull = false,
-                 bool isPrimary = false);
+                 length = 0, const void *defaultValue = 0,
+                 bool primary = false, bool notNull = false, bool unique = false);
 
     /** removes a field from the schema definition
     *   @param name field name 

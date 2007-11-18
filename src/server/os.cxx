@@ -153,7 +153,6 @@ size_t os::align(size_t size)
     return ((size - 1) | (sizeof(long) - 1)) + 1;
 }
 
-
 int os::select(int nfds, fd_set *readfds, fd_set *writefds,
                  fd_set *exceptfds, struct timeval * timeout)
 {

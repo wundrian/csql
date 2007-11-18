@@ -23,12 +23,11 @@ TableDef::~TableDef()
     fldList.removeAll();
 }
 int TableDef::addField(const char *name,  DataType type, size_t length,
-                 const void *defaultValue, bool notNull, bool isPrimary)
+                 const void *defaultValue, bool isPrimary,
+                 bool notNull, bool unique)
 
 {
-    if (isPrimary && !notNull) return (int)ErrBadArg;
     if (name == NULL) return (int)ErrBadArg;
-
     // The following code checks for duplicates
     FieldIterator iter = getFieldIterator();
     while (iter.hasElement())
@@ -58,6 +57,8 @@ int TableDef::addField(const char *name,  DataType type, size_t length,
     }
     fldDef.isNull_ = notNull;
     fldDef.isPrimary_ = isPrimary;
+    fldDef.isUnique_ = unique;
+    if (isPrimary) fldDef.isNull_ = fldDef.isUnique_ = true;
     switch(type)
     {
         case typeString :

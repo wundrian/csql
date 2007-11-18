@@ -24,7 +24,9 @@ LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsql
 TARGETS = \
         test001 \
         test002 \
-        test003
+        test003 \
+        test004 \
+        test005
        
 
 ifeq ($(PlatForm), supported)
@@ -36,6 +38,10 @@ test001: inserttest1.c
 test002: inserttest2.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test003: inserttest3.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test004: insertnulltest1.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test005: insertnulltest2.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 
 clean:
