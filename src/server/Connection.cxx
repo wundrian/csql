@@ -42,6 +42,7 @@ DbRetVal Connection::open(const char *username, const char *password)
     logFinest(logger, "User logged in %s",username);
     rv = session->open(username, password);
     if (rv != OK) { delete session; session = NULL; return rv; }
+    return OK;
 }
 
 DbRetVal Connection::close()
