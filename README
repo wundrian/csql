@@ -17,9 +17,10 @@ Compiling the source
 --------------------
 Go to the root directory and enter the following commands.
 
-$./configure --prefix=`pwd`/install
-$make
-$./csqlinstall.ksh
+$ export JDK_HOME=<path of jdk home>
+$ ./configure --prefix=`pwd`/install CXXFLAGS="-I$JDK_HOME/include -I$JDK_HOME/include/linux"
+$ make
+$ ./csqlinstall.ksh
 
 This will create "install" directory under the current directory and places all the executables created in bin directory and libraries in lib directory.
 
