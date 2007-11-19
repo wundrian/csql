@@ -22,7 +22,7 @@ int Logger::createLogRecord(LogLevel level, char* filename,
     os::gettimeofday(&timeStamp);
     struct tm*      tempTm = os::localtime(&timeStamp.tv_sec);
     strftime(tempBuffer, 25, "%d/%m/%Y %H:%M:%S.", tempTm);
-    snprintf(*buffer, MAX_TRACE_LOG_LENGTH, "%s::%s:%d::%s::%d::%d::%d::%s\n",
+    snprintf(*buffer, MAX_TRACE_LOG_LENGTH, "%s::%s:%d::%s::%d::%d::%lu::%s\n",
         levelNames[level], tempBuffer, timeStamp.tv_usec,
         filename, lineNo,
         os::getpid(),
@@ -69,10 +69,34 @@ int Logger::log(LogLevel level, char* filename,
 
 DbRetVal Logger::startLogger(char *filename, bool isCreate)
 {
+    char file[256];
+    int i =0;
     if (isCreate) 
-        fdLog = os::openFile(filename, fileOpenCreat,0);
+    {
+        for (i =0 ; i < 50; i++)
+        {
+            sprintf(file, "%s.%d", filename, i);
+            //check if file exists. If not create it
+            if (::access(file, F_OK) != 0 ) break;
+        }
+        fdLog = os::openFile(file, fileOpenCreat,0);
+        char buffer[] = "Log file overflow....Reached 50...Remove old files\n";
+        if ( i == 50) os::write(fdLog, buffer, strlen(buffer));
+    }
     else
-        fdLog = os::openFile(filename, fileOpenAppend,0);
+    {
+        int newlyCreatedID =0;
+        for (i =0 ; i < 50; i++)
+        {
+            sprintf(file, "%s.%d", filename, i);
+            //check if file exists. If not create it
+            if (::access(file, F_OK) != 0 ) break;
+            newlyCreatedID = i;
+        }
+        if (i == 50) newlyCreatedID = 50;
+        sprintf(file, "%s.%d", filename, newlyCreatedID );
+        fdLog = os::openFile(file, fileOpenAppend,0);
+    }
     if (fdLog == -1)
     {
         printError(ErrSysInit,"Unable to create log file. Check whether server started\n");

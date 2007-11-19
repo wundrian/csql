@@ -18,6 +18,7 @@
 #include <Debug.h>
 #include <NanoTimer.h>
 #include <Config.h>
+#include <Process.h>
 Mutex::Mutex()
 {
 #if defined(sparc) || defined(i686)
@@ -43,6 +44,14 @@ int Mutex::init()
     pthread_mutexattr_destroy(&attr);
 #endif
     return 0;
+}
+int Mutex::init(char *mname)
+{
+    if (strlen(mname) > 19 ) return 0;
+    init();
+    strcpy(name, mname);
+    return 0;
+
 }
 
 #if defined(sparc) || defined(i686)
@@ -114,7 +123,10 @@ int Mutex::tryLock(int tryTimes, int waitmsecs)
     while (tries < tryTimes)
     {
 #if defined(sparc) || defined(i686)
-    if (TSL(&lock) == 0) return 0; 
+    if (TSL(&lock) == 0) 
+    {
+        return 0; 
+    }
 #else
     ret = pthread_mutex_trylock(&mutex_);
     if (EBUSY  != ret) return 0;
@@ -128,11 +140,15 @@ int Mutex::tryLock(int tryTimes, int waitmsecs)
 }
 
 
-int Mutex::getLock()
+int Mutex::getLock(bool procAccount)
 {
     int ret=0;
 #if defined(sparc) || defined(i686)
-    return tryLock();
+    ret = tryLock();
+    //add it to the has_ of the ThreadInfo
+    if (ret ==0 && procAccount) ProcessManager::addMutex(this);
+
+    return ret;
 #else
     ret = pthread_mutex_lock(&mutex_);
 #endif
@@ -141,7 +157,7 @@ int Mutex::getLock()
         return 1;
 }
 
-int Mutex::releaseLock()
+int Mutex::releaseLock(bool procAccount)
 {
     int ret=0;
 #if defined(sparc) || defined(i686)
@@ -156,7 +172,11 @@ int Mutex::releaseLock()
 #else
     ret = pthread_mutex_unlock(&mutex_);
 #endif
-    if (ret == 0) return 0;
+    if (ret == 0 && procAccount) 
+    {
+        ProcessManager::removeMutex(this);
+        return ret;
+    }
     else
         return 1;
 }

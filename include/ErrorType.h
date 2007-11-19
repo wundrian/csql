@@ -47,6 +47,8 @@ enum DbRetVal
     ErrSyntaxError   = -19,
     ErrInvalidExpr   = -20,
     ErrUnique        = -21,
+//  add new error type here
+    ErrWarning       = -99,
     SplCase          = -100
 };
 #endif

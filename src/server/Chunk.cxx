@@ -552,11 +552,11 @@ int Chunk::totalPages()
 
 int Chunk::initMutex()
 {
-    return chunkMutex_.init();
+    return chunkMutex_.init("Chunk");
 }
 int Chunk::getChunkMutex()
 {
-    return chunkMutex_.tryLock();
+    return chunkMutex_.getLock();
 }
 int Chunk::releaseChunkMutex()
 {

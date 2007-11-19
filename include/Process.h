@@ -19,6 +19,7 @@
 #include<os.h>
 #include<ErrorType.h>
 #include<Mutex.h>
+#include<Transaction.h>
 
 class ProcInfo
 {
@@ -38,9 +39,12 @@ class ThreadInfo
 
     pthread_t thrid_;
 
-    void *want_;  //single mutex which we are waiting for.
+    Transaction *trans_;
 
-    void *has_;   //list of mutexes held
+    Mutex *want_;  //single mutex which we are waiting for.
+
+    Mutex *has_[MAX_MUTEX_PER_THREAD];   //list of mutexes held
+    void init();
 
 };
 class Database;
@@ -52,13 +56,14 @@ class ProcessManager
     static Mutex mutex;
     static caddr_t sysAddr;
     static caddr_t usrAddr;
-    Database *systemDatabase;
-    //ProcInfo *procInfo;
+    static Database *systemDatabase;
     //ThreadInfo *thrInfo;
-    ProcessManager(Database *sysdb) { systemDatabase = sysdb; //procInfo = NULL; thrInfo = NULL; 
-    }
+    ProcessManager() { }
     DbRetVal registerThread();
     DbRetVal deregisterThread();
+    static DbRetVal addMutex(Mutex *mutex);
+    static DbRetVal removeMutex(Mutex *mutex);
+    static DbRetVal setTransaction(Transaction *trans);
 };
 
 #endif

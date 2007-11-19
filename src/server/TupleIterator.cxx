@@ -37,7 +37,7 @@ DbRetVal TupleIterator::open()
         int bucketNo = HashIndex::computeHashBucket(hIdxInfo->type,
                         keyPtr, hIdxInfo->noOfBuckets);
         Bucket *bucket =  &(hIdxInfo->buckets[bucketNo]);
-        int ret = bucket->mutex_.tryLock();
+        int ret = bucket->mutex_.getLock();
         if (ret != 0)
         {
             printError(ErrLockTimeOut,"Unable to acquire bucket Mutex for bucket %d",bucketNo);

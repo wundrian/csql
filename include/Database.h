@@ -128,20 +128,20 @@ class Database
     Page* getFreePage(size_t size);
 
     int initAllocDatabaseMutex();
-    DbRetVal getAllocDatabaseMutex();
-    DbRetVal releaseAllocDatabaseMutex();
+    DbRetVal getAllocDatabaseMutex(bool procAccount = true);
+    DbRetVal releaseAllocDatabaseMutex(bool procAccount = true);
 
     int initTransTableMutex();
     DbRetVal getTransTableMutex();
     DbRetVal releaseTransTableMutex();
 
     int initDatabaseMutex();
-    DbRetVal getDatabaseMutex();
-    DbRetVal releaseDatabaseMutex();
+    DbRetVal getDatabaseMutex(bool procAccount = true);
+    DbRetVal releaseDatabaseMutex(bool procAccount = true);
 
     int initProcessTableMutex();
-    DbRetVal getProcessTableMutex();
-    DbRetVal releaseProcessTableMutex();
+    DbRetVal getProcessTableMutex(bool procAccount = true);
+    DbRetVal releaseProcessTableMutex(bool procAccount = true);
 
     //checks whether the ptr falls in the range of the database file size
     bool isValidAddress(void *ptr);

@@ -48,7 +48,7 @@ class ConfigValues
         maxDbSize = 1048576;
         sysDbKey = 2222;
         userDbKey = 5555;
-        strcpy(logFile, "/tmp/log.out");
+        strcpy(logFile, "/tmp/log/log.out");
         mapAddr=400000000;
         mutexSecs=0;
         mutexUSecs=10;

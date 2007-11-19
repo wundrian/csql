@@ -72,7 +72,7 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
    //to acquire lock so for sure we will get it.
    printDebug(DM_Lock, "LockManager::getSharedLock Begin");
    Bucket *bucket = getLockBucket(tuple);
-   int lockRet = bucket->mutex_.tryLock();
+   int lockRet = bucket->mutex_.getLock();
    if (lockRet != 0)
    {
        printDebug(DM_Lock, "LockManager::getSharedLock:End-Unable to get mutex");
@@ -176,7 +176,7 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
    //printDebug(DM_Lock, "Trying to get mutex: for bucket %x\n", bucket);
    while (tries < Conf::config.getLockRetries())
    {
-       lockRet = bucket->mutex_.tryLock();
+       lockRet = bucket->mutex_.getLock();
        if (lockRet != 0)
        {
            printDebug(DM_Lock, "Mutex is waiting for long time:May be deadlock");
@@ -237,7 +237,7 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
    //to acquire lock so for sure we will get it.
 
    Bucket *bucket = getLockBucket(tuple);
-   int lockRet = bucket->mutex_.tryLock();
+   int lockRet = bucket->mutex_.getLock();
    if (lockRet != 0)
    {
        printDebug(DM_Lock, "Unable to acquire bucket mutex:May be deadlock");
@@ -317,7 +317,7 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
 
    while (tries < Conf::config.getLockRetries())
    {
-       lockRet = bucket->mutex_.tryLock();
+       lockRet = bucket->mutex_.getLock();
        if (lockRet != 0)
        {
            printError(ErrLockTimeOut, "Unable to get bucket mutex");
@@ -383,7 +383,7 @@ DbRetVal LockManager::releaseLock(void *tuple)
    printDebug(DM_Lock, "LockManager:releaseLock Start");
    Bucket *bucket = getLockBucket(tuple);
    printDebug(DM_Lock,"Bucket is %x", bucket);
-   int lockRet = bucket->mutex_.tryLock();
+   int lockRet = bucket->mutex_.getLock();
    if (lockRet != 0)
    {
        printDebug(DM_Lock, "Mutex is waiting for long time:May be deadlock");
@@ -461,7 +461,7 @@ DbRetVal LockManager::isExclusiveLocked(void *tuple, Transaction **trans, bool &
 {
    Bucket *bucket = getLockBucket(tuple);
    printDebug(DM_Lock,"Bucket is %x", bucket);
-   int lockRet = bucket->mutex_.tryLock();
+   int lockRet = bucket->mutex_.getLock();
    if (lockRet != 0)
    {
        printDebug(DM_Lock, "Mutex is waiting for long time:May be deadlock");

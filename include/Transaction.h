@@ -92,6 +92,7 @@ class TransactionManager
     Transaction *firstTrans;
 
     void setFirstTrans(Transaction *trans);
+    void setTrans(Transaction *trans);
 
     DbRetVal startTransaction(IsolationLevel level);
     DbRetVal commit(LockManager *lManager_);

@@ -120,7 +120,6 @@ DbRetVal UpdStatement::setIntParam(int paramNo, int value)
         printError(ErrSysFatal, "param not set. Should never happen");
         return ErrSysFatal;
     }
-    printf("PRABA::totalAssignParams %d\n", totalAssignParams);
     ConditionValue *cValue;
     UpdateFieldValue *uValue;
     if (paramNo <= totalAssignParams) {

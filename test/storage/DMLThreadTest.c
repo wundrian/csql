@@ -34,8 +34,8 @@ int main()
     for (int i=0; i <THREADS; i++) {
         message[i] = i;
         pthread_create (&thr[i], NULL,
-                  //&runTest, (void *) &message[i]);
-                  &runTest, NULL);
+                  &runTest, (void *) &message[i]);
+                  //&runTest, NULL);
     }
     printf("All threads started\n");
     for (int i=0; i <THREADS; i++) {
@@ -68,11 +68,12 @@ void* runTest(void *message)
     int i;
     int icount =0;
     NanoTimer timer;
-    //int val = *(int*)message;
-     int val = 0;
+    int val = *(int*)message;
+    // int val = 0;
     //printf("PRABA::val in this thread %d is %d\n", val, os::getthrid());
     printf("PRABA::val in this thread %d is %lu\n", val, ::pthread_self());
-    for(i = val * 100; i< (val *100) +100; i++)
+    if (val == 0) sleep(1);
+    for(i = val * 10; i< (val *10) +10; i++)
     {
         timer.start();
         rv = conn.startTransaction();

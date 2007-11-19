@@ -89,6 +89,7 @@ enum MapMode
 #define LOCK_BUCKET_SIZE 2048
 #define MAX_CHUNKS 20
 #define PAGE_SIZE Conf::config.getPageSize()
+#define MAX_MUTEX_PER_THREAD 5
 
 
 #define BIT(x) (1 << (x))
@@ -138,6 +139,7 @@ class os
     static pid_t getpid();
     static pthread_t getthrid();
     static char* getenv(const char *envVarName);
+    static int kill(pid_t pid, int sig);
 };
 
 #endif

@@ -171,8 +171,8 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, void
     int bucketNo = computeHashBucket(type,
                         keyPtr, noOfBuckets);
     Bucket *bucket =  &(buckets[bucketNo]);
-    
-    int ret = bucket->mutex_.tryLock();
+
+    int ret = bucket->mutex_.getLock();
     if (ret != 0)
     {
         printError(ErrLockTimeOut,"Unable to acquire bucket Mutex for bucket %d",bucketNo);
@@ -249,7 +249,7 @@ DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, void
 
     Bucket *bucket1 = &buckets[bucket];
 
-    int ret = bucket1->mutex_.tryLock();
+    int ret = bucket1->mutex_.getLock();
     if (ret != 0)
     {
         printError(ErrLockTimeOut,"Unable to acquire bucket Mutex for bucket %d",bucket);
@@ -323,7 +323,7 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, void
     //TODO::it may run into deadlock, when two threads updates tuples which falls in
     //same buckets.So take both the mutex one after another, which will reduce the
     //deadlock window.
-    int ret = bucket->mutex_.tryLock();
+    int ret = bucket->mutex_.getLock();
     if (ret != 0)
     {
         printError(ErrLockTimeOut,"Unable to acquire bucket Mutex for bucket %d",bucketNo);
@@ -334,7 +334,7 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, void
                         newKey, noOfBuckets);
 
     Bucket *bucket1 = &buckets[newBucketNo];
-    bucket1->mutex_.tryLock();
+    bucket1->mutex_.getLock();
     if (ret != 0)
     {
         printError(ErrLockTimeOut,"Unable to acquire bucket Mutex for bucket %d",newBucketNo);

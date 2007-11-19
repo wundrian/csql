@@ -30,11 +30,13 @@ class Mutex
     pthread_mutex_t mutex_;
     #endif
     public:
+    char name[20];
     Mutex();
     int init();
-    int getLock();
+    int init(char *name);
     int tryLock(int tries=0, int waitmsecs=0);
-    int releaseLock();
+    int getLock(bool procAccount=true);
+    int releaseLock(bool procAccount=true);
     int destroy();
 };
 

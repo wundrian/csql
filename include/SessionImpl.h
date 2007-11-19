@@ -20,6 +20,7 @@
 #include<Session.h>
 
 class DatabaseManagerImpl;
+class Database;
 
 class SessionImpl : public Session
 {
@@ -56,6 +57,7 @@ class SessionImpl : public Session
     DbRetVal rollback();
 
     DbRetVal readConfigFile();
+    Database* getSystemDatabase();
     private:
     DbRetVal authenticate(const char *username, const char *password);
 };

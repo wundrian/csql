@@ -127,6 +127,14 @@ DbRetVal SessionImpl::open(const char *username, const char *password)
 
     dbMgr->createTransactionManager();
     dbMgr->createLockManager();
+    rv = dbMgr->registerThread();
+    if (OK != rv)
+    {
+        printError(rv,"Unable to register to csql server");
+        dbMgr->closeSystemDatabase();
+        delete dbMgr; dbMgr = NULL;
+        return rv;
+    }
     rv = dbMgr->openDatabase("praba");
     if (OK != rv) {
         dbMgr->closeSystemDatabase();
@@ -134,20 +142,12 @@ DbRetVal SessionImpl::open(const char *username, const char *password)
         return rv;
     }
 
-    rv = dbMgr->registerThread();
-    if (OK != rv)
-    {
-        printError(rv,"Unable to register to csql server");
-        dbMgr->closeDatabase();
-        dbMgr->closeSystemDatabase();
-        delete dbMgr; dbMgr = NULL;
-        return rv;
-    }
+    //ProcessManager::systemDatabase = dbMgr->sysDb();
     return OK;
 }
 DbRetVal SessionImpl::authenticate(const char *username, const char *password)
 {
-    DbRetVal rv = dbMgr->sysDb()->getDatabaseMutex();
+    DbRetVal rv = dbMgr->sysDb()->getDatabaseMutex(false);
     if (OK != rv)
     {
         printError(rv,"Unable to get database mutex");
@@ -156,7 +156,7 @@ DbRetVal SessionImpl::authenticate(const char *username, const char *password)
     CatalogTableUSER cUser(dbMgr->sysDb());
     cUser.authenticate(username, password, isAuthenticated, isDba);
     strcpy(userName, username);
-    dbMgr->sysDb()->releaseDatabaseMutex();
+    dbMgr->sysDb()->releaseDatabaseMutex(false);
     if (!isAuthenticated)
     {
         printError(ErrNoPrivilege,"User Authentication failed");
@@ -169,10 +169,10 @@ DbRetVal SessionImpl::close()
     DbRetVal rv = OK;
     if (dbMgr)
     {
-        rv = dbMgr->deregisterThread();
-        if (rv != OK) {  return ErrBadCall;  }
         rv = dbMgr->closeDatabase();
         if (rv != OK) { return ErrBadCall;  }
+        rv = dbMgr->deregisterThread();
+        if (rv != OK) {  return ErrBadCall;  }
         rv = dbMgr->closeSystemDatabase();
         if (rv != OK) { return ErrBadCall;  }
         delete dbMgr;
@@ -282,5 +282,9 @@ DbRetVal SessionImpl::readConfigFile()
     int  rv = Conf::config.readAllValues(confFilename);
     if (rv != 0) return ErrSysInit;
     return OK;
+}
+Database* SessionImpl::getSystemDatabase()
+{
+    return dbMgr->sysDb();
 }
 

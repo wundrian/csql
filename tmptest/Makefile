@@ -19,11 +19,12 @@ endif
 endif
 
 INCL= -I$(CSQL_INSTALL_ROOT)/include -I../src/sql
-#LIBS= -L$(CSQL_INSTALL_ROOT)/lib -L.. -lcsql -lcsqlsql
-LIBS= -L$(CSQL_INSTALL_ROOT)/lib -L.. -lcsql 
+LIBS= -L$(CSQL_INSTALL_ROOT)/lib -L.. -lcsql -lcsqlsql
+#LIBS= -L$(CSQL_INSTALL_ROOT)/lib -L.. -lcsql 
 
 TARGETS = \
         test \
+        testproc \
         create\
         upd\
         del\
@@ -35,6 +36,8 @@ all: $(TARGETS)
 endif
 
 test: test.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+testproc: testproc.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 del: del.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)

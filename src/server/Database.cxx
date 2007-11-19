@@ -97,16 +97,16 @@ void Database::setHashIndexChunk(Chunk *ch)
 
 int Database::initAllocDatabaseMutex()
 {
-    return metaData_->dbAllocMutex_.init();
+    return metaData_->dbAllocMutex_.init("allocdb");
 }
-DbRetVal Database::getAllocDatabaseMutex()
+DbRetVal Database::getAllocDatabaseMutex(bool procAccount) 
 {
-    int ret= metaData_->dbAllocMutex_.tryLock();
+    int ret= metaData_->dbAllocMutex_.getLock(procAccount);
     if (ret) return ErrSysInternal; else return OK;
 }
-DbRetVal Database::releaseAllocDatabaseMutex()
+DbRetVal Database::releaseAllocDatabaseMutex(bool procAccount)
 {
-    metaData_->dbAllocMutex_.releaseLock();
+    metaData_->dbAllocMutex_.releaseLock(procAccount);
     return OK;
 }
 
@@ -114,11 +114,11 @@ DbRetVal Database::releaseAllocDatabaseMutex()
 
 int Database::initTransTableMutex()
 {
-    return metaData_->dbTransTableMutex_.init();
+    return metaData_->dbTransTableMutex_.init("transtable");
 }
 DbRetVal Database::getTransTableMutex()
 {
-    int ret = metaData_->dbTransTableMutex_.tryLock();
+    int ret = metaData_->dbTransTableMutex_.getLock();
     if (ret) return ErrSysInternal; else return OK;
 }
 DbRetVal Database::releaseTransTableMutex()
@@ -131,16 +131,16 @@ DbRetVal Database::releaseTransTableMutex()
 
 int Database::initProcessTableMutex()
 {
-    return metaData_->dbProcTableMutex_.init();
+    return metaData_->dbProcTableMutex_.init("proctable");
 }
-DbRetVal Database::getProcessTableMutex()
+DbRetVal Database::getProcessTableMutex(bool procAccount)
 {
-    int ret = metaData_->dbProcTableMutex_.tryLock();
+    int ret = metaData_->dbProcTableMutex_.getLock(procAccount);
     if (ret) return ErrSysInternal; else return OK;
 }
-DbRetVal Database::releaseProcessTableMutex()
+DbRetVal Database::releaseProcessTableMutex(bool procAccount)
 {
-    metaData_->dbProcTableMutex_.releaseLock();
+    metaData_->dbProcTableMutex_.releaseLock(procAccount);
     return OK;
 }
 
@@ -148,16 +148,16 @@ DbRetVal Database::releaseProcessTableMutex()
 
 int Database::initDatabaseMutex()
 {
-    return metaData_->dbMutex_.init();
+    return metaData_->dbMutex_.init("db");
 }
-DbRetVal Database::getDatabaseMutex()
+DbRetVal Database::getDatabaseMutex(bool procAccount)
 {
-    int ret = metaData_->dbMutex_.tryLock();
+    int ret = metaData_->dbMutex_.getLock(procAccount);
     if (ret) return ErrSysInternal; else return OK;
 }
-DbRetVal Database::releaseDatabaseMutex()
+DbRetVal Database::releaseDatabaseMutex(bool procAccount)
 {
-    metaData_->dbMutex_.releaseLock();
+    metaData_->dbMutex_.releaseLock(procAccount);
     return OK;
 }
 
@@ -202,7 +202,7 @@ Page* Database::getFreePage()
         printError(ErrSysInternal, "Invalid address %x",((char*) pageInfo) + PAGE_SIZE);
         return NULL;
     }
-    setCurrentPage((Page*) pageInfo);
+    //setCurrentPage((Page*) pageInfo);
     printDebug(DM_Alloc,"Database::getFreePage returning page:%x",pageInfo);
     return (Page*) pageInfo ;
 }
@@ -247,7 +247,7 @@ Page* Database::getFreePage(size_t size)
     }
 
     printDebug(DM_Alloc,"Database::getFreePage returning page:%x",pageInfo);
-    setCurrentPage((Page*) pageInfo);
+    //setCurrentPage((Page*) pageInfo);
     return (Page*) pageInfo ;
 }
 

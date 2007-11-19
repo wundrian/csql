@@ -14,7 +14,6 @@ int main (int argc, char **argv)
   char *message1 = "Thread 1";
   char *message2 = "Thread 2";
   int status;
-
   pthread_create (&thread1, NULL,
 		  &print_message_function, (void *) message1);
   pthread_create (&thread2, NULL,
@@ -23,7 +22,7 @@ int main (int argc, char **argv)
   pthread_join(thread1, (void **)&status);
   pthread_join(thread2, (void **)&status);
   rv = conn.close();
-  if (rv != 0) return 1;
+  if (rv != 0) return 2;
   exit (0);
 }
 
@@ -40,7 +39,6 @@ void* print_message_function(void *ptr)
     }
     DatabaseManager *dbMgr = conn.getDatabaseManager();
     if (dbMgr == NULL) { printf("Auth failed\n"); return NULL;}
-
 
     TableDef tabDef;
     tabDef.addField("f1", typeInt, 0, NULL, true, true);

@@ -20,6 +20,7 @@
 #include<CatalogTables.h>
 #include<Debug.h>
 #include<Config.h>
+#include<Process.h>
 DbRetVal TransactionManager::startTransaction(IsolationLevel level)
 {
     if (NULL != trans)
@@ -50,12 +51,17 @@ DbRetVal TransactionManager::startTransaction(IsolationLevel level)
     trans = iter;
     trans->status_ = TransRunning;
     trans->isoLevel_ = level;
+    ProcessManager::setTransaction(trans);
     return OK;
 }
 
 void TransactionManager::setFirstTrans(Transaction *trans)
 {
     firstTrans = trans;
+}
+void TransactionManager::setTrans(Transaction *tr)
+{
+    trans = tr;
 }
 
 DbRetVal TransactionManager::commit(LockManager *lockManager_)
