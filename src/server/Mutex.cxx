@@ -91,8 +91,13 @@ int TSL(Lock *lock)
     The line after the code tells which values come out of the asm
     code, and the second line tells the input to the asm code. */
 //printf("before asm %d\n", *lock);
-    __asm__ __volatile__("movl %1, %0; xchgl %0, %2" :
-                  "=r" (res), "=r" (lock) : "r" (lock));
+//PRABA::below asm code works but it is very very slow. DMLTest takes lot of time.
+//Need to revert back this. It gives error in debug build
+   // __asm__ __volatile__("movl %1, %0; xchgl %0, %2" :
+   //               "=r" (res), "=r" (lock) : "r" (lock));
+	     __asm__ __volatile__("movl $1, %%eax; xchgl (%%ecx), %%eax" :
+ 	                   "=eax" (res), "=m" (*lw) : 	
+	                   "ecx" (lw));
 //printf("after asm %d ret %d\n", *lock, res);
     return(res);
 
