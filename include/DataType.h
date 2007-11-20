@@ -163,7 +163,9 @@ class ByteInt {
     char operator^=(ByteInt v)  { return val ^= v.val; }
     char operator^=(char v)         { return val ^= v; }
     char operator++()               { return val++; }
+    char operator++(int)               { char tmp = val; val++; return val; }
     char operator--()               { return val--; }
+    char operator--(int)               { char tmp = val; val--; return val; }
 
     private:
     signed char val;
