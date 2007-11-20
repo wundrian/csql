@@ -86,8 +86,6 @@ DbRetVal CatalogTableTABLE::getChunkAndTblPtr(const char *name,
          }
     }
     //table not found in TABLE
-    printError(ErrNotFound,
-                "No entries found in TABLE catalog table for the table %s", name);
     return ErrNotFound;
 }
 

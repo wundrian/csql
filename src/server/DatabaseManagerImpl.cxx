@@ -415,6 +415,20 @@ DbRetVal DatabaseManagerImpl::createTable(const char *name, TableDef &def)
         printError(rv, "Unable to get Database mutex");
         return rv;
     }
+
+    void *tptr =NULL;
+    void *chunk = NULL;
+
+    //check whether table already exists
+    CatalogTableTABLE cTable(systemDatabase_);
+    cTable.getChunkAndTblPtr(name, chunk, tptr);
+    if (NULL != tptr)
+    {
+        systemDatabase_->releaseDatabaseMutex();
+        printError(ErrAlready, "Table %s already exists", name);
+        return ErrAlready;
+    }
+
     //create a chunk to store the tuples
     Chunk *ptr = createUserChunk(sizeofTuple);
     if (NULL  == ptr)
@@ -424,10 +438,9 @@ DbRetVal DatabaseManagerImpl::createTable(const char *name, TableDef &def)
         return ErrNoResource;
     }
     printDebug(DM_Database,"Created UserChunk:%x", ptr);
+
     //add row to TABLE
-    CatalogTableTABLE cTable(systemDatabase_);
     int tblID = ((Chunk*)ptr)->getChunkID();
-    void *tptr = NULL;
     rv = cTable.insert(name, tblID, sizeofTuple,
                                    def.getFieldCount(), ptr, tptr);
     if (OK != rv)
