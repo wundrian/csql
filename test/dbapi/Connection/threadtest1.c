@@ -45,7 +45,7 @@ void* print_message_function(void *ptr)
     tabDef.addField("f2", typeInt);
     rv = dbMgr->createTable("t1", tabDef);
     if (rv != OK) { printf("Table creation failed\n"); return NULL; }
-    printf("Table created\n");
+    printf("Table created %d %lu\n", os::getpid(), os::getthrid());
 
     rv = conn.close();
     if (rv != OK) { printf("Thread Return value of close %d %d\n", rv, getpid()); } 

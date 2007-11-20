@@ -3,4 +3,6 @@
 #Any line which has "#" symbol is considered as comment and negleted
 dbapi/Connection
 dbapi/UserManager
-dbapi/Table
+#dbapi/Table
+dbapi/Index
+dbapi/DataType
