@@ -6,7 +6,8 @@ int select(Table *table, ComparisionOp op)
 {
     printf("Operator test for %d\n", op);
     Condition p1;
-    float val1 = 1.3;
+    float val1, i = 1.3;
+    val1=i;
     p1.setTerm("f1", op, &val1);
     table->setCondition(&p1);
     table->execute();

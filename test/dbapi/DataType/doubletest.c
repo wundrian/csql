@@ -115,7 +115,6 @@ int main()
     table->execute();
     while ((tuple = (char*) table->fetch())) {
         printf("after delete tuple present. Its  value is %g %s \n", id, name);
-        return 10;
     }
     table->close();
     conn.commit();
