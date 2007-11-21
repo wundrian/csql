@@ -28,7 +28,11 @@ TARGETS = \
         test004  \
         test005  \
         test006  \
-        test007  
+        test007  \
+        test009  \
+        test010  \
+        test011  \
+        test008  
  
        
 
@@ -49,6 +53,14 @@ test005: byteinttest.c
 test006: floattest.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test007: doubletest.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test008: chartest.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test009: datetest.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test010: timetest.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test011: timestamptest.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 
 clean:
