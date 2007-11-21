@@ -297,7 +297,7 @@ int operator> (const TimeStamp &d1,  const TimeStamp &d2)
 int operator<=(const TimeStamp &d1, const TimeStamp &d2)
     { return (d1.date != d2.date) ? d1.date < d2.date : d1.time <= d2.time; }
 int operator>=(const TimeStamp &d1, const TimeStamp &d2)
-    { return (d1.date != d2.date) ? d1.date < d2.date : d1.time >= d2.time; }
+    { return (d1.date != d2.date) ? d1.date > d2.date : d1.time >= d2.time; }
 int operator==(const TimeStamp &d1, const TimeStamp &d2)
     { return d1.date == d2.date && d1.time == d2.time; }
 int operator!=(const TimeStamp &d1, const TimeStamp &d2)
