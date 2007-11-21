@@ -26,7 +26,9 @@ TARGETS = \
         test002  \
         test003  \
         test004  \
-        test005  
+        test005  \
+        test006  \
+        test007  
  
        
 
@@ -43,6 +45,10 @@ test003: longlongtest.c
 test004: shorttest.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test005: byteinttest.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test006: floattest.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test007: doubletest.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 
 clean:

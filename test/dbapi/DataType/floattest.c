@@ -1,23 +1,20 @@
 #include<CSql.h>
 
-ByteInt id = 0;
+float  id = 0;
 char name[196] = "PRABAKARAN";
 int select(Table *table, ComparisionOp op)
 {
     printf("Operator test for %d\n", op);
     Condition p1;
-    ByteInt val1 = 3;
+    float val1 = 1.3;
     p1.setTerm("f1", op, &val1);
     table->setCondition(&p1);
     table->execute();
-printf("executed\n");
     void *tuple;
     while ((tuple = (char*) table->fetch())) {
-        printf("tuple value is %c %s \n", id, name);
+        printf("tuple value is %f %s \n", id, name);
     }
-printf("before cloase\n");
     table->close();
-printf("returned\n");
     return 0;
 }
 
@@ -34,29 +31,30 @@ int main()
     DatabaseManager *dbMgr = conn.getDatabaseManager();
     if (dbMgr == NULL) { printf("Auth failed\n"); return 2;}
     TableDef tabDef;
-    tabDef.addField("f1", typeByteInt, 0, NULL, true, true);
+    tabDef.addField("f1", typeFloat, 0, NULL, true, true );
     tabDef.addField("f2", typeString, 196);
     rv = dbMgr->createTable("t1", tabDef);
     if (rv != OK) { printf("Table creation failed\n"); return 3; }
     printf("Table created\n");
-return 0;
     Table *table = dbMgr->openTable("t1");
     if (table == NULL) { printf("Unable to open table\n"); return 4; }
     table->bindFld("f1", &id);
     table->bindFld("f2", name);
     char *tuple;
     int ret;
-    ByteInt i;
+    float i;
     rv =conn.startTransaction();
-    for(i = 0; i< 5; i++)
+    for(i = 1.0; i< 1.5; i = i + 0.1)
     {
         if (rv != OK) exit(5);
         id= i;
         strcpy(name, "PRABAKARAN0123456750590");
         ret = table->insertTuple();
         if (ret != 0) break;
+        printf("Tuple inserted %f\n", i);
     }
     conn.commit();
+
     conn.startTransaction();
     select(table, OpEquals);
     conn.commit();
@@ -82,11 +80,11 @@ return 0;
     conn.commit();
 
     Condition p1;
-    ByteInt val1 = 0;
+    float val1 = 0;
     p1.setTerm("f1", OpEquals, &val1);
     table->setCondition(&p1);
     rv  = conn.startTransaction();
-    for(i = 0; i< 5; i++)
+    for(i = 1.0; i< 1.5; i = i +0.1)
     {
         if (rv != OK) exit (1);
         val1 = i;
@@ -99,14 +97,14 @@ return 0;
     }
     conn.commit();
     rv = conn.startTransaction();
-    for(i = 0; i< 5; i++)
+    for(i = 1; i< 1.5; i++)
     {
         if (rv != OK) exit (1);
         val1 = i;
         table->execute();
         tuple = (char*)table->fetch() ;
         if (tuple == NULL) {printf("loop break in %d\n", i);table->close();break;}
-        printf("deleting tuple %c %s \n", id, name);
+        printf("deleting tuple %f %s \n", id, name);
         table->deleteTuple();
         table->close();
     }
@@ -116,7 +114,7 @@ return 0;
     rv = conn.startTransaction();
     table->execute();
     while ((tuple = (char*) table->fetch())) {
-        printf("after delete tuple present. Its  value is %c %s \n", id, name);
+        printf("after delete tuple present. Its  value is %f %s \n", id, name);
         return 10;
     }
     table->close();
