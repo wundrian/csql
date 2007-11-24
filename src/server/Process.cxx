@@ -192,7 +192,7 @@ DbRetVal ProcessManager::removeMutex(Mutex *mut)
             return OK;
         }
     }
-    printError(ErrSysInternal, "Mutex could not be found in the list");
+    printError(ErrSysInternal, "Mutex could not be found in the list %s", mut->name);
     return ErrSysInternal;
 }
 

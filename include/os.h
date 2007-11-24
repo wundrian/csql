@@ -139,6 +139,8 @@ class os
     static pid_t getpid();
     static pthread_t getthrid();
     static char* getenv(const char *envVarName);
+    static int setenv(const char *envVarName, const char *value);
+
     static int kill(pid_t pid, int sig);
 };
 

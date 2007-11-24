@@ -166,6 +166,12 @@ char* os::getenv(const char *envVarName)
     retVal = ::getenv(envVarName);
     return retVal;
 }
+
+int os::setenv(const char *envVarName, const char *value)
+{
+    return ::setenv(envVarName, value,1);
+}
+
 int os::kill(pid_t pid, int sig)
 {
     return ::kill(pid, sig);

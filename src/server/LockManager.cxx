@@ -166,7 +166,7 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
         printDebug(DM_Lock, "LockManager::getSharedLock End");
         return OK;
    }
-   bucket->mutex_.releaseLock();
+   //bucket->mutex_.releaseLock();
    int tries = 0;
    int ret = 0;
    struct timeval timeout;
@@ -308,7 +308,7 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
         printDebug(DM_Lock, "LockManager::getExclusiveLock End");
         return OK;
    }
-   bucket->mutex_.releaseLock();
+   //bucket->mutex_.releaseLock();
    int tries = 0;
    int ret = 0;
    struct timeval timeout;
