@@ -1,5 +1,5 @@
-//In a transaction mix insert, update and delete a tuple.
-//All should take effect in a transaction
+//In a transaction mix insert, update and delete a tuple and abort it
+//All should not take effect in a transaction
 
 #include<CSql.h>
 int main()
@@ -105,17 +105,19 @@ int main()
    table->close();
    printf("Deleted successfully");
 
-   conn.commit();
+   conn.rollback();
 
    conn.startTransaction();
    //Displays the database after the transaction 
    table->setCondition(NULL);
    table->execute();
+   int count =0;
    while(true)
    {
        tuple = (char*)table->fetch() ;
        if (tuple == NULL) {break;}
        printf("\nBinded Tuple value is %d %s", id, name);
+       count++;
    }
    conn.commit();
 
@@ -123,5 +125,6 @@ int main()
    dbMgr->closeTable(table);
    dbMgr->dropTable("t1");
    conn.close();
+   if (count !=0) return 100;
    return 0;
 }

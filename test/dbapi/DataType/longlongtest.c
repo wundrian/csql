@@ -31,11 +31,21 @@ int main()
     DatabaseManager *dbMgr = conn.getDatabaseManager();
     if (dbMgr == NULL) { printf("Auth failed\n"); return 2;}
     TableDef tabDef;
-    tabDef.addField("f1", typeLongLong, 0, NULL, true, true );
+    tabDef.addField("f1", typeLongLong);
     tabDef.addField("f2", typeString, 196);
     rv = dbMgr->createTable("t1", tabDef);
     if (rv != OK) { printf("Table creation failed\n"); return 3; }
     printf("Table created\n");
+#ifdef WITHINDEX
+    HashIndexInitInfo *idxInfo = new HashIndexInitInfo();
+    strcpy(idxInfo->tableName, "t1");
+    idxInfo->list.append("f1");
+    idxInfo->indType = hashIndex;
+    rv = dbMgr->createIndex("indx1", idxInfo);
+    if (rv != OK) { printf("Index creation failed\n"); return -1; }
+    printf("Index created\n");
+#endif
+
     Table *table = dbMgr->openTable("t1");
     if (table == NULL) { printf("Unable to open table\n"); return 4; }
     table->bindFld("f1", &id);

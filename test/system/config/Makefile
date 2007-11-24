@@ -9,7 +9,7 @@ SYSLIBS=-ldl -lnsl -lsocket  -lposix4
 else
 ifeq ($(OSNAME), Linux)
 CPlus = g++
-CPlusFlags = -g -w
+CPlusFlags = -O2 -w
 SYSLIBS= -rdynamic -lrt -lpthread -lcrypt
 else
 PlatForm=notsupported
@@ -22,26 +22,13 @@ INCL= -I$(CSQL_INSTALL_ROOT)/include
 LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsql
 
 TARGETS = \
-        test001 \
-        test002 \
-        test004 \
-        test005 \
-        test003
-       
+        test001
 
 ifeq ($(PlatForm), supported)
 all: $(TARGETS)
 endif
 
-test001: uniqueindex1.c
-	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
-test002: uniqueindex2.c
-	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
-test003: uniqueindex3.c
-	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
-test004: twoindex1.c
-	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
-test005: twoindex2.c
+test001: conftest1.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 
 clean:
