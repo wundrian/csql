@@ -39,6 +39,7 @@ TARGETS = \
 	test015 \
 	test016 \
 	test017 \
+	test051 \
 	test101
        
 
@@ -79,6 +80,8 @@ test015: conntest15.c
 test016: conntest16.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test017: conntest17.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test051: isotest1.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test101: threadtest1.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
