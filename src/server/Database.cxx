@@ -215,7 +215,7 @@ Page* Database::getFreePage(size_t size)
     PageInfo* pageInfo = ((PageInfo*)page);
     int multiple = size / PAGE_SIZE;
     int offset = ((multiple + 1) * PAGE_SIZE);
-    printDebug(DM_Alloc, "Database::getFreePage firstPage:%x size:%d",page, size);
+    printDebug(DM_Alloc, "Database::getFreePage firstPage:%x size:%ld",page, size);
 
     while(true){
         while( 1 == pageInfo->isUsed_)

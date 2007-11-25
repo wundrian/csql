@@ -489,7 +489,7 @@ DbRetVal LockManager::isExclusiveLocked(void *tuple, Transaction **trans, bool &
            {
                if ((*trans)->findInHasList(systemDatabase_, iter))
                {
-                   printDebug(DM_LOCK, "You already have exclusive Lock: %x", iter);
+                   printDebug(DM_Lock, "You already have exclusive Lock: %x", iter);
                    status = false;
                }
                else 

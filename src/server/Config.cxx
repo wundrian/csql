@@ -71,9 +71,14 @@ int Config::storeKeyVal(char *key, char *value)
 }
 int Config::validateValues()
 {
-    if (cVal.pageSize < 1024 || cVal.pageSize > 1024 * 1024 * 10 )
+    if (cVal.pageSize < 8192 || cVal.pageSize > 1024 * 1024 * 10 )
     {
-        printError(ErrBadArg,  "PAGE_SIZE should be >= 1024 and <= 10 MB");
+        printError(ErrBadArg,  "PAGE_SIZE should be >= 8192 and <= 10 MB");
+        return 1;
+    }
+    if (cVal.pageSize  % 1024 !=0 )
+    {
+        printError(ErrBadArg,  "PAGE_SIZE should be multiples of 1024");
         return 1;
     }
     if (cVal.maxTrans < 10 || cVal.maxTrans > 8192)
@@ -104,7 +109,7 @@ int Config::validateValues()
 
     if (cVal.maxDbSize < 1024 * 1024  || cVal.maxDbSize > 1024 *1024 *1024)
     {
-        printError(ErrBadArg,  "MAX_DB_SIZE should be >= 1 MB and <= 1 GB");
+        printError(ErrBadArg,  "MAX_DB_SIZE should be >= 1 MB and <= 2 GB");
         return 1;
     }
     if (cVal.maxDbSize % 8192 !=0)
@@ -134,11 +139,11 @@ int Config::validateValues()
         return 1;
     }
     //TODO::Check for the existence of the log file
-    if (cVal.mapAddr < 400000000 || cVal.mapAddr > 4000000000)
+    if (cVal.mapAddr < 400000000 || cVal.mapAddr > 2000000000)
     {
-        printError(ErrBadArg,  "MAP_ADDRESS should be >= 400000000 and <= 4000000000");
+        printError(ErrBadArg,  "MAP_ADDRESS should be >= 400000000 and <= 2000000000");
         return 1;
-    }
+    }	
     if (cVal.mutexSecs < 0 || cVal.mutexSecs > 360)
     {
         printError(ErrBadArg,  "MUTEX_TIMEOUT_SECS should be >= 0 and <= 360");

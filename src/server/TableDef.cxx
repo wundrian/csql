@@ -21,6 +21,7 @@
 TableDef::~TableDef()
 {
     fldList.removeAll();
+    fldCount = 0;
 }
 int TableDef::addField(const char *name,  DataType type, size_t length,
                  const void *defaultValue, bool isPrimary,

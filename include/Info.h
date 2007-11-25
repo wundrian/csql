@@ -73,6 +73,7 @@ class TableDef
     int fldCount;
 
     public:
+    TableDef() { fldCount = 0; }
     ~TableDef();
     /** adds a field to the schema definition.
     *   @param name field name 
