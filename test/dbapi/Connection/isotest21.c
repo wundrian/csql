@@ -1,5 +1,5 @@
 #include "common.h"
-//READ_COMMITTED isolation testing
+//READ_REPEATABLE isolation testing
 //T1 and T2 both inserting, T2 will fail saying unique key constraint
 
 void* runTest1(void *p);
@@ -34,11 +34,7 @@ void* runTest1(void *message)
     if (rv != OK) { printf("Error during connection %d\n", rv); return NULL; }
     DatabaseManager *dbMgr = conn.getDatabaseManager();
     if (dbMgr == NULL) { printf("Auth failed\n"); return NULL;}
-#ifndef DEFAULT
-    rv = conn.startTransaction(READ_COMMITTED);
-#else
-    rv = conn.startTransaction();
-#endif
+    rv = conn.startTransaction(READ_REPEATABLE);
     if (rv != OK) return NULL;
     printf("Thread and pid is %d %lu\n", os::getpid(), os::getthrid());
     int *retval = new int();
@@ -59,11 +55,7 @@ void* runTest2(void *message)
     if (rv != OK) { printf("Error during connection %d\n", rv); return NULL; }
     DatabaseManager *dbMgr = conn.getDatabaseManager();
     if (dbMgr == NULL) { printf("Auth failed\n"); return NULL;}
-#ifndef DEFAULT
-    rv = conn.startTransaction(READ_COMMITTED);
-#else
-    rv = conn.startTransaction();
-#endif
+    rv = conn.startTransaction(READ_REPEATABLE);
     if (rv != OK) return NULL;
     printf("Thread and pid is %d %lu\n", os::getpid(), os::getthrid());
 

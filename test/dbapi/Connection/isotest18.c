@@ -1,6 +1,11 @@
 #include "common.h"
-//READ_COMMITTED isolation testing
-//T1 and T2 both inserting, T2 will fail saying unique key constraint
+//READ_UNCOMMITTED isolation testing 
+//           T1                 T2
+//        -------------------------
+//         Update
+//	        		Update
+//         Read
+// T1 should read updated tuple by T1
 
 void* runTest1(void *p);
 void* runTest2(void *p);
@@ -14,6 +19,13 @@ int main()
     int ret = createTable(dbMgr);
     if (ret != 0) { return 1; }
 
+    rv = conn.startTransaction();
+    if (rv != OK) {printf ("Unable to start trans\n"); return 1; }
+    rv = insert(dbMgr, 100, false);
+    if (rv != OK) { printf("Unable to insert\n"); return 2; }
+    conn.commit();
+    printf("Tuple inserted\n");
+
     pthread_t thr[2];
     int *status1, *status2;
     pthread_create (&thr[0], NULL, &runTest1,  NULL);
@@ -22,10 +34,11 @@ int main()
 
     pthread_join(thr[0], (void**)&status1);
     pthread_join(thr[1], (void**)&status2);
+    ret = 0;
+    if (*status1 != 0 || *status2 != 0) ret = 1;
     dbMgr->dropTable("t1");
     conn.close();
-    if (*status1 != 0 || *status2 != 0) return 1;
-    return 0;
+    return ret;
 }
 void* runTest1(void *message)
 {
@@ -34,22 +47,18 @@ void* runTest1(void *message)
     if (rv != OK) { printf("Error during connection %d\n", rv); return NULL; }
     DatabaseManager *dbMgr = conn.getDatabaseManager();
     if (dbMgr == NULL) { printf("Auth failed\n"); return NULL;}
-#ifndef DEFAULT
-    rv = conn.startTransaction(READ_COMMITTED);
-#else
-    rv = conn.startTransaction();
-#endif
+    rv = conn.startTransaction(READ_UNCOMMITTED);
     if (rv != OK) return NULL;
     printf("Thread and pid is %d %lu\n", os::getpid(), os::getthrid());
     int *retval = new int();
     *retval = 0;
+    rv = update(dbMgr, 100, true);
+    if (rv != OK) { printf("Test Failed:first thread failed to update\n"); *retval = 1; }
 
-    rv = insert(dbMgr, 100, true);
-    if (rv != OK) { printf("Test Failed:first thread failed to insert\n"); *retval = 1; }
-
+    rv = select(dbMgr, 100, true, true);
+    if (rv != OK) { printf("Test Failed:first thread read wrong value \n"); *retval = 1; }
     conn.commit();
     rv  = conn.close();
-    printf("conn closed %d for Thread and pid is %d %lu\n", rv, os::getpid(), os::getthrid());
     pthread_exit(retval);
 }
 void* runTest2(void *message)
@@ -59,23 +68,16 @@ void* runTest2(void *message)
     if (rv != OK) { printf("Error during connection %d\n", rv); return NULL; }
     DatabaseManager *dbMgr = conn.getDatabaseManager();
     if (dbMgr == NULL) { printf("Auth failed\n"); return NULL;}
-#ifndef DEFAULT
-    rv = conn.startTransaction(READ_COMMITTED);
-#else
-    rv = conn.startTransaction();
-#endif
+    rv = conn.startTransaction(READ_UNCOMMITTED);
     if (rv != OK) return NULL;
     printf("Thread and pid is %d %lu\n", os::getpid(), os::getthrid());
 
     int *retval = new int();
     *retval = 0;
-
-    rv = insert(dbMgr, 100, false);
-    if (rv == OK) { printf("Test Failed:second thread inserted\n"); *retval = 1; }
-
+    rv = update(dbMgr, 100, true, "RITHISH");
+    if (rv == OK) { printf("Test Failed:second thread updated\n"); *retval = 1; }
     conn.commit();
-    rv  = conn.close();
-    printf("conn closed %d for Thread and pid is %d %lu\n", rv, os::getpid(), os::getthrid());
+    conn.close();
     pthread_exit(retval);
 }
 
