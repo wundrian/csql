@@ -48,6 +48,7 @@ enum DbRetVal
     ErrInvalidExpr   = -20,
     ErrUnique        = -21,
 //  add new error type here
+    ErrUnknown       = -98,
     ErrWarning       = -99,
     SplCase          = -100
 };
