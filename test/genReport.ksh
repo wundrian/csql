@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/ksh
 ##################Test Report Generator main starts here##############
 
 #TEST_RUN_DIR should be set before running this

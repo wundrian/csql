@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/ksh
 
 ################### Settings ########################################
 #Timeout value for the hanging scripts
