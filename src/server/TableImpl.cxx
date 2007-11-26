@@ -216,6 +216,7 @@ void* TableImpl::fetchNoBind()
         if (tries == 0) 
         { 
             printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
+            curTuple_ = NULL;
             return NULL;
         }
     }
