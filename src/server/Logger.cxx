@@ -73,27 +73,26 @@ DbRetVal Logger::startLogger(char *filename, bool isCreate)
     int i =0;
     if (isCreate) 
     {
-        for (i =0 ; i < 50; i++)
+        while (true)
         {
             sprintf(file, "%s.%d", filename, i);
             //check if file exists. If not create it
             if (::access(file, F_OK) != 0 ) break;
+            i++;
         }
         fdLog = os::openFile(file, fileOpenCreat,0);
-        char buffer[] = "Log file overflow....Reached 50...Remove old files\n";
-        if ( i == 50) os::write(fdLog, buffer, strlen(buffer));
     }
     else
     {
         int newlyCreatedID =0;
-        for (i =0 ; i < 50; i++)
+        while (true)
         {
             sprintf(file, "%s.%d", filename, i);
             //check if file exists. If not create it
             if (::access(file, F_OK) != 0 ) break;
             newlyCreatedID = i;
+            i++;
         }
-        if (i == 50) newlyCreatedID = 50;
         sprintf(file, "%s.%d", filename, newlyCreatedID );
         fdLog = os::openFile(file, fileOpenAppend,0);
     }
