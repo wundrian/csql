@@ -31,7 +31,7 @@ int main()
     DatabaseManager *dbMgr = conn.getDatabaseManager();
     if (dbMgr == NULL) { printf("Auth failed\n"); return 2;}
     TableDef tabDef;
-    tabDef.addField("f1", typeFloat, 0, NULL, true, true );
+    tabDef.addField("f1", typeDouble, 0, NULL, true, true );
     tabDef.addField("f2", typeString, 196);
     rv = dbMgr->createTable("t1", tabDef);
     if (rv != OK) { printf("Table creation failed\n"); return 3; }
@@ -107,7 +107,7 @@ int main()
     }
     conn.commit();
     rv = conn.startTransaction();
-    for(i = 1; i< 1.5; i++)
+    for(i = 1; i< 1.5; i = i + 0.1)
     {
         if (rv != OK) exit (1);
         val1 = i;
