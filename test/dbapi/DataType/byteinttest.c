@@ -11,8 +11,8 @@ int select(Table *table, ComparisionOp op)
     table->setCondition(&p1);
     table->execute();
     void *tuple;
-    while ((tuple = (char*) table->fetch())) {
-        printf("tuple value is %c %s \n", id, name);
+    while ( table->fetch() ) {
+        printf("tuple value is %c %s \n", (char)id, name);
     }
     table->close();
     return 0;
@@ -98,7 +98,7 @@ int main()
         val1 = i;
         table->execute();
         tuple = (char*)table->fetch() ;
-        if (tuple == NULL) {printf("loop break in %d\n", i);table->close();break;}
+        if (tuple == NULL) {printf("loop break in %d\n", (char)i);table->close();break;}
         strcpy(name, "PRABAKARAN0950576543210");
         table->updateTuple();
         table->close();
@@ -111,8 +111,8 @@ int main()
         val1 = i;
         table->execute();
         tuple = (char*)table->fetch() ;
-        if (tuple == NULL) {printf("loop break in %d\n", i);table->close();break;}
-        printf("deleting tuple %c %s \n", id, name);
+        if (tuple == NULL) {printf("loop break in %d\n", (char)i);table->close();break;}
+        printf("deleting tuple %c %s \n", (char)id, name);
         table->deleteTuple();
         table->close();
     }
@@ -122,7 +122,7 @@ int main()
     rv = conn.startTransaction();
     table->execute();
     while ((tuple = (char*) table->fetch())) {
-        printf("after delete tuple present. Its  value is %c %s \n", id, name);
+        printf("after delete tuple present. Its  value is %c %s \n", (char)id, name);
     }
     table->close();
     conn.commit();
