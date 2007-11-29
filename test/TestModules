@@ -4,3 +4,4 @@ dbapi/DataType
 dbapi/Table
 dbapi/UserManager
 system/config
+dbapi/Predicate
