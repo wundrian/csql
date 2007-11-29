@@ -13,17 +13,19 @@ int main (int argc, char **argv)
   pthread_t thread1, thread2;
   char *message1 = "Thread 1";
   char *message2 = "Thread 2";
-  int status;
+  int status1, status2;
   pthread_create (&thread1, NULL,
 		  &print_message_function, (void *) message1);
   pthread_create (&thread2, NULL,
 		  &print_message_function, (void *) message2);
 
-  pthread_join(thread1, (void **)&status);
-  pthread_join(thread2, (void **)&status);
+  pthread_join(thread1, (void **)&status1);
+  pthread_join(thread2, (void **)&status2);
   rv = conn.close();
   if (rv != 0) return 2;
-  exit (0);
+
+  if( 1 == (status1 + status2) ) return 0;
+  else return -1;
 }
 
 
@@ -38,13 +40,13 @@ void* print_message_function(void *ptr)
        return NULL;
     }
     DatabaseManager *dbMgr = conn.getDatabaseManager();
-    if (dbMgr == NULL) { printf("Auth failed\n"); return NULL;}
+    if (dbMgr == NULL) { printf("Auth failed\n"); conn.close(); return NULL;}
 
     TableDef tabDef;
     tabDef.addField("f1", typeInt, 0, NULL, true, true);
     tabDef.addField("f2", typeInt);
     rv = dbMgr->createTable("t1", tabDef);
-    if (rv != OK) { printf("Table creation failed\n"); return NULL; }
+    if (rv != OK) { printf("Table creation failed\n"); conn.close(); return (void*) 1; }
     printf("Table created %d %lu\n", os::getpid(), os::getthrid());
 
     rv = conn.close();
