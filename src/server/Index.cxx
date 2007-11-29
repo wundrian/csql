@@ -19,6 +19,7 @@
 #include<Debug.h>
 
 HashIndex* Index::hIdx = NULL;
+long Index::usageCount = 0;
 
 Index* Index::getIndex(IndexType type)
 {

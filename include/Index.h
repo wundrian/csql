@@ -67,11 +67,20 @@ class HashIndex;
 
 class Index
 {
-    //create (one) object for each indexing mechanisms here
+    // create (one) object for each indexing mechanisms here 
+    // Also need to make changes to getIndex() and destroy() methods 
+    // accordingly for new index machanism.
     static HashIndex *hIdx;
+    static long usageCount;
     public:
     static Index* getIndex(IndexType type);
-    static void destroy() { delete hIdx; }
+    static void init() { usageCount++; }
+    static void destroy() { 
+	 usageCount--;
+         if(!usageCount) {
+            if(!hIdx) { delete hIdx; hIdx=NULL; }
+	 }
+    }
     virtual DbRetVal insert(TableImpl *tbl, Transaction *tr, void *indexPtr, void *tuple)=0;
     virtual DbRetVal remove(TableImpl *tbl, Transaction *tr, void *indexPtr, void *tuple)=0; 
     virtual DbRetVal update(TableImpl *tbl, Transaction *tr, void *indexPtr, void *tuple)=0;
