@@ -23,6 +23,8 @@ void yyerror(const char* Msg);
 %token <stringval> STAR
 %token <stringval> INSERT INTO VALUES
 %token <stringval> DELETE UPDATE SET NULL_VALUE
+%token <stringval> CREATE TABLE PRIMARY KEY DEFAULT
+%token <stringval> INT_TYPE LONG_TYPE SHORT_TYPE DOUBLE_TYPE
 %token ';' ',' '(' ')'
 %type <stringval> ident field value 
 %type <predicate> conditions condition
@@ -32,6 +34,7 @@ command:  select_statement { YYACCEPT; }
         | insert_statement { YYACCEPT; }
         | delete_statement { YYACCEPT; }
         | update_statement { YYACCEPT; }
+        | ddl_statement { YYACCEPT; }
         ;
         
 select_statement: SELECT field_list FROM ident where_clause_opt semicolon_opt
@@ -182,6 +185,83 @@ value:    STRING { $$ = $1; }
         | PARAMETER { $$ = $1; }
         | NULL_VALUE { $$ = (char*) 0; }
         ;
+
+ddl_statement: CREATE TABLE ident '(' create_defn_list ')' semicolon_opt
+        {
+            parsedData->setStmtType(CreateTableStatement);
+            parsedData->setTableName($3); 
+            free($3);
+        }
+        ;
+
+create_defn_list: create_defn_list create_defn_list_L
+        | create_defn 
+        ;
+
+create_defn_list_L: ',' create_defn
+        ;
+
+create_defn: field_defn
+        {
+            parsedData->insertFldDef();
+        }
+        | constraint_defn
+        ;
+
+field_defn: field_name field_type size_opt default_expr_opt null_expr_opt
+        ;
+
+field_name: ident
+        {
+            parsedData->setFldName($1);
+            free($1);
+        }
+size_opt:
+        | '(' NUMBER_STRING ')'
+        {
+            parsedData->setFldLength(atoi($2));
+            free($2);
+        }
+        ;
+
+default_expr_opt:
+        | DEFAULT value
+        ;
+
+null_expr_opt:
+        | NULL_VALUE
+        {
+            parsedData->setFldNotNull(false);
+        }
+        | NOT NULL_VALUE
+        {
+            parsedData->setFldNotNull(true);
+        }
+        ;
+
+constraint_defn: primary_key_constraint
+        ;
+
+primary_key_constraint: PRIMARY KEY '(' field_list ')'
+        ;
+
+field_type: INT_TYPE
+        {
+            parsedData->setFldType(typeInt);
+        }
+        | LONG_TYPE
+        {
+            parsedData->setFldType(typeLong);
+        }
+        | SHORT_TYPE
+        {
+            parsedData->setFldType(typeShort);
+        }
+        | DOUBLE_TYPE
+        {
+            parsedData->setFldType(typeDouble);
+        }
+        ;         
 %%
 
 extern int lexEof;
