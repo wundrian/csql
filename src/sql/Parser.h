@@ -28,7 +28,8 @@ enum StatementType
     SelectStatement,
     InsertStatement,
     UpdateStatement,
-    DeleteStatement
+    DeleteStatement,
+    CreateTableStatement
 };
 
 struct FieldValue
@@ -93,6 +94,11 @@ class ParsedData
     //stores the where clause condition for SELECT, UPDATE and DELETE
     Condition predicate;
     
+    //stores field information in CREATE TABLE
+    FieldDef fldDef;
+
+    //stores list of fields for CREATE TABLE
+    FieldList creFldList;
 
     public:
     ParsedData() { paramCounter = 0; stmtType = UnknownStatement; } 
@@ -119,6 +125,16 @@ class ParsedData
     List getFieldValueList() { return fieldValueList; }
     List getUpdateFieldValueList() { return updFldValList; }
 
+    void setFldName(char *name);
+    void setFldType(DataType type);
+    void setFldLength(size_t length);
+    //void setFldDefaultValue -- will need two parametersers, check how u want to pass default value.
+    void setFldNotNull(bool notNull);
+
+    void insertFldDef(); //check if fldDef needs to be a part of ParsedData 
+    
+    FieldList getCreFldList() { return creFldList; }
+
     StatementType getStmtType() { return stmtType; }
 
     void reset();
@@ -126,3 +142,11 @@ class ParsedData
 };
 
 #endif
+
+//TODO: Aruna
+//variable and function names suck, change if u want to
+//setFldDefaultValue
+//finding out if fldDef needs to be part of parsedData, or can allocate memory and pass around
+//primary key
+//foreign key
+//Reset fldDef after storing it in list
