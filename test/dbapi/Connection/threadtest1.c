@@ -21,8 +21,13 @@ int main (int argc, char **argv)
 
   pthread_join(thread1, (void **)&status1);
   pthread_join(thread2, (void **)&status2);
+
+  DatabaseManager *dbMgr = conn.getDatabaseManager();
+  if (dbMgr == NULL) { printf("Auth failed \n"); conn.close(); return NULL; }
+  rv = dbMgr->dropTable("t1");
+  if ( rv != OK ) return 2;
   rv = conn.close();
-  if (rv != 0) return 2;
+  if (rv != 0) return 3;
 
   if( 1 == (status1 + status2) ) return 0;
   else return -1;
