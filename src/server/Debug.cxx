@@ -25,6 +25,7 @@ int DebugDM_HashIndex = 0;
 int DebugDM_SystemDatabase = 0;
 int DebugDM_Database = 0;
 int DebugDM_Table = 0;
+int DebugDM_Predicate = 0;
 int DebugDM_TableIterator = 0;
 
 

@@ -62,7 +62,11 @@ void PredicateImpl::setTerm(const char* fName1, ComparisionOp op, void **opnd)
 
 void PredicateImpl::setTerm(Predicate *p1, LogicalOp op, Predicate *p2 )
 {
-    if (p2 == NULL && op != OpNot) return;
+    if (p2 == NULL && op != OpNot || op == OpNot && p2 != NULL) 
+    { 
+        //TODO::printError
+        return; 
+    }
     lhs = (PredicateImpl*)p1;
     rhs = (PredicateImpl*)p2;
     logicalOp = op;
@@ -89,20 +93,25 @@ void PredicateImpl::setTuple(void *tpl)
 DbRetVal PredicateImpl::evaluate(bool &result)
 {
     bool rhsResult, lhsResult;
+    printDebug(DM_Predicate, "Evaluate start %x \n", this);
     DbRetVal retCode =OK;
+    result = false;
     if (NULL != lhs)
     {
         retCode = lhs->evaluate(lhsResult);
+        printDebug(DM_Predicate, "LHS result %d\n", lhsResult);
         if (retCode != OK) return ErrInvalidExpr;
     }
     if (NULL != rhs)
     {
         retCode = rhs->evaluate(rhsResult);
+        printDebug(DM_Predicate, "LHS result %d\n", rhsResult);
         if (retCode != OK) return ErrInvalidExpr;
     }
     if (NULL != lhs)
     {
         //Means it involves only Logical operator
+        printDebug(DM_Predicate,"Evalute operator %d lhsResult %d : rhsResult %d\n", logicalOp, lhsResult, rhsResult );
             switch(logicalOp)
             {
                 case OpAnd:
@@ -117,8 +126,9 @@ DbRetVal PredicateImpl::evaluate(bool &result)
                 default:
                     return ErrInvalidExpr;
 
-        }
-        return OK;
+            }
+            printDebug(DM_Predicate, "result is %d\n", result);
+            return OK;
     }
     //Means it is relational expression
     //first operand is always field identifier

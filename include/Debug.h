@@ -45,6 +45,7 @@ enum DebugModule
     DM_SystemDatabase,
     DM_Database,
     DM_Table,
+    DM_Predicate,
     DM_Iterator
 };
 static char moduleNames[][20] =
