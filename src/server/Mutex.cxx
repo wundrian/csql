@@ -90,15 +90,31 @@ int TSL(Lock *lock)
     syntax. The 'l' after the mnemonics denotes a 32-bit operation.
     The line after the code tells which values come out of the asm
     code, and the second line tells the input to the asm code. */
-//printf("before asm %d\n", *lock);
-//PRABA::below asm code works but it is very very slow. DMLTest takes lot of time.
-//Need to revert back this. It gives error in debug build
-   // __asm__ __volatile__("movl %1, %0; xchgl %0, %2" :
-   //               "=r" (res), "=r" (lock) : "r" (lock));
-	     __asm__ __volatile__("movl $1, %%eax; xchgl (%%ecx), %%eax" :
- 	                   "=eax" (res), "=m" (*lw) : 	
-	                   "ecx" (lw));
-//printf("after asm %d ret %d\n", *lock, res);
+
+    /* This assembly compiles only with -O2 option, and not with -g option. Version1
+    __asm__ __volatile__(
+        "movl $1, %%eax; xchgl (%%ecx), %%eax" 
+        : "=eax" (res), "=m" (*lw) 
+        : "ecx" (lw));
+    */
+
+     /* This assembly takes lot of time for test/performance/DMLTest. Version2
+     __asm__ __volatile__(
+	"movl %1, %0; xchgl %0, %2" 
+	: "=r" (res), "=r" (lock) 
+        : "r" (lock));
+     */
+    
+
+    // This assembly is Version3. Working fine for now
+    __asm__ __volatile__(
+        "xchgl %0, %1 \n\t"
+        : "=r"(res), "=m"(*lock)
+        : "0"(1), "m"(*lock)
+        : "memory"); 
+
+    //fprintf(stderr,"after asm %d ret %d\n", *lock, res);
+
     return(res);
 
 #elif defined (sparc)
