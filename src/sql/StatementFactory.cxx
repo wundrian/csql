@@ -31,6 +31,9 @@ Statement* StatementFactory::getStatement(ParsedData *data)
         case DeleteStatement:
             stmt = new DelStatement();
             break;
+        case CreateTableStatement:
+            stmt = new CreateTblStatement();
+            break;
     }
     stmt->setParsedData(data);
     return stmt;
