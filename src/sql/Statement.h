@@ -26,6 +26,35 @@ class Statement
     protected:
     ParsedData *parsedData;
     DatabaseManager *dbMgr;
+
+    public:
+    void setParsedData(ParsedData *pData) {  parsedData = pData; }
+    void setDbMgr(DatabaseManager *dbmgr) { dbMgr = dbmgr; }
+
+
+    virtual DbRetVal execute(int &rowsAffected)=0;
+    virtual DbRetVal setParam(int paramNo, void *value)=0;
+
+    virtual DbRetVal setShortParam(int paramNo, short value)=0;
+    virtual DbRetVal setIntParam(int paramNo, int value)=0;
+    virtual DbRetVal setLongParam(int paramNo, long value)=0;
+    virtual DbRetVal setLongLongParam(int paramNo, long long value)=0;
+    virtual DbRetVal setByteIntParam(int paramNo, ByteInt value)=0;
+    virtual DbRetVal setFloatParam(int paramNo, float value)=0;
+    virtual DbRetVal setDoubleParam(int paramNo, double value)=0;
+    virtual DbRetVal setStringParam(int paramNo, char *value)=0;
+    virtual DbRetVal setDateParam(int paramNo, Date value)=0;
+    virtual DbRetVal setTimeParam(int paramNo, Time value)=0;
+    virtual DbRetVal setTimeStampParam(int paramNo, TimeStamp value)=0;
+
+
+    virtual DbRetVal resolve()=0;
+    virtual ~Statement(){}
+};
+
+class DmlStatement : public Statement
+{
+    protected:
     Table *table;
 
     void **params;
@@ -35,9 +64,6 @@ class Statement
     int totalParams;
 
     public:
-    void setParsedData(ParsedData *pData) {  parsedData = pData; }
-    void setDbMgr(DatabaseManager *dbmgr) { dbMgr = dbmgr; }
-
     int noOfParamFields() { return totalParams; }
     DbRetVal getParamFldInfo(int paramPos, FieldInfo *&info) 
     { 
@@ -61,9 +87,10 @@ class Statement
 
 
     virtual DbRetVal resolve()=0;
-    virtual ~Statement(){}
+    virtual ~DmlStatement(){}
 };
-class InsStatement : public Statement
+
+class InsStatement : public DmlStatement
 {
     public:
     DbRetVal execute(int &rowsAffected);
@@ -86,7 +113,7 @@ class InsStatement : public Statement
     ~InsStatement();
 };
 
-class SelStatement : public Statement
+class SelStatement : public DmlStatement
 {
     private:
     DbRetVal resolveStar();
@@ -129,7 +156,8 @@ class SelStatement : public Statement
     void *fetchAndPrint();
 
 };
-class UpdStatement : public Statement
+
+class UpdStatement : public DmlStatement
 {
     public:
     DbRetVal execute(int &rowsAffected);
@@ -156,7 +184,8 @@ class UpdStatement : public Statement
     int totalAssignParams;
     DbRetVal resolveForAssignment();
 };
-class DelStatement : public Statement
+
+class DelStatement : public DmlStatement
 {
     public:
     DbRetVal execute(int &rowsAffected);
@@ -182,6 +211,36 @@ class DelStatement : public Statement
     DbRetVal resolveForCondition(); //TODO::put this is Statement class, duplicated from SelStatement.
 
 };
+
+//Introduce one more class DdlStatement and derive createTbl from that.
+class CreateTblStatement : public Statement
+{
+    public:
+    DbRetVal execute(int &rowsAffected); //TODO: i think rowsAffected is not part of ddl - gopal said its design decision
+    DbRetVal resolve();
+
+    DbRetVal setParam(int paramNo, void *value) { }
+
+    DbRetVal setShortParam(int paramNo, short value) { }
+    DbRetVal setIntParam(int paramNo, int value) { }
+    DbRetVal setLongParam(int paramNo, long value) { }
+    DbRetVal setLongLongParam(int paramNo, long long value) { }
+    DbRetVal setByteIntParam(int paramNo, ByteInt value) { }
+    DbRetVal setFloatParam(int paramNo, float value) { }
+    DbRetVal setDoubleParam(int paramNo, double value) { }
+    DbRetVal setStringParam(int paramNo, char *value) { }
+    DbRetVal setDateParam(int paramNo, Date value) { }
+    DbRetVal setTimeParam(int paramNo, Time value) { }
+    DbRetVal setTimeStampParam(int paramNo, TimeStamp value) { }
+
+    CreateTblStatement();
+    ~CreateTblStatement();
+   
+    private:
+    char tblName[IDENTIFIER_LENGTH];  
+    TableDef tblDef; 
+};
+
 class StatementFactory
 {
     public:

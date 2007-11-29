@@ -102,6 +102,15 @@ operator        "<"|">"|">="|"<="|"="|"\!="
                 if(strcasecmp(yytext,"UPDATE") == 0) token = UPDATE;
                 if(strcasecmp(yytext,"SET") == 0) token = SET;
                 if(strcasecmp(yytext,"NULL") == 0) token = NULL_VALUE;
+                if(strcasecmp(yytext,"CREATE") == 0) token = CREATE;
+                if(strcasecmp(yytext,"TABLE") == 0) token = TABLE;
+                if(strcasecmp(yytext,"PRIMARY") == 0) token = PRIMARY;
+                if(strcasecmp(yytext,"KEY") == 0) token = KEY;
+                if(strcasecmp(yytext,"DEFAULT") == 0) token = DEFAULT;
+                if(strcasecmp(yytext,"INT") ==0) token = INT_TYPE;
+                if(strcasecmp(yytext,"LONG") ==0) token = LONG_TYPE;
+                if(strcasecmp(yytext,"DOUBLE") ==0) token = DOUBLE_TYPE;
+                if(strcasecmp(yytext,"SHORT") ==0) token = SHORT_TYPE;
 
                 if( token == FIELD )
                     yylval.stringval = strdup((const char*)yytext);
