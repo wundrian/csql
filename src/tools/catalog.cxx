@@ -14,6 +14,8 @@
  *                                                                         *
  ***************************************************************************/
 #include <CSql.h>
+#include <DatabaseManagerImpl.h>
+#include <Database.h>
 
 int main(int argc, char **argv)
 {
@@ -22,7 +24,7 @@ int main(int argc, char **argv)
     char password[IDENTIFIER_LENGTH];
     password [0] = '\0';
     int c = 0, opt = 0;
-    while ((c = getopt(argc, argv, "u:p:li?")) != EOF) 
+    while ((c = getopt(argc, argv, "u:p:lid?")) != EOF) 
     {
         switch (c)
         {
@@ -30,15 +32,18 @@ int main(int argc, char **argv)
             case 'p' : { strcpy(password , argv[optind - 1]); break; }
             case 'l' : { opt = 2; break; } //list all the table with field info
             case 'i' : { opt = 3; break;  }//reinitialize the catalog table
-            case '?' : { opt = 4; break; } //print help 
+            case 'd' : { opt = 4; break;  }//print db usage statistics
+            case '?' : { opt = 10; break; } //print help 
             default: opt=1; //list all the tables
 
         }
     }//while options
-    if (opt == 4) {
-        printf("Usage: catalog [-u username] [-p passwd] [-l] [-i]\n");
+    if (opt == 10) {
+        printf("Usage: catalog [-u username] [-p passwd] [-l] [-i] [-d]\n");
         printf("       l -> list all table with field information\n");
         printf("       i -> reinitialize all the catalog tables\n");
+        printf("       d -> print db usage statistics\n");
+
     }
 
     printf("%s %s \n", username, password);
@@ -51,7 +56,7 @@ int main(int argc, char **argv)
     Connection conn;
     DbRetVal rv = conn.open(username, password);
     if (rv != OK) return 1;
-    DatabaseManager *dbMgr = conn.getDatabaseManager();
+    DatabaseManagerImpl *dbMgr = (DatabaseManagerImpl*) conn.getDatabaseManager();
     if (dbMgr == NULL) { printf("Auth failed\n"); return 2;}
     List tableList = dbMgr->getAllTableNames();
     ListIterator iter = tableList.getIterator();
@@ -95,6 +100,15 @@ int main(int argc, char **argv)
             printf("Dropping Table %s\n", elem->name);
             dbMgr->dropTable(elem->name);
         }
+    }else if (opt == 4)
+    {
+        printf("Database Usage Statistics\n");
+        printf("===========================\n");
+        Database *db = dbMgr->sysDb();
+        db->printStatistics();
+        printf("===========================\n");
+        db = dbMgr->db();
+        db->printStatistics();
     }
     tableList.reset();
     conn.close();

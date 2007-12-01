@@ -40,7 +40,6 @@ DbRetVal SessionImpl::initSystemDatabase()
     Conf::config.print();
 
     dbMgr = new DatabaseManagerImpl();
-
     rv = dbMgr->createDatabase(SYSTEMDB, Conf::config.getMaxSysDbSize());
     if (OK != rv) return rv;
     dbMgr->setSysDb(dbMgr->db());
@@ -77,7 +76,7 @@ DbRetVal SessionImpl::initSystemDatabase()
     }
 
     db->releaseDatabaseMutex();
-
+    printf("sysdb size %ld dbsize %ld\n", Conf::config.getMaxSysDbSize(), Conf::config.getMaxDbSize());
     //create user database
     rv = dbMgr->createDatabase("praba", Conf::config.getMaxDbSize());
     if (OK != rv) return rv;

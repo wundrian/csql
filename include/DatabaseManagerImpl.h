@@ -20,7 +20,9 @@
 #include<Lock.h>
 #include<DatabaseManager.h>
 #include<Process.h>
-
+//Note::DatabaseManagerImpl is used to hide functionalites from normal database user. 
+//User is exposed to DatabaseManagerImpl, for our tools we shall type cast DatabaseManager 
+//to DatabaseManagerImpl to retreive internal information such as db statistics, etc
 class Database;
 class SessionImpl;
 class TableDef;

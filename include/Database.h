@@ -33,8 +33,8 @@ class DatabaseMetaData
     //database does not have any limit for chunks
     int maxChunks_;
 
-    size_t maxSize_; //maximum size of database
-    size_t curSize_; //current size of database
+    long maxSize_; //maximum size of database
+    long curSize_; //current size of database
 
     //current page, this is used by the allocator to get new free page
     Page *curPage_;
@@ -102,8 +102,8 @@ class Database
 
     const char* getName();
     int getDatabaseID();
-    size_t getMaxSize();
-    size_t getCurrentSize();
+    long getMaxSize();
+    long getCurrentSize();
     Page* getCurrentPage();
     int getMaxChunks();
     DatabaseMetaData* getMetaDataPtr() { return metaData_; }
@@ -112,9 +112,9 @@ class Database
 
     void setDatabaseID(int id);
     void setName(const char *name);
-    void setCurrentSize(size_t size);
+    void setCurrentSize(long size);
     void setCurrentPage(Page *page);
-    void setMaxSize(size_t size);
+    void setMaxSize(long size);
     void setMaxChunks(int maxChunks);
     void setMetaDataPtr(DatabaseMetaData *ptr) {metaData_ = ptr; }
     void setFirstPage(Page *ptr);
@@ -126,6 +126,8 @@ class Database
     // of each page to determine if the page is free
     Page* getFreePage();
     Page* getFreePage(size_t size);
+
+    void printStatistics();
 
     int initAllocDatabaseMutex();
     DbRetVal getAllocDatabaseMutex(bool procAccount = true);

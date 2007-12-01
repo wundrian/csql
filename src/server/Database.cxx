@@ -32,12 +32,12 @@ int Database::getDatabaseID()
     return metaData_->dbID_;
 }
 
-size_t Database::getMaxSize()
+long Database::getMaxSize()
 {
     return metaData_->maxSize_;
 }
 
-size_t Database::getCurrentSize()
+long Database::getCurrentSize()
 {
     return metaData_->curSize_;
 
@@ -69,7 +69,7 @@ void Database::setName(const char *name)
 {
     strcpy(metaData_->dbName_ , name);
 }
-void Database::setCurrentSize(size_t size)
+void Database::setCurrentSize(long size)
 {
     metaData_->curSize_ = size;
 }
@@ -81,7 +81,7 @@ void Database::setFirstPage(Page *page)
 {
     metaData_->firstPage_ = page;
 }
-void Database::setMaxSize(size_t size)
+void Database::setMaxSize(long size)
 {
     metaData_->maxSize_ = size;
 }
@@ -251,6 +251,42 @@ Page* Database::getFreePage(size_t size)
     return (Page*) pageInfo ;
 }
 
+void Database::printStatistics()
+{
+    Page* page = getFirstPage();
+    PageInfo* pageInfo = ((PageInfo*)page);
+    int usedPageCount =0, usedMergedPageCount =0, totalPages=0;
+    printf("Database Name           : %s\n", getName());
+    printf("Max Size                : %ld\n", getMaxSize());
+    printf("First Page              : %x\n", getFirstPage());
+    while(isValidAddress((char*) pageInfo))
+    {
+        if (pageInfo == NULL) break;
+        if (1 == pageInfo->isUsed_) {
+           if ( pageInfo->nextPageAfterMerge_ == NULL) {
+              pageInfo = (PageInfo*)((char*)pageInfo + PAGE_SIZE);
+              usedPageCount++; totalPages++;
+              printDebug(DM_Alloc, "Normal Page:Moving to page:%x\n",pageInfo);
+              continue;
+           }
+           else {
+              pageInfo = (PageInfo*)pageInfo->nextPageAfterMerge_;
+              usedMergedPageCount++; totalPages++;
+              printDebug(DM_Alloc,"Merged Page:Moving to page:%x\n",pageInfo);
+              continue;
+           }
+        }
+        pageInfo = (PageInfo*)((char*)pageInfo + PAGE_SIZE);
+        printDebug(DM_Alloc,"Normal Page not used:Moving to page:%x\n",pageInfo);
+        totalPages++;
+    }
+    printf("Total Pages             : %d\n", totalPages);
+    printf("Total Used Normal Pages : %d\n", usedPageCount);
+    printf("Total Used Merged Pages : %d\n", usedMergedPageCount);
+    printf("Total Chunks in use     : %d\n", getNoOfChunks());
+    return ;
+}
+
 
 //called only in case of system database to create and initialize the chunk
 //information
@@ -403,7 +439,7 @@ ThreadInfo* Database::getThreadInfo(int slot)
 
 bool Database::isValidAddress(void* addr)
 {
-    if ((char*) addr > ((char*)getMetaDataPtr())  + getMaxSize())
+    if ((char*) addr >= ((char*)getMetaDataPtr())  + getMaxSize())
         return false;
     else
         return true;
