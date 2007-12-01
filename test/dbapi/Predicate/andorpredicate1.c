@@ -26,7 +26,7 @@ int main()
     Condition p1,p2,p3,p4,p5;
     int val1 = 2, val2 = 3, val3 = 4;
     p1.setTerm("f1", OpEquals, &val3);
-    p2.setTerm("f2", OpGreaterThan, &val3);
+    p2.setTerm("f2", OpGreaterThan, &val2);
     p3.setTerm("f2", OpEquals, &val3);
     p4.setTerm("f1", OpLessThan, &val1);
     p5.setTerm("f1", OpGreaterThan, &val1);

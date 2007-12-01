@@ -19,20 +19,19 @@ int main()
     }
 
 
-    Condition p1,p2,p3,p4,p5;
+    Condition p1,p2,p3,p4;
     int val1 = 2, val2 = 3, val3 = 5;
     p1.setTerm("f1", OpEquals, &val2);
     p2.setTerm("f2", OpGreaterThan, &val1);
     p3.setTerm("f3", OpNotEquals, &val3);
     p4.setTerm("f4", OpLessThan, &val3);
-    p5.setTerm("f5", OpGreaterThanEquals, &val2);
 
     Condition cond2, cond2a, cond2b;
     cond2.setTerm(p1.getPredicate(), OpAnd, p2.getPredicate());
     cond2a.setTerm(p3.getPredicate(), OpAnd, p4.getPredicate());
     cond2b.setTerm(cond2.getPredicate(), OpOr, cond2a.getPredicate());
     table->setCondition(&cond2b);
-    printf("Predicate: (f1 ==3 AND  f2 > 2) OR (f3 ==3 AND f4 <5) ) \n");
+    printf("Predicate: (f1 ==3 AND  f2 > 2) OR (f3 !=3 AND f4 <5) ) \n");
     conn.startTransaction();
     execAndPrint(table);
     conn.commit();

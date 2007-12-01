@@ -123,6 +123,7 @@ int main()
     table->execute();
     while ((tuple = (char*) table->fetch())) {
         printf("after delete tuple present. Its  value is %d %s \n", id, name);
+        dbMgr->dropTable("t1");
         return 10;
     }
     table->close();

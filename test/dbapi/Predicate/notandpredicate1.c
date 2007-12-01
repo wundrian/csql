@@ -13,14 +13,14 @@ int main()
 
     if ( createTable(dbMgr) != 0 ) { conn.close(); return 3; }
 #ifdef WITHF1INDEX
-    if (createIndex(dbMgr, "f1") != 0) {dbMgr->dropTable("t1");
+    if (createIndex(dbMgr, "f1", "idx1") != 0) {dbMgr->dropTable("t1");
                                         conn.close();
                                         return 4;
                                        }
 #endif
 
 #ifdef WITHF2INDEX
-    if (createIndex(dbMgr, "f2") != 0) {dbMgr->dropTable("t1");
+    if (createIndex(dbMgr, "f2", "idx2") != 0) {dbMgr->dropTable("t1");
                                         conn.close();
                                         return 4;
                                        }

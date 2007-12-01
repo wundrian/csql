@@ -1,4 +1,5 @@
 
+:
 OSNAME = $(shell  uname -s)
 PlatForm=supported
 

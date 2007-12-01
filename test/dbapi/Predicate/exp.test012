@@ -1,1 +1,9 @@
-Failed test:After fix create exp
+Table created
+Total Tuples inserted is 10
+Predicate: (f1 ==3 OR  f2 > 2) AND (f3 !=5 OR f4 <5) ) 
+tuple value is 3 3 3 3 3
+tuple value is 4 4 4 4 4
+tuple value is 6 6 6 6 6
+tuple value is 7 7 7 7 7
+tuple value is 8 8 8 8 8
+tuple value is 9 9 9 9 9

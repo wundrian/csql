@@ -1,11 +1,11 @@
 #include<CSql.h>
-DbRetVal createIndex(DatabaseManager *dbMgr, char *fldname) 
+DbRetVal createIndex(DatabaseManager *dbMgr, char *fldname, char *indname) 
 {
     HashIndexInitInfo *idxInfo = new HashIndexInitInfo();
     strcpy(idxInfo->tableName, "t1");
     idxInfo->list.append(fldname);
     idxInfo->indType = hashIndex;
-    DbRetVal rv = dbMgr->createIndex("indx1", idxInfo);
+    DbRetVal rv = dbMgr->createIndex(indname, idxInfo);
     if (rv != OK) { printf("Index creation failed\n"); return rv; }
     printf("Index created for %s\n", fldname);
     return OK;
