@@ -17,6 +17,7 @@
 #define ALLOCATOR_H
 #include<os.h>
 #include<Mutex.h>
+#include<ErrorType.h>
 
 typedef void Page;
 
@@ -123,9 +124,9 @@ class Chunk
 
 
     PageInfo* getPageInfo(Database *db, void *ptr);
-    void* allocate(Database *db);
+    void* allocate(Database *db, DbRetVal *status = NULL);
 
-    void* allocate(Database *db, size_t size);
+    void* allocate(Database *db, size_t size, DbRetVal *status = NULL);
 
     void  free(Database *db, void* ptr);
     ChunkIterator getIterator();

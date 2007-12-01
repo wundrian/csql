@@ -61,7 +61,7 @@ enum ComparisionOp {
     OpLessThanEquals,
     OpGreaterThan,
     OpGreaterThanEquals,
-    OpInvalidComparision
+    OpInvalidComparisionOp
 };
 
 /**
@@ -73,7 +73,8 @@ enum ComparisionOp {
 enum LogicalOp {
     OpAnd = 0,
     OpOr,
-    OpNot
+    OpNot,
+    OpInvalidLogicalOp
 };
 
 

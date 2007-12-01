@@ -70,7 +70,7 @@ class TableImpl:public Table
     size_t length_; //length of the tuple
     int numFlds_;
     void* chunkPtr_;
-    void *curTuple_;
+    void *curTuple_; //holds the current tuple ptr. moved during fetch() calls
 
     Predicate *pred_;
     ScanType scanType_;
@@ -81,9 +81,11 @@ class TableImpl:public Table
     public:
     FieldList fldList_;
     int numIndexes_;
-    char** indexPtr_;
+    char** indexPtr_; // array of index ptrs to the catalog table for the indexes of this table.
+    IndexInfo **idxInfo;
     int useIndex_;//offet in the above array indexPtr_ for scan
-    IndexInfo *idxInfo;
+    bool isPlanCreated;
+
     Database *db_;
     Database *sysDB_;
 
@@ -99,9 +101,9 @@ class TableImpl:public Table
     DbRetVal copyValuesFromBindBuffer(void *tuple);
     DbRetVal copyValuesToBindBuffer(void *tuple);
 
-    DbRetVal insertIndexNode(Transaction *trans, void *indexPtr, void *tuple);
-    DbRetVal updateIndexNode(Transaction *trans, void *indexPtr, void *tuple);
-    DbRetVal deleteIndexNode(Transaction *trans, void *indexPtr, void *tuple);
+    DbRetVal insertIndexNode(Transaction *trans, void *indexPtr, IndexInfo *info, void *tuple);
+    DbRetVal updateIndexNode(Transaction *trans, void *indexPtr, IndexInfo *info, void *tuple);
+    DbRetVal deleteIndexNode(Transaction *trans, void *indexPtr, IndexInfo *info, void *tuple);
 
     DbRetVal createPlan();
     Chunk* getSystemTableChunk(CatalogTableID id)
@@ -111,8 +113,8 @@ class TableImpl:public Table
 
     public:
     TableImpl() { db_ = NULL; chunkPtr_ = NULL; iter = NULL;
-        idxInfo = NULL; indexPtr_ = NULL; scanType_ = unknownScan; pred_ = NULL;
-        iNullInfo = 0; cNullInfo = NULL; isIntUsedForNULL = true;}
+        idxInfo = NULL; indexPtr_ = NULL; scanType_ = unknownScan; pred_ = NULL; useIndex_ = -1,
+        iNullInfo = 0; cNullInfo = NULL; isIntUsedForNULL = true; isPlanCreated = false;}
     ~TableImpl();
 
     void setDB(Database *db) { db_ = db; }
@@ -134,7 +136,7 @@ class TableImpl:public Table
 
     // search predicate
      void setCondition(Condition *p) 
-     { if (p) { pred_ = p->getPredicate(); }else pred_ = NULL;}
+     { isPlanCreated = false; if (p) pred_ = p->getPredicate(); else pred_ = NULL;}
 
     //binding
     DbRetVal bindFld(const char *name, void *val);

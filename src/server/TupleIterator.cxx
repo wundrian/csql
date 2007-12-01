@@ -50,6 +50,7 @@ DbRetVal TupleIterator::open()
             bIter = NULL ;
             return OK;
         }
+        printDebug(DM_HashIndex, "open:head for bucket %x is :%x", bucket, head);
         bIter  = new BucketIter(head);
         bucket->mutex_.releaseLock();
     }
@@ -79,6 +80,7 @@ void* TupleIterator::next()
                 tuple = cIter->nextElement();
                 if(NULL == tuple) return NULL;
                 predImpl->setTuple(tuple);
+                printDebug(DM_Table, "Evaluating the predicate from fullTableScan");
                 rv = predImpl->evaluate(result);
                 if (rv != OK) return NULL;
             }
@@ -96,11 +98,21 @@ void* TupleIterator::next()
         {
             HashIndexNode *node = bIter->next();
             if (node == NULL) return NULL;
+            printDebug(DM_HashIndex, "next: returned HashIndexNode: %x", node);
             tuple = node->ptrToTuple_;
-            if(NULL == tuple) return NULL;
-            predImpl->setTuple(tuple);
-            rv = predImpl->evaluate(result);
-            if (rv != OK) return NULL;
+            if(NULL == tuple) {
+                printDebug(DM_HashIndex, "next::tuple is null");
+                return NULL;
+           }
+
+            if (!predImpl->isSingleTerm()) {
+               printDebug(DM_HashIndex, "next: predicate has more than single term");
+               predImpl->setTuple(tuple);
+               printDebug(DM_Table, "Evaluating the predicate from hashIndexScan: has more than one term");
+               rv = predImpl->evaluate(result);
+               if (rv != OK) return NULL;
+            }
+            return tuple;
         }
 
     }

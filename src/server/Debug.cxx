@@ -17,15 +17,16 @@
 
 int DebugDM_Alloc = 0;
 int DebugDM_VarAlloc = 0;
-int DebugDM_Lock = 1;
+int DebugDM_Lock = 0;
 int DebugDM_Transaction = 0;
 int DebugDM_UndoLog = 0;
 int DebugDM_RedoLog = 0;
-int DebugDM_HashIndex = 0;
+int DebugDM_Index = 1;
+int DebugDM_HashIndex = 1;
 int DebugDM_SystemDatabase = 0;
 int DebugDM_Database = 0;
 int DebugDM_Table = 0;
-int DebugDM_Predicate = 0;
+int DebugDM_Predicate = 1;
 int DebugDM_TableIterator = 0;
 
 

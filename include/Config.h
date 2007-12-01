@@ -44,8 +44,8 @@ class ConfigValues
         maxTrans = 20;
         maxProcs = 20;
         maxThreads = 10;
-        maxSysSize = 1048576;
-        maxDbSize = 1048576;
+        maxSysSize = 10485760;
+        maxDbSize = 104857600;
         sysDbKey = 2222;
         userDbKey = 5555;
         strcpy(logFile, "/tmp/log/log.out");

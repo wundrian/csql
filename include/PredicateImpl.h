@@ -63,7 +63,8 @@ class PredicateImpl:public Predicate
 
     void setTable(Table *tbl);
     void setTuple(void *tpl);
-
+    bool isSingleTerm();
+    bool isNotOrInvolved();
     //check predicate, whether it has field name and == operator
     //and does not have OR, NOT operator
     // TODO:: expression like !(f1 !=100) wont be optimized for now

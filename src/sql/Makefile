@@ -61,6 +61,7 @@ LTLIBRARIES = $(lib_LTLIBRARIES)
 libcsqlsql_la_LIBADD =
 am_libcsqlsql_la_OBJECTS = dmlyacc.lo dmllex.lo ParsedData.lo \
 	SelStatement.lo InsStatement.lo UpdStatement.lo \
+	DdlStatement.lo \
 	DelStatement.lo SqlStatement.lo StatementFactory.lo
 libcsqlsql_la_OBJECTS = $(am_libcsqlsql_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
@@ -93,14 +94,14 @@ HEADERS = $(noinst_HEADERS)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /home1/praba/csql/tstbld/csql/missing --run aclocal-1.9
+ACLOCAL = ${SHELL} /home1/praba/csql/csql/missing --run aclocal-1.9
 AMDEP_FALSE = #
 AMDEP_TRUE = 
-AMTAR = ${SHELL} /home1/praba/csql/tstbld/csql/missing --run tar
+AMTAR = ${SHELL} /home1/praba/csql/csql/missing --run tar
 AR = ar
-AUTOCONF = ${SHELL} /home1/praba/csql/tstbld/csql/missing --run autoconf
-AUTOHEADER = ${SHELL} /home1/praba/csql/tstbld/csql/missing --run autoheader
-AUTOMAKE = ${SHELL} /home1/praba/csql/tstbld/csql/missing --run automake-1.9
+AUTOCONF = ${SHELL} /home1/praba/csql/csql/missing --run autoconf
+AUTOHEADER = ${SHELL} /home1/praba/csql/csql/missing --run autoheader
+AUTOMAKE = ${SHELL} /home1/praba/csql/csql/missing --run automake-1.9
 AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
@@ -110,7 +111,7 @@ CPPFLAGS =
 CXX = g++
 CXXCPP = g++ -E
 CXXDEPMODE = depmode=gcc3
-CXXFLAGS = -g -O2
+CXXFLAGS = -g
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
@@ -135,7 +136,7 @@ LIBS =
 LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LN_S = ln -s
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} /home1/praba/csql/tstbld/csql/missing --run makeinfo
+MAKEINFO = ${SHELL} /home1/praba/csql/csql/missing --run makeinfo
 OBJEXT = o
 PACKAGE = csql
 PACKAGE_BUGREPORT = 
@@ -180,14 +181,14 @@ host_os = linux-gnu
 host_vendor = pc
 includedir = ${prefix}/include
 infodir = ${prefix}/info
-install_sh = /home1/praba/csql/tstbld/csql/install-sh
+install_sh = /home1/praba/csql/csql/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localstatedir = ${prefix}/var
 mandir = ${prefix}/man
 mkdir_p = mkdir -p --
 oldincludedir = /usr/include
-prefix = /home1/praba/csql/tstbld/csql/install
+prefix = /home1/praba/csql/csql/install
 program_transform_name = s,x,x,
 sbindir = ${exec_prefix}/sbin
 sharedstatedir = ${prefix}/com
@@ -199,6 +200,7 @@ lib_LTLIBRARIES = libcsqlsql.la
 libcsqlsql_la_LDFLAGS = -avoid-version -module
 libcsqlsql_la_SOURCES = dmlyacc.yxx dmllex.lxx ParsedData.cxx SelStatement.cxx \
 	InsStatement.cxx UpdStatement.cxx DelStatement.cxx \
+	DdlStatement.cxx \
 	SqlStatement.cxx  StatementFactory.cxx
 
 noinst_HEADERS = Parser.h Statement.h 
@@ -279,6 +281,7 @@ include ./$(DEPDIR)/SelStatement.Plo
 include ./$(DEPDIR)/SqlStatement.Plo
 include ./$(DEPDIR)/StatementFactory.Plo
 include ./$(DEPDIR)/UpdStatement.Plo
+include ./$(DEPDIR)/DdlStatement.Plo
 include ./$(DEPDIR)/dmllex.Plo
 include ./$(DEPDIR)/dmlyacc.Plo
 

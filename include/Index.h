@@ -64,7 +64,7 @@ class BucketList
 
 };
 class HashIndex;
-
+class IndexInfo;
 class Index
 {
     // create (one) object for each indexing mechanisms here 
@@ -81,18 +81,17 @@ class Index
             if(!hIdx) { delete hIdx; hIdx=NULL; }
 	 }
     }
-    virtual DbRetVal insert(TableImpl *tbl, Transaction *tr, void *indexPtr, void *tuple)=0;
-    virtual DbRetVal remove(TableImpl *tbl, Transaction *tr, void *indexPtr, void *tuple)=0; 
-    virtual DbRetVal update(TableImpl *tbl, Transaction *tr, void *indexPtr, void *tuple)=0;
+    virtual DbRetVal insert(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple)=0;
+    virtual DbRetVal remove(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple)=0; 
+    virtual DbRetVal update(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple)=0;
 };
-
 class HashIndex : public Index
 {
 
     public:
-    DbRetVal insert(TableImpl *tbl, Transaction *tr, void *indexPtr, void *tuple);
-    DbRetVal remove(TableImpl *tbl, Transaction *tr, void *indexPtr, void *tuple);
-    DbRetVal update(TableImpl *tbl, Transaction *tr, void *indexPtr, void *tuple);
+    DbRetVal insert(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple);
+    DbRetVal remove(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple);
+    DbRetVal update(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple);
     static unsigned int computeHashBucket(DataType type, void *key, int noOfBuckets);
 
 };
@@ -121,6 +120,12 @@ class SingleFieldHashIndexInfo :public IndexInfo
     Bucket* buckets;
     int fldPos;
     bool isUnique;
+    int offset;
+    int length;
+    void print() 
+    {
+        printf("SingleFieldHashIndexInfo fldname:%s type:%d indexPtr:%x noOfBuckets:%d buckets:%x isUnique:%d\n", fldName, type, indexPtr, noOfBuckets, buckets, isUnique);
+    }
 };
 #endif
 

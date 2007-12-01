@@ -136,40 +136,25 @@ unsigned int HashIndex::computeHashBucket(DataType type, void *key, int noOfBuck
 }
 
 //TODO::composite keys are not supported currently
-DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, void *tuple)
+DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *indInfo, void *tuple)
 {
+    SingleFieldHashIndexInfo *info = (SingleFieldHashIndexInfo*) indInfo;
     INDEX *iptr = (INDEX*)indexPtr;
-    int offset = 0;
-    DataType type = typeUnknown ;
-    char *name = NULL;
-    bool isUnique = true;
-    //TODO:: the below code assumes that there is only one index on the 
-    //table
-    if (tbl->numIndexes_ == 1) 
-    {
-        SingleFieldHashIndexInfo *hIdxInfo = (SingleFieldHashIndexInfo*)tbl->idxInfo;
-        type = hIdxInfo->type;
-        name = hIdxInfo->fldName;
-        isUnique = hIdxInfo->isUnique;
-        //TODO::change below to fldPos.Currently it returns -1.check value of fldPos.
-        //offset = fldList_.getFieldOffset(hIdxInfo->fldPos);
-        offset = tbl->fldList_.getFieldOffset(name);
-        type = tbl->fldList_.getFieldType(name);
-        //TODO:: Remove the above code. it iterates again and again.
-        //instead get all the info in one iteration. change name to fldpos
-    } else {
-        CatalogTableINDEXFIELD cIndexField(tbl->sysDB_);
-        cIndexField.getFieldNameAndType(indexPtr, name, type);
-        offset = tbl->fldList_.getFieldOffset(name);
-    }
 
+    DataType type = info->type;
+    char *name = info->fldName;
+    int offset  = info->offset;
+    int noOfBuckets = info->noOfBuckets;
+    int length = info->length;
+
+    printDebug(DM_HashIndex, "Inserting hash index node for field %s", name);
     ChunkIterator citer = CatalogTableINDEX::getIterator(indexPtr);
-    int noOfBuckets = CatalogTableINDEX::getNoOfBuckets(indexPtr);
     Bucket* buckets = (Bucket*)citer.nextElement();
     void *keyPtr =(void*)((char*)tuple + offset);
 
     int bucketNo = computeHashBucket(type,
                         keyPtr, noOfBuckets);
+    printDebug(DM_HashIndex, "HashIndex insert bucketno %d", bucketNo);
     Bucket *bucket =  &(buckets[bucketNo]);
 
     int ret = bucket->mutex_.getLock();
@@ -179,19 +164,18 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, void
         return ErrLockTimeOut;
     }
     HashIndexNode *head = (HashIndexNode*) bucket->bucketList_;
-    //TODO::store this in INDEX catalog table and get it here
-    if (isUnique)
+    if (info->isUnique)
     {
         BucketList list(head); 
         BucketIter iter = list.getIterator();
         HashIndexNode *node;
         void *bucketTuple;
+        printDebug(DM_HashIndex, "HashIndex insert Checking for unique");
         while((node = iter.next()) != NULL)
         {
             bucketTuple = node->ptrToTuple_;
-            //TODO::make compareVal to work with string and binary (pass length)
             if (AllDataType::compareVal((void*)((char*)bucketTuple +offset), 
-                   (void*)((char*)tuple +offset), OpEquals,type)) 
+                   (void*)((char*)tuple +offset), OpEquals,type, length)) 
             {
                 printError(ErrUnique, "Unique key violation");
                 bucket->mutex_.releaseLock();
@@ -200,13 +184,16 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, void
         }
     }
 
+    printDebug(DM_HashIndex, "HashIndex insert into bucket list");
     if (!head)
     {
+        printDebug(DM_HashIndex, "HashIndex insert head is empty");
         HashIndexNode *firstNode= (HashIndexNode*)(((Chunk*)iptr->hashNodeChunk_)->allocate(tbl->db_));
         firstNode->ptrToKey_ = keyPtr;
         firstNode->ptrToTuple_ = tuple;
         firstNode->next_ = NULL;
         bucket->bucketList_ = (HashIndexNode*)firstNode;
+        printDebug(DM_HashIndex, "HashIndex insert new node %x in empty bucket", bucket->bucketList_);
     }
     else
     {
@@ -221,31 +208,22 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, void
 
 
 //TODO::composite keys are not supported currently
-DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, void *tuple)
+DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *indInfo, void *tuple)
 {
     INDEX *iptr = (INDEX*)indexPtr;
-    int offset = 0;
-    DataType type ;
-    char *name = NULL;
 
-    if (tbl->numIndexes_ == 1) {
-        SingleFieldHashIndexInfo *hIdxInfo = (SingleFieldHashIndexInfo*)tbl->idxInfo;
-        type = hIdxInfo->type;
-        name = hIdxInfo->fldName;
-        } else {
-        CatalogTableINDEXFIELD cIndexField(tbl->sysDB_);
-        cIndexField.getFieldNameAndType(indexPtr, name, type);
-    }
+    SingleFieldHashIndexInfo *info = (SingleFieldHashIndexInfo*) indInfo;
+    DataType type = info->type;
+    char *name = info->fldName;
+    int offset  = info->offset;
+    int noOfBuckets = info->noOfBuckets;
 
-    offset = tbl->fldList_.getFieldOffset(name);
-
+    printDebug(DM_HashIndex, "Removing hash index node for field %s", name);
     ChunkIterator citer = CatalogTableINDEX::getIterator(indexPtr);
-    int noOfBuckets = CatalogTableINDEX::getNoOfBuckets(indexPtr);
     Bucket* buckets = (Bucket*)citer.nextElement();
     void *keyPtr =(void*)((char*)tuple + offset);
 
-    int bucket = HashIndex::computeHashBucket(type,
-                        keyPtr, noOfBuckets);
+    int bucket = HashIndex::computeHashBucket(type, keyPtr, noOfBuckets);
 
     Bucket *bucket1 = &buckets[bucket];
 
@@ -257,10 +235,16 @@ DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, void
     }
     HashIndexNode *head = (HashIndexNode*) bucket1->bucketList_;
 
-    if (!head) return OK;
+    if (!head) { printError(ErrNotExists, "Hash index does not exist:should never happen\n"); return ErrNotExists; }
     BucketList list(head);
+    printDebug(DM_HashIndex, "Removing hash index node from head %x", head);
+
     DbRetVal rc = list.remove((Chunk*)iptr->hashNodeChunk_, tbl->db_, keyPtr);
-    if (SplCase == rc) bucket1->bucketList_ = 0;
+    if (SplCase == rc) 
+    { 
+       printDebug(DM_HashIndex, "Removing hash index node from head with only none node"); 
+       bucket1->bucketList_ = 0; 
+    }
     tr->appendLogicalUndoLog(tbl->sysDB_, DeleteHashIndexOperation,
                                 tuple, sizeof(void*), indexPtr);
     bucket1->mutex_.releaseLock();
@@ -269,24 +253,17 @@ DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, void
 }
 
 //TODO::composite keys are not supported currently
-DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, void *tuple)
+DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *indInfo, void *tuple)
 {
     INDEX *iptr = (INDEX*)indexPtr;
-    int offset = 0;
-    DataType type ;
-    char *name = NULL;
 
-    if (tbl->numIndexes_ == 1) {
-        SingleFieldHashIndexInfo *hIdxInfo = (SingleFieldHashIndexInfo*)tbl->idxInfo;
-        type = hIdxInfo->type;
-        name = hIdxInfo->fldName;
-        } else {
-        CatalogTableINDEXFIELD cIndexField(tbl->sysDB_);
-        cIndexField.getFieldNameAndType(indexPtr, name, type);
-    }
+    SingleFieldHashIndexInfo *info = (SingleFieldHashIndexInfo*) indInfo;
+    DataType type = info->type;
+    char *name = info->fldName;
+    int offset  = info->offset;
+    int noOfBuckets = info->noOfBuckets;
 
-
-    offset = tbl->fldList_.getFieldOffset(name);
+    printDebug(DM_HashIndex, "Updating hash index node for field %s", name);
 
     //check whether the index key is updated or not
     //if it is not updated return from here
@@ -304,23 +281,24 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, void
             if (result) return OK; else newKey = def.bindVal_;
         }
     }
+    printDebug(DM_HashIndex, "Updating hash index node: Key value is updated");
+
     if (newKey == NULL)
     { 
         printError(ErrSysInternal,"Internal Error:: newKey is Null");
         return ErrSysInternal;
     }
     ChunkIterator citer = CatalogTableINDEX::getIterator(indexPtr);
-    int noOfBuckets = CatalogTableINDEX::getNoOfBuckets(indexPtr);
 
     Bucket* buckets = (Bucket*)citer.nextElement();
 
     //remove the node whose key is updated
     int bucketNo = computeHashBucket(type,
                         keyPtr, noOfBuckets);
-
+    printDebug(DM_HashIndex, "Updating hash index node: Bucket for old value is %d", bucketNo);
     Bucket *bucket = &buckets[bucketNo];
 
-    //TODO::it may run into deadlock, when two threads updates tuples which falls in
+    //it may run into deadlock, when two threads updates tuples which falls in
     //same buckets.So take both the mutex one after another, which will reduce the
     //deadlock window.
     int ret = bucket->mutex_.getLock();
@@ -332,6 +310,7 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, void
     //insert node for the updated key value
     int newBucketNo = computeHashBucket(type,
                         newKey, noOfBuckets);
+    printDebug(DM_HashIndex, "Updating hash index node: Bucket for new value is %d", newBucketNo);
 
     Bucket *bucket1 = &buckets[newBucketNo];
     bucket1->mutex_.getLock();
@@ -345,11 +324,12 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, void
     if (head1)
     {
         BucketList list1(head1);
+        printDebug(DM_HashIndex, "Updating hash index node: Removing node from list with head %x", head1);
         list1.remove((Chunk*)iptr->hashNodeChunk_, tbl->db_, keyPtr);
     }
     else
     {
-        printError(ErrSysInternal,"Bucket list is null");
+        printError(ErrSysInternal,"Update: Bucket list is null");
         return ErrSysInternal;
     }
     tr->appendLogicalUndoLog(tbl->sysDB_, DeleteHashIndexOperation,
@@ -368,10 +348,12 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, void
         firstNode->ptrToTuple_ = tuple;
         firstNode->next_ = NULL;
         bucket1->bucketList_ = (HashIndexNode*)firstNode;
+        printDebug(DM_HashIndex, "Updating hash index node: Adding new node %x:Head is empty", firstNode);
     }
     else
     {
         BucketList list2(head2);
+        printDebug(DM_HashIndex, "Updating hash index node: Adding node to list with head %x", head2);
         list2.insert((Chunk*)iptr->hashNodeChunk_, tbl->db_, keyPtr, tuple);
     }
     tr->appendLogicalUndoLog(tbl->sysDB_, InsertHashIndexOperation,

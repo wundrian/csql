@@ -20,12 +20,12 @@
 
 DbRetVal BucketList::insert(Chunk *chunk, Database *db, void *key, void*tuple)
 {
-    HashIndexNode *newNode= (HashIndexNode*) chunk->allocate(db);
+    DbRetVal rv = OK;
+    HashIndexNode *newNode= (HashIndexNode*) chunk->allocate(db, &rv);
     if (NULL == newNode)
     {
-        printError(ErrNoMemory,
-                   "No memory to allocate HashIndex node");
-        return ErrNoMemory;
+        printError(rv, "Unable to allocate HashIndex node");
+        return rv;
     }
     printDebug(DM_HashIndex,"Hash Index node allocated:%x", newNode);
     newNode->ptrToKey_ = key;
@@ -44,7 +44,7 @@ DbRetVal BucketList::insert(Chunk *chunk, Database *db, void *key, void*tuple)
     while (NULL != it->next_) it = it->next_;
     it->next_ = newNode;
     printDebug(DM_HashIndex, "BucketList:insert adding it to the end of list key:%x", key);
-    return OK;
+    return rv;
 }
 //Returns 2 if the head itself is removed.
 DbRetVal BucketList::remove(Chunk *chunk, Database *db, void *keyPtr)

@@ -145,7 +145,7 @@ void* Chunk::allocateFromNewPage(Database *db)
 //till commit and it shall be rolledback.So make sure that it does not
 //allocate deleted tuple which is yet to be commited.
 
-void* Chunk::allocate(Database *db)
+void* Chunk::allocate(Database *db, DbRetVal *status)
 {
     PageInfo* pageInfo = ((PageInfo*)curPage_);
 
@@ -171,6 +171,7 @@ void* Chunk::allocate(Database *db)
     int ret = getChunkMutex();
     if (ret != 0)
     {
+        if (status != NULL) *status = ErrLockTimeOut;
         printError(ErrLockTimeOut,"Unable to acquire chunk Mutex");
         return NULL;
     }
@@ -202,6 +203,7 @@ void* Chunk::allocate(Database *db)
             if (data == NULL)
             {
                 printError(ErrNoMemory, "No memory in any of the pages:Increase db size\n");
+                if (status != NULL) *status = ErrNoMemory;
             }
         }
         releaseChunkMutex();
@@ -316,7 +318,7 @@ void* Chunk::allocateFromCurPageForVarSize(size_t size)
 }
 
 //Allocates memory to store data of variable size
-void* Chunk::allocate(Database *db, size_t size)
+void* Chunk::allocate(Database *db, size_t size, DbRetVal *status)
 {
 
     if (0 == size) return NULL;

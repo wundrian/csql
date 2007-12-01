@@ -23,10 +23,12 @@ extern int DebugDM_Lock;
 extern int DebugDM_Transaction;
 extern int DebugDM_UndoLog;
 extern int DebugDM_RedoLog;
+extern int DebugDM_Index;
 extern int DebugDM_HashIndex;
 extern int DebugDM_SystemDatabase;
 extern int DebugDM_Database;
 extern int DebugDM_Table;
+extern int DebugDM_Predicate;
 extern int DebugDM_Iterator;
 
 extern int printError1(DbRetVal val, char* fname, int lno, char *format, ...);

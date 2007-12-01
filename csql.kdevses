@@ -2,8 +2,8 @@
 <!DOCTYPE KDevPrjSession>
 <KDevPrjSession>
  <DocsAndViews NumberOfDocuments="1" >
-  <Doc0 NumberOfViews="1" URL="file:///home1/praba/csql/csql/src/server/Config.cxx" >
-   <View0 line="168" Type="Source" />
+  <Doc0 NumberOfViews="1" URL="file:///home1/praba/csql/csql/src/tools/catalog.cxx" >
+   <View0 line="29" Type="Source" />
   </Doc0>
  </DocsAndViews>
  <pluginList>
@@ -20,6 +20,12 @@
     </bookmark>
     <bookmark url="/home/praba/csql/include/SqlStatement.h" >
      <mark line="209" />
+    </bookmark>
+    <bookmark url="/home1/praba/csql/csql/src/server/DatabaseManagerImpl.cxx" >
+     <mark line="519" />
+    </bookmark>
+    <bookmark url="/home1/praba/csql/csql/src/server/HashIndex.cxx" >
+     <mark line="312" />
     </bookmark>
    </bookmarks>
   </kdevbookmarks>

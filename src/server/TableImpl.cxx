@@ -109,54 +109,64 @@ DbRetVal TableImpl::execute()
         printError(ErrSysInternal,"Unable to create the plan");
         return ErrSysInternal;
     }
-    iter = new TupleIterator(pred_, scanType_, idxInfo, chunkPtr_);
+    if (useIndex_ >= 0) 
+        iter = new TupleIterator(pred_, scanType_, idxInfo[useIndex_], chunkPtr_);
+    else if (scanType_ == fullTableScan)
+        iter = new TupleIterator(pred_, scanType_, NULL, chunkPtr_);
+    else
+    {
+        printError(ErrSysFatal,"Unable to create tuple iterator");//should never happen
+        return ErrSysFatal;
+    }
     ret = iter->open();
     if (OK != ret)
     {
-            printError(ErrSysInternal,"Unable to open the iterator");
-            return ErrSysInternal;
-        }
+        printError(ErrSysInternal,"Unable to open the iterator");
+        return ErrSysInternal;
+    }
     return OK;
 }
 
 
 DbRetVal TableImpl::createPlan()
 {
+    if (isPlanCreated) {
+        //will do early return here. plan is generated only when setPredicate is called.
+        if (scanType_ == unknownScan) return ErrSysFatal; //this should never happen
+        else return OK;
+    }
     useIndex_ = -1;
     //if there are no predicates then go for full scan
     //if there are no indexes then go for full scan
     if (NULL == pred_ || NULL == indexPtr_)
     {
         scanType_ = fullTableScan;
+        isPlanCreated = true;
         return OK;
     }
     if (NULL != indexPtr_)
     {
-        //Note:numIndexes_ == 0 is handled above. for this case indexPtr_ is null
-        if (numIndexes_ == 1) {
-           //check predicate, whether it has field name and == operator
-           //and does not have OR, NOT operator
-           char *fName = ((SingleFieldHashIndexInfo*)idxInfo)->fldName;
-           PredicateImpl *pred = (PredicateImpl*)pred_;
-           if (pred->pointLookupInvolved(fName))
-           {
-               scanType_ = hashIndexScan;
-               useIndex_ = 0;
-               return OK;
+       PredicateImpl *pred = (PredicateImpl*)pred_;
+       printDebug(DM_Predicate, "predicate does not involve NOT , OR operator");
+       if (!pred->isNotOrInvolved())
+       {
+           printDebug(DM_Predicate, "predicate does not involve NOT , OR operator");
+          for (int i =0; i < numIndexes_; i++)
+          {
+              char *fName = ((SingleFieldHashIndexInfo*)idxInfo[i])->fldName;
+              if (pred->pointLookupInvolved(fName))
+              {
+                 printDebug(DM_Predicate, "point lookup involved for field %s",fName);
+                 scanType_ = hashIndexScan;
+                 useIndex_ = i;
+                 isPlanCreated = true;
+                 return OK;
+              }
            }
-           else
-           {
-               scanType_ = fullTableScan;
-               return OK;
-           }
-        }
-        else
-        {
-        
-            return ErrNotYet;
         }
     }
     scanType_ = fullTableScan;
+    isPlanCreated = true;
     return OK;
 }
 
@@ -225,13 +235,14 @@ void* TableImpl::fetchNoBind()
 
 DbRetVal TableImpl::insertTuple()
 {
-    void *tptr = ((Chunk*)chunkPtr_)->allocate(db_);
+    DbRetVal ret;
+    void *tptr = ((Chunk*)chunkPtr_)->allocate(db_, &ret);
     if (NULL == tptr)
     {
-        printError(ErrNoMemory, "Unable to allocate memory to store tuple");
-        return ErrNoMemory;
+        printError(ret, "Unable to allocate from chunk");
+        return ret;
     }
-    DbRetVal ret = lMgr_->getExclusiveLock(tptr, trans);
+    ret = lMgr_->getExclusiveLock(tptr, trans);
     if (OK != ret)
     {
         ((Chunk*)chunkPtr_)->free(db_, tptr);
@@ -269,13 +280,13 @@ DbRetVal TableImpl::insertTuple()
         //it has index
         for (i = 0; i < numIndexes_ ; i++)
         {
-            ret = insertIndexNode(*trans, indexPtr_[i], tptr);
-            if (ret != OK) break;
+            ret = insertIndexNode(*trans, indexPtr_[i], idxInfo[i], tptr);
+            if (ret != OK) { printError(ret, "Error in inserting to index"); break;}
         }
         if (i != numIndexes_ )
         {
             for (int j = 0; j < i ; j++)
-                deleteIndexNode(*trans, indexPtr_[j], tptr);
+                deleteIndexNode(*trans, indexPtr_[j], idxInfo[j], tptr);
             lMgr_->releaseLock(tptr);
             (*trans)->removeFromHasList(db_, tptr);
             ((Chunk*)chunkPtr_)->free(db_, tptr);
@@ -307,13 +318,13 @@ DbRetVal TableImpl::deleteTuple()
         //it has index
         for (i = 0; i < numIndexes_ ; i++)
         {
-            ret = deleteIndexNode(*trans, indexPtr_[i], curTuple_);
+            ret = deleteIndexNode(*trans, indexPtr_[i], idxInfo[i], curTuple_);
             if (ret != OK) break;
         }
         if (i != numIndexes_ )
         {
             for (int j = 0; j < i ; j++)
-                insertIndexNode(*trans, indexPtr_[j], curTuple_);
+                insertIndexNode(*trans, indexPtr_[j], idxInfo[j], curTuple_);
             lMgr_->releaseLock(curTuple_);
             (*trans)->removeFromHasList(db_, curTuple_);
             printError(ret, "Unable to insert index node for tuple %x", curTuple_);
@@ -346,7 +357,7 @@ DbRetVal TableImpl::updateTuple()
         //inconsistent state.
         for (int i = 0; i < numIndexes_ ; i++)
         {
-            ret = updateIndexNode(*trans, indexPtr_[i], curTuple_);
+            ret = updateIndexNode(*trans, indexPtr_[i], idxInfo[i], curTuple_);
             if (ret != OK)
             {
                 lMgr_->releaseLock(curTuple_);
@@ -424,64 +435,37 @@ DbRetVal TableImpl::copyValuesToBindBuffer(void *tuplePtr)
 }
 
 //-1 index not supported
-DbRetVal TableImpl::insertIndexNode(Transaction *tr, void *indexPtr, void *tuple)
+DbRetVal TableImpl::insertIndexNode(Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple)
 {
     INDEX *iptr = (INDEX*)indexPtr;
     DbRetVal ret = OK;
+    printDebug(DM_Table, "Inside insertIndexNode type %d", iptr->indexType_);
     Index* idx = Index::getIndex(iptr->indexType_);
     if (idx == NULL) printf("It is here :PRABA\n");
-    ret = idx->insert(this, tr, indexPtr, tuple);
+    ret = idx->insert(this, tr, indexPtr, info, tuple);
     return ret;
 }
 
-DbRetVal TableImpl::deleteIndexNode(Transaction *tr, void *indexPtr, void *tuple)
+DbRetVal TableImpl::deleteIndexNode(Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple)
 {
     INDEX *iptr = (INDEX*)indexPtr;
     DbRetVal ret = OK;
-    //CatalogTableINDEX::getMutex(indexPtr);
     Index* idx = Index::getIndex(iptr->indexType_);
-    ret = idx->remove(this, tr, indexPtr, tuple);
-    //CatalogTableINDEX::releaseMutex(indexPtr);
+    ret = idx->remove(this, tr, indexPtr, info, tuple);
     return ret;
 }
 
 
-DbRetVal TableImpl::updateIndexNode(Transaction *tr, void *indexPtr, void *tuple)
+DbRetVal TableImpl::updateIndexNode(Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple)
 {
     INDEX *iptr = (INDEX*)indexPtr;
     DbRetVal ret = OK;
-    //CatalogTableINDEX::getMutex(indexPtr);
     Index* idx = Index::getIndex(iptr->indexType_);
-    ret = idx->update(this, tr, indexPtr, tuple);
-    //CatalogTableINDEX::releaseMutex(indexPtr);
+    ret = idx->update(this, tr, indexPtr, info, tuple);
     return ret;
 }
 
 
-
-DbRetVal TableImpl::close()
-{
-    if (NULL == iter)
-    {
-         printError(ErrNotOpen,"Scan not open");
-         return ErrNotOpen;
-    }
-    iter->close();
-    delete iter;
-    iter = NULL;
-    return OK;
-}
-
-TableImpl::~TableImpl()
-{
-    if (NULL != iter ) { delete iter; iter = NULL; }
-    if (NULL != idxInfo) { delete idxInfo; idxInfo = NULL; }
-    if (NULL != indexPtr_) { delete[] indexPtr_; indexPtr_ = NULL; }
-    if (numFlds_ > 31 && cNullInfo != NULL) { free(cNullInfo); cNullInfo = NULL; }
-
-    fldList_.removeAll();
-
-}
 void TableImpl::setTableInfo(char *name, int tblid, size_t  length,
                        int numFld, int numIdx, void *chunk)
 {
@@ -519,4 +503,32 @@ List TableImpl::getFieldNameList()
     } 
     return fldNameList;
 }
+DbRetVal TableImpl::close()
+{
+    if (NULL == iter)
+    {
+         printError(ErrNotOpen,"Scan not open");
+         return ErrNotOpen;
+    }
+    iter->close();
+    delete iter;
+    iter = NULL;
+    return OK;
+}
 
+TableImpl::~TableImpl()
+{
+    if (NULL != iter ) { delete iter; iter = NULL; }
+    if (NULL != idxInfo) { delete idxInfo; idxInfo = NULL; }
+    if (NULL != indexPtr_) { delete[] indexPtr_; indexPtr_ = NULL;  }
+    if (NULL != idxInfo) 
+    {
+        for (int i = 0; i < numIndexes_; i++) delete idxInfo[i];
+        delete[] idxInfo; 
+        idxInfo = NULL; 
+    }
+    if (numFlds_ > 31 && cNullInfo != NULL) { free(cNullInfo); cNullInfo = NULL; }
+
+    fldList_.removeAll();
+
+}

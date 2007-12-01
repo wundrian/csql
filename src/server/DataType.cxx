@@ -856,7 +856,7 @@ ComparisionOp AllDataType::getComparisionOperator(char *str)
     else if (strcmp(str, "!=") == 0)
         op = OpNotEquals;
     else
-        op = OpInvalidComparision;
+        op = OpInvalidComparisionOp;
     return op;
 }
 

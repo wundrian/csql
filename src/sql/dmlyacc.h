@@ -20,6 +20,15 @@
 #define UPDATE 276
 #define SET 277
 #define NULL_VALUE 278
+#define CREATE 279
+#define TABLE 280
+#define PRIMARY 281
+#define KEY 282
+#define DEFAULT 283
+#define INT_TYPE 284
+#define LONG_TYPE 285
+#define SHORT_TYPE 286
+#define DOUBLE_TYPE 287
 typedef union
 {
    char *stringval;

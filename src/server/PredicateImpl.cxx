@@ -38,6 +38,7 @@ void PredicateImpl::setTerm(const char* fName1, ComparisionOp op,
     operand = NULL;
     operandPtr = NULL;
     lhs = rhs = NULL;
+    logicalOp = OpInvalidLogicalOp;
 }
 
 //Operand should be of the same type of the field.This is must
@@ -48,6 +49,7 @@ void PredicateImpl::setTerm(const char* fName1, ComparisionOp op, void *opnd)
     operand = opnd;
     operandPtr = NULL;
     lhs = rhs = NULL;
+    logicalOp = OpInvalidLogicalOp;
 }
 
 void PredicateImpl::setTerm(const char* fName1, ComparisionOp op, void **opnd)
@@ -57,6 +59,7 @@ void PredicateImpl::setTerm(const char* fName1, ComparisionOp op, void **opnd)
     operand = NULL;
     operandPtr = opnd;
     lhs = rhs = NULL;
+    logicalOp = OpInvalidLogicalOp;
 }
 
 
@@ -70,6 +73,7 @@ void PredicateImpl::setTerm(Predicate *p1, LogicalOp op, Predicate *p2 )
     lhs = (PredicateImpl*)p1;
     rhs = (PredicateImpl*)p2;
     logicalOp = op;
+    compOp = OpInvalidComparisionOp;
 }
 
 void PredicateImpl::setTable(Table *tbl)
@@ -89,29 +93,65 @@ void PredicateImpl::setTuple(void *tpl)
          rhs->setTuple(tpl);
     tuple = tpl;
 }
+bool PredicateImpl::isSingleTerm()
+{
+    if (NULL == lhs  && NULL == rhs) return true; else false;
+}
+
+
+bool PredicateImpl::isNotOrInvolved()
+{
+    bool lhsResult = true, rhsResult = true;
+    if (NULL != lhs)
+    {
+        lhsResult = lhs->isNotOrInvolved();
+    }
+    if (NULL != rhs)
+    {
+        rhsResult = rhs->isNotOrInvolved();
+    }
+    if (NULL != lhs)
+    {
+        //Means it involves only Logical operator
+            switch(logicalOp)
+            {
+                case OpAnd:
+                     if (lhsResult || rhsResult) return true;  else return false;
+                     break;
+                case OpOr:
+                     return true;
+                     break;
+                case OpNot:
+                default:
+                     return true;
+                     break;
+        }
+    }
+    return false;
+}
 
 DbRetVal PredicateImpl::evaluate(bool &result)
 {
-    bool rhsResult, lhsResult;
-    printDebug(DM_Predicate, "Evaluate start %x \n", this);
+    bool rhsResult = false, lhsResult=false;
+    printDebug(DM_Predicate, "Evaluate start logical:%d compOp:%d", logicalOp, compOp);
     DbRetVal retCode =OK;
     result = false;
     if (NULL != lhs)
     {
         retCode = lhs->evaluate(lhsResult);
-        printDebug(DM_Predicate, "LHS result %d\n", lhsResult);
+        printDebug(DM_Predicate, "LHS result %d retcode: %d", lhsResult, retCode);
         if (retCode != OK) return ErrInvalidExpr;
     }
     if (NULL != rhs)
     {
         retCode = rhs->evaluate(rhsResult);
-        printDebug(DM_Predicate, "LHS result %d\n", rhsResult);
+        printDebug(DM_Predicate, "RHS result %d retcode:%d", rhsResult, retCode);
         if (retCode != OK) return ErrInvalidExpr;
     }
     if (NULL != lhs)
     {
         //Means it involves only Logical operator
-        printDebug(DM_Predicate,"Evalute operator %d lhsResult %d : rhsResult %d\n", logicalOp, lhsResult, rhsResult );
+        printDebug(DM_Predicate,"Evalute operator %d lhsResult %d : rhsResult %d", logicalOp, lhsResult, rhsResult );
             switch(logicalOp)
             {
                 case OpAnd:
@@ -127,9 +167,10 @@ DbRetVal PredicateImpl::evaluate(bool &result)
                     return ErrInvalidExpr;
 
             }
-            printDebug(DM_Predicate, "result is %d\n", result);
+            printDebug(DM_Predicate, "result is %d", result);
             return OK;
     }
+    printDebug(DM_Predicate, "Evaluating comparision predicate op:%d", compOp);
     //Means it is relational expression
     //first operand is always field identifier
     //get the value in the tuple
@@ -156,6 +197,7 @@ DbRetVal PredicateImpl::evaluate(bool &result)
         val2 = *(char**)operandPtr;
     }
     int ret = 0;
+    printDebug(DM_Predicate, " fldname :%s ", fldName1);
     result = AllDataType::compareVal(val1, val2, compOp, srcType,
                               table->getFieldLength(fldName1));
     return OK;
@@ -178,7 +220,8 @@ bool PredicateImpl::pointLookupInvolved(const char *fname)
             switch(logicalOp)
             {
                 case OpAnd:
-                     return lhsResult;
+                     //return lhsResult;
+                     if (lhsResult || rhsResult) return true;  else return false;
                      break;
                 case OpOr:
                      return false;

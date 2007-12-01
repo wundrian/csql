@@ -517,9 +517,8 @@ DbRetVal DatabaseManagerImpl::dropTable(const char *name)
     //TODO::check whether indexes are available and drop that also.
     CatalogTableINDEX cIndex(systemDatabase_);
     int noIndexes = cIndex.getNumIndexes(tptr);
-    char *idxName;
     for (int i =1 ; i<= noIndexes; i++) {
-        idxName = cIndex.getIndexName(tptr, i);
+        char *idxName = cIndex.getIndexName(tptr, 1);
         dropIndexInt(idxName, false);
     }
     Chunk *chunkNode = systemDatabase_->getSystemDatabaseChunk(UserChunkTableId);
@@ -576,25 +575,28 @@ Table* DatabaseManagerImpl::openTable(const char *name)
     //and populate the indexPtr array
     CatalogTableINDEX cIndex(systemDatabase_);
     table->numIndexes_ = cIndex.getNumIndexes(tptr);
-    if (table->numIndexes_)
+    if (table->numIndexes_) {
         table->indexPtr_ = new char*[table->numIndexes_];
+        table->idxInfo = new IndexInfo*[table->numIndexes_];
+    }
     else
+    {
         table->indexPtr_ = NULL;
+    }
     cIndex.getIndexPtrs(tptr, table->indexPtr_);
-
-    //HACK:Below works only for one hash index on table
-    if (table->numIndexes_ == 1)
+    for (int i =0 ; i < table->numIndexes_; i++ )
     {
         SingleFieldHashIndexInfo *hIdxInfo = new SingleFieldHashIndexInfo();
         CatalogTableINDEXFIELD cIndexField(systemDatabase_);
-        cIndexField.getFieldNameAndType(table->indexPtr_[0], hIdxInfo->fldName,
+        cIndexField.getFieldNameAndType(table->indexPtr_[i], hIdxInfo->fldName,
                                                       hIdxInfo->type);
-        ChunkIterator citer = CatalogTableINDEX::getIterator(table->indexPtr_[0]);
-        hIdxInfo->noOfBuckets = CatalogTableINDEX::getNoOfBuckets(table->indexPtr_[0]);
-        hIdxInfo->isUnique = CatalogTableINDEX::getUnique(table->indexPtr_[0]);
+        ChunkIterator citer = CatalogTableINDEX::getIterator(table->indexPtr_[i]);
+        hIdxInfo->noOfBuckets = CatalogTableINDEX::getNoOfBuckets(table->indexPtr_[i]);
+        hIdxInfo->isUnique = CatalogTableINDEX::getUnique(table->indexPtr_[i]);
         hIdxInfo->buckets = (Bucket*)citer.nextElement();
-
-        table->idxInfo = (IndexInfo*) hIdxInfo;
+        hIdxInfo->offset = table->fldList_.getFieldOffset(hIdxInfo->fldName);
+        hIdxInfo->length = table->fldList_.getFieldLength(hIdxInfo->fldName);
+        table->idxInfo[i] = (IndexInfo*) hIdxInfo;
     }
     systemDatabase_->releaseDatabaseMutex();
     if (tTuple->numFlds_ > 31) 
