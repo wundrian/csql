@@ -1,4 +1,7 @@
-export CSQL_CONFIG_FILE=`pwd`/csql.conf
-export CSQL_INSTALL_ROOT=`pwd`/install
+
+export CSQL_SRCROOT=`pwd`
+export CSQL_CONFIG_FILE=$CSQL_SRCROOT/csql.conf
+
+export CSQL_INSTALL_ROOT=$CSQL_SRCROOT/install
 export PATH=$CSQL_INSTALL_ROOT/bin:$PATH
 export LD_LIBRARY_PATH=$CSQL_INSTALL_ROOT/lib:$LD_LIBRARY_PATH
