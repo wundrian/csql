@@ -13,6 +13,6 @@ fi
 cp ${REL_PATH}/csql.conf ${REL_PATH}/csqltmp.conf
 export CSQL_CONFIG_FILE=${REL_PATH}/csqltmp.conf
 echo "MAX_SYS_DB_SIZE=2000000000" >>${REL_PATH}/csqltmp.conf
-${REL_PATH}/connect >${REL_PATH}/tmp.out
+${REL_PATH}/connect 2>${REL_PATH}/tmp.out
 cat ${REL_PATH}/tmp.out | gawk -F: '{ print $5 }'
 rm ${REL_PATH}/tmp.out ${REL_PATH}/csqltmp.conf
