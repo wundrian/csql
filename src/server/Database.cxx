@@ -52,9 +52,9 @@ Page* Database::getFirstPage()
     return metaData_->firstPage_;
 
 }
-int Database::getMaxChunks()
+int Database::getNoOfChunks()
 {
-    return metaData_->maxChunks_;
+    return metaData_->noOfChunks_;
 }
 Chunk* Database::getHashIndexChunk()
 {
@@ -85,9 +85,9 @@ void Database::setMaxSize(long size)
 {
     metaData_->maxSize_ = size;
 }
-void Database::setMaxChunks(int chunks)
+void Database::setNoOfChunks(int chunks)
 {
-    metaData_->maxChunks_ = chunks;
+    metaData_->noOfChunks_ = chunks;
 }
 void Database::setHashIndexChunk(Chunk *ch)
 {
@@ -256,9 +256,10 @@ void Database::printStatistics()
     Page* page = getFirstPage();
     PageInfo* pageInfo = ((PageInfo*)page);
     int usedPageCount =0, usedMergedPageCount =0, totalPages=0;
-    printf("Database Name           : %s\n", getName());
-    printf("Max Size                : %ld\n", getMaxSize());
-    printf("First Page              : %x\n", getFirstPage());
+    printf("<DatabaseStatistics>\n");
+    printf("  <Database Name>  %s </Database Name>\n", getName());
+    printf("  <Max Size> %ld </Max Size>\n", getMaxSize());
+    printf("  <First Page> %x </First Page>\n", getFirstPage());
     while(isValidAddress((char*) pageInfo))
     {
         if (pageInfo == NULL) break;
@@ -280,10 +281,12 @@ void Database::printStatistics()
         printDebug(DM_Alloc,"Normal Page not used:Moving to page:%x\n",pageInfo);
         totalPages++;
     }
-    printf("Total Pages             : %d\n", totalPages);
-    printf("Total Used Normal Pages : %d\n", usedPageCount);
-    printf("Total Used Merged Pages : %d\n", usedMergedPageCount);
-    printf("Total Chunks in use     : %d\n", getNoOfChunks());
+    printf("  <Total Pages> %d </Total Pages>\n", totalPages);
+    printf("  <Used Normal Pages> %d </Used Normal Pages>\n", usedPageCount);
+    printf("  <Used Merged Pages> %d </Used Merged Pages>\n", usedMergedPageCount);
+    printf("  <Chunks Used> %d </Chunks Used>\n", getNoOfChunks());
+    printf("</DatabaseStatistics>\n");
+
     return ;
 }
 
@@ -334,6 +337,7 @@ DbRetVal Database::createSystemDatabaseChunk(AllocType type, size_t size, int id
         varInfo->size_ = PAGE_SIZE - sizeof(PageInfo) - sizeof(VarSizeInfo);
 
     }
+    incrementChunk();
     //releaseDatabaseMutex();
     return OK;
 }
@@ -341,6 +345,7 @@ DbRetVal Database::createSystemDatabaseChunk(AllocType type, size_t size, int id
 //This is never called currently. If situation arises will be coded later.
 DbRetVal Database::deleteSystemDatabaseChunk(int id)
 {
+
     Chunk *chunk = getSystemDatabaseChunk(id);
     chunk->setChunkID(-1);
     chunk->setSize(0);
@@ -352,6 +357,7 @@ DbRetVal Database::deleteSystemDatabaseChunk(int id)
     //start of page to notused
     chunk->firstPage_ = NULL;
     chunk->curPage_ = NULL;
+    decrementChunk();
     return OK;
 }
 

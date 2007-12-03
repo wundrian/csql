@@ -208,6 +208,7 @@ class CatalogTableINDEX
     //Third argument is OUT parameter which will contain the
     //pointer to the removed tuple
     DbRetVal remove(const char *name, void *&chunk, void *&hchunk, void *&iptr);
+    DbRetVal get(const char *name, void *&chunk, void *&hchunk, void *&iptr);
 
     //get the number of indexes on table pointed by tblPtr
     int getNumIndexes(void *tblPtr);
@@ -220,7 +221,7 @@ class CatalogTableINDEX
     static ChunkIterator getIterator(void *iptr);
     static int getNoOfBuckets(void *iptr);
     static int getUnique(void *iptr);
-
+    static char* getName(void *iptr);
 };
 
 

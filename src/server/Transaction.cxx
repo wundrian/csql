@@ -177,6 +177,52 @@ UndoLogInfo* Transaction::popUndoLog()
 
 }
 
+int Transaction::noOfUndoLogs()
+{
+    UndoLogInfo *iter = firstUndoLog_;
+    int count =0;
+    while(NULL != iter)
+    {
+        count++;
+        iter = iter->next_;
+    }
+    return count;
+}
+void Transaction::printDebugInfo(Database *sysdb)
+{
+   printf("<TransactionInfo>\n");
+   if (waitLock_ != NULL) 
+   {
+       printf("<WaitLock>");
+       waitLock_->print();
+       printf("</WaitLock>");
+
+   }
+   printf("<UndoLogs>\n");
+   Chunk *chunk = sysdb->getSystemDatabaseChunk(UndoLogTableID);
+   printf("  <TotalPages> %d </TotalPages>\n", chunk->totalPages());
+   UndoLogInfo *iter = firstUndoLog_;
+   while(NULL != iter)
+   {
+      iter->print();
+      iter = iter->next_;
+   }
+   printf("</UndoLogs>\n");
+
+   printf("<TransHasList>\n");
+   chunk = sysdb->getSystemDatabaseChunk(TransHasTableId);
+   printf("  <TotalPages> %d </TotalPages>\n", chunk->totalPages());
+   TransHasNode *hasIter  = hasLockList_;
+   while (NULL != hasIter)
+   {
+       hasIter->print();
+       hasIter = hasIter->next_;
+   }
+   printf("</TransHasList>\n");
+
+   printf("</TransactionInfo>\n");
+   return ;
+}
 DbRetVal Transaction::removeUndoLogs(Database *sysdb)
 {
     Chunk *chunk = sysdb->getSystemDatabaseChunk(UndoLogTableID);

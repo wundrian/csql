@@ -272,6 +272,31 @@ DbRetVal CatalogTableINDEX::remove(const char *name, void *&chunk, void *&hchunk
     }
     return OK;
 }
+DbRetVal CatalogTableINDEX::get(const char *name, void *&chunk, void *&hchunk, void *&iptr)
+{
+    Chunk *fChunk = systemDatabase_->getSystemDatabaseChunk(IndexTableId);
+    ChunkIterator iter = fChunk->getIterator();
+
+    void *data = NULL;
+    while ((data = iter.nextElement())!= NULL)
+    {
+         if (0 == strcmp(((INDEX*)data)->indName_, name))
+         {
+             //remove this element and store the tuple ptr
+             //there will be only one row for this table(Primary key)
+             chunk = (Chunk*) ((INDEX*)data)->chunkPtr_;
+             hchunk = (Chunk*) ((INDEX*)data)->hashNodeChunk_;
+             iptr = (void*) data;
+             break;
+         }
+    }
+    if (NULL == iptr)
+    {
+        printError(ErrNotExists,"Index %s not exists in INDEX catalog table", name);
+        return ErrNotExists;
+    }
+    return OK;
+}
 
 int CatalogTableINDEX::getNumIndexes(void *tptr)
 {
@@ -336,6 +361,11 @@ int CatalogTableINDEX::getUnique(void *iptr)
 {
     INDEX *index = (INDEX*)iptr;
     return index->isUnique_;
+}
+char* CatalogTableINDEX::getName(void *iptr)
+{
+    INDEX *index = (INDEX*)iptr;
+    return index->indName_;
 }
 
 DbRetVal CatalogTableINDEXFIELD::insert(FieldNameList &fldList, void *indexPtr,

@@ -112,8 +112,11 @@ class DatabaseManagerImpl : public DatabaseManager
 
     DbRetVal registerThread();
     DbRetVal deregisterThread();
-
-
+    bool isAnyOneRegistered();
+    void printUsageStatistics();
+    void printDebugLockInfo();
+    void printDebugTransInfo();
+    DbRetVal printIndexInfo(char *name);
     friend class SessionImpl;
 };
 #endif

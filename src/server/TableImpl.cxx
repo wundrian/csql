@@ -371,6 +371,22 @@ DbRetVal TableImpl::updateTuple()
     return copyValuesFromBindBuffer(curTuple_);
 }
 
+void TableImpl::printInfo()
+{
+    printf("  <TableName> %s </TableName>\n", tblName_);
+    printf("  <TupleCount> %d </TupleCount>\n", numTuples());
+    printf("  <PagesUsed> %d </PagesUsed>\n", pagesUsed());
+    printf("  <SpaceUsed> %d </SpaceUsed>\n", spaceUsed());
+    printf("  <Indexes> %d <Indexes>\n", numIndexes_);
+    printf("  <TupleLength> %d </TupleLength>\n", length_);
+    printf("  <Fields> %d </Fields>\n", numFlds_);
+    printf("  <Indexes>\n");
+    for (int i =0; i<numIndexes_; i++)
+        printf("<IndexName> %s </IndexName>\n", CatalogTableINDEX::getName(indexPtr_[i]));
+    printf("  </Indexes>\n");
+
+}
+
 DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr)
 {
     //Iterate through the bind list and copy the value here
@@ -483,6 +499,12 @@ long TableImpl::spaceUsed()
     long totSize = chk->getTotalDataNodes() * chk->getSize();
     totSize = totSize + (chk->totalPages() * sizeof (PageInfo));
     return totSize;
+}
+
+int TableImpl::pagesUsed()
+{
+    Chunk *chk = (Chunk*)chunkPtr_;
+    return chk->totalPages();
 }
 
 long TableImpl::numTuples()

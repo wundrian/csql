@@ -33,7 +33,62 @@ Bucket* LockManager::getLockBucket(void *tuple)
    return bucket;
 }
 
+void LockManager::printUsageStatistics()
+{
+   Bucket* buckets = systemDatabase_->getLockHashBuckets();
+   Bucket* bucket;
+   LockHashNode *lockNode;
+   int nodeCount =0, bucketCount =0;
+   for (int i =0; i< LOCK_BUCKET_SIZE; i++)
+   {
+       bucket = &(buckets[i]);
+       lockNode = (LockHashNode*) bucket->bucketList_;
+       if (lockNode) bucketCount++; else continue;
+       while (NULL != lockNode) { nodeCount++; lockNode = lockNode->next_; }
+   }
+   printf("<LockTable>\n");
+   printf("  <TotalBuckets> %d  </TotalBuckets>\n", LOCK_BUCKET_SIZE);
+   printf("  <UsedBuckets> %d  </UsedBuckets>\n", bucketCount);
+   printf("  <TotalLockNodes> %d  </TotalLockNodes>\n", nodeCount);
+   printf("</LockTable>\n");
 
+}
+
+void LockManager::printDebugInfo()
+{
+   Bucket* buckets = systemDatabase_->getLockHashBuckets();
+   Bucket* bucket;
+   LockHashNode *lockNode;
+   int nodeCount =0, bucketCount =0;
+   printf("<LockTable>\n");
+   for (int i =0; i< LOCK_BUCKET_SIZE; i++)
+   {
+       nodeCount =0;
+       bucket = &(buckets[i]);
+       //if (bucket) bucketCount++; else continue;
+       lockNode = (LockHashNode*) bucket->bucketList_;
+
+       while (NULL != lockNode) 
+       { 
+           nodeCount++; 
+           lockNode->print();
+           lockNode = lockNode->next_; 
+       }
+       if (nodeCount) {
+           bucketCount++;
+           printf("  <LockBucket> \n");
+           printf("    <BucketNo> %d </BucketNo> \n", i); 
+           printf("    <TotalNodes> %d </TotalNodes>\n", nodeCount); 
+           printf("  <LockBucket>\n");
+       }
+   }
+
+   printf("  <TotalUsedBuckets> %d </TotalUsedBuckets>\n", bucketCount); 
+   Chunk *chunk = systemDatabase_->getSystemDatabaseChunk(LockTableId);
+   printf("  <TotalPages> %d </TotalPages>\n", chunk->totalPages()); 
+   printf("</LockTable>\n");
+
+}
 
 DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
 {
@@ -367,11 +422,7 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
    printDebug(DM_Lock, "LockManager::getExclusiveLock End");
    printError(ErrLockTimeOut, "Unable to acquire lock for long time.Timed out");
    return ErrLockTimeOut;
-
 }
-
-
-
 
 DbRetVal LockManager::releaseLock(void *tuple)
 {

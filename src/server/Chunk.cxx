@@ -498,6 +498,28 @@ PageInfo* Chunk::getPageInfo(Database *db, void *ptr)
 //present in the table
 long Chunk::getTotalDataNodes()
 {
+    long totalNodes =0;
+    if (0 == allocSize_) //->variable size allocator
+    {
+        Page *page = ((PageInfo*)firstPage_);
+        while(NULL != page)
+        {
+            VarSizeInfo *varInfo = (VarSizeInfo*)(((char*)page) + sizeof(PageInfo));
+            while ((char*) varInfo < ((char*)page + PAGE_SIZE))
+            {
+                if (1 == varInfo->isUsed_) totalNodes++;
+                varInfo = (VarSizeInfo*)((char*)varInfo + sizeof(VarSizeInfo)
+                                    +varInfo->size_);
+            }
+            page = ((PageInfo*) page)->nextPage_;
+        }
+        return totalNodes;
+    }
+
+    //TODO::for large size allocator
+    if (allocSize_ >PAGE_SIZE)//->each page has only one data node
+        return 0;
+
     int ret = getChunkMutex();
     if (ret != 0)
     {
@@ -505,18 +527,9 @@ long Chunk::getTotalDataNodes()
         return NULL;
     }
 
-    //TODO:: for variable size allocator
-    if (0 == allocSize_) //->variable size allocator
-        return 0;
-
-    //TODO::for large size allocator
-    if (allocSize_ >PAGE_SIZE)//->each page has only one data node
-        return 0;
-
     int noOfDataNodes=os::floor((PAGE_SIZE - sizeof(PageInfo))/allocSize_);
     PageInfo* pageInfo = ((PageInfo*)firstPage_);
     char *data = ((char*)firstPage_) + sizeof(PageInfo);
-    long totalNodes = 0; 
     int i=0;
     while( pageInfo != NULL )
     {

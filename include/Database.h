@@ -31,7 +31,7 @@ class DatabaseMetaData
     //TODO:: move this from here to system database
     //as only sys db has the limit and user
     //database does not have any limit for chunks
-    int maxChunks_;
+    int noOfChunks_;
 
     long maxSize_; //maximum size of database
     long curSize_; //current size of database
@@ -97,15 +97,15 @@ class Database
     void* allocLockHashBuckets();
     Bucket* getLockHashBuckets();
 
-    //TODO
-    int getNoOfChunks(){ return 0;}
+    void incrementChunk() { (metaData_->noOfChunks_)++;}
+    void decrementChunk() { (metaData_->noOfChunks_)--;}
 
     const char* getName();
     int getDatabaseID();
     long getMaxSize();
     long getCurrentSize();
     Page* getCurrentPage();
-    int getMaxChunks();
+    int getNoOfChunks();
     DatabaseMetaData* getMetaDataPtr() { return metaData_; }
     Page* getFirstPage();
     Chunk* getHashIndexChunk();
@@ -115,7 +115,7 @@ class Database
     void setCurrentSize(long size);
     void setCurrentPage(Page *page);
     void setMaxSize(long size);
-    void setMaxChunks(int maxChunks);
+    void setNoOfChunks(int maxChunks);
     void setMetaDataPtr(DatabaseMetaData *ptr) {metaData_ = ptr; }
     void setFirstPage(Page *ptr);
     void setHashIndexChunk(Chunk* chunk);

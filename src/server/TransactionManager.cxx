@@ -21,6 +21,59 @@
 #include<Debug.h>
 #include<Config.h>
 #include<Process.h>
+
+void TransactionManager::printUsageStatistics()
+{
+    Transaction *iter = firstTrans;
+    int i=0, usedCount =0, freeCount =0, undoLogCount=0;
+    for (; i < Conf::config.getMaxTrans(); i++)
+    {
+            if (iter->status_ == TransNotUsed) freeCount++; 
+            else 
+            { 
+                usedCount++;
+                undoLogCount += iter->noOfUndoLogs();
+            }
+            iter++;
+    }
+    printf("<TransactionTable>\n");
+    printf("  <UsedSlots> %d </UsedSlots>\n", usedCount);
+    printf("  <FreeSlots> %d </FreeSlots>\n", freeCount);
+
+    printf("  <UndoLogs>\n");
+    printf("    <TotalNodes> %d </TotalNodes>\n", undoLogCount);
+    printf("  </UndoLogs>\n");
+    printf("</TransactionTable>\n");
+
+}
+
+void TransactionManager::printDebugInfo(Database *sysdb)
+{
+    Transaction *iter = firstTrans;
+    int i=0, usedCount =0, freeCount =0, undoLogCount=0;
+    printf("<TransactionTable>\n");
+    for (; i < Conf::config.getMaxTrans(); i++)
+    {
+            if (iter->status_ == TransNotUsed) freeCount++; 
+            else 
+            { 
+                usedCount++;
+                undoLogCount += iter->noOfUndoLogs();
+                iter->printDebugInfo(sysdb);
+            }
+            iter++;
+    }
+
+    printf("  <UsedSlots> %d </UsedSlots>\n", usedCount);
+    printf("  <FreeSlots> %d </FreeSlots>\n", freeCount);
+
+    printf("  <UndoLogs>\n");
+    printf("    <TotalNodes> %d </TotalNodes>\n", undoLogCount);
+    printf("  </UndoLogs>\n");
+    printf("</TransactionTable>\n");
+}
+
+
 DbRetVal TransactionManager::startTransaction(IsolationLevel level)
 {
     if (NULL != trans)

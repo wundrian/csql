@@ -64,6 +64,8 @@ class ProcessManager
     static DbRetVal addMutex(Mutex *mutex);
     static DbRetVal removeMutex(Mutex *mutex);
     static DbRetVal setTransaction(Transaction *trans);
+    void printUsageStatistics();
+    bool isAnyOneRegistered();
 };
 
 #endif

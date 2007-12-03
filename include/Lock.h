@@ -30,6 +30,7 @@ class LockInfo
     unsigned char waitReaders_;
     unsigned char waitWriters_;
     LockInfo() { noOfReaders_ = 0; waitReaders_ = 0; waitWriters_ = 0; }
+
 };
 
 class LockHashNode
@@ -38,6 +39,15 @@ class LockHashNode
     void *ptrToTuple_;
     LockInfo lInfo_;
     LockHashNode *next_;
+    void print() 
+    { 
+        printf("<Lock Node>\n");
+        printf("  <Tuple> %x </Tuple>\n", ptrToTuple_);
+        printf("  <NoOfReaders> %d </NoOfReaders>\n", lInfo_.noOfReaders_);
+        printf("  <WaitReaders> %x </WaitReaders>\n", lInfo_.waitReaders_);
+        printf("  <WaitWriters> %x </WaitWriters>\n", lInfo_.waitWriters_);
+        printf("</Lock Node>\n");
+    }
 };
 
 class LockListIter
@@ -55,6 +65,7 @@ class TransHasNode
     public:
     LockHashNode *node_;
     TransHasNode *next_;
+    void print() { node_->print(); }
 };
 
 class DatabaseManagerImpl;
@@ -78,6 +89,8 @@ class LockManager
     DbRetVal getExclusiveLock(void * tuple, Transaction **trans);
     DbRetVal releaseLock(void *tuple);
     DbRetVal isExclusiveLocked(void *tuple, Transaction **trans, bool &status);
+    void printUsageStatistics();
+    void printDebugInfo();
 };
 
 

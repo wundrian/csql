@@ -164,9 +164,9 @@ class TableImpl:public Table
 
 
     long spaceUsed();
-
     long numTuples();
-
+    int pagesUsed();
+    void printInfo();
 
     void setTableInfo(char *name, int tblid, size_t  length,
                        int numFld, int numIdx, void *chunk);

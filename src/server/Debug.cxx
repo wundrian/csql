@@ -37,7 +37,7 @@ int printError1(DbRetVal val, char* fname, int lno, char *format, ...)
 
   sprintf(mesgBuf, "%d:%lu:%s:%d:",
            os::getpid(), os::getthrid(), fname, lno);
-  os::write(1, mesgBuf, strlen(mesgBuf));
+  os::write(2, mesgBuf, strlen(mesgBuf));
 
   va_start(ap, format);
 
@@ -45,10 +45,10 @@ int printError1(DbRetVal val, char* fname, int lno, char *format, ...)
   if(err < 0) {
       return err;
   }
-  os::write(1, mesgBuf, strlen(mesgBuf));
+  os::write(2, mesgBuf, strlen(mesgBuf));
   strcpy(mesgBuf,"\n");
-  os::write(1, mesgBuf, strlen(mesgBuf));
-   //1->stdout
+  os::write(2, mesgBuf, strlen(mesgBuf));
+   //3->stderr
   return 0;
 }
 

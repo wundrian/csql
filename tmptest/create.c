@@ -46,6 +46,7 @@ int main()
     if (rv != OK) { printf("Index creation failed\n"); return -1; }
     printf("Index created\n");
 
+    rv = dbMgr->createIndex("indx2", idxInfo);
     conn.close();
     return 0;
 }

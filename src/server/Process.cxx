@@ -221,4 +221,32 @@ DbRetVal ProcessManager::setTransaction(Transaction *trans)
     return OK;
 }
 
+void ProcessManager::printUsageStatistics()
+{
+    ThreadInfo* pInfo = systemDatabase->getThreadInfo(0);
+    int i=0, usedCount =0 , freeCount =0;
+    for (; i < Conf::config.getMaxProcs(); i++)
+    {
+        if (pInfo->pid_ != 0 ) usedCount++; else freeCount++;
+        pInfo++;
+    }
+    printf("<ProcTable>\n");
+    printf("  <UsedSlots> %d </UsedSlots>\n", usedCount);
+    printf("  <FreeSlots> %d </FreeSlots>\n", freeCount);
+    printf("</ProcTable>\n");
 
+}
+
+bool ProcessManager::isAnyOneRegistered()
+{
+    //the process which calls this will have an entry in proc table. 
+    //so checking for 1
+    ThreadInfo* pInfo = systemDatabase->getThreadInfo(0);
+    int i=0, usedCount =0;
+    for (; i < Conf::config.getMaxProcs(); i++)
+    {
+        if (pInfo->pid_ != 0 ) usedCount++; 
+        pInfo++;
+    }
+    if (usedCount == 1) return false; else return true;
+}

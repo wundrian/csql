@@ -48,6 +48,14 @@ class UndoLogInfo
     OperationType opType_;
     void *ptrToTuple_;
     UndoLogInfo *next_;
+    void print() {
+       printf("<UndoLogInfo>\n");
+       printf("  <Size> %d </Size>\n", size_);
+       printf("  <OperationType> %d </OperationType>\n", opType_);
+       printf("  <TuplePtr> %x </TuplePtr>\n", ptrToTuple_);
+       printf("</UndoLogInfo>\n");
+
+    }
 };
 
 class Transaction
@@ -81,6 +89,8 @@ class Transaction
     UndoLogInfo* popUndoLog();
     DbRetVal removeUndoLogs(Database *sysdb);
     DbRetVal applyUndoLogs(Database *sysdb);
+    int noOfUndoLogs();
+    void printDebugInfo(Database *sysdb);
 };
 
 class TransactionManager
@@ -93,6 +103,8 @@ class TransactionManager
 
     void setFirstTrans(Transaction *trans);
     void setTrans(Transaction *trans);
+    void printUsageStatistics();
+    void printDebugInfo(Database *sysdb);
 
     DbRetVal startTransaction(IsolationLevel level);
     DbRetVal commit(LockManager *lManager_);

@@ -123,7 +123,7 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
     db_->setDatabaseID(1);
     db_->setName(name);
     db_->setMaxSize(size);
-    db_->setMaxChunks(MAX_CHUNKS);
+    db_->setNoOfChunks(0);
     db_->initAllocDatabaseMutex();
     db_->initTransTableMutex();
     db_->initDatabaseMutex();
@@ -348,6 +348,7 @@ Chunk* DatabaseManagerImpl::createUserChunk(size_t size)
 
     //TODO::Generate chunkid::use tableid
     chunkInfo->setChunkID(-1);
+    db_->incrementChunk();
     printDebug(DM_Database, "Creating new User chunk chunkID:%d size: %d firstPage:%x",
                                -1, chunkInfo->allocSize_, firstPageInfo);
 
@@ -393,6 +394,7 @@ DbRetVal DatabaseManagerImpl::deleteUserChunk(Chunk *chunk)
     chunk->curPage_ = NULL;
     chunk->firstPage_ = NULL;
     chunk->destroyMutex();
+    db_->decrementChunk();
     printDebug(DM_Database,"deleting user chunk:%x",chunk);
     return OK;
 }
@@ -560,6 +562,7 @@ Table* DatabaseManagerImpl::openTable(const char *name)
     ret = cTable.getChunkAndTblPtr(name, chunk, tptr);
     if ( OK != ret)
     {
+        systemDatabase_->releaseDatabaseMutex();
         printError(ErrNotExists, "Table not exists %s", name);
         return NULL;
     }
@@ -869,7 +872,29 @@ DbRetVal DatabaseManagerImpl::dropIndexInt(const char *name, bool takeLock)
     logFinest(logger, "Deleted Index %s", name);
     return OK;
 }
+DbRetVal DatabaseManagerImpl::printIndexInfo(char *name)
+{
+    CatalogTableINDEX cIndex(systemDatabase_);
+    DbRetVal rv = OK;
+    void *chunk = NULL, *hchunk = NULL;
+    void *tptr =NULL;
+    rv = cIndex.get(name, chunk, hchunk, tptr);
+    if (OK != rv) return rv;
+    printf("<IndexName> %s </IndexName>\n", name);
+    printf("<Unique> %d </Unique>\n", CatalogTableINDEX::getUnique(tptr));
+    Chunk *ch = (Chunk*) hchunk;
+    printf("<HashBucket>\n");
+    printf("  <TotalPages> %d </TotalPages>\n", ch->totalPages());
+    printf("  <TotalBuckets> %d </TotalBuckets> \n", CatalogTableINDEX::getNoOfBuckets(tptr));
+    printf("</HashBucket>\n");
 
+    ch = (Chunk*) chunk;
+    printf("<IndexNodes>\n");
+    printf("  <TotalPages> %d </TotalPages>\n", ch->totalPages());
+    printf("  <TotalNodes> %d </TotalNodes>\n", ch->getTotalDataNodes());
+    printf("<IndexNodes>\n");
+    return OK;
+}
 DbRetVal DatabaseManagerImpl::registerThread()
 {
     DbRetVal rv = OK;
@@ -894,6 +919,29 @@ DbRetVal DatabaseManagerImpl::deregisterThread()
     return rv;
 }
 
+bool DatabaseManagerImpl::isAnyOneRegistered()
+{
+    if (pMgr_ != NULL) return pMgr_->isAnyOneRegistered();
+    return true;
+}
+
+
+void DatabaseManagerImpl::printUsageStatistics()
+{
+    pMgr_->printUsageStatistics();
+    tMgr_->printUsageStatistics();
+    lMgr_->printUsageStatistics();
+}
+
+void DatabaseManagerImpl::printDebugLockInfo()
+{
+    lMgr_->printDebugInfo();
+}
+
+void DatabaseManagerImpl::printDebugTransInfo()
+{
+    tMgr_->printDebugInfo(systemDatabase_);
+}
 ChunkIterator DatabaseManagerImpl::getSystemTableIterator(CatalogTableID id)
 {
     Chunk *fChunk = systemDatabase_->getSystemDatabaseChunk(id);
