@@ -146,7 +146,7 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
 
     if (0 == strcmp(name, SYSTEMDB)) return OK;
 
-    //Allocate new chunk to store hash index nodes
+    /*Allocate new chunk to store hash index nodes
     Chunk *chunkInfo = createUserChunk(sizeof(HashIndexNode));
     if (NULL == chunkInfo)
     {
@@ -156,7 +156,7 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
     printDebug(DM_Database, "Creating Chunk for storing Hash index nodes %x",
                                                                   chunkInfo);
 
-    db_->setHashIndexChunk(chunkInfo);
+    db_->setHashIndexChunk(chunkInfo);*/
     logFinest(logger, "Created database %s" , name);
 
     return OK;
@@ -331,7 +331,11 @@ Chunk* DatabaseManagerImpl::createUserChunk(size_t size)
         firstPageInfo->setPageAsUsed(offset);
     }
     else
+    {
         firstPageInfo->setPageAsUsed(chunkInfo->allocSize_);
+        char *data = ((char*)firstPageInfo) + sizeof(PageInfo);
+        *(int*)data =0;
+    }
     if (0 == size)
     {
         VarSizeInfo *varInfo = (VarSizeInfo*)(((char*)firstPageInfo) + sizeof(PageInfo));
@@ -410,7 +414,7 @@ DbRetVal DatabaseManagerImpl::createTable(const char *name, TableDef &def)
     //of each field
     //This is to done to reduce cpu cycles for small tables
     int addSize = 0;
-    if (fldCount > 31) addSize = 4; else addSize = os::align(fldCount);
+    if (fldCount < 31) addSize = 4; else addSize = os::align(fldCount);
     size_t sizeofTuple = os::align(def.getTupleSize())+addSize;
     rv = systemDatabase_->getDatabaseMutex();
     if (OK != rv ) {
@@ -569,10 +573,41 @@ Table* DatabaseManagerImpl::openTable(const char *name)
     TABLE *tTuple = (TABLE*)tptr;
     table->setTableInfo(tTuple->tblName_, tTuple->tblID_, tTuple->length_,
                         tTuple->numFlds_, tTuple->numIndexes_, tTuple->chunkPtr_);
+    if (tTuple->numFlds_ < 31) 
+    { 
+        table->isIntUsedForNULL = true;
+        table->iNullInfo = 0;
+        table->iNotNullInfo =0;
+    }
+    else
+    {
+        table->isIntUsedForNULL = false;
+        int noFields = os::align(tTuple->numFlds_);
+        table->cNullInfo = (char*) malloc(noFields);
+        table->cNotNullInfo = (char*) malloc(noFields);
+        for (int i =0 ; i < noFields; i++) table->cNullInfo[i] =0;
+        for (int i =0 ; i < noFields; i++) table->cNotNullInfo[i] =0;
+
+    }
 
     //get field information from FIELD table
     CatalogTableFIELD cField(systemDatabase_);
     cField.getFieldInfo(tptr, table->fldList_);
+
+    //populate the notnull info
+    FieldIterator fIter = table->fldList_.getIterator();
+    int fldpos=1;
+    while (fIter.hasElement())
+    {
+        FieldDef def = fIter.nextElement();
+        if (table->isIntUsedForNULL) {
+            if (def.isNull_) SETBIT(table->iNotNullInfo, fldpos);
+        }
+        else {
+            if (def.isNull_) table->cNotNullInfo[fldpos-1] = 1;
+        }
+        fldpos++;
+   } 
 
     //get the number of indexes on this table
     //and populate the indexPtr array
@@ -602,18 +637,7 @@ Table* DatabaseManagerImpl::openTable(const char *name)
         table->idxInfo[i] = (IndexInfo*) hIdxInfo;
     }
     systemDatabase_->releaseDatabaseMutex();
-    if (tTuple->numFlds_ > 31) 
-    { 
-        table->isIntUsedForNULL = true;
-        table->iNullInfo = 0;
-    }
-    else
-    {
-        table->isIntUsedForNULL = false;
-        int noFields = os::align(tTuple->numFlds_);
-        table->cNullInfo = (char*) malloc(noFields);
-        for (int i =0 ; i < noFields; i++) table->cNullInfo[i] =0;
-    }
+
     printDebug(DM_Database,"Opening table handle name:%s chunk:%x numIndex:%d",
                                          name, chunk, table->numIndexes_);
     logFinest(logger, "Opening Table %s" , name);
@@ -718,6 +742,8 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
 
     //create chunk to store the meta data of the index created
     //for latches and bucket pointers
+    printDebug(DM_HashIndex, "Creating chunk for storing hash buckets of size %d\n", 
+                             bucketSize * sizeof(Bucket));
     Chunk* chunkInfo = createUserChunk(bucketSize * sizeof(Bucket));
     if (NULL == chunkInfo)
     {
@@ -882,13 +908,13 @@ DbRetVal DatabaseManagerImpl::printIndexInfo(char *name)
     if (OK != rv) return rv;
     printf("<IndexName> %s </IndexName>\n", name);
     printf("<Unique> %d </Unique>\n", CatalogTableINDEX::getUnique(tptr));
-    Chunk *ch = (Chunk*) hchunk;
+    Chunk *ch = (Chunk*) chunk;
     printf("<HashBucket>\n");
     printf("  <TotalPages> %d </TotalPages>\n", ch->totalPages());
     printf("  <TotalBuckets> %d </TotalBuckets> \n", CatalogTableINDEX::getNoOfBuckets(tptr));
     printf("</HashBucket>\n");
 
-    ch = (Chunk*) chunk;
+    ch = (Chunk*) hchunk;
     printf("<IndexNodes>\n");
     printf("  <TotalPages> %d </TotalPages>\n", ch->totalPages());
     printf("  <TotalNodes> %d </TotalNodes>\n", ch->getTotalDataNodes());

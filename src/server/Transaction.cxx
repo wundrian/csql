@@ -118,29 +118,31 @@ bool Transaction::findInHasList(Database *sysdb, LockHashNode *node)
     return false;
 }
 
-void Transaction::appendUndoLog(Database *sysdb, OperationType type,
+DbRetVal Transaction::appendUndoLog(Database *sysdb, OperationType type,
                                                void *data, size_t size)
 {
     UndoLogInfo *logInfo = createUndoLog(sysdb, type, data, size);
+    if (logInfo == NULL) return ErrNoMemory;
     os::memcpy((char*)logInfo + sizeof(UndoLogInfo), data, size);
     addAtBegin(logInfo);
     printDebug(DM_Transaction, "creating undo log and append %x optype:%d",
                                                logInfo, type);
-    return;
+    return OK;
 }
 
 
 
-void Transaction::appendLogicalUndoLog(Database *sysdb, OperationType type, void *data,
+DbRetVal Transaction::appendLogicalUndoLog(Database *sysdb, OperationType type, void *data,
                        size_t size, void* indexPtr)
 {
     UndoLogInfo *logInfo = createUndoLog(sysdb, type, data, size);
+    if (logInfo == NULL) return ErrNoMemory;
     char **indPtr = (char**)((char*)logInfo + sizeof(UndoLogInfo));
     *indPtr = (char*)  indexPtr;
     addAtBegin(logInfo);
     printDebug(DM_Transaction, "creating logical undo log and append %x optype:%d",
                                                logInfo, type);
-    return;
+    return OK;
 }
 
 UndoLogInfo* Transaction::createUndoLog(Database *sysdb, OperationType type, void *data,
@@ -149,6 +151,7 @@ UndoLogInfo* Transaction::createUndoLog(Database *sysdb, OperationType type, voi
     Chunk *chunk = sysdb->getSystemDatabaseChunk(UndoLogTableID);
     UndoLogInfo *logInfo = (UndoLogInfo*)chunk->allocate(sysdb,
                                                 size + sizeof(UndoLogInfo));
+    if (logInfo == NULL) return NULL;
     logInfo->opType_ = type;
     logInfo->ptrToTuple_ = data;
     logInfo->size_ = size;
@@ -202,22 +205,28 @@ void Transaction::printDebugInfo(Database *sysdb)
    Chunk *chunk = sysdb->getSystemDatabaseChunk(UndoLogTableID);
    printf("  <TotalPages> %d </TotalPages>\n", chunk->totalPages());
    UndoLogInfo *iter = firstUndoLog_;
+   int count =0;
    while(NULL != iter)
    {
       iter->print();
       iter = iter->next_;
+      count++;
    }
+   printf("</TotalNodes> %d </TotalNodes>\n", count);
    printf("</UndoLogs>\n");
 
    printf("<TransHasList>\n");
    chunk = sysdb->getSystemDatabaseChunk(TransHasTableId);
    printf("  <TotalPages> %d </TotalPages>\n", chunk->totalPages());
    TransHasNode *hasIter  = hasLockList_;
+   count =0;
    while (NULL != hasIter)
    {
        hasIter->print();
        hasIter = hasIter->next_;
+       count++;
    }
+   printf("</TotalNodes> %d </TotalNodes>\n", count);
    printf("</TransHasList>\n");
 
    printf("</TransactionInfo>\n");

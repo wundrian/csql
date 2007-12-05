@@ -64,7 +64,7 @@ int main(int argc, char **argv)
     //printf("%s %s \n", username, password);
     if (username[0] == '\0' )
     {
-        strcpy(username, "praba");
+        strcpy(username, "root");
         strcpy(password, "manager");
         opt=1;//if username is not specified, just list all table names
     }

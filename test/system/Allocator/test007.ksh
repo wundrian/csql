@@ -18,7 +18,7 @@ then
 fi
 
 echo "Case 1: -d option with no table"
-$CSQL_INSTALL_ROOT/bin/catalog -u praba -p manager -d 
+$CSQL_INSTALL_ROOT/bin/catalog -u root -p manager -d 
 if [ $? -ne 0 ]
 then
    exit 1;
@@ -44,7 +44,7 @@ do
     exit 100;
   fi
 done
-$CSQL_INSTALL_ROOT/bin/catalog -u praba -p manager -d 
+$CSQL_INSTALL_ROOT/bin/catalog -u root -p manager -d 
 if [ $? -ne 0 ]
 then
    exit 1;

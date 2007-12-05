@@ -17,7 +17,7 @@ then
 fi
 
 echo "Case 1: -d option with no table"
-$CSQL_INSTALL_ROOT/bin/catalog -u praba -p manager -d 
+$CSQL_INSTALL_ROOT/bin/catalog -u root -p manager -d 
 if [ $? -ne 0 ]
 then
    exit 1;
@@ -31,7 +31,7 @@ fi
 echo "Tables and Indexes are created"
 
 echo "Case 2: -d option with 1 table"
-$CSQL_INSTALL_ROOT/bin/catalog -u praba -p manager -d 
+$CSQL_INSTALL_ROOT/bin/catalog -u root -p manager -d 
 if [ $? -ne 0 ]
 then
    exit 1;
@@ -44,7 +44,7 @@ then
 fi
 
 echo "Case 3: -d option after removing table"
-$CSQL_INSTALL_ROOT/bin/catalog -u praba -p manager -d
+$CSQL_INSTALL_ROOT/bin/catalog -u root -p manager -d
 if [ $? -ne 0 ]
 then
    exit 3;

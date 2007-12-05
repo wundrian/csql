@@ -1,8 +1,10 @@
+//Test Case:
+//Insert 1 million tuples. There will not be enough db space.
 #include<CSql.h>
 int main()
 {
     Connection conn;
-    DbRetVal rv = conn.open("praba", "manager");
+    DbRetVal rv = conn.open("root", "manager");
     if (rv != OK) return 1;
     DatabaseManager *dbMgr = conn.getDatabaseManager();
     if (dbMgr == NULL) { printf("Auth failed\n"); return 2;}
@@ -10,7 +12,7 @@ int main()
     TableDef tabDef;
     tabDef.addField("f1", typeInt, 0, NULL, true, true);
     tabDef.addField("f2", typeInt);
-    tabDef.addField("f3", typeString, 20);
+    tabDef.addField("f3", typeString, 1016);
     rv = dbMgr->createTable("t1", tabDef);
     if (rv != OK) { printf("Table creation failed\n"); conn.close(); return 3; }
     printf("Table created\n");
@@ -29,16 +31,16 @@ int main()
     table->bindFld("f2", &id2);
     table->bindFld("f3", name);
     int icount =0;
-    for (int i = 0 ; i < 10 ; i++)
+    for (int i = 0 ; i < 1000 ; i++)
     {
         conn.startTransaction();
-        for (int j = 0 ; j < 10000 ; j++) {
+        for (int j = 0 ; j < 100 ; j++) {
             id1= icount++;
             rv = table->insertTuple();
             if (rv != OK) break;
         }
+        if (rv != OK) break;
         conn.commit();
-        printf("Innser loop %d\n", i);
     }
     printf("Tuples inserted %d\n", icount);
     table->setCondition(NULL);

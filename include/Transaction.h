@@ -79,8 +79,8 @@ class Transaction
     DbRetVal removeFromHasList(Database *sysdb, void *tuple);
     bool findInHasList(Database *sysdb, LockHashNode *node);
 
-    void appendUndoLog(Database *sysdb, OperationType type, void *data, size_t size);
-    void appendLogicalUndoLog(Database *sysdb, OperationType type, void *data,
+    DbRetVal appendUndoLog(Database *sysdb, OperationType type, void *data, size_t size);
+    DbRetVal appendLogicalUndoLog(Database *sysdb, OperationType type, void *data,
                        size_t size, void* indexPtr);
     UndoLogInfo* createUndoLog(Database *sysdb, OperationType type, void *data,
                        size_t size);

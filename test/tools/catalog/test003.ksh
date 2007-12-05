@@ -23,21 +23,21 @@ then
 fi
 echo "Tables and Indexes are created"
 echo "Case 1: -T option for t1: with two index"
-$CSQL_INSTALL_ROOT/bin/catalog -u praba -p manager -T t1
+$CSQL_INSTALL_ROOT/bin/catalog -u root -p manager -T t1
 if [ $? -ne 0 ]
 then
    exit 1;
 fi
 
 echo "Case 2: -T option for t2: with one index"
-$CSQL_INSTALL_ROOT/bin/catalog -u praba -p manager -T t2
+$CSQL_INSTALL_ROOT/bin/catalog -u root -p manager -T t2
 if [ $? -ne 0 ]
 then
    exit 2;
 fi
 
 echo "Case 3: -I option for idx2 of t1"
-$CSQL_INSTALL_ROOT/bin/catalog -u praba -p manager -I t1idx2
+$CSQL_INSTALL_ROOT/bin/catalog -u root -p manager -I t1idx2
 if [ $? -ne 0 ]
 then
    exit 3;

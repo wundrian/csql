@@ -9,7 +9,7 @@
 # Note: catalog tool with no option specified connects and disconnects
 
 echo "Case 1: -d option with no connections"
-$CSQL_INSTALL_ROOT/bin/catalog -u praba -p manager -d 
+$CSQL_INSTALL_ROOT/bin/catalog -u root -p manager -d 
 if [ $? -ne 0 ]
 then
    exit 1;
@@ -28,7 +28,7 @@ do
   fi
 done
 echo "Case 2: -d option after 120 connect/disconnect"
-$CSQL_INSTALL_ROOT/bin/catalog -u praba -p manager -d 
+$CSQL_INSTALL_ROOT/bin/catalog -u root -p manager -d 
 if [ $? -ne 0 ]
 then
    exit 1;

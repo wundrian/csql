@@ -7,7 +7,7 @@ int main()
 {
 
     Connection conn;
-    DbRetVal rv = conn.open("praba", "manager");
+    DbRetVal rv = conn.open("root", "manager");
     if (rv != OK)
     {
        printf("Error during connection %d\n", rv);
@@ -71,7 +71,7 @@ int main()
 void* runInsTest(void *message)
 {
     Connection conn;
-    DbRetVal rv = conn.open("praba", "manager");
+    DbRetVal rv = conn.open("root", "manager");
     if (rv != OK)
     {
        printf("Error during connection %d\n", rv);
@@ -116,7 +116,7 @@ void* runInsTest(void *message)
 void* runSelTest(void *message)
 {
     Connection conn;
-    DbRetVal rv = conn.open("praba", "manager");
+    DbRetVal rv = conn.open("root", "manager");
     if (rv != OK)
     {
        printf("Error during connection %d\n", rv);

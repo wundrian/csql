@@ -8,7 +8,7 @@ int flag=0;
 int main (int argc, char **argv)
 {
   Connection conn;
-  DbRetVal rv = conn.open("praba","manager");
+  DbRetVal rv = conn.open("root","manager");
   if (rv != 0) return 1;
   pthread_t thread1, thread2;
   char *message1 = "Thread 1";
@@ -38,7 +38,7 @@ void* print_message_function(void *ptr)
 {
     //if (flag == 0) {flag =1; sleep(2); }
     Connection conn;
-    DbRetVal rv=conn.open("praba","manager");
+    DbRetVal rv=conn.open("root","manager");
     if(rv!=OK)
     {
        printf("Thread Return value of open %d %d\n", rv, getpid());

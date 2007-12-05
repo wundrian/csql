@@ -10,6 +10,9 @@
 # check pagesUsed for storing hash bucket
 # check number of index nodes, pagesUsed for storing index nodes
 
+# Note: spaceused for table = noOfDataNodes * sizeofTuple + noOfPages * sizeofPageInfo
+#Note:Thats why we see spaceused as 16 even when no tuple exist
+
 #Run this test only under csql/test or on this directory.
 #Otherwise, it may fail
 EXECUTABLE=${PWD}/system/Allocator/create
@@ -32,14 +35,14 @@ then
 fi
 echo "Tuples inserted into table"
 echo "Case 1: -T option for t1: with 1 tuple"
-$CSQL_INSTALL_ROOT/bin/catalog -u praba -p manager -T t1
+$CSQL_INSTALL_ROOT/bin/catalog -u root -p manager -T t1
 if [ $? -ne 0 ]
 then
    exit 1;
 fi
 
 echo "Case 2: -I option for idx1 of t1, with 1 tuple"
-$CSQL_INSTALL_ROOT/bin/catalog -u praba -p manager -I t1idx1
+$CSQL_INSTALL_ROOT/bin/catalog -u root -p manager -I t1idx1
 if [ $? -ne 0 ]
 then
    exit 2;
@@ -53,14 +56,14 @@ fi
 
 echo "Tuples deleted from table"
 echo "Case 3: -T option for t1: after removing 1 tuple"
-$CSQL_INSTALL_ROOT/bin/catalog -u praba -p manager -T t1
+$CSQL_INSTALL_ROOT/bin/catalog -u root -p manager -T t1
 if [ $? -ne 0 ]
 then
    exit 3;
 fi
 
 echo "Case 4: -I option for idx1 of t1, after removing 1 tuple"
-$CSQL_INSTALL_ROOT/bin/catalog -u praba -p manager -I t1idx1
+$CSQL_INSTALL_ROOT/bin/catalog -u root -p manager -I t1idx1
 if [ $? -ne 0 ]
 then
    exit 4;

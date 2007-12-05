@@ -63,10 +63,10 @@ void TableImpl::markFldNull(int fldpos)
 {
     if (fldpos <0 || fldpos > numFlds_) return;
     if (isIntUsedForNULL) {
-        SETBIT(iNullInfo, fldpos);
+        if (!BITSET(iNotNullInfo, fldpos)) SETBIT(iNullInfo, fldpos);
     }
     else
-        cNullInfo[fldpos-1] = 1;
+        if (!BITSET(iNotNullInfo, fldpos)) cNullInfo[fldpos-1] = 1;
     return;
 }
 
@@ -235,13 +235,14 @@ void* TableImpl::fetchNoBind()
 
 DbRetVal TableImpl::insertTuple()
 {
-    DbRetVal ret;
+    DbRetVal ret =OK;
     void *tptr = ((Chunk*)chunkPtr_)->allocate(db_, &ret);
     if (NULL == tptr)
     {
         printError(ret, "Unable to allocate from chunk");
         return ret;
     }
+
     ret = lMgr_->getExclusiveLock(tptr, trans);
     if (OK != ret)
     {
@@ -262,7 +263,7 @@ DbRetVal TableImpl::insertTuple()
     }
 
     int addSize = 0;
-    if (numFlds_ > 31) 
+    if (numFlds_ < 31) 
     {
         addSize = 4; 
         *(int*)((char*)(tptr) + (length_-addSize)) = iNullInfo;
@@ -294,8 +295,8 @@ DbRetVal TableImpl::insertTuple()
             return ret;
         }
     }
-    (*trans)->appendUndoLog(sysDB_, InsertOperation, tptr, length_);
-    return OK;
+    ret = (*trans)->appendUndoLog(sysDB_, InsertOperation, tptr, length_);
+    return ret;
 }
 
 DbRetVal TableImpl::deleteTuple()
@@ -332,8 +333,8 @@ DbRetVal TableImpl::deleteTuple()
         }
     }
     ((Chunk*)chunkPtr_)->free(db_, curTuple_);
-    (*trans)->appendUndoLog(sysDB_, DeleteOperation, curTuple_, length_);
-    return OK;
+    ret = (*trans)->appendUndoLog(sysDB_, DeleteOperation, curTuple_, length_);
+    return ret;
 }
 
 DbRetVal TableImpl::updateTuple()
@@ -367,7 +368,8 @@ DbRetVal TableImpl::updateTuple()
             }
         }
     }
-    (*trans)->appendUndoLog(sysDB_, UpdateOperation, curTuple_, length_);
+    ret = (*trans)->appendUndoLog(sysDB_, UpdateOperation, curTuple_, length_);
+    if (ret != OK) return ret;
     return copyValuesFromBindBuffer(curTuple_);
 }
 
@@ -392,6 +394,7 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr)
     //Iterate through the bind list and copy the value here
     FieldIterator fIter = fldList_.getIterator();
     char *colPtr = (char*) tuplePtr;
+    int fldpos=1;
     while (fIter.hasElement())
     {
         FieldDef def = fIter.nextElement();
@@ -403,23 +406,33 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr)
                     strcpy((char*)colPtr, (char*)def.bindVal_);
                     *(((char*)colPtr) + (def.length_-1)) = '\0';
                 }
+                else if (!def.isNull_)  setNullBit(fldpos);
                 colPtr = colPtr + os::align(def.length_);
                 break;
             case typeBinary:
                 if (NULL != def.bindVal_)
                     os::memcpy((char*)colPtr, (char*)def.bindVal_, def.length_);
+                else if (!def.isNull_)  setNullBit(fldpos);
                 colPtr = colPtr + os::align(def.length_);
                 break;
             default:
                 if (NULL != def.bindVal_)
                     AllDataType::copyVal(colPtr, def.bindVal_, def.type_);
+                else { if (!def.isNull_)  setNullBit(fldpos); }
                 colPtr = colPtr + os::align(AllDataType::size(def.type_));
                 break;
         }
+        fldpos++;
     }
     return OK;
 }
-
+void TableImpl::setNullBit(int fldpos)
+{
+    if (isIntUsedForNULL) 
+        SETBIT(iNullInfo, fldpos);
+    else
+        cNullInfo[fldpos-1] = 1;
+}
 DbRetVal TableImpl::copyValuesToBindBuffer(void *tuplePtr)
 {
     //Iterate through the bind list and copy the value here
@@ -457,7 +470,6 @@ DbRetVal TableImpl::insertIndexNode(Transaction *tr, void *indexPtr, IndexInfo *
     DbRetVal ret = OK;
     printDebug(DM_Table, "Inside insertIndexNode type %d", iptr->indexType_);
     Index* idx = Index::getIndex(iptr->indexType_);
-    if (idx == NULL) printf("It is here :PRABA\n");
     ret = idx->insert(this, tr, indexPtr, info, tuple);
     return ret;
 }

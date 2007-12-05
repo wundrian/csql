@@ -200,10 +200,15 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         BucketList list(head);
         list.insert((Chunk*)iptr->hashNodeChunk_, tbl->db_, keyPtr, tuple);
     }
-    tr->appendLogicalUndoLog(tbl->sysDB_, InsertHashIndexOperation,
+    DbRetVal rc = tr->appendLogicalUndoLog(tbl->sysDB_, InsertHashIndexOperation,
                                 tuple, sizeof(void*), indexPtr);
+    if (rc !=OK)
+    {
+        //TODO::remove it from the bucketlist
+    }
+
     bucket->mutex_.releaseLock();
-    return OK;
+    return rc;
 }
 
 
@@ -245,11 +250,14 @@ DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
        printDebug(DM_HashIndex, "Removing hash index node from head with only none node"); 
        bucket1->bucketList_ = 0; 
     }
-    tr->appendLogicalUndoLog(tbl->sysDB_, DeleteHashIndexOperation,
+    rc =tr->appendLogicalUndoLog(tbl->sysDB_, DeleteHashIndexOperation,
                                 tuple, sizeof(void*), indexPtr);
+    if (rc !=OK)
+    {
+        //TODO::add it back to the bucketlist
+    }
     bucket1->mutex_.releaseLock();
-
-    return OK;
+    return rc;
 }
 
 //TODO::composite keys are not supported currently
@@ -332,10 +340,15 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         printError(ErrSysInternal,"Update: Bucket list is null");
         return ErrSysInternal;
     }
-    tr->appendLogicalUndoLog(tbl->sysDB_, DeleteHashIndexOperation,
+    DbRetVal rc = tr->appendLogicalUndoLog(tbl->sysDB_, DeleteHashIndexOperation,
                                 tuple, sizeof(void*), indexPtr);
-
- 
+    if (rc !=OK) 
+    { 
+        //TODO::add it back to the bucket list
+        bucket1->mutex_.releaseLock();
+        bucket->mutex_.releaseLock();
+        return rc; 
+    }
     HashIndexNode *head2 = (HashIndexNode*) bucket1->bucketList_;
     //Note:: the tuple will be in the same address location
     //so not changing the keyptr and tuple during append
@@ -356,9 +369,14 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         printDebug(DM_HashIndex, "Updating hash index node: Adding node to list with head %x", head2);
         list2.insert((Chunk*)iptr->hashNodeChunk_, tbl->db_, keyPtr, tuple);
     }
-    tr->appendLogicalUndoLog(tbl->sysDB_, InsertHashIndexOperation,
+    rc = tr->appendLogicalUndoLog(tbl->sysDB_, InsertHashIndexOperation,
                                 tuple, sizeof(void*), indexPtr);
+    if (rc !=OK)
+    {
+        //TODO::revert back the changes:delete and add the node + remove the logical undo log 
+        //of the  DeleteHashIndexOperation
+    } 
     bucket1->mutex_.releaseLock();
     bucket->mutex_.releaseLock();
-    return OK;
+    return rc;
 }

@@ -2,11 +2,11 @@
 int main()
 {
     Connection conn;
-    DbRetVal rv = conn.open("praba", "manager");
+    DbRetVal rv = conn.open("root", "manager");
     if (rv != OK) return 1;
 
     //checking whether it returns already connected error 
-    rv = conn.open("praba", "manager");
+    rv = conn.open("root", "manager");
     if (rv == OK) return 2;
 
     rv = conn.close();

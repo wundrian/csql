@@ -1,0 +1,30 @@
+Table created
+Total Tuples inserted is 10
+Total Tuples selected is 10
+Before commit
+<TransactionTable>
+<TransactionInfo>
+<UndoLogs>
+  <TotalPages> 1 </TotalPages>
+</TotalNodes> 0 </TotalNodes>
+</UndoLogs>
+<TransHasList>
+  <TotalPages> 1 </TotalPages>
+</TotalNodes> 0 </TotalNodes>
+</TransHasList>
+</TransactionInfo>
+  <UsedSlots> 1 </UsedSlots>
+  <FreeSlots> 99 </FreeSlots>
+  <UndoLogs>
+    <TotalNodes> 0 </TotalNodes>
+  </UndoLogs>
+</TransactionTable>
+After commit
+<TransactionTable>
+  <UsedSlots> 0 </UsedSlots>
+  <FreeSlots> 100 </FreeSlots>
+  <UndoLogs>
+    <TotalNodes> 0 </TotalNodes>
+  </UndoLogs>
+</TransactionTable>
+Table Dropped

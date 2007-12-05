@@ -24,7 +24,7 @@ int main()
 {
 
     Connection conn;
-    DbRetVal rv = conn.open("praba", "manager");
+    DbRetVal rv = conn.open("root", "manager");
     if (rv != OK)
     {
        printf("Error during connection %d\n", rv);

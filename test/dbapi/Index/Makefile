@@ -26,6 +26,8 @@ TARGETS = \
         test002 \
         test004 \
         test005 \
+        test006 \
+        test007 \
         test003
        
 
@@ -42,6 +44,10 @@ test003: uniqueindex3.c
 test004: twoindex1.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test005: twoindex2.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test006: dupindex1.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test007: dupindex2.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 
 clean:

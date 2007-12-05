@@ -9,7 +9,7 @@ int main()
        return 1;
     }
     printf("wrong username test passed Return value %d \n", rv);
-    rv = conn.open("praba", "wrongpasswd");
+    rv = conn.open("root", "wrongpasswd");
     if (rv == OK)
     {
        conn.close();

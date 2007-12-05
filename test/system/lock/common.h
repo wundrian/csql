@@ -76,6 +76,7 @@ int selectTuple(DatabaseManager *dbMgr, Connection &conn, char *tblname, int cou
         if (rv != OK) break;
         tuple = (char*)table->fetch() ;
         if (tuple == NULL) break;
+        table->close();
     }
     printf("Total Tuples selected is %d\n", i);
     dbMgr->closeTable(table);
@@ -110,6 +111,7 @@ int updateTuple(DatabaseManager *dbMgr, Connection &conn, char *tblname, int cou
         id2 = 1000 + i;
         rv = table->updateTuple();
         if (rv != OK) break;
+        table->close();
     }
     printf("Total Tuples updated is %d\n", i);
     dbMgr->closeTable(table);
@@ -140,6 +142,7 @@ int deleteTuple(DatabaseManager *dbMgr, Connection &conn, char *tblname, int cou
         if (tuple == NULL) break;
         rv = table->deleteTuple();
         if (rv != OK) break;
+        table->close();
     }
     printf("Total Tuples deleted is %d\n", i);
     dbMgr->closeTable(table);

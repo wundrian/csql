@@ -23,7 +23,7 @@ then
 fi
 
 echo "Case 1: -d option with no transactions"
-$CSQL_INSTALL_ROOT/bin/catalog -u praba -p manager -D trans
+$CSQL_INSTALL_ROOT/bin/catalog -u root -p manager -D trans
 if [ $? -ne 0 ]
 then
    exit 1;
@@ -42,7 +42,7 @@ do
   fi
 done
 echo "Case 2: -d option after 120 commits"
-$CSQL_INSTALL_ROOT/bin/catalog -u praba -p manager -D trans
+$CSQL_INSTALL_ROOT/bin/catalog -u root -p manager -D trans
 if [ $? -ne 0 ]
 then
    exit 1;

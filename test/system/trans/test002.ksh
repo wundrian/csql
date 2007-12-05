@@ -3,7 +3,7 @@
 # check used and free transacation slots in transaction table
 # create table
 # for i = 1 to 120
-#    insert 1 tuple in 1 transaction and commit
+#    insert 1 tuple in 1 transaction and abort
 # end for
 # check used and free transacation slots in transaction table
 
@@ -23,7 +23,7 @@ then
 fi
 
 echo "Case 1: -d option with no transactions"
-$CSQL_INSTALL_ROOT/bin/catalog -u praba -p manager -D trans
+$CSQL_INSTALL_ROOT/bin/catalog -u root -p manager -D trans
 if [ $? -ne 0 ]
 then
    exit 1;
@@ -41,8 +41,8 @@ do
     exit 100;
   fi
 done
-echo "Case 2: -d option after 120 commits"
-$CSQL_INSTALL_ROOT/bin/catalog -u praba -p manager -D trans
+echo "Case 2: -d option after 120 aborts"
+$CSQL_INSTALL_ROOT/bin/catalog -u root -p manager -D trans
 if [ $? -ne 0 ]
 then
    exit 1;

@@ -43,13 +43,13 @@ int main(int argc, char **argv)
     printf("%s %s %s", username, password, filename);
     if (username[0] == '\0' )
     {
-        strcpy(username, "praba");
+        strcpy(username, "root");
         strcpy(password, "manager");
     }
     
     DbRetVal rv = OK;
     conn = new SqlConnection();
-    conn->connect("praba", "manager");
+    conn->connect("root", "manager");
     stmt = new SqlStatement();
     stmt->setConnection(conn);
     conn->beginTrans();

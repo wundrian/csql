@@ -10,7 +10,7 @@ SYSLIBS=-ldl -lnsl -lsocket  -lposix4
 else
 ifeq ($(OSNAME), Linux)
 CPlus = g++
-CPlusFlags = -O2 -w
+CPlusFlags = -g -w
 SYSLIBS= -rdynamic -lrt -lpthread -lcrypt
 else
 PlatForm=notsupported
@@ -27,7 +27,11 @@ TARGETS = \
         test002 \
         test003 \
         test004 \
-        test005
+        test005 \
+        test006 \
+        test010 \
+        test020 \
+        test021
        
 
 ifeq ($(PlatForm), supported)
@@ -43,6 +47,14 @@ test003: inserttest3.c
 test004: insertnulltest1.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test005: insertnulltest2.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test006: insertnulltest3.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test010: duptable1.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test020: bindtest1.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test021: bindtest2.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 
 clean:

@@ -6,7 +6,7 @@
 int main()
 {
    Connection conn;
-   DbRetVal rv=conn.open("praba","manager");
+   DbRetVal rv=conn.open("root","manager");
    if(rv!=OK)
    {
      return 1;
@@ -16,7 +16,7 @@ int main()
    {
      return 2; 
    }
-   rv=conn.open("praba","manager");
+   rv=conn.open("root","manager");
    if(rv!=OK)
    {
      return 3;

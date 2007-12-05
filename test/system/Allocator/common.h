@@ -83,6 +83,7 @@ int deleteTuple(DatabaseManager *dbMgr, Connection &conn, char *tblname, int cou
         if (tuple == NULL) break;
         rv = table->deleteTuple();
         if (rv != OK) break;
+        table->close();
     }
     conn.commit();
     printf("Total Tuples deleted is %d\n", i);

@@ -12,7 +12,7 @@ int main()
 {
 
     Connection conn;
-    DbRetVal rv = conn.open("praba", "manager");
+    DbRetVal rv = conn.open("root", "manager");
     if (rv != OK) { printf("Error during connection %d\n", rv); return 1; }
     DatabaseManager *dbMgr = conn.getDatabaseManager();
     int ret = createTable(dbMgr);
@@ -42,7 +42,7 @@ int main()
 void* runTest1(void *message)
 {
     Connection conn;
-    DbRetVal rv = conn.open("praba", "manager");
+    DbRetVal rv = conn.open("root", "manager");
     if (rv != OK) { printf("Error during connection %d\n", rv); return NULL; }
     DatabaseManager *dbMgr = conn.getDatabaseManager();
     if (dbMgr == NULL) { printf("Auth failed\n"); return NULL;}
@@ -68,7 +68,7 @@ void* runTest1(void *message)
 void* runTest2(void *message)
 {
     Connection conn;
-    DbRetVal rv = conn.open("praba", "manager");
+    DbRetVal rv = conn.open("root", "manager");
     if (rv != OK) { printf("Error during connection %d\n", rv); return NULL; }
     DatabaseManager *dbMgr = conn.getDatabaseManager();
     if (dbMgr == NULL) { printf("Auth failed\n"); return NULL;}

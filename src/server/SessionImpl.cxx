@@ -78,7 +78,7 @@ DbRetVal SessionImpl::initSystemDatabase()
     db->releaseDatabaseMutex();
     printf("sysdb size %ld dbsize %ld\n", Conf::config.getMaxSysDbSize(), Conf::config.getMaxDbSize());
     //create user database
-    rv = dbMgr->createDatabase("praba", Conf::config.getMaxDbSize());
+    rv = dbMgr->createDatabase("userdb", Conf::config.getMaxDbSize());
     if (OK != rv) return rv;
     return OK;
 }
@@ -88,7 +88,7 @@ DbRetVal SessionImpl::destroySystemDatabase()
     DbRetVal rv = OK;
     rv = dbMgr->deleteDatabase(SYSTEMDB);
     if (OK != rv) return rv;
-    rv = dbMgr->deleteDatabase("praba");
+    rv = dbMgr->deleteDatabase("userdb");
     if (OK != rv) return rv;
     delete dbMgr;
     dbMgr = NULL;
@@ -134,7 +134,7 @@ DbRetVal SessionImpl::open(const char *username, const char *password)
         delete dbMgr; dbMgr = NULL;
         return rv;
     }
-    rv = dbMgr->openDatabase("praba");
+    rv = dbMgr->openDatabase("userdb");
     if (OK != rv) {
         dbMgr->closeSystemDatabase();
         delete dbMgr; dbMgr = NULL;

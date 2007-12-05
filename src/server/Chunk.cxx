@@ -45,6 +45,19 @@ void* Chunk::allocateForLargeDataSize(Database *db)
         printError(ErrLockTimeOut,"Unable to acquire alloc database Mutex");
         return NULL;
     }
+
+    //check whether we have space in curPage 
+    if (pageInfo->hasFreeSpace_ == 1)
+    {
+        char *data = ((char*)curPage_) + sizeof(PageInfo);
+        pageInfo->hasFreeSpace_ =0;
+        *((int*)data) = 1;
+        db->releaseAllocDatabaseMutex();
+        return data + sizeof(int);
+    }
+
+
+    //no space in curpage , get new page from database 
     pageInfo = (PageInfo*)db->getFreePage(allocSize_);
     if (NULL == pageInfo)
     {
@@ -118,6 +131,7 @@ void* Chunk::allocateFromNewPage(Database *db)
     Page *page = db->getFreePage();
     if (page == NULL)
     {
+        db->releaseAllocDatabaseMutex();
         return NULL;
     }
     printDebug(DM_Alloc, "ChunkID:%d Normal Data Item newPage:%x",
@@ -202,7 +216,7 @@ void* Chunk::allocate(Database *db, DbRetVal *status)
             data = (char*) allocateFromFirstPage(db, noOfDataNodes);
             if (data == NULL)
             {
-                printError(ErrNoMemory, "No memory in any of the pages:Increase db size\n");
+                printError(ErrNoMemory, "No memory in any of the pages:Increase db size");
                 if (status != NULL) *status = ErrNoMemory;
             }
         }
@@ -267,8 +281,6 @@ void* Chunk::allocFromNewPageForVarSize(Database *db, size_t size)
     {
         void *data = varSizeFirstFitAllocate(size);
         db->releaseAllocDatabaseMutex();
-        if (NULL == data)
-            printError(ErrNoMemory,"Logical Error::should never happen");
         return data;
     }
     db->releaseAllocDatabaseMutex();
@@ -353,6 +365,10 @@ void* Chunk::allocate(Database *db, size_t size, DbRetVal *status)
             //No available spaces in the current page.
             //allocate new page
             data= allocFromNewPageForVarSize(db, alignedSize);
+            if (NULL == data) {
+                printError(ErrNoMemory, "No memory in any of the pages:Increase db size");
+                if (status != NULL) *status = ErrNoMemory;
+            }
         }
     }
     releaseChunkMutex();

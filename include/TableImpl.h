@@ -94,12 +94,15 @@ class TableImpl:public Table
     bool isIntUsedForNULL;
     int iNullInfo;
     char *cNullInfo;
+    int iNotNullInfo;
+    char *cNotNullInfo;
 
     private:
 
     //copy Values from binded buffer to tuple pointed by arg
     DbRetVal copyValuesFromBindBuffer(void *tuple);
     DbRetVal copyValuesToBindBuffer(void *tuple);
+    void setNullBit(int fldpos);
 
     DbRetVal insertIndexNode(Transaction *trans, void *indexPtr, IndexInfo *info, void *tuple);
     DbRetVal updateIndexNode(Transaction *trans, void *indexPtr, IndexInfo *info, void *tuple);
@@ -113,8 +116,10 @@ class TableImpl:public Table
 
     public:
     TableImpl() { db_ = NULL; chunkPtr_ = NULL; iter = NULL;
-        idxInfo = NULL; indexPtr_ = NULL; scanType_ = unknownScan; pred_ = NULL; useIndex_ = -1,
-        iNullInfo = 0; cNullInfo = NULL; isIntUsedForNULL = true; isPlanCreated = false;}
+        idxInfo = NULL; indexPtr_ = NULL; scanType_ = unknownScan; pred_ = NULL; useIndex_ = -1;
+        iNullInfo = 0; cNullInfo = NULL; isIntUsedForNULL = true; 
+        iNotNullInfo = 0; cNotNullInfo = NULL;
+        isPlanCreated = false;}
     ~TableImpl();
 
     void setDB(Database *db) { db_ = db; }

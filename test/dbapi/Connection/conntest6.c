@@ -5,7 +5,7 @@
 int main()
 {
    Connection conn;
-   DbRetVal rv=conn.open("praba","manager");
+   DbRetVal rv=conn.open("root","manager");
    if(rv!=OK) return 1;
    rv=conn.rollback();
    if(rv!=OK)

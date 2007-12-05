@@ -2,7 +2,7 @@
 int main()
 {
     Connection conn;
-    DbRetVal rv = conn.open("praba", "manager");
+    DbRetVal rv = conn.open("root", "manager");
     if (rv != OK) return 1;
     DatabaseManager *dbMgr = conn.getDatabaseManager();
     if (dbMgr == NULL) { printf("Auth failed\n"); return 2;}
@@ -26,17 +26,19 @@ int main()
     int id1 = 0, id2 = 5;
     char name[20] = "PRAVEEN";
     table->bindFld("f1", &id1);
-    //table->bindFld("f2", &id2);
+    table->bindFld("f2", &id2);
     table->bindFld("f3", name);
     int icount =0;
-    for (int i = 0 ; i < 10 ; i++)
+    for (int i = 0 ; i < 5 ; i++)
     {
         conn.startTransaction();
         id1= i;
-        //if (i%2 == 0) table->markFldNull(2);
+        if (i%2 == 0) table->markFldNull(2);
+        if (i%2 == 0) table->markFldNull(3);
         rv = table->insertTuple();
         if (rv != OK) break;
-        //if (i%2 == 0) table->clearFldNull(2);
+        if (i%2 == 0) table->clearFldNull(2);
+        if (i%2 == 0) table->clearFldNull(3);
         icount++;
         conn.commit();
 
@@ -56,7 +58,6 @@ int main()
     {
         tuple = (char*)table->fetch() ;
         if (tuple == NULL) {break;}
-        printf("Tuple %d\n", *(int*)((char*)tuple + 4));
         if (table->isFldNull(1)) printf("Column 1 is null\n");
         if (table->isFldNull(2)) printf("Column 2 is null\n");
         if (table->isFldNull(3)) printf("Column 3 is null\n");

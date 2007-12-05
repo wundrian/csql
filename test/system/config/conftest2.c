@@ -14,7 +14,7 @@ int main()
     os::setenv("CSQL_CONFIG_FILE", conf);
     char *val = os::getenv("CSQL_CONFIG_FILE");
     printf("CSQL_CONFIG_FILE= %s\n", val);
-    rv = conn.open("praba", "manager");
+    rv = conn.open("root", "manager");
     if (rv != OK) return 1;
     Conf::config.print();
     conn.close();

@@ -5,14 +5,14 @@
 int main()
 {
     Connection conn;
-    DbRetVal rv1 = conn.open("praba", "manager");
+    DbRetVal rv1 = conn.open("root", "manager");
     if (rv1!= OK)
     {
        printf("Unable to open the database");
        return 1;
     }
 
-    DbRetVal rv2 = conn.open("praba", "manager");
+    DbRetVal rv2 = conn.open("root", "manager");
     if(rv2==OK)
     {
       printf("Test failed");

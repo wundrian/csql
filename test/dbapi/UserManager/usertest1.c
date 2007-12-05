@@ -10,7 +10,7 @@ int main()
     printf("connection open failed \n");
 
     //open with dba to create new user
-    rv = conn.open("praba", "manager");
+    rv = conn.open("root", "manager");
     if (rv != OK) return 2;
     UserManager *uMgr = conn.getUserManager();
     uMgr->createUser("user1", "passwd");
@@ -30,7 +30,7 @@ int main()
     if (rv == OK) return 6;
 
     //open with dba to delete the newly created user
-    rv = conn.open("praba", "manager");
+    rv = conn.open("root", "manager");
     if (rv != OK) return 7;
     uMgr = conn.getUserManager();
     uMgr->deleteUser("user1");

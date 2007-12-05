@@ -1,8 +1,10 @@
+//TestCase: We need to start new server to test this.
+//the default db size set is not enough to test this
 #include<CSql.h>
 int main()
 {
     Connection conn;
-    DbRetVal rv = conn.open("praba", "manager");
+    DbRetVal rv = conn.open("root", "manager");
     if (rv != OK) return 1;
     DatabaseManager *dbMgr = conn.getDatabaseManager();
     if (dbMgr == NULL) { printf("Auth failed\n"); return 2;}
@@ -34,6 +36,7 @@ int main()
             rv = table->insertTuple();
             if (rv != OK) break;
         }
+        if (rv != OK) break;
         conn.commit();
     }
     printf("Tuples inserted %d\n", icount);

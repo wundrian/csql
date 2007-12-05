@@ -48,7 +48,7 @@ int printError1(DbRetVal val, char* fname, int lno, char *format, ...)
   os::write(2, mesgBuf, strlen(mesgBuf));
   strcpy(mesgBuf,"\n");
   os::write(2, mesgBuf, strlen(mesgBuf));
-   //3->stderr
+   //2->stderr
   return 0;
 }
 
