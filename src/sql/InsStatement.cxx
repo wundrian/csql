@@ -209,9 +209,17 @@ DbRetVal InsStatement::resolve()
         printError(ErrNotExists, "Unable to open the table:Table not exists");
         return ErrNotExists;
     }
+
+    List fieldNameList;
+    //check whether filed list is specified
+    if( 0 == parsedData->getFieldNameList().size() )
+        fieldNameList = table->getFieldNameList();
+    else
+        fieldNameList = parsedData->getFieldNameList();
+
     //check whether the total number of field name in the list is same as the total 
     //number of values provided in the values list.
-    if (parsedData->getFieldNameList().size() != 
+    if ( fieldNameList.size() != 
                                parsedData->getFieldValueList().size())
     {
         dbMgr->closeTable(table);
@@ -220,7 +228,7 @@ DbRetVal InsStatement::resolve()
     }
 
     //get the fieldname list and validate field names
-    ListIterator iter = parsedData->getFieldNameList().getIterator();
+    ListIterator iter = fieldNameList.getIterator();
     ListIterator valIter = parsedData->getFieldValueList().getIterator();
     FieldName *name; FieldValue *value;
     FieldInfo *fInfo = new FieldInfo();
