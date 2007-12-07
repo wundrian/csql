@@ -1,28 +1,31 @@
 <?xml version = '1.0' encoding = 'UTF-8'?>
 <!DOCTYPE KDevPrjSession>
 <KDevPrjSession>
- <DocsAndViews NumberOfDocuments="7" >
-  <Doc0 NumberOfViews="1" URL="file:///home1/praba/csql/latest/testbld/csql/src/server/DatabaseManagerImpl.cxx" >
-   <View0 line="606" Type="Source" />
+ <DocsAndViews NumberOfDocuments="8" >
+  <Doc0 NumberOfViews="1" URL="file:///home1/praba/csql/csql/src/sql/dmlyacc.yxx" >
+   <View0 line="241" Type="Source" />
   </Doc0>
-  <Doc1 NumberOfViews="1" URL="file:///home1/praba/csql/latest/testbld/csql/src/server/TableImpl.cxx" >
-   <View0 line="391" Type="Source" />
+  <Doc1 NumberOfViews="1" URL="file:///home1/praba/csql/csql/src/sql/DdlStatement.cxx" >
+   <View0 line="77" Type="Source" />
   </Doc1>
-  <Doc2 NumberOfViews="1" URL="file:///home1/praba/csql/latest/testbld/csql/include/Table.h" >
-   <View0 line="0" Type="Source" />
+  <Doc2 NumberOfViews="1" URL="file:///home1/praba/csql/csql/src/sql/Parser.h" >
+   <View0 line="154" Type="Source" />
   </Doc2>
-  <Doc3 NumberOfViews="1" URL="file:///home1/praba/csql/latest/testbld/csql/src/server/TableDef.cxx" >
-   <View0 line="58" Type="Source" />
+  <Doc3 NumberOfViews="1" URL="file:///home1/praba/csql/csql/src/sql/SelStatement.cxx" >
+   <View0 line="0" Type="Source" />
   </Doc3>
-  <Doc4 NumberOfViews="1" URL="file:///home1/praba/csql/latest/testbld/csql/include/TableImpl.h" >
-   <View0 line="104" Type="Source" />
+  <Doc4 NumberOfViews="1" URL="file:///home1/praba/csql/csql/src/server/TableDef.cxx" >
+   <View0 line="24" Type="Source" />
   </Doc4>
-  <Doc5 NumberOfViews="1" URL="file:///home1/praba/csql/latest/testbld/csql/include/CatalogTables.h" >
-   <View0 line="108" Type="Source" />
+  <Doc5 NumberOfViews="1" URL="file:///home1/praba/csql/csql/include/Info.h" >
+   <View0 line="77" Type="Source" />
   </Doc5>
-  <Doc6 NumberOfViews="1" URL="file:///home1/praba/csql/latest/testbld/csql/src/server/CatalogTables.cxx" >
-   <View0 line="176" Type="Source" />
+  <Doc6 NumberOfViews="1" URL="file:///home1/praba/csql/csql/src/sql/InsStatement.cxx" >
+   <View0 line="0" Type="Source" />
   </Doc6>
+  <Doc7 NumberOfViews="1" URL="file:///home1/praba/csql/csql/src/sql/ParsedData.cxx" >
+   <View0 line="77" Type="Source" />
+  </Doc7>
  </DocsAndViews>
  <pluginList>
   <kdevdebugger>
@@ -41,6 +44,12 @@
     </bookmark>
     <bookmark url="/home1/praba/csql/csql/src/server/DatabaseManagerImpl.cxx" >
      <mark line="519" />
+    </bookmark>
+    <bookmark url="/home1/praba/csql/csql/src/sql/dmllex.lxx" >
+     <mark line="129" />
+    </bookmark>
+    <bookmark url="/home1/praba/csql/csql/src/sql/dmlyacc.yxx" >
+     <mark line="275" />
     </bookmark>
     <bookmark url="/home1/praba/csql/latest/testbld/csql/src/server/Chunk.cxx" >
      <mark line="81" />

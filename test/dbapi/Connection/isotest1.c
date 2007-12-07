@@ -69,7 +69,7 @@ void* runTest2(void *message)
 
     int *retval = new int();
     *retval = 0;
-
+    ::sleep(2);
     rv = insert(dbMgr, 100, false);
     if (rv == OK) { printf("Test Failed:second thread inserted\n"); *retval = 1; }
 

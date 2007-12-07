@@ -1,7 +1,7 @@
 #!/bin/sh
 # TestCase:
 # check pages used(normal and merged) and chunks used for user database
-# create table t1 with two fields and index on first field
+# create table t1 with two fields 
 # check pages used(normal and merged) and chunks used for user database
 # drop table t1
 # check pages used(normal and merged) and chunks used for user database

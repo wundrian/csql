@@ -10,7 +10,7 @@ int main()
     if (dbMgr == NULL) { printf("Auth failed\n"); return 2;}
    
     TableDef tabDef;
-    tabDef.addField("f1", typeInt, 0, NULL, true, true);
+    tabDef.addField("f1", typeInt, 0, NULL, true);
     tabDef.addField("f2", typeString, 196);
     rv = dbMgr->createTable("t1", tabDef);
     if (rv != OK) { printf("Table creation failed\n"); conn.close(); return 3; }
@@ -29,10 +29,10 @@ int main()
     table->bindFld("f1", &id1);
     table->bindFld("f2", &id2);
     int icount =0;
-    for (int i = 0 ; i < 20 ; i++)
+    for (int i = 0 ; i < 10 ; i++)
     {
         conn.startTransaction();
-        for (int j = 0 ; j < 1000 ; j++) {
+        for (int j = 0 ; j < 10000 ; j++) {
             id1= icount++;
             rv = table->insertTuple();
             if (rv != OK) break;

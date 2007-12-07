@@ -14,7 +14,7 @@ int main()
     DatabaseManager *dbMgr = conn.getDatabaseManager();
     if (dbMgr == NULL) { printf("Auth failed\n"); return -1;}
     TableDef tabDef;
-    tabDef.addField("f1", typeString, 50, NULL, true, true);
+    tabDef.addField("f1", typeString, 50, NULL, true);
     tabDef.addField("f2", typeString, 950);
     rv = dbMgr->createTable("t1", tabDef);
     if (rv != OK) { printf("Table creation failed\n"); return -1; }

@@ -14,7 +14,7 @@ int main()
     if ( createIndex(dbMgr, false) != 0 ) { dbMgr->dropTable("t1");conn.close(); return 4;
  }
     int inscount =  insertTupleWithSameValue(dbMgr, conn);
-    if (inscount != 1 ) { dbMgr->dropTable("t1"); conn.close(); return 5; }
+    if (inscount != 10 ) { dbMgr->dropTable("t1"); conn.close(); return 5; }
     dbMgr->dropTable("t1");
     conn.close();
     return 0;

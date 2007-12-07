@@ -4,7 +4,7 @@ int main()
 {
     DbRetVal rv = OK; 
     SqlConnection *con = new SqlConnection();
-    con->connect("praba", "manager");
+    con->connect("root", "manager");
     SqlStatement *stmt = new SqlStatement();
     stmt->setConnection(con);
     char statement[1024];

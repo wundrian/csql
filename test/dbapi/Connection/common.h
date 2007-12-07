@@ -2,7 +2,7 @@
 DbRetVal createTable(DatabaseManager *dbMgr)
 {
     TableDef tabDef;
-    tabDef.addField("f1", typeInt, 0, NULL, true, true);
+    tabDef.addField("f1", typeInt, 0, NULL, true);
     tabDef.addField("f2", typeString, 196);
     DbRetVal rv = dbMgr->createTable("t1", tabDef);
     if (rv != OK) { printf("Table creation failed\n"); return ErrUnknown; }
@@ -10,6 +10,8 @@ DbRetVal createTable(DatabaseManager *dbMgr)
     HashIndexInitInfo *idxInfo = new HashIndexInitInfo();
     strcpy(idxInfo->tableName, "t1");
     idxInfo->list.append("f1");
+    idxInfo->isUnique = true;
+    idxInfo->isPrimary = true;
     idxInfo->indType = hashIndex;
     rv = dbMgr->createIndex("indx1", idxInfo);
     if (rv != OK) { printf("Index creation failed\n"); return ErrUnknown; }

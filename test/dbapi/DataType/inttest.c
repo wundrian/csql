@@ -31,7 +31,7 @@ int main()
     DatabaseManager *dbMgr = conn.getDatabaseManager();
     if (dbMgr == NULL) { printf("Auth failed\n"); return 2;}
     TableDef tabDef;
-    tabDef.addField("f1", typeInt, 0, NULL, true, true );
+    tabDef.addField("f1", typeInt, 0, NULL, true);
     tabDef.addField("f2", typeString, 196);
     rv = dbMgr->createTable("t1", tabDef);
     if (rv != OK) { printf("Table creation failed\n"); return 3; }
@@ -41,6 +41,8 @@ int main()
     strcpy(idxInfo->tableName, "t1");
     idxInfo->list.append("f1");
     idxInfo->indType = hashIndex;
+    idxInfo->isUnique = true;
+    idxInfo->isPrimary = true;
     rv = dbMgr->createIndex("indx1", idxInfo);
     if (rv != OK) { printf("Index creation failed\n"); return -1; }
     printf("Index created\n");

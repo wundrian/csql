@@ -17,7 +17,7 @@ int createIndex(DatabaseManager *dbMgr, bool unique)
 int createTable(DatabaseManager *dbMgr)
 {
     TableDef tabDef;
-    tabDef.addField("f1", typeInt, 0, NULL, true, true);
+    tabDef.addField("f1", typeInt, 0, NULL, true);
     tabDef.addField("f2", typeInt);
     tabDef.addField("f3", typeString, 20);
     DbRetVal rv = dbMgr->createTable("t1", tabDef);

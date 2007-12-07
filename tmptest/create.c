@@ -18,7 +18,7 @@ int main()
 {
     //connect to the database first
     Connection conn;
-    DbRetVal rv = conn.open("praba", "manager");
+    DbRetVal rv = conn.open("root", "manager");
     if (rv != OK)
     {
        printf("Error during connection %d\n", rv);
@@ -46,7 +46,6 @@ int main()
     if (rv != OK) { printf("Index creation failed\n"); return -1; }
     printf("Index created\n");
 
-    rv = dbMgr->createIndex("indx2", idxInfo);
     conn.close();
     return 0;
 }

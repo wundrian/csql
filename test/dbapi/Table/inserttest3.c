@@ -10,7 +10,7 @@ int main()
     if (dbMgr == NULL) { printf("Auth failed\n"); return 2;}
    
     TableDef tabDef;
-    tabDef.addField("f1", typeInt, 0, NULL, true, true);
+    tabDef.addField("f1", typeInt, 0, NULL, true);
     tabDef.addField("f2", typeInt);
     rv = dbMgr->createTable("t1", tabDef);
     if (rv != OK) { printf("Table creation failed\n"); conn.close(); return 3; }

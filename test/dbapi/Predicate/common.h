@@ -5,6 +5,8 @@ DbRetVal createIndex(DatabaseManager *dbMgr, char *fldname, char *indname)
     strcpy(idxInfo->tableName, "t1");
     idxInfo->list.append(fldname);
     idxInfo->indType = hashIndex;
+    idxInfo->isUnique = true;
+    idxInfo->isPrimary = true;
     DbRetVal rv = dbMgr->createIndex(indname, idxInfo);
     if (rv != OK) { printf("Index creation failed\n"); return rv; }
     printf("Index created for %s\n", fldname);
@@ -13,7 +15,7 @@ DbRetVal createIndex(DatabaseManager *dbMgr, char *fldname, char *indname)
 DbRetVal createTable(DatabaseManager *dbMgr)
 {
     TableDef tabDef;
-    tabDef.addField("f1", typeInt, 0, NULL, true, true);
+    tabDef.addField("f1", typeInt, 0, NULL, true);
     tabDef.addField("f2", typeInt);
     tabDef.addField("f3", typeInt);
     tabDef.addField("f4", typeInt);

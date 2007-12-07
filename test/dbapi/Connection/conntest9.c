@@ -52,7 +52,7 @@ void* print_message_function(void *ptr)
 
 
     TableDef tabDef;
-    tabDef.addField("f1", typeInt, 0, NULL, true, true);
+    tabDef.addField("f1", typeInt);
     tabDef.addField("f2", typeInt);
     rv = dbMgr->createTable(tblname, tabDef);
     if (rv != OK) { printf("Table creation failed\n"); return NULL; }

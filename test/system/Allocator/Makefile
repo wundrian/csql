@@ -24,7 +24,8 @@ LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsql
 TARGETS = \
          create createNoIndex drop \
          insert1 insert100 insert1000 delete1 delete100 delete1000 deleteAll \
-         dbsizelimit
+         test010 \
+         test025 test021 test022 test023 test024
        
 
 ifeq ($(PlatForm), supported)
@@ -51,7 +52,17 @@ delete100: delete100.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 deleteAll: deleteAll.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
-dbsizelimit: dbsizelimit.c
+test010: dbsizelimit.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test021: tuplesize1.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test022: tuplesize2.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test023: tuplesize3.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test024: tuplesize4.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test025: tuplesize5.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 clean:
 	rm -f $(TARGETS)

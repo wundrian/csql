@@ -28,6 +28,10 @@ TARGETS = \
         test005 \
         test006 \
         test007 \
+        test008 \
+        test009 \
+        test010 \
+        test011 \
         test003
        
 
@@ -48,6 +52,14 @@ test005: twoindex2.c
 test006: dupindex1.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test007: dupindex2.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test008: compositekeyindex1.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test009: createindexnotexist.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test010: createindexnofld.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test011: primarynonunique.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 
 clean:
