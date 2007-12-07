@@ -23,12 +23,33 @@ CreateTblStatement::CreateTblStatement()
 
 CreateTblStatement::~CreateTblStatement()
 {
-
+    tblDef.reset();
 }
 DbRetVal CreateTblStatement::execute(int &rowsAffected)
 {
     DbRetVal rv = OK;
     rv = dbMgr->createTable(tblName, tblDef);
+    if (rv != OK) return rv;
+    if (parsedData->getFieldNameList().size() > 0)
+    {
+        HashIndexInitInfo *idxInfo = new HashIndexInitInfo();
+        strcpy(idxInfo->tableName, tblName);
+        ListIterator iter = parsedData->getFieldNameList().getIterator();
+        FieldName *name = NULL;
+        while (iter.hasElement())
+        {
+            name = (FieldName*)iter.nextElement();
+            idxInfo->list.append(name->fldName);
+        }
+        idxInfo->indType = hashIndex;
+        idxInfo->isPrimary = true;
+        idxInfo->isUnique = true;
+ 
+        char indName[IDENTIFIER_LENGTH];
+        sprintf(indName, "%s_idx1_Primary", tblName);
+        rv = dbMgr->createIndex(indName, idxInfo);
+        delete idxInfo;
+    }
     return rv;
 }
 
@@ -45,13 +66,63 @@ DbRetVal CreateTblStatement::resolve()
        fDef = iter.nextElement();
        //TODO : need a new addField function which can take FieldDef as parameter.
        i = tblDef.addField(fDef.fldName_, fDef.type_, fDef.length_, 
-                        fDef.defaultValueBuf_,fDef.isNull_, fDef.isPrimary_  ); 
+                        fDef.defaultValueBuf_,fDef.isNull_);
        if( 0 != i )
        {
-          printf("Error while adding field \n");
+          printError(ErrUnknown, "Error while adding field");
+          rv = ErrUnknown;
           break;
        }
-    } 
-     
+    }
     return rv;
 }
+
+///////////////////////////////////////
+CreateIdxStatement::CreateIdxStatement()
+{
+    parsedData = NULL; 
+    dbMgr = NULL; 
+}
+
+CreateIdxStatement::~CreateIdxStatement()
+{
+
+}
+
+DbRetVal CreateIdxStatement::execute(int &rowsAffected)
+{
+    DbRetVal rv = OK;
+    if (parsedData->getFieldNameList().size() > 0)
+    {
+        HashIndexInitInfo *idxInfo = new HashIndexInitInfo();
+        strcpy(idxInfo->tableName, parsedData->getTableName());
+        ListIterator iter = parsedData->getFieldNameList().getIterator();
+        FieldName *name = NULL;
+        while (iter.hasElement())
+        {
+            name = (FieldName*)iter.nextElement();
+            idxInfo->list.append(name->fldName);
+        }
+        idxInfo->indType = parsedData->getIndexType();
+        idxInfo->isPrimary = parsedData->getPrimary();
+        idxInfo->isUnique = parsedData->getUnique();
+        rv = dbMgr->createIndex(parsedData->getIndexName(), idxInfo);
+        delete idxInfo;
+    }
+    return rv;
+}
+
+DbRetVal DropTblStatement::execute(int &rowsAffected)
+{
+    DbRetVal rv = OK;
+    rv = dbMgr->dropTable(parsedData->getTableName());
+    return rv;
+}
+
+DbRetVal DropIdxStatement::execute(int &rowsAffected)
+{
+    DbRetVal rv = OK;
+    rv = dbMgr->dropIndex(parsedData->getIndexName());
+    return rv;
+}
+

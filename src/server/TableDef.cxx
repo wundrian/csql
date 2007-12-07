@@ -20,13 +20,15 @@
 
 TableDef::~TableDef()
 {
+    reset();
+}
+void TableDef::reset()
+{
     fldList.removeAll();
     fldCount = 0;
 }
 int TableDef::addField(const char *name,  DataType type, size_t length,
-                 const void *defaultValue, bool isPrimary,
-                 bool notNull, bool unique)
-
+                 const void *defaultValue, bool notNull)
 {
     if (name == NULL) return (int)ErrBadArg;
     // The following code checks for duplicates
@@ -39,7 +41,6 @@ int TableDef::addField(const char *name,  DataType type, size_t length,
             return (int) ErrAlready;
         }
     }
-
     FieldDef fldDef;
     strcpy(fldDef.fldName_, name);
     fldDef.fldName_[IDENTIFIER_LENGTH] = '\0';
@@ -57,9 +58,6 @@ int TableDef::addField(const char *name,  DataType type, size_t length,
         os::memset(fldDef.defaultValueBuf_,0, DEFAULT_VALUE_BUF_LENGTH);
     }
     fldDef.isNull_ = notNull;
-    fldDef.isPrimary_ = isPrimary;
-    fldDef.isUnique_ = unique;
-    if (isPrimary) fldDef.isNull_ = fldDef.isUnique_ = true;
     switch(type)
     {
         case typeString :
@@ -73,7 +71,6 @@ int TableDef::addField(const char *name,  DataType type, size_t length,
     int ret = fldList.append(fldDef);
     if (0 == ret)  fldCount++;
     return ret;
-
 }
 
 int TableDef::dropField(const char *name)

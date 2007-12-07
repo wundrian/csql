@@ -29,7 +29,10 @@ enum StatementType
     InsertStatement,
     UpdateStatement,
     DeleteStatement,
-    CreateTableStatement
+    CreateTableStatement,
+    DropTableStatement,
+    CreateIndexStatement,
+    DropIndexStatement
 };
 
 struct FieldValue
@@ -72,9 +75,12 @@ class ParsedData
 {
     private:
     char tblName[IDENTIFIER_LENGTH];
+    char idxName[IDENTIFIER_LENGTH];
+
     StatementType stmtType;
   
     int paramCounter;
+
     //holds pointer to field names. used in insert to store field name list
     //and for projection list of select
     List fieldNameList;
@@ -100,11 +106,21 @@ class ParsedData
     //stores list of fields for CREATE TABLE
     FieldList creFldList;
 
+    //stores index information
+    bool isUnique;
+    bool isPrimary;
+    IndexType indexType;
+
     public:
-    ParsedData() { paramCounter = 0; stmtType = UnknownStatement; } 
+    ParsedData() { paramCounter = 0; stmtType = UnknownStatement; 
+                 isUnique = false; isPrimary = false; indexType = hashIndex;} 
     void setStmtType(StatementType type) { stmtType = type; }
     void setTableName(char *name) { strcpy(tblName, name); }
+    void setIndexName(char *name) { strcpy(idxName, name); }
+
     char* getTableName() { return tblName; }
+    char* getIndexName() { return idxName; }
+
     void insertValue(char *value);
     void** insertCondValueAndGetPtr(char *fName, char *value);
     void insertUpdateValue(char *fldName, char *value);
@@ -131,6 +147,13 @@ class ParsedData
     //void setFldDefaultValue -- will need two parametersers, check how u want to pass default value.
     void setFldNotNull(bool notNull);
 
+    void setUnique(bool unique){ isUnique = unique; }
+    void setPrimary(bool primary) { isPrimary = primary; }
+    void setIndexType (IndexType type) { indexType = type; }
+    IndexType getIndexType(){ return indexType; }
+    bool getUnique() { return isUnique; }
+    bool getPrimary() { return isPrimary; }
+
     void insertFldDef(); //check if fldDef needs to be a part of ParsedData 
     
     FieldList getCreFldList() { return creFldList; }
@@ -149,4 +172,3 @@ class ParsedData
 //finding out if fldDef needs to be part of parsedData, or can allocate memory and pass around
 //primary key
 //foreign key
-//Reset fldDef after storing it in list

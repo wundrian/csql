@@ -276,6 +276,7 @@ void* Chunk::allocFromNewPageForVarSize(Database *db, size_t size)
         printError(ErrLockTimeOut,"Unable to acquire alloc database Mutex");
         return NULL;
     }
+
     Page *newPage = db->getFreePage();
     if (NULL == newPage)
     {
@@ -284,6 +285,27 @@ void* Chunk::allocFromNewPageForVarSize(Database *db, size_t size)
         return data;
     }
     db->releaseAllocDatabaseMutex();
+
+/*
+//Do not remove the below code 
+//this will search from the firstPage for free slot first and then 
+//if it does not find, then it allocates new page.
+//Need to check performance before changing the algo
+void *vnode = varSizeFirstFitAllocate(size);
+if (vnode != NULL)
+{
+   db->releaseAllocDatabaseMutex();
+   return vnode;
+}
+Page *newPage = db->getFreePage();
+db->releaseAllocDatabaseMutex();
+
+    if (NULL == newPage)
+    {
+        return NULL;
+    }
+*/
+
 
     printDebug(DM_VarAlloc, "ChunkID:%d New Page: %x ", chunkID_, newPage);
     PageInfo *pInfo = (PageInfo*) newPage;

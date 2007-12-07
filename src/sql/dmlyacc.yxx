@@ -23,7 +23,7 @@ void yyerror(const char* Msg);
 %token <stringval> STAR
 %token <stringval> INSERT INTO VALUES
 %token <stringval> DELETE UPDATE SET NULL_VALUE
-%token <stringval> CREATE TABLE PRIMARY KEY DEFAULT
+%token <stringval> CREATE TABLE PRIMARY KEY DEFAULT INDEX ON HASH TREE UNIQUE DROP
 %token <stringval> INT_TYPE LONG_TYPE SHORT_TYPE DOUBLE_TYPE
 %token ';' ',' '(' ')'
 %type <stringval> ident field value 
@@ -192,8 +192,56 @@ ddl_statement: CREATE TABLE ident '(' create_defn_list ')' semicolon_opt
             parsedData->setTableName($3); 
             free($3);
         }
+        | CREATE INDEX ident ON ident '(' field_list ')' opt_constr_type opt_ind_type  semicolon_opt
+        {
+            parsedData->setStmtType(CreateIndexStatement);
+            parsedData->setIndexName($3); 
+            parsedData->setTableName($5); 
+            free($3);
+            free($5);
+        }
+        | DROP TABLE ident
+        {
+            parsedData->setStmtType(DropTableStatement);
+            parsedData->setTableName($3); 
+            free($3);
+        }
+        | DROP INDEX ident
+        {
+            parsedData->setStmtType(DropIndexStatement);
+            parsedData->setIndexName($3); 
+            free($3);
+        }
         ;
-
+opt_ind_type:
+        | HASH 
+        {
+            parsedData->setIndexType(hashIndex);
+        }
+        | TREE 
+        {
+            parsedData->setIndexType(treeIndex);
+        }
+        |
+        {
+            parsedData->setIndexType(hashIndex);
+        }
+opt_constr_type:
+        | UNIQUE 
+        {
+            parsedData->setUnique(true);
+        }
+        | PRIMARY 
+        {
+            parsedData->setUnique(true);
+            parsedData->setPrimary(true);
+        }
+        |
+        {
+            parsedData->setUnique(false);
+            parsedData->setPrimary(false);
+        }
+        ;
 create_defn_list: create_defn_list create_defn_list_L
         | create_defn 
         ;
@@ -208,7 +256,7 @@ create_defn: field_defn
         | constraint_defn
         ;
 
-field_defn: field_name field_type size_opt default_expr_opt null_expr_opt
+field_defn: field_name field_type size_opt null_expr_opt default_expr_opt
         ;
 
 field_name: ident
@@ -261,7 +309,27 @@ field_type: INT_TYPE
         {
             parsedData->setFldType(typeDouble);
         }
-        ;         
+        ;
+        | DATE_TYPE
+        {
+            parsedData->setFldType(typeDate);
+        }
+        ;
+        | TIME_TYPE
+        {
+            parsedData->setFldType(typeTime);
+        }
+        ;
+        | TIMESTAMP_TYPE
+        {
+            parsedData->setFldType(typeTimeStamp);
+        }
+        ;
+        | CHAR_TYPE
+        {
+            parsedData->setFldType(typeString);
+        }
+        ;
 %%
 
 extern int lexEof;

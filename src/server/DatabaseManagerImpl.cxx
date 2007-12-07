@@ -680,16 +680,26 @@ void DatabaseManagerImpl::closeTable(Table *table)
 DbRetVal DatabaseManagerImpl::createIndex(const char *indName, IndexInitInfo *info)
 {
     DbRetVal rv = OK;
+    if (!info->isUnique && info->isPrimary) 
+    {
+        printError(ErrBadCall, "Primary key cannot be non unique\n");
+        return ErrBadCall;
+    }
     if (info->indType == hashIndex)
     {
         //Assumes info is of type HashIndexInitInfo
         HashIndexInitInfo *hInfo = (HashIndexInitInfo*) info;
         rv = createHashIndex(indName, info->tableName, info->list, hInfo->bucketSize,
-                             info->isUnique);
+                             info->isUnique, info->isPrimary);
     }
-    else
+    else if (info->indType == treeIndex)
     {
         //TODO::tree index
+        printError(ErrNotYet, "Tree Index not supported\n");
+        return ErrNotYet;
+    }else {
+        printError(ErrBadCall, "Index type not supported\n");
+        return ErrBadCall;
     }
     return rv;
 }
@@ -699,7 +709,7 @@ DbRetVal DatabaseManagerImpl::createIndex(const char *indName, IndexInitInfo *in
 //-2 -> Field does not exists
 //-3 -> bucketSize is not valid
 DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *tblName,
-                      FieldNameList &fldList, int bucketSize, bool isUnique)
+                      FieldNameList &fldList, int bucketSize, bool isUnique, bool isPrimary)
 {
     //validate the bucket size
     if (bucketSize < 100 || bucketSize > 200000)
@@ -707,6 +717,15 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
         printError(ErrBadRange, "Index Bucket size %d not in range 100-200000",
                                  bucketSize);
         return ErrBadRange;
+    }
+    int totFlds = fldList.size();
+    if (totFlds == 0) 
+    {
+        printError(ErrBadCall, "No Field name specified");
+        return ErrBadCall;
+    }else if (totFlds >1) {
+        printError(ErrNotYet, "Composite keys not supported");
+        return ErrNotYet;
     }
     void *tptr =NULL;
     void *chunk = NULL;
@@ -726,7 +745,6 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
         printError(ErrNotExists, "Table does not exist %s", tblName);
         return ErrNotExists;
     }
-    int totFlds = fldList.size();
 
     //check whether field exists
     char **fptr = new char* [totFlds];
@@ -736,8 +754,17 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
     {
         delete[] fptr;
         systemDatabase_->releaseDatabaseMutex();
-        printError(ErrNotExists, "Field does not exist");
-        return ErrNotExists;
+        //TODO::check test cases of dbapi/Index, they give wrong results
+        //if (rv == ErrBadCall) {
+        ////    if (isPrimary) printError(ErrBadCall, "Field can have NULL values");
+        //} else {
+        //printError(ErrNotExists, "Field does not exist");
+        //} 
+        //return ErrBadCall;
+        if (rv != ErrBadCall) {
+            printError(ErrNotExists, "Field does not exist");
+            return ErrNotExists;
+        }
     }
 
     //create chunk to store the meta data of the index created
@@ -921,6 +948,7 @@ DbRetVal DatabaseManagerImpl::printIndexInfo(char *name)
     printf("<IndexNodes>\n");
     return OK;
 }
+
 DbRetVal DatabaseManagerImpl::registerThread()
 {
     DbRetVal rv = OK;
@@ -967,6 +995,14 @@ void DatabaseManagerImpl::printDebugLockInfo()
 void DatabaseManagerImpl::printDebugTransInfo()
 {
     tMgr_->printDebugInfo(systemDatabase_);
+}
+void DatabaseManagerImpl::printDebugProcInfo()
+{
+    pMgr_->printDebugInfo();
+}
+void DatabaseManagerImpl::printDebugChunkInfo()
+{
+    printf("<NotYetImplemented> </NotYetImplemented>\n");
 }
 ChunkIterator DatabaseManagerImpl::getSystemTableIterator(CatalogTableID id)
 {

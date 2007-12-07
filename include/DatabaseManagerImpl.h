@@ -77,7 +77,7 @@ class DatabaseManagerImpl : public DatabaseManager
 
 
     DbRetVal createHashIndex(const char *indName, const char *tableName,
-                        FieldNameList &fldList, int bucketSize, bool isUnique);
+                        FieldNameList &fldList, int bucketSize, bool isUnique, bool isPrimary = false);
     void initHashBuckets(Bucket *buck, int bucketSize);
 
     DbRetVal dropIndexInt(const char *name, bool takeLock);
@@ -116,6 +116,8 @@ class DatabaseManagerImpl : public DatabaseManager
     void printUsageStatistics();
     void printDebugLockInfo();
     void printDebugTransInfo();
+    void printDebugChunkInfo();
+    void printDebugProcInfo();
     DbRetVal printIndexInfo(char *name);
     friend class SessionImpl;
 };

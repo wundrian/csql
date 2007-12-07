@@ -75,6 +75,7 @@ class TableDef
     public:
     TableDef() { fldCount = 0; }
     ~TableDef();
+    void reset();
     /** adds a field to the schema definition.
     *   @param name field name 
     *   @param type data type of the field
@@ -87,7 +88,7 @@ class TableDef
     */
     int addField(const char *name,  DataType type = typeUnknown, size_t
                  length = 0, const void *defaultValue = 0,
-                 bool primary = false, bool notNull = false, bool unique = false);
+                 bool notNull = false);
 
     /** removes a field from the schema definition
     *   @param name field name 
@@ -148,7 +149,8 @@ class IndexInitInfo
     FieldNameList list;               /**<field name list*/
     IndexType indType;                /**<index type*/
     bool isUnique;                    /**<unique values*/
-    IndexInitInfo() {  indType = hashIndex;  isUnique = true;}
+    bool isPrimary;                   /**<primary key*/
+    IndexInitInfo() {  indType = hashIndex;  isUnique = false; isPrimary= false;}
     ~IndexInitInfo() {list.removeAll();}
 };
 

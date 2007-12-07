@@ -45,6 +45,7 @@ class ThreadInfo
 
     Mutex *has_[MAX_MUTEX_PER_THREAD];   //list of mutexes held
     void init();
+    void print();
 
 };
 class Database;
@@ -65,6 +66,8 @@ class ProcessManager
     static DbRetVal removeMutex(Mutex *mutex);
     static DbRetVal setTransaction(Transaction *trans);
     void printUsageStatistics();
+    void printDebugInfo();
+
     bool isAnyOneRegistered();
 };
 

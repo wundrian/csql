@@ -37,6 +37,20 @@ void ThreadInfo::init()
     for (int i =0; i <MAX_MUTEX_PER_THREAD; i++) has_[i] = NULL;
 }
 
+void ThreadInfo::print()
+{
+    printf("<THREADINFO>\n");
+    printf("  <PID> %d </PID>\n", pid_);
+    printf("  <THRID> %lu </THRID>\n", thrid_);
+    printf("  <TRANS> %x </TRANS>\n", trans_);
+    printf("  <WAIT> %x </WAIT>\n", want_);
+    printf("  <MUTEXLIST>\n");
+    for (int i =0; i <MAX_MUTEX_PER_THREAD; i++) if (has_[i]) printf("    <MUTEX> %x </MUTEX>\n", has_[i]);
+    printf("  </MUTEXLIST>\n");
+    printf("</THREADINFO>\n");
+
+}
+
 //It does not check for re registering as well as deregistering unregistered threads.
 //as it is handled in the connection class open and close methods.
 DbRetVal ProcessManager::registerThread()
@@ -236,6 +250,22 @@ void ProcessManager::printUsageStatistics()
     printf("</ProcTable>\n");
 
 }
+
+void ProcessManager::printDebugInfo()
+{
+    printf("<ProcTable>\n");
+    ThreadInfo* pInfo = systemDatabase->getThreadInfo(0);
+    int i=0, usedCount =0 , freeCount =0;
+    for (; i < Conf::config.getMaxProcs(); i++)
+    {
+        if (pInfo->pid_ != 0 ) {pInfo->print(); usedCount++;} else freeCount++;
+        pInfo++;
+    }
+    printf("<UsedSlots> %d </UsedSlots>\n", usedCount);
+    printf("<FreeSlots> %d </FreeSlots>\n", freeCount);
+    printf("</ProcTable>\n");
+}
+
 
 bool ProcessManager::isAnyOneRegistered()
 {

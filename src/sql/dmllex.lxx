@@ -102,15 +102,28 @@ operator        "<"|">"|">="|"<="|"="|"\!="
                 if(strcasecmp(yytext,"UPDATE") == 0) token = UPDATE;
                 if(strcasecmp(yytext,"SET") == 0) token = SET;
                 if(strcasecmp(yytext,"NULL") == 0) token = NULL_VALUE;
+                if(strcasecmp(yytext,"UNIQUE") == 0) token = UNIQUE;
                 if(strcasecmp(yytext,"CREATE") == 0) token = CREATE;
+                if(strcasecmp(yytext,"DROP") == 0) token = DROP;
                 if(strcasecmp(yytext,"TABLE") == 0) token = TABLE;
                 if(strcasecmp(yytext,"PRIMARY") == 0) token = PRIMARY;
+                if(strcasecmp(yytext,"INDEX") == 0) token = INDEX;
+                if(strcasecmp(yytext,"ON") == 0) token = ON;
+                if(strcasecmp(yytext,"HASH") == 0) token = HASH;
+                if(strcasecmp(yytext,"TREE") == 0) token = TREE;
+                if(strcasecmp(yytext,"UNIQUE") == 0) token = UNIQUE;
+
                 if(strcasecmp(yytext,"KEY") == 0) token = KEY;
                 if(strcasecmp(yytext,"DEFAULT") == 0) token = DEFAULT;
                 if(strcasecmp(yytext,"INT") ==0) token = INT_TYPE;
+                if(strcasecmp(yytext,"INTEGER") ==0) token = INT_TYPE;
                 if(strcasecmp(yytext,"LONG") ==0) token = LONG_TYPE;
                 if(strcasecmp(yytext,"DOUBLE") ==0) token = DOUBLE_TYPE;
                 if(strcasecmp(yytext,"SHORT") ==0) token = SHORT_TYPE;
+                if(strcasecmp(yytext,"DATE") ==0) token = DATE_TYPE;
+                if(strcasecmp(yytext,"TIME") ==0) token = TIME_TYPE;
+                if(strcasecmp(yytext,"TIMESTAMP") ==0) token = TIMESTAMP_TYPE;
+                if(strcasecmp(yytext,"CHAR") ==0) token = CHAR_TYPE;
 
                 if( token == FIELD )
                     yylval.stringval = strdup((const char*)yytext);

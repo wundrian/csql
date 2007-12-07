@@ -33,9 +33,14 @@ class FieldDef
     public:
     FieldDef()
     {
+        init();
+    }
+    void init() {
         type_ = typeUnknown;
         length_ = 0;
         bindVal_ = NULL;
+        isDefault_ = false;
+        isNull_ = false;
     }
     char fldName_[IDENTIFIER_LENGTH];
     DataType type_;

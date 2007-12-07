@@ -19,7 +19,7 @@
 #include <TableImpl.h>
 void printUsage()
 {
-   printf("Usage: catalog [-u username] [-p passwd] [-l] [-i] [-d] [-T table] [-I index] [-D <lock|trans>]\n");
+   printf("Usage: catalog [-u username] [-p passwd] [-l] [-i] [-d] [-T table] [-I index] [-D <lock|trans|proc>]\n");
    printf("       l -> list all table with field information\n");
    printf("       i -> reinitialize catalog tables. Drops all tables.\n");
    printf("       d -> print db usage statistics\n");
@@ -188,6 +188,10 @@ int main(int argc, char **argv)
         else if (strcmp(name, "trans")  == 0)
         {
             dbMgr->printDebugTransInfo();
+        }
+        else if (strcmp(name, "proc")  == 0)
+        {
+            dbMgr->printDebugProcInfo();
         }
         else {
            printf("Wrong argument passed\n");

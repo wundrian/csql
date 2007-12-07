@@ -78,13 +78,14 @@ DbRetVal TransactionManager::startTransaction(IsolationLevel level)
 {
     if (NULL != trans)
     {
-        if (trans->status_ == TransNotUsed)
-        {
+        if (trans->status_ != TransNotUsed) return ErrAlready; 
+        else {
             //the previous transaction shall be used again
             trans->status_ = TransRunning;
             trans->isoLevel_ = level;
             return OK;
         }
+
     }
     Transaction *iter = firstTrans;
     int i;

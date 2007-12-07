@@ -212,15 +212,14 @@ class DelStatement : public DmlStatement
 
 };
 
-//Introduce one more class DdlStatement and derive createTbl from that.
-class CreateTblStatement : public Statement
+class DdlStatement : public Statement
 {
     public:
-    DbRetVal execute(int &rowsAffected); //TODO: i think rowsAffected is not part of ddl - gopal said its design decision
-    DbRetVal resolve();
+    DbRetVal execute(int &rowsAffected)=0; 
+    //TODO: i think rowsAffected is not part of ddl - gopal said its design decision
+    DbRetVal resolve()=0;
 
     DbRetVal setParam(int paramNo, void *value) { }
-
     DbRetVal setShortParam(int paramNo, short value) { }
     DbRetVal setIntParam(int paramNo, int value) { }
     DbRetVal setLongParam(int paramNo, long value) { }
@@ -232,6 +231,13 @@ class CreateTblStatement : public Statement
     DbRetVal setDateParam(int paramNo, Date value) { }
     DbRetVal setTimeParam(int paramNo, Time value) { }
     DbRetVal setTimeStampParam(int paramNo, TimeStamp value) { }
+};
+
+class CreateTblStatement : public DdlStatement
+{
+    public:
+    DbRetVal execute(int &rowsAffected);
+    DbRetVal resolve();
 
     CreateTblStatement();
     ~CreateTblStatement();
@@ -239,6 +245,36 @@ class CreateTblStatement : public Statement
     private:
     char tblName[IDENTIFIER_LENGTH];  
     TableDef tblDef; 
+};
+
+class CreateIdxStatement : public DdlStatement
+{
+    public:
+    DbRetVal execute(int &rowsAffected);
+    DbRetVal resolve(){return OK; }
+
+    CreateIdxStatement();
+    ~CreateIdxStatement();
+
+};
+
+class DropTblStatement : public DdlStatement
+{
+    public:
+    DbRetVal execute(int &rowsAffected);
+    DbRetVal resolve(){return OK; }
+
+    DropTblStatement(){}
+    ~DropTblStatement(){}
+};
+class DropIdxStatement : public DdlStatement
+{
+    public:
+    DbRetVal execute(int &rowsAffected);
+    DbRetVal resolve() {return OK; }
+
+    DropIdxStatement(){}
+    ~DropIdxStatement(){}
 };
 
 class StatementFactory

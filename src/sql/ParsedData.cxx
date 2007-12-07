@@ -86,6 +86,9 @@ void ParsedData::reset()
     }
     fieldValueList.reset();
     creFldList.removeAll();
+    isUnique = false; 
+    isPrimary = false; 
+    indexType = hashIndex;
 }
 void ParsedData::clearFieldNameList()
 {
@@ -94,34 +97,27 @@ void ParsedData::clearFieldNameList()
 
 void ParsedData::setFldName(char *name)
 {
-printf("In setFldName \n");
     strcpy(fldDef.fldName_, name);
     fldDef.fldName_[IDENTIFIER_LENGTH] = '\0';
-printf("Value FldType %d \n", fldDef.type_);
 }
 
 void ParsedData::setFldType(DataType type)
 {
-printf("In setFldType %d \n", type);
     fldDef.type_ = type;
-printf("Value n setFldType %d \n", fldDef.type_);
 }
 
 void ParsedData::setFldLength(size_t length)
 {
-printf("In setFldLength \n");
     fldDef.length_ = length;
 }
 
 void ParsedData::setFldNotNull(bool notNull)
 {
-printf("In setFldNotNull \n");
     fldDef.isNull_ = notNull;
 }
 
 void ParsedData::insertFldDef()
 {
-printf("In insertFldDef \n");
- printf("Value %s %d %d \n", fldDef.fldName_, fldDef.type_, fldDef.length_);
     DbRetVal rv = creFldList.append(fldDef);
+    fldDef.init();
 }

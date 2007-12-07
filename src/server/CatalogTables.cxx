@@ -191,6 +191,7 @@ DbRetVal CatalogTableFIELD::getFieldPtrs(FieldNameList &fldList,void *tptr, char
     bool found = false;
     fldList.resetIter();
     void *data = NULL;
+    DbRetVal rv =OK;
     while (NULL != (fName = fldList.nextFieldName()))
     {
         ChunkIterator fIter = fChunk->getIterator();
@@ -202,6 +203,7 @@ DbRetVal CatalogTableFIELD::getFieldPtrs(FieldNameList &fldList,void *tptr, char
                  if(0 == strcmp((char*)((FIELD*)data)->fldName_, fName))
                  {
                      found = true;
+                     //if (! ((FIELD*)data)->isNull_) rv = ErrBadCall;
                      fptr[i++] = (char*) data;
                      break;
                  }
@@ -214,7 +216,7 @@ DbRetVal CatalogTableFIELD::getFieldPtrs(FieldNameList &fldList,void *tptr, char
             return ErrNotFound;
         }
     }
-    return OK;
+    return rv;
 }
 
 DbRetVal CatalogTableINDEX::insert(const char *name, void *tptr, int numFlds, bool isUnique,

@@ -25,10 +25,20 @@
 #define PRIMARY 281
 #define KEY 282
 #define DEFAULT 283
-#define INT_TYPE 284
-#define LONG_TYPE 285
-#define SHORT_TYPE 286
-#define DOUBLE_TYPE 287
+#define INDEX 284
+#define ON 285
+#define HASH 286
+#define TREE 287
+#define UNIQUE 288
+#define DROP 289
+#define INT_TYPE 290
+#define LONG_TYPE 291
+#define SHORT_TYPE 292
+#define DOUBLE_TYPE 293
+#define DATE_TYPE 294
+#define TIME_TYPE 295
+#define TIMESTAMP_TYPE 296
+#define CHAR_TYPE 297
 typedef union
 {
    char *stringval;

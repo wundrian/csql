@@ -221,6 +221,8 @@ DbRetVal SessionImpl::startTransaction(IsolationLevel level)
         return ErrSysFatal;
     }
     DbRetVal rv = OK;
+
+
     rv = dbMgr->sysDb()->getTransTableMutex();
     if (OK != rv)
     {

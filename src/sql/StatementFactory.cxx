@@ -34,6 +34,15 @@ Statement* StatementFactory::getStatement(ParsedData *data)
         case CreateTableStatement:
             stmt = new CreateTblStatement();
             break;
+        case DropTableStatement:
+            stmt = new DropTblStatement();
+            break;
+        case CreateIndexStatement:
+            stmt = new CreateIdxStatement();
+            break;
+        case DropIndexStatement:
+            stmt = new DropIdxStatement();
+            break;
     }
     stmt->setParsedData(data);
     return stmt;
