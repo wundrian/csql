@@ -17,9 +17,17 @@
 #include <Statement.h>
 #include <SqlStatement.h>
 #define SQL_STMT_LEN 1024
+enum STMT_TYPE
+{
+    SELECT =0,
+    DDL ,
+    OTHER
+};
+STMT_TYPE stmtType = SELECT;
+FILE *fp;
 SqlConnection *conn;
 SqlStatement *stmt;
-bool getInputFromUser();
+bool getInput(bool);
 int main(int argc, char **argv)
 {
     char username[IDENTIFIER_LENGTH];
@@ -40,25 +48,42 @@ int main(int argc, char **argv)
 
         }
     }//while options
-    printf("%s %s %s", username, password, filename);
+    //printf("%s %s %s", username, password, filename);
     if (username[0] == '\0' )
     {
         strcpy(username, "root");
         strcpy(password, "manager");
     }
+    bool fileFlag = false;
+    if (filename [0] !='\0')
+    {
+        fp = fopen(filename,"r");
+        if (fp == NULL)
+        {
+            printf("Unable to open the file %s\n", filename);
+            return 1;
+        }
+        fileFlag = true;
+    }
     
     DbRetVal rv = OK;
     conn = new SqlConnection();
-    conn->connect("root", "manager");
+    rv = conn->connect("root", "manager");
+    if (rv != OK) return 1;
     stmt = new SqlStatement();
     stmt->setConnection(conn);
-    conn->beginTrans();
+    rv = conn->beginTrans();
+    if (rv != OK) return 2;
 
-    while (getInputFromUser() == true) continue;
+    while (getInput(fileFlag) == true) continue;
 
     //TODO::conn should provide method telling status of the transaction.
     //if running, then abort it
     conn->rollback();
+    if (filename [0] !='\0')
+    {
+       fclose(fp);
+    }
     delete stmt;
     delete conn;
     return 0;
@@ -82,13 +107,27 @@ bool handleTransaction(char *st)
     }
     return false;
 }
-bool isSelectStmt(char *st)
+bool handleEcho(char *st)
 {
-    if (strncasecmp (st, "SELECT", 6) == 0) return true; 
+    while (isspace (*st)|| *st == '(' ) st++; // Skip white spaces
+    if (strncasecmp (st, "ECHO", 4) == 0 ||
+        strncasecmp (st, "echo", 4) == 0 )
+    {
+        printf("%s\n", st);
+        return true;
+    }
     return false;
 }
+void setStmtType(char *st)
+{
+   if (strncasecmp (st, "SELECT", 6) == 0)  {stmtType=SELECT; return; }
+   else if (strncasecmp (st, "CREATE", 6) == 0) {stmtType=DDL; return; }
+   else if (strncasecmp (st, "DROP", 4) == 0) { stmtType=DDL; return; }
+   stmtType = OTHER;
+   return ;
+}
 
-char getQuery(char *buf)
+char getQueryFromStdIn(char *buf)
 {
     char    c;
     int    ln;
@@ -99,27 +138,43 @@ char getQuery(char *buf)
     {
         *buf++ = c;
         if(c=='\n')
-            printf("%1d>",ln++);
+            //printf("%1d>",ln++);
+            ln++;
+    }
+    *buf++ = ';';
+    *buf = '\0';
+    return c;
+}
+char getQueryFromFile(char *buf)
+{
+    char    c;
+    while( (c=(char ) fgetc(fp)) != EOF && c != ';')
+    {
+        *buf++ = c;
     }
     *buf++ = ';';
     *buf = '\0';
     return c;
 }
 
-bool getInputFromUser()
+bool getInput(bool fromFile)
 {
     char buffer [SQL_STMT_LEN + 1];
 
-    char eof = getQuery(buffer);
+    char eof;
+    if (fromFile == false)
+        eof = getQueryFromStdIn(buffer);
+    else
+        eof = getQueryFromFile(buffer);
+                     
     char *buf = buffer;
     while(*buf == ' ' || *buf == '\t' || *buf == '\n') buf++;
-    printf("PRABA== %d %s\n", strlen(buf), buf);
     if (eof == EOF || strncasecmp (buf, "quit", 4) == 0)
         return false;
     if (handleTransaction(buf)) return true;
-
-    bool isSelect = false;
-    if (isSelectStmt(buf)) isSelect = true;
+    if (handleEcho(buf)) return true;
+    
+    setStmtType(buf);
 
     DbRetVal rv = stmt->prepare(buf);
     if (rv != OK) 
@@ -134,21 +189,27 @@ bool getInputFromUser()
         printf("Statement execute failed with error %d\n", rv); 
         return true; 
     }
-    if (! isSelect)
+    if (stmtType == OTHER)
     {
         printf("Statement Executed: Rows Affected = %d\n", rows);
+    }
+    else if (stmtType == DDL)
+    {
+        printf("Statement Executed\n");
     }
     else
     {
         FieldInfo *info = new FieldInfo();
+        printf("---------------------------------------------------------\n");
         printf("\t");
         for (int i = 0 ; i < stmt->noOfProjFields() ; i++)
         {
             stmt->getProjFldInfo(i, info);
             printf("%s\t", info->fldName);
         }
+        printf("\n---------------------------------------------------------\n");
         delete info;
-        printf("\n"); void *tuple = NULL;
+        void *tuple = NULL;
         while(true)
         {
             printf("\t");
