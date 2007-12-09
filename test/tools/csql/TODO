@@ -1,0 +1,5 @@
+update t1 set f1 = f2 where f1 =100;
+update t1 set f1 = 10, f2 = 20 where f1 =100;
+update t1 set f1 = 10+ 20 where f1 =100;
+update t1 set f1 = 200;
+delete from t1;
