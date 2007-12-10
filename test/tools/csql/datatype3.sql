@@ -1,12 +1,12 @@
-echo int data type testing
+echo smallint data type testing
 
-create table t1 (f1 int, f2 int, primary key (f1));
+create table t1 (f1 smallint, f2 smallint, primary key (f1));
 insert into t1 values (10, 1);
 insert into t1 values (11, 1);
 insert into t1 values (12, 1);
 insert into t1 values (13, 1);
-insert into t1 values (-999999999, 1);
-insert into t1 values (999999999, 1);
+insert into t1 values (-9999, 1);
+insert into t1 values (9999, 1);
 echo select * from t1;
 select * from t1;
 echo select * from t1 where f1 = 10;
@@ -31,9 +31,7 @@ echo select * from t1 where NOT f1 != 12;
 select * from t1 where NOT f1 != 12;
 echo select * from t1 where f1 = f2;
 select * from t1 where f1 = f2;
-
-echo TODO::between for +ve big number
-echo TODO::between for -ve big number
+echo TODO:between on -ve value
 
 echo update t1 set f2 = 2 where f1 != f2;
 update t1 set f2 = 2 where f1 != f2;
