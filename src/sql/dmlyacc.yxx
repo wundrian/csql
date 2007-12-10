@@ -24,7 +24,7 @@ void yyerror(const char* Msg);
 %token <stringval> INSERT INTO VALUES
 %token <stringval> DELETE UPDATE SET NULL_VALUE
 %token <stringval> CREATE TABLE PRIMARY KEY DEFAULT INDEX ON HASH TREE UNIQUE DROP
-%token <stringval> INT_TYPE LONG_TYPE SHORT_TYPE DOUBLE_TYPE
+%token <stringval> INT_TYPE LONG_TYPE SHORT_TYPE DOUBLE_TYPE TIMESTAMP_TYPE DATE_TYPE CHAR_TYPE TIME_TYPE
 %token ';' ',' '(' ')'
 %type <stringval> ident field value 
 %type <predicate> conditions condition
