@@ -68,7 +68,7 @@ int main(int argc, char **argv)
     
     DbRetVal rv = OK;
     conn = new SqlConnection();
-    rv = conn->connect("root", "manager");
+    rv = conn->connect(username,password);
     if (rv != OK) return 1;
     stmt = new SqlStatement();
     stmt->setConnection(conn);
