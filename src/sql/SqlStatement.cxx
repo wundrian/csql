@@ -105,6 +105,18 @@ DbRetVal SqlStatement::bindField(int pos, void* value)
     rv = selStmt->setBindField(pos, value);
     return rv;
 }
+void* SqlStatement::next()
+{
+    if (pData.getStmtType() != SelectStatement) return 0;
+    SelStatement *selStmt = (SelStatement*) stmt; 
+    return( (void*) selStmt->next() );
+}
+void* SqlStatement::getFieldValuePtr( int pos )
+{
+    if (pData.getStmtType() != SelectStatement) return 0;
+    SelStatement *selStmt = (SelStatement*) stmt; 
+    return( (void*) selStmt->getFieldValuePtr( pos ) );
+}
 
 int SqlStatement::noOfProjFields()
 {

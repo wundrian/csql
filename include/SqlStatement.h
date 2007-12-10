@@ -109,6 +109,16 @@ class SqlStatement
     */
     DbRetVal bindField(int pos, void* val);
 
+    /** same as fetch, but does not populate bindFieldValues
+    * @returns address void*
+    */
+    void* next();
+
+    /** get FieldValue->value ptr after fetch is done.
+    * @returns address void*
+    */
+    void* getFieldValuePtr( int pos );
+
     /**Frees all the resources held for the sql statement. Needs to be called before calling prepare again on the same statement handle.
     * @returns DbRetVal
     */

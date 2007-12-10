@@ -154,7 +154,8 @@ class SelStatement : public DmlStatement
 
     void *fetch();
     void *fetchAndPrint();
-
+    void *next();
+    void *getFieldValuePtr( int );
 };
 
 class UpdStatement : public DmlStatement

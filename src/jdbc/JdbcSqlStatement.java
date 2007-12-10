@@ -4,6 +4,7 @@ import java.sql.Statement;
 import java.sql.SQLException;
 import java.sql.ResultSet;
 import java.sql.SQLWarning;
+
 public class JdbcSqlStatement extends JSqlError implements Statement, JSqlErrorType
 {
     public boolean isClosed;
@@ -11,17 +12,18 @@ public class JdbcSqlStatement extends JSqlError implements Statement, JSqlErrorT
     public int rowsAffect;
     public JSqlStatement jniStmt;
     public JdbcSqlConnection conn;
-    //public JdbcSqlResultSet rs;
+    public JdbcSqlResultSet rs;
 
-    JdbcSqlStatement(Connection con)
+    JdbcSqlStatement( Connection con )
     {
         jniStmt = new JSqlStatement();
         jniStmt.alloc();
-        jniStmt.setConnectionPtr(((JdbcSqlConnection)con).getConnection().getPtr()); 
-        conn = (JdbcSqlConnection)con;  
+        conn = (JdbcSqlConnection) con;  
+        jniStmt.setConnectionPtr( conn.getConnection().getPtr() ); 
         isClosed = false;
         isPrepared = false;
         rowsAffect = 0;
+        rs = new JdbcSqlResultSet();
     }
     protected void finalize ()
     {
@@ -38,9 +40,11 @@ public class JdbcSqlStatement extends JSqlError implements Statement, JSqlErrorT
     public void prepareInt(String query) throws SQLException
     {
         int rv = 0;
-        if(isPrepared)
-        {
+        if(isPrepared) 
+	{
+            rs.close();
             jniStmt.freeStmt();
+            isPrepared = false;
         }
         rv = jniStmt.prepare(query);
         if( rv != 0 ) // 0 ->OK
@@ -67,7 +71,7 @@ public class JdbcSqlStatement extends JSqlError implements Statement, JSqlErrorT
         if(isClosed) return;
         if(isPrepared)
         {
-            //rs.close();
+            rs.close();
             jniStmt.freeStmt();
             jniStmt.free();
         }
@@ -82,9 +86,16 @@ public class JdbcSqlStatement extends JSqlError implements Statement, JSqlErrorT
 
     public ResultSet executeQuery(String query) throws SQLException
     {
-        if(!execute(query))
+        prepareInt(query);
+        if( !jniStmt.isSelect() ) {
+	    jniStmt.freeStmt();
+            isPrepared = false;
             throw getException(CSQL_NOT_QUERY);
-        return(null);
+	}
+	boolean hasResult = executeInt();
+
+        rs.setStmt( this );
+        return( rs );
     }
     public int executeUpdate (String query) throws SQLException
     {

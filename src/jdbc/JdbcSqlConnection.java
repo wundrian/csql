@@ -15,7 +15,7 @@ import java.util.Map;
 public final class JdbcSqlConnection extends JSqlError implements Connection, JSqlErrorType
 {
     private boolean isClosed;
-    private JSqlConnection conn;
+    private JSqlConnection jniConn;
     private LinkedList stmtList;
     private boolean autoCommit = true; //TODO
     private boolean transRunning = false;
@@ -24,22 +24,22 @@ public final class JdbcSqlConnection extends JSqlError implements Connection, JS
 
     public JSqlConnection getConnection()
     {
-        return conn;
+        return jniConn;
     }
 
     JdbcSqlConnection(String username, String password) throws SQLException
     {
         if( password == null || username == null ) throw getException(CSQL_AUTHEN_ERR);
-        conn = new JSqlConnection();
-        conn.alloc();
-        int rv = conn.connect(username, password);
+        jniConn = new JSqlConnection();
+        jniConn.alloc();
+        int rv = jniConn.connect(username, password);
         if (rv != 0) 
         {
-            conn.free();
+            jniConn.free();
             throw getException(CSQL_CON_REJECTED);
         }
         isClosed = false;
-        rv = conn.beginTrans(isoLevel);
+        rv = jniConn.beginTrans(isoLevel);
         if (rv != 0) 
         {
             throw getException(CSQL_TRANS_NOT_STARTED);
@@ -76,21 +76,21 @@ public final class JdbcSqlConnection extends JSqlError implements Connection, JS
         }
         stmtList = null;
 
-        if( conn.rollback() != 0 )
+        if( jniConn.rollback() != 0 )
             throw getException(CSQL_TRANS_NOT_ROLLBACK);
-        if(conn.disconnect() != 0 )
+        if(jniConn.disconnect() != 0 )
             throw getException(CSQL_NOT_DISCONNECT);
 
-        conn.free(); 
+        jniConn.free(); 
         isClosed = true;
     }
 
     public void commit() throws SQLException
     {
         if(isClosed) throw getException(CSQL_INVALID_STATE);
-        if( conn.commit() != 0 )
+        if( jniConn.commit() != 0 )
             throw getException(CSQL_TRANS_NOT_COMMIT);
-        if (conn.beginTrans(isoLevel) != 0)
+        if (jniConn.beginTrans(isoLevel) != 0)
             throw getException(CSQL_TRANS_NOT_STARTED);
         return;
     }
@@ -148,9 +148,9 @@ public final class JdbcSqlConnection extends JSqlError implements Connection, JS
     public void rollback() throws SQLException
     {
         if(isClosed) throw getException(CSQL_INVALID_STATE);
-        if( conn.rollback() != 0 )
+        if( jniConn.rollback() != 0 )
             throw getException(CSQL_TRANS_NOT_ROLLBACK);
-        if (conn.beginTrans(isoLevel) != 0)
+        if (jniConn.beginTrans(isoLevel) != 0)
             throw getException(CSQL_TRANS_NOT_STARTED);
         return;
     }

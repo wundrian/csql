@@ -446,6 +446,17 @@ void* SelStatement::fetchAndPrint()
     return tuple;
 }
 
+void* SelStatement::next()
+{
+    return( table->fetch() );
+}
+
+void* SelStatement::getFieldValuePtr( int pos )
+{
+    FieldValue *v = bindFields[pos];
+    return ( (void*) v->value );
+}
+
 int SelStatement::noOfProjFields()
 {
     return totalFields;

@@ -20,6 +20,8 @@ interface JSqlErrorType
     public static String CSQL_NOT_QUERY ="00014";
     public static String CSQL_NOT_UPDATE ="00015";
     public static String CSQL_INVALID_DATATYPE ="00016";
+    public static String CSQL_COL_NOT_FOUND = "00017";
+    public static String CSQL_INVALID_COLNUM = "00018";
 }
 public class JSqlError implements JSqlErrorType
 {
@@ -43,6 +45,7 @@ public class JSqlError implements JSqlErrorType
         hashTable.put(CSQL_NOT_QUERY, new SQLException("Statement is not query"));
         hashTable.put(CSQL_NOT_UPDATE, new SQLException("Statement is a query"));
         hashTable.put(CSQL_INVALID_DATATYPE, new SQLException("Invalid data type"));
+        hashTable.put(CSQL_INVALID_COLNUM, new SQLException("Invalid column index"));
     }
     public static String getErrorMsg(String err)
     {
