@@ -107,13 +107,16 @@ bool handleTransaction(char *st)
     }
     return false;
 }
-bool handleEcho(char *st)
+bool handleEchoAndComment(char *st)
 {
     while (isspace (*st)|| *st == '(' ) st++; // Skip white spaces
     if (strncasecmp (st, "ECHO", 4) == 0 ||
         strncasecmp (st, "echo", 4) == 0 )
     {
         printf("%s\n", st);
+        return true;
+    }else if (strncmp(st, "--", 2) == 0)
+    {
         return true;
     }
     return false;
@@ -172,7 +175,7 @@ bool getInput(bool fromFile)
     if (eof == EOF || strncasecmp (buf, "quit", 4) == 0)
         return false;
     if (handleTransaction(buf)) return true;
-    if (handleEcho(buf)) return true;
+    if (handleEchoAndComment(buf)) return true;
     
     setStmtType(buf);
 
