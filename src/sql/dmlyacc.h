@@ -1,7 +1,3 @@
-#ifndef YYERRCODE
-#define YYERRCODE 256
-#endif
-
 #define STRING 257
 #define FIELD 258
 #define NUMBER_STRING 259
@@ -39,10 +35,10 @@
 #define LONG_TYPE 291
 #define SHORT_TYPE 292
 #define DOUBLE_TYPE 293
-#define DATE_TYPE 294
-#define TIME_TYPE 295
-#define TIMESTAMP_TYPE 296
-#define CHAR_TYPE 297
+#define TIMESTAMP_TYPE 294
+#define DATE_TYPE 295
+#define CHAR_TYPE 296
+#define TIME_TYPE 297
 typedef union
 {
    char *stringval;

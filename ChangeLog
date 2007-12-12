@@ -20,6 +20,10 @@ CSQL - Version 1.1 - Beta
 CSQL - Version 1.2 - Beta
 -------------------------
 1.Primitive JDBC Type II Driver
-2.Procmgmt- process registration and deregistration, support for multi threads
-3.deleteAll support for Table Interface
-4.NULL value support 
+2.Procmgmt -
+  Process registration and deregistration, 
+  Support for multi threads and cleanup thread
+3.NULL value support 
+4.Support for DDL in SQL Engine
+5.NOT NULL, UNIQUE, PRIMARY KEY support 
+6.CSQL- Interactive SQL Tool

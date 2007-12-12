@@ -15,10 +15,24 @@ cd src/jdbc
 cp CSqlJdbcDriver.jar ${install_dir}/lib
 cd ${root_dir}
 make install
+
+#Any new libraries needs to be added here
 cd ${install_dir}/lib
-cp libcsql libcsql.so
-cp libcsqlsql libcsqlsql.so
-cp libcsqljdbc libcsqljdbc.so
+mv libcsql libcsql.so
+mv libcsqlsql libcsqlsql.so
+mv libcsqljdbc libcsqljdbc.so
+ln -s libcsql.so libcsql 
+ln -s libcsqlsql.so libcsqlsql
+ln -s libcsqljdbc.so libcsqljdbc
+
+
+cp ${root_dir}/src/sql/Statement.h ${install_dir}/include
+cp ${root_dir}/src/sql/Parser.h ${install_dir}/include
+cd ${install_dir}/include
+rm Allocator.h CatalogTables.h Database.h DatabaseManagerImpl.h
+rm Globals.h Index.h Lock.h PredicateImpl.h
+rm Process.h SessionImpl.h TableImpl.h Transaction.h UserManagerImpl.h 
+
 cp ${root_dir}/README.INSTALL ${install_dir}/README
 cp ${root_dir}/Doxyfile ${install_dir}
 cp ${root_dir}/COPYING ${install_dir}
@@ -28,7 +42,4 @@ cp -R ${root_dir}/examples ${install_dir}
 find ${install_dir}/examples -name "CVS" -exec rm -rf {} \;
 cp -R ${root_dir}/docs ${install_dir}
 find ${install_dir}/docs -name "CVS" -exec rm -rf {} \;
-
-
-
 cd ${root_dir}

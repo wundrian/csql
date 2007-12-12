@@ -266,7 +266,7 @@ DbRetVal SelStatement::resolve()
             newVal->paramNo = 0;
             newVal->type = fInfo->type;
             newVal->length = fInfo->length;
-            newVal->value = AllDataType::alloc(fInfo->type);
+            newVal->value = AllDataType::alloc(fInfo->type, fInfo->length);
             parsedData->insertFieldValue(newVal);
             table->bindFld(name->fldName, newVal->value);
         }
@@ -314,7 +314,7 @@ DbRetVal SelStatement::resolveStar()
         newVal->paramNo = 0;
         newVal->type = fInfo->type;
         newVal->length = fInfo->length;
-        newVal->value = AllDataType::alloc(fInfo->type);
+        newVal->value = AllDataType::alloc(fInfo->type, fInfo->length);
         parsedData->insertFieldValue(newVal);
         parsedData->insertField(fName);
         table->bindFld(fName, newVal->value);
@@ -381,7 +381,7 @@ DbRetVal SelStatement::resolveForCondition()
         }
         value->type = fInfo->type;
         value->length = fInfo->length;
-        value->value = AllDataType::alloc(fInfo->type);
+        value->value = AllDataType::alloc(fInfo->type, fInfo->length);
         //table->bindFld(name->fldName, value->value);
         if (value->parsedString[0] == '?')
         {

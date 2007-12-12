@@ -860,7 +860,7 @@ ComparisionOp AllDataType::getComparisionOperator(char *str)
     return op;
 }
 
-void* AllDataType::alloc(DataType type)
+void* AllDataType::alloc(DataType type, int length)
 {
     void *dest;
     switch(type)
@@ -889,6 +889,10 @@ void* AllDataType::alloc(DataType type)
         case typeDecimal:
             //TODO::for porting
             //fldDef.length_ = sizeof(long double);
+            break;
+        case typeString:
+            if (length == 0 ) return NULL;
+            dest = malloc(length);
             break;
         case typeDate:
             dest = malloc(sizeof(Date));

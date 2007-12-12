@@ -159,6 +159,8 @@ DbRetVal InsStatement::setStringParam(int paramNo, char *value)
         printError(ErrSysFatal, "condition value is null. Should never happen");
         return ErrSysFatal;
     }
+    //TODO::check if the strlen(value) is greater than field length
+    //do in all stmts
     strcpy((char*)cValue->value, value);
     return OK;
 }
@@ -256,7 +258,7 @@ DbRetVal InsStatement::resolve()
         }
         value->type = fInfo->type;
         value->length = fInfo->length;
-        value->value = AllDataType::alloc(fInfo->type);
+        value->value = AllDataType::alloc(fInfo->type, fInfo->length);
         table->bindFld(name->fldName, value->value);
         if (value->parsedString[0] == '?')
         {

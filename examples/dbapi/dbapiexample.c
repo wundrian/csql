@@ -18,7 +18,7 @@ int main()
 {
     //connect to the database first
     Connection conn;
-    DbRetVal rv = conn.open("praba", "manager");
+    DbRetVal rv = conn.open("root", "manager");
     if (rv != OK)
     {
        printf("Error during connection %d\n", rv);
@@ -31,7 +31,7 @@ int main()
 
     //create table with two fields, f1 integer and f2 string
     TableDef tabDef;
-    tabDef.addField("f1", typeInt, 0, NULL, true, true);
+    tabDef.addField("f1", typeInt, 0, NULL, true);
     tabDef.addField("f2", typeString, 20);
     rv = dbMgr->createTable("t1", tabDef);
     if (rv != OK) { printf("Table creation failed\n"); return -1; }

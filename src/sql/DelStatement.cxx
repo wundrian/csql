@@ -262,7 +262,7 @@ DbRetVal DelStatement::resolveForCondition()
         }
         value->type = fInfo->type;
         value->length = fInfo->length;
-        value->value = AllDataType::alloc(fInfo->type);
+        value->value = AllDataType::alloc(fInfo->type, fInfo->length);
         //table->bindFld(name->fldName, value->value);
         if (value->parsedString[0] == '?')
         {

@@ -114,7 +114,7 @@ class AllDataType
 
     static ComparisionOp getComparisionOperator(char *str);
 
-    static void* alloc(DataType type);
+    static void* alloc(DataType type, int length =0);
     static void strToValue(void *dest, char *src, DataType type);
     static void printVal(void *src, DataType type, int length);
 

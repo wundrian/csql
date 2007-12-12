@@ -376,7 +376,7 @@ DbRetVal UpdStatement::resolveForAssignment()
         }
         value->type = fInfo->type;
         value->length = fInfo->length;
-        value->value = AllDataType::alloc(fInfo->type);
+        value->value = AllDataType::alloc(fInfo->type, fInfo->length);
         table->bindFld(value->fldName, value->value);
         if (value->parsedString[0] == '?')
         {
@@ -412,7 +412,7 @@ DbRetVal UpdStatement::resolveForAssignment()
         }
         cValue->type = fInfo->type;
         cValue->length = fInfo->length;
-        cValue->value = AllDataType::alloc(fInfo->type);
+        cValue->value = AllDataType::alloc(fInfo->type, fInfo->length);
         if (cValue->parsedString[0] == '?')
         {
             cValue->paramNo = paramPos++;

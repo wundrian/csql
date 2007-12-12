@@ -22,7 +22,7 @@
 #include <SqlConnection.h>
 #include "Statement.h"
 //#include<CSql.h>
-//class Statement;
+class Statement;
 class ParsedData;
 
 /**

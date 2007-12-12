@@ -23,10 +23,12 @@ How to compile
 
 How to run
 ----------
-Set the CSQL_CONFIG_FILE environment variable to absolute path of csql.conf file.
+1. Set the CSQL_CONFIG_FILE environment variable to absolute path of csql.conf file.
 	$export CSQL_CONFIG_FILE=/tmp/csql.conf
+2. Set the LD_LIBRARY_PATH environment variable to csql library path
+	$export LD_LIBRARY_PATH=$CSQL_INSTALL_ROOT/lib:$LD_LIBRARY_PATH
 
-Run the executable created by make
+3. Run the executable created by make
 	$./dbapiexample
 
 Output of example:
