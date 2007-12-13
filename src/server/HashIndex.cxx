@@ -284,6 +284,8 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         FieldDef def = fldIter.nextElement();
         if (0 == strcmp(def.fldName_, name))
         {
+            if (NULL == def.bindVal_)
+                return OK;
             bool result = AllDataType::compareVal(keyPtr, def.bindVal_,
                                 OpEquals, def.type_, def.length_);
             if (result) return OK; else newKey = def.bindVal_;
