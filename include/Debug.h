@@ -16,7 +16,7 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 #include<ErrorType.h>
-//#define DEBUG 1
+#define DEBUG 1
 extern int DebugDM_Alloc;
 extern int DebugDM_VarAlloc;
 extern int DebugDM_Lock;
@@ -30,6 +30,8 @@ extern int DebugDM_Database;
 extern int DebugDM_Table;
 extern int DebugDM_Predicate;
 extern int DebugDM_Iterator;
+extern int DebugDM_Process;
+
 
 extern int printError1(DbRetVal val, char* fname, int lno, char *format, ...);
 
@@ -43,17 +45,19 @@ enum DebugModule
     DM_Transaction,
     DM_UndoLog,
     DM_RedoLog,
+    DM_Index,
     DM_HashIndex,
     DM_SystemDatabase,
     DM_Database,
     DM_Table,
     DM_Predicate,
-    DM_Iterator
+    DM_Iterator,
+    DM_Process
 };
 static char moduleNames[][20] =
 {
-    "Alloc", "VariableAlloc", "Lock", "Trans", "UndoLog", "RedoLog",
-    "HashIndex", "SysDb", "Db", "Table", "Iter"
+    "Alloc", "VariableAlloc", "Lock", "Trans", "UndoLog", "RedoLog", "Index",
+    "HashIndex", "SysDb", "Db", "Table", "Predicate", "Iter", "Procmgmt"
 };
 
 extern int printDebug1(int module, char *fname, int lineno, char *format, ...);

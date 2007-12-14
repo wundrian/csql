@@ -48,7 +48,11 @@ void DatabaseManagerImpl::createTransactionManager()
     tMgr_->setFirstTrans(systemDatabase_->getSystemDatabaseTrans(0));
     return;
 }
-
+void DatabaseManagerImpl::setProcSlot()
+{
+systemDatabase_->setProcSlot(procSlot);
+db_->setProcSlot(procSlot);
+}
 DbRetVal DatabaseManagerImpl::openSystemDatabase()
 {
     DbRetVal rv = openDatabase(SYSTEMDB);
@@ -216,7 +220,7 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
        key = Conf::config.getUserDbKey();
 
 
-    int ret = ProcessManager::mutex.getLock(false);
+    int ret = ProcessManager::mutex.getLock(-1, false);
     //If you are not getting lock ret !=0, it means somebody else is there.
     //he will close the database.
     if (ret != 0)
@@ -233,7 +237,7 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
        if (shm_id == -1 )
        {
            printError(ErrOS, "Shared memory open failed");
-           ProcessManager::mutex.releaseLock(false);
+           ProcessManager::mutex.releaseLock(-1, false);
            return ErrOS;
        }
        shm_ptr = os::shm_attach(shm_id, startaddr, SHM_RND);
@@ -252,7 +256,7 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
         else
               shm_ptr = ProcessManager::usrAddr;
     }
-    ProcessManager::mutex.releaseLock(false);
+    ProcessManager::mutex.releaseLock(-1, false);
 
 
     rtnAddr  = (caddr_t) shm_ptr;
@@ -282,7 +286,7 @@ DbRetVal DatabaseManagerImpl::closeDatabase()
     }
     printDebug(DM_Database, "Closing database: %s",(char*)db_->getName());
     //check if this is the last thread to be deregistered
-    int ret = ProcessManager::mutex.getLock(false);
+    int ret = ProcessManager::mutex.getLock(-1, false);
     //If you are not getting lock ret !=0, it means somebody else is there.
     //he will close the database.
     if (ret == 0) {
@@ -292,7 +296,7 @@ DbRetVal DatabaseManagerImpl::closeDatabase()
                 os::shm_detach((char*)db_->getMetaDataPtr());
             }
     }
-    ProcessManager::mutex.releaseLock(false);
+    ProcessManager::mutex.releaseLock(-1, false);
     logFinest(logger, "Closed database");
     delete db_;
     db_ = NULL;
@@ -545,7 +549,7 @@ Table* DatabaseManagerImpl::openTable(const char *name)
     table->setDB(db_);
     table->setSystemDB(systemDatabase_);
     table->setLockManager(lMgr_);
-    table->setTrans(&(tMgr_->trans));
+    table->setTrans(ProcessManager::getThreadTransAddr(systemDatabase_->procSlot));
 
     //to store the chunk pointer of table
     void *chunk = NULL;
@@ -958,7 +962,11 @@ DbRetVal DatabaseManagerImpl::registerThread()
         return ErrAlready;
     }
     pMgr_ = new ProcessManager();
-    return pMgr_->registerThread();
+    rv = pMgr_->registerThread();
+    if (rv ==OK) { procSlot = pMgr_->getProcSlot();
+        printDebug(DM_Process, "Process registed with slot %d\n", procSlot);
+    }
+    return rv;
 }
 
 DbRetVal DatabaseManagerImpl::deregisterThread()
@@ -966,7 +974,7 @@ DbRetVal DatabaseManagerImpl::deregisterThread()
     DbRetVal rv = OK;
     if (pMgr_ != NULL) 
     {
-        rv = pMgr_->deregisterThread();
+        rv = pMgr_->deregisterThread(procSlot);
         delete pMgr_;
         pMgr_ = NULL;
     }

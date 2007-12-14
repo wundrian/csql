@@ -31,6 +31,16 @@ class ProcInfo
 
 };
 
+struct ThreadTrans{
+    pid_t pid_;
+    pthread_t thrid_;
+    Transaction *trans_;
+    ThreadTrans() { pid_ =0; thrid_ =0; trans_ = NULL; }
+    void init() { pid_ =0; thrid_ =0; trans_ = NULL; }
+    void print();
+};
+
+
 class ThreadInfo
 {
     public:
@@ -39,7 +49,7 @@ class ThreadInfo
 
     pthread_t thrid_;
 
-    Transaction *trans_;
+    ThreadTrans thrTrans_[MAX_THREADS_PER_PROCESS]; //list of thread specific transactions
 
     Mutex *want_;  //single mutex which we are waiting for.
 
@@ -61,13 +71,18 @@ class ProcessManager
     //ThreadInfo *thrInfo;
     ProcessManager() { }
     DbRetVal registerThread();
-    DbRetVal deregisterThread();
-    static DbRetVal addMutex(Mutex *mutex);
-    static DbRetVal removeMutex(Mutex *mutex);
-    static DbRetVal setTransaction(Transaction *trans);
+    DbRetVal deregisterThread(int slot);
+    static DbRetVal addMutex(Mutex *mutex, int pslot);
+    static DbRetVal removeMutex(Mutex *mutex, int pslot);
+
+    static DbRetVal setThreadTransaction(Transaction *trans, int pslot);
+    static Transaction* getThreadTransaction(int pslot);
+    static Transaction** getThreadTransAddr(int pslot);
+
     void printUsageStatistics();
     void printDebugInfo();
-
+    int procSlot;
+    int getProcSlot() { return procSlot; }
     bool isAnyOneRegistered();
 };
 

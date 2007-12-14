@@ -9,7 +9,8 @@ SYSLIBS=-ldl -lnsl -lsocket  -lposix4
 else
 ifeq ($(OSNAME), Linux)
 CPlus = g++
-CPlusFlags = -O2 -w 
+#CPlusFlags = -O2 -w 
+CPlusFlags = -g -w 
 SYSLIBS= -rdynamic -lrt -lpthread -lcrypt
 else
 PlatForm=notsupported
@@ -25,6 +26,7 @@ TARGETS = \
         DMLTest \
         DMLTestChar \
         DMLThreadTest \
+        DMLTT \
 	Range
        
 
@@ -37,6 +39,8 @@ DMLTest: DMLTest.c
 DMLTestChar: DMLTestChar.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 DMLThreadTest: DMLThreadTest.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+DMLTT: DMLTT.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 Range: Range.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)

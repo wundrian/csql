@@ -182,7 +182,7 @@ void* Chunk::allocate(Database *db, DbRetVal *status)
         return data;
     }
 
-    int ret = getChunkMutex();
+    int ret = getChunkMutex(db->procSlot);
     if (ret != 0)
     {
         if (status != NULL) *status = ErrLockTimeOut;
@@ -220,11 +220,11 @@ void* Chunk::allocate(Database *db, DbRetVal *status)
                 if (status != NULL) *status = ErrNoMemory;
             }
         }
-        releaseChunkMutex();
+        releaseChunkMutex(db->procSlot);
         return data;
     }
     *((int*)data) = 1;
-    releaseChunkMutex();
+    releaseChunkMutex(db->procSlot);
     return data + sizeof(int);
 }
 
@@ -370,7 +370,7 @@ void* Chunk::allocate(Database *db, size_t size, DbRetVal *status)
 
     size_t alignedSize = os::align(size);
     void *data = NULL;
-    int ret = getChunkMutex();
+    int ret = getChunkMutex(db->procSlot);
     if (ret != 0)
     {
         printError(ErrLockTimeOut,"Unable to acquire chunk Mutex");
@@ -393,7 +393,7 @@ void* Chunk::allocate(Database *db, size_t size, DbRetVal *status)
             }
         }
     }
-    releaseChunkMutex();
+    releaseChunkMutex(db->procSlot);
     return data;
 }
 
@@ -423,9 +423,9 @@ void* Chunk::varSizeFirstFitAllocate(size_t size)
     return NULL;
 }
 
-void Chunk::freeForVarSizeAllocator(void *ptr)
+void Chunk::freeForVarSizeAllocator(void *ptr, int pslot)
 {
-    int ret = getChunkMutex();
+    int ret = getChunkMutex(pslot);
     if (ret != 0)
     {
         printError(ErrLockTimeOut,"Unable to acquire chunk Mutex");
@@ -434,16 +434,16 @@ void Chunk::freeForVarSizeAllocator(void *ptr)
     VarSizeInfo *varInfo = (VarSizeInfo*)((char*)ptr- sizeof(VarSizeInfo));
     varInfo->isUsed_ = 0;
     printDebug(DM_VarAlloc,"chunkID:%d Unset isUsed for %x", chunkID_, varInfo);
-    releaseChunkMutex();
+    releaseChunkMutex(pslot);
     return;
 
 }
 
-void Chunk::freeForLargeAllocator(void *ptr)
+void Chunk::freeForLargeAllocator(void *ptr, int pslot)
 {
     //There will be max only one data element in a page.
     //PageInfo is stored just before the data.
-    int ret = getChunkMutex();
+    int ret = getChunkMutex(pslot);
     if (ret != 0)
     {
         printError(ErrLockTimeOut,"Unable to acquire chunk Mutex");
@@ -462,7 +462,7 @@ void Chunk::freeForLargeAllocator(void *ptr)
     if (!found)
     {
         printError(ErrSysFatal,"Page %x not found in page list:Logical error", pageInfo );
-        releaseChunkMutex();
+        releaseChunkMutex(pslot);
         return ;
     }
     prev->nextPage_ = pageInfo->nextPage_;
@@ -470,7 +470,7 @@ void Chunk::freeForLargeAllocator(void *ptr)
     pageInfo->isUsed_ = 0;
     os::memset(pageInfo,  0 , allocSize_);
     pageInfo->hasFreeSpace_ = 1;
-    releaseChunkMutex();
+    releaseChunkMutex(pslot);
     return;
 }
 
@@ -479,17 +479,17 @@ void Chunk::free(Database *db, void *ptr)
 {
     if (0 == allocSize_)
     {
-        freeForVarSizeAllocator(ptr);
+        freeForVarSizeAllocator(ptr, db->procSlot);
         return;
     }
     int noOfDataNodes =os::floor((PAGE_SIZE - sizeof(PageInfo)) / allocSize_);
 
     if (0 == noOfDataNodes)
     {
-        freeForLargeAllocator(ptr);
+        freeForLargeAllocator(ptr, db->procSlot);
         return;
     }
-    int ret = getChunkMutex();
+    int ret = getChunkMutex(db->procSlot);
     if (ret != 0)
     {
         printError(ErrLockTimeOut,"Unable to acquire chunk Mutex");
@@ -504,12 +504,12 @@ void Chunk::free(Database *db, void *ptr)
     if (NULL == pageInfo)
     {
         printError(ErrSysFatal,"Probable Data corruption: pageInfo is NULL", pageInfo );
-        releaseChunkMutex();
+        releaseChunkMutex(db->procSlot);
         return;
     }
     //set the pageinfo where this ptr points
     pageInfo->hasFreeSpace_ = 1;
-    releaseChunkMutex();
+    releaseChunkMutex(db->procSlot);
     return;
 }
 
@@ -558,13 +558,6 @@ long Chunk::getTotalDataNodes()
     if (allocSize_ >PAGE_SIZE)//->each page has only one data node
         return 0;
 
-    int ret = getChunkMutex();
-    if (ret != 0)
-    {
-        printError(ErrLockTimeOut,"Unable to acquire chunk Mutex");
-        return NULL;
-    }
-
     int noOfDataNodes=os::floor((PAGE_SIZE - sizeof(PageInfo))/allocSize_);
     PageInfo* pageInfo = ((PageInfo*)firstPage_);
     char *data = ((char*)firstPage_) + sizeof(PageInfo);
@@ -579,18 +572,11 @@ long Chunk::getTotalDataNodes()
         }
         pageInfo = (PageInfo*)(((PageInfo*)pageInfo)->nextPage_) ;
     }
-    releaseChunkMutex();
     return totalNodes;
 }
 
 int Chunk::totalPages()
 {
-    int ret = getChunkMutex();
-    if (ret != 0)
-    {
-        printError(ErrLockTimeOut,"Unable to acquire chunk Mutex");
-        return NULL;
-    }
     //logic is same for variable size and for large data node allocator. 
     PageInfo* pageInfo = ((PageInfo*)firstPage_);
     int totPages=0;
@@ -599,7 +585,6 @@ int Chunk::totalPages()
         totPages++;
         pageInfo = (PageInfo*)(((PageInfo*)pageInfo)->nextPage_) ;
     }
-    releaseChunkMutex();
     return totPages;
 }
 
@@ -607,13 +592,13 @@ int Chunk::initMutex()
 {
     return chunkMutex_.init("Chunk");
 }
-int Chunk::getChunkMutex()
+int Chunk::getChunkMutex(int procSlot)
 {
-    return chunkMutex_.getLock();
+    return chunkMutex_.getLock(procSlot);
 }
-int Chunk::releaseChunkMutex()
+int Chunk::releaseChunkMutex(int procSlot)
 {
-    return chunkMutex_.releaseLock();
+    return chunkMutex_.releaseLock(procSlot);
 }
 int Chunk::destroyMutex()
 {
@@ -638,7 +623,6 @@ void Chunk::createDataBucket(Page *page, size_t totalSize, size_t needSize)
     varInfo->isUsed_ = 0;
     varInfo->size_ = PAGE_SIZE - sizeof(PageInfo) - sizeof(VarSizeInfo);
     splitDataBucket(varInfo, needSize);
-
     return;
 }
 

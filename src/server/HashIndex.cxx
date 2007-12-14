@@ -157,7 +157,7 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     printDebug(DM_HashIndex, "HashIndex insert bucketno %d", bucketNo);
     Bucket *bucket =  &(buckets[bucketNo]);
 
-    int ret = bucket->mutex_.getLock();
+    int ret = bucket->mutex_.getLock(tbl->db_->procSlot);
     if (ret != 0)
     {
         printError(ErrLockTimeOut,"Unable to acquire bucket Mutex for bucket %d",bucketNo);
@@ -178,7 +178,7 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
                    (void*)((char*)tuple +offset), OpEquals,type, length)) 
             {
                 printError(ErrUnique, "Unique key violation");
-                bucket->mutex_.releaseLock();
+                bucket->mutex_.releaseLock(tbl->db_->procSlot);
                 return ErrUnique;
             }
         }
@@ -207,7 +207,7 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         //TODO::remove it from the bucketlist
     }
 
-    bucket->mutex_.releaseLock();
+    bucket->mutex_.releaseLock(tbl->db_->procSlot);
     return rc;
 }
 
@@ -232,7 +232,7 @@ DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
 
     Bucket *bucket1 = &buckets[bucket];
 
-    int ret = bucket1->mutex_.getLock();
+    int ret = bucket1->mutex_.getLock(tbl->db_->procSlot);
     if (ret != 0)
     {
         printError(ErrLockTimeOut,"Unable to acquire bucket Mutex for bucket %d",bucket);
@@ -256,7 +256,7 @@ DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     {
         //TODO::add it back to the bucketlist
     }
-    bucket1->mutex_.releaseLock();
+    bucket1->mutex_.releaseLock(tbl->db_->procSlot);
     return rc;
 }
 
@@ -311,7 +311,7 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     //it may run into deadlock, when two threads updates tuples which falls in
     //same buckets.So take both the mutex one after another, which will reduce the
     //deadlock window.
-    int ret = bucket->mutex_.getLock();
+    int ret = bucket->mutex_.getLock(tbl->db_->procSlot);
     if (ret != 0)
     {
         printError(ErrLockTimeOut,"Unable to acquire bucket Mutex for bucket %d",bucketNo);
@@ -323,7 +323,7 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     printDebug(DM_HashIndex, "Updating hash index node: Bucket for new value is %d", newBucketNo);
 
     Bucket *bucket1 = &buckets[newBucketNo];
-    bucket1->mutex_.getLock();
+    bucket1->mutex_.getLock(tbl->db_->procSlot);
     if (ret != 0)
     {
         printError(ErrLockTimeOut,"Unable to acquire bucket Mutex for bucket %d",newBucketNo);
@@ -347,8 +347,8 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     if (rc !=OK) 
     { 
         //TODO::add it back to the bucket list
-        bucket1->mutex_.releaseLock();
-        bucket->mutex_.releaseLock();
+        bucket1->mutex_.releaseLock(tbl->db_->procSlot);
+        bucket->mutex_.releaseLock(tbl->db_->procSlot);
         return rc; 
     }
     HashIndexNode *head2 = (HashIndexNode*) bucket1->bucketList_;
@@ -378,7 +378,7 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         //TODO::revert back the changes:delete and add the node + remove the logical undo log 
         //of the  DeleteHashIndexOperation
     } 
-    bucket1->mutex_.releaseLock();
-    bucket->mutex_.releaseLock();
+    bucket1->mutex_.releaseLock(tbl->db_->procSlot);
+    bucket->mutex_.releaseLock(tbl->db_->procSlot);
     return rc;
 }

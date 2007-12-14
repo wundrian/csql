@@ -96,19 +96,19 @@ class Transaction
 class TransactionManager
 {
     public:
-    TransactionManager() { trans = NULL; }
+    TransactionManager() {  }
     ~TransactionManager() {}
-    Transaction *trans;
+    //Transaction *trans;
+
     Transaction *firstTrans;
 
     void setFirstTrans(Transaction *trans);
-    void setTrans(Transaction *trans);
     void printUsageStatistics();
     void printDebugInfo(Database *sysdb);
 
-    DbRetVal startTransaction(IsolationLevel level);
-    DbRetVal commit(LockManager *lManager_);
-    DbRetVal rollback(LockManager *lManager_);
+    DbRetVal startTransaction(LockManager *lManager, IsolationLevel level);
+    DbRetVal commit(LockManager *lManager);
+    DbRetVal rollback(LockManager *lManager, Transaction *t=NULL);
 
 };
 #endif

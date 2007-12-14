@@ -21,14 +21,14 @@ int DebugDM_Lock = 0;
 int DebugDM_Transaction = 0;
 int DebugDM_UndoLog = 0;
 int DebugDM_RedoLog = 0;
-int DebugDM_Index = 1;
-int DebugDM_HashIndex = 1;
+int DebugDM_Index = 0;
+int DebugDM_HashIndex = 0;
 int DebugDM_SystemDatabase = 0;
 int DebugDM_Database = 0;
 int DebugDM_Table = 0;
-int DebugDM_Predicate = 1;
+int DebugDM_Predicate = 0;
 int DebugDM_TableIterator = 0;
-
+int DebugDM_Process=0;
 
 int printError1(DbRetVal val, char* fname, int lno, char *format, ...)
 {
@@ -68,6 +68,9 @@ int printDebug1(int module, char *fname, int lno, char *format, ...)
      case DM_Database: { if (!DebugDM_Database) return 1; break; }
      case DM_Table: { if (!DebugDM_Table) return 1; break; }
      case DM_Iterator: { if (!DebugDM_TableIterator) return 1; break; }
+     case DM_Predicate: { if (!DebugDM_Predicate) return 1; break; }
+     case DM_Process: { if (!DebugDM_Process) return 1; break; }
+
   }
 
   va_list ap;

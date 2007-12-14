@@ -182,7 +182,6 @@ host_vendor = pc
 includedir = ${prefix}/include
 infodir = ${prefix}/info
 install_sh = /home1/praba/csql/build/csql/install-sh
-libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localstatedir = ${prefix}/var
 mandir = ${prefix}/man

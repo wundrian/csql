@@ -110,9 +110,9 @@ DbRetVal TableImpl::execute()
         return ErrSysInternal;
     }
     if (useIndex_ >= 0) 
-        iter = new TupleIterator(pred_, scanType_, idxInfo[useIndex_], chunkPtr_);
+        iter = new TupleIterator(pred_, scanType_, idxInfo[useIndex_], chunkPtr_, sysDB_->procSlot);
     else if (scanType_ == fullTableScan)
-        iter = new TupleIterator(pred_, scanType_, NULL, chunkPtr_);
+        iter = new TupleIterator(pred_, scanType_, NULL, chunkPtr_, sysDB_->procSlot);
     else
     {
         printError(ErrSysFatal,"Unable to create tuple iterator");//should never happen

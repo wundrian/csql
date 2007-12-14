@@ -35,8 +35,8 @@ class Mutex
     int init();
     int init(char *name);
     int tryLock(int tries=0, int waitmsecs=0);
-    int getLock(bool procAccount=true);
-    int releaseLock(bool procAccount=true);
+    int getLock(int procSlot, bool procAccount=true);
+    int releaseLock(int procSlot, bool procAccount=true);
     int destroy();
 };
 

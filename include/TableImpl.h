@@ -43,11 +43,12 @@ class TupleIterator
     BucketIter *bIter;
     IndexInfo *info;
     void *chunkPtr_;
+    int procSlot;
 
     TupleIterator(){}
     public:
-    TupleIterator(Predicate *p, ScanType t, IndexInfo *i, void *cptr)
-    { pred_ = p ; scanType_ = t; info = i; chunkPtr_ = cptr; }
+    TupleIterator(Predicate *p, ScanType t, IndexInfo *i, void *cptr, int pslot)
+    { pred_ = p ; scanType_ = t; info = i; chunkPtr_ = cptr; procSlot =pslot;}
     DbRetVal open();
     void* next();
     DbRetVal close();

@@ -138,14 +138,14 @@ class Chunk
     private:
 
     int initMutex();
-    int getChunkMutex();
-    int releaseChunkMutex();
+    int getChunkMutex(int procSlot);
+    int releaseChunkMutex(int procSlot);
     int destroyMutex();
     void createDataBucket(Page *page, size_t totalSize, size_t needSize);
     void splitDataBucket(VarSizeInfo *varInfo, size_t needSize);
     void* varSizeFirstFitAllocate(size_t size);
-    void freeForLargeAllocator(void *ptr);
-    void freeForVarSizeAllocator(void *ptr);
+    void freeForLargeAllocator(void *ptr, int pslot);
+    void freeForVarSizeAllocator(void *ptr, int pslot);
 
     void* allocateForLargeDataSize(Database *db);
     void* allocateFromFirstPage(Database *db, int noOfDataNodes);

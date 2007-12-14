@@ -57,7 +57,7 @@ class DatabaseManagerImpl : public DatabaseManager
 
 
     ProcessManager *pMgr_;
-
+    int procSlot;
 
     //only SessionImpl creates object of this class
     DatabaseManagerImpl() { systemDatabase_ = NULL; tMgr_ = NULL; lMgr_ =  NULL; 
@@ -89,6 +89,7 @@ class DatabaseManagerImpl : public DatabaseManager
     void setSysDb(Database *db) { systemDatabase_ = db; }
     void setDb(Database *db) { db_ = db; }
 
+    void setProcSlot();
     TransactionManager* txnMgr() { return tMgr_; }
     LockManager* lockMgr() { return lMgr_; }
 

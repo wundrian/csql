@@ -49,15 +49,19 @@ DbRetVal releaseAllResources(Database *sysdb, ThreadInfo *info )
             srvStop = 1;
         }
     }
-    if (info->trans_ && info->trans_->status_ == TransRunning)
+    TransactionManager *tm = new TransactionManager();
+    LockManager *lm = new LockManager(sysdb);
+    for (int i = 0 ;i < MAX_THREADS_PER_PROCESS; i++)
     {
-        TransactionManager *tm = new TransactionManager();
-        tm->setTrans(info->trans_);
-        LockManager *lm = new LockManager(sysdb);
-        printf("Rollback Transaction %x\n", info->trans_);
-        tm->rollback(lm);
+        if (info->thrTrans_[i].trans_ != NULL && info->thrTrans_[i].trans_->status_ == TransRunning)
+        {
+            printf("Rollback Transaction %x\n", info->thrTrans_[i].trans_);
+            tm->rollback(lm, info->thrTrans_[i].trans_);
+        }
     }
     info->init();
+    delete tm;
+    delete lm;
     return OK;
 }
 

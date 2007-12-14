@@ -161,13 +161,13 @@ int Mutex::tryLock(int tryTimes, int waitmsecs)
 }
 
 
-int Mutex::getLock(bool procAccount)
+int Mutex::getLock(int procSlot, bool procAccount)
 {
     int ret=0;
 #if defined(sparc) || defined(i686)
     ret = tryLock();
     //add it to the has_ of the ThreadInfo
-    if (ret ==0 && procAccount) ProcessManager::addMutex(this);
+    if (ret ==0 && procAccount) ProcessManager::addMutex(this, procSlot);
 
     return ret;
 #else
@@ -178,7 +178,7 @@ int Mutex::getLock(bool procAccount)
         return 1;
 }
 
-int Mutex::releaseLock(bool procAccount)
+int Mutex::releaseLock(int procSlot, bool procAccount)
 {
     int ret=0;
 #if defined(sparc) || defined(i686)
@@ -195,7 +195,7 @@ int Mutex::releaseLock(bool procAccount)
 #endif
     if (ret == 0 && procAccount) 
     {
-        ProcessManager::removeMutex(this);
+        ProcessManager::removeMutex(this, procSlot);
         return ret;
     }
     else

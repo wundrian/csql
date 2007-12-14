@@ -145,6 +145,8 @@ class Database
     DbRetVal getProcessTableMutex(bool procAccount = true);
     DbRetVal releaseProcessTableMutex(bool procAccount = true);
 
+    int procSlot;
+    void setProcSlot(int slot) { procSlot =slot;}
     //checks whether the ptr falls in the range of the database file size
     bool isValidAddress(void *ptr);
     friend class DatabaseManagerImpl;

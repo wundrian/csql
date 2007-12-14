@@ -140,7 +140,7 @@ DbRetVal SessionImpl::open(const char *username, const char *password)
         delete dbMgr; dbMgr = NULL;
         return rv;
     }
-
+    ((DatabaseManagerImpl*)dbMgr)->setProcSlot();
     //ProcessManager::systemDatabase = dbMgr->sysDb();
     return OK;
 }
@@ -222,15 +222,7 @@ DbRetVal SessionImpl::startTransaction(IsolationLevel level)
     }
     DbRetVal rv = OK;
 
-
-    rv = dbMgr->sysDb()->getTransTableMutex();
-    if (OK != rv)
-    {
-        printError(rv,"Unable to get TransTable mutex\n");
-        return rv;
-    }
-    rv = dbMgr->txnMgr()->startTransaction(level);
-    dbMgr->sysDb()->releaseTransTableMutex();
+    rv = dbMgr->txnMgr()->startTransaction(dbMgr->lockMgr(), level);
     return rv;
 }
 

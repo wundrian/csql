@@ -37,7 +37,7 @@ DbRetVal TupleIterator::open()
         int bucketNo = HashIndex::computeHashBucket(hIdxInfo->type,
                         keyPtr, hIdxInfo->noOfBuckets);
         Bucket *bucket =  &(hIdxInfo->buckets[bucketNo]);
-        int ret = bucket->mutex_.getLock();
+        int ret = bucket->mutex_.getLock(procSlot);
         if (ret != 0)
         {
             printError(ErrLockTimeOut,"Unable to acquire bucket Mutex for bucket %d",bucketNo);
@@ -46,13 +46,13 @@ DbRetVal TupleIterator::open()
         HashIndexNode *head = (HashIndexNode*) bucket->bucketList_;
         if (!head)
         {
-            bucket->mutex_.releaseLock();
+            bucket->mutex_.releaseLock(procSlot);
             bIter = NULL ;
             return OK;
         }
         printDebug(DM_HashIndex, "open:head for bucket %x is :%x", bucket, head);
         bIter  = new BucketIter(head);
-        bucket->mutex_.releaseLock();
+        bucket->mutex_.releaseLock(procSlot);
     }
     return OK;
 }
