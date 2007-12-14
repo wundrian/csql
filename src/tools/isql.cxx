@@ -28,6 +28,16 @@ FILE *fp;
 SqlConnection *conn;
 SqlStatement *stmt;
 bool getInput(bool);
+void printUsage()
+{
+   printf("Usage: csql [-u username] [-p passwd] [-s sqlfile] \n");
+   printf("       username -> username to connect to database\n");
+   printf("       password -> password to connect to database\n");
+   printf("       sqlfile -> filename containing sql statements\n");
+   return;
+  
+}
+
 int main(int argc, char **argv)
 {
     char username[IDENTIFIER_LENGTH];
@@ -36,19 +46,25 @@ int main(int argc, char **argv)
     password [0] = '\0';
     char filename[512];
     filename [0] ='\0';
-    int c = 0;
-    while ((c = getopt(argc, argv, "u:p:s")) != EOF) 
+    int c = 0, opt=0;
+    while ((c = getopt(argc, argv, "u:p:s:?")) != EOF) 
     {
         switch (c)
         {
             case 'u' : strcpy(username , argv[optind - 1]); break;
             case 'p' : strcpy(password , argv[optind - 1]); break;
-            case 's' : strcpy(filename , argv[optind ]); break;
+            case 's' : strcpy(filename , argv[optind - 1]); break;
+            case '?' : { opt = 1; break; } //print help 
             default: printf("Wrong args\n"); exit(1);
 
         }
     }//while options
     //printf("%s %s %s", username, password, filename);
+    if (opt == 1)
+    {
+        printUsage();
+        return 0;
+    }
     if (username[0] == '\0' )
     {
         strcpy(username, "root");
@@ -57,6 +73,7 @@ int main(int argc, char **argv)
     bool fileFlag = false;
     if (filename [0] !='\0')
     {
+        printf("Entering here\n");
         fp = fopen(filename,"r");
         if (fp == NULL)
         {
@@ -189,7 +206,8 @@ bool getInput(bool fromFile)
     rv = stmt->execute(rows);
     if (rv != OK) 
     {
-        printf("Statement execute failed with error %d\n", rv); 
+        printf("Statement execute failed with error %d\n", rv);
+        stmt->free();
         return true; 
     }
     if (stmtType == OTHER)
@@ -220,6 +238,7 @@ bool getInput(bool fromFile)
             printf("\n");
             if (tuple == NULL) { break; }
         }
+        stmt->close();
     }
     stmt->free();
     return true;

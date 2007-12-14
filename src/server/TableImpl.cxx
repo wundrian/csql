@@ -489,7 +489,11 @@ DbRetVal TableImpl::updateIndexNode(Transaction *tr, void *indexPtr, IndexInfo *
     INDEX *iptr = (INDEX*)indexPtr;
     DbRetVal ret = OK;
     Index* idx = Index::getIndex(iptr->indexType_);
-    ret = idx->update(this, tr, indexPtr, info, tuple);
+    //TODO::currently it updates irrespective of whether the key changed or not 
+    //because of this commenting the whole index update code. relook at it and uncomment
+
+    //ret = idx->update(this, tr, indexPtr, info, tuple);
+
     return ret;
 }
 

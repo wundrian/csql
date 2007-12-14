@@ -21,6 +21,11 @@ Condition::Condition()
     //pred = new PredicateImpl();
     pred = NULL;
 }
+void Condition::reset()
+{
+    if (pred) {delete pred;}
+    pred =  NULL;
+}
 Condition::~Condition()
 {
     //delete pred;

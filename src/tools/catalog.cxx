@@ -110,11 +110,10 @@ int main(int argc, char **argv)
                  printf("      <FieldInfo>\n");
                  printf("        <FieldName> %s </FieldName>\n", elem->name);
                  printf("        <Type> %d </Type>\n", info->type);
-                 printf("        <Type> %d </Type>\n", info->type);
                  printf("        <Length> %d </Length>\n", info->length);
                  printf("        <Primary> %d </Primary>\n", info->isPrimary);
                  printf("        <Null> %d </Null>\n", info->isNull);
-                 printf("        <Default> %d </Null>\n", info->isDefault);
+                 printf("        <Default> %d </Default>\n", info->isDefault);
                  printf("        <DefaultValue> %s </DefaultValue>\n", info->defaultValueBuf);
                  printf("      </FieldInfo>\n");
 

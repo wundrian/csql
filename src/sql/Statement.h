@@ -141,7 +141,7 @@ class SelStatement : public DmlStatement
     DbRetVal setTimeParam(int paramNo, Time value);
     DbRetVal setTimeStampParam(int paramNo, TimeStamp value);
 
-
+    DbRetVal close();
     DbRetVal resolve();
     SelStatement();
     ~SelStatement();

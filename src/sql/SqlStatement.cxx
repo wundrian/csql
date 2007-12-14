@@ -111,6 +111,14 @@ void* SqlStatement::next()
     SelStatement *selStmt = (SelStatement*) stmt; 
     return( (void*) selStmt->next() );
 }
+
+DbRetVal SqlStatement::close()
+{
+    if (pData.getStmtType() != SelectStatement) return OK;
+    SelStatement *selStmt = (SelStatement*) stmt; 
+    return selStmt->close();
+}
+
 void* SqlStatement::getFieldValuePtr( int pos )
 {
     if (pData.getStmtType() != SelectStatement) return 0;

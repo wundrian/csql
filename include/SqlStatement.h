@@ -114,6 +114,11 @@ class SqlStatement
     */
     void* next();
 
+    /**Closes the iterator and makes the statement ready for another execution
+    * @returns DbRetVal
+    */
+    DbRetVal close();
+
     /** get FieldValue->value ptr after fetch is done.
     * @returns address void*
     */

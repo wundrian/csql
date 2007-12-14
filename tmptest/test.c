@@ -4,7 +4,7 @@ int main()
 {
     DbRetVal rv = OK; 
     SqlConnection *con = new SqlConnection();
-    con->connect("praba", "manager");
+    con->connect("root", "manager");
     printf("Connected\n");
     SqlStatement *stmt = new SqlStatement();
     stmt->setConnection(con);
@@ -30,7 +30,7 @@ int main()
     stmt->execute(rows);
     timer.stop();
     }
-{printf("Sleeping\n"); sleep(10);}
+//{printf("Sleeping\n"); sleep(10);}
     con->commit();
     printf("Insert %lld %lld %lld\n", timer.min(), timer.max(), timer.avg());
     stmt->free();

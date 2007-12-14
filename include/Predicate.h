@@ -45,6 +45,7 @@ class Condition
     public:
     Condition();
     ~Condition();
+    void reset();
 
     /** gets the current predicate. This is used to create logical expressions with terms or predicates.
     *   @return Predicate* predicate

@@ -41,6 +41,9 @@ class FieldDef
         bindVal_ = NULL;
         isDefault_ = false;
         isNull_ = false;
+        isPrimary_ = false;
+        isUnique_ = false;
+        strcpy(fldName_, "");
     }
     char fldName_[IDENTIFIER_LENGTH];
     DataType type_;

@@ -134,13 +134,13 @@ conditions: condition AND condition
             Predicate *pred;
             pred = parsedData->insertPredicate((Predicate*) $2, OpNot, NULL);
             parsedData->setCondition((Predicate*)pred);
-            ((Predicate*)$2)->print();
+            //((Predicate*)$2)->print();
             $$= pred;
         }
         | condition
         {
             parsedData->setCondition((Predicate*)$1);
-            ((Predicate*)$1)->print();
+            //((Predicate*)$1)->print();
             $$=$1;
         }
         ;
@@ -277,16 +277,11 @@ default_expr_opt:
         ;
 
 null_expr_opt:
-        | NULL_VALUE
-        {
-            parsedData->setFldNotNull(false);
-        }
         | NOT NULL_VALUE
         {
             parsedData->setFldNotNull(true);
         }
         ;
-
 constraint_defn: primary_key_constraint
         ;
 
@@ -304,6 +299,14 @@ field_type: INT_TYPE
         | SHORT_TYPE
         {
             parsedData->setFldType(typeShort);
+        }
+        | BIGINT_TYPE
+        {
+            parsedData->setFldType(typeLongLong);
+        }
+        | FLOAT_TYPE
+        {
+            parsedData->setFldType(typeFloat);
         }
         | DOUBLE_TYPE
         {

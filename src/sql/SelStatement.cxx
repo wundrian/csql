@@ -30,6 +30,10 @@ SelStatement::SelStatement()
 
 SelStatement::~SelStatement()
 {
+    if (table) {
+        table->setCondition(NULL);
+        if (dbMgr) dbMgr->closeTable(table);
+    }
     if (totalParams) {
         free(params);
         params =  NULL;
@@ -278,13 +282,13 @@ DbRetVal SelStatement::resolve()
 
     table->setCondition(parsedData->getCondition());
 
-
-
     rv = resolveForCondition();
     if (rv != OK) 
     {
         //TODO::free memory allocated for params
         table->setCondition(NULL);
+        dbMgr->closeTable(table);
+
     }
     return rv;
 }
@@ -433,15 +437,25 @@ void* SelStatement::fetch()
     return tuple;
 }
 
+DbRetVal SelStatement::close()
+{
+    return table->close();
+}
+
 void* SelStatement::fetchAndPrint()
 {
     void *tuple = table->fetch();
     if (NULL == tuple) return NULL;
     FieldValue *value;
+    bool nullValueSet;
     for (int i = 0; i < totalFields; i++)
     {
         value = bindFields[i];
-        AllDataType::printVal(value->value, value->type, value->length);
+        nullValueSet = table->isFldNull(i+1);
+        if (nullValueSet) 
+            printf("NULL\t");
+        else 
+            AllDataType::printVal(value->value, value->type, value->length);
     }
     return tuple;
 }

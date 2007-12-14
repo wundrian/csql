@@ -8,11 +8,11 @@ int main()
     SqlStatement *stmt = new SqlStatement();
     stmt->setConnection(con);
     char statement[1024];
-    strcpy(statement, "SELECT * from t1 ;");
+    strcpy(statement, "SELECT * from t1  where f1 = 5;");
     int rows =0;
     rv = stmt->prepare(statement);
     if (rv != OK) {delete stmt; delete con; return 1; }
-    int id1 =100, id2 = 100;
+    int id1 =50, id2 = 100;
     int icount=0;
     rv = stmt->bindField(1, &id1);
     if (rv != OK) {delete stmt; delete con; return 2; }

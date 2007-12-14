@@ -84,7 +84,11 @@ void ParsedData::reset()
         free(value->parsedString);
         free(value->value);
     }
+   
     fieldValueList.reset();
+    predicate.reset();
+    conditionValueList.reset();
+    
     creFldList.removeAll();
     isUnique = false; 
     isPrimary = false; 

@@ -131,7 +131,12 @@ class ParsedData
 
     Predicate* insertPredicate(char *fldName, ComparisionOp op, void** value);
     Predicate* insertPredicate(Predicate *p1, LogicalOp op, Predicate *p2 = NULL);
-    void setCondition(Predicate *pred) { predicate.setPredicate(pred); }
+    void setCondition(Predicate *pred) 
+    { 
+        //No body is deleting memory allocated during condition::setTerm for PredicateImpl 
+        //have list in this pared data and delete it during reset
+        predicate.setPredicate(pred); 
+    }
     Condition* getCondition() { return &predicate; }
 
     void insertFieldValue(FieldValue *newVal) { fieldValueList.append(newVal); }
