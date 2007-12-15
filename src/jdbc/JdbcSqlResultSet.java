@@ -62,7 +62,9 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
 
         isClosed = true;
         curRow = -1;
-	rsmd.close();
+	//rsmd.close(); //commented by praba
+        //after close the app can reexecute.
+        if (stmt != null) stmt.closeScan();
         return;
     }
 

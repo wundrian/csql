@@ -31,6 +31,7 @@ public class JdbcSqlStatement extends JSqlError implements Statement, JSqlErrorT
         {
             if(!isClosed)
                 close();
+            jniStmt.free();//praba
         }
         catch(SQLException e)
         {
@@ -42,7 +43,7 @@ public class JdbcSqlStatement extends JSqlError implements Statement, JSqlErrorT
         int rv = 0;
         if(isPrepared) 
 	{
-            rs.close();
+            if(jniStmt.isSelect()) rs.close();
             jniStmt.freeStmt();
             isPrepared = false;
         }
@@ -71,13 +72,19 @@ public class JdbcSqlStatement extends JSqlError implements Statement, JSqlErrorT
         if(isClosed) return;
         if(isPrepared)
         {
-            rs.close();
+            if(jniStmt.isSelect() ) rs.close();
             jniStmt.freeStmt();
-            jniStmt.free();
+            //jniStmt.free(); Praba. this makes the stmt unusable after close
         }
         isClosed = true;
         return;
     }
+
+    public void closeScan() throws SQLException
+    {
+        if( jniStmt.isSelect()) jniStmt.close();
+    }
+
     public boolean execute (String query) throws SQLException
     {
         prepareInt(query);
@@ -119,9 +126,9 @@ public class JdbcSqlStatement extends JSqlError implements Statement, JSqlErrorT
     {
         if(!jniStmt.isSelect())
             return (null);
-
-        //TODO::Create ResultSet object
-        return null;
+         //praba:;changed this
+         rs.setStmt(this);
+         return rs; 
     }
     public int getResultSetConcurrency() throws SQLException
     {

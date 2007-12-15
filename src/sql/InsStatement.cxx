@@ -46,13 +46,14 @@ DbRetVal InsStatement::execute(int &rowsAffected)
         value = (FieldValue*) params[i];
         if (paramValues[i] == NULL) 
         {
-            continue;
             //printError(ErrBadCall, "param values not set");
+            continue;
             //return ErrBadCall;
         }
         AllDataType::copyVal(value->value, paramValues[i], value->type, value->length);
     }
     rv = table->insertTuple();
+    if (rv ==OK) rowsAffected = 1;
     return rv;
 }
 
@@ -86,6 +87,7 @@ DbRetVal InsStatement::setIntParam(int paramNo, int value)
         printError(ErrSysFatal, "condition value is null. Should never happen");
         return ErrSysFatal;
     }
+
     *(int*)cValue->value = value; 
     return OK;
 }
@@ -265,7 +267,7 @@ DbRetVal InsStatement::resolve()
             value->paramNo = paramPos++;
         }
         if (!value->paramNo) 
-            AllDataType::strToValue(value->value, value->parsedString, fInfo->type);
+            AllDataType::strToValue(value->value, value->parsedString, fInfo->type, value->length);
     }
     delete fInfo;
     totalParams = paramPos -1;

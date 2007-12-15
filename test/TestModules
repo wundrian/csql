@@ -10,3 +10,5 @@ system/proc
 system/lock
 system/trans
 tools/catalog
+jdbc/Connection
+jdbc/Statement

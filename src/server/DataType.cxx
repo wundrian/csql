@@ -390,7 +390,7 @@ void AllDataType::copyVal(void* dest, void *src, DataType type, int length)
             {
                 strncpy((char*)dest, (char*)src, length);
                 char *d =(char*)dest;
-                d[length] = '\0';
+                d[length-1] = '\0';
                 break;
             }
         case typeBinary:
@@ -906,7 +906,7 @@ void* AllDataType::alloc(DataType type, int length)
     }
     return dest;
 }
-void AllDataType::strToValue(void* dest, char *src, DataType type)
+void AllDataType::strToValue(void* dest, char *src, DataType type, int length)
 {
     switch(type)
     {
@@ -947,6 +947,11 @@ void AllDataType::strToValue(void* dest, char *src, DataType type)
             break; }
         case typeDecimal:
             //TODO::for porting
+        case typeString: {
+                strncpy((char*)dest, (char*)src, length);
+                char *d =(char*)dest;
+                d[length-1] = '\0'; 
+                break;}
         case typeDate: {
             int d,m,y,res=0;
             res = sscanf( src, "%d-%d-%d", &d, &m, &y );

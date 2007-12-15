@@ -37,8 +37,10 @@ public final class JdbcSqlPreparedStatement extends JdbcSqlStatement
     {
         if(!executeInt())
             throw getException(CSQL_NOT_QUERY);
-        //TODO
-        return null;
+        //Praba changed this
+        rs.setStmt( this );
+        return( rs );
+        //return null;
     }
     public int executeUpdate() throws SQLException
     {

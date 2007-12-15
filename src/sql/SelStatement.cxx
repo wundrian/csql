@@ -429,7 +429,7 @@ void* SelStatement::fetch()
         value = bindFields[i];
         if (bindFieldValues[i] == NULL) 
         {
-            printError(ErrBadCall, "Fields are not binded");
+            printError(ErrBadCall, "Fields are not binded properly. Should never happen");
             return NULL;
         }
         AllDataType::copyVal(bindFieldValues[i], value->value, value->type, value->length);

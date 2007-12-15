@@ -227,7 +227,7 @@ JNIEXPORT jlong JNICALL Java_csql_jdbc_JSqlStatement_close
     }
     SqlStatement *stmt = (SqlStatement*) env->GetLongField( obj, fid );
     int rv =0;
-    //rv  = stmt->close();
+    rv  = stmt->close();
     return rv;
 }
 

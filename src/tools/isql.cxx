@@ -73,7 +73,6 @@ int main(int argc, char **argv)
     bool fileFlag = false;
     if (filename [0] !='\0')
     {
-        printf("Entering here\n");
         fp = fopen(filename,"r");
         if (fp == NULL)
         {
