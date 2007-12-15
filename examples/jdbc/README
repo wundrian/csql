@@ -1,0 +1,46 @@
+----------------------------------README---------------------------------------
+This contains an example program that demonstates usage of jdbc interface.
+
+What it does?
+-------------
+It creates table T1 with two fields f1 integer and f2 string.
+Creates index on f1 field of T1 table.
+Inserts 10 rows into the table T1, 1 insert per transaction
+Update all rows where f1 field have even numbers
+Delete all rows where f1 value is 0,3,6,9
+Select rows with f1 value 0 to 9 and displays
+Drop the table
+
+How to compile
+--------------
+1. Make a copy of this directory in a writable area
+2. Edit the Makefile and set the JAVAC variable to point to the javac
+   compiler on your system.
+3. Use the make command to compile
+	$make
+
+How to run
+----------
+1. Set the CSQL_CONFIG_FILE environment variable to absolute path of csql.conf file.
+	$export CSQL_CONFIG_FILE=/tmp/csql.conf
+2. Set the LD_LIBRARY_PATH environment variable to csql library path
+	$export LD_LIBRARY_PATH=$CSQL_INSTALL_ROOT/lib:$LD_LIBRARY_PATH
+
+3. Run the class file created by make
+	$java jdbcexample
+
+Output of example:
+------------------
+Table t1 created
+Index created on T1 (f1) 
+Total Rows inserted 10
+Total Rows updated 5
+Total Rows deleted 4
+Tuple value is 1 101
+Tuple value is 2 202
+Tuple value is 4 204
+Tuple value is 5 105
+Tuple value is 7 107
+Tuple value is 8 208
+Total Rows selected 6
+Dropped table T1

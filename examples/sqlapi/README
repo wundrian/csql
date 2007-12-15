@@ -1,0 +1,48 @@
+----------------------------------README---------------------------------------
+This contains an example program that demonstates usage of sqlapi interface.
+
+What it does?
+-------------
+It creates table t1 with two fields f1 integer and f2 string.
+Creates index on f1 field of t1 table.
+Inserts 100 rows into the table t1, 1 insert per transaction
+select rows with f1 value 1 to 10 and displays
+Drop the table
+
+How to compile
+--------------
+1. Make a copy of this directory in a writable area
+2. Edit the Makefile and set the CPlus variable to point to the C++
+   compiler on your system.
+3. Set the CSQL_INSTALL_ROOT environment variable to point to your installation 
+   directory or change INCL and LIB variable in the Makefile to point to
+   installation directory
+4. Use the make command to compile
+	$make
+
+How to run
+----------
+1. Set the CSQL_CONFIG_FILE environment variable to absolute path of csql.conf file.
+	$export CSQL_CONFIG_FILE=/tmp/csql.conf
+2. Set the LD_LIBRARY_PATH environment variable to csql library path
+	$export LD_LIBRARY_PATH=$CSQL_INSTALL_ROOT/lib:$LD_LIBRARY_PATH
+
+3. Run the executable created by make
+	$./sqlapiexample
+
+Output of example:
+------------------
+Table t1 created
+Index created on t1(f1) 
+Total Rows Inserted 100
+Row value is 0 Gopika_0
+Row value is 1 Gopika_1
+Row value is 2 Gopika_2
+Row value is 3 Gopika_3
+Row value is 4 Gopika_4
+Row value is 5 Gopika_5
+Row value is 6 Gopika_6
+Row value is 7 Gopika_7
+Row value is 8 Gopika_8
+Row value is 9 Gopika_9
+Table dropped

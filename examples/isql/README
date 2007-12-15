@@ -1,0 +1,70 @@
+----------------------------------README---------------------------------------
+This contains an example program that demonstates usage of csql tool.
+
+What it does?
+-------------
+A) create.sql
+It creates table t1 with two fields f1 integer (primary key) and f2 string.
+
+B) insert.sql
+Inserts 5 rows into the table t1
+ 
+C) select.sql
+select value of f2 from table t1 for tuple with f1 value 3
+select all the tuples from table t1
+
+D) delete.sql
+delete all rows from table t1 with f1 value 3
+delete all rows from table t1;
+
+E) Drop the table
+drop the table object
+
+How to run
+----------
+1. Set the CSQL_CONFIG_FILE environment variable to absolute path of csql.conf file.
+	$export CSQL_CONFIG_FILE=/tmp/csql.conf
+2. Set the LD_LIBRARY_PATH environment variable to csql library path
+	$export LD_LIBRARY_PATH=$CSQL_INSTALL_ROOT/lib:$LD_LIBRARY_PATH
+
+3. Run the csql tool with appropriate sql script as input
+	$csql -u root -p manager -s create.sql
+
+Output of example:
+------------------
+A) create.sql
+echo create table t1 (f1 integer, f2 char (20), primary key(f1));
+Statement Executed
+
+B) insert.sql
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+
+C)select.sql
+echo select f2 from t1 where f1 =3;
+---------------------------------------------------------
+        f2
+---------------------------------------------------------
+        Baskar
+
+echo select * from t1;
+---------------------------------------------------------
+        f1      f2
+---------------------------------------------------------
+        1       Hari
+        2       Mani
+        3       Baskar
+        4       Babu
+        5       Raghu
+
+D)delete.sql
+echo delete from t1 where f1 =3;
+Statement Executed: Rows Affected = 1
+echo delete from t1;
+Statement Executed: Rows Affected = 4
+
+E)drop.sql
+Statement Executed
