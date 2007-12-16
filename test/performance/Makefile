@@ -6,11 +6,12 @@ ifeq ($(OSNAME), SunOS)
 CPlus = CC
 CPlusFlags = -O2 -w -mt -xarch=v8
 SYSLIBS=-ldl -lnsl -lsocket  -lposix4
+JAVAC = javac
 else
 ifeq ($(OSNAME), Linux)
 CPlus = g++
-#CPlusFlags = -O2 -w 
-CPlusFlags = -g -w 
+CPlusFlags = -O2 -w 
+JAVAC = javac
 SYSLIBS= -rdynamic -lrt -lpthread -lcrypt
 else
 PlatForm=notsupported
@@ -26,7 +27,7 @@ TARGETS = \
         DMLTest \
         DMLTestChar \
         DMLThreadTest \
-        DMLTT \
+        JDBCTest \
 	Range
        
 
@@ -40,11 +41,11 @@ DMLTestChar: DMLTestChar.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 DMLThreadTest: DMLThreadTest.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
-DMLTT: DMLTT.c
-	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 Range: Range.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+JDBCTest: JDBCTest.java
+	$(JAVAC) JDBCTest.java
 
 clean:
-	rm -f $(TARGETS)
+	rm -f $(TARGETS) *.class
 
