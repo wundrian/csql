@@ -30,7 +30,7 @@ It aids in the development of high performance, fault-resilent applications requ
 
 This database is built keeping ultra fast performance in mind. This database suits well as a front end database for other commercial database to increase the throughput. Throughput of queries involving single table may improve by 20x. This loads all the data into memory and avoids on demand fetches from disk and avoids the overhead of buffer manager found in commercial disk based database systems. It provides fast access through shared memory.
 
-This main memory database shall be used as a cache for disk based database to improve the throughput of your exising application by 20x times without any code change. For more information of how to do this, please refer \emph{http://www.databasecache.com}
+This main memory database shall be used as a cache for disk based database to improve the throughput of your exising application by 20x times without any code change. 
 \subsection{Platforms Supported}
 \label{psupported}
 Linux \\
@@ -148,61 +148,131 @@ This starts the server and creates the database file.
 \label{shutserver}
 Pressing Ctrl-C on the terminal where csqlserver is running, is safe and will stop the server gracefully by removing the database file.
 
+\subsection{Creating tables}
+\label{creatingtables}
+Tables and Indexes can be created though interactive sql tool named csql.
+To create table t1 with two fields integer and char
+\begin{verbatim}
+$csql
+CSQL>create table t1 (f1 int, f2 char (20), primary key (f1));
+\end{verbatim}
+If you see "Statement Executed" message after you enter the above command, it means the table is created successfully.
 
+\subsection{Inserting data into tables}
+\label{insertingdata}
+Rows shall be inserted using INSERT SQL statement through csql tool
+\begin{verbatim}
+$csql
+CSQL>insert into t1 values (10, 'Value');
+
+\end{verbatim}
+If you see "Statement Executed: Rows Affected = 1 " message after you enter the above command, it means the row is inserted successfully.
+
+\subsection{Selecting data from tables}
+\label{selectdata}
+
+\begin{verbatim}
+$csql
+CSQL>select * from t1;
+\end{verbatim}
+It will display all the rows in the table t1
+
+
+\subsection{Deleting data from tables}
+\label{deletedata}
+
+\begin{verbatim}
+$csql
+CSQL>select * from t1;
+\end{verbatim}
+It will delete all the rows in the table t1
 \section{API Interfaces}
 
 \subsection{SQL Support}
 \label{SQL Syntax Support:}
 
-CREATE TABLE {tablename} ({fielddefinitionlist}[, primary ({fieldname})]) [HASH] [UNIQUE]
-     fielddefinitionlist shall be fieldname type [(size)] [NOT NULL] \\
+\begin{verbatim}
+CREATE TABLE {tablename} ({fielddefinitionlist}[, primary ({fieldname})]) 
+     fielddefinitionlist shall be fieldname type [(size)] [NOT NULL] 
 
-CREATE INDEX {idxname} ON {tablename}({fieldname}) \\
+CREATE INDEX {idxname} ON {tablename}({fieldname}) [HASH] [UNIQUE] [PRIMARY]
 
-DROP TABLE {tablename} \\
+DROP TABLE {tablename} 
 
-DROP INDEX {indexname} \\
+DROP INDEX {indexname} 
 
-INSERT INTO {tablename} [fieldNameList] VALUES ({valuelist}) \\
+INSERT INTO {tablename} [fieldNameList] VALUES ({valuelist}) 
 
-UPDATE {tablename} SET {fldname=value ,...} [WHERE {condition}] \\
+UPDATE {tablename} SET {fldname=value ,...} [WHERE {condition}] 
 
-DELETE FROM {tablename} [WHERE {condition}] \\
+DELETE FROM {tablename} [WHERE {condition}] 
 
-SELECT {* | fieldNameList} FROM {tablename} [WHERE {condition}] \\
-     condition shall be [NOT] {predicate} {AND | OR } {predicate} \\
-     predicate shall be {fieldName} {"=, !=, >,<, >=, <="} [fieldName | value] \\
-                         LIKE {format}, BETWEEN {value} AND {value} , IN {list} \\
+SELECT {* | fieldNameList} FROM {tablename} [WHERE {condition}] 
+     condition shall be [NOT] {predicate} {AND | OR } {predicate} 
+     predicate shall be {fieldName} {"=, !=, >,<, >=, <="} [fieldName | value] 
+                         LIKE {format}, BETWEEN {value} AND {value} , IN {list} 
+\end{verbatim}
 
-\label {DataType support:}
-INT, LONG , BIGINT, SHORT, \\
-FLOAT,  DOUBLE, \\
-DATE, TIME,  TIMESTAMP, \\
-CHAR \\
+DataType support:
+INT, LONG , BIGINT, SHORT, 
+FLOAT,  DOUBLE, 
+DATE, TIME,  TIMESTAMP, 
+CHAR 
 
 
-\subsection{JDBC Interface Support}
-\label{JDBC Interface Support}
-
+\subsection{JDBC Interface }
+\label{JDBC Interface }
+\subsubsection{Supported Interfaces}
+\label{supportedInterfaces}
+\begin{verbatim}
 Connection:: connect, close
 Statement:: execute
 PreparedStatement:: execute, params
 ResultSetMetaData::
 ResultSet:: Forward only
+\end{verbatim}
+
 
 DataType Support:
 All Primitive types
 Date, Time, TimeStamp
 
-\subsection{SQLAPI Interface Support}
-\label{SQLAPI Interface Support}
+\subsubsection{Connecting from jdbc}
+\label{jdbcconnect}
+The default username is root and password is manager for the csql database system. Below code snippet shows how to connect to csql database from jdbc applications \\
+\begin{verbatim}
+          Class.forName("csql.jdbc.JdbcSqlDriver");
+          Connection con = DriverManager.getConnection("jdbc:csql", "root", "manager");
+\end{verbatim}
 
+\subsubsection{Inserting data through jdbc}
+\label{jdbcinsert}
+ The below code snippet inserts into table t1 with two fields, f1 integer and f2 char \\
+\begin{verbatim}
+          PreparedStatement stmt = null;
+          stmt = con.prepareStatement("INSERT INTO T1 (f1, f2) VALUES (?, ?);");
+          int ret =0;
+          for (int i =0 ; i< 10 ; i++) {
+             stmt.setInt(1, i);
+             stmt.setString(2, String.valueOf(i+100));
+             ret = stmt.executeUpdate();
+             if (ret != 1) break; //error
+           }
+           stmt.close();
+           con.commit();
+\end{verbatim}
+
+\subsection{SQLAPI }
+\label{SQLAPI }
+
+\begin{verbatim}
 SqlConnection :: connect, disconnect, commit, rollback
 
 SqlStatement:: prepare, execute,  bindField, bindParam,
                fetch, set[Type]Param, getProjFldInfo, getParamFldInfo
 
 FieldInfo :: Meta data information for params and projection fields.
+\end{verbatim}
 
 
 \subsection{DB API}
@@ -223,7 +293,7 @@ You can obtain a connection to database using the following code snippet:
 \begin{verbatim}
 Connection conn;
 DbRetVal rv = OK;
-rv = conn.open("praba", ",manager");
+rv = conn.open("root", ",manager");
 if (rv!= OK) return -1;
 ...
 \end{verbatim}
@@ -236,7 +306,7 @@ For example to create table with two fields,
     DatabaseManager *dbMgr = conn.getDatabaseManager();
     if (dbMgr == NULL) { printf("Bad connection \n"); return -1;}
     TableDef tabDef;
-    tabDef.addField("f1", typeInt, 0, NULL, true, true);
+    tabDef.addField("f1", typeInt, 0, NULL, true);
     tabDef.addField("f2", typeString, 196);
     rv = dbMgr->createTable("t1", tabDef);
     if (rv != OK) { printf("Table creation failed\n"); return -1; }
@@ -254,7 +324,7 @@ Application buffer should first be binded to the respective fields using the bin
     Table *table = dbMgr->openTable("t1");
     if (table == NULL) { printf("Unable to open table\n"); return -1; }
     int id = 100;
-    char name[196] = "PRABAKARAN";
+    char name[196] = "Tuticorin";
     table->bindFld("f1", &id);
     table->bindFld("f2", name);
     conn.startTransaction();
@@ -274,7 +344,7 @@ Predicate if required shall be created using the condition interface and set in 
    p1.setTerm("f1", OpEquals, &val1);
    table->setCondition(p1);
    int id = 100;
-   char name[196] = "PRABAKARAN";
+   char name[196] = "Bangalore";
    table->bindFld("f1", &id);
    table->bindFld("f2", name);
    table->execute();
@@ -291,9 +361,141 @@ For example:
 \begin{verbatim}
         tuple = (char*)table->fetch() ;
         if (tuple == NULL)  {printf(" No tuple found \n" ); table->close();return -1;}
-        strcpy(name, "PRABAKARAN0950576543210"); //update the value
+        strcpy(name, "50576543210"); //update the value
         table->updateTuple();
 \end{verbatim}
+
+\section{Configuration}
+\label{confFile}
+\subsection{csql.conf}
+\label{csqlconf}
+Configuration is read from environment variable \begin{verbatim}CSQL_CONFIG_FILE \end{verbatim}. A default configuration is available at the src root directory with name csql.conf.
+
+\subsubsection{Server Section}
+\label{serversection}
+This contains parameters which affect the functioning of the csql server process. For Server section parameters, make sure that the value is same for the server process and all the csql client process which connects to it. otherwise, behavior is undefined
+
+\begin{verbatim} PAGE_SIZE \end{verbatim}
+Default Value :8192 \\
+Description: Each database is logically divided into pages and allocation happens in unit of pages. This defines the size of the allocation unit. Increasing this value will reduce frequent allocation of pages \\
+
+
+\begin{verbatim} MAX_TRANS \end{verbatim}
+Default Value :100 \\
+Description: Total number of active transactions that can run concurrently in the system \\
+
+\begin{verbatim} MAX_PROCS \end{verbatim}
+Default Value :100 \\
+Description: Total number of client process which can connect and work with the database concurrently \\
+
+\begin{verbatim} MAX_SYS_DB_SIZE \end{verbatim}
+Default Value :1048576 \\
+Description: Maximum size of the system database. Catalog information and control information(lock, logs, etc) are stored in this internal database. \\
+
+\begin{verbatim} MAX_DB_SIZE \end{verbatim}
+Default Value :10485760 \\
+Description: Maximum size of the user database. Rows and Index information of tables are stored in this database.\\
+
+
+\begin{verbatim} SYS_DB_KEY \end{verbatim}
+Default Value :2222 \\
+Description: Shared memory key to be used by the system to create and locate system database. Change this value if u want to run two csql instances in same host \\
+
+\begin{verbatim} USER_DB_KEY \end{verbatim}
+Default Value :5555 \\
+Description: Shared memory key to be used by the system to create and locate user database \\
+
+\begin{verbatim} LOG_FILE \end{verbatim}
+Default Value :/tmp/log/log.out \\
+Description: Give full path for the log file. This is  where important system actions are stored for tracing application events\\
+
+
+\begin{verbatim} MAP_ADDRESS \end{verbatim}
+Default Value :400000000 \\
+Description: The virtual memory start address at which the shared memory segment will be created and attached\\
+
+\subsubsection{Client Section}
+\label{serversection}
+This contains parameters which affect the functioning of the client process which connects to the database.
+
+\begin{verbatim} MUTEX_TIMEOUT_SECS \end{verbatim}
+Default Value : 0 \\
+Description: Mutex interval in seconds
+
+\begin{verbatim} MUTEX_TIMEOUT_USECS \end{verbatim}
+Default Value : 1000 \\
+Description: Mutex interval in milli seconds
+
+\begin{verbatim} MUTEX_TIMEOUT_RETRIES \end{verbatim}
+Default Value : 10 \\
+Description: Mutex retry count in case it fails to acquire
+
+
+\begin{verbatim} LOCK_TIMEOUT_SECS \end{verbatim}
+Default Value : 0 \\
+Description: Lock interval in seconds
+
+\begin{verbatim} LOCK_TIMEOUT_USECS \end{verbatim}
+Default Value : 1000 \\
+Description: Lock interval in milli seconds
+
+\begin{verbatim} LOCK_TIMEOUT_RETRIES \end{verbatim}
+Default Value : 10 \\
+Description: Lock retry count in case it fails to acquire
+
+\section{Tools}
+\label{tools}
+\subsection{csql tool}
+\label{csqltool}
+\begin{verbatim}
+Usage: csql [-u username] [-p passwd] [-s sqlfile] 
+       username -> username to connect to database
+       password -> password to connect to database
+       sqlfile -> filename containing sql statements
+\end{verbatim}
+
+Example: 
+\begin{verbatim}
+$csql -u root -p manager -s /tmp/import.sql
+\end{verbatim}
+
+\subsection{catalog tool}
+\label{catalogtool}
+\begin{verbatim}
+Usage: catalog [-u username] [-p passwd] [-l] [-i] [-d] [-T table] [-I index] [-D <lock|trans|proc>]
+       l -> list all table with field information
+       i -> reinitialize catalog tables. Drops all tables.
+       d -> print db usage statistics
+       T -> list table information
+       I -> list index information
+       D -> print debug information for system tables
+Note: If multiple options are specified, last one will be considered.
+\end{verbatim}
+
+Example: 
+\begin{verbatim}
+$catalog -u root -p manager -T table1
+\end{verbatim}
+Sample output:
+\begin{verbatim}
+<Table Info> 
+  <TableName> table1 </TableName>
+  <TupleCount> 0 </TupleCount>
+  <PagesUsed> 1 </PagesUsed>
+  <SpaceUsed> 16 </SpaceUsed>
+  <Indexes> 1 <Indexes>
+  <TupleLength> 20 </TupleLength>
+  <Fields> 2 </Fields>
+  <Indexes>
+<IndexName> t1_idx1_Primary </IndexName>
+  </Indexes>
+</Table Info> 
+\end{verbatim}
+
+\section{Common Error Messages}
+\label{errormessages}
+Message: Shared memory open failed  \\
+Check whether the csqlserver process is running \\
 
 % Stop your text
 \end{document}
