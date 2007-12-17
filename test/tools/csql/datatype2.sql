@@ -1,4 +1,4 @@
-echo char datatype testing
+echo char datatype testing;
 
 create table t1 (f1 char(20), f2 char(20), primary key (f1));
 insert into t1 values ('10', 'A');
@@ -62,3 +62,4 @@ select * from t1;
 
 delete from t1 where f1 = '50';
 select * from t1;
+drop table t1;

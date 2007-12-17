@@ -1,6 +1,6 @@
-echo int data type testing
+echo bigint data type testing;
 
-create table t1 (f1 long long, f2 long long,  primary key (f1));
+create table t1 (f1 bigint, f2 bigint,  primary key (f1));
 insert into t1 values (10, 1);
 insert into t1 values (11, 1);
 insert into t1 values (12, 1);
@@ -19,9 +19,9 @@ echo select * from t1 where f1 = 12 AND f2 >= 22;
 select * from t1 where f1 = 12 AND f2 >= 22;
 echo select * from t1 where f1 = 12 OR  f1 > 13;
 select * from t1 where f1 = 12 OR  f1 > 13;
-echo select * from t1 where f1 = 12 OR f2 = 13;
+echo select * from t1 where f1 = 12 OR f2 < 13;
 select * from t1 where f1 = 12 OR f2 < 13;
-echo select * from t1 where f1 = 12 OR f2 < 22;
+echo select * from t1 where f1 = 12 OR f2 <> 22;
 select * from t1 where f1 = 12 OR f2 <> 22;
 echo select * from t1 where NOT f1 = 12;
 select * from t1 where NOT f1 = 12;
@@ -48,3 +48,4 @@ select * from t1;
 
 delete from t1 where f1 = 50;
 select * from t1;
+drop table t1;

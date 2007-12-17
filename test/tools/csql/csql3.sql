@@ -49,3 +49,4 @@ echo select * from t1 where f1 = 12 + f2;
 select * from t1 where f1 = 12 + f2;
 echo select * from t1 where f1 =  f2;
 select * from t1 where f1 = f2;
+drop table t1;

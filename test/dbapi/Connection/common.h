@@ -30,7 +30,7 @@ DbRetVal insert(DatabaseManager *dbMgr, int val, bool isSleep)
     ret = table->insertTuple();
     if (ret != 0)  return ErrLockTimeOut;
     printf("Inserted tuple : %d %s\n", val, name);
-    if (isSleep) ::sleep(2);
+    if (isSleep) ::sleep(5);
     dbMgr->closeTable(table);
     return OK;
 }
@@ -56,7 +56,7 @@ DbRetVal select(DatabaseManager *dbMgr, int val, bool isSleep, bool checkUpd=fal
         return ErrUnknown; 
     }
     printf("ThreadID: %lu Tuple %d %s\n", os::getthrid(), id, name);
-    if (isSleep) ::sleep(2);
+    if (isSleep) ::sleep(5);
     dbMgr->closeTable(table);
     if ( checkUpd && strcmp(name, "KANCHANA") != 0) return ErrUnknown;
     return OK;

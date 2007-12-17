@@ -31,3 +31,4 @@ echo delete from t1;
 delete from t1;
 echo select * from t1;
 select *  from t1;
+drop table t1;

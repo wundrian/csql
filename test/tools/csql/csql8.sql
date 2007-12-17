@@ -1,4 +1,4 @@
-echo Description:count(*) test
+echo Description:count(*) test;
 
 create table t1 (f1 int, f2 int, primary key (f1));
 insert into t1 values (10, 20);
@@ -11,3 +11,4 @@ echo select * from t1;
 select count(*) from t1;
 echo select * from t1 where f1 =11;
 select count(*) from t1 where f1 = 11;
+drop table t1;

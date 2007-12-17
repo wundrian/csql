@@ -1,4 +1,4 @@
-echo bit data type testing
+echo bit data type testing;
 
 create table t1 (f1 bit, f2 bit));
 insert into t1 values (0, 0);
@@ -36,3 +36,4 @@ select * from t1;
 
 delete from t1 where f1 = 1;
 select * from t1;
+drop table t1;

@@ -1,4 +1,4 @@
-echo Description:BETWEEN and IN test
+echo Description:BETWEEN and IN test;
 
 create table t1 (f1 int, f2 char(10), f3 int, primary key (f1));
 insert into t1 values (10, '20', 10);
@@ -21,3 +21,4 @@ select * from t1 where f1 IN (12, 14, 50);
 
 echo select * from t1 where f1 NOT IN (12, 14, 50);
 select * from t1 where f1 NOT IN (12, 14, 50);
+drop table t1;

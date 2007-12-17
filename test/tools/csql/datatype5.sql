@@ -1,5 +1,4 @@
-echo float  data type testing
-
+echo float data type testing;
 create table t1 (f1 float, f2 float, primary key (f1));
 insert into t1 values (0.1048575, 10.234);
 insert into t1 values (-0.1048575, 11.234);
@@ -34,3 +33,4 @@ select * from t1;
 echo delete from t1 where f1 > 14.234;
 delete from t1 where f1 > 14.234;
 select * from t1;
+drop table t1;
