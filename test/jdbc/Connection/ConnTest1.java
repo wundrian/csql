@@ -9,6 +9,7 @@ public class ConnTest1
        {
            Class.forName("csql.jdbc.JdbcSqlDriver");
            Connection con = DriverManager.getConnection("jdbc:csql", "root", "manager");
+           con.setAutoCommit( false );
            Statement cStmt = con.createStatement();
 	   int ret =0;
            cStmt.execute("CREATE TABLE T1 (f1 integer, f2 char (20));");
