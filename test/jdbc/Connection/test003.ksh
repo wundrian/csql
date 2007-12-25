@@ -6,7 +6,7 @@ then
     REL_PATH=`pwd`/jdbc/Connection
 fi
 export CLASSPATH=$CLASSPATH:${REL_PATH}
-java -Xm256m -XmX256m ConnTest3
+java -Xms256m -Xmx256m ConnTest3
 if [ $? -ne 0 ]
 then
    exit 1;
