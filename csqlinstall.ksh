@@ -5,11 +5,11 @@
 root_dir=`pwd`
 install_dir=`grep "prefix =" Makefile|tail -1|awk '{ print $3 }'`
 echo "installdir is ${install_dir}"
-cd src/sql
-sed -e "s/getc([ ]*yyin[ ]*)/(*lexInput++)/1" dmllex.cxx >tmp.c
-cp tmp.c dmllex.cxx
-make
-cd ../..
+#cd src/sql
+#sed -e "s/getc([ ]*yyin[ ]*)/(*lexInput++)/1" dmllex.cxx >tmp.c
+#cp tmp.c dmllex.cxx
+#make
+#cd ../..
 cd src/jdbc
 ./buildJdbcDriver.ksh
 cp CSqlJdbcDriver.jar ${install_dir}/lib

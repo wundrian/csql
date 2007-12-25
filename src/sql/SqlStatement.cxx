@@ -19,12 +19,13 @@
  ***************************************************************************/
 #include "Statement.h"
 #include <SqlStatement.h>
+#include <dmllex.h>
 
 char *lexInput;
 extern ParsedData *parsedData;
+
 int yyparse ();
-void yyrestart (FILE *inp);
-extern FILE *yyin;
+
 SqlStatement::SqlStatement()
 {
     con = NULL;
@@ -40,6 +41,7 @@ DbRetVal SqlStatement::prepare(char *stmtstr)
     DbRetVal rv = OK;
     lexInput = stmtstr;
     parsedData = &pData;
+    yy_scan_string( stmtstr );
     int rc = yyparse();
     if (rc != 0) 
     {
