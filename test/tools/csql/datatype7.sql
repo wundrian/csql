@@ -11,8 +11,6 @@ echo select * from t1;
 select * from t1;
 echo select * from t1 where f1 = 10;
 select * from t1 where f1 = 10;
-echo select * from t1 where f1 = 12 AND f1 = 13;
-select * from t1 where f1 = 12 AND f1 = 13;
 echo select * from t1 where f1 != 12 AND f2 <= 13;
 select * from t1 where f1 != 12 AND f2 <= 13;
 echo select * from t1 where f1 = 12 AND f2 >= 22;
@@ -35,8 +33,8 @@ select * from t1 where f1 = f2;
 echo select * from t1 where f1 between 999999999997 and 999999999999;
 select * from t1 where f1 between 999999999997 and 999999999999;
 
-echo select * from t1 where f1 between -999999999997 and -999999999999;
-select * from t1 where f1 between -999999999997 and -999999999999;
+echo select * from t1 where f1 between -999999999999 and -999999999997;
+select * from t1 where f1 between -999999999999 and -999999999997;
 
 echo update t1 set f2 = 2 where f1 != f2;
 update t1 set f2 = 2 where f1 != f2;

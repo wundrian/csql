@@ -16,8 +16,6 @@ echo select * from t1;
 select * from t1;
 echo select * from t1 where f1 = '10';
 select * from t1 where f1 = '10';
-echo select * from t1 where f1 = '12' AND f1 = '13';
-select * from t1 where f1 = '12' AND f1 = '13';
 echo select * from t1 where f1 != '12' AND f2 <= '13';
 select * from t1 where f1 != '12' AND f2 <= '13';
 echo select * from t1 where f1 = '12' AND f2 >= '22';
@@ -39,18 +37,6 @@ select * from t1 where f1 = f2;
 
 echo select * from t1 where f2 between 'A' AND 'C';
 select * from t1 where f2 between 'A' AND 'C';
-
-echo select * from t1 where f1 LIKE 'UPP%';
-select * from t1 where f1 LIKE 'UPP%';
-
-echo select * from t1 where f1 LIKE 'upp%';
-select * from t1 where f1 LIKE 'upp%';
-
-echo select * from t1 where f1 LIKE 'upper%letter';
-select * from t1 where f1 LIKE 'upp%letter';
-
-echo select * from t1 where f1 LIKE 'upper____letter';
-select * from t1 where f1 LIKE 'upp____letter';
 
 echo update t1 set f2 = '2' where f1 != f2;
 update t1 set f2 = '2' where f1 != f2;

@@ -1,4 +1,4 @@
-echo int data type testing;
+ int data type testing;
 
 create table t1 (f1 int, f2 int, primary key (f1));
 insert into t1 values (10, 1);
@@ -11,8 +11,6 @@ echo select * from t1;
 select * from t1;
 echo select * from t1 where f1 = 10;
 select * from t1 where f1 = 10;
-echo select * from t1 where f1 = 12 AND f1 = 13;
-select * from t1 where f1 = 12 AND f1 = 13;
 echo select * from t1 where f1 != 12 AND f2 <= 13;
 select * from t1 where f1 != 12 AND f2 <= 13;
 echo select * from t1 where f1 = 12 AND f2 >= 22;

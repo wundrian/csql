@@ -12,8 +12,6 @@ echo select * from t1;
 select * from t1;
 echo select * from t1 where f1 = 10;
 select * from t1 where f1 = 10;
-echo select * from t1 where f1 = 12 AND f1 = 13;
-select * from t1 where f1 = 12 AND f1 = 13;
 echo select * from t1 where f1 != 12 AND f2 <= 13;
 select * from t1 where f1 != 12 AND f2 <= 13;
 echo select * from t1 where f1 = 12 AND f2 >= 22;
