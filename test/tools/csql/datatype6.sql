@@ -1,6 +1,6 @@
 echo double data type testing;
 
-create table t1 (f1 double, f2 double, primary key (f1));
+create table t1 (f1 double, f2 double);
 insert into t1 values (0.1073741823, 10.234);
 insert into t1 values (-0.1073741823, 11.234);
 insert into t1 values (12.234, 11.456);

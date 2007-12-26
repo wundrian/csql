@@ -1,5 +1,5 @@
 echo float data type testing;
-create table t1 (f1 float, f2 float, primary key (f1));
+create table t1 (f1 float, f2 float);
 insert into t1 values (0.1048575, 10.234);
 insert into t1 values (-0.1048575, 11.234);
 insert into t1 values (12.234, 11.456);
@@ -11,14 +11,14 @@ insert into t1 values (123456E-3, 10.234);
 echo select * from t1;
 select * from t1;
 
-echo select * from t1 where f1 BETWEEN 0.1048574 AND 1048576
-select * from t1 where  f1 BETWEEN 0.1048574 AND 1048576;
+echo select * from t1 where f1 BETWEEN 0.104856 AND 0.104858
+select * from t1 where  f1 BETWEEN 0.104856 AND 0.104858;
 
 echo select * from t1 where f1 >122 AND f1 <124;
 select * from t1 where  f1 >122 AND f1 <124;
 
-echo select * from t1 where f1 BETWEEN -0.1048576 AND -0.1048574
-select * from t1 where  f1 BETWEEN -0.1048576 AND -0.1048574;
+echo select * from t1 where f1 BETWEEN -0.104859 AND -0.104856
+select * from t1 where  f1 BETWEEN -0.104859 AND -0.104856;
 
 echo select * from t1 where f1 BETWEEN -124 AND -122
 select * from t1 where  f1 BETWEEN  -124 AND -122;
