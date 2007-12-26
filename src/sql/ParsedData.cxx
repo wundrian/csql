@@ -65,6 +65,12 @@ Predicate* ParsedData::insertPredicate(char *fName, ComparisionOp op, void **val
     cond.setTerm(fName, op, val);
     return cond.getPredicate();
 }
+Predicate* ParsedData::insertPredicate(char *fName1, ComparisionOp op, char *fName2)
+{
+    Condition cond;
+    cond.setTerm(fName1, op, fName2);
+    return cond.getPredicate();
+}
 
 Predicate* ParsedData::insertPredicate(Predicate *p1, LogicalOp op, Predicate *p2)
 {

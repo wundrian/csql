@@ -130,6 +130,7 @@ class ParsedData
 
 
     Predicate* insertPredicate(char *fldName, ComparisionOp op, void** value);
+    Predicate* insertPredicate(char *fldName, ComparisionOp op, char *fldName);
     Predicate* insertPredicate(Predicate *p1, LogicalOp op, Predicate *p2 = NULL);
     void setCondition(Predicate *pred) 
     { 

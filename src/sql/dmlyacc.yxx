@@ -145,6 +145,15 @@ condition: ident OPERATOR value
             free( $1 ); free( $3 ); 
             $$=pred;
         }
+        | ident OPERATOR ident
+        {
+            ComparisionOp  op = AllDataType::getComparisionOperator((char*)$2);
+            Predicate *pred;
+            pred = parsedData->insertPredicate((char*) $1, op, (char*) $3);
+            free( $1 ); free( $3 );
+            $$=pred;
+        }
+
         | ident not_opt BETWEEN value AND value
         {
             void **ptr1 = parsedData->insertCondValueAndGetPtr((char*)$1, (char*)$4);
