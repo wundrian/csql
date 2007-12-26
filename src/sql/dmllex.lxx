@@ -42,7 +42,7 @@ blank           [ \t]
 quota           \'\'
 non_double_quota [^\"\n]
 other           .
-operator        "<"|">"|">="|"<="|"="|"\!="
+operator        "<"|">"|">="|"<="|"="|"\!="|"<>"
 
 
 %%
