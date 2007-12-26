@@ -26,7 +26,7 @@ void yyerror(const char* Msg);
 %token <stringval> CREATE TABLE PRIMARY KEY DEFAULT INDEX ON HASH TREE UNIQUE DROP
 %token <stringval> INT_TYPE LONG_TYPE SHORT_TYPE DOUBLE_TYPE TIMESTAMP_TYPE DATE_TYPE CHAR_TYPE TIME_TYPE
 %token ';' ',' '(' ')'
-%type <stringval> ident field value 
+%type <stringval> ident field value not_opt
 %type <predicate> conditions condition
 
 %%
@@ -129,14 +129,6 @@ conditions: condition AND condition
             parsedData->setCondition((Predicate*)pred);
             $$= pred;
         }
-        | NOT condition
-        {
-            Predicate *pred;
-            pred = parsedData->insertPredicate((Predicate*) $2, OpNot, NULL);
-            parsedData->setCondition((Predicate*)pred);
-            //((Predicate*)$2)->print();
-            $$= pred;
-        }
         | condition
         {
             parsedData->setCondition((Predicate*)$1);
@@ -153,18 +145,32 @@ condition: ident OPERATOR value
             free( $1 ); free( $3 ); 
             $$=pred;
         }
-        | ident BETWEEN value AND value
+        | ident not_opt BETWEEN value AND value
         {
-            void **ptr1 = parsedData->insertCondValueAndGetPtr((char*)$1, (char*)$3);
-            void **ptr2 = parsedData->insertCondValueAndGetPtr((char*)$1, (char*)$5);
-            Predicate *pred1, *pred2, *pred3;
+            void **ptr1 = parsedData->insertCondValueAndGetPtr((char*)$1, (char*)$4);
+            void **ptr2 = parsedData->insertCondValueAndGetPtr((char*)$1, (char*)$6);
+            Predicate *pred1, *pred2, *pred3, *finalPred;
             pred1 = parsedData->insertPredicate((char*) $1, OpGreaterThanEquals, ptr1);
             pred2 = parsedData->insertPredicate((char*) $1, OpLessThanEquals, ptr2);
-            pred3 = parsedData->insertPredicate(pred1, OpAnd, pred2);
-            free( $1 );  free( $3 );  free( $5 );
-            $$= pred3;
+            finalPred = parsedData->insertPredicate(pred1, OpAnd, pred2);
+            if( $2 == (char*) 1 )
+                finalPred = parsedData->insertPredicate(finalPred, OpNot, NULL);
+            free( $1 );  free( $4 );  free( $6 );
+            $$= finalPred;
+        }
+        | NOT condition
+        {
+            Predicate *pred;
+            pred = parsedData->insertPredicate((Predicate*) $2, OpNot, NULL);
+            $$= pred;
         }
         ;
+not_opt: NOT
+	{ $$=(char*) 1;
+	}
+	| 
+	{ $$=(char*) 0; }
+	;
 field:   ident
         {
             parsedData->insertField((char*)$1);
