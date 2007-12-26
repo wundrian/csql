@@ -25,7 +25,7 @@
 \section{Introduction}
 \label{Introduction}
 
-\emph {CSQL} is a fast, multi-threaded SQL main memory database engine. It is a free software, licensed with the GNU GENERAL PUBLIC LICENSE http://www.gnu.org/
+\emph {CSQL} is compact SQL main memory database which delivers ultra high performance and throughput. It is a free software, licensed with the GNU GENERAL PUBLIC LICENSE http://www.gnu.org/
 It aids in the development of high performance, fault-resilent applications requiring concurrent access to the shared data. 
 
 This database is built keeping ultra fast performance in mind. This database suits well as a front end database for other commercial database to increase the throughput. Throughput of queries involving single table may improve by 20x. This loads all the data into memory and avoids on demand fetches from disk and avoids the overhead of buffer manager found in commercial disk based database systems. It provides fast access through shared memory.
@@ -80,7 +80,7 @@ Primitive JDBC Support
 \label{arch}
 Main memory databases are times faster than disk based database systems as, all the data is available 
 in physical memory and avoids the buffer manager overhead which is found in disk based database systems. 
-Moreover data access algorithms can work efficiently as compared to traditional disk based algorithms. \\
+Moreover data structures and algorithms can work more efficiently as compared to traditional disk based algorithms. \\
 
 CSQL is compact main memory database SQL Engine which supports limited set of features and gives ultra 
 fast response to database queries. It supports only limited features which is used by most of the real time 
@@ -92,8 +92,8 @@ latter the whole data is stored in main memory.It differs in \\
                located. When all the data is in memory anyway, there is no need to store the data value 
                redundantly, only the address is required. \\
 
-    Caching/buffer management - no longer exists because all the data is in memory already. All of the 
-               processing as well as all of the disk latency associated with moving data from disk to 
+    Caching/buffer management - no longer exists because all the data is in memory already. All of the buffer or cache
+               processing as well as disk latency associated with moving data from disk to 
                memory (and vice versa) are removed. \\
 
     Optimization - is still required but becomes much simpler and is more likely to choose the fastest path, 
@@ -312,9 +312,9 @@ For example to create table with two fields,
     if (rv != OK) { printf("Table creation failed\n"); return -1; }
 \end{verbatim}
 
-First argument of addField method is field name, second is the type of the field, third argument is length, fourth is default value, fifth is not null flag and last is primary key flag.
+First parameter of addField method is field name, second is the type of the field, third parameter is length, fourth is default value, fifth is not null flag and last is primary key flag.
 In our example, field "f1" is not null and it is the primary key for the table.
-Call addField for all the field definition in the table and call createTable passing table name as first argument and TableDef as second argument.
+Call addField for all the field definition in the table and call createTable passing table name as first parameter and TableDef as second parameter.
 
 \subsubsection{Inserting into the tables}
 \label{inserttable}
@@ -335,8 +335,8 @@ Application buffer should first be binded to the respective fields using the bin
 
 \subsubsection{Selecting tuples from the tables}
 \label{seltable}
-Application buffer should first be binded to the respective fields using the bindFld method as we did for insert; fetch method will copy the values from the row to the binded application buffer.
-Predicate if required shall be created using the condition interface and set in the table object before the execution. Calling execute method is must before calling the fetch method, as it will create the execution plan for the scan. It selects appropriate index based on the predicate set.
+Application buffer should first be binded to the respective fields using the bindFld() method as we did for insert; fetch() method will copy the values from the row to the binded application buffer.
+Predicate if required shall be created using the condition interface and set in the table object before the execution. Calling execute() method is must before calling the fetch() method, as it will create the execution plan for the scan. It selects appropriate index based on the predicate set.
 
 \begin{verbatim}
    Condition p1;
@@ -389,11 +389,11 @@ Default Value :100 \\
 Description: Total number of client process which can connect and work with the database concurrently \\
 
 \begin{verbatim} MAX_SYS_DB_SIZE \end{verbatim}
-Default Value :1048576 \\
+Default Value :1048576 bytes \\
 Description: Maximum size of the system database. Catalog information and control information(lock, logs, etc) are stored in this internal database. \\
 
 \begin{verbatim} MAX_DB_SIZE \end{verbatim}
-Default Value :10485760 \\
+Default Value :10485760 bytes \\
 Description: Maximum size of the user database. Rows and Index information of tables are stored in this database.\\
 
 
@@ -448,6 +448,8 @@ Description: Lock retry count in case it fails to acquire
 \subsection{csql tool}
 \label{csqltool}
 \begin{verbatim}
+csql is a command line tool for interactive SQL access to database.
+
 Usage: csql [-u username] [-p passwd] [-s sqlfile] 
        username -> username to connect to database
        password -> password to connect to database
@@ -462,6 +464,9 @@ $csql -u root -p manager -s /tmp/import.sql
 \subsection{catalog tool}
 \label{catalogtool}
 \begin{verbatim}
+catalog is a command line tool used to display the internal control structures of 
+csql database engine. It will print the information in XML format.
+
 Usage: catalog [-u username] [-p passwd] [-l] [-i] [-d] [-T table] [-I index] [-D <lock|trans|proc>]
        l -> list all table with field information
        i -> reinitialize catalog tables. Drops all tables.
