@@ -1,8 +1,1 @@
 It currently takes bison, need to figure out ways to configure it to use yacc -vd instead of bison -y
-
-Manually replace getc with lexInput, so that inputted string shall be parsed by yacc.
-
-sed -e "s/getc([ ]*yyin[ ]*)/(*lexInput++)/1" dmllex.cxx >tmp.c
-cp tmp.c dmllex.cxx
-
-
