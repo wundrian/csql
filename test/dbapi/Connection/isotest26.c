@@ -2,7 +2,7 @@
 //READ_REPEATABLE
 //T1 doing delete and T2 doing insert for same tuple
 //Insert should fail
-
+int deleteDone=0, insertDone=0;
 void* runTest1(void *p);
 void* runTest2(void *p);
 int main()
@@ -52,7 +52,8 @@ void* runTest1(void *message)
     *retval = 0;
     rv = remove(dbMgr, 100, true);
     if (rv != OK) { printf("Test Failed:first thread failed to delete\n"); *retval = 1; }
-
+    deleteDone =1;
+    while(insertDone !=1) ::sleep(1);
     conn.commit();
     rv  = conn.close();
     pthread_exit(retval);
@@ -67,11 +68,12 @@ void* runTest2(void *message)
     rv = conn.startTransaction(READ_REPEATABLE);
     if (rv != OK) return NULL;
     printf("Thread and pid is %d %lu\n", os::getpid(), os::getthrid());
-
+    while(deleteDone !=1) ::sleep(1);
     int *retval = new int();
     *retval = 0;
     rv = insert(dbMgr, 100, false);
     if (rv == OK) { printf("Test Failed:second thread inserted\n"); *retval = 1; }
+    insertDone = 1;
     conn.commit();
     conn.close();
     pthread_exit(retval);

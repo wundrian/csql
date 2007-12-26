@@ -5,9 +5,10 @@
 //         Read
 //	        		Update
 //         Read
-// T1 should read updated tuple by T2
+// T1 should fail to get read lock
 void* runTest1(void *p);
 void* runTest2(void *p);
+int selectDone =0, updateDone=0, select2Done=0;
 int main()
 {
 
@@ -53,9 +54,11 @@ void* runTest1(void *message)
     *retval = 0;
     rv = select(dbMgr, 100, true);
     if (rv != OK) { printf("Test Failed:first thread read failed \n"); *retval = 1; }
-
+    selectDone = 1;
+    while (updateDone !=1) ::sleep(1);
     rv = select(dbMgr, 100, true, true);
-    if (rv != OK) { printf("Test Failed:first thread read failed \n"); *retval = 1; }
+    if (rv != OK) { printf("Test Failed:first thread read failed %d \n", rv); *retval = 1; }
+    select2Done=1;
     conn.commit();
     rv  = conn.close();
     pthread_exit(retval);
@@ -70,11 +73,13 @@ void* runTest2(void *message)
     rv = conn.startTransaction(READ_REPEATABLE);
     if (rv != OK) return NULL;
     printf("Thread and pid is %d %lu\n", os::getpid(), os::getthrid());
-
+    while (selectDone !=1) ::sleep(1);
     int *retval = new int();
     *retval = 0;
     rv = update(dbMgr, 100, true);
     if (rv == OK) { printf("Test Failed:second thread updated\n"); *retval = 1; }
+    updateDone = 1;
+    while(select2Done !=1) ::sleep(1);
     conn.commit();
     conn.close();
     pthread_exit(retval);

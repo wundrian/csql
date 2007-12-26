@@ -8,6 +8,7 @@
 // T1 second read should fail saying "tuple not found"
 void* runTest1(void *p);
 void* runTest2(void *p);
+int selectDone = 0, deleteDone =0;
 int main()
 {
 
@@ -58,7 +59,8 @@ void* runTest1(void *message)
     *retval = 0;
     rv = select(dbMgr, 100, true);
     if (rv != OK) { printf("Test Failed:first thread failed to select\n"); *retval = 1; }
-
+    selectDone = 1;
+    while (deleteDone != 1) {::sleep(1); } 
     rv = select(dbMgr, 100, true);
     if (rv == OK) { printf("Test Failed:first thread read succeeded \n"); *retval = 1; }
     conn.commit();
@@ -80,11 +82,13 @@ void* runTest2(void *message)
 
     if (rv != OK) return NULL;
     printf("Thread and pid is %d %lu\n", os::getpid(), os::getthrid());
+    while (selectDone != 1) {::sleep(1); } 
 
     int *retval = new int();
     *retval = 0;
     rv = remove(dbMgr, 100, true);
     if (rv != OK) { printf("Test Failed:second thread failed to delete\n"); *retval = 1; }
+    deleteDone =1;
     conn.commit();
     conn.close();
     pthread_exit(retval);

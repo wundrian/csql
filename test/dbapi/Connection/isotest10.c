@@ -8,6 +8,7 @@
 // T1 should read updated tuple by T2
 void* runTest1(void *p);
 void* runTest2(void *p);
+int selectDone =0, updateDone=0, allDone=0;
 int main()
 {
 
@@ -58,9 +59,11 @@ void* runTest1(void *message)
     *retval = 0;
     rv = select(dbMgr, 100, true);
     if (rv != OK) { printf("Test Failed:first thread read failed \n"); *retval = 1; }
-
+    selectDone = 1;
+    while (updateDone != 1) {::sleep(1); }
     rv = select(dbMgr, 100, true, true);
     if (rv == OK) { printf("Test Failed:first thread read succeeded \n"); *retval = 1; }
+    allDone = 1;
     conn.commit();
     rv  = conn.close();
     pthread_exit(retval);
@@ -80,11 +83,14 @@ void* runTest2(void *message)
 
     if (rv != OK) return NULL;
     printf("Thread and pid is %d %lu\n", os::getpid(), os::getthrid());
+    while (selectDone != 1) {::sleep(1); }
 
     int *retval = new int();
     *retval = 0;
     rv = update(dbMgr, 100, true);
     if (rv != OK) { printf("Test Failed:second thread failed to update\n"); *retval = 1; }
+    updateDone = 1;
+    while (allDone !=1) ::sleep(1);
     conn.commit();
     conn.close();
     pthread_exit(retval);
