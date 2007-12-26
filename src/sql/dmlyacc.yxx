@@ -24,7 +24,7 @@ void yyerror(const char* Msg);
 %token <stringval> INSERT INTO VALUES
 %token <stringval> DELETE UPDATE SET NULL_VALUE
 %token <stringval> CREATE TABLE PRIMARY KEY DEFAULT INDEX ON HASH TREE UNIQUE DROP
-%token <stringval> INT_TYPE LONG_TYPE SHORT_TYPE DOUBLE_TYPE TIMESTAMP_TYPE DATE_TYPE CHAR_TYPE TIME_TYPE
+%token <stringval> INT_TYPE LONG_TYPE SHORT_TYPE DOUBLE_TYPE TIMESTAMP_TYPE DATE_TYPE CHAR_TYPE TIME_TYPE BIGINT_TYPE
 %token ';' ',' '(' ')'
 %type <stringval> ident field value not_opt
 %type <predicate> conditions condition
@@ -114,7 +114,7 @@ where_clause_opt:  WHERE conditions
         |
         ;
 
-conditions: condition AND condition
+conditions: conditions AND conditions
 	{
             Predicate *pred;
             pred = parsedData->insertPredicate((Predicate*) $1, OpAnd, (Predicate*) $3);
@@ -122,13 +122,21 @@ conditions: condition AND condition
             $$= pred;
 
         }
-        | condition OR condition
+        | conditions OR conditions
         {
             Predicate *pred;
             pred = parsedData->insertPredicate((Predicate*) $1, OpOr, (Predicate*) $3);
             parsedData->setCondition((Predicate*)pred);
             $$= pred;
         }
+        | NOT conditions
+        {
+            Predicate *pred;
+            pred = parsedData->insertPredicate((Predicate*) $2, OpNot, NULL);
+            parsedData->setCondition((Predicate*)pred);
+            $$= pred;
+        }
+        | '(' conditions ')' { }
         | condition
         {
             parsedData->setCondition((Predicate*)$1);
@@ -166,12 +174,6 @@ condition: ident OPERATOR value
                 finalPred = parsedData->insertPredicate(finalPred, OpNot, NULL);
             free( $1 );  free( $4 );  free( $6 );
             $$= finalPred;
-        }
-        | NOT condition
-        {
-            Predicate *pred;
-            pred = parsedData->insertPredicate((Predicate*) $2, OpNot, NULL);
-            $$= pred;
         }
         ;
 not_opt: NOT
@@ -241,6 +243,7 @@ opt_ind_type:
         {
             parsedData->setIndexType(hashIndex);
         }
+        ;
 opt_constr_type:
         | UNIQUE 
         {
