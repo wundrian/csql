@@ -148,17 +148,24 @@ void setStmtType(char *st)
 
 char getQueryFromStdIn(char *buf)
 {
-    char    c;
-    int    ln;
+    char    c, *bufBegin=buf;
+    int    ln, charCnt=0;
 
     ln=1;
     printf("CSQL>");
     while( (c=(char ) getchar()) != EOF && c != ';')
     {
-        *buf++ = c;
-        if(c=='\n')
-            //printf("%1d>",ln++);
+        *buf++ = c; charCnt++;
+        if(c=='\n') //printf("%1d>",ln++);
             ln++;
+
+	if( charCnt == SQL_STMT_LEN ) {
+            printf("SQL Statement length is greater than %d. "
+	    "Ignoring the statement.\n", SQL_STMT_LEN );
+            *bufBegin++ =';';
+            *bufBegin ='\0';
+	    return 0;
+	}
     }
     *buf++ = ';';
     *buf = '\0';
@@ -166,10 +173,18 @@ char getQueryFromStdIn(char *buf)
 }
 char getQueryFromFile(char *buf)
 {
-    char    c;
+    char    c, *bufBegin=buf;
+    int charCnt=0;
     while( (c=(char ) fgetc(fp)) != EOF && c != ';')
     {
-        *buf++ = c;
+        *buf++ = c; charCnt++; 
+	if( charCnt == SQL_STMT_LEN ) {
+            printf("SQL Statement length is greater than %d. "
+	    "Ignoring the statement.\n", SQL_STMT_LEN );
+            *bufBegin++ =';';
+            *bufBegin ='\0';
+	    return 0;
+	}
     }
     *buf++ = ';';
     *buf = '\0';
@@ -192,6 +207,7 @@ bool getInput(bool fromFile)
         return false;
     if (handleTransaction(buf)) return true;
     if (handleEchoAndComment(buf)) return true;
+    if ( *buf == ';' ) return true; // Null statement.
     
     setStmtType(buf);
 
