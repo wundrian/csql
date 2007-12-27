@@ -231,11 +231,11 @@ ddl_statement: CREATE TABLE ident '(' create_defn_list ')' semicolon_opt
         }
         ;
 opt_ind_type:
-        | HASH 
+        | HASH  opt_constr_type
         {
             parsedData->setIndexType(hashIndex);
         }
-        | TREE 
+        | TREE  opt_constr_type
         {
             parsedData->setIndexType(treeIndex);
         }

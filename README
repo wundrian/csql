@@ -20,7 +20,12 @@ Go to the root directory and enter the following commands.
 $ export JDK_HOME=<path of jdk home>
 $ ./configure --prefix=`pwd`/install CXXFLAGS="-I$JDK_HOME/include -I$JDK_HOME/include/linux"
 $ make
+$ make install
 $ ./csqlinstall.ksh
+
+Note: 
+setupenv.ksh script is available at the root directory which shall be used to
+set the necessary environment variables.
 
 This will create "install" directory under the current directory and places all the executables created in bin directory and libraries in lib directory.
 
@@ -28,7 +33,7 @@ Available Documentation
 -----------------------
 1.User Manual is available under the docs directory
 2.HTML API Reference for DB API under the docs/html directory (Refer next section)
-3.DB API example programs under the examples directory
+3.DB API, SQL API, JDBC, ISQL  example programs under the examples directory
 
 Generating API Reference
 ------------------------
@@ -55,6 +60,9 @@ Start the server using csqlserver executable
 $./csqlserver
 
 This starts the server and creates the database file.
+
+Note:
+Refer UserManual.pdf available in docs folder to know how to work with csql
 
 Shutting down the Server
 ------------------------

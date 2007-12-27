@@ -14,8 +14,8 @@ g++ in linux
 Untar the distribution
 ----------------------
 Go to the root directory and enter the following commands.
-$gunzip csql-linux-i686-1.0Beta.tar.gz
-$tar xvf csql-linux-i686-1.0Beta.tar
+$gunzip csql-linux-i686-1.2Beta.tar.gz
+$tar xvf csql-linux-i686-1.2Beta.tar
 
 This will create the following directories,
   1. include
@@ -29,14 +29,15 @@ and following files,
   3. AUTHORS
   4. ChangeLog
   5. README 
+  6. csql.conf 
 
-under csql-linux-i686-1.0Beta directory.
+under csql-linux-i686-1.2Beta directory.
 
 Available Documentation
 -----------------------
 1.User Manual is available under the docs directory
-2.HTML API Reference for DB API under the docs/html directory (Refer next section)
-3.DB API example programs under the examples directory
+2.HTML API Reference for DB API under the docs/html directory (Refer next section to create HTML API Reference)
+3.DB API, SQL API, JDBC, ISQL  example programs under the examples directory
 
 Generating API Reference
 ------------------------
@@ -57,12 +58,14 @@ Set the CSQL_CONFIG_FILE environment variable to absolute path of csql.conf file
 
 $export CSQL_CONFIG_FILE=/tmp/csql.conf
 
-
 You should find csqlserver executable under the bin directory of the installation.
 
 $./csqlserver
 
 This starts the server and creates the database file.
+
+Note:
+Refer UserManual.pdf available in docs folder to know how to work with csql
 
 Shutting down the Server
 ------------------------

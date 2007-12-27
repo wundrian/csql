@@ -29,7 +29,8 @@ ln -s libcsqljdbc.so libcsqljdbc
 cp ${root_dir}/src/sql/Statement.h ${install_dir}/include
 cp ${root_dir}/src/sql/Parser.h ${install_dir}/include
 cd ${install_dir}/include
-rm Allocator.h CatalogTables.h Database.h DatabaseManagerImpl.h
+rm Allocator.h CatalogTables.h Database.h 
+#rm DatabaseManagerImpl.h
 rm Globals.h Index.h Lock.h PredicateImpl.h
 rm Process.h SessionImpl.h TableImpl.h Transaction.h UserManagerImpl.h 
 
@@ -38,6 +39,7 @@ cp ${root_dir}/Doxyfile ${install_dir}
 cp ${root_dir}/COPYING ${install_dir}
 cp ${root_dir}/AUTHORS ${install_dir}
 cp ${root_dir}/ChangeLog ${install_dir}
+cp ${root_dir}/csql.conf ${install_dir}
 cp -R ${root_dir}/examples ${install_dir}
 find ${install_dir}/examples -name "CVS" -exec rm -rf {} \;
 cp -R ${root_dir}/docs ${install_dir}

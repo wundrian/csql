@@ -937,7 +937,7 @@ void AllDataType::strToValue(void* dest, char *src, DataType type, int length)
             break; }
         case typeDouble: {
             double val;
-            sscanf( src, "%g",  &val);
+            sscanf( src, "%lg",  &val);
             *(double*)dest = val;
             break; }
         case typeFloat: {
