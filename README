@@ -18,6 +18,7 @@ Compiling the source
 Go to the root directory and enter the following commands.
 
 $ export JDK_HOME=<path of jdk home>
+$ export PATH=$PATH:$JDK_HOME/bin
 $ ./configure --prefix=`pwd`/install CXXFLAGS="-I$JDK_HOME/include -I$JDK_HOME/include/linux"
 $ make
 $ make install

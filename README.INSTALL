@@ -55,8 +55,11 @@ $sysctl -w kernel.shmmax=1000000000
 
 Change csql.conf file under the installation root directory if necessary.
 Set the CSQL_CONFIG_FILE environment variable to absolute path of csql.conf file.
+Lets say if you have installed csql under /home/csql, then
+$export CSQL_CONFIG_FILE=/home/csql/csql.conf
 
-$export CSQL_CONFIG_FILE=/tmp/csql.conf
+Set the LD_LIBRARY_PATH variable to lib directory of the installation path
+$export LD_LIBRARY_PATH=/home/csql/lib:$LD_LIBRARY_PATH
 
 You should find csqlserver executable under the bin directory of the installation.
 
