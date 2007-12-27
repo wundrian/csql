@@ -26,7 +26,9 @@ How to run
 2. Set the LD_LIBRARY_PATH environment variable to csql library path
 	$export LD_LIBRARY_PATH=$CSQL_INSTALL_ROOT/lib:$LD_LIBRARY_PATH
 
-3. Run the class file created by make
+3. Set the CLASSPATH environment variable to csql jdbc jar 
+	$export CLASSPATH=.:$CLASSPATH:$CSQL_INSTALL_ROOT/lib/CSqlJdbcDriver.jar
+4. Run the class file created by make
 	$java jdbcexample
 
 Output of example:
