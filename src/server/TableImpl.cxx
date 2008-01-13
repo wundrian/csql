@@ -34,15 +34,22 @@ DbRetVal TableImpl::bindFld(const char *name, void *val)
     }
     return OK;
 }
+
 bool TableImpl::isFldNull(const char *name){
-    //TODO::find the fldpos and call the other function
-    return true;
+    int colpos = fldList_.getFieldPosition(name);
+    if (-1 == colpos)
+    {
+        printError(ErrNotExists, "Field %s does not exist", name);
+        return false;
+    }
+
+    return isFldNull(colpos);
 }
 
 bool TableImpl::isFldNull(int colpos)
 {
     if (!curTuple_) return false;
-    if (colpos <0 || colpos > numFlds_) return false;
+    if (colpos <1 || colpos > numFlds_) return false;
     char *nullOffset = (char*)curTuple_ - 4;
     if (isIntUsedForNULL) {
         int nullVal = *(int*)((char*)curTuple_ + (length_ - 4));
@@ -56,12 +63,19 @@ bool TableImpl::isFldNull(int colpos)
 }
 void TableImpl::markFldNull(char const* name)
 {
-    //TODO::find the fldpos and call the other function
-    return;
+    int colpos = fldList_.getFieldPosition(name);
+    if (-1 == colpos)
+    {
+        printError(ErrNotExists, "Field %s does not exist", name);
+        return;
+    }
+
+    markFldNull(colpos);
 }
+
 void TableImpl::markFldNull(int fldpos)
 {
-    if (fldpos <0 || fldpos > numFlds_) return;
+    if (fldpos <1 || fldpos > numFlds_) return;
     if (isIntUsedForNULL) {
         if (!BITSET(iNotNullInfo, fldpos)) SETBIT(iNullInfo, fldpos);
     }
@@ -72,12 +86,19 @@ void TableImpl::markFldNull(int fldpos)
 
 void TableImpl::clearFldNull(const char *name)
 {
-    //TODO::find the fldpos and call the other function
-    return;
+    int colpos = fldList_.getFieldPosition(name);
+    if (-1 == colpos)
+    {
+        printError(ErrNotExists, "Field %s does not exist", name);
+        return;
+    }
+
+    clearFldNull(colpos);
 }
+
 void TableImpl::clearFldNull(int colpos)
 {
-    if (colpos <0 || colpos > numFlds_) return;
+    if (colpos <1 || colpos > numFlds_) return;
     if (isIntUsedForNULL) { 
         CLEARBIT(iNullInfo, colpos);
     }

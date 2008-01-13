@@ -110,6 +110,9 @@ class FieldList
     int getFieldOffset(const char *fldName);
     int getFieldOffset(int fldpos);
 
+    //Returns position of field in the list:count starting from 1
+    int getFieldPosition(const char *fldName);
+
     DataType getFieldType(const char *fldName);
 
     size_t getFieldLength(const char *fldName);

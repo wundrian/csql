@@ -171,6 +171,22 @@ int FieldList::getFieldOffset(int fldpos)
     return -1;
 }
 
+//Returns position of field in the list
+//Count starting from 1
+//-1 if field not found in the list
+int FieldList::getFieldPosition(const char *fldName)
+{
+    int position = 1;
+    FieldNode *iter = head;
+    while(iter != NULL)
+    {
+        if (0 == strcmp(iter->fldDef.fldName_, fldName))
+            return position;
+        position++;
+    }
+
+    return -1;
+}
 
 int FieldList::getTupleSize()
 {
