@@ -223,6 +223,23 @@ DbRetVal CatalogTableINDEX::insert(const char *name, void *tptr, int numFlds, bo
                           void* chunk, int bucketSize, void *hChunk, void *&tupleptr)
 {
     Chunk *tChunk = systemDatabase_->getSystemDatabaseChunk(IndexTableId);
+    ChunkIterator iter = tChunk->getIterator();
+
+    //Checking for index having same name, proceed further only
+    //if no such indexes are 
+    void *data = NULL;
+    while ((data = iter.nextElement())!= NULL)
+    {
+	    if (0 == strcmp(((INDEX*)data)->indName_, name))
+	    {
+		    printError(ErrAlready, "Index with name \'%s\' already exists "
+				    "on the table \'%s\'.", name, ((TABLE *)tptr)->tblName_);
+		    return ErrAlready;
+	    }
+
+    }
+
+ 
     tupleptr = tChunk->allocate(systemDatabase_);
     if (NULL == tupleptr)
     {
