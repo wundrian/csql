@@ -90,10 +90,28 @@ void ParsedData::reset()
         free(value->parsedString);
         free(value->value);
     }
-   
     fieldValueList.reset();
     predicate.reset();
+
+    iter = conditionValueList.getIterator();
+    ConditionValue *condVal;
+    while (iter.hasElement())
+    {
+        condVal = (ConditionValue*)iter.nextElement();
+        free(condVal->parsedString);
+        free(condVal->value);
+    }
     conditionValueList.reset();
+
+    iter = updFldValList.getIterator();
+    UpdateFieldValue *updFldVal;
+    while (iter.hasElement())
+    {
+        updFldVal = (UpdateFieldValue*)iter.nextElement();
+        free(updFldVal->parsedString);
+        free(updFldVal->value);
+    }
+    updFldValList.reset();
     
     creFldList.removeAll();
     isUnique = false; 
