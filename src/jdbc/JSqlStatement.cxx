@@ -1,4 +1,5 @@
-#include<SqlStatement.h>
+#include<AbsSqlStatement.h>
+#include<SqlFactory.h>
 //sqlStmtPtr
 
 
@@ -20,7 +21,7 @@ JNIEXPORT void JNICALL Java_csql_jdbc_JSqlStatement_alloc
     jclass cls;
     jfieldID fid;
 
-    SqlStatement *stmt = new SqlStatement();
+    AbsSqlStatement *stmt = SqlFactory::createStatement(CSql);
 
     cls = env->GetObjectClass( obj );
     fid = env->GetFieldID( cls, "sqlStmtPtr", "J");
@@ -53,7 +54,7 @@ JNIEXPORT void JNICALL Java_csql_jdbc_JSqlStatement_free
         env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
         return;
     }
-    SqlStatement *stmt = (SqlStatement*) env->GetLongField( obj, fid );
+    AbsSqlStatement *stmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
     delete stmt;
     return;
 }
@@ -77,7 +78,7 @@ JNIEXPORT void JNICALL Java_csql_jdbc_JSqlStatement_freeStmt
         env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
         return;
     }
-    SqlStatement *stmt = (SqlStatement*) env->GetLongField( obj, fid);
+    AbsSqlStatement *stmt = (AbsSqlStatement*) env->GetLongField( obj, fid);
     stmt->free();
     return;
 
@@ -103,8 +104,8 @@ JNIEXPORT void JNICALL Java_csql_jdbc_JSqlStatement_setConnectionPtr
         env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
         return;
     }
-    SqlStatement *stmt = (SqlStatement*) env->GetLongField( obj, fid);
-    stmt->setConnection((SqlConnection*) conn);
+    AbsSqlStatement *stmt = (AbsSqlStatement*) env->GetLongField( obj, fid);
+    stmt->setConnection((AbsSqlConnection*) conn);
     return;
 }
 
@@ -127,7 +128,7 @@ JNIEXPORT jint JNICALL Java_csql_jdbc_JSqlStatement_prepare
         env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
         return(-1);
     }
-    SqlStatement *s = (SqlStatement*) env->GetLongField( obj, fid );
+    AbsSqlStatement *s = (AbsSqlStatement*) env->GetLongField( obj, fid );
     jboolean isCopy = JNI_TRUE;
     char *stmtString = (char*) env->GetStringUTFChars(stmt, &isCopy );
     int rv = s->prepare(stmtString);
@@ -153,7 +154,7 @@ JNIEXPORT jboolean JNICALL Java_csql_jdbc_JSqlStatement_isSelect
         env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
         return(-1);
     }
-    SqlStatement *s = (SqlStatement*) env->GetLongField( obj, fid );
+    AbsSqlStatement *s = (AbsSqlStatement*) env->GetLongField( obj, fid );
     return s->isSelect();
 }
 
@@ -176,7 +177,7 @@ JNIEXPORT jint JNICALL Java_csql_jdbc_JSqlStatement_execute
         env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
         return(-1);
     }
-    SqlStatement *stmt = (SqlStatement*) env->GetLongField( obj, fid );
+    AbsSqlStatement *stmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
     int rowsAffected =0;
     DbRetVal rv = stmt->execute(rowsAffected);
     if (rv != OK) return -1;
@@ -201,7 +202,7 @@ JNIEXPORT jlong JNICALL Java_csql_jdbc_JSqlStatement_next
         env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
         return(-1);
     }
-    SqlStatement *stmt = (SqlStatement*) env->GetLongField( obj, fid );
+    AbsSqlStatement *stmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
     void *tuple = stmt->next();
     if (NULL == tuple) return 0; else return 1;
 }
@@ -225,7 +226,7 @@ JNIEXPORT jlong JNICALL Java_csql_jdbc_JSqlStatement_close
         env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
         return(-1);
     }
-    SqlStatement *stmt = (SqlStatement*) env->GetLongField( obj, fid );
+    AbsSqlStatement *stmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
     int rv =0;
     rv  = stmt->close();
     return rv;
@@ -259,7 +260,7 @@ JNIEXPORT void JNICALL Java_csql_jdbc_JSqlStatement_setShort
         env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
         return;
     }
-    SqlStatement *stmt = (SqlStatement*) env->GetLongField( obj, fid );
+    AbsSqlStatement *stmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
     stmt->setShortParam(position, (short) value);
     return;
 }
@@ -283,7 +284,7 @@ JNIEXPORT void JNICALL Java_csql_jdbc_JSqlStatement_setInt
         env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
         return;
     }
-    SqlStatement *stmt = (SqlStatement*) env->GetLongField( obj, fid );
+    AbsSqlStatement *stmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
     stmt->setIntParam(position, (int) value);
     return;
 }
@@ -307,7 +308,7 @@ JNIEXPORT void JNICALL Java_csql_jdbc_JSqlStatement_setLong
         env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
         return;
     }
-    SqlStatement *stmt = (SqlStatement*) env->GetLongField( obj, fid );
+    AbsSqlStatement *stmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
     stmt->setLongParam(position, (long) value);
     return;
 }
@@ -331,7 +332,7 @@ JNIEXPORT void JNICALL Java_csql_jdbc_JSqlStatement_setByte
         env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
         return;
     }
-    SqlStatement *stmt = (SqlStatement*) env->GetLongField( obj, fid );
+    AbsSqlStatement *stmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
     stmt->setByteIntParam(position, (ByteInt) value);
     return;
 }
@@ -354,7 +355,7 @@ JNIEXPORT void JNICALL Java_csql_jdbc_JSqlStatement_setFloat
         env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
         return;
     }
-    SqlStatement *stmt = (SqlStatement*) env->GetLongField( obj, fid );
+    AbsSqlStatement *stmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
     stmt->setFloatParam(position, (float) value);
     return;
 }
@@ -378,7 +379,7 @@ JNIEXPORT void JNICALL Java_csql_jdbc_JSqlStatement_setDouble
         env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
         return;
     }
-    SqlStatement *stmt = (SqlStatement*) env->GetLongField( obj, fid );
+    AbsSqlStatement *stmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
     stmt->setDoubleParam(position, (double) value);
     return;
 }
@@ -406,7 +407,7 @@ JNIEXPORT void JNICALL Java_csql_jdbc_JSqlStatement_setString
     jboolean isCopy = JNI_TRUE;
     char *valueStr = (char*) env->GetStringUTFChars( value, &isCopy );
 
-    SqlStatement *stmt = (SqlStatement*) env->GetLongField( obj, fid );
+    AbsSqlStatement *stmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
     stmt->setStringParam(position, valueStr);
     return;
 }
@@ -432,7 +433,7 @@ JNIEXPORT void JNICALL Java_csql_jdbc_JSqlStatement_setDate
         env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
         return;
     }
-    SqlStatement *stmt = (SqlStatement*) env->GetLongField( obj, fid );
+    AbsSqlStatement *stmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
 
     // Get date, month, year from java object
     int d, m, y;
@@ -472,7 +473,7 @@ JNIEXPORT void JNICALL Java_csql_jdbc_JSqlStatement_setTime
         env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
         return;
     }
-    SqlStatement *stmt = (SqlStatement*) env->GetLongField( obj, fid );
+    AbsSqlStatement *stmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
 
     // Get hour, minures, secs from java object
     int h, m, s;
@@ -511,7 +512,7 @@ JNIEXPORT void JNICALL Java_csql_jdbc_JSqlStatement_setTimestamp
         env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
         return;
     }
-    SqlStatement *stmt = (SqlStatement*) env->GetLongField( obj, fid );
+    AbsSqlStatement *stmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
 
     // Get year, month, day, hour, minutes, secs from java object
     int y, mo, d, h, mn, s;
@@ -555,7 +556,7 @@ JNIEXPORT jshort JNICALL Java_csql_jdbc_JSqlStatement_getShort
         env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
         return(-1);
     }
-    SqlStatement *sqlStmt = (SqlStatement*) env->GetLongField( obj, fid );
+    AbsSqlStatement *sqlStmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
 
     // Validate pos
     // Handle conversion
@@ -592,7 +593,7 @@ JNIEXPORT jint JNICALL Java_csql_jdbc_JSqlStatement_getInt
         env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
         return(-1);
     }
-    SqlStatement *sqlStmt = (SqlStatement*) env->GetLongField( obj, fid );
+    AbsSqlStatement *sqlStmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
 
     // Validate pos
     // Handle conversion
@@ -621,7 +622,7 @@ JNIEXPORT jlong JNICALL Java_csql_jdbc_JSqlStatement_getLong
         env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
         return(-1);
     }
-    SqlStatement *sqlStmt = (SqlStatement*) env->GetLongField( obj, fid );
+    AbsSqlStatement *sqlStmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
 
     // Validate pos
     // Handle conversion
@@ -650,7 +651,7 @@ JNIEXPORT jbyte JNICALL Java_csql_jdbc_JSqlStatement_getByte
         env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
         return(-1);
     }
-    SqlStatement *sqlStmt = (SqlStatement*) env->GetLongField( obj, fid );
+    AbsSqlStatement *sqlStmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
 
     // Validate pos
     // Handle conversion
@@ -679,7 +680,7 @@ JNIEXPORT jfloat JNICALL Java_csql_jdbc_JSqlStatement_getFloat
         env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
         return(-1);
     }
-    SqlStatement *sqlStmt = (SqlStatement*) env->GetLongField( obj, fid );
+    AbsSqlStatement *sqlStmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
 
     // Validate pos
     // Handle conversion
@@ -708,7 +709,7 @@ JNIEXPORT jdouble JNICALL Java_csql_jdbc_JSqlStatement_getDouble
         env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
         return(-1);
     }
-    SqlStatement *sqlStmt = (SqlStatement*) env->GetLongField( obj, fid );
+    AbsSqlStatement *sqlStmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
 
     // Validate pos
     // Handle conversion
@@ -737,7 +738,7 @@ JNIEXPORT jstring JNICALL Java_csql_jdbc_JSqlStatement_getString
         env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
         return( (jstring) 0 );
     }
-    SqlStatement *sqlStmt = (SqlStatement*) env->GetLongField( obj, fid );
+    AbsSqlStatement *sqlStmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
 
     // Validate pos
     // Handle conversion
@@ -774,7 +775,7 @@ JNIEXPORT jobject JNICALL Java_csql_jdbc_JSqlStatement_getDate
         env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
         return( (jobject) 0 );
     }
-    SqlStatement *sqlStmt = (SqlStatement*) env->GetLongField( obj, fid );
+    AbsSqlStatement *sqlStmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
 
     // Validate pos
     // Handle conversion
@@ -814,7 +815,7 @@ JNIEXPORT jobject JNICALL Java_csql_jdbc_JSqlStatement_getTime
         env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
         return( (jobject) 0 );
     }
-    SqlStatement *sqlStmt = (SqlStatement*) env->GetLongField( obj, fid );
+    AbsSqlStatement *sqlStmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
 
     // Validate pos
     // Handle conversion
@@ -854,7 +855,7 @@ JNIEXPORT jobject JNICALL Java_csql_jdbc_JSqlStatement_getTimestamp
         env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
         return( (jobject) 0 );
     }
-    SqlStatement *sqlStmt = (SqlStatement*) env->GetLongField( obj, fid );
+    AbsSqlStatement *sqlStmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
 
     // Validate pos
     // Handle conversion

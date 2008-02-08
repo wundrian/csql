@@ -62,7 +62,7 @@ libcsqlsql_la_LIBADD =
 am_libcsqlsql_la_OBJECTS = dmlyacc.lo dmllex.lo ParsedData.lo \
 	SelStatement.lo InsStatement.lo UpdStatement.lo \
 	DdlStatement.lo \
-	DelStatement.lo SqlStatement.lo StatementFactory.lo
+	DelStatement.lo SqlStatement.lo StatementFactory.lo SqlFactory.lo
 libcsqlsql_la_OBJECTS = $(am_libcsqlsql_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -94,14 +94,14 @@ HEADERS = $(noinst_HEADERS)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /home/csql/latest/dec27/csql/missing --run aclocal-1.9
+ACLOCAL = ${SHELL} /home1/praba/csql/feb08sql/csql/missing --run aclocal-1.9
 AMDEP_FALSE = #
 AMDEP_TRUE = 
-AMTAR = ${SHELL} /home/csql/latest/dec27/csql/missing --run tar
+AMTAR = ${SHELL} /home1/praba/csql/feb08sql/csql/missing --run tar
 AR = ar
-AUTOCONF = ${SHELL} /home/csql/latest/dec27/csql/missing --run autoconf
-AUTOHEADER = ${SHELL} /home/csql/latest/dec27/csql/missing --run autoheader
-AUTOMAKE = ${SHELL} /home/csql/latest/dec27/csql/missing --run automake-1.9
+AUTOCONF = ${SHELL} /home1/praba/csql/feb08sql/csql/missing --run autoconf
+AUTOHEADER = ${SHELL} /home1/praba/csql/feb08sql/csql/missing --run autoheader
+AUTOMAKE = ${SHELL} /home1/praba/csql/feb08sql/csql/missing --run automake-1.9
 AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
@@ -111,7 +111,7 @@ CPPFLAGS =
 CXX = g++
 CXXCPP = g++ -E
 CXXDEPMODE = depmode=gcc3
-CXXFLAGS = -I/home/csql/jdk1.5.0_14/include -I/home/csql/jdk1.5.0_14/include/linux
+CXXFLAGS = -g -O2
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
@@ -119,9 +119,9 @@ ECHO = echo
 ECHO_C = 
 ECHO_N = -n
 ECHO_T = 
-EGREP = grep -E
+EGREP = /bin/grep -E
 EXEEXT = 
-F77 = g77
+F77 = gfortran
 FFLAGS = -g -O2
 INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
@@ -129,14 +129,14 @@ INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = ${SHELL} $(install_sh) -c -s
 LDFLAGS = 
 LEX = flex
-LEXLIB = -lfl
+LEXLIB = 
 LEX_OUTPUT_ROOT = lex.yy
 LIBOBJS = 
 LIBS = 
 LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LN_S = ln -s
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} /home/csql/latest/dec27/csql/missing --run makeinfo
+MAKEINFO = ${SHELL} /home1/praba/csql/feb08sql/csql/missing --run makeinfo
 OBJEXT = o
 PACKAGE = csql
 PACKAGE_BUGREPORT = 
@@ -152,12 +152,12 @@ STRIP = strip
 VERSION = 0.1
 YACC = yacc -vd
 #LFLAGS = --header-file=dmllex.h
-ac_ct_AR = ar
+ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = gcc
 ac_ct_CXX = g++
-ac_ct_F77 = g77
-ac_ct_RANLIB = ranlib
-ac_ct_STRIP = strip
+ac_ct_F77 = gfortran
+ac_ct_RANLIB = @ac_ct_RANLIB@
+ac_ct_STRIP = @ac_ct_STRIP@
 am__fastdepCC_FALSE = #
 am__fastdepCC_TRUE = 
 am__fastdepCXX_FALSE = #
@@ -181,15 +181,15 @@ host_cpu = i686
 host_os = linux-gnu
 host_vendor = pc
 includedir = ${prefix}/include
-infodir = ${prefix}/info
-install_sh = /home/csql/latest/dec27/csql/install-sh
+infodir = ${prefix}/share/info
+install_sh = /home1/praba/csql/feb08sql/csql/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localstatedir = ${prefix}/var
-mandir = ${prefix}/man
+mandir = ${prefix}/share/man
 mkdir_p = mkdir -p --
 oldincludedir = /usr/include
-prefix = /home/csql/latest/dec27/csql/install
+prefix = /home1/praba/csql/feb08sql/csql/install
 program_transform_name = s,x,x,
 sbindir = ${exec_prefix}/sbin
 sharedstatedir = ${prefix}/com
@@ -202,7 +202,7 @@ libcsqlsql_la_LDFLAGS = -avoid-version -module
 libcsqlsql_la_SOURCES = dmlyacc.yxx dmllex.lxx ParsedData.cxx SelStatement.cxx \
 	InsStatement.cxx UpdStatement.cxx DelStatement.cxx \
 	DdlStatement.cxx \
-	SqlStatement.cxx  StatementFactory.cxx
+	SqlStatement.cxx  StatementFactory.cxx SqlFactory.cxx
 
 noinst_HEADERS = Parser.h Statement.h 
 libcsqlsql_a_LIBADD = $(top_builddir)/src/server/libcsql.la
@@ -281,6 +281,7 @@ include ./$(DEPDIR)/ParsedData.Plo
 include ./$(DEPDIR)/SelStatement.Plo
 include ./$(DEPDIR)/SqlStatement.Plo
 include ./$(DEPDIR)/StatementFactory.Plo
+include ./$(DEPDIR)/SqlFactory.Plo
 include ./$(DEPDIR)/UpdStatement.Plo
 include ./$(DEPDIR)/DdlStatement.Plo
 include ./$(DEPDIR)/dmllex.Plo

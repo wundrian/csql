@@ -15,6 +15,7 @@
  ***************************************************************************/
 #include<CSql.h>
 #include <Statement.h>
+#include <SqlFactory.h>
 #include <SqlStatement.h>
 #define SQL_STMT_LEN 1024
 enum STMT_TYPE
@@ -25,8 +26,8 @@ enum STMT_TYPE
 };
 STMT_TYPE stmtType = SELECT;
 FILE *fp;
-SqlConnection *conn;
-SqlStatement *stmt;
+AbsSqlConnection *conn;
+AbsSqlStatement *stmt;
 bool getInput(bool);
 void printUsage()
 {
@@ -83,14 +84,13 @@ int main(int argc, char **argv)
     }
     
     DbRetVal rv = OK;
-    conn = new SqlConnection();
+    conn = SqlFactory::createConnection(CSql);
     rv = conn->connect(username,password);
     if (rv != OK) return 1;
-    stmt = new SqlStatement();
+    stmt =  SqlFactory::createStatement(CSql);
     stmt->setConnection(conn);
     rv = conn->beginTrans();
     if (rv != OK) return 2;
-
     while (getInput(fileFlag) == true) continue;
 
     //TODO::conn should provide method telling status of the transaction.

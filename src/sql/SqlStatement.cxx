@@ -28,12 +28,18 @@ int yyparse ();
 
 SqlStatement::SqlStatement()
 {
-    con = NULL;
+    sqlCon = NULL;
     stmt = NULL;
 }
-void SqlStatement::setConnection(SqlConnection *conn)
+void SqlStatement::setConnection(AbsSqlConnection *conn)
 {
+    sqlCon = (SqlConnection*)conn;
     con = conn;
+
+}
+void SqlStatement::setSqlConnection(SqlConnection *conn)
+{
+    sqlCon = conn;
 }
 
 DbRetVal SqlStatement::prepare(char *stmtstr)
@@ -51,7 +57,7 @@ DbRetVal SqlStatement::prepare(char *stmtstr)
         return ErrSyntaxError;
     }
     stmt = StatementFactory::getStatement(parsedData);
-    stmt->setDbMgr(con->getConnObject().getDatabaseManager());
+    stmt->setDbMgr(sqlCon->getConnObject().getDatabaseManager());
     rv = stmt->resolve();
     if (rv != OK)
     {

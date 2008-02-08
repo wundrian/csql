@@ -19,7 +19,9 @@
  ***************************************************************************/
 #ifndef SQLSTATEMENT_H
 #define SQLSTATEMENT_H
+#include <AbsSqlStatement.h>
 #include <SqlConnection.h>
+#include <SqlFactory.h>
 #include "Statement.h"
 //#include<CSql.h>
 class Statement;
@@ -38,16 +40,15 @@ class ParsedData;
 * <br/>
 * @author Prabakaran Thirumalai
 */
-class SqlStatement
+class SqlStatement: public AbsSqlStatement
 {
     public:
-    /** Default constructor
-    */
     SqlStatement();
     /** sets connection handle to be used for subsequent operations
     *   @param con SqlConnection*
     */
-    void setConnection(SqlConnection *con);
+    void setConnection(AbsSqlConnection *con);
+    void setSqlConnection(SqlConnection *con);
 
     /** compiles the sql statement. It calls the parser and tokenizes the statement 
     * into logical plan. This method sets the statement string which needs to be executed.
@@ -215,10 +216,10 @@ class SqlStatement
     bool isSelect();
 
     private:
-    SqlConnection *con;
+    SqlConnection *sqlCon;
     Statement *stmt;
     ParsedData pData;
-
+    friend class SqlFactory;
 };
 
 #endif

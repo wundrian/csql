@@ -20,6 +20,8 @@
 #ifndef SQLCONNECTION_H
 #define SQLCONNECTION_H
 #include<CSql.h>
+#include<AbsSqlConnection.h>
+#include<SqlFactory.h>
 
 /**
 * @class SqlConnection
@@ -39,10 +41,11 @@
 *  SERIALIZABLE isolation level is not supported.
 * @author Prabakaran Thirumalai
 */
-class SqlConnection
+class SqlConnection : public AbsSqlConnection
 {
     Connection conn;
     public:
+    SqlConnection(){innerConn = NULL; }
 
     /** opens connection to the sql engine
     *   @param user username for authentication
@@ -87,6 +90,7 @@ class SqlConnection
         { return conn.startTransaction(isoLevel); }
 
     Connection& getConnObject(){  return conn; }
+    friend class SqlFactory;
 };
 
 #endif

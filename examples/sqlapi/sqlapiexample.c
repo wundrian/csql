@@ -6,7 +6,7 @@ int main()
     rv = con->connect("root", "manager");
     if (rv != OK) return 1;
     SqlStatement *stmt = new SqlStatement();
-    stmt->setConnection(con);
+    stmt->setSqlConnection(con);
     char statement[1024];
     strcpy(statement, "CREATE TABLE t1 (f1 int, f2 char(20), primary key (f1));");
     int rows =0;
