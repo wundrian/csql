@@ -131,13 +131,27 @@ This will create "docs/html" directory under which API Reference html files are 
 You should find csqlserver executable under the bin directory of the installation.
 Change csql.conf file under the installation root directory if necessary.
 
-Set the \begin{verbatim} CSQL_CONFIG_FILE \end{verbatim} environment variable to absolute path of csql.conf file.
+Set the \textbf {CSQL\_INSTALL\_ROOT } environment variable to absolute path of installation root directory. For example if csql is installed in /opt/csql, enter
 
 \begin{verbatim}
-$export CSQL_CONFIG_FILE=/tmp/csql.conf
+$export CSQL_INSTALL_ROOT=/opt/csql
 \end{verbatim}
 
-You should find csqlserver executable under the bin directory of the installation.
+Set the \textbf{CSQL\_CONFIG\_FILE}  environment variable to absolute path of csql.conf file.
+
+\begin{verbatim}
+$export CSQL_CONFIG_FILE=$CSQL_INSTALL_ROOT/csql.conf
+\end{verbatim}
+
+Set the \textbf {LD\_LIBRARY\_PATH} environment variable to absolute path $CSQL\_INSTALL\_ROOT/lib
+
+\begin{verbatim}
+$export LD_LIBRARY_PATH=$CSQL_INSTALL_ROOT/lib
+\end{verbatim}
+
+Note: Alternatively, setupenv.ksh script in installation directory shall be run to set all the above environment variables.
+
+You should find csqlserver executable under the bin directory of the installation. Running that command will start the server.
 \begin{verbatim}
 $./csqlserver
 \end{verbatim}
@@ -183,7 +197,7 @@ It will display all the rows in the table t1
 
 \begin{verbatim}
 $csql
-CSQL>select * from t1;
+CSQL>delete from t1;
 \end{verbatim}
 It will delete all the rows in the table t1
 \section{API Interfaces}
@@ -192,7 +206,7 @@ It will delete all the rows in the table t1
 \label{SQL Syntax Support:}
 
 \begin{verbatim}
-CREATE TABLE {tablename} ({fielddefinitionlist}[, primary ({fieldname})]) 
+CREATE TABLE {tablename} ({fielddefinitionlist}[, PRIMARY KEY ({fieldname})]) 
      fielddefinitionlist shall be fieldname type [(size)] [NOT NULL] 
 
 CREATE INDEX {idxname} ON {tablename}({fieldname}) [HASH] [UNIQUE] [PRIMARY]
@@ -467,7 +481,8 @@ $csql -u root -p manager -s /tmp/import.sql
 catalog is a command line tool used to display the internal control structures of 
 csql database engine. It will print the information in XML format.
 
-Usage: catalog [-u username] [-p passwd] [-l] [-i] [-d] [-T table] [-I index] [-D <lock|trans|proc>]
+Usage: catalog [-u username] [-p passwd] [-l] [-i] [-d] [-T table] [-I index] \\
+               [-D <lock|trans|proc>]
        l -> list all table with field information
        i -> reinitialize catalog tables. Drops all tables.
        d -> print db usage statistics
@@ -499,8 +514,13 @@ Sample output:
 
 \section{Common Error Messages}
 \label{errormessages}
-Message: Shared memory open failed  \\
+\textbf {Message: Shared memory open failed}  \\
 Check whether the csqlserver process is running \\
+
+\textbf {Message: Unable to create log file or Unable to start the logger}\\
+Check whether the csqlserver process is running \\
+Check whether log file directory exists which is specified in csql.conf \\
+For default configuration /tmp/log directory should exist in the system.
 
 % Stop your text
 \end{document}
