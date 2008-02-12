@@ -112,7 +112,6 @@ void* TupleIterator::next()
                rv = predImpl->evaluate(result);
                if (rv != OK) return NULL;
             }
-            return tuple;
         }
 
     }
