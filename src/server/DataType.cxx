@@ -980,6 +980,8 @@ void AllDataType::strToValue(void* dest, char *src, DataType type, int length)
             int d,m,y, h,mn,s, res=0;
             res = sscanf( src, "%d-%d-%d %d:%d:%d", &d, &m, &y, &h, &mn, &s );
             if( res != 6 )
+                res = sscanf( src, "%d-%d-%d, %d:%d:%d", &d, &m, &y, &h, &mn, &s );
+            if( res != 6 )
                 res = sscanf( src, "%d/%d/%d %d:%d:%d", &d, &m, &y, &h, &mn, &s );
             if( res != 6 )
                 res = sscanf( src, "%d/%d/%d, %d:%d:%d", &d, &m, &y, &h, &mn, &s );
