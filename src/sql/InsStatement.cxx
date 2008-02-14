@@ -227,6 +227,7 @@ DbRetVal InsStatement::resolve()
                                parsedData->getFieldValueList().size())
     {
         dbMgr->closeTable(table);
+        table = NULL;
         printError(ErrSyntaxError, "Field Name list and field values do not match");
         return ErrSyntaxError;
     }
@@ -245,6 +246,7 @@ DbRetVal InsStatement::resolve()
         if (NULL == name || NULL == value) 
         {
             dbMgr->closeTable(table);
+            table = NULL;
             delete fInfo;
             printError(ErrSyntaxError, "Field Name list and field values do not match");
             return ErrSyntaxError;
@@ -253,6 +255,7 @@ DbRetVal InsStatement::resolve()
         if (ErrNotFound == rv)
         {
             dbMgr->closeTable(table);
+            table = NULL;
             delete fInfo;
             printError(ErrSyntaxError, "Field %s does not exist in table", 
                                         name->fldName);
@@ -283,6 +286,7 @@ DbRetVal InsStatement::resolve()
         if (value == NULL) 
         {
             dbMgr->closeTable(table);
+            table = NULL;
             free(params); params = NULL;
             free(paramValues); paramValues = NULL;
             printError(ErrSysFatal, "Should never happen. value NULL after iteration");

@@ -244,6 +244,7 @@ DbRetVal SelStatement::resolve()
         if (NULL == name) 
         {
             dbMgr->closeTable(table);
+            table = NULL;
             delete fInfo;
             printError(ErrSysFatal, "Should never happen. Field Name list has NULL");
             return ErrSysFatal;
@@ -251,7 +252,13 @@ DbRetVal SelStatement::resolve()
         if ('*' == name->fldName[0]) 
         {
             rv = resolveStar();
-            if (rv != OK) { delete fInfo; return rv; }
+            if (rv != OK)
+            { 
+                dbMgr->closeTable(table);
+                table = NULL;
+                delete fInfo; 
+                return rv; 
+            }
             //as soon as it encounters *, it breaks the loop negleting other field names
             //as they all are deleted during resolveStar method.
             break;
@@ -260,6 +267,7 @@ DbRetVal SelStatement::resolve()
             if (ErrNotFound == rv)
             {
                 dbMgr->closeTable(table);
+                table = NULL;
                 delete fInfo;
                 printError(ErrSyntaxError, "Field %s does not exist in table", 
                                         name->fldName);
@@ -278,7 +286,12 @@ DbRetVal SelStatement::resolve()
     delete fInfo;
 
     rv = setBindFieldAndValues();
-    if (rv != OK) return rv;
+    if (rv != OK) 
+    {
+        dbMgr->closeTable(table);
+        table = NULL;
+        return rv;
+    }
 
     table->setCondition(parsedData->getCondition());
 
@@ -288,7 +301,7 @@ DbRetVal SelStatement::resolve()
         //TODO::free memory allocated for params
         table->setCondition(NULL);
         dbMgr->closeTable(table);
-
+        table = NULL;
     }
     return rv;
 }
@@ -307,7 +320,6 @@ DbRetVal SelStatement::resolveStar()
         rv = table->getFieldInfo(fName, fInfo);
         if (ErrNotFound == rv)
         {
-            dbMgr->closeTable(table);
             delete fInfo;
             fNameList.reset();
             printError(ErrSysFatal, "Should never happen.");
@@ -343,7 +355,6 @@ DbRetVal SelStatement::setBindFieldAndValues()
         value = (FieldValue*) valIter.nextElement();
         if (value == NULL)
         {
-            dbMgr->closeTable(table);
             free(bindFields); bindFields = NULL;
             free(bindFieldValues); bindFieldValues = NULL;
             printError(ErrSysFatal, "Should never happen. value NULL after iteration");
@@ -369,7 +380,6 @@ DbRetVal SelStatement::resolveForCondition()
         value = (ConditionValue*) iter.nextElement();
         if (NULL == value) 
         {
-            dbMgr->closeTable(table);
             delete fInfo;
             printError(ErrSysFatal, "Should never happen.");
             return ErrSysFatal;
@@ -377,7 +387,6 @@ DbRetVal SelStatement::resolveForCondition()
         rv = table->getFieldInfo(value->fName, fInfo);
         if (ErrNotFound == rv)
         {
-            dbMgr->closeTable(table);
             delete fInfo;
             printError(ErrSyntaxError, "Field %s does not exist in table", 
                                         value->fName);
@@ -407,7 +416,6 @@ DbRetVal SelStatement::resolveForCondition()
         value = (ConditionValue*) iter.nextElement();
         if (value == NULL) 
         {
-            dbMgr->closeTable(table);
             free(params); params = NULL;
             free(paramValues); paramValues = NULL;
             printError(ErrSysFatal, "Should never happen. value NULL after iteration");

@@ -342,6 +342,8 @@ DbRetVal UpdStatement::resolve()
     {
         //TODO::free memory allocated for params
         table->setCondition(NULL);
+        dbMgr->closeTable(table);
+        table = NULL;
     }
     return rv;
 }
@@ -360,7 +362,6 @@ DbRetVal UpdStatement::resolveForAssignment()
         value = (UpdateFieldValue*) iter.nextElement();
         if (NULL == value) 
         {
-            dbMgr->closeTable(table);
             delete fInfo;
             printError(ErrSysFatal, "Should never happen.");
             return ErrSysFatal;
@@ -368,7 +369,6 @@ DbRetVal UpdStatement::resolveForAssignment()
         rv = table->getFieldInfo(value->fldName, fInfo);
         if (ErrNotFound == rv)
         {
-            dbMgr->closeTable(table);
             delete fInfo;
             printError(ErrSyntaxError, "Field %s does not exist in table", 
                                         value->fldName);
@@ -383,7 +383,7 @@ DbRetVal UpdStatement::resolveForAssignment()
             value->paramNo = paramPos++;
         }
         if (!value->paramNo) 
-            AllDataType::strToValue(value->value, value->parsedString, fInfo->type);
+            AllDataType::strToValue(value->value, value->parsedString, fInfo->type, value->length);
     }
     totalAssignParams = paramPos -1;
 
@@ -396,7 +396,6 @@ DbRetVal UpdStatement::resolveForAssignment()
         cValue = (ConditionValue*) cIter.nextElement();
         if (NULL == cValue) 
         {
-            dbMgr->closeTable(table);
             delete fInfo;
             printError(ErrSysFatal, "Should never happen.");
             return ErrSysFatal;
@@ -404,7 +403,6 @@ DbRetVal UpdStatement::resolveForAssignment()
         rv = table->getFieldInfo(cValue->fName, fInfo);
         if (ErrNotFound == rv)
         {
-            dbMgr->closeTable(table);
             delete fInfo;
             printError(ErrSyntaxError, "Field %s does not exist in table", 
                                         cValue->fName);
@@ -437,7 +435,6 @@ DbRetVal UpdStatement::resolveForAssignment()
         value = (UpdateFieldValue*) iter.nextElement();
         if (value == NULL) 
         {
-            dbMgr->closeTable(table);
             free(params); params = NULL;
             free(paramValues); paramValues = NULL;
             printError(ErrSysFatal, "Should never happen. value NULL after iteration");
@@ -452,7 +449,6 @@ DbRetVal UpdStatement::resolveForAssignment()
         cValue = (ConditionValue*) cIter.nextElement();
         if (cValue == NULL) 
         {
-            dbMgr->closeTable(table);
             free(params); params = NULL;
             free(paramValues); paramValues = NULL;
             printError(ErrSysFatal, "Should never happen. value NULL after iteration");

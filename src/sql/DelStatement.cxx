@@ -227,6 +227,8 @@ DbRetVal DelStatement::resolve()
     {
         //TODO::free memory allocated for params
         table->setCondition(NULL);
+        dbMgr->closeTable(table);
+        table = NULL;
     }
     return rv;
 }
@@ -246,7 +248,6 @@ DbRetVal DelStatement::resolveForCondition()
         value = (ConditionValue*) iter.nextElement();
         if (NULL == value) 
         {
-            dbMgr->closeTable(table);
             delete fInfo;
             printError(ErrSysFatal, "Should never happen.");
             return ErrSysFatal;
@@ -254,7 +255,6 @@ DbRetVal DelStatement::resolveForCondition()
         rv = table->getFieldInfo(value->fName, fInfo);
         if (ErrNotFound == rv)
         {
-            dbMgr->closeTable(table);
             delete fInfo;
             printError(ErrSyntaxError, "Field %s does not exist in table", 
                                         value->fName);
@@ -284,7 +284,6 @@ DbRetVal DelStatement::resolveForCondition()
         value = (ConditionValue*) iter.nextElement();
         if (value == NULL) 
         {
-            dbMgr->closeTable(table);
             free(params); params = NULL;
             free(paramValues); paramValues = NULL;
             printError(ErrSysFatal, "Should never happen. value NULL after iteration");
