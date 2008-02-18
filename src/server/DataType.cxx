@@ -350,6 +350,38 @@ long AllDataType::size(DataType type)
     return size;
 }
 
+SQLSMALLINT AllDataType::convertToSQLType(DataType type)
+{
+    switch(type)
+    {
+        case typeInt:
+            return SQL_INTEGER;
+        case typeLong:
+            return SQL_C_LONG;
+        case typeLongLong:
+            return SQL_C_SBIGINT;
+        case typeShort:
+            return SQL_C_SHORT;
+        case typeByteInt:
+            return SQL_C_TINYINT;
+        case typeDouble:
+            return SQL_C_DOUBLE;
+        case typeFloat:
+            return SQL_C_FLOAT;
+        case typeDecimal:
+            //TODO
+        case typeDate:
+            return SQL_C_TYPE_DATE;
+        case typeTime:
+           return SQL_C_TYPE_TIME;
+        case typeTimeStamp:
+           return SQL_C_TYPE_TIMESTAMP;
+        case typeString:
+            return SQL_C_CHAR;
+    }
+    return SQL_INTEGER;
+}
+
 void AllDataType::copyVal(void* dest, void *src, DataType type, int length)
 {
     switch(type)
