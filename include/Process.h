@@ -20,6 +20,7 @@
 #include<ErrorType.h>
 #include<Mutex.h>
 #include<Transaction.h>
+#include<Util.h>
 
 class ProcInfo
 {
@@ -68,6 +69,8 @@ class ProcessManager
     static caddr_t sysAddr;
     static caddr_t usrAddr;
     static Database *systemDatabase;
+    static List hasLockList;
+
     //ThreadInfo *thrInfo;
     ProcessManager() { }
     DbRetVal registerThread();
@@ -78,7 +81,7 @@ class ProcessManager
     static DbRetVal setThreadTransaction(Transaction *trans, int pslot);
     static Transaction* getThreadTransaction(int pslot);
     static Transaction** getThreadTransAddr(int pslot);
-
+    
     void printUsageStatistics();
     void printDebugInfo();
     int procSlot;

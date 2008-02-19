@@ -156,6 +156,21 @@ class Table
     */
     virtual long numTuples()=0;
 
+    /**takes lock on the table
+    * if bool shared flag is set, it will take shared lock, or else exclusive lock
+    * @returns DbRetVal
+    */
+    virtual DbRetVal lock(bool shared)=0;
+
+    /**releases the lock acquired on the table
+    * @returns DbRetVal
+    */
+    virtual DbRetVal unlock()=0;
+
+    /**sets the undo log flag. If this flag is unset then undo logs will not be generated
+    * @returns DbRetVal
+    */
+    virtual DbRetVal setUndoLogging(bool flag)=0;
 
     virtual DbRetVal getFieldInfo(const char *fieldName, FieldInfo *&info)=0;
     virtual List getFieldNameList()=0;

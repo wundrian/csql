@@ -59,7 +59,6 @@ DbRetVal CacheTableLoader::load(bool tabDefinition)
 
 DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
 {
-    //TODO::take exclusive lock on table
     char dsn[72];
     sprintf(dsn, "DSN=%s;", Conf::config.getDSN());
     SQLCHAR outstr[1024];
@@ -120,6 +119,15 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
                     SQLDisconnect(hdbc); return rv;}
     }
     Table *table = dbMgr->openTable(tableName);
+    table->setUndoLogging(false);
+    rv = table->lock(false); //no need to release this lock as it is upgrade from S to X
+    if (rv != OK)
+    {
+        dbMgr->closeTable(table);
+        if (tabDefinition) dbMgr->dropTable(tableName);
+        SQLDisconnect(hdbc);
+        return ErrSysInit;
+    }
     if (table == NULL){ printf("Table creation failed in csql for %s\n", tableName); 
                     SQLDisconnect(hdbc); return ErrSysInit; }
     List fNameList = table->getFieldNameList();
@@ -209,6 +217,7 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
     }
     //TODO::leak:: valBufList and its targetdb buffer
     valBufList.reset();
+    dbMgr->closeTable(table);
     SQLCloseCursor (hstmt);
     SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
     SQLDisconnect (hdbc);

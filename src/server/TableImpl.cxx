@@ -316,7 +316,8 @@ DbRetVal TableImpl::insertTuple()
             return ret;
         }
     }
-    ret = (*trans)->appendUndoLog(sysDB_, InsertOperation, tptr, length_);
+    if (undoFlag)
+        ret = (*trans)->appendUndoLog(sysDB_, InsertOperation, tptr, length_);
     return ret;
 }
 
@@ -354,7 +355,8 @@ DbRetVal TableImpl::deleteTuple()
         }
     }
     ((Chunk*)chunkPtr_)->free(db_, curTuple_);
-    ret = (*trans)->appendUndoLog(sysDB_, DeleteOperation, curTuple_, length_);
+    if (undoFlag)
+        ret = (*trans)->appendUndoLog(sysDB_, DeleteOperation, curTuple_, length_);
     return ret;
 }
 
@@ -389,7 +391,8 @@ DbRetVal TableImpl::updateTuple()
             }
         }
     }
-    ret = (*trans)->appendUndoLog(sysDB_, UpdateOperation, curTuple_, length_);
+    if (undoFlag)
+        ret = (*trans)->appendUndoLog(sysDB_, UpdateOperation, curTuple_, length_);
     if (ret != OK) return ret;
     return copyValuesFromBindBuffer(curTuple_);
 }
@@ -491,7 +494,7 @@ DbRetVal TableImpl::insertIndexNode(Transaction *tr, void *indexPtr, IndexInfo *
     DbRetVal ret = OK;
     printDebug(DM_Table, "Inside insertIndexNode type %d", iptr->indexType_);
     Index* idx = Index::getIndex(iptr->indexType_);
-    ret = idx->insert(this, tr, indexPtr, info, tuple);
+    ret = idx->insert(this, tr, indexPtr, info, tuple,undoFlag);
     return ret;
 }
 
@@ -500,7 +503,7 @@ DbRetVal TableImpl::deleteIndexNode(Transaction *tr, void *indexPtr, IndexInfo *
     INDEX *iptr = (INDEX*)indexPtr;
     DbRetVal ret = OK;
     Index* idx = Index::getIndex(iptr->indexType_);
-    ret = idx->remove(this, tr, indexPtr, info, tuple);
+    ret = idx->remove(this, tr, indexPtr, info, tuple, undoFlag);
     return ret;
 }
 
@@ -513,7 +516,7 @@ DbRetVal TableImpl::updateIndexNode(Transaction *tr, void *indexPtr, IndexInfo *
     //TODO::currently it updates irrespective of whether the key changed or not 
     //because of this commenting the whole index update code. relook at it and uncomment
 
-    //ret = idx->update(this, tr, indexPtr, info, tuple);
+    //ret = idx->update(this, tr, indexPtr, info, tuple, undoFlag);
 
     return ret;
 }
@@ -572,6 +575,36 @@ DbRetVal TableImpl::close()
     iter->close();
     delete iter;
     iter = NULL;
+    return OK;
+}
+DbRetVal TableImpl::lock(bool shared)
+{
+    DbRetVal ret = OK;
+    if (shared) 
+        ret = lMgr_->getSharedLock(chunkPtr_, NULL);
+    else 
+        ret = lMgr_->getExclusiveLock(chunkPtr_, NULL);
+    if (OK != ret)
+    {
+        printError(ret, "Could not exclusive lock on the table %x", chunkPtr_);
+    }else {
+        //do not append for S to X upgrade
+        if (!ProcessManager::hasLockList.exists(chunkPtr_)) 
+            ProcessManager::hasLockList.append(chunkPtr_);
+    }
+    return ret;
+}
+DbRetVal TableImpl::unlock()
+{
+    if (!ProcessManager::hasLockList.exists(chunkPtr_)) return OK;
+    DbRetVal ret = lMgr_->releaseLock(chunkPtr_);
+    if (OK != ret)
+    {
+        printError(ret, "Could not release exclusive lock on the table %x", chunkPtr_);
+    }else
+    {
+        ProcessManager::hasLockList.remove(chunkPtr_);
+    }
     return OK;
 }
 

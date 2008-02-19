@@ -121,6 +121,20 @@ class List
         return ErrNotFound;
     }
 
+    bool exists(void *elem) 
+    {
+        ListNode *iter = head;
+        while (iter != NULL)
+        {
+            if (elem == iter->element)
+            {
+                return true;
+            }
+            iter = iter->next;
+        }
+        return false;
+    }
+
     ListIterator getIterator()
     {
         ListIterator iter(head);

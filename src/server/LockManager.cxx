@@ -20,7 +20,7 @@
 #include<Transaction.h>
 #include<Debug.h>
 #include<Config.h>
-
+#include<Process.h>
 Bucket* LockManager::getLockBucket(void *tuple)
 {
    int noOfBuckets = LOCK_BUCKET_SIZE;
@@ -146,7 +146,7 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
         printDebug(DM_Lock, "Bucket list is null: Allocating new LockHashNode %x", node);
         bucket->bucketList_ = (void*)node; //make it as head
         bucket->mutex_.releaseLock(systemDatabase_->procSlot);
-        (*trans)->insertIntoHasList(systemDatabase_, node);
+        if (trans != NULL) (*trans)->insertIntoHasList(systemDatabase_, node);
         printDebug(DM_Lock, "LockManager::getSharedLock End");
         return OK;
 
@@ -165,7 +165,7 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
                iter->lInfo_.waitReaders_++;
                        cachedLockNode = iter;
                bucket->mutex_.releaseLock(systemDatabase_->procSlot);
-               (*trans)->updateWaitLock(iter);
+               if (trans != NULL) (*trans)->updateWaitLock(iter);
                printDebug(DM_Lock, "lock node:%x exclusive locked",iter);
                break;
            }
@@ -176,7 +176,7 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
                    iter->lInfo_.waitReaders_++;
                    cachedLockNode = iter;
                    bucket->mutex_.releaseLock(systemDatabase_->procSlot);
-                   (*trans)->updateWaitLock(iter);
+                   if (trans != NULL) (*trans)->updateWaitLock(iter);
                    printDebug(DM_Lock, "lock node:%x Writers waiting.",iter);
                    break;
                }
@@ -184,7 +184,7 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
                {
                    iter->lInfo_.noOfReaders_++;
                    bucket->mutex_.releaseLock(systemDatabase_->procSlot);
-                   (*trans)->insertIntoHasList(systemDatabase_, iter);
+                   if (trans != NULL) (*trans)->insertIntoHasList(systemDatabase_, iter);
                    printDebug(DM_Lock, "lock node:%x First to take shared lock",
                                                                           iter);
                    printDebug(DM_Lock, "LockManager::getSharedLock End");
@@ -194,7 +194,7 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
            {
                iter->lInfo_.noOfReaders_++;
                bucket->mutex_.releaseLock(systemDatabase_->procSlot);
-               (*trans)->insertIntoHasList(systemDatabase_, iter);
+               if (trans != NULL) (*trans)->insertIntoHasList(systemDatabase_, iter);
                printDebug(DM_Lock, "lock node:%x incr readers",iter);
                printDebug(DM_Lock, "LockManager::getSharedLock End");
                return OK;
@@ -217,7 +217,7 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
         while (NULL != it->next_) it = it->next_;
         it->next_ = node;
         bucket->mutex_.releaseLock(systemDatabase_->procSlot);
-        (*trans)->insertIntoHasList(systemDatabase_, node);
+        if (trans != NULL) (*trans)->insertIntoHasList(systemDatabase_, node);
         printDebug(DM_Lock, "LockManager::getSharedLock End");
         return OK;
    }
@@ -247,14 +247,14 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
                cachedLockNode->lInfo_.noOfReaders_++;
                cachedLockNode->lInfo_.waitReaders_--;
                bucket->mutex_.releaseLock(systemDatabase_->procSlot);
-               (*trans)->insertIntoHasList(systemDatabase_, cachedLockNode);
-               (*trans)->removeWaitLock();
+               if (trans != NULL) (*trans)->insertIntoHasList(systemDatabase_, cachedLockNode);
+               if (trans != NULL) (*trans)->removeWaitLock();
                printDebug(DM_Lock, "LockManager::getSharedLock End");
                return OK;
            }
        } else if (cachedLockNode->lInfo_.noOfReaders_ == -1)
        {
-           if ((*trans)->findInHasList(systemDatabase_, cachedLockNode))
+           if (trans !=NULL && (*trans)->findInHasList(systemDatabase_, cachedLockNode))
            {
                bucket->mutex_.releaseLock(systemDatabase_->procSlot);
                printDebug(DM_Lock, "LockManager::getSharedLock End");
@@ -265,7 +265,7 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
            cachedLockNode->lInfo_.noOfReaders_++;
            cachedLockNode->lInfo_.waitReaders_--;
            bucket->mutex_.releaseLock(systemDatabase_->procSlot);
-           (*trans)->insertIntoHasList(systemDatabase_, cachedLockNode);
+           if (trans != NULL) (*trans)->insertIntoHasList(systemDatabase_, cachedLockNode);
            printDebug(DM_Lock, "LockManager::getSharedLock End");
            return OK;
        }
@@ -311,7 +311,7 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
         printDebug(DM_Lock, "No head. So new lock node allocated:%x",node);
         bucket->bucketList_ = (void*)node; //make it as head
         bucket->mutex_.releaseLock(systemDatabase_->procSlot);
-        (*trans)->insertIntoHasList(systemDatabase_, node);
+        if (trans != NULL) (*trans)->insertIntoHasList(systemDatabase_, node);
         printDebug(DM_Lock, "LockManager::getExclusiveLock End");
         return OK;
 
@@ -328,7 +328,7 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
            {
                iter->lInfo_.waitWriters_++;
                bucket->mutex_.releaseLock(systemDatabase_->procSlot);
-               (*trans)->updateWaitLock(iter);
+               if (trans != NULL) (*trans)->updateWaitLock(iter);
                cachedLockNode = iter;
                printDebug(DM_Lock, "Either some one has exclusive or shared lock:%x",iter);
                break;
@@ -337,7 +337,7 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
            {
                iter->lInfo_.noOfReaders_ = -1;
                bucket->mutex_.releaseLock(systemDatabase_->procSlot);
-               (*trans)->insertIntoHasList(systemDatabase_, iter);
+               if (trans != NULL) (*trans)->insertIntoHasList(systemDatabase_, iter);
                printDebug(DM_Lock, "LockManager::getExclusiveLock End");
                return OK;
            }
@@ -359,7 +359,7 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
         while (NULL != it->next_) it = it->next_;
         it->next_ = node;
         bucket->mutex_.releaseLock(systemDatabase_->procSlot);
-        (*trans)->insertIntoHasList(systemDatabase_, node);
+        if (trans != NULL) (*trans)->insertIntoHasList(systemDatabase_, node);
         printDebug(DM_Lock, "LockManager::getExclusiveLock End");
         return OK;
    }
@@ -383,13 +383,13 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
            cachedLockNode->lInfo_.noOfReaders_ = -1;
            cachedLockNode->lInfo_.waitWriters_--;
            bucket->mutex_.releaseLock(systemDatabase_->procSlot);
-           (*trans)->insertIntoHasList(systemDatabase_, cachedLockNode);
-           (*trans)->removeWaitLock();
+           if (trans != NULL) (*trans)->insertIntoHasList(systemDatabase_, cachedLockNode);
+           if (trans != NULL) (*trans)->removeWaitLock();
            printDebug(DM_Lock, "LockManager::getExclusiveLock End");
            return OK;
        }else if ( cachedLockNode->lInfo_.noOfReaders_ == 1)
        {
-           if ((*trans)->findInHasList(systemDatabase_, cachedLockNode))
+           if (trans !=NULL && (*trans)->findInHasList(systemDatabase_, cachedLockNode))
            {
                printDebug(DM_Lock, "upgrading shared to exclusive lock:%x",
                                                            cachedLockNode);
@@ -397,19 +397,39 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
                cachedLockNode->lInfo_.noOfReaders_ = -1;
                cachedLockNode->lInfo_.waitWriters_--;
                bucket->mutex_.releaseLock(systemDatabase_->procSlot);
-               (*trans)->removeWaitLock();
+               if (trans != NULL) (*trans)->removeWaitLock();
+               printDebug(DM_Lock, "LockManager::getExclusiveLock End");
+               return OK;
+           }
+           if (trans ==NULL && ProcessManager::hasLockList.exists(cachedLockNode->ptrToTuple_))
+           {
+               printDebug(DM_Lock, "upgrading shared to exclusive lock:%x",
+                                                           cachedLockNode);
+               //upgrade it to exclusive lock
+               cachedLockNode->lInfo_.noOfReaders_ = -1;
+               cachedLockNode->lInfo_.waitWriters_--;
+               bucket->mutex_.releaseLock(systemDatabase_->procSlot);
                printDebug(DM_Lock, "LockManager::getExclusiveLock End");
                return OK;
            }
        }else if ( cachedLockNode->lInfo_.noOfReaders_ == -1)
        {
-           if ((*trans)->findInHasList(systemDatabase_, cachedLockNode))
+           if (trans !=NULL && (*trans)->findInHasList(systemDatabase_, cachedLockNode))
            {
                printDebug(DM_Lock, "You already have exclusive lock:%x",
                                                         cachedLockNode);
                cachedLockNode->lInfo_.waitWriters_--;
                bucket->mutex_.releaseLock(systemDatabase_->procSlot);
-               (*trans)->removeWaitLock();
+               if (trans != NULL) (*trans)->removeWaitLock();
+               printDebug(DM_Lock, "LockManager::getExclusiveLock End");
+               return OK;
+           }
+           if (trans ==NULL && ProcessManager::hasLockList.exists(cachedLockNode->ptrToTuple_))
+           {
+               printDebug(DM_Lock, "You already have exclusive lock:%x",
+                                                           cachedLockNode);
+               cachedLockNode->lInfo_.waitWriters_--;
+               bucket->mutex_.releaseLock(systemDatabase_->procSlot);
                printDebug(DM_Lock, "LockManager::getExclusiveLock End");
                return OK;
            }
@@ -538,7 +558,7 @@ DbRetVal LockManager::isExclusiveLocked(void *tuple, Transaction **trans, bool &
        {
            if (iter->lInfo_.noOfReaders_ == -1)
            {
-               if ((*trans)->findInHasList(systemDatabase_, iter))
+               if (trans != NULL && (*trans)->findInHasList(systemDatabase_, iter))
                {
                    printDebug(DM_Lock, "You already have exclusive Lock: %x", iter);
                    status = false;

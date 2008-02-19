@@ -420,6 +420,7 @@ DbRetVal DatabaseManagerImpl::createTable(const char *name, TableDef &def)
     int addSize = 0;
     if (fldCount < 31) addSize = 4; else addSize = os::align(fldCount);
     size_t sizeofTuple = os::align(def.getTupleSize())+addSize;
+
     rv = systemDatabase_->getDatabaseMutex();
     if (OK != rv ) {
         printError(rv, "Unable to get Database mutex");
@@ -498,6 +499,20 @@ DbRetVal DatabaseManagerImpl::dropTable(const char *name)
 
     //remove the entry in TABLE
     CatalogTableTABLE cTable(systemDatabase_);
+    rv = cTable.getChunkAndTblPtr(name, chunk, tptr);
+    if (OK != rv) {
+        systemDatabase_->releaseDatabaseMutex();
+        printError(ErrSysInternal, "Table %s does not exist");
+        return ErrSysInternal;
+    }
+    rv = lMgr_->getExclusiveLock(chunk, NULL);
+    if (rv !=OK)
+    {
+        systemDatabase_->releaseDatabaseMutex();
+        printError(ErrLockTimeOut, "Unable to acquire exclusive lock on the table\n");
+        return rv;
+    }
+
     rv = cTable.remove(name, chunk, tptr);
     if (OK != rv) {
         systemDatabase_->releaseDatabaseMutex();
@@ -536,6 +551,12 @@ DbRetVal DatabaseManagerImpl::dropTable(const char *name)
     systemDatabase_->releaseDatabaseMutex();
     printDebug(DM_Database, "Deleted Table %s" , name);
     logFinest(logger, "Deleted Table %s" , name);
+    rv = lMgr_->releaseLock(chunk);
+    if (rv !=OK)
+    {
+        printError(ErrLockTimeOut, "Unable to release exclusive lock on the table\n");
+        return rv;
+    }
     return OK;
 }
 
@@ -564,6 +585,7 @@ Table* DatabaseManagerImpl::openTable(const char *name)
     DbRetVal rv = systemDatabase_->getDatabaseMutex();
     if (OK != rv) {
         printError(ErrSysInternal, "Unable to get database mutex");
+        delete table;
         return NULL;
     }
     CatalogTableTABLE cTable(systemDatabase_);
@@ -571,12 +593,23 @@ Table* DatabaseManagerImpl::openTable(const char *name)
     if ( OK != ret)
     {
         systemDatabase_->releaseDatabaseMutex();
+        delete table;
         printError(ErrNotExists, "Table not exists %s", name);
         return NULL;
     }
     TABLE *tTuple = (TABLE*)tptr;
     table->setTableInfo(tTuple->tblName_, tTuple->tblID_, tTuple->length_,
                         tTuple->numFlds_, tTuple->numIndexes_, tTuple->chunkPtr_);
+    rv = table->lock(true); //take shared lock
+    if (rv !=OK)
+    {
+        printError(ErrLockTimeOut, "Unable to acquire shared lock on the table\n");
+        systemDatabase_->releaseDatabaseMutex();
+        delete table;
+        return NULL;
+    }
+
+
     if (tTuple->numFlds_ < 31) 
     { 
         table->isIntUsedForNULL = true;
@@ -641,11 +674,12 @@ Table* DatabaseManagerImpl::openTable(const char *name)
         table->idxInfo[i] = (IndexInfo*) hIdxInfo;
     }
     systemDatabase_->releaseDatabaseMutex();
-
+   // lMgr->  tTuple->chunkPtr_
     printDebug(DM_Database,"Opening table handle name:%s chunk:%x numIndex:%d",
                                          name, chunk, table->numIndexes_);
     logFinest(logger, "Opening Table %s" , name);
 
+        
     return table;
 }
 
@@ -677,6 +711,7 @@ void DatabaseManagerImpl::closeTable(Table *table)
 {
     printDebug(DM_Database,"Closing table handle: %x", table);
     if (NULL == table) return;
+    table->unlock();
     delete table;
     logFinest(logger, "Closing Table");
 }

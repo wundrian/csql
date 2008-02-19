@@ -136,7 +136,7 @@ unsigned int HashIndex::computeHashBucket(DataType type, void *key, int noOfBuck
 }
 
 //TODO::composite keys are not supported currently
-DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *indInfo, void *tuple)
+DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *indInfo, void *tuple, bool undoFlag)
 {
     SingleFieldHashIndexInfo *info = (SingleFieldHashIndexInfo*) indInfo;
     INDEX *iptr = (INDEX*)indexPtr;
@@ -200,11 +200,15 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         BucketList list(head);
         list.insert((Chunk*)iptr->hashNodeChunk_, tbl->db_, keyPtr, tuple);
     }
-    DbRetVal rc = tr->appendLogicalUndoLog(tbl->sysDB_, InsertHashIndexOperation,
-                                tuple, sizeof(void*), indexPtr);
-    if (rc !=OK)
-    {
-        //TODO::remove it from the bucketlist
+    DbRetVal rc = OK;
+    if (undoFlag) {
+
+         rc = tr->appendLogicalUndoLog(tbl->sysDB_, InsertHashIndexOperation,
+                                 tuple, sizeof(void*), indexPtr);
+        if (rc !=OK)
+        {
+            //TODO::remove it from the bucketlist
+        }
     }
 
     bucket->mutex_.releaseLock(tbl->db_->procSlot);
@@ -213,7 +217,7 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
 
 
 //TODO::composite keys are not supported currently
-DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *indInfo, void *tuple)
+DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *indInfo, void *tuple, bool undoFlag)
 {
     INDEX *iptr = (INDEX*)indexPtr;
 
@@ -250,18 +254,20 @@ DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
        printDebug(DM_HashIndex, "Removing hash index node from head with only none node"); 
        bucket1->bucketList_ = 0; 
     }
-    rc =tr->appendLogicalUndoLog(tbl->sysDB_, DeleteHashIndexOperation,
+    if (undoFlag) {
+        rc =tr->appendLogicalUndoLog(tbl->sysDB_, DeleteHashIndexOperation,
                                 tuple, sizeof(void*), indexPtr);
-    if (rc !=OK)
-    {
+        if (rc !=OK)
+        {
         //TODO::add it back to the bucketlist
+        }
     }
     bucket1->mutex_.releaseLock(tbl->db_->procSlot);
     return rc;
 }
 
 //TODO::composite keys are not supported currently
-DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *indInfo, void *tuple)
+DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *indInfo, void *tuple, bool undoFlag)
 {
     INDEX *iptr = (INDEX*)indexPtr;
 
@@ -342,14 +348,17 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         printError(ErrSysInternal,"Update: Bucket list is null");
         return ErrSysInternal;
     }
-    DbRetVal rc = tr->appendLogicalUndoLog(tbl->sysDB_, DeleteHashIndexOperation,
+    DbRetVal rc = OK;
+    if (undoFlag) {
+         rc = tr->appendLogicalUndoLog(tbl->sysDB_, DeleteHashIndexOperation,
                                 tuple, sizeof(void*), indexPtr);
-    if (rc !=OK) 
-    { 
-        //TODO::add it back to the bucket list
-        bucket1->mutex_.releaseLock(tbl->db_->procSlot);
-        bucket->mutex_.releaseLock(tbl->db_->procSlot);
-        return rc; 
+        if (rc !=OK) 
+        { 
+            //TODO::add it back to the bucket list
+            bucket1->mutex_.releaseLock(tbl->db_->procSlot);
+            bucket->mutex_.releaseLock(tbl->db_->procSlot);
+            return rc; 
+        }
     }
     HashIndexNode *head2 = (HashIndexNode*) bucket1->bucketList_;
     //Note:: the tuple will be in the same address location
@@ -371,13 +380,16 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         printDebug(DM_HashIndex, "Updating hash index node: Adding node to list with head %x", head2);
         list2.insert((Chunk*)iptr->hashNodeChunk_, tbl->db_, keyPtr, tuple);
     }
-    rc = tr->appendLogicalUndoLog(tbl->sysDB_, InsertHashIndexOperation,
+    if (undoFlag) {
+
+        rc = tr->appendLogicalUndoLog(tbl->sysDB_, InsertHashIndexOperation,
                                 tuple, sizeof(void*), indexPtr);
-    if (rc !=OK)
-    {
-        //TODO::revert back the changes:delete and add the node + remove the logical undo log 
-        //of the  DeleteHashIndexOperation
-    } 
+        if (rc !=OK)
+        {
+            //TODO::revert back the changes:delete and add the node + remove the logical undo log 
+            //of the  DeleteHashIndexOperation
+        } 
+    }
     bucket1->mutex_.releaseLock(tbl->db_->procSlot);
     bucket->mutex_.releaseLock(tbl->db_->procSlot);
     return rc;

@@ -26,7 +26,7 @@ Mutex ProcessManager::mutex;
 caddr_t ProcessManager::sysAddr=0;
 caddr_t ProcessManager::usrAddr=0;
 Database* ProcessManager::systemDatabase=NULL;
-
+List ProcessManager::hasLockList;
 
 void ThreadInfo::init()
 {

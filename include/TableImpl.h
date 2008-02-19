@@ -79,6 +79,9 @@ class TableImpl:public Table
     //BucketIter *bIter;
 
     TupleIterator *iter;
+
+    bool undoFlag;
+
     public:
     FieldList fldList_;
     int numIndexes_;
@@ -120,7 +123,7 @@ class TableImpl:public Table
         idxInfo = NULL; indexPtr_ = NULL; scanType_ = unknownScan; pred_ = NULL; useIndex_ = -1;
         iNullInfo = 0; cNullInfo = NULL; isIntUsedForNULL = true; 
         iNotNullInfo = 0; cNotNullInfo = NULL;
-        isPlanCreated = false;}
+        isPlanCreated = false; undoFlag = true;}
     ~TableImpl();
 
     void setDB(Database *db) { db_ = db; }
@@ -173,6 +176,12 @@ class TableImpl:public Table
     long numTuples();
     int pagesUsed();
     void printInfo();
+
+    DbRetVal lock(bool shared);
+    DbRetVal unlock();
+
+    DbRetVal setUndoLogging(bool flag) { undoFlag = flag; }
+
 
     void setTableInfo(char *name, int tblid, size_t  length,
                        int numFld, int numIdx, void *chunk);
