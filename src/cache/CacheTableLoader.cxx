@@ -31,7 +31,7 @@ DbRetVal CacheTableLoader::addToCacheTableFile()
 DbRetVal CacheTableLoader::removeFromCacheTableFile()
 {
     FILE *fp;
-    fp = fopen(Conf::config.getCacheTableFile(),"a");
+    fp = fopen(Conf::config.getCacheTableFile(),"w");
     if( fp == NULL ) {
         printError(ErrSysInit, "Invalid path/filename in CACHE_TABLE_FILE.\nTable will not be"
                                 "recovered in case of crash");
@@ -44,19 +44,26 @@ DbRetVal CacheTableLoader::removeFromCacheTableFile()
 
 DbRetVal CacheTableLoader::load(char *username, char *password)
 {
-    //TODO::take exclusive lock on table
-
     Connection conn;
     DbRetVal rv = conn.open(username, password);
     if (rv != OK) return ErrSysInit;
     DatabaseManager *dbMgr = (DatabaseManager*) conn.getDatabaseManager();
     if (dbMgr == NULL) { printf("Auth failed\n"); return ErrSysInit; }
+    conn.startTransaction();
+    rv = load(dbMgr);
+    conn.commit();
+    conn.close();
+    return rv;
+}
 
+DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr)
+{
+    //TODO::take exclusive lock on table
     char dsn[72];
     sprintf(dsn, "DSN=%s;", Conf::config.getDSN());
     SQLCHAR outstr[1024];
     SQLSMALLINT outstrlen;
-
+    DbRetVal rv = OK;
     int retValue =0;
     SQLHENV henv; 
     SQLHDBC hdbc;
@@ -109,11 +116,11 @@ DbRetVal CacheTableLoader::load(char *username, char *password)
     }
     rv = dbMgr->createTable(tableName, tabDef);
     if (rv != OK) { printf("Table creation failed in csql for %s\n", tableName); 
-                    conn.close(); SQLDisconnect(hdbc); return rv;}
+                    SQLDisconnect(hdbc); return rv;}
 
     Table *table = dbMgr->openTable(tableName);
     if (table == NULL){ printf("Table creation failed in csql for %s\n", tableName); 
-                    conn.close(); SQLDisconnect(hdbc); return ErrSysInit; }
+                    SQLDisconnect(hdbc); return ErrSysInit; }
     List fNameList = table->getFieldNameList();
     ListIterator fNameIter = fNameList.getIterator();
     FieldInfo *info = new FieldInfo();
@@ -149,7 +156,7 @@ DbRetVal CacheTableLoader::load(char *username, char *password)
         if (retValue) {printf("Unable to bind columns in ODBC\n"); return ErrSysInit; }
     }
     delete info;
-    conn.startTransaction();
+    
     retValue = SQLExecute (hstmt);
     if (retValue) {printf("Unable to execute ODBC statement\n"); return ErrSysInit; }
     while(true)
@@ -168,8 +175,6 @@ ACCESSING MEMBERS of above structures...
         table->insertTuple();
     }
     SQLCloseCursor (hstmt);
-    conn.commit();
-    conn.close();
     SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
     SQLDisconnect (hdbc);
     SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
@@ -197,8 +202,8 @@ DbRetVal CacheTableLoader::recoverAllCachedTables(char *username, char *password
     FILE *fp;
     fp = fopen(Conf::config.getCacheTableFile(),"r");
     if( fp == NULL ) {
-        printError(ErrSysInit, "Invalid path/filename in CACHE_TABLE_FILE.\nRecovery Failed.");
-	return ErrSysInit;
+        printError(ErrSysInit, "cache.table file does not exist");
+	return OK;
     }
     //TODO::take exclusive lock on database
     char tablename[IDENTIFIER_LENGTH];
@@ -212,3 +217,4 @@ DbRetVal CacheTableLoader::recoverAllCachedTables(char *username, char *password
     fclose(fp);
     return OK;
 }
+

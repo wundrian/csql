@@ -9,4 +9,5 @@ libcsql_la_SOURCES = BucketIter.cxx BucketList.cxx CatalogTables.cxx Chunk.cxx \
 	TransactionManager.cxx TupleIterator.cxx UserManagerImpl.cxx HashIndex.cxx Config.cxx Process.cxx
 bin_PROGRAMS = csqlserver
 csqlserver_SOURCES = Server.cxx 
-csqlserver_LDADD = $(top_builddir)/src/server/.libs/libcsql -lrt -lpthread -lcrypt
+csqlserver_LDADD = $(top_builddir)/src/cache/libcacheload.la \
+	$(top_builddir)/src/server/.libs/libcsql -lrt -lpthread -lcrypt

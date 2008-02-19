@@ -98,9 +98,9 @@ DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = ${SHELL} /home1/praba/csql/feb18/csql/missing --run aclocal-1.10
 AMTAR = ${SHELL} /home1/praba/csql/feb18/csql/missing --run tar
 AR = ar
-AUTOCONF = ${SHELL} /home1/praba/csql/tst/csql/missing --run autoconf
-AUTOHEADER = ${SHELL} /home1/praba/csql/tst/csql/missing --run autoheader
-AUTOMAKE = ${SHELL} /home1/praba/csql/tst/csql/missing --run automake-1.10
+AUTOCONF = ${SHELL} /home1/praba/csql/feb18/csql/missing --run autoconf
+AUTOHEADER = ${SHELL} /home1/praba/csql/feb18/csql/missing --run autoheader
+AUTOMAKE = ${SHELL} /home1/praba/csql/feb18/csql/missing --run automake-1.10
 AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
@@ -139,7 +139,6 @@ LN_S = ln -s
 LTLIBOBJS = 
 MAKEINFO = ${SHELL} /home1/praba/csql/feb18/csql/missing --run makeinfo
 MKDIR_P = /bin/mkdir -p
->>>>>>> 1.29
 OBJEXT = o
 PACKAGE = csql
 PACKAGE_BUGREPORT = 

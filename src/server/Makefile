@@ -69,7 +69,8 @@ binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am_csqlserver_OBJECTS = Server.$(OBJEXT)
 csqlserver_OBJECTS = $(am_csqlserver_OBJECTS)
-csqlserver_DEPENDENCIES = $(top_builddir)/src/server/.libs/libcsql
+csqlserver_DEPENDENCIES = $(top_builddir)/src/cache/libcacheload.la \
+	$(top_builddir)/src/server/.libs/libcsql
 DEFAULT_INCLUDES = -I. -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -87,12 +88,12 @@ DIST_SOURCES = $(libcsql_la_SOURCES) $(csqlserver_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /home1/praba/csql/tst/csql/missing --run aclocal-1.10
-AMTAR = ${SHELL} /home1/praba/csql/tst/csql/missing --run tar
+ACLOCAL = ${SHELL} /home1/praba/csql/feb18/csql/missing --run aclocal-1.10
+AMTAR = ${SHELL} /home1/praba/csql/feb18/csql/missing --run tar
 AR = ar
-AUTOCONF = ${SHELL} /home1/praba/csql/tst/csql/missing --run autoconf
-AUTOHEADER = ${SHELL} /home1/praba/csql/tst/csql/missing --run autoheader
-AUTOMAKE = ${SHELL} /home1/praba/csql/tst/csql/missing --run automake-1.10
+AUTOCONF = ${SHELL} /home1/praba/csql/feb18/csql/missing --run autoconf
+AUTOHEADER = ${SHELL} /home1/praba/csql/feb18/csql/missing --run autoheader
+AUTOMAKE = ${SHELL} /home1/praba/csql/feb18/csql/missing --run automake-1.10
 AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
@@ -129,7 +130,7 @@ LIBS =
 LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LN_S = ln -s
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} /home1/praba/csql/tst/csql/missing --run makeinfo
+MAKEINFO = ${SHELL} /home1/praba/csql/feb18/csql/missing --run makeinfo
 MKDIR_P = /bin/mkdir -p
 OBJEXT = o
 PACKAGE = csql
@@ -147,10 +148,10 @@ STRIP = strip
 VERSION = 0.1
 YACC = bison -y
 YFLAGS = 
-abs_builddir = /home1/praba/csql/tst/csql/src/server
-abs_srcdir = /home1/praba/csql/tst/csql/src/server
-abs_top_builddir = /home1/praba/csql/tst/csql
-abs_top_srcdir = /home1/praba/csql/tst/csql
+abs_builddir = /home1/praba/csql/feb18/csql/src/server
+abs_srcdir = /home1/praba/csql/feb18/csql/src/server
+abs_top_builddir = /home1/praba/csql/feb18/csql
+abs_top_srcdir = /home1/praba/csql/feb18/csql
 ac_ct_CC = gcc
 ac_ct_CXX = g++
 ac_ct_F77 = gfortran
@@ -179,7 +180,7 @@ host_vendor = pc
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = $(SHELL) /home1/praba/csql/tst/csql/install-sh
+install_sh = $(SHELL) /home1/praba/csql/feb18/csql/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -188,7 +189,7 @@ mandir = ${datarootdir}/man
 mkdir_p = /bin/mkdir -p
 oldincludedir = /usr/include
 pdfdir = ${docdir}
-prefix = /home1/praba/csql/tst/csql/install
+prefix = /home1/praba/csql/feb18/csql/install
 program_transform_name = s,x,x,
 psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
@@ -209,7 +210,9 @@ libcsql_la_SOURCES = BucketIter.cxx BucketList.cxx CatalogTables.cxx Chunk.cxx \
 	TransactionManager.cxx TupleIterator.cxx UserManagerImpl.cxx HashIndex.cxx Config.cxx Process.cxx
 
 csqlserver_SOURCES = Server.cxx 
-csqlserver_LDADD = $(top_builddir)/src/server/.libs/libcsql -lrt -lpthread -lcrypt
+csqlserver_LDADD = $(top_builddir)/src/cache/libcacheload.la \
+	$(top_builddir)/src/server/.libs/libcsql -lrt -lpthread -lcrypt
+
 all: all-am
 
 .SUFFIXES:

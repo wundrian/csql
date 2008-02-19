@@ -26,8 +26,11 @@ class CacheTableLoader
     DbRetVal addToCacheTableFile();
     DbRetVal removeFromCacheTableFile();
     DbRetVal load(char *user, char *pass);
+    DbRetVal load(DatabaseManager *dbMgr);
+
     DbRetVal reload();
     DbRetVal unload();
     DbRetVal refresh();
     DbRetVal recoverAllCachedTables(char *user, char *pass);
+
 };

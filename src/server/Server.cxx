@@ -20,6 +20,7 @@
 #include<Database.h>
 #include<Transaction.h>
 #include<Lock.h>
+#include<CacheTableLoader.h>
 
 int srvStop =0;
 static void sigTermHandler(int sig)
@@ -142,13 +143,19 @@ int main()
     printf("System Database initialized\n");
 
 
-    printf("Database server started\n");
     bool end = false;
 
     struct timeval timeout, tval;
     timeout.tv_sec = 5;
     timeout.tv_usec = 0;
     Database* sysdb = session.getSystemDatabase();
+    printf("Database server recovering cached tables...\n");
+   
+    system("cachetable -u root -p manager -r");
+
+    printf("Cached Tables recovered\n");
+
+    printf("Database server started\n");
 
     while(!srvStop)
     {

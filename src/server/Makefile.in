@@ -69,7 +69,8 @@ binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am_csqlserver_OBJECTS = Server.$(OBJEXT)
 csqlserver_OBJECTS = $(am_csqlserver_OBJECTS)
-csqlserver_DEPENDENCIES = $(top_builddir)/src/server/.libs/libcsql
+csqlserver_DEPENDENCIES = $(top_builddir)/src/cache/libcacheload.la \
+	$(top_builddir)/src/server/.libs/libcsql
 DEFAULT_INCLUDES = -I. -I$(top_builddir)@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -209,7 +210,9 @@ libcsql_la_SOURCES = BucketIter.cxx BucketList.cxx CatalogTables.cxx Chunk.cxx \
 	TransactionManager.cxx TupleIterator.cxx UserManagerImpl.cxx HashIndex.cxx Config.cxx Process.cxx
 
 csqlserver_SOURCES = Server.cxx 
-csqlserver_LDADD = $(top_builddir)/src/server/.libs/libcsql -lrt -lpthread -lcrypt
+csqlserver_LDADD = $(top_builddir)/src/cache/libcacheload.la \
+	$(top_builddir)/src/server/.libs/libcsql -lrt -lpthread -lcrypt
+
 all: all-am
 
 .SUFFIXES:
