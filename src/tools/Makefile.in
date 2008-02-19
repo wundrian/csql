@@ -32,7 +32,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = csql$(EXEEXT) catalog$(EXEEXT) cachetable$(EXEEXT)
+bin_PROGRAMS = csql$(EXEEXT) catalog$(EXEEXT) cachetable$(EXEEXT) \
+	csqlserver1$(EXEEXT)
 subdir = src/tools
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -62,6 +63,13 @@ am_csql_OBJECTS = isql.$(OBJEXT)
 csql_OBJECTS = $(am_csql_OBJECTS)
 csql_DEPENDENCIES = $(top_builddir)/src/server/.libs/libcsql \
 	$(top_builddir)/src/sql/.libs/libcsqlsql
+am_csqlserver1_OBJECTS = csqlserver1.$(OBJEXT)
+csqlserver1_OBJECTS = $(am_csqlserver1_OBJECTS)
+csqlserver1_DEPENDENCIES = $(top_builddir)/src/cache/libcacheload.la \
+	$(top_builddir)/src/server/libcsql.la
+csqlserver1_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
+	$(CXXFLAGS) $(csqlserver1_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I. -I$(top_builddir)@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -74,9 +82,10 @@ CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(cachetable_SOURCES) $(catalog_SOURCES) $(csql_SOURCES)
+SOURCES = $(cachetable_SOURCES) $(catalog_SOURCES) $(csql_SOURCES) \
+	$(csqlserver1_SOURCES)
 DIST_SOURCES = $(cachetable_SOURCES) $(catalog_SOURCES) \
-	$(csql_SOURCES)
+	$(csql_SOURCES) $(csqlserver1_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -203,6 +212,11 @@ cachetable_LDADD = $(top_builddir)/src/cache/libcacheload.la \
 
 cachetable_LDFLAGS = -lcrypt -lodbc
 cachetable_SOURCES = cachetable.cxx
+csqlserver1_LDADD = $(top_builddir)/src/cache/libcacheload.la \
+	$(top_builddir)/src/server/libcsql.la -lrt -lpthread -lcrypt
+
+csqlserver1_LDFLAGS = -lcrypt -lodbc 
+csqlserver1_SOURCES = csqlserver1.cxx
 all: all-am
 
 .SUFFIXES:
@@ -216,9 +230,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  src/tools/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  src/tools/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  src/tools/Makefile
+	  $(AUTOMAKE) --foreign  src/tools/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -273,6 +287,9 @@ catalog$(EXEEXT): $(catalog_OBJECTS) $(catalog_DEPENDENCIES)
 csql$(EXEEXT): $(csql_OBJECTS) $(csql_DEPENDENCIES) 
 	@rm -f csql$(EXEEXT)
 	$(CXXLINK) $(csql_OBJECTS) $(csql_LDADD) $(LIBS)
+csqlserver1$(EXEEXT): $(csqlserver1_OBJECTS) $(csqlserver1_DEPENDENCIES) 
+	@rm -f csqlserver1$(EXEEXT)
+	$(csqlserver1_LINK) $(csqlserver1_OBJECTS) $(csqlserver1_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -282,6 +299,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cachetable.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/catalog.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/csqlserver1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/isql.Po@am__quote@
 
 .cxx.o:

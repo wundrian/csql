@@ -73,12 +73,12 @@ DIST_SOURCES = $(libcacheload_la_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /home1/praba/csql/feb18/csql/missing --run aclocal-1.10
-AMTAR = ${SHELL} /home1/praba/csql/feb18/csql/missing --run tar
+ACLOCAL = ${SHELL} /home1/praba/csql/feb18/tmp/csql/missing --run aclocal-1.10
+AMTAR = ${SHELL} /home1/praba/csql/feb18/tmp/csql/missing --run tar
 AR = ar
-AUTOCONF = ${SHELL} /home1/praba/csql/feb18/csql/missing --run autoconf
-AUTOHEADER = ${SHELL} /home1/praba/csql/feb18/csql/missing --run autoheader
-AUTOMAKE = ${SHELL} /home1/praba/csql/feb18/csql/missing --run automake-1.10
+AUTOCONF = ${SHELL} /home1/praba/csql/feb18/tmp/csql/missing --run autoconf
+AUTOHEADER = ${SHELL} /home1/praba/csql/feb18/tmp/csql/missing --run autoheader
+AUTOMAKE = ${SHELL} /home1/praba/csql/feb18/tmp/csql/missing --run automake-1.10
 AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
@@ -115,7 +115,7 @@ LIBS =
 LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LN_S = ln -s
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} /home1/praba/csql/feb18/csql/missing --run makeinfo
+MAKEINFO = ${SHELL} /home1/praba/csql/feb18/tmp/csql/missing --run makeinfo
 MKDIR_P = /bin/mkdir -p
 OBJEXT = o
 PACKAGE = csql
@@ -133,10 +133,10 @@ STRIP = strip
 VERSION = 0.1
 YACC = bison -y
 YFLAGS = 
-abs_builddir = /home1/praba/csql/feb18/csql/src/cache
-abs_srcdir = /home1/praba/csql/feb18/csql/src/cache
-abs_top_builddir = /home1/praba/csql/feb18/csql
-abs_top_srcdir = /home1/praba/csql/feb18/csql
+abs_builddir = /home1/praba/csql/feb18/tmp/csql/src/cache
+abs_srcdir = /home1/praba/csql/feb18/tmp/csql/src/cache
+abs_top_builddir = /home1/praba/csql/feb18/tmp/csql
+abs_top_srcdir = /home1/praba/csql/feb18/tmp/csql
 ac_ct_CC = gcc
 ac_ct_CXX = g++
 ac_ct_F77 = gfortran
@@ -165,7 +165,7 @@ host_vendor = pc
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = $(SHELL) /home1/praba/csql/feb18/csql/install-sh
+install_sh = $(SHELL) /home1/praba/csql/feb18/tmp/csql/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -174,7 +174,7 @@ mandir = ${datarootdir}/man
 mkdir_p = /bin/mkdir -p
 oldincludedir = /usr/include
 pdfdir = ${docdir}
-prefix = /home1/praba/csql/feb18/csql/install
+prefix = /home1/praba/csql/feb18/tmp/csql/install
 program_transform_name = s,x,x,
 psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
@@ -202,9 +202,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  src/cache/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  src/cache/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  src/cache/Makefile
+	  $(AUTOMAKE) --foreign  src/cache/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
