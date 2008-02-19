@@ -20,17 +20,32 @@
 class CacheTableLoader
 {
     char tableName[IDENTIFIER_LENGTH];
+    char userName[IDENTIFIER_LENGTH];
+    char password[IDENTIFIER_LENGTH];
     public:
     CacheTableLoader(){strcpy(tableName,"");}
+    void setConnParam(char *user, char *pass){ strcpy(userName, user); strcpy(password, pass); }
     void setTable(char *tablename) { strcpy(tableName,tablename); }
     DbRetVal addToCacheTableFile();
     DbRetVal removeFromCacheTableFile();
-    DbRetVal load(char *user, char *pass);
-    DbRetVal load(DatabaseManager *dbMgr);
-
+    DbRetVal load(bool tabDef=true);
     DbRetVal reload();
     DbRetVal unload();
     DbRetVal refresh();
-    DbRetVal recoverAllCachedTables(char *user, char *pass);
+    DbRetVal recoverAllCachedTables();
+
+
+
+    DbRetVal load(DatabaseManager *dbMgr, bool tabDef);
+
 
 };
+
+class BindBuffer
+{
+    public:
+    void *csql;
+    void *targetdb;
+    DataType type;
+};
+

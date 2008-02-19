@@ -14,6 +14,7 @@
  *                                                                         *
   ***************************************************************************/
 #include<CacheTableLoader.h>
+#include<Util.h>
 DbRetVal CacheTableLoader::addToCacheTableFile()
 {
     FILE *fp;
@@ -42,21 +43,21 @@ DbRetVal CacheTableLoader::removeFromCacheTableFile()
     return OK;
 }
 
-DbRetVal CacheTableLoader::load(char *username, char *password)
+DbRetVal CacheTableLoader::load(bool tabDefinition)
 {
     Connection conn;
-    DbRetVal rv = conn.open(username, password);
+    DbRetVal rv = conn.open(userName, password);
     if (rv != OK) return ErrSysInit;
     DatabaseManager *dbMgr = (DatabaseManager*) conn.getDatabaseManager();
     if (dbMgr == NULL) { printf("Auth failed\n"); return ErrSysInit; }
     conn.startTransaction();
-    rv = load(dbMgr);
+    rv = load(dbMgr, tabDefinition);
     conn.commit();
     conn.close();
     return rv;
 }
 
-DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr)
+DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
 {
     //TODO::take exclusive lock on table
     char dsn[72];
@@ -89,35 +90,35 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr)
     sprintf(stmtBuf, "SELECT * FROM %s;", tableName);
     retValue = SQLPrepare (hstmt, (unsigned char *) stmtBuf, SQL_NTS);
     if (retValue) {printf("Unable to Prepare ODBC statement \n"); return ErrSysInit; }
-    short totalFields=0;
-    retValue = SQLNumResultCols (hstmt, &totalFields);
-    if (retValue) {printf("Unable to retrieve ODBC total columns\n"); return ErrSysInit; }
 
-    UWORD                   icol;
-    UCHAR                   colName[IDENTIFIER_LENGTH];
-    SWORD                   colNameMax;
-    SWORD                   nameLength;
-    SWORD                   colType;
-    SQLULEN                 colLength;
-    SWORD                   scale;
-    SWORD                   nullable;
-    TableDef tabDef;
-
-    icol = 1; colNameMax = IDENTIFIER_LENGTH;
-    while (icol <= totalFields) {
-        retValue = SQLDescribeCol(hstmt, icol, colName, colNameMax,
+    if (tabDefinition) {
+        short totalFields=0;
+        retValue = SQLNumResultCols (hstmt, &totalFields);
+        if (retValue) {printf("Unable to retrieve ODBC total columns\n"); return ErrSysInit; }
+        UWORD                   icol;
+        UCHAR                   colName[IDENTIFIER_LENGTH];
+        SWORD                   colNameMax;
+        SWORD                   nameLength;
+        SWORD                   colType;
+        SQLULEN                 colLength;
+        SWORD                   scale;
+        SWORD                   nullable;
+        TableDef tabDef;
+        icol = 1; colNameMax = IDENTIFIER_LENGTH;
+        while (icol <= totalFields) {
+            retValue = SQLDescribeCol(hstmt, icol, colName, colNameMax,
                                         &nameLength, &colType, &colLength,
                                         &scale, &nullable);
-        if (retValue) {printf("Unable to retrieve ODBC column info\n"); return ErrSysInit; }
+            if (retValue) {printf("Unable to retrieve ODBC column info\n"); return ErrSysInit; }
  
-        //printf("Describe Column %s %d %d %d\n", szColName, pcbColName, colType, colLength);
-        icol++;
-        tabDef.addField((char*) colName, AllDataType::convertFromSQLType(colType), colLength);
-    }
-    rv = dbMgr->createTable(tableName, tabDef);
-    if (rv != OK) { printf("Table creation failed in csql for %s\n", tableName); 
+            //printf("Describe Column %s %d %d %d\n", szColName, pcbColName, colType, colLength);
+            icol++;
+           tabDef.addField((char*) colName, AllDataType::convertFromSQLType(colType), colLength);
+        }
+        rv = dbMgr->createTable(tableName, tabDef);
+        if (rv != OK) { printf("Table creation failed in csql for %s\n", tableName); 
                     SQLDisconnect(hdbc); return rv;}
-
+    }
     Table *table = dbMgr->openTable(tableName);
     if (table == NULL){ printf("Table creation failed in csql for %s\n", tableName); 
                     SQLDisconnect(hdbc); return ErrSysInit; }
@@ -127,13 +128,8 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr)
     int fcount =1; void *valBuf; int fieldsize=0;
     Identifier *elem = NULL;
 
-    //TODO::support for date, time and timestamp data types. 
-    //need to have two buffers as size is different in odbc and csql. 
-    //before we insert into csql, we should convert accordingly
-    DATE_STRUCT sDate;
-    TIME_STRUCT sTime;
-    TIMESTAMP_STRUCT sTimestamp;
-
+    BindBuffer *bBuf;
+    List valBufList;
     while (fNameIter.hasElement()) {
         elem = (Identifier*) fNameIter.nextElement();
         table->getFieldInfo((const char*)elem->name, info);
@@ -146,9 +142,31 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr)
                 fieldsize = info->length;
                 break;
             case typeDate:
-                //TODO::store valBuf with type in list
+                bBuf = new BindBuffer();
+                bBuf->csql = valBuf;
+                bBuf->type = typeDate;
                 fieldsize = sizeof(DATE_STRUCT);
-                valBuf = &sDate;
+                bBuf->targetdb = malloc(fieldsize);
+                valBuf = bBuf->targetdb;
+                valBufList.append(bBuf);
+                break;
+            case typeTime:
+                bBuf = new BindBuffer();
+                bBuf->csql = valBuf;
+                bBuf->type = typeTime;
+                fieldsize = sizeof(TIME_STRUCT);
+                bBuf->targetdb = malloc(fieldsize);
+                valBuf = bBuf->targetdb;
+                valBufList.append(bBuf);
+                break;
+            case typeTimeStamp:
+                bBuf = new BindBuffer();
+                bBuf->csql = valBuf;
+                bBuf->type = typeDate;
+                fieldsize = sizeof(TIMESTAMP_STRUCT);
+                bBuf->targetdb = malloc(fieldsize);
+                valBuf = bBuf->targetdb;
+                valBufList.append(bBuf);
                 break;
         }
         retValue = SQLBindCol (hstmt, fcount++, AllDataType::convertToSQLType(info->type),
@@ -156,24 +174,41 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr)
         if (retValue) {printf("Unable to bind columns in ODBC\n"); return ErrSysInit; }
     }
     delete info;
-    
     retValue = SQLExecute (hstmt);
     if (retValue) {printf("Unable to execute ODBC statement\n"); return ErrSysInit; }
     while(true)
     {
         retValue = SQLFetch (hstmt);
         if (retValue) break;
-        //TODO::convert odbc to csql for date, time, timestamp
-/*
-ACCESSING MEMBERS of above structures...
-       sDate.year, sDate.month, sDate.day,
-       sTime.hour, sTime.minute, sTime.second,
-       sTimestamp.year, sTimestamp.month, sTimestamp.day,
-       sTimestamp.hour, sTimestamp.minute, sTimestamp.second, sTimestamp.fraction
-
-*/
+        ListIterator bindIter = valBufList.getIterator();
+        while (bindIter.hasElement()) {
+            bBuf = (BindBuffer*) bindIter.nextElement();
+            switch (bBuf->type) {
+                case typeDate: {
+                    Date *dtCSQL = (Date*) bBuf->csql;
+                    DATE_STRUCT *dtTarget = (DATE_STRUCT*) bBuf->targetdb;
+                    dtCSQL->set(dtTarget->year,dtTarget->month,dtTarget->day);
+                    break;
+                }
+                case typeTime: {
+                    Time *dtCSQL = (Time*) bBuf->csql;
+                    TIME_STRUCT *dtTarget = (TIME_STRUCT*) bBuf->targetdb;
+                    dtCSQL->set(dtTarget->hour,dtTarget->minute,dtTarget->second);
+                    break;
+                }
+                case typeTimeStamp: {
+                    TimeStamp *dtCSQL = (TimeStamp*) bBuf->csql;
+                    TIMESTAMP_STRUCT *dtTarget = (TIMESTAMP_STRUCT*) bBuf->targetdb;
+                    dtCSQL->setDate(dtTarget->year,dtTarget->month,dtTarget->day);
+                    dtCSQL->setTime(dtTarget->hour,dtTarget->minute,dtTarget->second, dtTarget->fraction);
+                    break;
+                }
+            }
+        }
         table->insertTuple();
     }
+    //TODO::leak:: valBufList and its targetdb buffer
+    valBufList.reset();
     SQLCloseCursor (hstmt);
     SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
     SQLDisconnect (hdbc);
@@ -197,7 +232,7 @@ DbRetVal CacheTableLoader::refresh()
     return OK;
 }
 
-DbRetVal CacheTableLoader::recoverAllCachedTables(char *username, char *password)
+DbRetVal CacheTableLoader::recoverAllCachedTables()
 {
     FILE *fp;
     fp = fopen(Conf::config.getCacheTableFile(),"r");
@@ -212,7 +247,7 @@ DbRetVal CacheTableLoader::recoverAllCachedTables(char *username, char *password
         fscanf(fp, "%s\n", tablename);
         printf("Recovering Table : %s\n", tablename);
         setTable(tablename);
-        load(username, password);
+        load();
     }
     fclose(fp);
     return OK;

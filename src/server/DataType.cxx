@@ -352,6 +352,8 @@ long AllDataType::size(DataType type)
 
 SQLSMALLINT AllDataType::convertToSQLType(DataType type)
 {
+    //printf("CSQL TYPE is %d\n", type);
+
     switch(type)
     {
         case typeInt:
@@ -386,6 +388,7 @@ SQLSMALLINT AllDataType::convertToSQLType(DataType type)
 }
 DataType  AllDataType::convertFromSQLType(SQLSMALLINT type)
 {
+    //printf("SQL TYPE is %d\n", type);
     switch(type)
     {
         case SQL_INTEGER :
@@ -397,7 +400,7 @@ DataType  AllDataType::convertFromSQLType(SQLSMALLINT type)
         case  SQL_FLOAT:
         case  SQL_REAL:
             return typeFloat;
-        case  SQL_TYPE_DATE:
+        case SQL_TYPE_DATE:
             return typeDate;
         case SQL_TYPE_TIME :
            return typeTime;
