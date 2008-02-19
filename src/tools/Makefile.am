@@ -7,6 +7,7 @@ csql_LDADD = $(top_builddir)/src/server/.libs/libcsql $(top_builddir)/src/sql/.l
 catalog_SOURCES = catalog.cxx
 catalog_LDADD = $(top_builddir)/src/server/libcsql.la
 catalog_LDFLAGS = -lcrypt
-cachetable_LDADD = $(top_builddir)/src/server/libcsql.la
+cachetable_LDADD = $(top_builddir)/src/cache/libcacheload.la \
+	$(top_builddir)/src/server/libcsql.la
 cachetable_LDFLAGS = -lcrypt -lodbc
 cachetable_SOURCES = cachetable.cxx

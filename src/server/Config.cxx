@@ -66,6 +66,10 @@ int Config::storeKeyVal(char *key, char *value)
            { cVal.lockUSecs = atoi(value);  }
     else if (strcasestr(key, "LOCK_TIMEOUT_RETRIES") != NULL)
            { cVal.lockRetries = atoi(value);  }
+    else if (strcasestr(key, "DSN") != NULL)
+           { strcpy(cVal.dsn , value);  }
+    else if (strcasestr(key, "CACHE_TABLE_FILE") != NULL)
+           { strcpy(cVal.cacheTableFile , value);  }
     else  return 1;
     return 0;
 }
@@ -135,6 +139,7 @@ int Config::validateValues()
     }
     if (0 == strcmp(cVal.logFile,""))
     {
+        //TODO::check whether file exists
         printError(ErrBadArg,  "LOG_FILE is set to NULL");
         return 1;
     }
@@ -172,6 +177,17 @@ int Config::validateValues()
     if (cVal.lockRetries < 0 || cVal.lockRetries > 100)
     {
         printError(ErrBadArg,  "LOCK_TIMEOUT_RETRY should be >= 0 and <= 100");
+        return 1;
+    }
+    if (0 == strcmp(cVal.dsn,""))
+    {
+        printError(ErrBadArg,  "DSN is set to NULL");
+        return 1;
+    }
+    if (0 == strcmp(cVal.cacheTableFile,""))
+    {
+        //TODO::check whether file exists
+        printError(ErrBadArg,  "CACHE_TABLE_FILE is set to NULL");
         return 1;
     }
     return 0;
@@ -240,4 +256,6 @@ void Config::print()
     printf(" getLockSecs %d\n", getLockSecs());
     printf(" getLockUSecs %d\n", getLockUSecs());
     printf(" getLockRetries %d\n", getLockRetries());
+    printf(" getDSN %s\n", getDSN());
+    printf(" getCacheTableFile %s\n", getCacheTableFile());
 }

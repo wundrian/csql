@@ -29,6 +29,7 @@
         <csqlserver/>
         <CreateTable/>
         <catalog/>
+        <cachetable></cachetable>
       </runarguments>
     </run>
     <configurations>

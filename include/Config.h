@@ -37,6 +37,9 @@ class ConfigValues
     int lockUSecs;
     int lockRetries;
 
+    char dsn[64];
+    char cacheTableFile[256];
+
 
     ConfigValues()
     {
@@ -56,6 +59,8 @@ class ConfigValues
         lockSecs =0;
         lockUSecs = 10;
         lockRetries = 10;
+        strcpy(dsn, "myodbc3");
+        strcpy(cacheTableFile, "/tmp/csql/cache.table");
     }
 };
 
@@ -86,6 +91,8 @@ class Config
     inline int getLockSecs() { return cVal.lockSecs; }
     inline int getLockUSecs() { return cVal.lockUSecs; }
     inline int getLockRetries() { return cVal.lockRetries; }
+    inline char* getDSN() { return cVal.dsn; }
+    inline char* getCacheTableFile() { return cVal.cacheTableFile; }
 };
 
 class Conf

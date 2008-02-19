@@ -84,6 +84,8 @@ class AllDataType
     public:
     static long size(DataType type);
     static SQLSMALLINT convertToSQLType(DataType type);
+    static DataType convertFromSQLType(SQLSMALLINT type);
+
     static void copyVal(void* dest, void *src, DataType type, int length = 0);
 
     static bool compareVal(void *src1, void *src2, ComparisionOp op,
