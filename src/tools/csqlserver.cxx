@@ -151,7 +151,7 @@ int main()
     Database* sysdb = session.getSystemDatabase();
     printf("Database server recovering cached tables...\n");
    
-    system("cachetable -u root -p manager -r");
+    system("cachetable -U root -P manager -R");
 
     printf("Cached Tables recovered\n");
 
