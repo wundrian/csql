@@ -33,11 +33,9 @@ int main()
     {
         conn.startTransaction();
         id1= i;
-        if (i%2 == 0) table->markFldNull(2);
         if (i%2 == 0) table->markFldNull(3);
         rv = table->insertTuple();
         if (rv != OK) break;
-        if (i%2 == 0) table->clearFldNull(2);
         if (i%2 == 0) table->clearFldNull(3);
         icount++;
         conn.commit();
