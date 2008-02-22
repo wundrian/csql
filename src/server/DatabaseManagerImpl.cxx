@@ -856,7 +856,7 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
     //add row to INDEX
     void *tupleptr = NULL;
     CatalogTableINDEX cIndex(systemDatabase_);
-    DbRetVal ret = cIndex.insert(indName, tptr, fldList.size(), isUnique,
+    rv = cIndex.insert(indName, tptr, fldList.size(), isUnique,
                         chunkInfo, bucketSize, hChunk, tupleptr);
     if (OK != rv)
     {
@@ -869,7 +869,7 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
     }
     //add rows to INDEXFIELD
     CatalogTableINDEXFIELD cIndexField(systemDatabase_);
-    ret = cIndexField.insert(fldList, tupleptr, tptr, fptr);
+    rv = cIndexField.insert(fldList, tupleptr, tptr, fptr);
 
     if (OK != rv)
     {
