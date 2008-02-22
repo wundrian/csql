@@ -579,7 +579,9 @@ DbRetVal TableImpl::close()
 }
 DbRetVal TableImpl::lock(bool shared)
 {
+
     DbRetVal ret = OK;
+/*
     if (shared) 
         ret = lMgr_->getSharedLock(chunkPtr_, NULL);
     else 
@@ -592,10 +594,12 @@ DbRetVal TableImpl::lock(bool shared)
         if (!ProcessManager::hasLockList.exists(chunkPtr_)) 
             ProcessManager::hasLockList.append(chunkPtr_);
     }
+*/
     return ret;
 }
 DbRetVal TableImpl::unlock()
 {
+/*
     if (!ProcessManager::hasLockList.exists(chunkPtr_)) return OK;
     DbRetVal ret = lMgr_->releaseLock(chunkPtr_);
     if (OK != ret)
@@ -605,6 +609,7 @@ DbRetVal TableImpl::unlock()
     {
         ProcessManager::hasLockList.remove(chunkPtr_);
     }
+*/
     return OK;
 }
 

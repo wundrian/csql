@@ -600,14 +600,14 @@ Table* DatabaseManagerImpl::openTable(const char *name)
     TABLE *tTuple = (TABLE*)tptr;
     table->setTableInfo(tTuple->tblName_, tTuple->tblID_, tTuple->length_,
                         tTuple->numFlds_, tTuple->numIndexes_, tTuple->chunkPtr_);
-    rv = table->lock(true); //take shared lock
+    /*rv = table->lock(true); //take shared lock
     if (rv !=OK)
     {
         printError(ErrLockTimeOut, "Unable to acquire shared lock on the table\n");
         systemDatabase_->releaseDatabaseMutex();
         delete table;
         return NULL;
-    }
+    }*/
 
 
     if (tTuple->numFlds_ < 31) 
@@ -711,7 +711,7 @@ void DatabaseManagerImpl::closeTable(Table *table)
 {
     printDebug(DM_Database,"Closing table handle: %x", table);
     if (NULL == table) return;
-    table->unlock();
+    //table->unlock();
     delete table;
     logFinest(logger, "Closing Table");
 }

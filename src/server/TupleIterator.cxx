@@ -111,7 +111,9 @@ void* TupleIterator::next()
                printDebug(DM_Table, "Evaluating the predicate from hashIndexScan: has more than one term");
                rv = predImpl->evaluate(result);
                if (rv != OK) return NULL;
-            }
+            } 
+            else 
+                return tuple;
         }
 
     }
