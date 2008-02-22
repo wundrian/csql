@@ -805,7 +805,17 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
             return ErrNotExists;
         }
     }
-
+    for (int i=0; i <totFlds; i++)
+    {
+        FIELD* fInfo = (FIELD*)fptr[i];
+        if (fInfo->type_ == typeFloat || fInfo->type_ == typeDouble || fInfo->type_ == typeTimeStamp) 
+        {
+            printError(ErrBadArg, "HashIndex cannot be created for float or double or timestamp type");
+            delete[] fptr;
+            systemDatabase_->releaseDatabaseMutex();
+            return ErrBadArg;
+        }
+    }
     //create chunk to store the meta data of the index created
     //for latches and bucket pointers
     printDebug(DM_HashIndex, "Creating chunk for storing hash buckets of size %d\n", 
