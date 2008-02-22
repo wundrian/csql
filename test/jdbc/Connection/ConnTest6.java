@@ -9,6 +9,7 @@ public class ConnTest6
            Class.forName("csql.jdbc.JdbcSqlDriver");
            Connection con = DriverManager.getConnection("jdbc:csql", "root", "manager");
 	   Statement cStmt = con.createStatement();
+           con.setAutoCommit(false);
 	   int ret =0;
            cStmt.execute("CREATE TABLE T1 (f1 integer, f2 char (20));");
 		   
@@ -28,9 +29,7 @@ public class ConnTest6
            if (ret != 1) System.out.println("Insert error");
            ret = cStmt.executeUpdate("DELETE FROM T1 WHERE f1 = 4;");
            if (ret != 1) System.out.println("Delete error");
-           System.out.println( "JDBC rollback:startt");
            con.rollback();
-           System.out.println( "JDBC rollback");
 
            System.out.println("After rollback, listing tuples:");
 	   ResultSet rs = cStmt.executeQuery("SELECT * from T1;");
@@ -40,7 +39,7 @@ public class ConnTest6
 	   }
 	   rs.close();
 	   con.commit();
-            cStmt.executeUpdate("DROP TABLE T1;");
+           cStmt.executeUpdate("DROP TABLE T1;");
 
            con.close();
         }catch(Exception e) {
