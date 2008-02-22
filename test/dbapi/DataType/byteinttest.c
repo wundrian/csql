@@ -12,7 +12,7 @@ int select(Table *table, ComparisionOp op)
     table->execute();
     void *tuple;
     while ( table->fetch() ) {
-        printf("tuple value is %c %s \n", (char)id, name);
+        printf("tuple value is %d %s \n", (int)id, name);
     }
     table->close();
     return 0;
@@ -114,7 +114,7 @@ int main()
         table->execute();
         tuple = (char*)table->fetch() ;
         if (tuple == NULL) {printf("loop break in %d\n", (char)i);table->close();break;}
-        printf("deleting tuple %c %s \n", (char)id, name);
+        printf("deleting tuple %d %s \n", (int)id, name);
         table->deleteTuple();
         table->close();
     }
@@ -124,7 +124,7 @@ int main()
     rv = conn.startTransaction();
     table->execute();
     while ((tuple = (char*) table->fetch())) {
-        printf("after delete tuple present. Its  value is %c %s \n", (char)id, name);
+        printf("after delete tuple present. Its  value is %d %s \n", (int)id, name);
     }
     table->close();
     conn.commit();

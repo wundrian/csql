@@ -45,8 +45,10 @@ int main()
     idxInfo->isPrimary = true;
     idxInfo->indType = hashIndex;
     rv = dbMgr->createIndex("indx1", idxInfo);
-    if (rv != OK) { printf("Index creation failed\n"); return -1; }
-    printf("Index created\n");
+    if (rv == OK) { printf("Index creation passed\n"); return 1; }
+    dbMgr->dropTable("t1");
+    conn.close();
+    return 0;
 #endif
 
     Table *table = dbMgr->openTable("t1");
