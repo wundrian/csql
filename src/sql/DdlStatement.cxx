@@ -61,9 +61,20 @@ DbRetVal CreateTblStatement::resolve()
     FieldDef fDef; 
 
     int i = 0;
+    FieldName *name = NULL;
+    ListIterator nIter = parsedData->getFieldNameList().getIterator();
     while (iter.hasElement())
     {
-       fDef = iter.nextElement();
+        fDef = iter.nextElement();
+        nIter.reset();
+        while (nIter.hasElement())
+        {
+            name = (FieldName*)nIter.nextElement();
+            if (strcmp(name->fldName, fDef.fldName_) == 0) fDef.isNull_ = true;
+printf("PRABA:=%s= =%s= %d\n", name->fldName,fDef.fldName_, fDef.isNull_ );
+        }
+
+
        //TODO : need a new addField function which can take FieldDef as parameter.
        i = tblDef.addField(fDef.fldName_, fDef.type_, fDef.length_, 
                         fDef.defaultValueBuf_,fDef.isNull_);
