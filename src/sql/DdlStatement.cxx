@@ -71,7 +71,6 @@ DbRetVal CreateTblStatement::resolve()
         {
             name = (FieldName*)nIter.nextElement();
             if (strcmp(name->fldName, fDef.fldName_) == 0) fDef.isNull_ = true;
-printf("PRABA:=%s= =%s= %d\n", name->fldName,fDef.fldName_, fDef.isNull_ );
         }
 
 
