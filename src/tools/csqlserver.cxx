@@ -114,9 +114,32 @@ DbRetVal logActiveProcs(Database *sysdb)
 }
 
 
-
-int main()
+void printUsage()
 {
+   printf("Usage: csqlserver [-c]\n");
+   printf("       c -> recover all cached tables from the target database.\n");
+   printf("Description: Start the csql server and initialize the database.\n");
+   return;
+}
+int main(int argc, char **argv)
+{
+    int c = 0, opt = 0;
+    while ((c = getopt(argc, argv, "c?")) != EOF) 
+    {
+        switch (c)
+        {
+            case '?' : { opt = 10; break; } //print help 
+            case 'c' : { opt = 1; break; } //recover all the tables from cache
+            default: opt=10; 
+
+        }
+    }//while options
+
+    if (opt == 10) {
+        printUsage();
+        return 0;
+    }
+
     SessionImpl session;
     DbRetVal rv = session.readConfigFile();
     if (rv != OK)
@@ -149,11 +172,11 @@ int main()
     timeout.tv_sec = 5;
     timeout.tv_usec = 0;
     Database* sysdb = session.getSystemDatabase();
-    printf("Database server recovering cached tables...\n");
-   
-    system("cachetable -U root -P manager -R");
-
-    printf("Cached Tables recovered\n");
+    if (opt == 1) {
+        printf("Database server recovering cached tables...\n");
+        system("cachetable -U root -P manager -R");
+        printf("Cached Tables recovered\n");
+    }
 
     printf("Database server started\n");
 

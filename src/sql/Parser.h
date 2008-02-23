@@ -83,6 +83,7 @@ class ParsedData
 
     //holds pointer to field names. used in insert to store field name list
     //and for projection list of select
+    //also used to store primary or unique key fields in create statement
     List fieldNameList;
 
     //holds pointer to condition values.

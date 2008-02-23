@@ -304,6 +304,9 @@ constraint_defn: primary_key_constraint
         ;
 
 primary_key_constraint: PRIMARY KEY '(' field_list ')'
+        {
+            parsedData->setPrimary(true);
+        }
         ;
 
 field_type: INT_TYPE

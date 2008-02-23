@@ -18,17 +18,15 @@
 
 void printUsage()
 {
-   printf("Usage: cachetable [-u username] [-p passwd] -t tablename [-R] [-s] [-r]\n");
+   printf("Usage: cachetable [-U username] [-P passwd] -t tablename [-R] [-s] [-r]\n");
    printf("       username -> username to connect with csql.\n");
    printf("       passwd -> password for the above username to connect with csql.\n");
    printf("       tablename -> table name to be cached in csql from target db.\n");
    printf("       R -> recover all cached tables from the target database.\n");
    printf("       s -> load only the records from target db. Assumes table is already created in csql\n");
    printf("       r -> reload the table. get the latest image of table from target db\n");
-   printf("       u -> unload the table. also removes all the records in csql\n");
+   printf("       u -> unload the table. if used with -s option, removes only records and preserves the schema\n");
    printf("       no option -> get table definition and records from target db and create in csql.\n");
-
-
    return;
 }
 
@@ -54,18 +52,23 @@ int main(int argc, char **argv)
     int c = 0, opt = 10;
     char tablename[IDENTIFIER_LENGTH];
     bool tableDefinition = true;
+    bool tableNameSpecified = false;
     while ((c = getopt(argc, argv, "U:P:t:Rsru?")) != EOF) 
     {
         switch (c)
         {
             case 'U' : { strcpy(username, argv[optind - 1]); opt=10; break; }
             case 'P' : { strcpy(password, argv[optind - 1]); opt=10; break; }
-            case 't' : { strcpy(tablename, argv[optind - 1]); opt = 2; break; }
+            case 't' : { strcpy(tablename, argv[optind - 1]); 
+                         if (opt==10) opt = 2; 
+                         tableNameSpecified = true; 
+                         break; 
+                       }
             case '?' : { opt = 10; break; } //print help 
             case 'R' : { opt = 3; break; } //recover all the tables
             case 's' : { tableDefinition=false; break; } //do not get the schema information from target db
-            case 'r' : { opt = 4; break; } //recover all the tables
-            case 'u' : { opt = 5; break; } //recover all the tables
+            case 'r' : { opt = 4; break; } //reload the table
+            case 'u' : { opt = 5; break; } //unload the table
             default: opt=10; 
 
         }
@@ -85,6 +88,7 @@ int main(int argc, char **argv)
     CacheTableLoader cacheLoader;
     cacheLoader.setConnParam(username, password);
     if (opt==2) {
+        
         cacheLoader.setTable(tablename);
         rv = cacheLoader.load(tableDefinition);
         if (rv != OK) exit (1);
@@ -96,13 +100,27 @@ int main(int argc, char **argv)
         if (rv != OK) exit (1);
     }else if (opt==4) //reload
     {
+        if (!tableNameSpecified) 
+        {
+            printf("Table name is not specified. Check usage with ? \n");
+            return 1;
+        }
         cacheLoader.setTable(tablename);
         rv = cacheLoader.reload();
         if (rv != OK) exit (1);
     }else if (opt==5) //unload
     {
-        rv = cacheLoader.unload();
+        if (!tableNameSpecified) 
+        {
+            printf("Table name is not specified. Check usage with ? option\n");
+            return 1;
+        }
+        cacheLoader.setTable(tablename);
+        rv = cacheLoader.unload(tableDefinition);
         if (rv != OK) exit (1);
+        rv = cacheLoader.removeFromCacheTableFile();
+        if (rv != OK) exit (2);
+
     }
     return 0;
 }

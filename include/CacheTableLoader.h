@@ -30,7 +30,7 @@ class CacheTableLoader
     DbRetVal removeFromCacheTableFile();
     DbRetVal load(bool tabDef=true);
     DbRetVal reload();
-    DbRetVal unload();
+    DbRetVal unload(bool tabDefinition = true);
     DbRetVal refresh();
     DbRetVal recoverAllCachedTables();
 

@@ -162,7 +162,10 @@ class TableImpl:public Table
 
     DbRetVal insertTuple();
     DbRetVal updateTuple();
+
     DbRetVal deleteTuple();
+    int deleteWhere();
+    int truncate();
 
     DbRetVal execute();
 

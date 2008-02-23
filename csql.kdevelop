@@ -26,10 +26,10 @@
       <terminal>true</terminal>
       <directoryradio>executable</directoryradio>
       <runarguments>
-        <csqlserver></csqlserver>
+        <csqlserver/>
         <CreateTable/>
         <catalog/>
-        <cachetable></cachetable>
+        <cachetable/>
       </runarguments>
     </run>
     <configurations>

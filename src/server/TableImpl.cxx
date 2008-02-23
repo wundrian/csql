@@ -360,6 +360,47 @@ DbRetVal TableImpl::deleteTuple()
     return ret;
 }
 
+int TableImpl::deleteWhere()
+{
+    int tuplesDeleted = 0;
+    DbRetVal rv  = OK;
+    rv =  execute();
+    if (rv !=OK) return (int) rv;
+    while(true){
+        fetchNoBind();
+        if (NULL == curTuple_) break;
+        rv = deleteTuple();
+        if (rv != OK) {
+            printError(rv, "Error: Could only delete %d tuples", tuplesDeleted);
+            close();
+            return (int) rv;
+        }
+        tuplesDeleted++;
+    }
+    close();
+    return tuplesDeleted;
+}
+
+int TableImpl::truncate()
+{
+    //take exclusive lock on the table
+    //get the chunk ptr of the table
+    //traverse the tablechunks and free all the pages except the first one
+    //get the chunk ptr of all its indexes
+    //traverse the indexchunks and free all the pages except the first one
+    //release table lock
+
+    //TEMPORARY FIX
+    DbRetVal rv = OK;
+    Predicate* tmpPred = pred_;
+    pred_ = NULL;
+    isPlanCreated = false;
+    int tuplesDeleted = deleteWhere();
+    isPlanCreated = false;
+    pred_ = tmpPred;
+    return tuplesDeleted;
+}
+
 DbRetVal TableImpl::updateTuple()
 {
     if (NULL == curTuple_)
@@ -422,6 +463,11 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr)
     while (fIter.hasElement())
     {
         FieldDef def = fIter.nextElement();
+        if (def.isNull_ && NULL == def.bindVal_) 
+        {
+            printError(ErrNullViolation, "NOT NULL constraint violation for field %s\n", def.fldName_);
+            return ErrNullViolation;
+        }
         switch(def.type_)
         {
             case typeString:

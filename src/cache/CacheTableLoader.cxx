@@ -31,15 +31,36 @@ DbRetVal CacheTableLoader::addToCacheTableFile()
 
 DbRetVal CacheTableLoader::removeFromCacheTableFile()
 {
-    FILE *fp;
-    fp = fopen(Conf::config.getCacheTableFile(),"w");
-    if( fp == NULL ) {
-        printError(ErrSysInit, "Invalid path/filename in CACHE_TABLE_FILE.\nTable will not be"
-                                "recovered in case of crash");
+    FILE *fp, *tmpfp;
+    char tmpFileName[MAX_FILE_PATH_LEN];
+    sprintf(tmpFileName, "%s.tmp", Conf::config.getCacheTableFile());
+    tmpfp = fopen(tmpFileName,"w");
+    if( tmpfp == NULL ) {
+        printError(ErrSysInit, "Invalid path/filename in CACHE_TABLE_FILE.\n");
 	return ErrSysInit;
     }
-    //TODO::delete the entry of tableName from the file
+    fp = fopen(Conf::config.getCacheTableFile(),"r");
+    if( fp == NULL ) {
+        printError(ErrSysInit, "cache.table file does not exist");
+	return ErrSysInit;
+    }
+    char tablename[IDENTIFIER_LENGTH];
+    while(!feof(fp))
+    {
+        fscanf(fp, "%s\n", tablename);
+        if (strcmp (tablename, tableName) == 0) continue;
+        fprintf(tmpfp, "%s\n", tablename);
+    }
+    fclose(tmpfp);
     fclose(fp);
+    char sysCommand[MAX_FILE_PATH_LEN * 2];
+    sprintf(sysCommand, "mv %s %s", tmpFileName, Conf::config.getCacheTableFile());
+    int ret = system(sysCommand);
+    if (ret != 0) 
+    {
+        printError(ErrSysInit, "Check cache.table file permission. unable to remove %s from file", tableName);
+	return ErrSysInit;
+    }
     return OK;
 }
 
@@ -228,12 +249,36 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
 
 DbRetVal CacheTableLoader::reload()
 {
-    return OK;
+    DbRetVal rv = unload(false);
+    if (rv != OK) return rv;
+    rv = load(false);
+    return rv;
 }
 
-DbRetVal CacheTableLoader::unload()
+DbRetVal CacheTableLoader::unload(bool tabDefinition)
 {
-    return OK;
+    Connection conn;
+    DbRetVal rv = conn.open(userName, password);
+    if (rv != OK) return ErrSysInit;
+    DatabaseManager *dbMgr = (DatabaseManager*) conn.getDatabaseManager();
+    if (dbMgr == NULL) { printf("Auth failed\n"); return ErrSysInit; }
+    if (!tabDefinition)
+    {
+        Table *table = dbMgr->openTable(tableName);
+        if (table == NULL) { conn.close(); return ErrBadCall; }
+        rv = conn.startTransaction();
+        if (rv != OK) { dbMgr->closeTable(table); conn.close(); return ErrBadCall; }
+        table->truncate();
+        conn.commit();
+        dbMgr->closeTable(table);
+    }
+    else
+    {
+        rv = dbMgr->dropTable(tableName);
+    }
+    conn.close();
+
+    return rv;
 }
 
 DbRetVal CacheTableLoader::refresh()

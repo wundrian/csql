@@ -122,6 +122,24 @@ class Table
 
     virtual DbRetVal deleteTuple()=0;
 
+
+    /**deletes all the records which satisfies the condition set.
+    * @returns int totalTuples deleted
+    */
+
+    virtual int deleteWhere()=0;
+
+
+
+    /**deletes the all the records in the table. No transaction required to call this. 
+    *  It takes table level lock.
+    * @returns DbRetVal
+    */
+
+    virtual int truncate()=0;
+
+
+
     //scan
 
     /**fetches the next tuple in the table which satisfies the condition specified.
