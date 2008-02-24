@@ -218,9 +218,9 @@ int Config::readAllValues(char *fileName)
         for (int i = 0; i <1024; i++)
         {
               if (buffer[i] == '=' ) posEqual=i;
-              if (buffer[i] == '#' ) { isComment = true; break; }
-              if (buffer[i] == '\n') { break; }
-              if (buffer[i] == '\0') { break; }
+              else if (buffer[i] == '#' ) { isComment = true; break; }
+              else if (buffer[i] == '\n') { break; }
+              else if (buffer[i] == '\0') { break; }
         }
       if (isComment) continue;
       if (!posEqual) continue;
