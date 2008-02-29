@@ -68,7 +68,7 @@ mkdir $TEST_EXEC_DIR
 
 
 echo "Test Executor log file" >$TEST_LOG
-echo "----------------------" >$TEST_LOG
+echo "----------------------" >>$TEST_LOG
 
 TestList=`ls ${TEST_SCRIPT_DIR}/test*`
 for test in $TestList
