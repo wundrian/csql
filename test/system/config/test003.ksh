@@ -13,4 +13,4 @@ echo "PAGE_SIZE= 512" >>${REL_PATH}/csqltmp.conf
 ${REL_PATH}/connect 2>${REL_PATH}/tmp.out
 #cat ${REL_PATH}/tmp.out
 cat ${REL_PATH}/tmp.out | gawk -F: '{ print $5 }'
-#rm ${REL_PATH}/tmp.out ${REL_PATH}/csqltmp.conf
+rm ${REL_PATH}/tmp.out ${REL_PATH}/csqltmp.conf
