@@ -1,3 +1,5 @@
+#List of test module directories which needs to be run by test executor
+#Note:  To exclude modules, comment out using # 
 dbapi/Connection
 dbapi/Index
 dbapi/DataType
