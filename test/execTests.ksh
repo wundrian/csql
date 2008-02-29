@@ -48,7 +48,7 @@ TEST_SCRIPT_DIR=${ROOT_DIR}/${MODULE}
 TEST_RUN_DIR=${TEST_RUN_ROOT}/${MODULE}
 if [ -s "$TEST_RUN_DIR" ]
 then
-    echo "TEST_RUN_ROOT already has Connection directory. Remove and try again."
+    echo "TEST_RUN_ROOT directory is not empty. Clean and try again."
     exit 1
 fi
 mkdir -p $TEST_RUN_DIR
