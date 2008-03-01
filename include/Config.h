@@ -28,7 +28,7 @@ class ConfigValues
     long maxDbSize;
     int sysDbKey;
     int userDbKey;
-    char logFile[256];
+    char logFile[MAX_FILE_PATH_LEN];
     long mapAddr;
     int mutexSecs;
     int mutexUSecs;
@@ -37,9 +37,17 @@ class ConfigValues
     int lockUSecs;
     int lockRetries;
 
-    char dsn[64];
-    char cacheTableFile[256];
+    bool isCache;
+    char dsn[IDENTIFIER_LENGTH];
+    char tableConfigFile[MAX_FILE_PATH_LEN];
 
+    bool isReplication;
+    char replConfigFile[MAX_FILE_PATH_LEN];
+    int networkID;
+
+    long logStoreSize;
+    int nwResponseTimeout;
+    int nwConnectTimeout;
 
     ConfigValues()
     {
@@ -59,8 +67,15 @@ class ConfigValues
         lockSecs =0;
         lockUSecs = 10;
         lockRetries = 10;
+        isCache = false;
         strcpy(dsn, "myodbc3");
-        strcpy(cacheTableFile, "/tmp/csql/cache.table");
+        strcpy(tableConfigFile, "/tmp/csql/csqltable.conf");
+        isReplication = false;
+        strcpy(replConfigFile, "/tmp/csql/csqlnw.conf");
+        logStoreSize = 10485760;
+        networkID=1;
+        nwResponseTimeout=3;
+        nwConnectTimeout=5;
     }
 };
 
@@ -91,8 +106,15 @@ class Config
     inline int getLockSecs() { return cVal.lockSecs; }
     inline int getLockUSecs() { return cVal.lockUSecs; }
     inline int getLockRetries() { return cVal.lockRetries; }
+    inline bool useCache() { return cVal.isCache; }
     inline char* getDSN() { return cVal.dsn; }
-    inline char* getCacheTableFile() { return cVal.cacheTableFile; }
+    inline char* getTableConfigFile() { return cVal.tableConfigFile; }
+    inline bool useReplication() { return cVal.isReplication; }
+    inline char* getReplConfigFile() { return cVal.replConfigFile; }
+    inline long getMaxLogStoreSize() { return cVal.logStoreSize; }
+    inline int getNetworkID() { return cVal.networkID; }
+    inline int getNetworkResponseTimeout() { return cVal.nwResponseTimeout; }
+    inline int getNetworkConnectTimeout() { return cVal.nwConnectTimeout; }
 };
 
 class Conf

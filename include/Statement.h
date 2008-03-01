@@ -32,7 +32,6 @@ class Statement
     void setDbMgr(DatabaseManager *dbmgr) { dbMgr = dbmgr; }
 
 
-    virtual int noOfParamFields() { return  0; }
     virtual DbRetVal execute(int &rowsAffected)=0;
     virtual DbRetVal setParam(int paramNo, void *value)=0;
 

@@ -17,41 +17,28 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-#ifndef SQLFACTORY_H
-#define SQLFACTORY_H
+#ifndef SQLNWHDLR_H
+#define SQLNWHDLR_H
 #include<CSql.h>
-
+#include<Network.h>
 #include<AbsSqlConnection.h>
-#include<AbsSqlStatement.h>
+#include<SqlConnection.h>
+class SqlNetworkHandler
+{
 
-enum SqlApiImplType
-{
-    CSql =1,
-    ODBCAdapter =2,
-    ODBCGateway =3,
-    CSqlLog= 4
-};
-/**
-* @class SqlFactory
-*
-* @brief Factory class to create appropriate implementation of SQL API
-* @author Prabakaran Thirumalai
-*/
-class SqlFactory
-{
+
+    DbRetVal applyExecPackets(List sList, List pList);
+    void setParamValues(AbsSqlStatement *stmt, int parampos, DataType type,
+                        int length, char *value);
     public:
-
-    /** creates appropriate implementation of AbsSqlConnection based on implFlag passed
-    *   @param implFlag 1->SqlConnection, 2->?
-    *   @return AbsSqlConnection
-    */
-    static AbsSqlConnection* createConnection (SqlApiImplType implFlag);
-
-    /** creates appropriate implementation of AbsSqlStatement based on implFlag passed
-    *   @param implFlag 1->SqlConnection, 2->?
-    *   @return AbsSqlStatement
-    */
-    static AbsSqlStatement* createStatement (SqlApiImplType implFlag);
+    static List stmtList;
+    static AbsSqlConnection *conn;
+    int process(PacketHeader &header,  char *buffer);
+    int processPrepare(PacketHeader &header,  char *buffer);
+    int processCommit(PacketHeader &header,  char *buffer);
+    int processFree(PacketHeader &header, char *buffer);
+    
+    
 };
 
 #endif

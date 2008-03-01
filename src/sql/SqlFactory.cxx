@@ -16,6 +16,8 @@
 #include <SqlFactory.h>
 #include <SqlStatement.h>
 #include <SqlConnection.h>
+#include <SqlLogConnection.h>
+#include <SqlLogStatement.h>
 AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
 {
     AbsSqlConnection *conn = NULL ;
@@ -24,6 +26,14 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
         case CSql:
             conn = new SqlConnection();
             break;
+        case CSqlLog:
+            {
+            //generates sql logs
+            AbsSqlConnection *sqlCon = new SqlConnection();
+            conn = new SqlLogConnection();
+            conn->setInnerConnection(sqlCon);
+            break;
+            }
         default:
             printf("Todo");
             break;
@@ -38,6 +48,14 @@ AbsSqlStatement* SqlFactory::createStatement(SqlApiImplType implFlag)
         case CSql:
             stmt = new SqlStatement();
             break;
+        case CSqlLog:
+            {
+            //generates sql logs
+            AbsSqlStatement *sqlStmt = new SqlStatement();
+            stmt = new SqlLogStatement();
+            stmt->setInnerStatement(sqlStmt);
+            break;
+            }
         default:
             printf("Todo");
             break;

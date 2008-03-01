@@ -45,6 +45,7 @@ class AbsSqlConnection
     AbsSqlConnection *innerConn;
     public:
     void setInnerConnection(AbsSqlConnection *conn) { innerConn = conn; }
+    AbsSqlConnection* getInnerConnection() { return innerConn; }
     virtual Connection& getConnObject() =0;
 
     /** opens connection to the sql engine

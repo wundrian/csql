@@ -36,6 +36,29 @@ UpdStatement::~UpdStatement() {
         //paramValues = NULL;
     }
 }
+DbRetVal UpdStatement::getParamFldInfo(int paramPos, FieldInfo *&info)
+{
+    if (paramPos <=0 || paramPos > totalParams) return ErrBadArg;
+    if (NULL == params[paramPos-1])
+    {
+        printError(ErrSysFatal, "param not set. Should never happen");
+        return ErrSysFatal;
+    }
+
+    ConditionValue *cValue;
+    UpdateFieldValue *uValue;
+    if (paramPos <= totalAssignParams) {
+        uValue = (UpdateFieldValue*) params[paramPos-1];
+        info->type = uValue->type;
+        info->length = uValue->length;
+    } else {
+        cValue = (ConditionValue*) params[paramPos-1];
+        info->type = cValue->type;
+        info->length = cValue->length;
+    }
+    return OK;
+
+}
 DbRetVal UpdStatement::execute(int &rowsAffected)
 {
     DbRetVal rv = OK;
@@ -440,6 +463,7 @@ DbRetVal UpdStatement::resolveForAssignment()
             printError(ErrSysFatal, "Should never happen. value NULL after iteration");
             return ErrSysFatal;
         }
+        if (0 == value->paramNo) continue;
         params[value->paramNo -1 ] = value;
     }
 
@@ -454,6 +478,7 @@ DbRetVal UpdStatement::resolveForAssignment()
             printError(ErrSysFatal, "Should never happen. value NULL after iteration");
             return ErrSysFatal;
         }
+        if (0 == value->paramNo) continue;
         params[cValue->paramNo -1 ] = cValue;
     }
     return OK;

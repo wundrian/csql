@@ -49,7 +49,19 @@ SelStatement::~SelStatement()
 
     }
 }
-
+DbRetVal SelStatement::getParamFldInfo(int paramNo, FieldInfo *&info)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    ConditionValue *cValue = (ConditionValue*) params [paramNo-1];
+    if (NULL == cValue)
+    {
+        printError(ErrSysFatal, "condition value is null. Should never happen");
+        return ErrSysFatal;
+    }
+    info->type = cValue->type;
+    info->length = cValue->length;
+    return OK;
+}
 DbRetVal SelStatement::execute(int &rowsAffected)
 {
     DbRetVal rv = OK;

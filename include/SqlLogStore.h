@@ -1,6 +1,6 @@
 /***************************************************************************
- *   Copyright (C) 2007 by www.databasecache.com                           *
- *   Contact: praba_tuty@databasecache.com                                 *
+ *   Copyright (C) 2007 by Prabakaran Thirumalai   *
+ *   praba_tuty@yahoo.com   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -12,22 +12,19 @@
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
  *   GNU General Public License for more details.                          *
  *                                                                         *
-  **************************************************************************/
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, write to the                         *
+ *   Free Software Foundation, Inc.,                                       *
+ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+ ***************************************************************************/
+#ifndef SQLLOGSTORE_H
+#define SQLLOGSTORE_H
 #include<CSql.h>
-int main()
+class SqlLogStore
 {
-    //connect to the database first
-    Connection conn;
-    DbRetVal rv = conn.open("root", "manager");
-    if (rv != OK)
-    {
-       printf("Error during connection %d\n", rv);
-       return -1;
-    }
+    List logStore;
+    public:
+    
+};
 
-    //get dbmgr to create table and index
-    DatabaseManager *dbMgr = conn.getDatabaseManager();
-    if (dbMgr == NULL) { printf("Auth failed\n"); return -1;}
-    conn.close();
-    return 0;
-}
+#endif

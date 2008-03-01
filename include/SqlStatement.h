@@ -59,6 +59,8 @@ class SqlStatement: public AbsSqlStatement
     */
     DbRetVal prepare(char *stmt);
 
+    char* getTableName();
+
     /** executes the sql statement. For insert, update, delete queries execute performs the
     * required operation on the table. 
     * For Select queries, application should call execute before they start fetching

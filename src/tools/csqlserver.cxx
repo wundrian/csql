@@ -23,6 +23,7 @@
 #include<CacheTableLoader.h>
 
 int srvStop =0;
+pid_t replpid;
 static void sigTermHandler(int sig)
 {
     printf("Received signal %d\nStopping the server\n", sig);
@@ -177,6 +178,19 @@ int main(int argc, char **argv)
         system("cachetable -U root -P manager -R");
         printf("Cached Tables recovered\n");
     }
+    if (Conf::config.useReplication())
+    {
+        printf("Starting Replication Server\n");
+        char execName[1024];
+        sprintf(execName, "%s/bin/csqlreplserver", os::getenv("CSQL_INSTALL_ROOT"));
+        printf("filename is %s\n", execName);
+        replpid = os::createProcess(execName, "-s");
+        if (replpid != -1) 
+            printf("Repl Server Started pid=%d\n", replpid);
+        
+    }
+
+    
 
     printf("Database server started\n");
 
@@ -188,8 +202,11 @@ int main(int argc, char **argv)
         
         //send signal to all the registered process..check they are alive
         cleanupDeadProcs(sysdb);
+
+        //TODO::check repl server is alive, if not restart it
         
     }
+    //TODO::kill replication server process
    
     logFine(logger, "Server Exiting");
     logActiveProcs(sysdb);

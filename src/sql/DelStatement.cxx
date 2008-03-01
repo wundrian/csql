@@ -34,6 +34,17 @@ DelStatement::~DelStatement() {
     }
 
 }
+
+DbRetVal DelStatement::getParamFldInfo(int paramPos, FieldInfo *&info)
+{
+    if (paramPos <=0 || paramPos > totalParams) return ErrBadArg;
+    ConditionValue *value = (ConditionValue*) params[paramPos-1];
+    if (value == NULL) { printError(ErrBadArg, "Should never happen\n");
+                         return ErrBadArg; }
+    info->type = value->type;
+    info->length = value->length;
+    return OK;
+}
 DbRetVal DelStatement::execute(int &rowsAffected)
 {
     DbRetVal rv = OK;

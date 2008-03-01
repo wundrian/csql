@@ -71,6 +71,11 @@ DbRetVal SqlStatement::prepare(char *stmtstr)
     return OK;
 }
 
+char*  SqlStatement::getTableName()
+{
+    return pData.getTableName();
+}
+
 bool SqlStatement::isSelect()
 {
     if (pData.getStmtType() == SelectStatement) return true;
@@ -143,9 +148,7 @@ int SqlStatement::noOfProjFields()
 
 int SqlStatement::noOfParamFields()
 {
-    if (pData.getStmtType() != SelectStatement) return 0;
-    SelStatement *selStmt = (SelStatement*) stmt; 
-    return selStmt->noOfParamFields();
+    return stmt->noOfParamFields();
 }
 
 DbRetVal SqlStatement::getProjFldInfo (int projpos, FieldInfo *&fInfo)
@@ -160,9 +163,15 @@ DbRetVal SqlStatement::getProjFldInfo (int projpos, FieldInfo *&fInfo)
 DbRetVal SqlStatement::getParamFldInfo (int parampos, FieldInfo *&fInfo)
 {
     DbRetVal rv = OK;
-    if (pData.getStmtType() != SelectStatement) return ErrBadCall;
-    SelStatement *selStmt = (SelStatement*) stmt; 
-    rv = selStmt->getParamFldInfo(parampos, fInfo);
+    if (pData.getStmtType() ==SelectStatement ||
+        pData.getStmtType() ==InsertStatement ||
+        pData.getStmtType() ==UpdateStatement ||
+        pData.getStmtType() ==DeleteStatement)
+    {
+ 
+        DmlStatement *dmlStmt = (DmlStatement*) stmt; 
+        rv = dmlStmt->getParamFldInfo(parampos, fInfo);
+    }
     return rv;
 }
 

@@ -176,3 +176,54 @@ int os::kill(pid_t pid, int sig)
 {
     return ::kill(pid, sig);
 }
+bool os::atobool(char *value)
+{
+    if (strlen(value) ==3 && strncasecmp(value,"YES",3)==0) return true;
+    else if (strlen(value) ==2 && strncasecmp(value,"NO", 2)==0) return false;
+    else if (strlen(value) ==4 && strncasecmp(value,"true",4)==0) return true;
+    else if (strlen(value) ==5 && strncasecmp(value,"false",5)==0) return false;
+    return false;
+}
+pid_t os::createProcess(const char* cmdName, const char *arg0, ...)
+{
+    pid_t pid;
+    pid = ::vfork();
+    if (pid == (pid_t) -1 )
+    {
+        printf("Process creation failed\n");
+        return -1;
+    }
+    if (pid >0)
+    {
+        //return for parent
+        return pid;
+    }
+    va_list ap;
+    va_start(ap,arg0);
+
+    const char *argv[5];
+
+    argv[0]=cmdName;
+    argv[1]=arg0;
+
+    argv[2]=NULL;
+    int i = 2;
+    while(argv[i++]=va_arg(ap,char *));
+    switch(i){
+        case 2:
+            pid=::execl(argv[0],argv[1]);break;
+        case 3:
+            pid=::execl(argv[0],argv[1],argv[2]);break;
+        case 4:
+            pid=::execl(argv[0],argv[1],argv[2],argv[3]);break;
+        case 5:
+            pid=::execl(argv[0],argv[1],argv[2],argv[3],argv[4]);break;
+        default:
+            printf("only three options allowed\n");
+            pid=-1;break;
+    }
+    if (pid < 0)
+        printf("Exec failed\n");
+    return pid;
+
+}

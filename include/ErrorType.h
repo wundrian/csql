@@ -48,6 +48,8 @@ enum DbRetVal
     ErrInvalidExpr   = -20,
     ErrUnique        = -21,
     ErrNullViolation = -22,
+    ErrPeerResponse  = -23,
+    ErrPeerTimeOut   = -24,
 //  add new error type here
     ErrUnknown       = -98,
     ErrWarning       = -99,

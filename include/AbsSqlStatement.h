@@ -43,6 +43,7 @@ class ParsedData;
 class AbsSqlStatement
 {
     protected:
+    AbsSqlStatement(){}
     AbsSqlStatement *innerStmt;
     AbsSqlConnection *con;
     public:
@@ -60,6 +61,12 @@ class AbsSqlStatement
     * @returns DbRetVal
     */
     virtual DbRetVal prepare(char *stmt) = 0;
+
+    /** Retrieves the tablename of the prepared statement
+    * Used internally to get the tablename of the non select DML stmts
+    * @returns char* tablename
+    */
+    virtual char* getTableName(){ return NULL; }
 
     /** executes the sql statement. For insert, update, delete queries execute performs the
     * required operation on the table. 

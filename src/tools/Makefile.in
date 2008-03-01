@@ -14,7 +14,7 @@
 
 @SET_MAKE@
 
-SOURCES = $(cachetable_SOURCES) $(catalog_SOURCES) $(csql_SOURCES) $(csqlserver_SOURCES)
+SOURCES = $(cachetable_SOURCES) $(catalog_SOURCES) $(csql_SOURCES) $(csqlreplserver_SOURCES) $(csqlserver_SOURCES) $(repltable_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -39,7 +39,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = csql$(EXEEXT) catalog$(EXEEXT) cachetable$(EXEEXT) \
-	csqlserver$(EXEEXT)
+	csqlserver$(EXEEXT) csqlreplserver$(EXEEXT) repltable$(EXEEXT)
 subdir = src/tools
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -62,10 +62,22 @@ catalog_DEPENDENCIES = $(top_builddir)/src/server/libcsql.la
 am_csql_OBJECTS = isql.$(OBJEXT)
 csql_OBJECTS = $(am_csql_OBJECTS)
 csql_DEPENDENCIES = $(top_builddir)/src/server/.libs/libcsql \
-	$(top_builddir)/src/sql/.libs/libcsqlsql
+	$(top_builddir)/src/sql/.libs/libcsqlsql \
+	$(top_builddir)/src/sqllog/.libs/libcsqlsqllog \
+	$(top_builddir)/src/network/.libs/libcsqlnw
+am_csqlreplserver_OBJECTS = csqlreplserver.$(OBJEXT)
+csqlreplserver_OBJECTS = $(am_csqlreplserver_OBJECTS)
+csqlreplserver_DEPENDENCIES = $(top_builddir)/src/sql/libcsqlsql.la \
+	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/server/libcsql.la
 am_csqlserver_OBJECTS = csqlserver.$(OBJEXT)
 csqlserver_OBJECTS = $(am_csqlserver_OBJECTS)
 csqlserver_DEPENDENCIES = $(top_builddir)/src/cache/libcacheload.la \
+	$(top_builddir)/src/server/libcsql.la
+am_repltable_OBJECTS = repltable.$(OBJEXT)
+repltable_OBJECTS = $(am_repltable_OBJECTS)
+repltable_DEPENDENCIES = $(top_builddir)/src/cache/libcacheload.la \
 	$(top_builddir)/src/server/libcsql.la
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -79,9 +91,11 @@ CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --mode=link --tag=CXX $(CXXLD) $(AM_CXXFLAGS) \
 	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(cachetable_SOURCES) $(catalog_SOURCES) $(csql_SOURCES) \
-	$(csqlserver_SOURCES)
+	$(csqlreplserver_SOURCES) $(csqlserver_SOURCES) \
+	$(repltable_SOURCES)
 DIST_SOURCES = $(cachetable_SOURCES) $(catalog_SOURCES) \
-	$(csql_SOURCES) $(csqlserver_SOURCES)
+	$(csql_SOURCES) $(csqlreplserver_SOURCES) \
+	$(csqlserver_SOURCES) $(repltable_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -188,7 +202,7 @@ target_alias = @target_alias@
 INCLUDES = -I$(top_srcdir)/include $(all_includes) -I$(top_srcdir)/src/sql
 METASOURCES = AUTO
 csql_SOURCES = isql.cxx
-csql_LDADD = $(top_builddir)/src/server/.libs/libcsql $(top_builddir)/src/sql/.libs/libcsqlsql -lrt -lpthread -lcrypt
+csql_LDADD = $(top_builddir)/src/server/.libs/libcsql $(top_builddir)/src/sql/.libs/libcsqlsql $(top_builddir)/src/sqllog/.libs/libcsqlsqllog $(top_builddir)/src/network/.libs/libcsqlnw -lrt -lpthread -lcrypt
 catalog_SOURCES = catalog.cxx
 catalog_LDADD = $(top_builddir)/src/server/libcsql.la
 catalog_LDFLAGS = -lcrypt
@@ -197,11 +211,23 @@ cachetable_LDADD = $(top_builddir)/src/cache/libcacheload.la \
 
 cachetable_LDFLAGS = -lcrypt -lodbc
 cachetable_SOURCES = cachetable.cxx
+repltable_LDADD = $(top_builddir)/src/cache/libcacheload.la \
+	$(top_builddir)/src/server/libcsql.la
+
+repltable_LDFLAGS = -lcrypt -lodbc
+repltable_SOURCES = repltable.cxx
 csqlserver_LDADD = $(top_builddir)/src/cache/libcacheload.la \
 	$(top_builddir)/src/server/libcsql.la -lrt -lpthread -lcrypt
 
 csqlserver_LDFLAGS = -lcrypt -lodbc 
 csqlserver_SOURCES = csqlserver.cxx
+csqlreplserver_LDADD = $(top_builddir)/src/sql/libcsqlsql.la \
+	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/server/libcsql.la -lrt -lpthread -lcrypt
+
+csqlreplserver_LDFLAGS = -lcrypt
+csqlreplserver_SOURCES = csqlreplserver.cxx
 all: all-am
 
 .SUFFIXES:
@@ -272,9 +298,15 @@ catalog$(EXEEXT): $(catalog_OBJECTS) $(catalog_DEPENDENCIES)
 csql$(EXEEXT): $(csql_OBJECTS) $(csql_DEPENDENCIES) 
 	@rm -f csql$(EXEEXT)
 	$(CXXLINK) $(csql_LDFLAGS) $(csql_OBJECTS) $(csql_LDADD) $(LIBS)
+csqlreplserver$(EXEEXT): $(csqlreplserver_OBJECTS) $(csqlreplserver_DEPENDENCIES) 
+	@rm -f csqlreplserver$(EXEEXT)
+	$(CXXLINK) $(csqlreplserver_LDFLAGS) $(csqlreplserver_OBJECTS) $(csqlreplserver_LDADD) $(LIBS)
 csqlserver$(EXEEXT): $(csqlserver_OBJECTS) $(csqlserver_DEPENDENCIES) 
 	@rm -f csqlserver$(EXEEXT)
 	$(CXXLINK) $(csqlserver_LDFLAGS) $(csqlserver_OBJECTS) $(csqlserver_LDADD) $(LIBS)
+repltable$(EXEEXT): $(repltable_OBJECTS) $(repltable_DEPENDENCIES) 
+	@rm -f repltable$(EXEEXT)
+	$(CXXLINK) $(repltable_LDFLAGS) $(repltable_OBJECTS) $(repltable_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -284,8 +316,10 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cachetable.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/catalog.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/csqlreplserver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/csqlserver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/isql.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/repltable.Po@am__quote@
 
 .cxx.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

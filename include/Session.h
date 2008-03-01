@@ -24,7 +24,9 @@ enum IsolationLevel
 {
     READ_UNCOMMITTED = 1,
     READ_COMMITTED = 2,
-    READ_REPEATABLE = 3
+    READ_REPEATABLE = 3,
+    WRITE_OSYNC = 4 //this will work only from sqlapi
+                    //for dbapi WRITE_OSYNC = READ_REPEATABLE
 };
 
 /**

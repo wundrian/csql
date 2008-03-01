@@ -36,4 +36,4 @@ AC_CHECK_HEADERS(stdio.h sys/mman.h sys/shm.h sys/errno.h crypt.h unistd.h \
 
 
 
-AC_OUTPUT(Makefile src/Makefile include/Makefile src/server/Makefile src/sql/Makefile src/jdbc/Makefile src/cache/Makefile src/tools/Makefile)
+AC_OUTPUT(Makefile src/Makefile include/Makefile src/server/Makefile src/sql/Makefile src/jdbc/Makefile src/cache/Makefile src/network/Makefile src/sqllog/Makefile src/tools/Makefile)

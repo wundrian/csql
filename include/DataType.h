@@ -82,7 +82,7 @@ enum LogicalOp {
 class AllDataType
 {
     public:
-    static long size(DataType type);
+    static long size(DataType type, int length =0);
     static SQLSMALLINT convertToSQLType(DataType type);
     static DataType convertFromSQLType(SQLSMALLINT type);
 

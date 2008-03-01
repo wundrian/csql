@@ -51,6 +51,18 @@ class ListIterator
         iter = iter ->next;
         return node->element;
     }
+
+    //index start with one, such that 1->first element in list
+    void* getElement(int index)
+    {
+        ListNode *localIter = start;
+        if (localIter == NULL) return NULL;
+        for (int i=0; i <index; i++) {
+           localIter = localIter->next;
+           if (localIter == NULL) break;
+        }
+        return localIter->element;
+    }
 };
 
 class Identifier
@@ -121,6 +133,19 @@ class List
         return ErrNotFound;
     }
 
+    //index start with one, such that 1->first element in list
+    void* get(int index)
+    {
+        ListNode *localIter = head;
+        if (localIter == NULL) return NULL;
+        for (int i=0; i <index -1; i++) {
+           localIter = localIter->next;
+           if (localIter == NULL) break;
+        }
+        return localIter->element;
+    }
+
+
     bool exists(void *elem) 
     {
         ListNode *iter = head;
@@ -169,4 +194,19 @@ class List
     }
 
 };
+class UniqueID
+{
+   int startID;
+   Mutex mutex;
+   public:
+   UniqueID() { startID = 1; mutex.init(); }
+   int getID()
+   {
+      if (mutex.getLock(-1, false) != 0) return 0;
+      startID++;
+      mutex.releaseLock(-1, false); 
+      return startID;
+   }
+};
+
 #endif

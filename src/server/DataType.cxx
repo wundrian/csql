@@ -304,7 +304,7 @@ int operator!=(const TimeStamp &d1, const TimeStamp &d2)
     { return d1.date != d2.date && d1.time != d2.time; }
 
 
-long AllDataType::size(DataType type)
+long AllDataType::size(DataType type, int length )
 {
     long size = 0;
     switch(type)
@@ -342,6 +342,9 @@ long AllDataType::size(DataType type)
             break;
         case typeTimeStamp:
             size = sizeof(TimeStamp);
+            break;
+        case typeString:
+            size = length;
             break;
         default:
             size  = 0;

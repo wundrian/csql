@@ -18,13 +18,16 @@
 DbRetVal CacheTableLoader::addToCacheTableFile()
 {
     FILE *fp;
-    fp = fopen(Conf::config.getCacheTableFile(),"a");
+    fp = fopen(Conf::config.getTableConfigFile(),"a");
     if( fp == NULL ) {
-        printError(ErrSysInit, "Invalid path/filename in CACHE_TABLE_FILE.\nTable will not be"
+        printError(ErrSysInit, "Invalid path/filename in TABLE_CONFIG_FILE.\nTable will not be"
                                 "recovered in case of crash");
 	return ErrSysInit;
     }
-    fprintf(fp, "%s\n", tableName);
+    //TODO::if already table present in the file, it means that the
+    //table is replicated. in this case change mode from
+    //2 to 3 (repl to replcache)
+    fprintf(fp, "%d:%d:%s\n", 1, syncMode, tableName);
     fclose(fp);
     return OK;
 }
@@ -33,28 +36,30 @@ DbRetVal CacheTableLoader::removeFromCacheTableFile()
 {
     FILE *fp, *tmpfp;
     char tmpFileName[MAX_FILE_PATH_LEN];
-    sprintf(tmpFileName, "%s.tmp", Conf::config.getCacheTableFile());
+    sprintf(tmpFileName, "%s.tmp", Conf::config.getTableConfigFile());
     tmpfp = fopen(tmpFileName,"w");
     if( tmpfp == NULL ) {
         printError(ErrSysInit, "Invalid path/filename in CACHE_TABLE_FILE.\n");
 	return ErrSysInit;
     }
-    fp = fopen(Conf::config.getCacheTableFile(),"r");
+    fp = fopen(Conf::config.getTableConfigFile(),"r");
     if( fp == NULL ) {
         printError(ErrSysInit, "cache.table file does not exist");
 	return ErrSysInit;
     }
     char tablename[IDENTIFIER_LENGTH];
+    int mode;
+    DataSyncMode  syncmode;
     while(!feof(fp))
     {
-        fscanf(fp, "%s\n", tablename);
+        fscanf(fp, "%d:%d:%s\n", &mode, &syncmode, tablename);
         if (strcmp (tablename, tableName) == 0) continue;
-        fprintf(tmpfp, "%s\n", tablename);
+        fprintf(tmpfp, "%d:%d:%s\n", mode, syncmode, tablename);
     }
     fclose(tmpfp);
     fclose(fp);
     char sysCommand[MAX_FILE_PATH_LEN * 2];
-    sprintf(sysCommand, "mv %s %s", tmpFileName, Conf::config.getCacheTableFile());
+    sprintf(sysCommand, "mv %s %s", tmpFileName, Conf::config.getTableConfigFile());
     int ret = system(sysCommand);
     if (ret != 0) 
     {
@@ -140,8 +145,15 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
                     SQLDisconnect(hdbc); return rv;}
     }
     Table *table = dbMgr->openTable(tableName);
+    if (table == NULL) {
+        printf("unable to open table %d\n", tableName);
+        dbMgr->closeTable(table);
+        if (tabDefinition) dbMgr->dropTable(tableName);
+        SQLDisconnect(hdbc);
+        return ErrSysInit;
+    }
     table->setUndoLogging(false);
-    rv = table->lock(false); //no need to release this lock as it is upgrade from S to X
+    //rv = table->lock(false); //no need to release this lock as it is upgrade from S to X
     if (rv != OK)
     {
         dbMgr->closeTable(table);
@@ -149,8 +161,6 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
         SQLDisconnect(hdbc);
         return ErrSysInit;
     }
-    if (table == NULL){ printf("Table creation failed in csql for %s\n", tableName); 
-                    SQLDisconnect(hdbc); return ErrSysInit; }
     List fNameList = table->getFieldNameList();
     ListIterator fNameIter = fNameList.getIterator();
     FieldInfo *info = new FieldInfo();
@@ -289,17 +299,21 @@ DbRetVal CacheTableLoader::refresh()
 DbRetVal CacheTableLoader::recoverAllCachedTables()
 {
     FILE *fp;
-    fp = fopen(Conf::config.getCacheTableFile(),"r");
+    fp = fopen(Conf::config.getTableConfigFile(),"r");
     if( fp == NULL ) {
         printError(ErrSysInit, "cache.table file does not exist");
 	return OK;
     }
     //TODO::take exclusive lock on database
     char tablename[IDENTIFIER_LENGTH];
+    int mode;
+    DataSyncMode syncMode;
     while(!feof(fp))
     {
-        fscanf(fp, "%s\n", tablename);
-        printf("Recovering Table : %s\n", tablename);
+        fscanf(fp, "%d:%d:%s\n", &mode, &syncMode, tablename);
+        if (mode ==2 )  //just replicated table and not cached
+            continue;
+        printf("Recovering Table from target db: %s\n", tablename);
         setTable(tablename);
         load();
     }

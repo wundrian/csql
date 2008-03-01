@@ -17,41 +17,43 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-#ifndef SQLFACTORY_H
-#define SQLFACTORY_H
-#include<CSql.h>
+#include <CSql.h>
+#include <Network.h>
 
-#include<AbsSqlConnection.h>
-#include<AbsSqlStatement.h>
-
-enum SqlApiImplType
+TCPClient::~TCPClient()
 {
-    CSql =1,
-    ODBCAdapter =2,
-    ODBCGateway =3,
-    CSqlLog= 4
-};
-/**
-* @class SqlFactory
-*
-* @brief Factory class to create appropriate implementation of SQL API
-* @author Prabakaran Thirumalai
-*/
-class SqlFactory
+   if (isConnectedFlag) disconnect();
+}
+DbRetVal TCPClient::send(NetworkPacketType type, char *buf, int len)
 {
-    public:
+    DbRetVal rv = OK;
+    //printf("NW:TCP Send\n");
+    return rv;
+    
+}
+DbRetVal TCPClient::receive()
+{
+    DbRetVal rv = OK;
+    //printf("NW:TCP receive\n");
+    return rv;
+}
+DbRetVal TCPClient::connect()
+{
+    //printf("NW:TCP connect %s %d %d\n", hostName, port, networkid);
+    
+    //TODO::send endian to the peer site
+    //do not do endian conversion here. it will be done at the server side
 
-    /** creates appropriate implementation of AbsSqlConnection based on implFlag passed
-    *   @param implFlag 1->SqlConnection, 2->?
-    *   @return AbsSqlConnection
-    */
-    static AbsSqlConnection* createConnection (SqlApiImplType implFlag);
 
-    /** creates appropriate implementation of AbsSqlStatement based on implFlag passed
-    *   @param implFlag 1->SqlConnection, 2->?
-    *   @return AbsSqlStatement
-    */
-    static AbsSqlStatement* createStatement (SqlApiImplType implFlag);
-};
+    isConnectedFlag = true;
+    return OK;
+}
 
-#endif
+DbRetVal TCPClient::disconnect()
+{
+    if (isConnectedFlag)
+        printf("NW:TCP disconnect %s %d\n", hostName, port);
+
+    isConnectedFlag = false;
+    return OK;
+}

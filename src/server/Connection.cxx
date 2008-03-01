@@ -72,6 +72,7 @@ UserManager* Connection::getUserManager()
 DbRetVal Connection::startTransaction(IsolationLevel level)
 {
     if (session == NULL) return ErrNoConnection;
+    if (level == WRITE_OSYNC) level = READ_REPEATABLE;
     return session->startTransaction(level);
 }
 

@@ -36,6 +36,20 @@ InsStatement::~InsStatement()
     }
 }
 
+DbRetVal InsStatement::getParamFldInfo(int paramPos, FieldInfo *&info)
+{
+    if (paramPos >totalParams ) return ErrBadCall;
+    FieldValue *value = (FieldValue*)params[paramPos-1];
+    if (value == NULL)
+    {
+        printError(ErrSysFatal, "param ptr is null: should never happen\n");
+        return ErrBadArg;
+    }
+    info->type = value->type;
+    info->length = value->length;
+    return OK;
+}
+
 DbRetVal InsStatement::execute(int &rowsAffected)
 {
     DbRetVal rv = OK;
@@ -292,6 +306,7 @@ DbRetVal InsStatement::resolve()
             printError(ErrSysFatal, "Should never happen. value NULL after iteration");
             return ErrSysFatal;
         }
+        if (value->paramNo == 0) continue;
         params[value->paramNo -1 ] = value;
     }
     return OK;

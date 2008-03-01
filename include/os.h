@@ -144,6 +144,8 @@ class os
     static int setenv(const char *envVarName, const char *value);
 
     static int kill(pid_t pid, int sig);
+    static bool atobool(char *value);
+    static pid_t createProcess(const char* cmdName, const char *arg0, ...);
 };
 
 #endif

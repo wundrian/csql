@@ -17,41 +17,59 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-#ifndef SQLFACTORY_H
-#define SQLFACTORY_H
+#ifndef SQLLOGCONNECTION_H
+#define SQLLOGCONNECTION_H
 #include<CSql.h>
-
 #include<AbsSqlConnection.h>
-#include<AbsSqlStatement.h>
+#include<SqlFactory.h>
+#include<Util.h>
+#include<Network.h>
 
-enum SqlApiImplType
-{
-    CSql =1,
-    ODBCAdapter =2,
-    ODBCGateway =3,
-    CSqlLog= 4
-};
 /**
-* @class SqlFactory
+* @class SqlLogConnection
 *
-* @brief Factory class to create appropriate implementation of SQL API
-* @author Prabakaran Thirumalai
 */
-class SqlFactory
+class SqlLogConnection : public AbsSqlConnection
 {
+    Connection dummyConn;
+
+    //stores all the sql log packets to be shipped to peers
+    List logStore;
+
+    //sync mode of the current transaction
+    //will be modified by the SqlLogStatement based on the table
+    DataSyncMode syncMode;
+
+    //stores list of client objects in it for each peer
+    //List NWClientList;
+    NetworkTable nwTable;
+
+    static UniqueID txnUID;
+
     public:
+    SqlLogConnection(){innerConn = NULL; syncMode = TSYNC;}
 
-    /** creates appropriate implementation of AbsSqlConnection based on implFlag passed
-    *   @param implFlag 1->SqlConnection, 2->?
-    *   @return AbsSqlConnection
-    */
-    static AbsSqlConnection* createConnection (SqlApiImplType implFlag);
+    //Note::forced to implement this as it is pure virtual in base class
+    Connection& getConnObject(){  return dummyConn; }
 
-    /** creates appropriate implementation of AbsSqlStatement based on implFlag passed
-    *   @param implFlag 1->SqlConnection, 2->?
-    *   @return AbsSqlStatement
-    */
-    static AbsSqlStatement* createStatement (SqlApiImplType implFlag);
+    DbRetVal connect (char *user, char * pass);
+
+    DbRetVal disconnect();
+
+    DbRetVal commit();
+
+    DbRetVal rollback();
+
+    DbRetVal beginTrans (IsolationLevel isoLevel);
+
+    DbRetVal addPacket(BasePacket *pkt);
+
+    DbRetVal setSyncMode(DataSyncMode mode);
+    DataSyncMode getSyncMode() { return syncMode; }
+    void sendToAllPeers(NetworkPacketType type, char *packet, int length);
+    void receiveFromAllPeers(NetworkPacketType type, char *packet, int length);
+    void sendAndReceiveAllPeers(NetworkPacketType type, char *packet, int length);
+    friend class SqlFactory;
 };
 
 #endif

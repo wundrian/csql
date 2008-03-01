@@ -14,21 +14,21 @@
  *                                                                         *
  ***************************************************************************/
 #include <CSql.h>
-#include <CacheTableLoader.h>
+#include <Network.h>
 
 void printUsage()
 {
-   printf("Usage: cachetable [-U username] [-P passwd] -t tablename \n"
-          "       [-m <TSYNC|ASYNC>][-R] [-s] [-r]\n");
+   printf("Usage: repltable [-U username] [-P passwd] -t tablename \n"
+          "       [-m TSYNC|ASYNC>][-u] [-l nwid] \n");
    printf("       username -> username to connect with csql.\n");
    printf("       passwd -> password for the above username to connect with csql.\n");
-   printf("       tablename -> table name to be cached in csql from target db.\n");
-   printf("       R -> recover all cached tables from the target database.\n");
-   printf("       s -> load only the records from target db. Assumes table is already created in csql\n");
-   printf("       r -> reload the table. get the latest image of table from target db\n");
-   printf("       u -> unload the table. if used with -s option, removes only records and preserves the schema\n");
-   printf("       m -> synchronous mode\n");
-   printf("       no option -> get table definition and records from target db and create in csql.\n");
+   printf("       tablename -> table name to be replicated in csql with peers.\n");
+   printf("       u -> unreplicate the table\n");
+   printf("       l -> load all the records from specified peer site(nwid)\n");
+   printf("       m -> replication mode for the table\n");
+   printf("         -> Modes could be one of TSYNC|ASYNC\n");
+   printf("       no option -> replicates with default mode ASYNC\n");
+   printf("       Note:Table should not have any records for this command to succeed\n");
    return;
 }
 
@@ -42,9 +42,8 @@ int main(int argc, char **argv)
     char tablename[IDENTIFIER_LENGTH];
     char syncModeStr[IDENTIFIER_LENGTH];
     DataSyncMode syncMode = ASYNC;
-    bool tableDefinition = true;
     bool tableNameSpecified = false;
-    while ((c = getopt(argc, argv, "U:P:t:Rsru?")) != EOF) 
+    while ((c = getopt(argc, argv, "U:P:t:l:m:u?")) != EOF) 
     {
         switch (c)
         {
@@ -57,10 +56,8 @@ int main(int argc, char **argv)
                          break; 
                        }
             case '?' : { opt = 10; break; } //print help 
-            case 'R' : { opt = 3; break; } //recover all the tables
-            case 's' : { tableDefinition=false; break; } //do not get the schema information from target db
-            case 'r' : { opt = 4; break; } //reload the table
-            case 'u' : { opt = 5; break; } //unload the table
+            case 'l' : { opt = 4; break; } //load records  of the the table
+            case 'u' : { opt = 5; break; } //unreplicate the table
             default: opt=10; 
 
         }
@@ -77,8 +74,6 @@ int main(int argc, char **argv)
         strcpy(password, "manager");
     }
     DbRetVal rv = OK;
-    CacheTableLoader cacheLoader;
-    cacheLoader.setConnParam(username, password);
     if (opt==2) {
         if (strncasecmp(syncModeStr, "TSYNC",4) == 0)
             syncMode = TSYNC;
@@ -86,39 +81,6 @@ int main(int argc, char **argv)
             syncMode = ASYNC;
         else 
             printf("Unknown mode. Setting ASYNC mode\n");
-        cacheLoader.setSyncMode(syncMode); 
-        cacheLoader.setTable(tablename);
-        rv = cacheLoader.load(tableDefinition);
-        if (rv != OK) exit (1);
-        rv = cacheLoader.addToCacheTableFile();
-        if (rv != OK) exit (2);
-    }else if (opt==3) //recover
-    {
-        rv = cacheLoader.recoverAllCachedTables();
-        if (rv != OK) exit (1);
-    }else if (opt==4) //reload
-    {
-        if (!tableNameSpecified) 
-        {
-            printf("Table name is not specified. Check usage with ? \n");
-            return 1;
-        }
-        cacheLoader.setTable(tablename);
-        rv = cacheLoader.reload();
-        if (rv != OK) exit (1);
-    }else if (opt==5) //unload
-    {
-        if (!tableNameSpecified) 
-        {
-            printf("Table name is not specified. Check usage with ? option\n");
-            return 1;
-        }
-        cacheLoader.setTable(tablename);
-        rv = cacheLoader.unload(tableDefinition);
-        if (rv != OK) exit (1);
-        rv = cacheLoader.removeFromCacheTableFile();
-        if (rv != OK) exit (2);
-
     }
     return 0;
 }

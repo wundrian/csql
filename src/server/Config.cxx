@@ -68,8 +68,22 @@ int Config::storeKeyVal(char *key, char *value)
            { cVal.lockRetries = atoi(value);  }
     else if (strcasestr(key, "DSN") != NULL)
            { strcpy(cVal.dsn , value);  }
-    else if (strcasestr(key, "CACHE_TABLE_FILE") != NULL)
-           { strcpy(cVal.cacheTableFile , value);  }
+    else if (strcasestr(key, "TABLE_CONFIG_FILE") != NULL)
+           { strcpy(cVal.tableConfigFile , value);  }
+    else if (strcasestr(key, "CACHE") != NULL)
+           { cVal.isCache = os::atobool(value); }
+    else if (strcasestr(key, "REPLICATION") != NULL)
+           { cVal.isReplication = os::atobool(value); }
+    else if (strcasestr(key, "REPL_CONFIG_FILE") != NULL)
+           { strcpy(cVal.replConfigFile , value);  }
+    else if (strcasestr(key, "MAX_LOG_STORE_SIZE") != NULL)
+           { cVal.logStoreSize = atol(value);  }
+    else if (strcasestr(key, "NETWORK_ID") != NULL)
+           { cVal.networkID = atoi(value);  }
+    else if (strcasestr(key, "NETWORK_RESPONSE_TIMEOUT") != NULL)
+           { cVal.nwResponseTimeout = atoi(value);  }
+    else if (strcasestr(key, "NETWORK_CONNECT_TIMEOUT") != NULL)
+           { cVal.nwConnectTimeout = atoi(value);  }
     else  return 1;
     return 0;
 }
@@ -111,7 +125,7 @@ int Config::validateValues()
         return 1;
     }
 
-    if (cVal.maxDbSize < 1024 * 1024  || cVal.maxDbSize > 1024 *1024 *1024)
+    if (cVal.maxDbSize < 1024 * 1024  || cVal.maxDbSize > (1024*1024*1024))
     {
         printError(ErrBadArg,  "MAX_DB_SIZE should be >= 1 MB and <= 2 GB");
         return 1;
@@ -179,17 +193,54 @@ int Config::validateValues()
         printError(ErrBadArg,  "LOCK_TIMEOUT_RETRY should be >= 0 and <= 100");
         return 1;
     }
-    if (0 == strcmp(cVal.dsn,""))
+    if (cVal.isCache) {
+        if (0 == strcmp(cVal.dsn,""))
+        {
+            printError(ErrBadArg,  "DSN is set to NULL");
+            return 1;
+        }
+        if (0 == strcmp(cVal.tableConfigFile,""))
+        {
+            //TODO::check whether file exists
+            printError(ErrBadArg,  "TABLE_CONFIG_FILE is set to NULL");
+            return 1;
+        }
+    }
+    if (cVal.isReplication) {
+        if (0 == strcmp(cVal.replConfigFile,""))
+        {
+            //TODO::check whether file exists
+            printError(ErrBadArg,  "REPL_CONFIG_FILE is set to NULL");
+            return 1;
+        }
+        if (0 == strcmp(cVal.tableConfigFile,""))
+        {
+            //TODO::check whether file exists
+            printError(ErrBadArg,  "TABLE_CONFIG_FILE is set to NULL");
+            return 1;
+        }
+    }
+    if (cVal.logStoreSize < 1024 * 1024  || cVal.logStoreSize > 1024 *1024 *1024)
     {
-        printError(ErrBadArg,  "DSN is set to NULL");
+        printError(ErrBadArg,  "MAX_LOG_STORE_SIZE should be >= 1 MB and <= 1 GB");
         return 1;
     }
-    if (0 == strcmp(cVal.cacheTableFile,""))
+    if (cVal.logStoreSize % 8192 !=0)
     {
-        //TODO::check whether file exists
-        printError(ErrBadArg,  "CACHE_TABLE_FILE is set to NULL");
+        printError(ErrBadArg,  "MAX_LOG_STORE_SIZE should be multiples of 8192");
         return 1;
     }
+    if (cVal.nwResponseTimeout <0 || cVal.nwResponseTimeout > 60)
+    {
+        printError(ErrBadArg,  "NETWORK_RESPONSE_TIMEOUT should be 0 to 60");
+        return 1;
+    }
+    if (cVal.nwConnectTimeout <0 || cVal.nwConnectTimeout > 60)
+    {
+        printError(ErrBadArg,  "NETWORK_CONNECT_TIMEOUT should be 0 to 60");
+        return 1;
+    }
+    //TODO::validate networkid
     return 0;
 }
 
@@ -256,6 +307,11 @@ void Config::print()
     printf(" getLockSecs %d\n", getLockSecs());
     printf(" getLockUSecs %d\n", getLockUSecs());
     printf(" getLockRetries %d\n", getLockRetries());
+    printf(" useCache %d\n", useCache());
     printf(" getDSN %s\n", getDSN());
-    printf(" getCacheTableFile %s\n", getCacheTableFile());
+    printf(" getTableConfigFile %s\n", getTableConfigFile());
+    printf(" useReplication %d\n", useReplication());
+    printf(" getReplConfigFile %s\n", getReplConfigFile());
+    printf(" getMaxLogStoreSize %ld\n", getMaxLogStoreSize());
+    printf(" getNetworkID %d\n", getNetworkID());
 }
