@@ -21,18 +21,20 @@ cd ${install_dir}/lib
 mv libcsql libcsql.so
 mv libcsqlsql libcsqlsql.so
 mv libcsqljdbc libcsqljdbc.so
-ln -s libcsql.so libcsql 
-ln -s libcsqlsql.so libcsqlsql
-ln -s libcsqljdbc.so libcsqljdbc
+mv libcsqlnw libcsqlnw.so
+mv libcsqlsqllog libcsqlsqllog.so
+#ln -s libcsql.so libcsql 
+#ln -s libcsqlsql.so libcsqlsql
+#ln -s libcsqljdbc.so libcsqljdbc
 
 
 cp ${root_dir}/src/sql/Statement.h ${install_dir}/include
 cp ${root_dir}/src/sql/Parser.h ${install_dir}/include
 cd ${install_dir}/include
-rm Allocator.h CatalogTables.h Database.h 
+#rm Allocator.h CatalogTables.h Database.h 
 #rm DatabaseManagerImpl.h
-rm Globals.h Index.h Lock.h PredicateImpl.h
-rm Process.h SessionImpl.h TableImpl.h Transaction.h UserManagerImpl.h 
+#rm Globals.h Index.h Lock.h PredicateImpl.h
+#rm Process.h SessionImpl.h TableImpl.h Transaction.h UserManagerImpl.h 
 
 cp ${root_dir}/README.INSTALL ${install_dir}/README
 cp ${root_dir}/Doxyfile ${install_dir}
