@@ -74,7 +74,7 @@ int Config::storeKeyVal(char *key, char *value)
            { cVal.isCache = os::atobool(value); }
     else if (strcasestr(key, "REPLICATION") != NULL)
            { cVal.isReplication = os::atobool(value); }
-    else if (strcasestr(key, "REPL_CONFIG_FILE") != NULL)
+    else if (strcasestr(key, "NETWORK_CONFIG_FILE") != NULL)
            { strcpy(cVal.replConfigFile , value);  }
     else if (strcasestr(key, "MAX_LOG_STORE_SIZE") != NULL)
            { cVal.logStoreSize = atol(value);  }
@@ -193,24 +193,22 @@ int Config::validateValues()
         printError(ErrBadArg,  "LOCK_TIMEOUT_RETRY should be >= 0 and <= 100");
         return 1;
     }
+    if (cVal.isCache && cVal.isReplication) {
+        printError(ErrBadArg, "Either caching or replication option needs to be set"
+                              "Both options does not work together");
+    }
     if (cVal.isCache) {
         if (0 == strcmp(cVal.dsn,""))
         {
             printError(ErrBadArg,  "DSN is set to NULL");
             return 1;
         }
-        if (0 == strcmp(cVal.tableConfigFile,""))
-        {
-            //TODO::check whether file exists
-            printError(ErrBadArg,  "TABLE_CONFIG_FILE is set to NULL");
-            return 1;
-        }
     }
-    if (cVal.isReplication) {
+    if (cVal.isReplication || cVal.isCache) {
         if (0 == strcmp(cVal.replConfigFile,""))
         {
             //TODO::check whether file exists
-            printError(ErrBadArg,  "REPL_CONFIG_FILE is set to NULL");
+            printError(ErrBadArg,  "NETWORK_CONFIG_FILE is set to NULL");
             return 1;
         }
         if (0 == strcmp(cVal.tableConfigFile,""))

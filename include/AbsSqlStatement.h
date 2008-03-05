@@ -227,4 +227,27 @@ class AbsSqlStatement
     virtual ~AbsSqlStatement(){}
 };
 
+//used to store the binded field values and parameters from derived clases of
+//AbsSqlStatement class
+class BindSqlField
+{
+    public:
+    DataType type;
+    int length;
+    void *value;
+    void *targetvalue;
+    BindSqlField(){ value = NULL; targetvalue = NULL; }
+};
+
+class BindSqlProjectField
+{
+    public:
+    char fName[IDENTIFIER_LENGTH];
+    DataType type;
+    int length;
+    void *value;
+    void *targetvalue;
+    BindSqlProjectField(){ value = NULL; targetvalue = NULL; }
+};
+
 #endif

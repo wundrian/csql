@@ -19863,7 +19863,7 @@ done
 
 
 
-                                                                                                    ac_config_files="$ac_config_files Makefile src/Makefile include/Makefile src/server/Makefile src/sql/Makefile src/jdbc/Makefile src/cache/Makefile src/network/Makefile src/sqllog/Makefile src/tools/Makefile"
+                                                                                                              ac_config_files="$ac_config_files Makefile src/Makefile include/Makefile src/server/Makefile src/sql/Makefile src/jdbc/Makefile src/cache/Makefile src/network/Makefile src/sqllog/Makefile src/adapter/Makefile src/tools/Makefile"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -20429,6 +20429,7 @@ do
   "src/cache/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/cache/Makefile" ;;
   "src/network/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/network/Makefile" ;;
   "src/sqllog/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/sqllog/Makefile" ;;
+  "src/adapter/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/adapter/Makefile" ;;
   "src/tools/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/tools/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;

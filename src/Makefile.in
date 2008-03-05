@@ -161,7 +161,7 @@ target_alias = @target_alias@
 INCLUDES = $(all_includes)
 
 # the library search path.
-SUBDIRS = server sql jdbc cache network sqllog tools
+SUBDIRS = server adapter sql cache network sqllog jdbc tools
 all: all-recursive
 
 .SUFFIXES:

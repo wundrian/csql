@@ -27,7 +27,7 @@
 enum SqlApiImplType
 {
     CSql =1,
-    ODBCAdapter =2,
+    CSqlAdapter =2,
     ODBCGateway =3,
     CSqlLog= 4
 };

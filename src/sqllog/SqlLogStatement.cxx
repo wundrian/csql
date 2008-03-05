@@ -110,22 +110,30 @@ DbRetVal SqlLogStatement::prepare(char *stmtstr)
     pkt->stmtID= sid;
     pkt->syncMode = syncMode;
     pkt->stmtString = stmtstr;
-    pkt->marshall();
-    SqlLogConnection* logConn = (SqlLogConnection*)con;
-    logConn->sendAndReceiveAllPeers(NW_PKT_PREPARE, pkt->getMarshalledBuffer(), pkt->getBufferSize());
-    delete pkt;
+    pkt->noParams = innerStmt->noOfParamFields();
     FieldInfo *info = new FieldInfo();
-    BindSqlField *bindField = NULL;
-    //populate paramList
-    for (int i = 0; i < innerStmt->noOfParamFields(); i++)
-    {
+    if (pkt->noParams > 0) {
+      pkt->type = new int [pkt->noParams];
+      pkt->length = new int [pkt->noParams];
+      BindSqlField *bindField = NULL;
+      for (int i = 0; i < innerStmt->noOfParamFields(); i++)
+      {
         innerStmt->getParamFldInfo(i+1, info);
         bindField = new BindSqlField();
         bindField->type = info->type;
         bindField->length = info->length;
+        pkt->type[i] =  info->type;
+        pkt->length[i] =  info->length;
         bindField->value = AllDataType::alloc(info->type, info->length);
         paramList.append(bindField);
+      }
     }
+    pkt->marshall();
+    SqlLogConnection* logConn = (SqlLogConnection*)con;
+    printf("Sending PREPARe packet of size %d\n", pkt->getBufferSize());
+    logConn->sendAndReceiveAllPeers(NW_PKT_PREPARE, pkt->getMarshalledBuffer(), pkt->getBufferSize());
+    delete pkt;
+    delete info;
     return OK;
 }
 

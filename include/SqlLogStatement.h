@@ -28,13 +28,6 @@ class TableSyncMode{
     char tableName[IDENTIFIER_LENGTH];
     DataSyncMode mode;
 };
-class BindSqlField
-{
-    public:
-    DataType type;
-    int length;
-    void *value;
-};
 class SqlLogStatement: public AbsSqlStatement
 {
     public:

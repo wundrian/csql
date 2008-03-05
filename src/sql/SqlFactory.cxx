@@ -18,6 +18,8 @@
 #include <SqlConnection.h>
 #include <SqlLogConnection.h>
 #include <SqlLogStatement.h>
+#include <SqlOdbcConnection.h>
+#include <SqlOdbcStatement.h>
 AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
 {
     AbsSqlConnection *conn = NULL ;
@@ -32,6 +34,12 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
             AbsSqlConnection *sqlCon = new SqlConnection();
             conn = new SqlLogConnection();
             conn->setInnerConnection(sqlCon);
+            break;
+            }
+        case CSqlAdapter:
+            {
+            conn = new SqlOdbcConnection();
+            conn->setInnerConnection(NULL);
             break;
             }
         default:
@@ -54,6 +62,12 @@ AbsSqlStatement* SqlFactory::createStatement(SqlApiImplType implFlag)
             AbsSqlStatement *sqlStmt = new SqlStatement();
             stmt = new SqlLogStatement();
             stmt->setInnerStatement(sqlStmt);
+            break;
+            }
+        case CSqlAdapter:
+            {
+            stmt = new SqlOdbcStatement();
+            stmt->setInnerStatement(NULL);
             break;
             }
         default:

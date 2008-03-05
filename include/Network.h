@@ -148,10 +148,15 @@ class BasePacket{
 class PacketPrepare:public BasePacket
 {
     public:
-    PacketPrepare() { buffer=NULL; bufferSize =0; pktType = NW_PKT_PREPARE;}
+    PacketPrepare() { buffer=NULL; bufferSize =0; noParams = 0;
+                      type = NULL; length = NULL; pktType = NW_PKT_PREPARE;}
     ~PacketPrepare() { free(buffer); bufferSize = 0; buffer = NULL; }
     int stmtID;
     int syncMode;
+    int stmtLength;
+    int noParams;
+    int *type;
+    int *length;
     char *stmtString;
     DbRetVal marshall();
     DbRetVal unmarshall();
