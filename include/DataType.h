@@ -84,6 +84,7 @@ class AllDataType
     public:
     static long size(DataType type, int length =0);
     static SQLSMALLINT convertToSQLType(DataType type);
+    static SQLSMALLINT convertToSQL_C_Type(DataType type);
     static DataType convertFromSQLType(SQLSMALLINT type);
 
     static void copyVal(void* dest, void *src, DataType type, int length = 0);
