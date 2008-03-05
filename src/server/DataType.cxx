@@ -389,6 +389,41 @@ SQLSMALLINT AllDataType::convertToSQLType(DataType type)
     }
     return SQL_INTEGER;
 }
+SQLSMALLINT AllDataType::convertToSQL_C_Type(DataType type)
+{
+    //printf("CSQL TYPE is %d\n", type);
+
+    switch(type)
+    {
+        case typeInt:
+            return SQL_C_SLONG;
+        case typeLong:
+            return SQL_C_SLONG;
+        case typeLongLong:
+            return SQL_C_SBIGINT;
+        case typeShort:
+            return SQL_C_SSHORT;
+        case typeByteInt:
+            return SQL_C_STINYINT;
+        case typeDouble:
+            return SQL_C_DOUBLE;
+        case typeFloat:
+            return SQL_C_FLOAT;
+        case typeDecimal:
+            //TODO
+            return SQL_INTEGER;
+        case typeDate:
+            return SQL_C_TYPE_DATE;
+        case typeTime:
+           return SQL_C_TYPE_TIME;
+        case typeTimeStamp:
+           return SQL_C_TYPE_TIMESTAMP;
+        case typeString:
+            return SQL_C_CHAR;
+    }
+    return SQL_C_SLONG;
+}
+
 DataType  AllDataType::convertFromSQLType(SQLSMALLINT type)
 {
     //printf("SQL TYPE is %d\n", type);
@@ -409,7 +444,9 @@ DataType  AllDataType::convertFromSQLType(SQLSMALLINT type)
            return typeTime;
         case SQL_TYPE_TIMESTAMP :
            return typeTimeStamp;
-        case SQL_CHAR :
+        case SQL_CHAR:
+            return typeString;
+        case SQL_VARCHAR:
             return typeString;
     }
     return typeInt;
@@ -1018,12 +1055,12 @@ void AllDataType::strToValue(void* dest, char *src, DataType type, int length)
                 break;}
         case typeDate: {
             int d,m,y,res=0;
-            res = sscanf( src, "%d-%d-%d", &d, &m, &y );
+            res = sscanf( src, "%d-%d-%d", &y, &m, &d );
             if( res != 3 )
-                 res = sscanf( src, "%d/%d/%d", &d, &m, &y );
+                 res = sscanf( src, "%d/%d/%d", &y, &m, &d );
             if( res != 3 )
             {
-           fprintf(stderr,"Error reading date. dd{-/}mm{-/}yyyy is the valid format.");
+           fprintf(stderr,"Error reading date. yyyy{-/}mm{-/}dd is the valid format.");
                 d=m=y=0;
             }
             Date dateObj(y,m,d);
@@ -1042,16 +1079,16 @@ void AllDataType::strToValue(void* dest, char *src, DataType type, int length)
             break; }
         case typeTimeStamp: {
             int d,m,y, h,mn,s, res=0;
-            res = sscanf( src, "%d-%d-%d %d:%d:%d", &d, &m, &y, &h, &mn, &s );
+            res = sscanf( src, "%d-%d-%d %d:%d:%d", &y, &m, &d, &h, &mn, &s );
             if( res != 6 )
-                res = sscanf( src, "%d-%d-%d, %d:%d:%d", &d, &m, &y, &h, &mn, &s );
+                res = sscanf( src, "%d-%d-%d, %d:%d:%d", &y, &m, &d, &h, &mn, &s );
             if( res != 6 )
-                res = sscanf( src, "%d/%d/%d %d:%d:%d", &d, &m, &y, &h, &mn, &s );
+                res = sscanf( src, "%d/%d/%d %d:%d:%d", &y, &m, &d, &h, &mn, &s );
             if( res != 6 )
-                res = sscanf( src, "%d/%d/%d, %d:%d:%d", &d, &m, &y, &h, &mn, &s );
+                res = sscanf( src, "%d/%d/%d, %d:%d:%d", &y, &m, &d, &h, &mn, &s );
             if( res != 6 )
             {
-                fprintf(stderr, "Error reading timestamp, dd{-/}mm{-/}yyyy[,] hh:mm:ss is the valid format.");
+                fprintf(stderr, "Error reading timestamp, yyyy{-/}mm{-/}dd[,] hh:mm:ss is the valid format.");
                 d=m=y=h=mn=s=0;
             }
             TimeStamp timeStampObj(y,m,d,h,mn,s);
@@ -1301,8 +1338,8 @@ void AllDataType::convertToString( void* dest, void* src, DataType srcType )
         case typeDate:
         {
             Date* dt = (Date*)src;
-            sprintf((char*) dest, "%d/%d/%d", dt->dayOfMonth(),
-                                  dt->month(), dt->year());
+            sprintf((char*) dest, "%d/%d/%d", dt->year(),
+                                  dt->month(), dt->dayOfMonth());
             break;
         }
         case typeTime:
@@ -1314,8 +1351,8 @@ void AllDataType::convertToString( void* dest, void* src, DataType srcType )
         case typeTimeStamp:
         {
             TimeStamp* tm = (TimeStamp*)src;
-            sprintf((char*)dest, "%d/%d/%d %d:%d:%d.%d", tm->dayOfMonth(),
-                                tm->month(), tm->year(), tm->hours(),
+            sprintf((char*)dest, "%d/%d/%d %d:%d:%d.%d", tm->year(),
+                                tm->month(), tm->dayOfMonth(), tm->hours(),
                                 tm->minutes(), tm->seconds(), 0 );
             break;
         }
@@ -1373,8 +1410,8 @@ void AllDataType::printVal(void* src, DataType srcType, int length )
         case typeDate:
         {
             Date* dt = (Date*)src;
-            printf("%d/%d/%d\t", dt->dayOfMonth(),
-                                  dt->month(), dt->year());
+            printf("%d/%d/%d\t", dt->year(),
+                                  dt->month(), dt->dayOfMonth());
             break;
         }
         case typeTime:
@@ -1386,8 +1423,8 @@ void AllDataType::printVal(void* src, DataType srcType, int length )
         case typeTimeStamp:
         {
             TimeStamp* tm = (TimeStamp*)src;
-            printf("%d/%d/%d %d:%d:%d.%d\t", tm->dayOfMonth(),
-                                tm->month(), tm->year(), tm->hours(),
+            printf("%d/%d/%d %d:%d:%d.%d\t", tm->year(),
+                                tm->month(), tm->dayOfMonth(), tm->hours(),
                                 tm->minutes(), tm->seconds(), 0 );
             break;
         }
