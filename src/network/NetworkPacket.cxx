@@ -24,20 +24,52 @@
 
 DbRetVal PacketPrepare::marshall()
 {
-    bufferSize  = sizeof(int) + sizeof(int) + strlen(stmtString);
+    bufferSize  = sizeof(int) * 4 + strlen(stmtString) + 1;
+    printf("NOOFPARAMS %d size %d\n", noParams, bufferSize);
+    printf("stmt length %s size %d\n", stmtString, strlen(stmtString));
+printf("noParams is %d\n", noParams);
+    if (noParams >0)
+        bufferSize = bufferSize + 2 * sizeof(int) * noParams;
     buffer = (char*) malloc(bufferSize);
+    printf("start of the buffer %x\n", buffer);
     *(int*)buffer = stmtID;
     char *bufIter = buffer + sizeof(int);
     *(int*)bufIter = syncMode;
     bufIter = bufIter + sizeof(int); 
+    *(int*)bufIter = strlen(stmtString);
+    bufIter = bufIter + sizeof(int);
+    *(int*)bufIter = noParams;
+    bufIter = bufIter + sizeof(int); 
+    if (noParams >0) { 
+       memcpy(bufIter, type, sizeof(int) * noParams);
+       bufIter = bufIter + sizeof(int)* noParams; 
+       memcpy(bufIter, length, sizeof(int) * noParams);
+       bufIter = bufIter + sizeof(int)* noParams; 
+    }
+    printf("stmtString is in  %x\n", bufIter);
     strcpy(bufIter, stmtString);
     return OK;
 }
 DbRetVal PacketPrepare::unmarshall()
 {
     stmtID = *(int*)buffer;
-    syncMode = *(int*)(buffer+sizeof(int));
-    stmtString = buffer +sizeof(int)+sizeof(int);
+    printf("start of the buffer is %x\n", buffer);
+    char *bufIter = buffer + sizeof (int);
+    syncMode = *(int*)bufIter;
+    bufIter = bufIter + sizeof(int);
+    stmtLength = *(int*)bufIter;
+    bufIter = bufIter + sizeof(int);
+    noParams = *(int*)bufIter;
+    bufIter = bufIter + sizeof(int);
+    if (noParams >0) { 
+        type = (int*) bufIter;
+        bufIter = bufIter + sizeof(int) * noParams;
+        length = (int*) bufIter;
+        bufIter = bufIter + sizeof(int) * noParams;
+    }
+    stmtString = bufIter;
+    printf("stmtString ptr is %x\n", stmtString);
+    stmtString[stmtLength+1] = '\0';
     return OK;
 }
 DbRetVal PacketFree::marshall()

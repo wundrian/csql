@@ -29,14 +29,15 @@ DbRetVal UDPClient::send(NetworkPacketType type, char *buf, int len)
     DbRetVal rv = OK;
     //printf("NW:UDP Send\n");
     void* totalBuffer = malloc(sizeof(PacketHeader)+ len);
-    PacketHeader *hdr= (PacketHeader*) totalBuffer;
+    //PacketHeader *hdr= (PacketHeader*) totalBuffer;
+    PacketHeader *hdr=  new PacketHeader();
     hdr->packetType = type;
     hdr->packetLength = len;
     hdr->srcNetworkID = networkid;
     hdr->version = 1;
     memcpy(((char*)totalBuffer) + sizeof(PacketHeader) , buf, len);
 
-
+/*
     int numbytes =sendto(sockfd, totalBuffer, sizeof(PacketHeader)+ len, 0,
                 (struct sockaddr *)&srvAddr, sizeof(struct sockaddr));
 
@@ -44,17 +45,21 @@ DbRetVal UDPClient::send(NetworkPacketType type, char *buf, int len)
         printError(ErrOS,"Unable to send the packet\n");
         return ErrOS;
     }
-    free(totalBuffer);
-/*
-    //printf("sent %d bytes \n", numbytes);
-    //printf("Buffer contains %s\n", buf);
+*/
+    int numbytes=0;
+    if ((numbytes=sendto(sockfd, hdr, sizeof(PacketHeader), 0,
+           (struct sockaddr *)&srvAddr, sizeof(struct sockaddr))) == -1) {
+        printError(ErrOS, "Unable to send the packet\n");
+        return ErrOS;
+    }
+    printf("Sent bytes %d\n", numbytes);
     if ((numbytes=sendto(sockfd, buf, len, 0,
            (struct sockaddr *)&srvAddr, sizeof(struct sockaddr))) == -1) {
         printError(ErrOS, "Unable to send the packet\n");
         return ErrOS;
     }
-*/
-    //printf("sent %d bytes \n", numbytes);
+    printf("Sent bytes %d\n", numbytes);
+    free(totalBuffer);
     return rv;
     
 }

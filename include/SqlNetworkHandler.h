@@ -33,6 +33,7 @@ class SqlNetworkHandler
     public:
     static List stmtList;
     static AbsSqlConnection *conn;
+    static SqlApiImplType type;
     int process(PacketHeader &header,  char *buffer);
     int processPrepare(PacketHeader &header,  char *buffer);
     int processCommit(PacketHeader &header,  char *buffer);

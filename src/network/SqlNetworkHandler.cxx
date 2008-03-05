@@ -20,13 +20,16 @@
 #include <SqlNetworkHandler.h>
 #include <AbsSqlConnection.h>
 #include <SqlConnection.h>
+#include <SqlOdbcConnection.h>
 #include <AbsSqlStatement.h>
 #include <SqlStatement.h>
+#include <SqlOdbcStatement.h>
 
 #include <SqlLogStatement.h>
 
 List SqlNetworkHandler::stmtList;
 AbsSqlConnection* SqlNetworkHandler::conn;
+SqlApiImplType SqlNetworkHandler::type;
 
 int SqlNetworkHandler::process(PacketHeader &header, char *buffer)
 {
@@ -95,9 +98,11 @@ int SqlNetworkHandler::processPrepare(PacketHeader &header, char *buffer)
     pkt->setBufferSize(header.packetLength);
     pkt->unmarshall();
     printf("PREPARE %d %s\n", pkt->stmtID, pkt->stmtString);
+    for (int i =0 ; i < pkt->noParams; i++)
+        printf("PREPARE type %d length %d \n", pkt->type[i], pkt->length[i]);
     int response =1;
     //TODO::add it to the SqlStatement list
-    AbsSqlStatement *sqlstmt = SqlFactory::createStatement(CSql);
+    AbsSqlStatement *sqlstmt = SqlFactory::createStatement(type);
     sqlstmt->setConnection(conn);
     NetworkStmt *nwStmt = new NetworkStmt();
     printf("nwstmt in prepare %x %x\n", nwStmt, sqlstmt);
@@ -111,20 +116,18 @@ int SqlNetworkHandler::processPrepare(PacketHeader &header, char *buffer)
         printError(ErrSysInit, "statement prepare failed\n");
         response = 0;
     }
-    FieldInfo *info = new FieldInfo();
     BindSqlField *bindField = NULL;
     //populate paramList
-    for (int i = 1; i <= sqlstmt->noOfParamFields(); i++)
+    for (int i = 0; i < pkt->noParams; i++)
     {
-             sqlstmt->getParamFldInfo(i, info);
              bindField = new BindSqlField();
-             bindField->type = info->type;
-             bindField->length = info->length;
-             bindField->value = AllDataType::alloc(info->type, info->length);
+             bindField->type = (DataType) pkt->type[i];
+             bindField->length = pkt->length[i];
+             bindField->value = AllDataType::alloc(bindField->type, 
+                                                   bindField->length);
              nwStmt->paramList.append(bindField);
-             printf("Adding element to paramList for type %d\n",info->type);
+             printf("Adding element to paramList for type %d\n",bindField->type);
     }
-    delete info;
     stmtList.append(nwStmt);
     return response;
 

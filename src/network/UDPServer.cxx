@@ -68,8 +68,22 @@ DbRetVal UDPServer::handleClient()
    printf("HEADERINFO %d %d %d %d\n", header.packetType, header.packetLength,
                     header.srcNetworkID, header.version);
    char *buffer = (char*) malloc(header.packetLength);
+    fd_set fdset; //TODO::Move it to UDPClient class
+    FD_ZERO(&fdset);
+    FD_SET(sockfd, &fdset);
+    struct timeval timeout;
+    timeout.tv_sec = Conf::config.getNetworkResponseTimeout();
+    timeout.tv_usec = 0;
+    int ret = os::select(sockfd+1, &fdset, 0, 0, &timeout);
+    if (ret <= 0) {
+        printError(ErrPeerTimeOut,"Response timeout for peer site\n");
+        return ErrPeerTimeOut;
+    }
+
    numbytes = recvfrom(sockfd, buffer, header.packetLength, 0,
                         (struct sockaddr*) &clientAddress, &addressLen);
+
+   printf("Bytes read %d\n", numbytes);
    if (numbytes == -1)
    {
        printf("Error reading from socket\n");

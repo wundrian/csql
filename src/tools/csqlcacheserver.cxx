@@ -15,13 +15,14 @@
   ***************************************************************************/
 #include <AbsSqlConnection.h>
 #include <AbsSqlStatement.h>
-#include <SqlConnection.h>
-#include <SqlStatement.h>
+#include <SqlOdbcConnection.h>
+#include <SqlOdbcStatement.h>
 #include <SqlFactory.h>
 #include <CSql.h>
 #include <Network.h>
 #include <SqlLogStatement.h> //for BindSqlField
 #include <SqlNetworkHandler.h>
+#include <SessionImpl.h>
 
 int srvStop =0;
 static void sigTermHandler(int sig)
@@ -57,14 +58,16 @@ int main(int argc, char **argv)
     os::signal(SIGINT, sigTermHandler);
     os::signal(SIGTERM, sigTermHandler);
 
+    SessionImpl *impl = new SessionImpl();
+    impl->readConfigFile();
     bool end = false;
-    SqlNetworkHandler::type = CSql;
-    SqlNetworkHandler::conn = SqlFactory::createConnection(CSql);
+    SqlNetworkHandler::type = CSqlAdapter;
+    SqlNetworkHandler::conn = SqlFactory::createConnection(CSqlAdapter);
     DbRetVal rv = SqlNetworkHandler::conn->connect("root", "manager");
     if (rv != OK) return 1;
-    if (!Conf::config.useReplication())
+    if (!Conf::config.useCache())
     {
-        printf("Replication is set to OFF in csql.conf file\n");
+        printf("Cache is set to OFF in csql.conf file\n");
         SqlNetworkHandler::conn->disconnect();
         return 1;
     } 
@@ -77,7 +80,7 @@ int main(int argc, char **argv)
     int port=0;
     fp = fopen(Conf::config.getReplConfigFile(),"r");
     if( fp == NULL ) {
-        printError(ErrSysInit, "Invalid path/filename for REPL_CONFIG_FILE.\n");
+        printError(ErrSysInit, "Invalid path/filename for NETWORK_CONFIG_FILE.\n");
         SqlNetworkHandler::conn->disconnect();
         return 1;
     }
@@ -90,7 +93,7 @@ int main(int argc, char **argv)
     fclose(fp);
     if (!found)
     {
-        printf("Info not found in REPL_CONFIG_FILE for nwid %d\n", 
+        printf("Info not found in NETWORK_CONFIG_FILE for nwid %d\n", 
                Conf::config.getNetworkID());
         SqlNetworkHandler::conn->disconnect();
         return 1;
@@ -111,7 +114,7 @@ int main(int argc, char **argv)
         printf("Unable to start the server\n");
         return 1;
     }
-    printf("Replication server started\n");
+    printf("Cache server started\n");
     fd_set fdset;
     int ret = 0;
     struct timeval timeout, tval;
@@ -130,7 +133,7 @@ int main(int argc, char **argv)
         }
         printf("Server Waiting for clients\n");
     }
-    printf("Replication Server Exiting");
+    printf("Cache Server Exiting");
     nwServer->stop();
     SqlNetworkHandler::conn->disconnect();
     delete SqlNetworkHandler::conn;
