@@ -24,6 +24,7 @@ INCL= -I$(CSQL_INSTALL_ROOT)/include
 LIBS= -L$(CSQL_INSTALL_ROOT)/lib -rdynamic -lcsql
 
 TARGETS = \
+        SQLTest \
         DMLTest \
         DMLTestChar \
         DMLThreadTest \
@@ -37,6 +38,8 @@ endif
 
 DMLTest: DMLTest.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+SQLTest: SQLTest.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc $(SYSLIBS)
 DMLTestChar: DMLTestChar.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 DMLThreadTest: DMLThreadTest.c

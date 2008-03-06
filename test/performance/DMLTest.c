@@ -1,5 +1,14 @@
 #include<CSql.h>
 #include<NanoTimer.h>
+#include<TableImpl.h>
+#define ITERATIONS 100
+//#define LOAD 1000000
+//Note: Set following parameters in csql.conf for this test
+//MAX_SYS_DB_SIZE=10485760
+//MAX_DB_SIZE=335544320
+//you may have to set the kernel.shmmax kernel paremeter(login as root) using 
+//$sysctl -w kernel.shmmax=1000000000
+#define LOAD 0
 int main()
 {
 
@@ -24,6 +33,10 @@ int main()
     strcpy(idxInfo->tableName, "t1");
     idxInfo->list.append("f1");
     idxInfo->indType = hashIndex;
+    if (LOAD >0 )
+       idxInfo->bucketSize = 100007;
+    else
+       idxInfo->bucketSize = 10007;
     rv = dbMgr->createIndex("indx1", idxInfo);
     if (rv != OK) { printf("Index creation failed\n"); return -1; }
     printf("Index created\n");
@@ -37,24 +50,48 @@ int main()
     int ret;
     int i;
     int icount =0;
+    if (LOAD > 0) {
+      TableImpl *impl = (TableImpl*)table;
+      impl->setUndoLogging(false);
+      strcpy(name, "PRABAKARAN0123456750590");
+      rv = conn.startTransaction();
+      if (rv != OK) exit(1);
+      for(i = 0; i< LOAD; i++)
+      {
+        id= i;
+        ret = table->insertTuple();
+        if (ret != 0) break;
+        icount++;
+        if (i % 100 == 0 ) { rv = conn.commit(); 
+                             if (rv != OK) exit(1);
+                             rv = conn.startTransaction(); 
+                             if (rv != OK) exit(1);
+                           }
+        if (i %50000 == 0) printf("%d rows inserted\n", i);
+      }
+      conn.commit();
+      impl->setUndoLogging(true);
+      printf("Loaded %d records\n", icount);
+    }
+   
+    i = 0; 
     NanoTimer timer;
-    for(i = 0; i< 100; i++)
+    icount =0;
+    for(i = LOAD; i< LOAD+ITERATIONS; i++)
     {
         timer.start();
         rv = conn.startTransaction();
         if (rv != OK) exit(1);
         id= i;
         strcpy(name, "PRABAKARAN0123456750590");
-        //printf("%d\n ", i);
         ret = table->insertTuple();
         if (ret != 0) break;
+    //    printf("%d\n ", i);
         icount++;
         conn.commit();
         timer.stop();
     }
-   char msgBuf[1024];
-   sprintf(msgBuf,"Total rows inserted %d %lld %lld %lld\n",icount, timer.min(), timer.max(), timer.avg());
-   os::write(1,msgBuf,strlen(msgBuf));
+   printf("%d rows inserted %lld %lld %lld\n",icount, timer.min(), timer.max(), timer.avg());
 
     int offset1= os::align(sizeof(int));
     Condition p1;
@@ -62,8 +99,9 @@ int main()
     p1.setTerm("f1", OpEquals, &val1);
     table->setCondition(&p1);
     icount=0;
+   
     timer.reset();
-    for(i = 0; i< 100; i++)
+    for(i = LOAD; i< LOAD+ITERATIONS; i++)
     {    
         timer.start();
         rv =conn.startTransaction();
@@ -72,16 +110,16 @@ int main()
         table->execute();
         tuple = (char*)table->fetch() ;
         if (tuple == NULL) {printf("loop break in %d\n", i);table->close();break;}
-        //printf("tuple value is %d %s \n", *((int*)tuple), tuple+offset1);
+    //    printf(" %d tuple value is %d %s \n", i, *((int*)tuple), tuple+offset1);
         table->close();
         icount++;
         conn.commit();
         timer.stop();
     }
-    sprintf(msgBuf,"%d rows selected %lld %lld %lld\n", icount, timer.min(), timer.max(), timer.avg());
-    os::write(1,msgBuf,strlen(msgBuf));
+    printf("%d rows selected %lld %lld %lld\n", icount, timer.min(), timer.max(), timer.avg());
     timer.reset();
-    for(i = 0; i< 100; i++)
+
+    for(i = LOAD; i< LOAD+ITERATIONS; i++)
     {
         timer.start();
         rv  = conn.startTransaction();
@@ -96,10 +134,11 @@ int main()
         conn.commit();
         timer.stop();
     }
-    sprintf(msgBuf,"%d rows updated %lld %lld %lld\n", i, timer.min(), timer.max(), timer.avg());
-    os::write(1,msgBuf,strlen(msgBuf));
+    printf("%d rows updated %lld %lld %lld\n", i- LOAD, timer.min(), timer.max(), timer.avg());
+
+
     icount=0;
-    for(i = 0; i< 100; i++)
+    for(i = LOAD; i< LOAD+ITERATIONS; i++)
     {
         timer.start();
         rv = conn.startTransaction();
@@ -107,7 +146,7 @@ int main()
         val1 = i;
         table->execute();
         tuple = (char*)table->fetch() ;
-        if (tuple == NULL) {printf("loop break in %d\n", i);table->close();break;}
+        if (tuple == NULL) {printf("No record for %d\n", i);table->close();break;}
         table->deleteTuple();
         icount++;
         table->close();
@@ -116,24 +155,11 @@ int main()
     }
     printf("%d rows deleted %lld %lld %lld\n", icount, timer.min(), timer.max(), timer.avg());
 
-    int count =0;
-    timer.reset();
-    for(i = 0; i< 100; i++)
-    {    
-        rv = conn.startTransaction();
-        if (rv != OK) exit (1);
-        val1 = i;
-        table->execute();
-        tuple = (char*)table->fetch() ;
-        if (tuple == NULL) {printf("loop break in %d\n", i);table->close();break;}
-        //printf("tuple value is %d %s \n", *((int*)tuple), tuple+offset1);
-        count++;
-        table->close();
-        conn.commit();
-    }
-    printf("Total rows selected %d\n", count);
+
     dbMgr->closeTable(table);
     dbMgr->dropTable("t1");
+    printf("Table dropped\n");
+
 
     conn.close();
     return 0;
