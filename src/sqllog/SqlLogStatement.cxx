@@ -139,7 +139,7 @@ DbRetVal SqlLogStatement::prepare(char *stmtstr)
 
 bool SqlLogStatement::isSelect()
 {
-    if (innerStmt) return isSelect();
+    if (innerStmt) return innerStmt->isSelect();
     return false;
 }
 
