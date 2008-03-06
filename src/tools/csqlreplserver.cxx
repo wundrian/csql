@@ -130,7 +130,7 @@ int main(int argc, char **argv)
         }
         printf("Server Waiting for clients\n");
     }
-    printf("Replication Server Exiting");
+    printf("Replication Server Exiting\n");
     nwServer->stop();
     SqlNetworkHandler::conn->disconnect();
     delete SqlNetworkHandler::conn;

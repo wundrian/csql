@@ -174,9 +174,16 @@ int main(int argc, char **argv)
     timeout.tv_usec = 0;
     Database* sysdb = session.getSystemDatabase();
     if (opt == 1) {
-        printf("Database server recovering cached tables...\n");
-        system("cachetable -U root -P manager -R");
-        printf("Cached Tables recovered\n");
+        if (Conf::config.useCache()) {
+            printf("Database server recovering cached tables...\n");
+            system("cachetable -U root -P manager -R");
+            printf("Cached Tables recovered\n");
+        } else {
+            printf("Cache mode is not set in csql.conf. Cannot recover\n");
+            logger.stopLogger();
+            session.destroySystemDatabase();
+            return 1;
+        }
     }
     if (Conf::config.useReplication())
     {
@@ -189,8 +196,6 @@ int main(int argc, char **argv)
             printf("Repl Server Started pid=%d\n", replpid);
         
     }
-
-    
 
     printf("Database server started\n");
 

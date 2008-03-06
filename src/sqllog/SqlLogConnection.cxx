@@ -75,8 +75,6 @@ DbRetVal SqlLogConnection::commit()
 {
     DbRetVal rv = OK;
     //printf("LOG: commit %d\n", syncMode);
-    if (innerConn) rv = innerConn->commit();
-    if (rv != OK) return rv;
     if (logStore.size() == 0) return rv;
     //create COMMIT packet
     PacketCommit *pkt = new PacketCommit();
@@ -104,7 +102,7 @@ DbRetVal SqlLogConnection::commit()
           if (rv !=OK) 
           {
             printError(ErrOS, "Could not get acknowledgement from peer site\n");
-            return ErrOS;
+            return ErrPeerExecFailed;
           }
            //TODO::remove all sql logs nodes and the list which contains ptr to it
        }else //(syncMode == ASYNC)
@@ -121,6 +119,7 @@ DbRetVal SqlLogConnection::commit()
         delete execPkt;
     }
     logStore.reset();
+    if (innerConn) rv = innerConn->commit();
     return rv;
 }
 DbRetVal SqlLogConnection::rollback()

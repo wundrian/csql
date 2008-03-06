@@ -170,7 +170,9 @@ class TableImpl:public Table
     DbRetVal execute();
 
     void* fetch();
+    void* fetch(DbRetVal &rv);
     void* fetchNoBind();
+    void* fetchNoBind(DbRetVal &rv);
 
     DbRetVal close();
 

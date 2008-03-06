@@ -133,7 +133,7 @@ int main(int argc, char **argv)
         }
         printf("Server Waiting for clients\n");
     }
-    printf("Cache Server Exiting");
+    printf("Cache Server Exiting\n");
     nwServer->stop();
     SqlNetworkHandler::conn->disconnect();
     delete SqlNetworkHandler::conn;

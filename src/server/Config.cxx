@@ -194,8 +194,9 @@ int Config::validateValues()
         return 1;
     }
     if (cVal.isCache && cVal.isReplication) {
-        printError(ErrBadArg, "Either caching or replication option needs to be set"
-                              "Both options does not work together");
+        printError(ErrBadArg, "Either caching or replication option should be set."
+                              " Both options are not supported together");
+        return 1;
     }
     if (cVal.isCache) {
         if (0 == strcmp(cVal.dsn,""))

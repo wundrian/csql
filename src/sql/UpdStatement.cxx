@@ -94,10 +94,11 @@ DbRetVal UpdStatement::execute(int &rowsAffected)
     void *tuple;
     while(true)
     {
-        tuple = (char*)table->fetchNoBind();
+        tuple = (char*)table->fetchNoBind(rv);
+        if (rv != OK) break;
         if (tuple == NULL) {break;}
         rv = table->updateTuple();
-        if (rv != OK) return rv;
+        if (rv != OK) break;
         rowsAffected++;
     }
     table->close();

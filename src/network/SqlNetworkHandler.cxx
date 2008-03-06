@@ -36,10 +36,10 @@ int SqlNetworkHandler::process(PacketHeader &header, char *buffer)
     switch(header.packetType)
     {
         case NW_PKT_PREPARE:
-            processPrepare(header, buffer);
+            return processPrepare(header, buffer);
             break;
         case NW_PKT_COMMIT:
-            processCommit(header, buffer);
+            return processCommit(header, buffer);
             break;
     }
 }
@@ -137,7 +137,8 @@ DbRetVal SqlNetworkHandler::applyExecPackets(List sList, List pList)
 {
     ListIterator stmtIter = sList.getIterator();
     NetworkStmt *nwstmt;
-    conn->beginTrans();
+    DbRetVal rv = conn->beginTrans();
+    if (rv != OK) return rv;
     ListIterator pktIter = pList.getIterator();
     PacketExecute *pkt;
     int i = 0;
@@ -164,12 +165,16 @@ DbRetVal SqlNetworkHandler::applyExecPackets(List sList, List pList)
             printf("setting %d parameter of type %d\n", i, bindField->type);
             i++;
         }
-        int rows;
+        int rows= 0;
         DbRetVal rv = nwstmt->stmt->execute(rows);
-        if (rv != OK)
+        printf("sqlHandler rv ois %d\n", rv);
+        if (rv != OK )
         {
             printf("sql execute failed with rv %d\n", rv);
             //TODO::log all things like SQL statements to a file
+            SqlNetworkHandler::conn->rollback();
+            printError(ErrPeerExecFailed, "Transaction Rolledback\n");
+            return ErrPeerExecFailed;
         }
     }
     SqlNetworkHandler::conn->commit();

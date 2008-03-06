@@ -198,6 +198,13 @@ void* TableImpl::fetch()
     copyValuesToBindBuffer(curTuple_);
     return curTuple_;
 }
+void* TableImpl::fetch(DbRetVal &rv)
+{
+    fetchNoBind(rv);
+    if (NULL == curTuple_) return curTuple_;
+    copyValuesToBindBuffer(curTuple_);
+    return curTuple_;
+}
 
 void* TableImpl::fetchNoBind()
 {
@@ -254,6 +261,67 @@ void* TableImpl::fetchNoBind()
     return curTuple_;
 }
 
+void* TableImpl::fetchNoBind(DbRetVal &rv)
+{
+    rv = OK;
+    if (NULL == iter)
+    {
+        printError(ErrNotOpen,"Scan not open or Scan is closed\n");
+        rv = ErrNotOpen;
+        return NULL;
+    }
+    curTuple_ = iter->next();
+    if (NULL == curTuple_)
+    {
+        return NULL;
+    }
+    DbRetVal lockRet = OK;
+    if ((*trans)->isoLevel_ == READ_REPEATABLE) {
+        lockRet = lMgr_->getSharedLock(curTuple_, trans);
+        if (OK != lockRet)
+        {
+            printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
+            rv = ErrLockTimeOut;
+            return NULL;
+        }
+
+    }
+    else if ((*trans)->isoLevel_ == READ_COMMITTED)
+    {
+        //if iso level is read committed, operation duration lock is sufficent
+        //so release it here itself.
+        int tries = 5;
+        struct timeval timeout;
+        timeout.tv_sec = Conf::config.getMutexSecs();
+        timeout.tv_usec = Conf::config.getMutexUSecs();
+
+        bool status = false;
+        while(true) {
+            lockRet = lMgr_->isExclusiveLocked( curTuple_, trans, status);
+            if (OK != lockRet)
+            {
+                printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
+                rv = ErrLockTimeOut;
+                return NULL;
+            }
+            if (!status) break;
+            tries--;
+            if (tries == 0) break;
+            os::select(0, 0, 0, 0, &timeout);
+
+        }
+        if (tries == 0)
+        {
+            printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
+            rv = ErrLockTimeOut;
+            printf("rv is set to %d\n", rv);
+            curTuple_ = NULL;
+            return NULL;
+        }
+    }
+    return curTuple_;
+}
+
 DbRetVal TableImpl::insertTuple()
 {
     DbRetVal ret =OK;
@@ -269,7 +337,7 @@ DbRetVal TableImpl::insertTuple()
     {
         ((Chunk*)chunkPtr_)->free(db_, tptr);
         printError(ret, "Could not get lock for the insert tuple %x", tptr);
-        return ret;
+        return ErrLockTimeOut;
     }
 
 
@@ -332,7 +400,7 @@ DbRetVal TableImpl::deleteTuple()
     if (OK != ret)
     {
         printError(ret, "Could not get lock for the delete tuple %x", curTuple_);
-        return ret;
+        return ErrLockTimeOut;
     }
 
     if (NULL != indexPtr_)
@@ -367,7 +435,8 @@ int TableImpl::deleteWhere()
     rv =  execute();
     if (rv !=OK) return (int) rv;
     while(true){
-        fetchNoBind();
+        fetchNoBind( rv);
+        if (rv != OK) { tuplesDeleted = (int)rv; break; }
         if (NULL == curTuple_) break;
         rv = deleteTuple();
         if (rv != OK) {
@@ -412,7 +481,7 @@ DbRetVal TableImpl::updateTuple()
     if (OK != ret)
     {
         printError(ret, "Could not get lock for the update tuple %x", curTuple_);
-        return ret;
+        return ErrLockTimeOut;
     }
     if (NULL != indexPtr_)
     {

@@ -62,14 +62,16 @@ DbRetVal DelStatement::execute(int &rowsAffected)
         AllDataType::copyVal(value->value, paramValues[i], value->type, value->length);
     }
     rv = table->execute();
+    if (rv != OK) return rv;
     rowsAffected = 0;
     void *tuple;
     while(true)
     {
-        tuple = (char*)table->fetchNoBind();
+        tuple = (char*)table->fetchNoBind(rv);
+        if (rv != OK) break;
         if (tuple == NULL) {break;}
         rv = table->deleteTuple();
-        if (rv != OK) return rv;
+        if (rv != OK) break;
         rowsAffected++;
     }
     table->close();

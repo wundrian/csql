@@ -148,6 +148,7 @@ class Table
     * @returns void* NULL if there is no tuple.
     */
     virtual void* fetch()=0;
+    virtual void* fetch(DbRetVal &rv)=0;
 
     /**fetches the next tuple in the table which satisfies the condition specified.
     * execute should be called before calling this method. Application buffer need not be 
@@ -155,6 +156,7 @@ class Table
     * @returns void* NULL if there is no tuple.
     */
     virtual void* fetchNoBind()=0;
+    virtual void* fetchNoBind(DbRetVal &rv)=0;
 
     
     /**closes the scan. Needs to be called before calling execute again on the same table handle. It releases the resources
