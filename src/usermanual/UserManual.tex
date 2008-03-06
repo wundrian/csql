@@ -522,5 +522,10 @@ Check whether the csqlserver process is running \\
 Check whether log file directory exists which is specified in csql.conf \\
 For default configuration /tmp/log directory should exist in the system.
 
+\textbf {Message: Shared memory create failed}\\
+Check the system limit for max shared memory segment \\
+Run the following command to increase the limit to 1 GB \\
+/sbin/sysctl -w kernel.shmmax=1000000000 
+
 % Stop your text
 \end{document}
