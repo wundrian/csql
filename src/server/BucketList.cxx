@@ -51,38 +51,17 @@ DbRetVal BucketList::remove(Chunk *chunk, Database *db, void *keyPtr)
 {
     if (NULL == head) return ErrNotFound;
     HashIndexNode *ite = head, *prev = head;
-    while (ite->next_ != NULL)
+    while (ite != NULL)
     {
         if (ite->ptrToKey_ ==  keyPtr)
         {
             prev->next_ = ite->next_;
             chunk->free(db, ite);
+            if ( ite == head) { head = NULL; return SplCase; }
+            return OK;
         }
         prev = ite;
         ite = ite->next_;
-    }
-    if( ite == head) // there is only one node in the list
-    {
-        if (ite->ptrToKey_ ==  keyPtr)
-        {
-            chunk->free(db, head);
-            printDebug(DM_HashIndex,"BucketList::remove head:%x removed key:%x",
-                                                        head, keyPtr);
-            head = NULL;
-            return SplCase;
-        }
-
-    }
-    if( prev == head) // there are only two node in the list
-    {
-        if (ite->ptrToKey_ ==  keyPtr)
-        {
-            chunk->free(db, head->next_);
-            head->next_ = NULL;
-            printDebug(DM_HashIndex,"BucketList::remove element:%x removed key:%x",
-                                                     head->next_, keyPtr);
-            return OK;
-        }
     }
     printError(ErrNotFound, "Node not found in the bucket list");
     return ErrNotFound;

@@ -105,15 +105,15 @@ void* TupleIterator::next()
                 return NULL;
            }
 
-            if (!predImpl->isSingleTerm()) {
+            //if (!predImpl->isSingleTerm()) {
                printDebug(DM_HashIndex, "next: predicate has more than single term");
                predImpl->setTuple(tuple);
                printDebug(DM_Table, "Evaluating the predicate from hashIndexScan: has more than one term");
                rv = predImpl->evaluate(result);
                if (rv != OK) return NULL;
-            } 
-            else 
-                return tuple;
+            //} 
+            //else 
+            //    return tuple;
         }
 
     }
