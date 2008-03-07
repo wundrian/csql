@@ -1,4 +1,5 @@
 //Test DML statement with rollback
+//Author: XieLiang
 import java.sql.*;
 public class ConnTest6
 {

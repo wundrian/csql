@@ -1,7 +1,8 @@
-//Try to connect with connectstring "jdbc:csql" and give correct "user" and "password" in properties object. It should pass.
+//Open the connection and then call isClosed(). It should return false.
+//Close the connection and then call isClosed(). It should return true.
 //Author: XieLiang
 import java.sql.*;
-public class ConnTest1
+public class ConnTest20 
 {
     public static void main(String[] args) 
     {
@@ -9,11 +10,13 @@ public class ConnTest1
        {
            Class.forName("csql.jdbc.JdbcSqlDriver");
            Connection con = DriverManager.getConnection("jdbc:csql", "root", "manager");
-  	  if ( con == null ) System.exit(1);
+	   if ( con == null )
+		   System.exit(1);
+	   if(con.isClosed()) System.exit(1);
            con.close();
-           System.exit(0);
+	   if(!con.isClosed()) System.exit(1);
         }catch(Exception e) {
-            System.out.println("Exception in Test: "+e);
+            System.out.println(e.getMessage());
             e.getStackTrace();
             System.exit(1);
        }

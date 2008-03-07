@@ -1,4 +1,5 @@
 //Test 5000 connections
+//Author: XieLiang
 import java.sql.*;
 
 public class ConnTest2 
@@ -18,6 +19,7 @@ public class ConnTest2
            for (int i=0; i <5000 ; i++)
 	   {
 	       con = DriverManager.getConnection("jdbc:csql", "root", "manager");	   
+               con.setAutoCommit(false);
                stmt = con.prepareStatement("INSERT INTO T1 VALUES (?, ?);");
                stmt.setInt(1, i);
                stmt.setString(2, String.valueOf(i+100));
@@ -39,7 +41,6 @@ public class ConnTest2
            count =0;
 	   while (rs.next())
   	   {
-	       System.out.println("Tuple value is " + rs.getInt(1)+ " "+ rs.getString(2));
                count++;
 	   }
 	   rs.close();
@@ -47,9 +48,11 @@ public class ConnTest2
            System.out.println("Total rows selected " + count);
            cStmt.execute("DROP TABLE T1;");
            con.close();
+           if (count !=5000) System.exit(1); else System.exit(0);
            }catch(Exception e) {
                System.out.println("Exception in Test: "+e);
-                e.printStackTrace();
+               e.printStackTrace();
+               System.exit(1);
            }
     }
 }

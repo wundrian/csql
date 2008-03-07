@@ -1,4 +1,5 @@
-//Test 100 statements committed in 1 transaction
+//Test 100 statements, inserting 1 tuple,  committed in 1 transaction, check whether total tuples is 100
+//Author: XieLiang
 import java.sql.*;
 public class ConnTest5 
 {
@@ -31,17 +32,20 @@ public class ConnTest5
 	   cStmt = con.createStatement();
            System.out.println("Listing tuples:");
 	   ResultSet rs = cStmt.executeQuery("SELECT * from T1;");
+           int count =0;
 	   while (rs.next())
 	   {
-	       System.out.println("Tuple value is " + rs.getInt(1)+ " "+ rs.getString(2));
+               count++;
 	   }
 	   rs.close();
 	   con.commit();
            cStmt.execute("DROP TABLE T1;");
            con.close();
+           if (count == 100) System.exit(0); else System.exit(1);
        }catch(Exception e) {
             System.out.println("Exception in Test: "+e);
             e.printStackTrace();
+            System.exit(1);
        }
     }
 }
