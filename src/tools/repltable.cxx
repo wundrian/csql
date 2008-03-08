@@ -19,12 +19,12 @@
 void printUsage()
 {
    printf("Usage: repltable [-U username] [-P passwd] -t tablename \n"
-          "       [-m TSYNC|ASYNC>][-u] [-l nwid] \n");
+          "       [-m TSYNC|ASYNC>][-u] [-r] \n");
    printf("       username -> username to connect with csql.\n");
    printf("       passwd -> password for the above username to connect with csql.\n");
    printf("       tablename -> table name to be replicated in csql with peers.\n");
    printf("       u -> unreplicate the table\n");
-   printf("       l -> load all the records from specified peer site(nwid)\n");
+   printf("       r -> replicate and load all the records from peer site\n");
    printf("       m -> replication mode for the table\n");
    printf("         -> Modes could be one of TSYNC|ASYNC\n");
    printf("       no option -> replicates with default mode ASYNC\n");
@@ -56,7 +56,7 @@ int main(int argc, char **argv)
                          break; 
                        }
             case '?' : { opt = 10; break; } //print help 
-            case 'l' : { opt = 4; break; } //load records  of the the table
+            case 'r' : { opt = 4; break; } //replicate the table
             case 'u' : { opt = 5; break; } //unreplicate the table
             default: opt=10; 
 

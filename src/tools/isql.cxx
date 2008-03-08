@@ -84,12 +84,10 @@ int main(int argc, char **argv)
     }
     
     DbRetVal rv = OK;
-    //conn = SqlFactory::createConnection(CSql);
-    //TESTING
-    conn = SqlFactory::createConnection(CSqlLog);
+    conn = SqlFactory::createConnection(CSql);
     rv = conn->connect(username,password);
     if (rv != OK) return 1;
-    stmt =  SqlFactory::createStatement(CSqlLog);
+    stmt =  SqlFactory::createStatement(CSql);
     stmt->setConnection(conn);
     rv = conn->beginTrans();
     if (rv != OK) return 2;

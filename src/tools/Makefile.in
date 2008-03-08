@@ -67,12 +67,14 @@ csql_DEPENDENCIES = $(top_builddir)/src/server/.libs/libcsql \
 	$(top_builddir)/src/sql/.libs/libcsqlsql \
 	$(top_builddir)/src/sqllog/.libs/libcsqlsqllog \
 	$(top_builddir)/src/network/.libs/libcsqlnw \
-	$(top_builddir)/src/adapter/.libs/libcsqlodbcadapter
+	$(top_builddir)/src/adapter/.libs/libcsqlodbcadapter \
+	$(top_builddir)/src/gateway/.libs/libcsqlgw
 am_csqlcacheserver_OBJECTS = csqlcacheserver.$(OBJEXT)
 csqlcacheserver_OBJECTS = $(am_csqlcacheserver_OBJECTS)
 csqlcacheserver_DEPENDENCIES = $(top_builddir)/src/sql/libcsqlsql.la \
 	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
 	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la \
 	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
 	$(top_builddir)/src/server/libcsql.la
 am_csqlreplserver_OBJECTS = csqlreplserver.$(OBJEXT)
@@ -80,17 +82,20 @@ csqlreplserver_OBJECTS = $(am_csqlreplserver_OBJECTS)
 csqlreplserver_DEPENDENCIES = $(top_builddir)/src/sql/libcsqlsql.la \
 	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
 	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la \
 	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
 	$(top_builddir)/src/server/libcsql.la
 am_csqlserver_OBJECTS = csqlserver.$(OBJEXT)
 csqlserver_OBJECTS = $(am_csqlserver_OBJECTS)
 csqlserver_DEPENDENCIES = $(top_builddir)/src/cache/libcacheload.la \
-	$(top_builddir)/src/server/libcsql.la
+	$(top_builddir)/src/server/libcsql.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la
 am_repltable_OBJECTS = repltable.$(OBJEXT)
 repltable_OBJECTS = $(am_repltable_OBJECTS)
 repltable_DEPENDENCIES = $(top_builddir)/src/cache/libcacheload.la \
 	$(top_builddir)/src/server/libcsql.la \
-	$(top_builddir)/src/adapter/libcsqlodbcadapter.la
+	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -215,7 +220,7 @@ target_alias = @target_alias@
 INCLUDES = -I$(top_srcdir)/include $(all_includes) -I$(top_srcdir)/src/sql
 METASOURCES = AUTO
 csql_SOURCES = isql.cxx
-csql_LDADD = $(top_builddir)/src/server/.libs/libcsql $(top_builddir)/src/sql/.libs/libcsqlsql $(top_builddir)/src/sqllog/.libs/libcsqlsqllog $(top_builddir)/src/network/.libs/libcsqlnw $(top_builddir)/src/adapter/.libs/libcsqlodbcadapter -lrt -lpthread -lcrypt -lodbc
+csql_LDADD = $(top_builddir)/src/server/.libs/libcsql $(top_builddir)/src/sql/.libs/libcsqlsql $(top_builddir)/src/sqllog/.libs/libcsqlsqllog $(top_builddir)/src/network/.libs/libcsqlnw $(top_builddir)/src/adapter/.libs/libcsqlodbcadapter $(top_builddir)/src/gateway/.libs/libcsqlgw  -lrt -lpthread -lcrypt -lodbc
 catalog_SOURCES = catalog.cxx
 catalog_LDADD = $(top_builddir)/src/server/libcsql.la
 catalog_LDFLAGS = -lcrypt
@@ -225,18 +230,22 @@ cachetable_LDADD = $(top_builddir)/src/cache/libcacheload.la \
 cachetable_LDFLAGS = -lcrypt -lodbc
 cachetable_SOURCES = cachetable.cxx
 repltable_LDADD = $(top_builddir)/src/cache/libcacheload.la \
-	$(top_builddir)/src/server/libcsql.la $(top_builddir)/src/adapter/libcsqlodbcadapter.la
+	$(top_builddir)/src/server/libcsql.la \
+	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la
 
 repltable_LDFLAGS = -lcrypt -lodbc
 repltable_SOURCES = repltable.cxx
 csqlserver_LDADD = $(top_builddir)/src/cache/libcacheload.la \
-	$(top_builddir)/src/server/libcsql.la -lrt -lpthread -lcrypt
+	$(top_builddir)/src/server/libcsql.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la -lrt -lpthread -lcrypt
 
 csqlserver_LDFLAGS = -lcrypt -lodbc 
 csqlserver_SOURCES = csqlserver.cxx
 csqlreplserver_LDADD = $(top_builddir)/src/sql/libcsqlsql.la \
 	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
 	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la \
 	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
 	$(top_builddir)/src/server/libcsql.la -lrt -lpthread -lcrypt
 
@@ -245,6 +254,7 @@ csqlreplserver_SOURCES = csqlreplserver.cxx
 csqlcacheserver_LDADD = $(top_builddir)/src/sql/libcsqlsql.la \
 	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
 	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la \
 	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
 	$(top_builddir)/src/server/libcsql.la -lrt -lpthread -lcrypt
 
