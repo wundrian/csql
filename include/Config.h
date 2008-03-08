@@ -44,6 +44,7 @@ class ConfigValues
     bool isReplication;
     char replConfigFile[MAX_FILE_PATH_LEN];
     int networkID;
+    int cacheNetworkID;
 
     long logStoreSize;
     int nwResponseTimeout;
@@ -68,12 +69,13 @@ class ConfigValues
         lockUSecs = 10;
         lockRetries = 10;
         isCache = false;
+        cacheNetworkID =-1;
         strcpy(dsn, "myodbc3");
         strcpy(tableConfigFile, "/tmp/csql/csqltable.conf");
         isReplication = false;
         strcpy(replConfigFile, "/tmp/csql/csqlnw.conf");
         logStoreSize = 10485760;
-        networkID=1;
+        networkID=-1;
         nwResponseTimeout=3;
         nwConnectTimeout=5;
     }
@@ -113,6 +115,7 @@ class Config
     inline char* getReplConfigFile() { return cVal.replConfigFile; }
     inline long getMaxLogStoreSize() { return cVal.logStoreSize; }
     inline int getNetworkID() { return cVal.networkID; }
+    inline int getCacheNetworkID() { return cVal.cacheNetworkID; }
     inline int getNetworkResponseTimeout() { return cVal.nwResponseTimeout; }
     inline int getNetworkConnectTimeout() { return cVal.nwConnectTimeout; }
 };

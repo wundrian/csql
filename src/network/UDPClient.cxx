@@ -52,13 +52,13 @@ DbRetVal UDPClient::send(NetworkPacketType type, char *buf, int len)
         printError(ErrOS, "Unable to send the packet\n");
         return ErrOS;
     }
-    printf("Sent bytes %d\n", numbytes);
+    //printf("Sent bytes %d\n", numbytes);
     if ((numbytes=sendto(sockfd, buf, len, 0,
            (struct sockaddr *)&srvAddr, sizeof(struct sockaddr))) == -1) {
         printError(ErrOS, "Unable to send the packet\n");
         return ErrOS;
     }
-    printf("Sent bytes %d\n", numbytes);
+    //printf("Sent bytes %d\n", numbytes);
     free(totalBuffer);
     return rv;
     
@@ -104,7 +104,8 @@ DbRetVal UDPClient::connect()
 
     //TODO::send endian to the peer site
     //do not do endian conversion here. it will be done at the server side
-    
+    DbRetVal rv = OK; 
+    isConnectedFlag = false;
     struct hostent *he;
     int numbytes;
     if ((he=gethostbyname(hostName)) == NULL) { // get the host info
@@ -119,9 +120,43 @@ DbRetVal UDPClient::connect()
     srvAddr.sin_port = htons(port); // short, network byte order
     srvAddr.sin_addr = *((struct in_addr *)he->h_addr);
     memset(&(srvAddr.sin_zero), '\0', 8); // zero the rest of the struct
-    printf("NW:UDP connected\n");
+    printf("NW:UDP connecting\n");
+    PacketHeader *hdr=  new PacketHeader();
+    hdr->packetType = NW_PKT_CONNECT;
+    hdr->packetLength = 0;
+    hdr->srcNetworkID = 
+    hdr->version = 1;
+    if ((numbytes=sendto(sockfd, hdr, sizeof(PacketHeader), 0,
+           (struct sockaddr *)&srvAddr, sizeof(struct sockaddr))) == -1) {
+        printError(ErrOS, "Unable to send the packet\n");
+        return ErrOS;
+    }
+    printf("Sent bytes %d\n", numbytes);
 
+    fd_set fdset; 
+    FD_ZERO(&fdset);
+    FD_SET(sockfd, &fdset);
+    struct timeval timeout;
+    timeout.tv_sec = Conf::config.getNetworkConnectTimeout();
+    timeout.tv_usec = 0;
+    int ret = os::select(sockfd+1, &fdset, 0, 0, &timeout);
+    if (ret <= 0) {
+        printError(ErrPeerTimeOut,"Response timeout for peer site\n");
+        return ErrPeerTimeOut;
+    }
+
+    int response =0;
+    socklen_t len = sizeof(struct sockaddr);
+    numbytes = recvfrom(sockfd, &response, 4, 0,
+                   (struct sockaddr *)&fromAddr, &len);
+    if (numbytes !=4)
+    {
+       printf("Unable to receive response from peer\n");
+       return ErrOS;
+    }
+    if (response != 1) return ErrPeerResponse;
     isConnectedFlag = true;
+    printf("NW:UDP connected\n");
     return OK;
 }
 

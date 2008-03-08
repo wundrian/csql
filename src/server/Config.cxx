@@ -70,7 +70,7 @@ int Config::storeKeyVal(char *key, char *value)
            { strcpy(cVal.dsn , value);  }
     else if (strcasestr(key, "TABLE_CONFIG_FILE") != NULL)
            { strcpy(cVal.tableConfigFile , value);  }
-    else if (strcasestr(key, "CACHE") != NULL)
+    else if (strcasestr(key, "CACHE_TABLE") != NULL)
            { cVal.isCache = os::atobool(value); }
     else if (strcasestr(key, "REPLICATION") != NULL)
            { cVal.isReplication = os::atobool(value); }
@@ -78,8 +78,10 @@ int Config::storeKeyVal(char *key, char *value)
            { strcpy(cVal.replConfigFile , value);  }
     else if (strcasestr(key, "MAX_LOG_STORE_SIZE") != NULL)
            { cVal.logStoreSize = atol(value);  }
-    else if (strcasestr(key, "NETWORK_ID") != NULL)
+    else if (strcasestr(key, "MY_NETWORK_ID") != NULL)
            { cVal.networkID = atoi(value);  }
+    else if (strcasestr(key, "CACHE_NETWORK_ID") != NULL)
+           { cVal.cacheNetworkID = atoi(value);  }
     else if (strcasestr(key, "NETWORK_RESPONSE_TIMEOUT") != NULL)
            { cVal.nwResponseTimeout = atoi(value);  }
     else if (strcasestr(key, "NETWORK_CONNECT_TIMEOUT") != NULL)
@@ -218,6 +220,55 @@ int Config::validateValues()
             printError(ErrBadArg,  "TABLE_CONFIG_FILE is set to NULL");
             return 1;
         }
+        if (cVal.networkID == -1)
+        {
+            printError(ErrBadArg,  "MY_NETWORK_ID should not be -1");
+            return 1;
+        }
+        FILE *fp = fopen(cVal.replConfigFile,"r");
+        if( fp == NULL ) {
+            printError(ErrSysInit, "Invalid path/filename for NETWORK_CONFIG_FILE.\n");
+            return 1;
+        }
+        int count =0;
+        int nwid, port;
+        char hostname[IDENTIFIER_LENGTH];
+        char nwmode;
+ 
+        while(!feof(fp)) {
+            fscanf(fp, "%d:%c:%d:%s\n", &nwid, &nwmode, &port, hostname);
+            count++;
+        }
+        if (count >2) {
+            printError(ErrSysInit, "NETWORK_CONFIG_FILE has more than 2 entries\n");
+            return 1;
+        }
+
+    }
+    if (cVal.isCache)
+    {
+        if (cVal.cacheNetworkID == -1)
+        {
+            printError(ErrBadArg,  "CACHE_NETWORK_ID should not be -1");
+            return 1;
+        }else {
+            FILE *fp;
+            int nwid;
+            char hostname[IDENTIFIER_LENGTH];
+            char nwmode;
+            int port;
+            fp = fopen(Conf::config.getReplConfigFile(),"r");
+            if( fp == NULL ) {
+                printError(ErrSysInit, "Invalid path/filename for NETWORK_CONFIG_FILE.\n");
+                return 1;
+            }
+            bool found = false;
+            while(!feof(fp)) {
+                fscanf(fp, "%d:%c:%d:%s\n", &nwid, &nwmode, &port, hostname);
+                if (cVal.cacheNetworkID == nwid) found = true;
+            }
+            if (!found) return 1;
+        }
     }
     if (cVal.logStoreSize < 1024 * 1024  || cVal.logStoreSize > 1024 *1024 *1024)
     {
@@ -239,7 +290,6 @@ int Config::validateValues()
         printError(ErrBadArg,  "NETWORK_CONNECT_TIMEOUT should be 0 to 60");
         return 1;
     }
-    //TODO::validate networkid
     return 0;
 }
 
@@ -313,4 +363,5 @@ void Config::print()
     printf(" getReplConfigFile %s\n", getReplConfigFile());
     printf(" getMaxLogStoreSize %ld\n", getMaxLogStoreSize());
     printf(" getNetworkID %d\n", getNetworkID());
+    printf(" getCacheNetworkID %d\n", getCacheNetworkID());
 }

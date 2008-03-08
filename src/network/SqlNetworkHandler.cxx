@@ -46,7 +46,7 @@ int SqlNetworkHandler::process(PacketHeader &header, char *buffer)
 
 int SqlNetworkHandler::processCommit(PacketHeader &header, char *buffer)
 {
-    printf("COMMIT \n");
+    //printf("COMMIT \n");
     PacketCommit *pkt = new PacketCommit();
     pkt->setBuffer(buffer);
     pkt->setBufferSize(header.packetLength);
@@ -69,7 +69,7 @@ int SqlNetworkHandler::processFree(PacketHeader &header, char *buffer)
     pkt->setBuffer(buffer);
     pkt->setBufferSize(header.packetLength);
     pkt->unmarshall();
-    printf("FREE %d \n", pkt->stmtID);
+    //printf("FREE %d \n", pkt->stmtID);
     int response =1;
     //This wont work for two statement executed in same transaction using same SqlStatement object using free.
     //so do not delete now and put a flag 'readyfordelete' in NetworkStmt object and delete it during execute
@@ -97,16 +97,16 @@ int SqlNetworkHandler::processPrepare(PacketHeader &header, char *buffer)
     pkt->setBuffer(buffer);
     pkt->setBufferSize(header.packetLength);
     pkt->unmarshall();
-    printf("PREPARE %d %s\n", pkt->stmtID, pkt->stmtString);
-    for (int i =0 ; i < pkt->noParams; i++)
-        printf("PREPARE type %d length %d \n", pkt->type[i], pkt->length[i]);
+    //printf("PREPARE %d %s\n", pkt->stmtID, pkt->stmtString);
+    //for (int i =0 ; i < pkt->noParams; i++)
+        //printf("PREPARE type %d length %d \n", pkt->type[i], pkt->length[i]);
     int response =1;
     //TODO::add it to the SqlStatement list
     AbsSqlStatement *sqlstmt = SqlFactory::createStatement(type);
     sqlstmt->setConnection(conn);
     NetworkStmt *nwStmt = new NetworkStmt();
-    printf("nwstmt in prepare %x %x\n", nwStmt, sqlstmt);
-    printf("Statement string %s\n", pkt->stmtString);
+    //printf("nwstmt in prepare %x %x\n", nwStmt, sqlstmt);
+    //printf("Statement string %s\n", pkt->stmtString);
     nwStmt->srcNetworkID = header.srcNetworkID;
     nwStmt->stmtID =  pkt->stmtID;
     nwStmt->stmt = sqlstmt;
@@ -115,6 +115,7 @@ int SqlNetworkHandler::processPrepare(PacketHeader &header, char *buffer)
     {
         printError(ErrSysInit, "statement prepare failed\n");
         response = 0;
+        return response;
     }
     BindSqlField *bindField = NULL;
     //populate paramList
@@ -126,7 +127,7 @@ int SqlNetworkHandler::processPrepare(PacketHeader &header, char *buffer)
              bindField->value = AllDataType::alloc(bindField->type, 
                                                    bindField->length);
              nwStmt->paramList.append(bindField);
-             printf("Adding element to paramList for type %d\n",bindField->type);
+             //printf("Adding element to paramList for type %d\n",bindField->type);
     }
     stmtList.append(nwStmt);
     return response;
@@ -146,7 +147,7 @@ DbRetVal SqlNetworkHandler::applyExecPackets(List sList, List pList)
     while (pktIter.hasElement())
     {
         pkt = (PacketExecute*) pktIter.nextElement();
-        printf("EXEC packt ptr %x in apply \n", pkt);
+        //printf("EXEC packt ptr %x in apply \n", pkt);
         stmtIter.reset();
         bool found = false;
         while (stmtIter.hasElement())
@@ -154,20 +155,22 @@ DbRetVal SqlNetworkHandler::applyExecPackets(List sList, List pList)
             nwstmt = (NetworkStmt*) stmtIter.nextElement();
             if (nwstmt->stmtID == pkt->stmtID) {found = true ; break;}
         }
-        if (!found) { printError(ErrSysFatal, "Element not found\n"); conn->rollback();
-                      return ErrSysFatal;}
-        printf("nwstmt ptr in apply %x\n", nwstmt);
+        if (!found) {
+           printf("stmt not found in list. Negleting unreplicated table...\n"); 
+           continue;
+        }
+        //printf("nwstmt ptr in apply %x\n", nwstmt);
         ListIterator paramIter = nwstmt->paramList.getIterator();
         i = 0;
         while (paramIter.hasElement()) {
             bindField = (BindSqlField*) paramIter.nextElement();
             setParamValues(nwstmt->stmt, i+1,  bindField->type, bindField->length, pkt->paramValues[i]);
-            printf("setting %d parameter of type %d\n", i, bindField->type);
+            //printf("setting %d parameter of type %d\n", i, bindField->type);
             i++;
         }
         int rows= 0;
         DbRetVal rv = nwstmt->stmt->execute(rows);
-        printf("sqlHandler rv ois %d\n", rv);
+        //printf("sqlHandler rv ois %d\n", rv);
         if (rv != OK )
         {
             printf("sql execute failed with rv %d\n", rv);
@@ -178,7 +181,7 @@ DbRetVal SqlNetworkHandler::applyExecPackets(List sList, List pList)
         }
     }
     SqlNetworkHandler::conn->commit();
-    printf("Transaction committed\n");
+    //printf("Transaction committed\n");
     return OK;
 }
 

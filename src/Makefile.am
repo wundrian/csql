@@ -3,4 +3,4 @@
 INCLUDES= $(all_includes)
 
 # the library search path.
-SUBDIRS = server adapter sql cache network sqllog jdbc tools
+SUBDIRS = server adapter gateway sqllog sql cache network jdbc tools

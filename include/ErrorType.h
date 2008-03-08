@@ -52,6 +52,7 @@ enum DbRetVal
     ErrPeerTimeOut   = -24,
     ErrPeerExecFailed= -25,
     ErrNoEffect      = -26,
+    ErrNotCached     = -27,
 //  add new error type here
     ErrUnknown       = -98,
     ErrWarning       = -99,

@@ -20,6 +20,7 @@
 #include <SqlLogStatement.h>
 #include <SqlOdbcConnection.h>
 #include <SqlOdbcStatement.h>
+#include <SqlGwStatement.h>
 AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
 {
     AbsSqlConnection *conn = NULL ;
@@ -40,6 +41,18 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
             {
             conn = new SqlOdbcConnection();
             conn->setInnerConnection(NULL);
+            break;
+            }
+        case CSqlGateway:
+            {
+            AbsSqlConnection *sqlCon = new SqlConnection();
+            AbsSqlConnection *sqllogconn = new SqlLogConnection();
+            sqllogconn->setInnerConnection(sqlCon);
+            AbsSqlConnection *adapterCon = new SqlOdbcConnection();
+            SqlGwConnection *gwconn = new SqlGwConnection();
+            gwconn->setInnerConnection(sqllogconn);
+            gwconn->setAdapter(adapterCon);
+            conn = gwconn;
             break;
             }
         default:
@@ -68,6 +81,18 @@ AbsSqlStatement* SqlFactory::createStatement(SqlApiImplType implFlag)
             {
             stmt = new SqlOdbcStatement();
             stmt->setInnerStatement(NULL);
+            break;
+            }
+        case CSqlGateway:
+            {
+            AbsSqlStatement *sqlstmt = new SqlStatement();
+            AbsSqlStatement *sqllogstmt = new SqlLogStatement();
+            sqllogstmt->setInnerStatement(sqlstmt);
+            AbsSqlStatement *adapterstmt = new SqlOdbcStatement();
+            SqlGwStatement *gwstmt = new SqlGwStatement();
+            gwstmt->setInnerStatement(sqllogstmt);
+            gwstmt->setAdapter(adapterstmt);
+            stmt = gwstmt;
             break;
             }
         default:

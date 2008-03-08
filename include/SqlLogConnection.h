@@ -36,12 +36,16 @@ class SqlLogConnection : public AbsSqlConnection
     //stores all the sql log packets to be shipped to peers
     List logStore;
 
+    //stores all the prepare log packets to be shipped to peers
+    //as soon as connection is established to cache server
+    //all these packets are sent to it
+    List prepareStore;
+
     //sync mode of the current transaction
     //will be modified by the SqlLogStatement based on the table
     DataSyncMode syncMode;
 
-    //stores list of client objects in it for each peer
-    //List NWClientList;
+    //stores client objects in it for peer
     NetworkTable nwTable;
 
     static UniqueID txnUID;
@@ -64,11 +68,12 @@ class SqlLogConnection : public AbsSqlConnection
 
     DbRetVal addPacket(BasePacket *pkt);
 
+    DbRetVal addPreparePacket(PacketPrepare *pkt);
+    DbRetVal removePreparePacket(int stmtid);
+
     DbRetVal setSyncMode(DataSyncMode mode);
     DataSyncMode getSyncMode() { return syncMode; }
-    void sendToAllPeers(NetworkPacketType type, char *packet, int length);
-    void receiveFromAllPeers(NetworkPacketType type, char *packet, int length);
-    void sendAndReceiveAllPeers(NetworkPacketType type, char *packet, int length);
+    DbRetVal  sendAndReceive(NetworkPacketType type, char *packet, int length);
     friend class SqlFactory;
 };
 

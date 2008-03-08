@@ -57,7 +57,7 @@ DbRetVal UDPServer::handleClient()
    DbRetVal rv = OK;
    PacketHeader header;
    socklen_t addressLen = sizeof(struct sockaddr);
-   printf("UDP Server receives packet\n");
+   //printf("UDP Server receives packet\n");
    int numbytes = recvfrom(sockfd, &header,  sizeof(PacketHeader), 0,
                         (struct sockaddr*) &clientAddress, &addressLen);
    if (numbytes == -1)
@@ -65,8 +65,20 @@ DbRetVal UDPServer::handleClient()
        printf("Error reading from socket\n");
        return ErrOS;
    }
-   printf("HEADERINFO %d %d %d %d\n", header.packetType, header.packetLength,
-                    header.srcNetworkID, header.version);
+   //printf("HEADERINFO %d %d %d %d\n", header.packetType, header.packetLength,
+   //                 header.srcNetworkID, header.version);
+   if (header.packetType == NW_PKT_CONNECT)
+   {
+       int response =1;
+       numbytes = sendto(sockfd, &response, 4, 0,
+              (struct sockaddr*) &clientAddress, addressLen);
+       if (numbytes != 4)
+       {
+          printf("Error writing to socket\n");
+          return ErrOS;
+       }
+       return OK;
+   }
    char *buffer = (char*) malloc(header.packetLength);
     fd_set fdset; //TODO::Move it to UDPClient class
     FD_ZERO(&fdset);
@@ -83,7 +95,7 @@ DbRetVal UDPServer::handleClient()
    numbytes = recvfrom(sockfd, buffer, header.packetLength, 0,
                         (struct sockaddr*) &clientAddress, &addressLen);
 
-   printf("Bytes read %d\n", numbytes);
+   //printf("Bytes read %d\n", numbytes);
    if (numbytes == -1)
    {
        printf("Error reading from socket\n");

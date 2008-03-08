@@ -33,7 +33,8 @@ enum NetworkPacketType
     NW_PKT_PREPARE =1,
     NW_PKT_EXECUTE =2,
     NW_PKT_COMMIT =3,
-    NW_PKT_FREE =4
+    NW_PKT_FREE =4,
+    NW_PKT_CONNECT =5
 };
 class NetworkClient {
     protected:
@@ -44,6 +45,7 @@ class NetworkClient {
     int responseTimeout; //in secs
     int connectTimeout;
     bool encrypt;
+    bool cacheClient;
 
     public:
     virtual DbRetVal send( NetworkPacketType type, char *buf, int len)=0;
@@ -63,13 +65,15 @@ class NetworkClient {
     void setEntryption(bool encr) { encrypt=encr;}
     void setConnectFlag(bool flag) { isConnectedFlag=flag;}
     bool isConnected() { return isConnectedFlag; }
+    void setCacheClient() { cacheClient = true; }
+    bool isCacheClient() { return cacheClient; }
 };
 class UDPClient : public NetworkClient{
     public:
     int sockfd;
     struct sockaddr_in srvAddr;
     struct sockaddr_in fromAddr;
-    UDPClient(){ isConnectedFlag =false;}
+    UDPClient(){ isConnectedFlag =false; cacheClient = false;}
     DbRetVal send(NetworkPacketType type, char *buf, int len);
     DbRetVal receive();
     DbRetVal connect();
@@ -78,7 +82,7 @@ class UDPClient : public NetworkClient{
 };
 class TCPClient : public NetworkClient{
     public:
-    TCPClient(){ isConnectedFlag =false;}
+    TCPClient(){ isConnectedFlag =false; cacheClient = false;}
     DbRetVal send(NetworkPacketType type, char *buf, int len);
     DbRetVal receive();
     DbRetVal connect();
@@ -92,15 +96,16 @@ enum NetworkMode
 };
 class NetworkTable
 {
-    List nwTable;
+    NetworkClient* nwClient;
     public:
     ~NetworkTable();
     DbRetVal initialize();
     void destroy(){}
     DbRetVal readNetworkConfig();
-    ListIterator getIterator() { return nwTable.getIterator(); }
+    NetworkClient* getNetworkClient() { return nwClient; }
     void connect();
     void disconnect();
+    DbRetVal connectIfNotConnected();
 };
 class NetworkFactory 
 {

@@ -17,20 +17,25 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-#ifndef SQLODBCSTATEMENT_H
-#define SQLODBCSTATEMENT_H
+#ifndef SQLGWSTATEMENT_H
+#define SQLGWSTATEMENT_H
 #include <AbsSqlStatement.h>
-#include <SqlOdbcConnection.h>
+#include <SqlGwConnection.h>
 #include <SqlFactory.h>
 #include <CSql.h>
-class SqlOdbcStatement: public AbsSqlStatement
+class SqlGwStatement: public AbsSqlStatement
 {
+    AbsSqlStatement *adapter;
+    bool isAdapterHanding;
     public:
-    SqlOdbcStatement(){innerStmt = NULL; con = NULL;}
+    SqlGwStatement(){innerStmt = NULL; adapter = NULL; con = NULL;}
+    void setAdapter(AbsSqlStatement *stmt) { adapter = stmt; }
 
     void setConnection(AbsSqlConnection *conn)
     {
         if (innerStmt) innerStmt->setConnection(conn->getInnerConnection());
+        SqlGwConnection *cn = (SqlGwConnection*) conn;
+        if (adapter) adapter->setConnection(cn->getAdapterConnection());
         con = conn;
     }
 
@@ -71,10 +76,6 @@ class SqlOdbcStatement: public AbsSqlStatement
     bool isSelect();
 
     private:
-    bool isPrepared;
-    List paramList;
-    List bindList;
-    SQLHSTMT hstmt;
     friend class SqlFactory;
 };
 

@@ -23,7 +23,7 @@
 DbRetVal NetworkTable::initialize()
 {
     DbRetVal rv = OK;
-    nwTable.reset();
+    if (!Conf::config.useReplication() && !Conf::config.useCache()) return OK;
     rv = readNetworkConfig();
     return rv;
     
@@ -31,8 +31,6 @@ DbRetVal NetworkTable::initialize()
 NetworkTable::~NetworkTable()
 {
     //TODO::
-    //traverse the nwTable and disconnect is connected
-    //remove all elements from the nwTable
 }
 DbRetVal NetworkTable::readNetworkConfig()
 {
@@ -43,25 +41,36 @@ DbRetVal NetworkTable::readNetworkConfig()
     int port;
     fp = fopen(Conf::config.getReplConfigFile(),"r");
     if( fp == NULL ) {
-        printError(ErrSysInit, "Invalid path/filename for REPL_CONFIG_FILE.\n");
+        printError(ErrSysInit, "Invalid path/filename for NETWORK_CONFIG_FILE.\n");
         return ErrSysInit;
     }
+    int count = 0;
     while(!feof(fp)) {
+       if (count >=1) 
+       {
+           fclose(fp);
+           printError(ErrNotYet, "Only 2 hosts are allowed in this version"); 
+           return ErrNotYet;
+       }
+       printf("Count is %d\n", count);
        fscanf(fp, "%d:%c:%d:%s\n", &nwid, &nwmode, &port, hostname);
        printf( "%d:%c:%d:%s\n", nwid, nwmode, port, hostname);
-       NetworkClient* nwClient;
+       NetworkClient* nClient;
        if (nwid == Conf::config.getNetworkID()) continue;
        if (nwmode == 'U' ) 
-          nwClient = NetworkFactory::createClient(UDP);
+          nClient = NetworkFactory::createClient(UDP);
        else if (nwmode == 'T' ) 
-          nwClient = NetworkFactory::createClient(TCP);
+          nClient = NetworkFactory::createClient(TCP);
        else {
           fclose(fp);
           printError(ErrSysInit, "Mode %s not supported.\n", nwmode);
           return ErrSysInit;
        }
-       nwClient->setHost(hostname, port, nwid);
-       nwTable.append(nwClient);
+       printf("nwid %d getCacheNetworkID %d\n", nwid,  Conf::config.getCacheNetworkID());
+       if (nwid == Conf::config.getCacheNetworkID()) nClient->setCacheClient();
+       nClient->setHost(hostname, port, nwid);
+       nwClient = nClient;
+       count++;
     }
     fclose(fp);
     return OK;
@@ -71,31 +80,23 @@ DbRetVal NetworkTable::readNetworkConfig()
 //connect to all hosts in the table
 void NetworkTable::connect()
 {
-    ListIterator iter = getIterator();
-    NetworkClient* nwClient;
-    DbRetVal rv = OK;
-    while(iter.hasElement())
-    {
-        nwClient = (NetworkClient*) iter.nextElement();
-        rv = nwClient->connect();
-        if (rv != OK) {
-            printf("Unable to connect to peer %d\n", nwClient->getNetworkID());
-            nwClient->setConnectFlag(false);
-            continue;
-        }
+    DbRetVal rv = nwClient->connect();
+    if (rv != OK) {
+        printError(ErrOS, "Unable to connect to peer %d\n", nwClient->getNetworkID());
+        nwClient->setConnectFlag(false);
     }
+    return;
 }
-
+DbRetVal NetworkTable::connectIfNotConnected()
+{
+   DbRetVal rv = OK;
+   if (!nwClient->isConnected()) rv = nwClient->connect(); else rv =ErrAlready;
+   return rv;
+}
 //disconnect from all hosts in the table
 void NetworkTable::disconnect()
 {
-    ListIterator iter = getIterator();
-    NetworkClient* nwClient;
-    while(iter.hasElement())
-    {
-        nwClient = (NetworkClient*) iter.nextElement();
-        if (nwClient->isConnected()) {
-            nwClient->disconnect();
-        }
+    if (nwClient->isConnected()) {
+        nwClient->disconnect();
     }
 }

@@ -92,7 +92,7 @@ DbRetVal SqlOdbcConnection::beginTrans(IsolationLevel isoLevel)
 DbRetVal SqlOdbcConnection::commit()
 {
     DbRetVal rv = OK;
-    int retVal = SQLTransact (envHdl, dbHdl, SQL_ROLLBACK);
+    int retVal = SQLTransact (envHdl, dbHdl, SQL_COMMIT);
     if (!SQL_SUCCEEDED(retVal)) rv = ErrSysInit;
     return rv;
 }

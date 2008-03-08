@@ -29,14 +29,17 @@ DbRetVal SqlOdbcStatement::prepare(char *stmtstr)
     if (innerStmt) rv = ErrBadCall;
     if (rv != OK) return rv;
     int retValue;
+    isPrepared = false;
     SqlOdbcConnection *conn = (SqlOdbcConnection*)con;
     retValue=SQLAllocHandle (SQL_HANDLE_STMT, conn->dbHdl, &hstmt);
     if (retValue) return ErrBadCall;
     retValue = SQLPrepare (hstmt, (unsigned char *) stmtstr, SQL_NTS);
+    //printf("retvalue from prepare is %d %s\n", retValue, stmtstr);
     if (retValue) return ErrBadCall;
+    isPrepared = true;
     short totalFields=0;
     retValue = SQLNumResultCols (hstmt, &totalFields);
-    printf("Total project fields %d\n", totalFields);
+    //printf("Total project fields %d\n", totalFields);
     if (retValue) return ErrBadCall;
     BindSqlProjectField *bindProjField = NULL;
     UWORD                   icol;
@@ -61,6 +64,7 @@ DbRetVal SqlOdbcStatement::prepare(char *stmtstr)
         bindProjField->type = AllDataType::convertFromSQLType(colType);
         bindProjField->length = colLength;
         bindProjField->value = NULL;
+        bindProjField->targetvalue = NULL;
         int fieldsize =0;
         switch(bindProjField->type)
         {
@@ -88,7 +92,7 @@ DbRetVal SqlOdbcStatement::prepare(char *stmtstr)
                               bindProjField->targetvalue, fieldsize, NULL);
         if (retValue) return ErrBadCall; 
         bindList.append(bindProjField);
-        printf("appending to bindlist %d\n", icol);
+        //printf("appending to bindlist %d\n", icol);
         icol++;
        
     }
@@ -96,7 +100,7 @@ DbRetVal SqlOdbcStatement::prepare(char *stmtstr)
     BindSqlField *bindField;
     retValue = SQLNumParams (hstmt, &totalFields);
     if (retValue) return ErrBadCall;
-    printf("SQLNUMParams returned %d\n", totalFields);
+    //printf("SQLNUMParams returned %d\n", totalFields);
     icol = 1; colNameMax = IDENTIFIER_LENGTH;
     SWORD                   cType=0;
     SQLULEN                 cLength=0;
@@ -143,7 +147,7 @@ DbRetVal SqlOdbcStatement::prepare(char *stmtstr)
                       cType, fieldsize, scale, bindField->targetvalue, 
                       fieldsize, NULL);
         if (retValue) return ErrBadCall;
-        printf("adding to param list\n");
+        //printf("adding to param list\n");
         paramList.append(bindField);
         icol++;
     }
@@ -161,13 +165,13 @@ bool SqlOdbcStatement::isSelect()
 DbRetVal SqlOdbcStatement::execute(int &rowsAffected)
 {
     DbRetVal rv = OK;
-    //TODO: param value setting
+    if (!isPrepared) return OK;
+    //printf("Adapter calling execute\n");
     ListIterator iter = paramList.getIterator();
     BindSqlField *bindField = NULL;
     while (iter.hasElement())
     {
         bindField = (BindSqlField*)iter.nextElement();
-        printf("param type is %d\n", bindField->type);
         switch(bindField->type)
         {
             case typeDate: {
@@ -200,14 +204,12 @@ DbRetVal SqlOdbcStatement::execute(int &rowsAffected)
             default: {
                 AllDataType::copyVal(bindField->targetvalue, bindField->value,
                                      bindField->type, bindField->length);
-                printf("Value1 set in param %d\n",*(int*)bindField->value);
-                printf("Value2 set in param %d\n",*(int*)bindField->targetvalue);
                 break;
             }
         }
     }
     int retValue = SQLExecute (hstmt);
-    printf("EXECUTE returned %d\n", retValue);
+    //printf("EXECUTE returned %d\n", retValue);
     if (retValue) return ErrBadCall;
     return rv;
 }
@@ -221,14 +223,16 @@ DbRetVal SqlOdbcStatement::bindParam(int pos, void* value)
 
 DbRetVal SqlOdbcStatement::bindField(int pos, void* value)
 {
+    if (!isPrepared) return OK;
     BindSqlProjectField *bindField = (BindSqlProjectField*)bindList.get(pos);
     bindField->value = value;
     return OK;
 }
 void* SqlOdbcStatement::fetch()
 {
+    if (!isPrepared) return NULL;
     int retValue = SQLFetch (hstmt);
-    printf("SQLFETCH return value %d\n", retValue);
+    //printf("SQLFETCH return value %d\n", retValue);
     if (retValue) return NULL;
     ListIterator iter = bindList.getIterator();
     BindSqlProjectField *bindField = NULL;
@@ -261,14 +265,12 @@ void* SqlOdbcStatement::fetch()
             default: {
                 AllDataType::copyVal(bindField->value, bindField->targetvalue,
                                      bindField->type, bindField->length);
-                if (bindField->type == typeInt) printf("FETCH %d\n",
-                                *(int*)bindField->value);
                 break;
             }
         } 
         if (ptrToFirstField == NULL) ptrToFirstField=bindField->value;
     }
-    printf("ptrToFirstField is %x\n", ptrToFirstField);
+    //printf("ptrToFirstField is %x\n", ptrToFirstField);
     return ptrToFirstField;
 }
 
@@ -284,6 +286,7 @@ void* SqlOdbcStatement::next()
 
 DbRetVal SqlOdbcStatement::close()
 {
+    if (!isPrepared) return OK;
     SQLCloseCursor(hstmt);
     return OK;
 }
@@ -295,11 +298,13 @@ void* SqlOdbcStatement::getFieldValuePtr( int pos )
 
 int SqlOdbcStatement::noOfProjFields()
 {
+    if (!isPrepared) return 0;
     return bindList.size();
 }
 
 int SqlOdbcStatement::noOfParamFields()
 {
+    if (!isPrepared) return 0;
     return paramList.size();
 }
 
@@ -315,11 +320,33 @@ DbRetVal SqlOdbcStatement::getParamFldInfo (int parampos, FieldInfo *&fInfo)
 
 DbRetVal SqlOdbcStatement::free()
 {
+    isPrepared = false;
+    ListIterator biter = bindList.getIterator();
+    BindSqlProjectField *elem = NULL;
+    while (biter.hasElement())
+    {
+        elem = (BindSqlProjectField*) biter.nextElement();
+        ::free(elem->targetvalue); 
+        delete elem;
+    }
+    bindList.reset();
+    ListIterator piter = paramList.getIterator();
+    BindSqlField *bindField = NULL;
+    while (piter.hasElement())
+    {
+        bindField = (BindSqlField*) piter.nextElement();
+        ::free(bindField->value);
+        ::free(bindField->targetvalue);
+        delete bindField; 
+    }
+    paramList.reset();
+
     SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
     return OK;
 }
 void SqlOdbcStatement::setShortParam(int paramPos, short value)
 {
+    if (!isPrepared) return ;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     if (bindField->type != typeShort) return;
     *(short*)(bindField->value) = value;
@@ -327,6 +354,7 @@ void SqlOdbcStatement::setShortParam(int paramPos, short value)
 }
 void SqlOdbcStatement::setIntParam(int paramPos, int value)
 {
+    if (!isPrepared) return ;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     /*if (bindField->type != typeInt) return;
     *(int*)(bindField->value) = value;
@@ -341,6 +369,7 @@ void SqlOdbcStatement::setIntParam(int paramPos, int value)
 }
 void SqlOdbcStatement::setLongParam(int paramPos, long value)
 {
+    if (!isPrepared) return ;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     //if (bindField->type != typeLong) return;
     //*(long*)(bindField->value) = value;
@@ -352,6 +381,7 @@ void SqlOdbcStatement::setLongParam(int paramPos, long value)
 }
 void SqlOdbcStatement::setLongLongParam(int paramPos, long long value)
 {
+    if (!isPrepared) return ;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     //if (bindField->type != typeLongLong) return;
     //*(long long*)(bindField->value) = value;
@@ -360,6 +390,7 @@ void SqlOdbcStatement::setLongLongParam(int paramPos, long long value)
 }
 void SqlOdbcStatement::setByteIntParam(int paramPos, ByteInt value)
 {
+    if (!isPrepared) return ;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     //if (bindField->type != typeByteInt) return;
     //*(char*)(bindField->value) = value;
@@ -368,6 +399,7 @@ void SqlOdbcStatement::setByteIntParam(int paramPos, ByteInt value)
 }
 void SqlOdbcStatement::setFloatParam(int paramPos, float value)
 {
+    if (!isPrepared) return ;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     //if (bindField->type != typeFloat) return;
     //*(float*)(bindField->value) = value;
@@ -375,6 +407,7 @@ void SqlOdbcStatement::setFloatParam(int paramPos, float value)
 }
 void SqlOdbcStatement::setDoubleParam(int paramPos, double value)
 {
+    if (!isPrepared) return ;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     //if (bindField->type != typeDouble) return;
     //*(double*)(bindField->value) = value;
@@ -383,6 +416,7 @@ void SqlOdbcStatement::setDoubleParam(int paramPos, double value)
 }
 void SqlOdbcStatement::setStringParam(int paramPos, char *value)
 {
+    if (!isPrepared) return ;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     if (bindField->type != typeString) return;
     char *dest = (char*)bindField->value;
@@ -392,15 +426,17 @@ void SqlOdbcStatement::setStringParam(int paramPos, char *value)
 }
 void SqlOdbcStatement::setDateParam(int paramPos, Date value)
 {
+    if (!isPrepared) return ;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     //if (bindField->type != typeDate) return;
     //*(Date*)(bindField->value) = value;
     AllDataType::convertToString(bindField->value, &value, typeDate);
-    printf("Param value contains %s\n", bindField->value);
+    //printf("Param value contains %s\n", bindField->value);
 
 }
 void SqlOdbcStatement::setTimeParam(int paramPos, Time value)
 {
+    if (!isPrepared) return ;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     //if (bindField->type != typeTime) return;
     //*(Time*)(bindField->value) = value;
@@ -409,9 +445,10 @@ void SqlOdbcStatement::setTimeParam(int paramPos, Time value)
 }
 void SqlOdbcStatement::setTimeStampParam(int paramPos, TimeStamp value)
 {
+    if (!isPrepared) return ;
     BindSqlField *bindField = (BindSqlField*) paramList.get(paramPos);
     //if (bindField->type != typeTimeStamp) return;
     //*(TimeStamp*)(bindField->value) = value;
     AllDataType::convertToString(bindField->value, &value, typeTimeStamp);
-    printf("Param value contains %s\n", bindField->value);
+    //printf("Param value contains %s\n", bindField->value);
 }

@@ -82,7 +82,7 @@ DbRetVal SqlLogStatement::populateSyncModeList()
         node->mode = syncmode;
         syncModeList.append(node);
     }
-    printf("Loaded tablesyncmode to list. size %d\n", syncModeList.size());
+    //printf("Loaded tablesyncmode to list. size %d\n", syncModeList.size());
     fclose(fp);
     return OK;
 }
@@ -103,7 +103,7 @@ DbRetVal SqlLogStatement::prepare(char *stmtstr)
     if (rv != OK) return rv;
     rv = getTableSyncMode();
     if (rv != OK) return rv;
-
+    if (!needLog) return ErrNotCached;
     sid  = SqlLogStatement::stmtUID.getID();
     //printf("LOG: prepare sid %d needLog %d syncMode %d \n", sid, needLog, syncMode);
     PacketPrepare *pkt = new PacketPrepare();
@@ -130,11 +130,16 @@ DbRetVal SqlLogStatement::prepare(char *stmtstr)
     }
     pkt->marshall();
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    printf("Sending PREPARe packet of size %d\n", pkt->getBufferSize());
-    logConn->sendAndReceiveAllPeers(NW_PKT_PREPARE, pkt->getMarshalledBuffer(), pkt->getBufferSize());
+    //printf("Sending PREPARe packet of size %d\n", pkt->getBufferSize());
+    rv = logConn->sendAndReceive(NW_PKT_PREPARE, pkt->getMarshalledBuffer(), pkt->getBufferSize());
+    //printf("RV from PREPARE SQLLOG %d\n", rv);
+    if (rv != OK) { needLog = false; 
+       logConn->addPreparePacket(pkt); free(); 
+       delete info; return rv;
+    }
     delete pkt;
     delete info;
-    return OK;
+    return rv;
 }
 
 bool SqlLogStatement::isSelect()
@@ -248,6 +253,8 @@ DbRetVal SqlLogStatement::free()
     if (innerStmt) rv = innerStmt->free();
     //TODO::DEBUG::always innsrStmt->free() returns error
     //if (rv != OK) return rv;
+    SqlLogConnection* logConn = (SqlLogConnection*)con;
+    if (sid != 0 ) logConn->removePreparePacket(sid);
     if (!needLog) return rv;
 
     //TODO
@@ -273,6 +280,7 @@ DbRetVal SqlLogStatement::free()
 void SqlLogStatement::setShortParam(int paramPos, short value)
 {
     if (innerStmt) innerStmt->setShortParam(paramPos,value);
+    if (!needLog) return;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     if (bindField->type != typeShort) return;
     *(short*)(bindField->value) = value;
@@ -281,6 +289,7 @@ void SqlLogStatement::setShortParam(int paramPos, short value)
 void SqlLogStatement::setIntParam(int paramPos, int value)
 {
     if (innerStmt) innerStmt->setIntParam(paramPos,value);
+    if (!needLog) return;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     if (bindField->type != typeInt) return;
     *(int*)(bindField->value) = value;
@@ -290,6 +299,7 @@ void SqlLogStatement::setIntParam(int paramPos, int value)
 void SqlLogStatement::setLongParam(int paramPos, long value)
 {
     if (innerStmt) innerStmt->setLongParam(paramPos,value);
+    if (!needLog) return;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     if (bindField->type != typeLong) return;
     *(long*)(bindField->value) = value;
@@ -299,6 +309,7 @@ void SqlLogStatement::setLongParam(int paramPos, long value)
 void SqlLogStatement::setLongLongParam(int paramPos, long long value)
 {
     if (innerStmt) innerStmt->setLongLongParam(paramPos,value);
+    if (!needLog) return;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     if (bindField->type != typeLongLong) return;
     *(long long*)(bindField->value) = value;
@@ -307,6 +318,7 @@ void SqlLogStatement::setLongLongParam(int paramPos, long long value)
 void SqlLogStatement::setByteIntParam(int paramPos, ByteInt value)
 {
     if (innerStmt) innerStmt->setByteIntParam(paramPos,value);
+    if (!needLog) return;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     if (bindField->type != typeByteInt) return;
     *(char*)(bindField->value) = value;
@@ -315,6 +327,7 @@ void SqlLogStatement::setByteIntParam(int paramPos, ByteInt value)
 void SqlLogStatement::setFloatParam(int paramPos, float value)
 {
     if (innerStmt) innerStmt->setFloatParam(paramPos,value);
+    if (!needLog) return;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     if (bindField->type != typeFloat) return;
     *(float*)(bindField->value) = value;
@@ -323,6 +336,7 @@ void SqlLogStatement::setFloatParam(int paramPos, float value)
 void SqlLogStatement::setDoubleParam(int paramPos, double value)
 {
     if (innerStmt) innerStmt->setDoubleParam(paramPos,value);
+    if (!needLog) return;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     if (bindField->type != typeDouble) return;
     *(double*)(bindField->value) = value;
@@ -331,6 +345,7 @@ void SqlLogStatement::setDoubleParam(int paramPos, double value)
 void SqlLogStatement::setStringParam(int paramPos, char *value)
 {
     if (innerStmt) innerStmt->setStringParam(paramPos,value);
+    if (!needLog) return;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     if (bindField->type != typeString) return;
     char *dest = (char*)bindField->value;
@@ -341,6 +356,7 @@ void SqlLogStatement::setStringParam(int paramPos, char *value)
 void SqlLogStatement::setDateParam(int paramPos, Date value)
 {
     if (innerStmt) innerStmt->setDateParam(paramPos,value);
+    if (!needLog) return;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     if (bindField->type != typeDate) return;
     *(Date*)(bindField->value) = value;
@@ -349,6 +365,7 @@ void SqlLogStatement::setDateParam(int paramPos, Date value)
 void SqlLogStatement::setTimeParam(int paramPos, Time value)
 {
     if (innerStmt) innerStmt->setTimeParam(paramPos,value);
+    if (!needLog) return;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     if (bindField->type != typeTime) return;
     *(Time*)(bindField->value) = value;
@@ -357,6 +374,7 @@ void SqlLogStatement::setTimeParam(int paramPos, Time value)
 void SqlLogStatement::setTimeStampParam(int paramPos, TimeStamp value)
 {
     if (innerStmt) innerStmt->setTimeStampParam(paramPos,value);
+    if (!needLog) return;
     BindSqlField *bindField = (BindSqlField*) paramList.get(paramPos);
     if (bindField->type != typeTimeStamp) return;
     *(TimeStamp*)(bindField->value) = value;

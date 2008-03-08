@@ -100,34 +100,17 @@ class List
             return ErrNotExists;
         }
         ListNode *iter = head, *prev = head;
-        while (iter->next != NULL)
+        while (iter != NULL)
         {
             if (elem == iter->element)
             {
                 prev->next = iter->next;
                 delete iter;
+                if (iter == head) { head = NULL; return OK;}
+                return OK;
             }
             prev = iter;
             iter = iter->next;
-        }
-        if( iter == head) // there is only one node in the list
-        {
-            if (elem == iter->element)
-            {
-                delete head;
-                head = NULL;
-                return OK;
-            }
-
-        }
-        if( prev == head) // there are only two node in the list
-        {
-            if (elem == iter->element)
-            {
-                head->next = NULL;
-                delete iter;
-                return OK;
-            }
         }
         printError(ErrNotFound, "There are no elements in the list");
         return ErrNotFound;

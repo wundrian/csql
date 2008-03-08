@@ -17,41 +17,47 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-#ifndef SQLFACTORY_H
-#define SQLFACTORY_H
+#ifndef SQLGWCONNECTION_H
+#define SQLGWCONNECTION_H
 #include<CSql.h>
-
 #include<AbsSqlConnection.h>
-#include<AbsSqlStatement.h>
+#include<SqlFactory.h>
 
-enum SqlApiImplType
-{
-    CSql =1,
-    CSqlAdapter =2,
-    CSqlGateway =3,
-    CSqlLog= 4
-};
 /**
-* @class SqlFactory
+* @class SqlGwConnection
 *
-* @brief Factory class to create appropriate implementation of SQL API
-* @author Prabakaran Thirumalai
 */
-class SqlFactory
+class SqlGwConnection : public AbsSqlConnection
 {
+    Connection dummyConn;
+    AbsSqlConnection *adapter;
+    bool isCSqlConnected;
+    bool isAdapterConnected;
+    char username[IDENTIFIER_LENGTH];
+    char password[IDENTIFIER_LENGTH];
+
     public:
+    SqlGwConnection(){innerConn = NULL; }
 
-    /** creates appropriate implementation of AbsSqlConnection based on implFlag passed
-    *   @param implFlag 1->SqlConnection, 2->?
-    *   @return AbsSqlConnection
-    */
-    static AbsSqlConnection* createConnection (SqlApiImplType implFlag);
+    DbRetVal connect (char *user, char * pass);
 
-    /** creates appropriate implementation of AbsSqlStatement based on implFlag passed
-    *   @param implFlag 1->SqlConnection, 2->?
-    *   @return AbsSqlStatement
-    */
-    static AbsSqlStatement* createStatement (SqlApiImplType implFlag);
+    DbRetVal disconnect();
+
+    DbRetVal commit();
+
+    DbRetVal rollback();
+
+    DbRetVal beginTrans (IsolationLevel isoLevel);
+
+    friend class SqlFactory;
+
+    void setAdapter(AbsSqlConnection *conn) { adapter =  conn; }
+    AbsSqlConnection* getAdapterConnection() { return adapter; }
+
+    DbRetVal connectCSqlIfNotConnected();
+    DbRetVal connectAdapterIfNotConnected();
+    //Note::forced to implement this as it is pure virtual in base class
+    Connection& getConnObject(){  return dummyConn; }
 };
 
 #endif
