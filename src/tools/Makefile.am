@@ -21,7 +21,7 @@ repltable_LDFLAGS = -lcrypt -lodbc
 repltable_SOURCES = repltable.cxx
 
 csqlserver_LDADD = $(top_builddir)/src/cache/libcacheload.la \
-	$(top_builddir)/src/server/libcsql.la \ 
+	$(top_builddir)/src/server/libcsql.la \
 	$(top_builddir)/src/gateway/libcsqlgw.la -lrt -lpthread -lcrypt
 csqlserver_LDFLAGS = -lcrypt -lodbc 
 csqlserver_SOURCES = csqlserver.cxx
@@ -38,7 +38,7 @@ csqlreplserver_SOURCES = csqlreplserver.cxx
 csqlcacheserver_LDADD = $(top_builddir)/src/sql/libcsqlsql.la \
 	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
 	$(top_builddir)/src/network/libcsqlnw.la \
-	$(top_builddir)/src/gateway/libcsqlgw.la \ 
+	$(top_builddir)/src/gateway/libcsqlgw.la \
 	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
 	$(top_builddir)/src/server/libcsql.la -lrt -lpthread -lcrypt
 csqlcacheserver_LDFLAGS = -lcrypt -lodbc
