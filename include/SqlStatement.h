@@ -27,19 +27,6 @@
 class Statement;
 class ParsedData;
 
-/**
-* @class SqlStatement
-*
-* @brief Handle to the sql statement.
-* It is used to execute queries and return the values from the database<br>
-* Sql Statement is fed to the prepare method first and then it should be executed. <br/>
-* Functionality: <br/>
-*     1.Input values for insert statement <br/>
-*     2.Iterator for retrieving rows from the table <br/>
-*     3.Parameter support for performance.<br/>
-* <br/>
-* @author Prabakaran Thirumalai
-*/
 class SqlStatement: public AbsSqlStatement
 {
     public:

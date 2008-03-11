@@ -50,7 +50,7 @@ Starting the Server
 -------------------
 Note: kernel.shmmax should be set to more than 500 MB before starting the server
 
-In linux for setting 1GB enter
+In linux for setting it to 1GB enter
 $sysctl -w kernel.shmmax=1000000000
 
 Change csql.conf file under the installation root directory if necessary.
@@ -73,4 +73,3 @@ Refer UserManual.pdf available in docs folder to know how to work with csql
 Shutting down the Server
 ------------------------
 Pressing Ctrl-C on the terminal where csqlserver is running, is safe and will stop the server gracefully by removing the database file.
-

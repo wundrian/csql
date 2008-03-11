@@ -19,7 +19,10 @@
 #include<UserManager.h>
 #include<ErrorType.h>
 class Session;
-
+/**
+* @enum IsolationLevel
+* @brief Represents isolation level of the transaction.
+*/
 enum IsolationLevel
 {
     READ_UNCOMMITTED = 1,

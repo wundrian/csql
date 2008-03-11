@@ -23,24 +23,6 @@
 #include<AbsSqlConnection.h>
 #include<SqlFactory.h>
 
-/**
-* @class SqlConnection
-*
-* @brief Represents a database connection to sql engine.
-* All database operations shall be done within the context of the connection. <br>
-* Application should first create object of this class for accessing the database.<br/>
-* Each connection has only one active transaction at any given point of time, all <br/>
-* operations which happen using this connection object will be done as part of that <br/>
-* transaction.<br/>
-* <br/>
-* Functionality: <br/>
-*     1.Connection Management (connect and disconnect) <br/>
-*     2.Transaction Management (start, commit, abort) <br/>
-* <br/>
-*  Note: <br/>
-*  SERIALIZABLE isolation level is not supported.
-* @author Prabakaran Thirumalai
-*/
 class SqlConnection : public AbsSqlConnection
 {
     Connection conn;

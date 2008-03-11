@@ -24,20 +24,18 @@
 /**
 * @class AbsSqlConnection
 *
-* @brief Represents a database connection to sql engine.
-* All database operations shall be done within the context of the connection. <br>
-* Application should first create object of this class for accessing the database.<br/>
-* Each connection has only one active transaction at any given point of time, all <br/>
-* operations which happen using this connection object will be done as part of that <br/>
-* transaction.<br/>
-* <br/>
-* Functionality: <br/>
-*     1.Connection Management (connect and disconnect) <br/>
-*     2.Transaction Management (start, commit, abort) <br/>
-* <br/>
-*  Note: <br/>
-*  SERIALIZABLE isolation level is not supported.
-* @author Prabakaran Thirumalai
+* \brief{ Represents a database connection to sql engine.}
+*
+* It represents the database connection to the sql engine.\n
+* All database operations shall be done within the context of the connection.\n 
+* Application should first create object of this class to accessing the database\n
+* through SQL Engine.
+* Each connection has only one active transaction at any given point of time, all \n
+* operations which happen using this connection object will be done as part of that \n
+* transaction.\n
+* \n
+*  Note: \n
+*  SERIALIZABLE isolation level is not supported. \n
 */
 class AbsSqlConnection
 {
@@ -55,34 +53,34 @@ class AbsSqlConnection
     */
     virtual DbRetVal connect (char *user, char * pass) =0;
 
-    /** closes connection to the database and releases all the resources
+    /** closes connection to the sql engine and releases all the resources
     *   @return DbRetVal 
     */
     virtual DbRetVal disconnect () = 0;
 
-    /** Commits active transaction. 
-    *   It makes all the changes made in the current transaction permanent and <br/>
-    *   it also releases the locks held by the current transaction.<br/>
-    *   After a transaction commits, application is required to start another <br/>
-    *   transaction for further database operations.
+    /** Commits active transaction. \n
+    *   It makes all the changes made in the current transaction permanent and \n
+    *   it also releases the locks held by the current transaction.\n
+    *   After a transaction commits, application is required to start another \n
+    *   transaction for further database operations.\n
     *   @return DbRetVal 
     */
     virtual DbRetVal commit() = 0;
 
-    /** Aborts the active transaction. 
-    *   undo all the changes made in the current transaction and it also <br/>
-    *   releases the locks held by the current transaction.<br/>
-    *   After a transaction rollback, application is required to start another <br/>
-    *   transaction for further database operations.
+    /** Aborts the active transaction.\n 
+    *   undo all the changes made in the current transaction and it also \n
+    *   releases the locks held by the current transaction.\n
+    *   After a transaction rollback, application is required to start another \n
+    *   transaction for further database operations.\n
     *   @return DbRetVal 
     */
     virtual DbRetVal rollback() = 0;
 
-    /** Starts a transaction.
-    *   The previous transaction should be either committed or rollback <br/> 
-    *   before beginTrans is called. <br/>
-    *   Applications are required to start transaction before they attempt any <br>
-    *   database operation.
+    /** Starts a new transaction.\n
+    *   The previous transaction should be either committed or rollback \n
+    *   before beginTrans is called. \n
+    *   Applications are required to start transaction before they attempt any \n
+    *   database operation.\n
     *   @param isoLevel isolation level. Default is read committed.
     *   @return DbRetVal
     */
