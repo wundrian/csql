@@ -438,7 +438,7 @@ ThreadInfo* Database::getThreadInfo(int slot)
 {
     size_t offset = os::alignLong(sizeof (DatabaseMetaData));
     offset = offset + os::alignLong( MAX_CHUNKS  * sizeof (Chunk));
-    offset = offset + os::alignLong( Conf::config.getMaxTrans()   * sizeof(Transaction));
+    offset = offset + os::alignLong( Conf::config.getMaxProcs()   * sizeof(Transaction));
     offset = offset + slot * sizeof (ThreadInfo);
     return (ThreadInfo*)(((char*) metaData_) +  offset);
 }

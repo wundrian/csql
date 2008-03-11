@@ -36,12 +36,8 @@ int Config::storeKeyVal(char *key, char *value)
 {
     if (strcasestr(key, "PAGE_SIZE") != NULL )
            { cVal.pageSize = atoi(value);  }
-    else if (strcasestr(key, "MAX_TRANS") != NULL)
-           { cVal.maxTrans = atoi(value);  }
     else if (strcasestr(key, "MAX_PROCS") != NULL)
            { cVal.maxProcs = atoi(value);  }
-    else if (strcasestr(key, "MAX_THREADS") != NULL)
-           { cVal.maxThreads = atoi(value);  }
     else if (strcasestr(key, "MAX_SYS_DB_SIZE") != NULL)
            { cVal.maxSysSize = atol(value);  }
     else if (strcasestr(key, "MAX_DB_SIZE") != NULL)
@@ -101,19 +97,9 @@ int Config::validateValues()
         printError(ErrBadArg,  "PAGE_SIZE should be multiples of 1024");
         return 1;
     }
-    if (cVal.maxTrans < 10 || cVal.maxTrans > 8192)
-    {
-        printError(ErrBadArg,  "MAX_TRANS should be >= 10 and <= 8192");
-        return 1;
-    }
     if (cVal.maxProcs < 10 || cVal.maxProcs > 8192)
     {
         printError(ErrBadArg,  "MAX_PROCS should be >= 10 and <= 8192");
-        return 1;
-    }
-    if (cVal.maxThreads < 1 || cVal.maxThreads > 64)
-    {
-        printError(ErrBadArg,  "MAX_THREADS should be >= 1 and <= 64");
         return 1;
     }
     if (cVal.maxSysSize < 1024 * 1024  || cVal.maxSysSize > 1024 *1024 *1024)
@@ -342,7 +328,6 @@ void Config::print()
 {
     printf("ConfigValues\n");
     printf(" getPageSize %d\n", getPageSize());
-    printf(" getMaxTrans %d\n", getMaxTrans());
     printf(" getMaxProcs %d\n", getMaxProcs());
     printf(" getMaxSysDbSize %ld\n", getMaxSysDbSize());
     printf(" getMaxDbSize %ld\n", getMaxDbSize());

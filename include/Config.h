@@ -21,9 +21,7 @@ class ConfigValues
     public:
     //All the members of the configuration file
     int pageSize;
-    int maxTrans;
     int maxProcs;
-    int maxThreads;
     long maxSysSize;
     long maxDbSize;
     int sysDbKey;
@@ -53,9 +51,7 @@ class ConfigValues
     ConfigValues()
     {
         pageSize = 8192;
-        maxTrans = 20;
         maxProcs = 20;
-        maxThreads = 10;
         maxSysSize = 10485760;
         maxDbSize = 104857600;
         sysDbKey = 2222;
@@ -93,9 +89,7 @@ class Config
     void print();
 
     inline int getPageSize() { return cVal.pageSize; }
-    inline int getMaxTrans() { return cVal.maxTrans; }
     inline int getMaxProcs() { return cVal.maxProcs; }
-    inline int getMaxThreads() { return cVal.maxThreads; }
     inline long getMaxSysDbSize() { return cVal.maxSysSize; }
     inline long getMaxDbSize() { return cVal.maxDbSize; }
     inline int getSysDbKey() { return cVal.sysDbKey; }

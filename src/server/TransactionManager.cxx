@@ -26,7 +26,7 @@ void TransactionManager::printUsageStatistics()
 {
     Transaction *iter = firstTrans;
     int i=0, usedCount =0, freeCount =0, undoLogCount=0;
-    for (; i < Conf::config.getMaxTrans(); i++)
+    for (; i < Conf::config.getMaxProcs(); i++)
     {
             if (iter->status_ == TransNotUsed) freeCount++; 
             else 
@@ -52,7 +52,7 @@ void TransactionManager::printDebugInfo(Database *sysdb)
     Transaction *iter = firstTrans;
     int i=0, usedCount =0, freeCount =0, undoLogCount=0;
     printf("<TransactionTable>\n");
-    for (; i < Conf::config.getMaxTrans(); i++)
+    for (; i < Conf::config.getMaxProcs(); i++)
     {
             if (iter->status_ == TransNotUsed) freeCount++; 
             else 
@@ -99,13 +99,13 @@ DbRetVal TransactionManager::startTransaction(LockManager *lMgr, IsolationLevel 
     }
     Transaction *iter = firstTrans;
     int i;
-    for (i =0 ; i < Conf::config.getMaxTrans(); i++)
+    for (i =0 ; i < Conf::config.getMaxProcs(); i++)
     {
             if (iter->status_ == TransNotUsed) break;
             iter++;
     }
     // if Transaction table is full return error
-    if (i == Conf::config.getMaxTrans()) {
+    if (i == Conf::config.getMaxProcs()) {
         printError(ErrNoResource, "Transaction slots are full");
         sysdb->releaseTransTableMutex();
         return ErrNoResource;
