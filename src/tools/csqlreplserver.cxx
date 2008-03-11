@@ -73,7 +73,6 @@ int main(int argc, char **argv)
     FILE *fp = NULL;
     int nwid =0;
     char hostname[IDENTIFIER_LENGTH];
-    char nwmode ='a';
     int port=0;
     fp = fopen(Conf::config.getReplConfigFile(),"r");
     if( fp == NULL ) {
@@ -83,8 +82,8 @@ int main(int argc, char **argv)
     }
     bool found =false;
     while(!feof(fp)) {
-       fscanf(fp, "%d:%c:%d:%s\n", &nwid, &nwmode, &port, hostname);
-       printf( "%d:%c:%d:%s\n", nwid, nwmode, port, hostname);
+       fscanf(fp, "%d:%d:%s\n", &nwid, &port, hostname);
+       printf( "%d:%d:%s\n", nwid, port, hostname);
        if (nwid == Conf::config.getNetworkID()) { found = true; break;}
     }
     fclose(fp);
@@ -96,15 +95,9 @@ int main(int argc, char **argv)
         return 1;
     }
     NetworkServer *nwServer;
-    if (nwmode == 'U')
-    {
-        nwServer = new UDPServer();
-        
-    }else if (nwmode =='T')
-    {
-        nwServer = new TCPServer();
-    }
-    
+
+    nwServer = new UDPServer();
+
     nwServer->setServerPort(port);
     rv = nwServer->start();
     if (rv != OK) {

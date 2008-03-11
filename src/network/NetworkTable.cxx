@@ -37,7 +37,6 @@ DbRetVal NetworkTable::readNetworkConfig()
     FILE *fp;
     int nwid;
     char hostname[IDENTIFIER_LENGTH];
-    char nwmode;
     int port;
     fp = fopen(Conf::config.getReplConfigFile(),"r");
     if( fp == NULL ) {
@@ -53,19 +52,13 @@ DbRetVal NetworkTable::readNetworkConfig()
            return ErrNotYet;
        }
        printf("Count is %d\n", count);
-       fscanf(fp, "%d:%c:%d:%s\n", &nwid, &nwmode, &port, hostname);
-       printf( "%d:%c:%d:%s\n", nwid, nwmode, port, hostname);
+       fscanf(fp, "%d:%c:%d:%s\n", &nwid, &port, hostname);
+       printf( "%d:%d:%s\n", nwid, port, hostname);
        NetworkClient* nClient;
        if (nwid == Conf::config.getNetworkID()) continue;
-       if (nwmode == 'U' ) 
-          nClient = NetworkFactory::createClient(UDP);
-       else if (nwmode == 'T' ) 
-          nClient = NetworkFactory::createClient(TCP);
-       else {
-          fclose(fp);
-          printError(ErrSysInit, "Mode %s not supported.\n", nwmode);
-          return ErrSysInit;
-       }
+
+       nClient = NetworkFactory::createClient(UDP);
+
        printf("nwid %d getCacheNetworkID %d\n", nwid,  Conf::config.getCacheNetworkID());
        if (nwid == Conf::config.getCacheNetworkID()) nClient->setCacheClient();
        nClient->setHost(hostname, port, nwid);
