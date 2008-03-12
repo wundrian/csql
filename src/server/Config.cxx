@@ -23,7 +23,7 @@ int Config::readLine(FILE *fp, char * buffer)
 {
   char c =0;
   int count =0;
-  while ( true)
+  while (true)
   {
       c = fgetc(fp);
       if (c == '\n') break;
@@ -222,7 +222,7 @@ int Config::validateValues()
         char nwmode;
  
         while(!feof(fp)) {
-            fscanf(fp, "%d:%c:%d:%s\n", &nwid, &nwmode, &port, hostname);
+            fscanf(fp, "%d:%d:%s\n", &nwid, &port, hostname);
             count++;
         }
         if (count >2) {
@@ -250,7 +250,7 @@ int Config::validateValues()
             }
             bool found = false;
             while(!feof(fp)) {
-                fscanf(fp, "%d:%c:%d:%s\n", &nwid, &nwmode, &port, hostname);
+                fscanf(fp, "%d:%d:%s\n", &nwid, &port, hostname);
                 if (cVal.cacheNetworkID == nwid) found = true;
             }
             if (!found) return 1;

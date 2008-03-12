@@ -52,7 +52,7 @@ DbRetVal NetworkTable::readNetworkConfig()
            return ErrNotYet;
        }
        printf("Count is %d\n", count);
-       fscanf(fp, "%d:%c:%d:%s\n", &nwid, &port, hostname);
+       fscanf(fp, "%d:%d:%s\n", &nwid, &port, hostname);
        printf( "%d:%d:%s\n", nwid, port, hostname);
        NetworkClient* nClient;
        if (nwid == Conf::config.getNetworkID()) continue;

@@ -27,7 +27,7 @@ DbRetVal CacheTableLoader::addToCacheTableFile()
     //TODO::if already table present in the file, it means that the
     //table is replicated. in this case change mode from
     //2 to 3 (repl to replcache)
-    fprintf(fp, "%d:%d:%s\n", 1, syncMode, tableName);
+    fprintf(fp, "%d:%d:%s\n", 1, tableName);
     fclose(fp);
     return OK;
 }
@@ -49,12 +49,11 @@ DbRetVal CacheTableLoader::removeFromCacheTableFile()
     }
     char tablename[IDENTIFIER_LENGTH];
     int mode;
-    DataSyncMode  syncmode;
     while(!feof(fp))
     {
-        fscanf(fp, "%d:%d:%s\n", &mode, &syncmode, tablename);
+        fscanf(fp, "%d:%s\n", &mode, tablename);
         if (strcmp (tablename, tableName) == 0) continue;
-        fprintf(tmpfp, "%d:%d:%s\n", mode, syncmode, tablename);
+        fprintf(tmpfp, "%d:%s\n", mode, tablename);
     }
     fclose(tmpfp);
     fclose(fp);
@@ -307,10 +306,9 @@ DbRetVal CacheTableLoader::recoverAllCachedTables()
     //TODO::take exclusive lock on database
     char tablename[IDENTIFIER_LENGTH];
     int mode;
-    DataSyncMode syncMode;
     while(!feof(fp))
     {
-        fscanf(fp, "%d:%d:%s\n", &mode, &syncMode, tablename);
+        fscanf(fp, "%d:%s\n", &mode, tablename);
         if (mode ==2 )  //just replicated table and not cached
             continue;
         printf("Recovering Table from target db: %s\n", tablename);

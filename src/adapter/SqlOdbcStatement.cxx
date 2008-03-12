@@ -276,7 +276,50 @@ void* SqlOdbcStatement::fetch()
 
 void* SqlOdbcStatement::fetchAndPrint()
 {
-    return NULL;
+    if (!isPrepared) return NULL;
+    int retValue = SQLFetch (hstmt);
+    if (retValue) return NULL;
+    ListIterator iter = bindList.getIterator();
+    BindSqlProjectField *bindField = NULL;
+    void *ptrToFirstField = NULL;
+    while (iter.hasElement())
+    {
+        bindField = (BindSqlProjectField*)iter.nextElement();
+        switch(bindField->type)
+        {
+            case typeDate: {
+                Date dtCSQL;
+                DATE_STRUCT *dtTarget = (DATE_STRUCT*) bindField->targetvalue;
+                dtCSQL.set(dtTarget->year,dtTarget->month,dtTarget->day);
+                AllDataType::printVal(&dtCSQL, bindField->type, bindField->length);
+                break;
+            }
+            case typeTime: {
+                Time dtCSQL;
+                TIME_STRUCT *dtTarget = (TIME_STRUCT*) bindField->targetvalue;
+                dtCSQL.set(dtTarget->hour,dtTarget->minute,dtTarget->second);
+                AllDataType::printVal(&dtCSQL, bindField->type, bindField->length);
+                break;
+            }
+            case typeTimeStamp: {
+                TimeStamp dtCSQL;
+                TIMESTAMP_STRUCT *dtTarget = (TIMESTAMP_STRUCT*) bindField->targetvalue;
+                dtCSQL.setDate(dtTarget->year,dtTarget->month,dtTarget->day);
+                dtCSQL.setTime(dtTarget->hour,dtTarget->minute,
+                                dtTarget->second, dtTarget->fraction);
+                AllDataType::printVal(&dtCSQL, bindField->type, bindField->length);
+                break;
+            }
+            default: {
+                AllDataType::printVal(bindField->targetvalue,
+                                     bindField->type, bindField->length);
+                break;
+            }
+        }
+        if (ptrToFirstField == NULL) ptrToFirstField=bindField->targetvalue;
+    }
+
+    return ptrToFirstField;
 }
 
 void* SqlOdbcStatement::next()
@@ -310,12 +353,41 @@ int SqlOdbcStatement::noOfParamFields()
 
 DbRetVal SqlOdbcStatement::getProjFldInfo (int projpos, FieldInfo *&fInfo)
 {
-    return OK;
+    ListIterator biter = bindList.getIterator();
+    BindSqlProjectField *elem = NULL;
+    int count =0;
+    while (biter.hasElement())
+    {
+        elem = (BindSqlProjectField*) biter.nextElement();
+        if (count == projpos) 
+        {
+            strcpy(fInfo->fldName, elem->fName);
+            fInfo->length = elem->length;
+            fInfo->type =elem->type;
+            return OK;
+        }
+        count++;
+    }
+    return ErrNotFound;
 }
 
 DbRetVal SqlOdbcStatement::getParamFldInfo (int parampos, FieldInfo *&fInfo)
 {
-    return OK;
+    ListIterator biter = paramList.getIterator();
+    BindSqlField *elem = NULL;
+    int count =0;
+    while (biter.hasElement())
+    {
+        elem = (BindSqlField*) biter.nextElement();
+        if (count == parampos) 
+        {
+            fInfo->length = elem->length;
+            fInfo->type =elem->type;
+            return OK;
+        }
+        count++;
+    }
+    return ErrNotFound;
 }
 
 DbRetVal SqlOdbcStatement::free()

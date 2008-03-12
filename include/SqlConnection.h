@@ -68,7 +68,8 @@ class SqlConnection : public AbsSqlConnection
     *   @param isoLevel isolation level. Default is read committed.
     *   @return DbRetVal
     */
-    DbRetVal beginTrans (IsolationLevel isoLevel = READ_COMMITTED) 
+    DbRetVal beginTrans (IsolationLevel isoLevel = READ_COMMITTED, 
+                         TransSyncMode mode = OSYNC) 
         { return conn.startTransaction(isoLevel); }
 
     Connection& getConnObject(){  return conn; }

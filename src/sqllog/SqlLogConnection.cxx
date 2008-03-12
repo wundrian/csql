@@ -22,6 +22,7 @@
 #include <Network.h>
 
 UniqueID SqlLogConnection::txnUID;
+List SqlLogConnection::cacheList;
 
 DbRetVal SqlLogConnection::addPacket(BasePacket* pkt)
 {
@@ -53,12 +54,6 @@ DbRetVal SqlLogConnection::removePreparePacket(int stmtid)
     return OK;
 }
 
-DbRetVal SqlLogConnection::setSyncMode(DataSyncMode mode)
-{
-    if (syncMode < mode) syncMode = mode;
-    //printf("Current syncMode is  %d\n", syncMode);
-    return OK;
-}
 DbRetVal SqlLogConnection::connect (char *user, char * pass)
 {
     DbRetVal rv = OK;
@@ -66,10 +61,13 @@ DbRetVal SqlLogConnection::connect (char *user, char * pass)
     if (innerConn) rv = innerConn->connect(user,pass);
     if (rv != OK) return rv;
     if (!Conf::config.useReplication() && !Conf::config.useCache()) return OK;
-    rv = nwTable.initialize();
-    if (rv !=OK) { innerConn->disconnect(); return rv; }
-    nwTable.connect();
-    //printf("PRABAAAAAAA==you are here\n");
+    //rv = nwTable.initialize();
+    //if (rv !=OK) { innerConn->disconnect(); return rv; }
+    //nwTable.connect();
+
+    //populate cacheList if not populated by another thread in same process
+    //TODO::cacheList requires mutex guard
+    if (0 == cacheList.size()) rv = populateCachedTableList(); 
     return rv;
     
 }
@@ -80,18 +78,16 @@ DbRetVal SqlLogConnection::disconnect()
     if (innerConn) rv =innerConn->disconnect();
     if (rv != OK) return rv;
     if (!Conf::config.useReplication() && !Conf::config.useCache()) return OK;
-    nwTable.disconnect();
-    nwTable.destroy();
+    //nwTable.disconnect();
+    //nwTable.destroy();
     return rv;
 }
-DbRetVal SqlLogConnection::beginTrans(IsolationLevel isoLevel)
+DbRetVal SqlLogConnection::beginTrans(IsolationLevel isoLevel, TransSyncMode mode)
 {
     DbRetVal rv = OK;
-    //printf("LOG: beginTrans\n");
     if (innerConn) rv =  innerConn->beginTrans(isoLevel);
     if (rv != OK) return rv;
-    rv  = nwTable.connectIfNotConnected(); 
-printf("RV FROM if not connected %d\n", rv);
+    /*rv  = nwTable.connectIfNotConnected(); 
     if (rv == OK) {
         //send all prepare packets to client
         ListIterator iter = prepareStore.getIterator();
@@ -105,22 +101,22 @@ printf("RV FROM if not connected %d\n", rv);
             delete pkt;
         }
         prepareStore.reset();
-    }
-    //reset the mode to the highest mode
-    //SqlLogStatement will reduce the mode based on the tables it operate on
-    //all the tables modified in this txn should be TSYNC for txn to be in TSYNC
-    //if any one table is ASYNC, then it gets further downgraded to ASYNC
-    syncMode = TSYNC;
-
+    }*/
+    syncMode = mode;
     return OK;
 }
 DbRetVal SqlLogConnection::commit()
 {
     DbRetVal rv = OK;
     //printf("LOG: commit %d\n", syncMode);
+        if (innerConn) rv =  innerConn->commit();
+        return rv; 
+
+    //TODO::TSYNC MODE
     if (logStore.size() == 0) 
     { 
-        //This means no execution for any statements in this transaction
+        //This means no execution for any non select statements in 
+        //this transaction
         //rollback so that subsequent beginTrans will not report that
         //transaction is already started
         if (innerConn) rv =  innerConn->rollback();
@@ -183,6 +179,47 @@ DbRetVal SqlLogConnection::rollback()
     logStore.reset();
     return rv;
 }
+DbRetVal SqlLogConnection::populateCachedTableList()
+{
+    FILE *fp = NULL;
+    fp = fopen(Conf::config.getTableConfigFile(),"r");
+    if( fp == NULL ) {
+        printError(ErrSysInit, "cache.table file does not exist");
+        return ErrSysInit;
+    }
+    char tablename[IDENTIFIER_LENGTH];
+    int cmode;
+    CachedTable *node;
+    while(!feof(fp))
+    {
+        fscanf(fp, "%d:%s\n", &cmode, tablename);
+        node = new CachedTable();
+        strcpy(node->tableName, tablename);
+        cacheList.append(node);
+    }
+    fclose(fp);
+    return OK;
+}
+bool SqlLogConnection::isTableCached(char *tblName)
+{
+    if (NULL == tblName)
+    {
+        printError(ErrBadArg, "tblName passed is NULL\n");
+        return ErrBadArg;
+    }
+    ListIterator iter = cacheList.getIterator();
+    CachedTable *node;
+    while (iter.hasElement()) {
+        node = (CachedTable*)iter.nextElement();
+        if (strcmp(node->tableName, tblName) == 0)
+        {
+           return true;
+        }
+    }
+    return false;
+}
+
+
 DbRetVal SqlLogConnection::sendAndReceive(NetworkPacketType type, char *packet, int length)
 {
     NetworkClient* nwClient = nwTable.getNetworkClient();

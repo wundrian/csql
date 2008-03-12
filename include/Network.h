@@ -23,11 +23,13 @@
 #include <netdb.h>
 #include <AbsSqlStatement.h>
 
-enum DataSyncMode {
+/*enum DataSyncMode {
     NOSYNC=0,
+    OSYNC=1,
     TSYNC=1,
     ASYNC=2
 };
+*/
 enum NetworkPacketType
 {
     NW_PKT_PREPARE =1,

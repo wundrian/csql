@@ -25,6 +25,11 @@
 #include<Util.h>
 #include<Network.h>
 
+class CachedTable{
+    public:
+    char tableName[IDENTIFIER_LENGTH];
+};
+
 /**
 * @class SqlLogConnection
 *
@@ -42,16 +47,20 @@ class SqlLogConnection : public AbsSqlConnection
     List prepareStore;
 
     //sync mode of the current transaction
-    //will be modified by the SqlLogStatement based on the table
-    DataSyncMode syncMode;
+    TransSyncMode syncMode;
 
     //stores client objects in it for peer
     NetworkTable nwTable;
 
     static UniqueID txnUID;
 
+    static List cacheList;
+    DbRetVal populateCachedTableList();
+
     public:
     SqlLogConnection(){innerConn = NULL; syncMode = TSYNC;}
+
+    bool isTableCached(char *name);
 
     //Note::forced to implement this as it is pure virtual in base class
     Connection& getConnObject(){  return dummyConn; }
@@ -64,15 +73,15 @@ class SqlLogConnection : public AbsSqlConnection
 
     DbRetVal rollback();
 
-    DbRetVal beginTrans (IsolationLevel isoLevel);
+    DbRetVal beginTrans (IsolationLevel isoLevel, TransSyncMode mode);
 
     DbRetVal addPacket(BasePacket *pkt);
 
     DbRetVal addPreparePacket(PacketPrepare *pkt);
     DbRetVal removePreparePacket(int stmtid);
 
-    DbRetVal setSyncMode(DataSyncMode mode);
-    DataSyncMode getSyncMode() { return syncMode; }
+    DbRetVal setSyncMode(TransSyncMode mode);
+    TransSyncMode getSyncMode() { return syncMode; }
     DbRetVal  sendAndReceive(NetworkPacketType type, char *packet, int length);
     friend class SqlFactory;
 };

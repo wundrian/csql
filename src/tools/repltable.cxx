@@ -41,7 +41,6 @@ int main(int argc, char **argv)
     int c = 0, opt = 10;
     char tablename[IDENTIFIER_LENGTH];
     char syncModeStr[IDENTIFIER_LENGTH];
-    DataSyncMode syncMode = ASYNC;
     bool tableNameSpecified = false;
     while ((c = getopt(argc, argv, "U:P:t:l:m:u?")) != EOF) 
     {
@@ -49,7 +48,6 @@ int main(int argc, char **argv)
         {
             case 'U' : { strcpy(username, argv[optind - 1]); opt=10; break; }
             case 'P' : { strcpy(password, argv[optind - 1]); opt=10; break; }
-            case 'm' : { strcpy(syncModeStr, argv[optind - 1]); break; }
             case 't' : { strcpy(tablename, argv[optind - 1]); 
                          if (opt==10) opt = 2; 
                          tableNameSpecified = true; 
@@ -75,12 +73,6 @@ int main(int argc, char **argv)
     }
     DbRetVal rv = OK;
     if (opt==2) {
-        if (strncasecmp(syncModeStr, "TSYNC",4) == 0)
-            syncMode = TSYNC;
-        else if (strncasecmp(syncModeStr, "ASYNC",4) == 0)
-            syncMode = ASYNC;
-        else 
-            printf("Unknown mode. Setting ASYNC mode\n");
     }
     return 0;
 }

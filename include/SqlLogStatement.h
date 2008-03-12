@@ -23,11 +23,6 @@
 #include <SqlLogConnection.h>
 #include <SqlFactory.h>
 #include <CSql.h>
-class TableSyncMode{
-    public:
-    char tableName[IDENTIFIER_LENGTH];
-    DataSyncMode mode;
-};
 class SqlLogStatement: public AbsSqlStatement
 {
     public:
@@ -40,7 +35,6 @@ class SqlLogStatement: public AbsSqlStatement
     }
 
     bool isNonSelectDML(char *stmtstr);
-    DbRetVal  getTableSyncMode();
     DbRetVal prepare(char *stmt);
 
     DbRetVal execute(int &rowsAffect);
@@ -77,15 +71,13 @@ class SqlLogStatement: public AbsSqlStatement
     void setTimeStampParam(int paramPos, TimeStamp value);
     bool isSelect();
 
+    bool isCached;
     private:
-    DbRetVal populateSyncModeList();
 
     bool needLog;
-    DataSyncMode syncMode;
     int sid; //statement id
     List paramList;
 
-    static List syncModeList;
     static UniqueID stmtUID;
     friend class SqlFactory;
 };

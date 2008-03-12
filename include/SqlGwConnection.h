@@ -22,11 +22,15 @@
 #include<CSql.h>
 #include<AbsSqlConnection.h>
 #include<SqlFactory.h>
+#include<Network.h>
 
-/**
-* @class SqlGwConnection
-*
-*/
+enum GwHandler
+{
+    NoHandler =0,
+    CSqlHandler = 1,
+    AdapterHandler =2,
+    CSqlAndAdapterHandler =3
+};
 class SqlGwConnection : public AbsSqlConnection
 {
     Connection dummyConn;
@@ -37,7 +41,11 @@ class SqlGwConnection : public AbsSqlConnection
     char password[IDENTIFIER_LENGTH];
 
     public:
-    SqlGwConnection(){innerConn = NULL; }
+    GwHandler txnHdlr;
+    TransSyncMode mode;
+    SqlGwConnection(){innerConn = NULL; mode = OSYNC; }
+    void setTxnHandler(GwHandler hdlr) { txnHdlr = hdlr; }
+    GwHandler getTxnHandler() { return txnHdlr; }
 
     DbRetVal connect (char *user, char * pass);
 
@@ -47,7 +55,7 @@ class SqlGwConnection : public AbsSqlConnection
 
     DbRetVal rollback();
 
-    DbRetVal beginTrans (IsolationLevel isoLevel);
+    DbRetVal beginTrans (IsolationLevel isoLevel, TransSyncMode mode = OSYNC);
 
     friend class SqlFactory;
 
@@ -56,6 +64,7 @@ class SqlGwConnection : public AbsSqlConnection
 
     DbRetVal connectCSqlIfNotConnected();
     DbRetVal connectAdapterIfNotConnected();
+
     //Note::forced to implement this as it is pure virtual in base class
     Connection& getConnObject(){  return dummyConn; }
 };

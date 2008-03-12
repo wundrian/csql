@@ -24,13 +24,10 @@ class CacheTableLoader
     char userName[IDENTIFIER_LENGTH];
     char password[IDENTIFIER_LENGTH];
 
-    DataSyncMode syncMode;
-
     public:
     CacheTableLoader(){strcpy(tableName,"");}
     void setConnParam(char *user, char *pass){ strcpy(userName, user); strcpy(password, pass); }
     void setTable(char *tablename) { strcpy(tableName,tablename); }
-    void setSyncMode(DataSyncMode  mode) { syncMode = mode; }
     DbRetVal addToCacheTableFile();
     DbRetVal removeFromCacheTableFile();
     DbRetVal load(bool tabDef=true);
@@ -38,12 +35,7 @@ class CacheTableLoader
     DbRetVal unload(bool tabDefinition = true);
     DbRetVal refresh();
     DbRetVal recoverAllCachedTables();
-
-
-
     DbRetVal load(DatabaseManager *dbMgr, bool tabDef);
-
-
 };
 
 class BindBuffer

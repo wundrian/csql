@@ -74,14 +74,16 @@ class Identifier
 class List
 {
     ListNode *head;
+    int totalElements;
     public:
-    List() { head = NULL;}
+    List() { head = NULL; totalElements = 0;}
 
     DbRetVal append(void *elem)
     {
         ListNode *newNode = new ListNode();
         newNode->element = elem;
         newNode->next = NULL;
+        totalElements++;
         //If this is the first node, set it as head
         if (NULL == head) { head = newNode; return OK; }
 
@@ -106,6 +108,7 @@ class List
             {
                 prev->next = iter->next;
                 delete iter;
+                totalElements--;
                 if (iter == head) { head = NULL; return OK;}
                 return OK;
             }
@@ -161,19 +164,12 @@ class List
         }
         delete iter;
         head = NULL;
+        totalElements = 0;
         return;
     }
     int size()
     {
-        int count =1;
-        if (NULL == head) return 0;
-        ListNode *iter = head;
-        while (iter->next != NULL)
-        {
-            count++;
-            iter = iter->next;
-        }
-        return count;
+        return totalElements;
     }
 
 };

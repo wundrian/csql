@@ -21,6 +21,11 @@
 #define ABSSQLCONNECTION_H
 #include<CSql.h>
 
+enum TransSyncMode {
+    OSYNC=1,
+    TSYNC=2
+};
+
 /**
 * @class AbsSqlConnection
 *
@@ -84,7 +89,8 @@ class AbsSqlConnection
     *   @param isoLevel isolation level. Default is read committed.
     *   @return DbRetVal
     */
-    virtual DbRetVal beginTrans (IsolationLevel isoLevel = READ_COMMITTED) = 0;
+    virtual DbRetVal beginTrans (IsolationLevel isoLevel = READ_COMMITTED,
+                                 TransSyncMode mode = OSYNC) = 0;
     virtual ~AbsSqlConnection(){}
 
 };

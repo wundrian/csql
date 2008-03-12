@@ -61,12 +61,13 @@ DbRetVal SqlOdbcConnection::disconnect()
     SQLFreeHandle (SQL_HANDLE_ENV, envHdl);
     return rv;
 }
-DbRetVal SqlOdbcConnection::beginTrans(IsolationLevel isoLevel)
+DbRetVal SqlOdbcConnection::beginTrans(IsolationLevel isoLevel, TransSyncMode mode)
 {
+    if (prevIsoLevel == isoLevel) return OK;
     DbRetVal rv = OK;
     int retVal =0;
     SQLPOINTER iso;
-
+    
     switch(isoLevel)
     {
         case READ_UNCOMMITTED:
@@ -85,6 +86,7 @@ DbRetVal SqlOdbcConnection::beginTrans(IsolationLevel isoLevel)
 
     retVal = SQLSetConnectAttr(dbHdl, SQL_ATTR_TXN_ISOLATION, iso, 0);    
     if (!SQL_SUCCEEDED(retVal)) return ErrSysInit;
+    prevIsoLevel = isoLevel;
     retVal = SQLTransact (envHdl, dbHdl, SQL_ROLLBACK);
     if (!SQL_SUCCEEDED(retVal)) rv = ErrSysInit;
     return rv;

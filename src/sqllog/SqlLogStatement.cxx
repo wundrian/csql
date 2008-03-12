@@ -19,7 +19,6 @@
  ***************************************************************************/
 #include <SqlLogStatement.h>
 
-List SqlLogStatement::syncModeList;
 UniqueID SqlLogStatement::stmtUID;
 
 bool SqlLogStatement::isNonSelectDML(char *stmtstr)
@@ -31,84 +30,27 @@ bool SqlLogStatement::isNonSelectDML(char *stmtstr)
     return false;
 }
 
-//also sets needLog and syncMod3
-DbRetVal SqlLogStatement::getTableSyncMode()
-{
-    if (0 == syncModeList.size()) 
-    {
-        printError(ErrSysInit, "syncModelist not populated\n");
-        return ErrSysInit;
-    }
-    ListIterator iter = syncModeList.getIterator();
-    TableSyncMode *node;
-    char* tblName = innerStmt->getTableName();
-    if (NULL == tblName)
-    {
-        printError(ErrSysInit, "Underlying stmt object does not provide tblname\n");
-        needLog = false;
-        syncMode = NOSYNC;
-        return ErrSysInit;
-    } 
-    while (iter.hasElement()) {
-        node = (TableSyncMode*)iter.nextElement();
-        //printf("LOOP %s %s %d\n", node->tableName, tblName, node->mode);
-        if (strcmp(node->tableName, tblName) == 0) 
-        {
-            if (NOSYNC == node->mode ) break; 
-            else { needLog = true; syncMode = node->mode;  return OK;}
-        }
-    }
-    needLog = false;
-    syncMode = NOSYNC;
-    return OK;
-}
-DbRetVal SqlLogStatement::populateSyncModeList()
-{
-    FILE *fp = NULL;
-    fp = fopen(Conf::config.getTableConfigFile(),"r");
-    if( fp == NULL ) {
-        printError(ErrSysInit, "cache.table file does not exist");
-        return ErrSysInit;
-    }
-    char tablename[IDENTIFIER_LENGTH];
-    int cmode;
-    DataSyncMode  syncmode;
-    TableSyncMode *node;
-    while(!feof(fp))
-    {
-        fscanf(fp, "%d:%d:%s\n", &cmode, &syncmode, tablename);
-        node = new TableSyncMode();
-        strcpy(node->tableName, tablename);
-        node->mode = syncmode;
-        syncModeList.append(node);
-    }
-    //printf("Loaded tablesyncmode to list. size %d\n", syncModeList.size());
-    fclose(fp);
-    return OK;
-}
-
 DbRetVal SqlLogStatement::prepare(char *stmtstr)
 {
     DbRetVal rv = OK;
     if (innerStmt) rv = innerStmt->prepare(stmtstr);
     if (rv != OK) return rv;
 
-    //printf("LOG ENTER: prepare %s %d\n", stmtstr, isNonSelectDML(stmtstr));
+    isCached = false;
     //check if it is INSERT UPDATE DELETE statement
+    //if not, then no need to generate logs
     if (!isNonSelectDML(stmtstr)) { return rv;}
-    needLog = false;
     if (!Conf::config.useReplication() && !Conf::config.useCache()) return OK;
+    SqlLogConnection* logConn = (SqlLogConnection*)con;
+    if (!logConn->isTableCached(innerStmt->getTableName())) return ErrNotCached;
+    isCached = true;
+    return OK;
 
-    if (0 == syncModeList.size()) rv = populateSyncModeList();
-    if (rv != OK) return rv;
-    rv = getTableSyncMode();
-    if (rv != OK) return rv;
-    if (!needLog) return ErrNotCached;
     sid  = SqlLogStatement::stmtUID.getID();
-    //printf("LOG: prepare sid %d needLog %d syncMode %d \n", sid, needLog, syncMode);
+    //TODO::for TSYNC mode
     PacketPrepare *pkt = new PacketPrepare();
     pkt->stmtID= sid;
-    pkt->syncMode = syncMode;
+    pkt->syncMode = TSYNC;
     pkt->stmtString = stmtstr;
     pkt->noParams = innerStmt->noOfParamFields();
     FieldInfo *info = new FieldInfo();
@@ -129,13 +71,14 @@ DbRetVal SqlLogStatement::prepare(char *stmtstr)
       }
     }
     pkt->marshall();
-    SqlLogConnection* logConn = (SqlLogConnection*)con;
     //printf("Sending PREPARe packet of size %d\n", pkt->getBufferSize());
     rv = logConn->sendAndReceive(NW_PKT_PREPARE, pkt->getMarshalledBuffer(), pkt->getBufferSize());
     //printf("RV from PREPARE SQLLOG %d\n", rv);
-    if (rv != OK) { needLog = false; 
-       logConn->addPreparePacket(pkt); free(); 
-       delete info; return rv;
+    if (rv != OK) { 
+       needLog = false; 
+       logConn->addPreparePacket(pkt); 
+       delete info; 
+       return rv;
     }
     delete pkt;
     delete info;
@@ -157,11 +100,11 @@ DbRetVal SqlLogStatement::execute(int &rowsAffected)
     if (innerStmt) rv = innerStmt->execute(rowsAffected);
     if (rv != OK) return rv;
 
-    if (!needLog) return rv;
-
-    logConn->setSyncMode(syncMode);
+    if (!needLog) return OK;
     //no need to generate log if it does not actually modify the table
     if (rowsAffected == 0 ) return OK;
+    if (!isCached) return OK;
+    if (logConn->getSyncMode() == OSYNC) return OK;
 
     //printf("LOG:execute\n");
     PacketExecute *pkt = new PacketExecute();

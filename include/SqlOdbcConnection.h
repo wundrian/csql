@@ -36,6 +36,7 @@ class SqlOdbcConnection : public AbsSqlConnection
     public:
     SQLHENV envHdl;
     SQLHDBC dbHdl;
+    IsolationLevel prevIsoLevel;
     SqlOdbcConnection(){innerConn = NULL; }
 
     //Note::forced to implement this as it is pure virtual in base class
@@ -49,7 +50,7 @@ class SqlOdbcConnection : public AbsSqlConnection
 
     DbRetVal rollback();
 
-    DbRetVal beginTrans (IsolationLevel isoLevel);
+    DbRetVal beginTrans (IsolationLevel isoLevel, TransSyncMode mode);
 
     friend class SqlFactory;
 };

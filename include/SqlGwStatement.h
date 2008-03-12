@@ -26,7 +26,7 @@
 class SqlGwStatement: public AbsSqlStatement
 {
     AbsSqlStatement *adapter;
-    bool isAdapterHanding;
+    GwHandler stmtHdlr;
     public:
     SqlGwStatement(){innerStmt = NULL; adapter = NULL; con = NULL;}
     void setAdapter(AbsSqlStatement *stmt) { adapter = stmt; }
@@ -76,6 +76,8 @@ class SqlGwStatement: public AbsSqlStatement
     bool isSelect();
 
     private:
+    bool shouldAdapterHandle();
+    bool shouldCSqlHandle();
     friend class SqlFactory;
 };
 
