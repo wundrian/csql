@@ -46,35 +46,39 @@ DbRetVal SqlGwConnection::disconnect()
     isAdapterConnected = false;
     return rv;
 }
-DbRetVal SqlGwConnection::beginTrans(IsolationLevel isoLevel)
+DbRetVal SqlGwConnection::beginTrans(IsolationLevel isoLevel, TransSyncMode smode)
 {
     DbRetVal rv = OK;
-    //if (innerConn) connectCSqlIfNotConnected();
-    //if (adapter) connectAdapterIfNotConnected();
     if (innerConn && isCSqlConnected) rv =  innerConn->beginTrans(isoLevel);
-    //printf("BEGINTRANS %d\n", rv);
     if (rv != OK) return rv;
     if (adapter && isAdapterConnected) rv = adapter->beginTrans(isoLevel);
-    //printf("BEGINTRANS2 %d\n", rv);
     if (!isAdapterConnected && !isCSqlConnected) return ErrNoConnection;
-    //printf("BEGINTRANS3 %d\n", rv);
+    printf("passed mode is %d\n", smode);
+    mode = smode;
+    txnHdlr = CSqlHandler;
     return rv;
 }
 DbRetVal SqlGwConnection::commit()
 {
     DbRetVal rv = OK;
-    if (innerConn && isCSqlConnected) rv = innerConn->commit();
+    if (innerConn)
+        rv = innerConn->commit();
     if (rv != OK) return rv;
-    if (adapter && isAdapterConnected) rv = adapter->commit();
+    if (adapter && 
+        (txnHdlr == AdapterHandler || txnHdlr == CSqlAndAdapterHandler))
+        rv = adapter->commit();
     if (!isAdapterConnected && !isCSqlConnected) return ErrNoConnection;
     return rv;
 }
 DbRetVal SqlGwConnection::rollback()
 {
     DbRetVal rv = OK;
-    if (innerConn && isCSqlConnected) rv =  innerConn->rollback();
+    if (innerConn && isCSqlConnected )
+        rv =  innerConn->rollback();
     if (rv != OK) return rv;
-    if (adapter && isAdapterConnected) rv = adapter->rollback();
+    if (adapter && isAdapterConnected &&
+        (txnHdlr == AdapterHandler || txnHdlr == CSqlAndAdapterHandler))
+        rv = adapter->rollback();
     if (!isAdapterConnected && !isCSqlConnected) return ErrNoConnection;
     return rv;
 }
