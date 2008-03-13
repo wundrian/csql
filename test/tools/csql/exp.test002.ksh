@@ -19,7 +19,7 @@ Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
-Statement Executed: Rows Affected = 1
+Statement execute failed with error -22
 ---------------------------------------------------------
 	f1	f2	
 ---------------------------------------------------------
@@ -33,7 +33,7 @@ Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
-Statement Executed: Rows Affected = 1
+Statement execute failed with error -22
 ---------------------------------------------------------
 	f1	f2	
 ---------------------------------------------------------
