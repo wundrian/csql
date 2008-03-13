@@ -53,7 +53,7 @@ DbRetVal SqlGwConnection::beginTrans(IsolationLevel isoLevel, TransSyncMode smod
     if (rv != OK) return rv;
     if (adapter && isAdapterConnected) rv = adapter->beginTrans(isoLevel);
     if (!isAdapterConnected && !isCSqlConnected) return ErrNoConnection;
-    printf("passed mode is %d\n", smode);
+    //printf("passed mode is %d\n", smode);
     mode = smode;
     txnHdlr = CSqlHandler;
     return rv;
@@ -61,7 +61,8 @@ DbRetVal SqlGwConnection::beginTrans(IsolationLevel isoLevel, TransSyncMode smod
 DbRetVal SqlGwConnection::commit()
 {
     DbRetVal rv = OK;
-    if (innerConn)
+    if (innerConn && isCSqlConnected)
+        //(txnHdlr == CSqlHandler || txnHdlr == CSqlAndAdapterHandler))
         rv = innerConn->commit();
     if (rv != OK) return rv;
     if (adapter && 
@@ -73,7 +74,8 @@ DbRetVal SqlGwConnection::commit()
 DbRetVal SqlGwConnection::rollback()
 {
     DbRetVal rv = OK;
-    if (innerConn && isCSqlConnected )
+    if (innerConn && isCSqlConnected)
+        //(txnHdlr == CSqlHandler || txnHdlr == CSqlAndAdapterHandler))
         rv =  innerConn->rollback();
     if (rv != OK) return rv;
     if (adapter && isAdapterConnected &&

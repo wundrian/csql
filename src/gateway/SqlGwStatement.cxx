@@ -24,15 +24,24 @@ DbRetVal SqlGwStatement::prepare(char *stmtstr)
 {
     DbRetVal rv = OK;
     SqlGwConnection *conn = (SqlGwConnection*) con;
-    conn->connectCSqlIfNotConnected();
-    conn->connectAdapterIfNotConnected();
+    //conn->connectCSqlIfNotConnected();
+    //conn->connectAdapterIfNotConnected();
     stmtHdlr = NoHandler;
     if (innerStmt) rv = innerStmt->prepare(stmtstr);
     SqlLogStatement *stmt = (SqlLogStatement*) innerStmt;
     printf("rv from prepare is %d hdlr %d\n", rv, stmtHdlr);
-    if (rv == OK && !stmt->isCached) { 
-        stmtHdlr = CSqlHandler;
-        return rv;  
+    if (rv == OK) {
+        if (!stmt->isCached) { 
+            stmtHdlr = CSqlHandler;
+            return rv;  
+        }else {
+            if (conn->mode != OSYNC) {
+                stmtHdlr = CSqlHandler;
+                return rv;
+            }else {
+                stmtHdlr = CSqlAndAdapterHandler;
+            }
+        }
     }
     //prepare failed. means table not there in csql->uncached table
     //or sql statement is complex and csql parser failed
