@@ -27,7 +27,6 @@ void printUsage()
    printf("       s -> load only the records from target db. Assumes table is already created in csql\n");
    printf("       r -> reload the table. get the latest image of table from target db\n");
    printf("       u -> unload the table. if used with -s option, removes only records and preserves the schema\n");
-   printf("       m -> synchronous mode\n");
    printf("       no option -> get table definition and records from target db and create in csql.\n");
    return;
 }
