@@ -69,7 +69,6 @@ void TableImpl::markFldNull(char const* name)
         printError(ErrNotExists, "Field %s does not exist", name);
         return;
     }
-
     markFldNull(colpos);
 }
 
@@ -345,8 +344,8 @@ DbRetVal TableImpl::insertTuple()
     if (ret != OK)
     {
         printError(ret, "Unable to copy values from bind buffer");
-        lMgr_->releaseLock(tptr);
         (*trans)->removeFromHasList(db_, tptr);
+        //lMgr_->releaseLock(tptr);
         ((Chunk*)chunkPtr_)->free(db_, tptr);
         return ret;
     }
@@ -504,7 +503,27 @@ DbRetVal TableImpl::updateTuple()
     if (undoFlag)
         ret = (*trans)->appendUndoLog(sysDB_, UpdateOperation, curTuple_, length_);
     if (ret != OK) return ret;
-    return copyValuesFromBindBuffer(curTuple_);
+
+    DbRetVal rv = copyValuesFromBindBuffer(curTuple_, false);
+    if (rv != OK) { 
+        lMgr_->releaseLock(curTuple_); 
+        (*trans)->removeFromHasList(db_, curTuple_); 
+        return rv; 
+    }
+    int addSize = 0;
+    if (numFlds_ < 31)
+    {
+        addSize = 4;
+        *(int*)((char*)(curTuple_) + (length_-addSize)) = iNullInfo;
+    }
+    else
+    {
+        addSize = os::align(numFlds_);
+        os::memcpy(((char*)(curTuple_) + (length_-addSize)), cNullInfo, addSize);
+
+    }
+
+    return OK;
 }
 
 void TableImpl::printInfo()
@@ -523,7 +542,7 @@ void TableImpl::printInfo()
 
 }
 
-DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr)
+DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
 {
     //Iterate through the bind list and copy the value here
     FieldIterator fIter = fldList_.getIterator();
@@ -532,7 +551,7 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr)
     while (fIter.hasElement())
     {
         FieldDef def = fIter.nextElement();
-        if (def.isNull_ && NULL == def.bindVal_) 
+        if (def.isNull_ && NULL == def.bindVal_ && isInsert) 
         {
             printError(ErrNullViolation, "NOT NULL constraint violation for field %s\n", def.fldName_);
             return ErrNullViolation;

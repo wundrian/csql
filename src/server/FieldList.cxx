@@ -183,6 +183,7 @@ int FieldList::getFieldPosition(const char *fldName)
         if (0 == strcmp(iter->fldDef.fldName_, fldName))
             return position;
         position++;
+        iter  = iter->next;
     }
 
     return -1;

@@ -104,7 +104,7 @@ class TableImpl:public Table
     private:
 
     //copy Values from binded buffer to tuple pointed by arg
-    DbRetVal copyValuesFromBindBuffer(void *tuple);
+    DbRetVal copyValuesFromBindBuffer(void *tuple, bool isInsert=true);
     DbRetVal copyValuesToBindBuffer(void *tuple);
     void setNullBit(int fldpos);
 

@@ -276,7 +276,13 @@ DbRetVal DelStatement::resolveForCondition()
         value->type = fInfo->type;
         value->length = fInfo->length;
         value->value = AllDataType::alloc(fInfo->type, fInfo->length);
-        //table->bindFld(name->fldName, value->value);
+        if (value->parsedString == NULL)
+        {
+            delete fInfo;
+            printError(ErrSyntaxError, "Condition value should not be NULL");
+            return ErrSyntaxError;
+        }
+
         if (value->parsedString[0] == '?')
         {
             value->paramNo = paramPos++;

@@ -278,6 +278,7 @@ DbRetVal InsStatement::resolve()
         value->type = fInfo->type;
         value->length = fInfo->length;
         value->value = AllDataType::alloc(fInfo->type, fInfo->length);
+        if (value->parsedString == NULL) continue;
         table->bindFld(name->fldName, value->value);
         if (value->parsedString[0] == '?')
         {

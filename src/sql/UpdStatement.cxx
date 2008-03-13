@@ -402,6 +402,12 @@ DbRetVal UpdStatement::resolveForAssignment()
         value->length = fInfo->length;
         value->value = AllDataType::alloc(fInfo->type, fInfo->length);
         table->bindFld(value->fldName, value->value);
+        if (value->parsedString == NULL) 
+        {    
+            if (fInfo->isNull) { delete fInfo; return ErrNullViolation; }
+            table->markFldNull(value->fldName); 
+            continue; 
+        }
         if (value->parsedString[0] == '?')
         {
             value->paramNo = paramPos++;
@@ -435,6 +441,13 @@ DbRetVal UpdStatement::resolveForAssignment()
         cValue->type = fInfo->type;
         cValue->length = fInfo->length;
         cValue->value = AllDataType::alloc(fInfo->type, fInfo->length);
+        if (value->parsedString == NULL)
+        {
+            delete fInfo;
+            printError(ErrSyntaxError, "Condition value should not be NULL");
+            return ErrSyntaxError;
+        }
+
         if (cValue->parsedString[0] == '?')
         {
             cValue->paramNo = paramPos++;

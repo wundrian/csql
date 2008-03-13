@@ -467,7 +467,7 @@ DbRetVal LockManager::releaseLock(void *tuple)
    {
        bucket->mutex_.releaseLock(systemDatabase_->procSlot);
        printDebug(DM_Lock, "LockManager:releaseLock End");
-       printError(ErrSysFatal, "Lock Element Not found: Probable Data Corruption");
+       printError(ErrSysFatal, "Lock Element Not found: Probable Data Corruption.\n");
        return ErrSysFatal;
    }
 

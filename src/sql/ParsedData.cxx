@@ -20,7 +20,10 @@
 void ParsedData::insertValue(char *val)
 {
     FieldValue *newVal = new FieldValue();
-    newVal->parsedString = strdup(val);
+    if (val == NULL) 
+        newVal->parsedString = NULL;
+    else 
+        newVal->parsedString = strdup(val);
     newVal->value = NULL;
     newVal->paramNo = 0;
     newVal->type = typeUnknown;
@@ -31,7 +34,10 @@ void ParsedData::insertValue(char *val)
 void** ParsedData::insertCondValueAndGetPtr(char *fldName, char *val)
 {
     ConditionValue *newVal = new ConditionValue();
-    newVal->parsedString = strdup(val);
+    if (val == NULL) 
+        newVal->parsedString = NULL;
+    else
+        newVal->parsedString = strdup(val);
     newVal->value = NULL;
     newVal->paramNo = 0;
     newVal->type = typeUnknown;
@@ -53,7 +59,10 @@ void ParsedData::insertUpdateValue(char *fName, char *val)
 {
     UpdateFieldValue *newVal = new UpdateFieldValue();
     strcpy(newVal->fldName, fName);
-    newVal->parsedString = strdup(val);
+    if (val == NULL) 
+        newVal->parsedString = NULL;
+    else 
+        newVal->parsedString = strdup(val);
     newVal->value = NULL;
     newVal->paramNo = 0;
     updFldValList.append(newVal);

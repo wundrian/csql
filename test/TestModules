@@ -1,17 +1,3 @@
 #List of test module directories which needs to be run by test executor
 #Note:  To exclude modules, comment out using # 
-dbapi/Connection
-dbapi/Index
-dbapi/DataType
-dbapi/Table
-dbapi/UserManager
-dbapi/Predicate
-system/config
-system/Allocator
-system/proc
-system/lock
-system/trans
-tools/catalog
 tools/csql
-jdbc/Connection
-jdbc/Statement
