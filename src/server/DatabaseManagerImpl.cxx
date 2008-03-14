@@ -815,6 +815,13 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
             systemDatabase_->releaseDatabaseMutex();
             return ErrBadArg;
         }
+        if (!fInfo->isNull_ && isPrimary ) 
+        {
+            printError(ErrBadArg, "Primary Index cannot be created on field without NOTNULL constraint");
+            delete[] fptr;
+            systemDatabase_->releaseDatabaseMutex();
+            return ErrBadArg;
+        }
     }
     //create chunk to store the meta data of the index created
     //for latches and bucket pointers
