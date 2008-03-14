@@ -1,4 +1,4 @@
- int data type testing;
+echo int data type testing;
 
 create table t1 (f1 int, f2 int, primary key (f1));
 insert into t1 values (10, 1);
@@ -30,10 +30,10 @@ select * from t1 where NOT f1 != 12;
 echo select * from t1 where f1 = f2;
 select * from t1 where f1 = f2;
 
-echo select * from t1 where f1 between 999999997 and 999999999;
-select * from t1 where f1 between 999999997 and 999999999;
-echo select * from t1 where f1 between -999999999 and -999999997;
-select * from t1 where f1 between -999999999 and -999999997;
+echo select * from t1 where f1 between 2147483646 and 2147483647;
+select * from t1 where f1 between 2147483646 and 2147483647;
+echo select * from t1 where f1 between -2147483647 and -2147483648;
+select * from t1 where f1 between -2147483647 and -2147483648;
 
 echo update t1 set f2 = 2 where f1 != f2;
 update t1 set f2 = 2 where f1 != f2;
