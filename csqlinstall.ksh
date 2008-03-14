@@ -12,6 +12,7 @@ echo "installdir is ${install_dir}"
 #cd ../..
 cd src/jdbc
 ./buildJdbcDriver.ksh
+mkdir -p ${install_dir}/lib
 cp CSqlJdbcDriver.jar ${install_dir}/lib
 cd ${root_dir}
 make install
@@ -23,9 +24,11 @@ mv libcsqlsql libcsqlsql.so
 mv libcsqljdbc libcsqljdbc.so
 mv libcsqlnw libcsqlnw.so
 mv libcsqlsqllog libcsqlsqllog.so
-#ln -s libcsql.so libcsql 
-#ln -s libcsqlsql.so libcsqlsql
-#ln -s libcsqljdbc.so libcsqljdbc
+ln -s libcsql.so libcsql 
+ln -s libcsqlsql.so libcsqlsql
+ln -s libcsqljdbc.so libcsqljdbc
+ln -s libcsqlnw.so libcsqlnw
+ln -s libcsqlsqllog.so libcsqlsqllog
 
 
 cp ${root_dir}/src/sql/Statement.h ${install_dir}/include
