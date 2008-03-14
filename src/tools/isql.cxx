@@ -28,6 +28,10 @@ STMT_TYPE stmtType = SELECT;
 FILE *fp;
 AbsSqlConnection *conn;
 AbsSqlStatement *stmt;
+
+bool autocommitmode = true;
+IsolationLevel isoLevel = READ_COMMITTED;
+void printHelp();
 bool getInput(bool);
 void printUsage()
 {
@@ -114,14 +118,44 @@ bool handleTransaction(char *st)
         strncasecmp (st, "commit", 6) == 0 )
     {
         conn->commit();
-        conn->beginTrans();
+        conn->beginTrans(isoLevel);
         return true;
     }
     else if (strncasecmp (st, "ROLLBACK", 8) == 0|| 
         strncasecmp (st, "rollback", 8) == 0)
     {
         conn->rollback();
-        conn->beginTrans();
+        conn->beginTrans(isoLevel);
+        return true;
+    }
+    else if (strncasecmp (st, "SET AUTOCOMMIT ON", 17) == 0)
+    {
+        autocommitmode = true;
+        printf("AUTOCOMMIT Mode is set to ON\n");
+        return true;
+    }
+    else if (strncasecmp (st, "SET AUTOCOMMIT OFF", 18) == 0)
+    {
+        autocommitmode = false;
+        printf("AUTOCOMMIT Mode is set to OFF\n");
+        return true;
+    }
+    else if (strncasecmp (st, "SET ISOLATION LEVEL UNCOMMITTED", 31) == 0)
+    {
+        isoLevel = READ_UNCOMMITTED;
+        printf("Isolation Level is set to READ_UNCOMMITTED\n");
+        return true;
+    }
+    else if (strncasecmp (st, "SET ISOLATION LEVEL COMMITTED", 29) == 0)
+    {
+        isoLevel = READ_COMMITTED;
+        printf("Isolation Level is set to READ_COMMITTED\n");
+        return true;
+    }
+    else if (strncasecmp (st, "SET ISOLATION LEVEL REPEATABLE", 30) == 0)
+    {
+        isoLevel = READ_REPEATABLE;
+        printf("Isolation Level is set to READ_REPEATABLE\n");
         return true;
     }
     return false;
@@ -129,16 +163,32 @@ bool handleTransaction(char *st)
 bool handleEchoAndComment(char *st)
 {
     while (isspace (*st)|| *st == '(' ) st++; // Skip white spaces
-    if (strncasecmp (st, "ECHO", 4) == 0 ||
-        strncasecmp (st, "echo", 4) == 0 )
+    if (strncasecmp (st, "ECHO", 4) == 0)
     {
         printf("%s\n", st);
         return true;
     }else if (strncmp(st, "--", 2) == 0)
     {
         return true;
+    }else if (strncasecmp(st, "help", 2) == 0)
+    {
+        printHelp();
+        return true;
     }
     return false;
+}
+void printHelp()
+{
+    printf("CSQL Command List\n");
+    printf("======================================================\n");
+    printf("SET AUTOCOMMIT ON|OFF\n");
+    printf("SET ISOLATION LEVEL UNCOMMITTED|COMMITTED|REPEATABLE\n");
+    printf("CREATE TABLE|INDEX ...\n");
+    printf("INSERT ...\n");
+    printf("UPDATE ...\n");
+    printf("DELETE ...\n");
+    printf("SELECT ...\n");
+    printf("======================================================\n");
 }
 void setStmtType(char *st)
 {
@@ -259,6 +309,12 @@ bool getInput(bool fromFile)
         stmt->close();
     }
     stmt->free();
-    return true;
+    if (autocommitmode)
+    {
+        conn->commit();
+        conn->beginTrans(isoLevel);
+        return true;
+    }
 
+    return true;
 }
