@@ -441,7 +441,7 @@ DbRetVal UpdStatement::resolveForAssignment()
         cValue->type = fInfo->type;
         cValue->length = fInfo->length;
         cValue->value = AllDataType::alloc(fInfo->type, fInfo->length);
-        if (value->parsedString == NULL)
+        if (cValue->parsedString == NULL)
         {
             delete fInfo;
             printError(ErrSyntaxError, "Condition value should not be NULL");
