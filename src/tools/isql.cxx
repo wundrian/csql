@@ -14,6 +14,7 @@
  *                                                                         *
  ***************************************************************************/
 #include<CSql.h>
+#include<DatabaseManagerImpl.h>
 #include <Statement.h>
 #include <SqlFactory.h>
 #include <SqlStatement.h>
@@ -174,6 +175,27 @@ bool handleEchoAndComment(char *st)
     {
         printHelp();
         return true;
+    }else if (strncasecmp(st, "show tables", 11) == 0)
+    {
+      Connection conn;
+      conn.open("root","manager");
+      DatabaseManagerImpl *dbMgr =  (DatabaseManagerImpl*)conn.getDatabaseManager();
+      List tableList = dbMgr->getAllTableNames();
+      ListIterator iter = tableList.getIterator();
+      Identifier *elem = NULL;
+      int ret =0;
+      printf("=============TableNames===================\n");
+      int count =0;
+      while (iter.hasElement())
+      {
+          elem = (Identifier*) iter.nextElement();
+          count++;
+          printf("   %s \n", elem->name);
+      }
+      if (count ==0) printf("  No tables exist\n");
+      printf("=========================================\n");
+      conn.close();
+      return true;
     }
     return false;
 }
@@ -181,6 +203,7 @@ void printHelp()
 {
     printf("CSQL Command List\n");
     printf("======================================================\n");
+    printf("SHOW TABLES\n");
     printf("SET AUTOCOMMIT ON|OFF\n");
     printf("SET ISOLATION LEVEL UNCOMMITTED|COMMITTED|REPEATABLE\n");
     printf("CREATE TABLE|INDEX ...\n");
