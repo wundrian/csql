@@ -30,6 +30,7 @@ public final class JdbcSqlConnection extends JSqlError implements Connection, JS
     JdbcSqlConnection(String username, String password) throws SQLException
     {
         if( password == null || username == null ) throw getException(CSQL_AUTHEN_ERR);
+        if (username.length() > 64 || password.length() > 64) throw getException(CSQL_AUTHEN_ERR);
         jniConn = new JSqlConnection();
         jniConn.alloc();
         int rv = jniConn.connect(username, password);
