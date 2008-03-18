@@ -310,7 +310,7 @@ field_name: ident
 size_opt:
         | '(' NUMBER_STRING ')'
         {
-            parsedData->setFldLength(atoi($2));
+            parsedData->setFldLength(atoi($2)+1);
             free($2);
         }
         ;
@@ -377,6 +377,7 @@ field_type: INT_TYPE
         | CHAR_TYPE
         {
             parsedData->setFldType(typeString);
+            parsedData->setFldLength(2);
         }
         ;
 %%
