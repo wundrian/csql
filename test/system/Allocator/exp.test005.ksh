@@ -3,8 +3,8 @@ Case 1: -d option with no table
 <DatabaseStatistics>
   <Database Name>  SYSTEMDB </Database Name>
   <Max Size> 1048576 </Max Size>
-  <First Page> 17d7a000 </First Page>
-  <Total Pages> 114 </Total Pages>
+  <First Page> 17d84000 </First Page>
+  <Total Pages> 109 </Total Pages>
   <Used Normal Pages> 11 </Used Normal Pages>
   <Used Merged Pages> 2 </Used Merged Pages>
   <Chunks Used> 13 </Chunks Used>
@@ -27,9 +27,9 @@ Case 1: -d option with no table
 </LockTable>
 <DatabaseStatistics>
   <Database Name>  userdb </Database Name>
-  <Max Size> 1048576 </Max Size>
+  <Max Size> 10485760 </Max Size>
   <First Page> 17e7a000 </First Page>
-  <Total Pages> 127 </Total Pages>
+  <Total Pages> 1279 </Total Pages>
   <Used Normal Pages> 0 </Used Normal Pages>
   <Used Merged Pages> 0 </Used Merged Pages>
   <Chunks Used> 0 </Chunks Used>
@@ -42,8 +42,8 @@ Case 2: -d option with 1 table
 <DatabaseStatistics>
   <Database Name>  SYSTEMDB </Database Name>
   <Max Size> 1048576 </Max Size>
-  <First Page> 17d7a000 </First Page>
-  <Total Pages> 114 </Total Pages>
+  <First Page> 17d84000 </First Page>
+  <Total Pages> 109 </Total Pages>
   <Used Normal Pages> 11 </Used Normal Pages>
   <Used Merged Pages> 2 </Used Merged Pages>
   <Chunks Used> 13 </Chunks Used>
@@ -66,9 +66,9 @@ Case 2: -d option with 1 table
 </LockTable>
 <DatabaseStatistics>
   <Database Name>  userdb </Database Name>
-  <Max Size> 1048576 </Max Size>
+  <Max Size> 10485760 </Max Size>
   <First Page> 17e7a000 </First Page>
-  <Total Pages> 127 </Total Pages>
+  <Total Pages> 1279 </Total Pages>
   <Used Normal Pages> 1 </Used Normal Pages>
   <Used Merged Pages> 0 </Used Merged Pages>
   <Chunks Used> 1 </Chunks Used>
@@ -80,8 +80,8 @@ Case 3: -d option after removing table
 <DatabaseStatistics>
   <Database Name>  SYSTEMDB </Database Name>
   <Max Size> 1048576 </Max Size>
-  <First Page> 17d7a000 </First Page>
-  <Total Pages> 114 </Total Pages>
+  <First Page> 17d84000 </First Page>
+  <Total Pages> 109 </Total Pages>
   <Used Normal Pages> 11 </Used Normal Pages>
   <Used Merged Pages> 2 </Used Merged Pages>
   <Chunks Used> 13 </Chunks Used>
@@ -104,9 +104,9 @@ Case 3: -d option after removing table
 </LockTable>
 <DatabaseStatistics>
   <Database Name>  userdb </Database Name>
-  <Max Size> 1048576 </Max Size>
+  <Max Size> 10485760 </Max Size>
   <First Page> 17e7a000 </First Page>
-  <Total Pages> 127 </Total Pages>
+  <Total Pages> 1279 </Total Pages>
   <Used Normal Pages> 0 </Used Normal Pages>
   <Used Merged Pages> 0 </Used Merged Pages>
   <Chunks Used> 0 </Chunks Used>
