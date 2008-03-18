@@ -10,6 +10,7 @@ if [ -s "$CSQL_CONF" ]
 then
     REL_PATH=`pwd`/system/config
 fi
+mkdir /tmp/log
 cp ${REL_PATH}/csql.conf ${REL_PATH}/csqltmp.conf
 export CSQL_CONFIG_FILE=${REL_PATH}/csqltmp.conf
 echo "MAX_THREADS=100" >>${REL_PATH}/csqltmp.conf
