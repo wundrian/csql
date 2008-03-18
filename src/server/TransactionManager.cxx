@@ -67,8 +67,11 @@ void TransactionManager::printDebugInfo(Database *sysdb)
     printf("  <UsedSlots> %d </UsedSlots>\n", usedCount);
     printf("  <FreeSlots> %d </FreeSlots>\n", freeCount);
 
+    Chunk *chunk = sysdb->getSystemDatabaseChunk(UndoLogTableID);
+
     printf("  <UndoLogs>\n");
     printf("    <TotalNodes> %d </TotalNodes>\n", undoLogCount);
+    printf("    <TotalPages> %d </TotalPages>\n", chunk->totalPages());
     printf("  </UndoLogs>\n");
     printf("</TransactionTable>\n");
 }

@@ -92,6 +92,7 @@ operator        "<"|">"|">="|"<="|"="|"\!="|"<>"
                 if(strcasecmp(yytext,"FROM") == 0) token = FROM;
                 if(strcasecmp(yytext,"WHERE") == 0) token = WHERE;
                 if(strcasecmp(yytext,"BETWEEN") == 0) token = BETWEEN;
+                if(strcasecmp(yytext,"IN") == 0) token = IN;
                 if(strcasecmp(yytext,"AND") == 0) token = AND;
                 if(strcasecmp(yytext,"OR") == 0) token = OR;
                 if(strcasecmp(yytext,"NOT") == 0) token = NOT;

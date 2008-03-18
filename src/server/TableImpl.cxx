@@ -345,7 +345,7 @@ DbRetVal TableImpl::insertTuple()
     {
         printError(ret, "Unable to copy values from bind buffer");
         (*trans)->removeFromHasList(db_, tptr);
-        //lMgr_->releaseLock(tptr);
+        lMgr_->releaseLock(tptr);
         ((Chunk*)chunkPtr_)->free(db_, tptr);
         return ret;
     }

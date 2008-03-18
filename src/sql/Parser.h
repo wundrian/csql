@@ -94,6 +94,11 @@ class ParsedData
     //by value in updFldValList and then update() is called.
     List fieldValueList;
 
+    //used to store IN values of SELECT statement
+    //This should be a list of list. so that multiple IN shall be present
+    //in the select statement
+    //List inValueList;
+
     //update field value list. used to store the values to be updated
     //value in the SET clause of UPDATE statement is stored here.
     List updFldValList;
@@ -123,6 +128,7 @@ class ParsedData
     char* getIndexName() { return idxName; }
 
     void insertValue(char *value);
+    //void insertInValue(char *value);
     void** insertCondValueAndGetPtr(char *fName, char *value);
     void insertUpdateValue(char *fldName, char *value);
 
@@ -146,6 +152,7 @@ class ParsedData
     List getFieldNameList() { return fieldNameList; }
     List getConditionValueList() { return conditionValueList; }
     List getFieldValueList() { return fieldValueList; }
+    //List getInValueList() { return inValueList; }
     List getUpdateFieldValueList() { return updFldValList; }
 
     void setFldName(char *name);

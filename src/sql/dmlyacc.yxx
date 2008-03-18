@@ -19,7 +19,7 @@ void yyerror(const char* Msg);
 }
 
 %token <stringval> STRING FIELD NUMBER_STRING BINARY_STRING DOUBLE OPERATOR PARAMETER
-%token <stringval> SELECT FROM WHERE BETWEEN AND OR NOT
+%token <stringval> SELECT FROM WHERE BETWEEN IN AND OR NOT
 %token <stringval> STAR
 %token <stringval> INSERT INTO VALUES
 %token <stringval> DELETE UPDATE SET NULL_VALUE
@@ -173,6 +173,31 @@ condition: ident OPERATOR value
             if( $2 == (char*) 1 )
                 finalPred = parsedData->insertPredicate(finalPred, OpNot, NULL);
             free( $1 );  free( $4 );  free( $6 );
+            $$= finalPred;
+        }
+        | ident not_opt IN '(' value_list ')'
+        {
+            ListIterator valIter = parsedData->getFieldValueList().getIterator();
+            FieldValue *value1, *value2;
+            Predicate *pred1, *pred2, *finalPred;
+            void **ptr1, **ptr2;
+            if (valIter.hasElement()) {
+               value1 = (FieldValue*) valIter.nextElement();
+               ptr1 = parsedData->insertCondValueAndGetPtr((char*)$1, value1->parsedString);
+               pred1 = parsedData->insertPredicate((char*) $1, OpEquals, ptr1);
+               finalPred=pred1;
+            }
+            while (valIter.hasElement()) {
+               value2 = (FieldValue*) valIter.nextElement();
+               ptr2 = parsedData->insertCondValueAndGetPtr((char*)$1, value2->parsedString);
+               pred2 = parsedData->insertPredicate((char*) $1, OpEquals, ptr2);
+               finalPred = parsedData->insertPredicate(pred1, OpOr, pred2);
+               pred1= finalPred;     
+            }
+            if( $2 == (char*)1)
+                finalPred = parsedData->insertPredicate(finalPred, OpNot, NULL);
+
+            free( $1 );  
             $$= finalPred;
         }
         ;

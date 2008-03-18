@@ -553,6 +553,8 @@ bool AllDataType::compareVal(void *val1, void *val2, ComparisionOp op,
 
 bool AllDataType::compareIntVal(void* src1, void *src2, ComparisionOp op)
 {
+    if (src1 == NULL) printf("src1 is null\n");
+    if (src2 == NULL) printf("src2 is null\n");
     bool result = false;
     switch(op)
     {

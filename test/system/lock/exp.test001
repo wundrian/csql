@@ -103,11 +103,11 @@ Before commit
     <TotalNodes> 1 </TotalNodes>
   <LockBucket>
   <TotalUsedBuckets> 10 </TotalUsedBuckets>
-  <TotalPages> 1 </TotalPages>
+  <TotalPages> 8 </TotalPages>
 </LockTable>
 After commit
 <LockTable>
   <TotalUsedBuckets> 0 </TotalUsedBuckets>
-  <TotalPages> 1 </TotalPages>
+  <TotalPages> 8 </TotalPages>
 </LockTable>
 Table Dropped

@@ -134,6 +134,7 @@ class Chunk
 
     long getTotalDataNodes();
     int totalPages();
+    int compact();
 
     private:
 
