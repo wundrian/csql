@@ -18,6 +18,7 @@ Before commit
   <FreeSlots> 99 </FreeSlots>
   <UndoLogs>
     <TotalNodes> 0 </TotalNodes>
+    <TotalPages> 1 </TotalPages>
   </UndoLogs>
 </TransactionTable>
 After commit
@@ -26,6 +27,7 @@ After commit
   <FreeSlots> 100 </FreeSlots>
   <UndoLogs>
     <TotalNodes> 0 </TotalNodes>
+    <TotalPages> 1 </TotalPages>
   </UndoLogs>
 </TransactionTable>
 Table Dropped

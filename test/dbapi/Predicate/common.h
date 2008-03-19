@@ -16,7 +16,7 @@ DbRetVal createTable(DatabaseManager *dbMgr)
 {
     TableDef tabDef;
     tabDef.addField("f1", typeInt, 0, NULL, true);
-    tabDef.addField("f2", typeInt);
+    tabDef.addField("f2", typeInt, 0, NULL, true);
     tabDef.addField("f3", typeInt);
     tabDef.addField("f4", typeInt);
     tabDef.addField("f5", typeInt);

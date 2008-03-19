@@ -17,6 +17,7 @@ Before abort
   <FreeSlots> 99 </FreeSlots>
   <UndoLogs>
     <TotalNodes> 0 </TotalNodes>
+    <TotalPages> 1 </TotalPages>
   </UndoLogs>
 </TransactionTable>
 After abort
@@ -25,6 +26,7 @@ After abort
   <FreeSlots> 100 </FreeSlots>
   <UndoLogs>
     <TotalNodes> 0 </TotalNodes>
+    <TotalPages> 1 </TotalPages>
   </UndoLogs>
 </TransactionTable>
 Table Dropped

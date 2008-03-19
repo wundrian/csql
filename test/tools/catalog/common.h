@@ -16,7 +16,7 @@ DbRetVal createTable(DatabaseManager *dbMgr, char *tblname)
 {
     TableDef tabDef;
     tabDef.addField("f1", typeInt, 0, NULL, true);
-    tabDef.addField("f2", typeInt);
+    tabDef.addField("f2", typeInt, 0, NULL, true);
     DbRetVal rv = dbMgr->createTable(tblname, tabDef);
     if (rv != OK) { printf("Table creation failed\n"); return rv; }
     printf("Table created\n");
