@@ -253,6 +253,7 @@ DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     { 
        printDebug(DM_HashIndex, "Removing hash index node from head with only none node"); 
        bucket1->bucketList_ = 0; 
+       rc = OK;
     }
     if (undoFlag) {
         rc =tr->appendLogicalUndoLog(tbl->sysDB_, DeleteHashIndexOperation,
