@@ -317,6 +317,10 @@ size_opt:
 
 default_expr_opt:
         | DEFAULT value
+        {
+            parsedData->setDefaultValue($2);
+            free($2);
+        }
         ;
 
 null_expr_opt:

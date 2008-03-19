@@ -115,6 +115,9 @@ class AllDataType
     static void convertToFloat(void* dest, void* src, DataType srcType);
     static void convertToDouble(void* dest, void* src, DataType srcType);
     static void convertToString(void* dest, void* src, DataType srcType);
+    static void convertToDate(void* dest, void* src, DataType srcType);
+    static void convertToTime(void* dest, void* src, DataType srcType);
+    static void convertToTimeStamp(void* dest, void* src, DataType srcType);
 
 
     static ComparisionOp getComparisionOperator(char *str);
@@ -610,6 +613,7 @@ day".
 
     int parseTimeFrom(const char *s) { return time.parseFrom(s); }
 
+    int parseFrom(const char *s);
     friend int  operator<(const TimeStamp &d1, const TimeStamp &d2);
     friend int  operator>(const TimeStamp &d1, const TimeStamp &d2);
     friend int  operator<=(const TimeStamp &d1, const TimeStamp &d2);

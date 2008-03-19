@@ -74,6 +74,8 @@ int main()
       printf("Loaded %d records\n", icount);
     }
    
+      //TableImpl *impl = (TableImpl*)table;
+      //impl->setUndoLogging(false);
     i = 0; 
     NanoTimer timer;
     icount =0;
@@ -100,6 +102,7 @@ int main()
     table->setCondition(&p1);
     icount=0;
    
+
     timer.reset();
     for(i = LOAD; i< LOAD+ITERATIONS; i++)
     {    

@@ -75,8 +75,13 @@ DbRetVal CreateTblStatement::resolve()
 
 
        //TODO : need a new addField function which can take FieldDef as parameter.
-       i = tblDef.addField(fDef.fldName_, fDef.type_, fDef.length_, 
+       if (!fDef.isDefault_)  {
+           i = tblDef.addField(fDef.fldName_, fDef.type_, fDef.length_, 
+                        NULL,fDef.isNull_);
+       } else {
+           i = tblDef.addField(fDef.fldName_, fDef.type_, fDef.length_, 
                         fDef.defaultValueBuf_,fDef.isNull_);
+       }
        if( 0 != i )
        {
           printError(ErrUnknown, "Error while adding field");

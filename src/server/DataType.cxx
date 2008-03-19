@@ -28,14 +28,14 @@ int Date::get(int &year, int &month, int &day) const
 int Date::parseFrom(const char *s) {
     int month,day,year;
     int count;
-    count = sscanf(s,"%d/%d/%d",&month,&day,&year);
+    count = sscanf(s,"%d/%d/%d",&year,&month,&day);
     if (count < 3) return -1;
 
     if (year < 100) year += 1900;
 
     if (!isValidDate(year, month, day))
         return -1;
-
+    printf("%d %d %d\n", year, month, day);
     return set(year,month,day);
 }
 
@@ -288,6 +288,26 @@ int Time::parseFrom(const char *s) {
     if (!isValidTime(hours,mins,secs))
         return -1;
     return set(hours,mins,secs);
+}
+int TimeStamp::parseFrom(const char *s) {
+    int hours,mins,secs;
+    int month,day,year;
+    int count;
+    count = sscanf(s,"%d/%d/%d %d:%d:%d",&year,&month,&day, &hours, &mins, &secs);
+    if (count < 5) return -1;
+    if (count == 5) secs = 0;
+
+    if (year < 100) year += 1900;
+
+    if (!date.isValidDate(year, month, day))
+        return -1;
+
+    setDate(year,month,day);
+
+
+    if (!time.isValidTime(hours,mins,secs))
+        return -1;
+    return setTime(hours,mins,secs);
 }
 
 int operator< (const TimeStamp &d1,  const TimeStamp &d2)
@@ -1122,9 +1142,9 @@ void AllDataType::convert(DataType srcType, void *src,
         case typeString:     convertToString(dest, src, srcType); break;
 
         case typeBinary:
-        case typeDate:
-        case typeTime:
-        case typeTimeStamp:
+        case typeDate:       convertToDate(dest, src, srcType); break;
+        case typeTime:       convertToTime(dest, src, srcType); break;
+        case typeTimeStamp:  convertToTimeStamp(dest, src, srcType); break;
         default: return;
     }
 }
@@ -1335,6 +1355,7 @@ void AllDataType::convertToString( void* dest, void* src, DataType srcType )
         case typeString:
         {
             strcpy((char*)dest, (char*)src);
+            printf("copy string to string %s %s\n", dest, src);
             break;
         }
         case typeDate:
@@ -1342,6 +1363,7 @@ void AllDataType::convertToString( void* dest, void* src, DataType srcType )
             Date* dt = (Date*)src;
             sprintf((char*) dest, "%d/%d/%d", dt->year(),
                                   dt->month(), dt->dayOfMonth());
+            printf("converto date src is %s\n", src);
             break;
         }
         case typeTime:
@@ -1361,6 +1383,80 @@ void AllDataType::convertToString( void* dest, void* src, DataType srcType )
         default: ((char*)dest)[0] = '\0';
     }
 
+}
+void AllDataType::convertToDate( void* dest, void* src, DataType srcType )
+{
+    switch(srcType)
+    {
+        case typeInt:
+        case typeLong:
+        case typeLongLong:
+        case typeShort:
+        case typeByteInt:
+        case typeFloat:
+        case typeDouble:
+        case typeDate:
+        case typeTime:
+        case typeTimeStamp:
+        case typeString:
+        {
+            Date *dt = (Date*) dest;
+            dt->parseFrom((char*)src);
+printf("converting date %s\n", src);
+            break;
+        }
+        default: ((char*)dest)[0] = '\0';
+    }
+}
+
+void AllDataType::convertToTime( void* dest, void* src, DataType srcType )
+{
+    switch(srcType)
+    {
+        case typeInt:
+        case typeLong:
+        case typeLongLong:
+        case typeShort:
+        case typeByteInt:
+        case typeFloat:
+        case typeDouble:
+        case typeDate:
+        case typeTime:
+        case typeTimeStamp:
+        case typeString:
+        {
+            Time *dt = (Time*) dest;
+            dt->parseFrom((char*)src);
+printf("converting time %s\n", src);
+            break;
+        }
+        default: ((char*)dest)[0] = '\0';
+    }
+}
+
+void AllDataType::convertToTimeStamp( void* dest, void* src, DataType srcType )
+{
+    switch(srcType)
+    {
+        case typeInt:
+        case typeLong:
+        case typeLongLong:
+        case typeShort:
+        case typeByteInt:
+        case typeFloat:
+        case typeDouble:
+        case typeDate:
+        case typeTime:
+        case typeTimeStamp:
+        case typeString:
+        {
+            TimeStamp *dt = (TimeStamp*) dest;
+            dt->parseFrom((char*)src);
+printf("converting timestamp %s\n", src);
+            break;
+        }
+        default: ((char*)dest)[0] = '\0';
+    }
 }
 
 void AllDataType::printVal(void* src, DataType srcType, int length )

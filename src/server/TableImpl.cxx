@@ -551,10 +551,20 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
     while (fIter.hasElement())
     {
         FieldDef def = fIter.nextElement();
-        if (def.isNull_ && NULL == def.bindVal_ && isInsert) 
+        if (def.isNull_ && !def.isDefault_ && NULL == def.bindVal_ && isInsert) 
         {
             printError(ErrNullViolation, "NOT NULL constraint violation for field %s\n", def.fldName_);
             return ErrNullViolation;
+        }
+        if (def.isDefault_ && NULL == def.bindVal_ && isInsert)
+        {
+            printf("inside the if\n");
+            void *dest = AllDataType::alloc(def.type_, def.length_);
+            AllDataType::convert(typeString, def.defaultValueBuf_, def.type_, dest);
+            AllDataType::copyVal(colPtr, dest, def.type_, def.length_);
+            colPtr = colPtr + os::align(AllDataType::size(def.type_, def.length_));
+            fldpos++;
+            continue;
         }
         switch(def.type_)
         {

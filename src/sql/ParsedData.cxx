@@ -152,6 +152,18 @@ void ParsedData::setFldNotNull(bool notNull)
 {
     fldDef.isNull_ = notNull;
 }
+void ParsedData::setDefaultValue(char *value)
+{
+    fldDef.isDefault_ = true;
+    if (strlen(value) > DEFAULT_VALUE_BUF_LENGTH -1) 
+    {
+        strncpy(fldDef.defaultValueBuf_, value, DEFAULT_VALUE_BUF_LENGTH -1);
+        fldDef.defaultValueBuf_[DEFAULT_VALUE_BUF_LENGTH] ='\0';
+    } else
+        strcpy(fldDef.defaultValueBuf_, value);
+    return;
+}
+
 
 void ParsedData::insertFldDef()
 {
