@@ -238,7 +238,7 @@ DbRetVal SessionImpl::commit()
     rv = dbMgr->txnMgr()->commit(dbMgr->lockMgr());
     if (OK != rv)
     {
-        printError(rv,"Unable to get TransTable mutex\n");
+        printError(rv,"Transaction commit failed\n");
         return rv;
     }
     return OK;
@@ -256,7 +256,7 @@ DbRetVal SessionImpl::rollback()
     rv = dbMgr->txnMgr()->rollback(dbMgr->lockMgr());
     if (OK != rv)
     {
-        printError(rv,"Unable to get TransTable mutex\n");
+        printError(rv, "Transaction rollback failed\n");
         return rv;
     }
     return OK;
