@@ -33,7 +33,7 @@ TARGETS = \
 	test079 test080 \
 	test081 test082 test083 test084 test085 test086 test087 test088 \
 	test089 test090 \
-	test101
+	test101 test102
        
 
 ifeq ($(PlatForm), supported)
@@ -155,6 +155,8 @@ test089: isotest29.c common.h
 test090: isotest30.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test101: threadtest1.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test102: threadtest2.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 
 clean:
