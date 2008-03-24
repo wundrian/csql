@@ -1,20 +1,18 @@
+// Make sure the server is not running
+
 #include<CSql.h>
+
 int main()
 {
     Connection conn;
     DbRetVal rv = conn.open("root", "manager");
-    if (rv != OK) return 1;
-
-    //checking whether it returns already connected error 
-    rv = conn.open("root", "manager");
-    if (rv == OK) return 2;
-
-    rv = conn.close();
-    if (rv != OK) return 3;
-
-    //when not connected both are expected to return NULL
-    DatabaseManager *dbMgr = conn.getDatabaseManager();
-    UserManager *uMgr  = conn.getUserManager();
-    if (dbMgr != NULL || uMgr != NULL) return 5;
-    return 0;
+	if (rv == OK) {
+		printf("The server must be running. Stop the server and rerun the test\n");
+		printf("Test failed\n");
+		return 1;
+	}
+    if (rv != OK) {
+	    printf("The test passed, return value %d\n", rv);
+		return 0;
+	}
 }
