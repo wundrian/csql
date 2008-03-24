@@ -42,9 +42,13 @@ class SqlLogConnection : public AbsSqlConnection
     List logStore;
 
     //stores all the prepare log packets to be shipped to peers
-    //as soon as connection is established to cache server
-    //all these packets are sent to it
+    //as soon as connection is reestablished to cache server
     List prepareStore;
+
+    //stores all the prepare log packets to be shipped between two
+    //consecutive commits. Commit() call sends first all the stmts
+    //prepared during the course and then sends the exec pkts
+    List curPrepareStore;
 
     //sync mode of the current transaction
     TransSyncMode syncMode;
@@ -82,6 +86,7 @@ class SqlLogConnection : public AbsSqlConnection
 
     DbRetVal setSyncMode(TransSyncMode mode);
     TransSyncMode getSyncMode() { return syncMode; }
+    DbRetVal connectIfNotConnected() { return nwTable.connectIfNotConnected(); }
     DbRetVal  sendAndReceive(NetworkPacketType type, char *packet, int length);
     friend class SqlFactory;
 };

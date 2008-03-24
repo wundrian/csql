@@ -227,3 +227,15 @@ pid_t os::createProcess(const char* cmdName, const char *arg0, ...)
     return pid;
 
 }
+pid_t os::fork()
+{
+    return ::fork();
+}
+size_t os::send(int fd, const void *buf, size_t len, int flags)
+{
+    return ::send(fd, buf, len, flags);
+}
+size_t os::recv(int fd, void *buf, size_t len, int flags)
+{
+    return ::recv(fd, buf, len, flags);
+}

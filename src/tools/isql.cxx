@@ -96,6 +96,7 @@ int main(int argc, char **argv)
     stmt =  SqlFactory::createStatement(CSql);
     //stmt =  SqlFactory::createStatement(CSqlGateway);
     stmt->setConnection(conn);
+    //rv = conn->beginTrans(READ_COMMITTED, TSYNC);
     rv = conn->beginTrans();
     if (rv != OK) return 2;
     while (getInput(fileFlag) == true) continue;
@@ -119,6 +120,7 @@ bool handleTransaction(char *st)
         strncasecmp (st, "commit", 6) == 0 )
     {
         conn->commit();
+        //conn->beginTrans(isoLevel, TSYNC);
         conn->beginTrans(isoLevel);
         return true;
     }
@@ -126,6 +128,7 @@ bool handleTransaction(char *st)
         strncasecmp (st, "rollback", 8) == 0)
     {
         conn->rollback();
+        //conn->beginTrans(isoLevel, TSYNC);
         conn->beginTrans(isoLevel);
         return true;
     }
@@ -335,9 +338,9 @@ bool getInput(bool fromFile)
     if (autocommitmode)
     {
         conn->commit();
+        //conn->beginTrans(isoLevel, TSYNC);
         conn->beginTrans(isoLevel);
         return true;
     }
-
     return true;
 }

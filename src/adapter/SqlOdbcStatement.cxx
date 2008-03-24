@@ -209,7 +209,7 @@ DbRetVal SqlOdbcStatement::execute(int &rowsAffected)
         }
     }
     int retValue = SQLExecute (hstmt);
-    //printf("EXECUTE returned %d\n", retValue);
+    printf("EXECUTE returned %d\n", retValue);
     if (retValue) return ErrBadCall;
     return rv;
 }

@@ -21,7 +21,7 @@
 #include<Transaction.h>
 #include<Lock.h>
 #include<CacheTableLoader.h>
-
+char* version = "csql-linux-i686-1.2Beta";
 int srvStop =0;
 pid_t replpid;
 static void sigTermHandler(int sig)
@@ -117,7 +117,8 @@ DbRetVal logActiveProcs(Database *sysdb)
 
 void printUsage()
 {
-   printf("Usage: csqlserver [-c]\n");
+   printf("Usage: csqlserver [-c] [-v]\n");
+   printf("       v -> print the version.\n");
    printf("       c -> recover all cached tables from the target database.\n");
    printf("Description: Start the csql server and initialize the database.\n");
    return;
@@ -125,12 +126,13 @@ void printUsage()
 int main(int argc, char **argv)
 {
     int c = 0, opt = 0;
-    while ((c = getopt(argc, argv, "c?")) != EOF) 
+    while ((c = getopt(argc, argv, "cv?")) != EOF) 
     {
         switch (c)
         {
             case '?' : { opt = 10; break; } //print help 
             case 'c' : { opt = 1; break; } //recover all the tables from cache
+            case 'v' : { opt = 2; break; } //print version
             default: opt=10; 
 
         }
@@ -138,6 +140,9 @@ int main(int argc, char **argv)
 
     if (opt == 10) {
         printUsage();
+        return 0;
+    }else if (opt ==2) {
+        printf("%s\n",version);
         return 0;
     }
 

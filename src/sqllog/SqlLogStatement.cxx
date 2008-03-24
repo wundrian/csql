@@ -42,12 +42,11 @@ DbRetVal SqlLogStatement::prepare(char *stmtstr)
     if (!isNonSelectDML(stmtstr)) { return rv;}
     if (!Conf::config.useReplication() && !Conf::config.useCache()) return OK;
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    if (!logConn->isTableCached(innerStmt->getTableName())) return ErrNotCached;
+    if (!logConn->isTableCached(innerStmt->getTableName())) return OK;
     isCached = true;
-    return OK;
 
     sid  = SqlLogStatement::stmtUID.getID();
-    //TODO::for TSYNC mode
+    //TODO::if connected to peer then only send this packet
     PacketPrepare *pkt = new PacketPrepare();
     pkt->stmtID= sid;
     pkt->syncMode = TSYNC;
@@ -71,16 +70,16 @@ DbRetVal SqlLogStatement::prepare(char *stmtstr)
       }
     }
     pkt->marshall();
-    //printf("Sending PREPARe packet of size %d\n", pkt->getBufferSize());
+    /*logConn->connectIfNotConnected();
+    //printf("Sending PREPARE packet of size %d\n", pkt->getBufferSize());
     rv = logConn->sendAndReceive(NW_PKT_PREPARE, pkt->getMarshalledBuffer(), pkt->getBufferSize());
-    //printf("RV from PREPARE SQLLOG %d\n", rv);
+    printf("RV from PREPARE SQLLOG %d\n", rv);
     if (rv != OK) { 
-       needLog = false; 
        logConn->addPreparePacket(pkt); 
        delete info; 
-       return rv;
-    }
-    delete pkt;
+       return OK;
+    }*/
+    logConn->addPreparePacket(pkt); 
     delete info;
     return rv;
 }
@@ -100,7 +99,6 @@ DbRetVal SqlLogStatement::execute(int &rowsAffected)
     if (innerStmt) rv = innerStmt->execute(rowsAffected);
     if (rv != OK) return rv;
 
-    if (!needLog) return OK;
     //no need to generate log if it does not actually modify the table
     if (rowsAffected == 0 ) return OK;
     if (!isCached) return OK;
@@ -198,7 +196,7 @@ DbRetVal SqlLogStatement::free()
     //if (rv != OK) return rv;
     SqlLogConnection* logConn = (SqlLogConnection*)con;
     if (sid != 0 ) logConn->removePreparePacket(sid);
-    if (!needLog) return rv;
+    if (!isCached) return rv;
 
     //TODO
     //If statement is freed before the txn commits, it will lead to issue 
@@ -215,7 +213,7 @@ DbRetVal SqlLogStatement::free()
     SqlLogConnection* logConn = (SqlLogConnection*)con;
     logConn->sendAndReceiveAllPeers(NW_PKT_FREE, pkt->getMarshalledBuffer(), pkt->getBufferSize());
     delete pkt;*/
-    needLog= false;
+    isCached= false;
     sid = 0;
     paramList.reset();
     return OK;
@@ -223,7 +221,8 @@ DbRetVal SqlLogStatement::free()
 void SqlLogStatement::setShortParam(int paramPos, short value)
 {
     if (innerStmt) innerStmt->setShortParam(paramPos,value);
-    if (!needLog) return;
+    SqlLogConnection* logConn = (SqlLogConnection*)con;
+    if (logConn->getSyncMode() == OSYNC) return ;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     if (bindField->type != typeShort) return;
     *(short*)(bindField->value) = value;
@@ -232,7 +231,9 @@ void SqlLogStatement::setShortParam(int paramPos, short value)
 void SqlLogStatement::setIntParam(int paramPos, int value)
 {
     if (innerStmt) innerStmt->setIntParam(paramPos,value);
-    if (!needLog) return;
+    SqlLogConnection* logConn = (SqlLogConnection*)con;
+    if (logConn->getSyncMode() == OSYNC) return ;
+    if (!isCached) return;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     if (bindField->type != typeInt) return;
     *(int*)(bindField->value) = value;
@@ -242,7 +243,9 @@ void SqlLogStatement::setIntParam(int paramPos, int value)
 void SqlLogStatement::setLongParam(int paramPos, long value)
 {
     if (innerStmt) innerStmt->setLongParam(paramPos,value);
-    if (!needLog) return;
+    SqlLogConnection* logConn = (SqlLogConnection*)con;
+    if (logConn->getSyncMode() == OSYNC) return ;
+    if (!isCached) return;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     if (bindField->type != typeLong) return;
     *(long*)(bindField->value) = value;
@@ -252,7 +255,9 @@ void SqlLogStatement::setLongParam(int paramPos, long value)
 void SqlLogStatement::setLongLongParam(int paramPos, long long value)
 {
     if (innerStmt) innerStmt->setLongLongParam(paramPos,value);
-    if (!needLog) return;
+    SqlLogConnection* logConn = (SqlLogConnection*)con;
+    if (logConn->getSyncMode() == OSYNC) return ;
+    if (!isCached) return;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     if (bindField->type != typeLongLong) return;
     *(long long*)(bindField->value) = value;
@@ -261,7 +266,9 @@ void SqlLogStatement::setLongLongParam(int paramPos, long long value)
 void SqlLogStatement::setByteIntParam(int paramPos, ByteInt value)
 {
     if (innerStmt) innerStmt->setByteIntParam(paramPos,value);
-    if (!needLog) return;
+    SqlLogConnection* logConn = (SqlLogConnection*)con;
+    if (logConn->getSyncMode() == OSYNC) return ;
+    if (!isCached) return;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     if (bindField->type != typeByteInt) return;
     *(char*)(bindField->value) = value;
@@ -270,7 +277,9 @@ void SqlLogStatement::setByteIntParam(int paramPos, ByteInt value)
 void SqlLogStatement::setFloatParam(int paramPos, float value)
 {
     if (innerStmt) innerStmt->setFloatParam(paramPos,value);
-    if (!needLog) return;
+    SqlLogConnection* logConn = (SqlLogConnection*)con;
+    if (logConn->getSyncMode() == OSYNC) return ;
+    if (!isCached) return;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     if (bindField->type != typeFloat) return;
     *(float*)(bindField->value) = value;
@@ -279,7 +288,9 @@ void SqlLogStatement::setFloatParam(int paramPos, float value)
 void SqlLogStatement::setDoubleParam(int paramPos, double value)
 {
     if (innerStmt) innerStmt->setDoubleParam(paramPos,value);
-    if (!needLog) return;
+    SqlLogConnection* logConn = (SqlLogConnection*)con;
+    if (logConn->getSyncMode() == OSYNC) return ;
+    if (!isCached) return;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     if (bindField->type != typeDouble) return;
     *(double*)(bindField->value) = value;
@@ -288,7 +299,9 @@ void SqlLogStatement::setDoubleParam(int paramPos, double value)
 void SqlLogStatement::setStringParam(int paramPos, char *value)
 {
     if (innerStmt) innerStmt->setStringParam(paramPos,value);
-    if (!needLog) return;
+    SqlLogConnection* logConn = (SqlLogConnection*)con;
+    if (logConn->getSyncMode() == OSYNC) return ;
+    if (!isCached) return;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     if (bindField->type != typeString) return;
     char *dest = (char*)bindField->value;
@@ -299,7 +312,9 @@ void SqlLogStatement::setStringParam(int paramPos, char *value)
 void SqlLogStatement::setDateParam(int paramPos, Date value)
 {
     if (innerStmt) innerStmt->setDateParam(paramPos,value);
-    if (!needLog) return;
+    SqlLogConnection* logConn = (SqlLogConnection*)con;
+    if (logConn->getSyncMode() == OSYNC) return ;
+    if (!isCached) return;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     if (bindField->type != typeDate) return;
     *(Date*)(bindField->value) = value;
@@ -308,7 +323,9 @@ void SqlLogStatement::setDateParam(int paramPos, Date value)
 void SqlLogStatement::setTimeParam(int paramPos, Time value)
 {
     if (innerStmt) innerStmt->setTimeParam(paramPos,value);
-    if (!needLog) return;
+    SqlLogConnection* logConn = (SqlLogConnection*)con;
+    if (logConn->getSyncMode() == OSYNC) return ;
+    if (!isCached) return;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
     if (bindField->type != typeTime) return;
     *(Time*)(bindField->value) = value;
@@ -317,7 +334,9 @@ void SqlLogStatement::setTimeParam(int paramPos, Time value)
 void SqlLogStatement::setTimeStampParam(int paramPos, TimeStamp value)
 {
     if (innerStmt) innerStmt->setTimeStampParam(paramPos,value);
-    if (!needLog) return;
+    SqlLogConnection* logConn = (SqlLogConnection*)con;
+    if (logConn->getSyncMode() == OSYNC) return ;
+    if (!isCached) return;
     BindSqlField *bindField = (BindSqlField*) paramList.get(paramPos);
     if (bindField->type != typeTimeStamp) return;
     *(TimeStamp*)(bindField->value) = value;

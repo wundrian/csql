@@ -49,10 +49,10 @@ DbRetVal SqlGwConnection::disconnect()
 DbRetVal SqlGwConnection::beginTrans(IsolationLevel isoLevel, TransSyncMode smode)
 {
     DbRetVal rv = OK;
-    if (innerConn && isCSqlConnected) rv =  innerConn->beginTrans(isoLevel);
+    if (!isAdapterConnected && !isCSqlConnected) return ErrNoConnection;
+    if (innerConn && isCSqlConnected) rv =  innerConn->beginTrans(isoLevel, smode);
     if (rv != OK) return rv;
     if (adapter && isAdapterConnected) rv = adapter->beginTrans(isoLevel);
-    if (!isAdapterConnected && !isCSqlConnected) return ErrNoConnection;
     //printf("passed mode is %d\n", smode);
     mode = smode;
     txnHdlr = CSqlHandler;

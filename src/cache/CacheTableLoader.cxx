@@ -141,7 +141,7 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
         }
         rv = dbMgr->createTable(tableName, tabDef);
         if (rv != OK) { printf("Table creation failed in csql for %s\n", tableName); 
-                    SQLDisconnect(hdbc); return rv;}
+        SQLDisconnect(hdbc); return rv;}
     }
     Table *table = dbMgr->openTable(tableName);
     if (table == NULL) {

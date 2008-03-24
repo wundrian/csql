@@ -57,7 +57,7 @@ DbRetVal NetworkTable::readNetworkConfig()
        NetworkClient* nClient;
        if (nwid == Conf::config.getNetworkID()) continue;
 
-       nClient = NetworkFactory::createClient(UDP);
+       nClient = NetworkFactory::createClient(TCP);
 
        printf("nwid %d getCacheNetworkID %d\n", nwid,  Conf::config.getCacheNetworkID());
        if (nwid == Conf::config.getCacheNetworkID()) nClient->setCacheClient();
@@ -70,26 +70,28 @@ DbRetVal NetworkTable::readNetworkConfig()
 }
 
 
-//connect to all hosts in the table
-void NetworkTable::connect()
+//connect to peer hosts 
+DbRetVal  NetworkTable::connect()
 {
     DbRetVal rv = nwClient->connect();
     if (rv != OK) {
         printError(ErrOS, "Unable to connect to peer %d\n", nwClient->getNetworkID());
         nwClient->setConnectFlag(false);
     }
-    return;
+    return rv;
 }
 DbRetVal NetworkTable::connectIfNotConnected()
 {
    DbRetVal rv = OK;
    if (!nwClient->isConnected()) rv = nwClient->connect(); else rv =ErrAlready;
+   printf("PRABA:connectIfNotConnected  rv is %d\n", rv);
    return rv;
 }
 //disconnect from all hosts in the table
-void NetworkTable::disconnect()
+DbRetVal NetworkTable::disconnect()
 {
     if (nwClient->isConnected()) {
         nwClient->disconnect();
     }
+    return OK;
 }

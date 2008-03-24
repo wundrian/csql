@@ -54,15 +54,15 @@ DbRetVal SqlLogConnection::removePreparePacket(int stmtid)
     return OK;
 }
 
-DbRetVal SqlLogConnection::connect (char *user, char * pass)
+DbRetVal SqlLogConnection::connect (char *user, char *pass)
 {
     DbRetVal rv = OK;
     //printf("LOG: connect\n");
     if (innerConn) rv = innerConn->connect(user,pass);
     if (rv != OK) return rv;
     if (!Conf::config.useReplication() && !Conf::config.useCache()) return OK;
-    //rv = nwTable.initialize();
-    //if (rv !=OK) { innerConn->disconnect(); return rv; }
+    rv = nwTable.initialize();
+    if (rv !=OK) { innerConn->disconnect(); return rv; }
     //nwTable.connect();
 
     //populate cacheList if not populated by another thread in same process
@@ -78,8 +78,8 @@ DbRetVal SqlLogConnection::disconnect()
     if (innerConn) rv =innerConn->disconnect();
     if (rv != OK) return rv;
     if (!Conf::config.useReplication() && !Conf::config.useCache()) return OK;
-    //nwTable.disconnect();
-    //nwTable.destroy();
+    nwTable.disconnect();
+    nwTable.destroy();
     return rv;
 }
 DbRetVal SqlLogConnection::beginTrans(IsolationLevel isoLevel, TransSyncMode mode)
@@ -87,21 +87,7 @@ DbRetVal SqlLogConnection::beginTrans(IsolationLevel isoLevel, TransSyncMode mod
     DbRetVal rv = OK;
     if (innerConn) rv =  innerConn->beginTrans(isoLevel);
     if (rv != OK) return rv;
-    /*rv  = nwTable.connectIfNotConnected(); 
-    if (rv == OK) {
-        //send all prepare packets to client
-        ListIterator iter = prepareStore.getIterator();
-        PacketPrepare *pkt;
-        while (iter.hasElement())
-        {
-            pkt = (PacketPrepare*) iter.nextElement();
-            rv = sendAndReceive(NW_PKT_PREPARE, pkt->getMarshalledBuffer(),
-                                           pkt->getBufferSize());
-            if (rv !=OK) return rv;
-            delete pkt;
-        }
-        prepareStore.reset();
-    }*/
+
     syncMode = mode;
     return OK;
 }
@@ -109,19 +95,63 @@ DbRetVal SqlLogConnection::commit()
 {
     DbRetVal rv = OK;
     //printf("LOG: commit %d\n", syncMode);
-        if (innerConn) rv =  innerConn->commit();
-        return rv; 
-
-    //TODO::TSYNC MODE
+    //if (innerConn) rv =  innerConn->commit();
+    if (syncMode == OSYNC) {
+        if (innerConn) rv = innerConn->commit();
+        return rv;
+    }
     if (logStore.size() == 0) 
     { 
         //This means no execution for any non select statements in 
         //this transaction
         //rollback so that subsequent beginTrans will not report that
         //transaction is already started
-        if (innerConn) rv =  innerConn->rollback();
+        if (innerConn) {
+            rv =  innerConn->rollback(); 
+            //if (rv != OK) return rv;
+            //rv = innerConn->beginTrans(READ_COMMITTED, syncMode);
+        }
         return rv; 
     }
+    if (syncMode == TSYNC) {
+      rv  = nwTable.connectIfNotConnected();
+      if (rv != OK && rv != ErrAlready) return ErrOS;
+      if (rv == OK) {
+        //send all prepare packets to client
+        ListIterator iter = prepareStore.getIterator();
+        PacketPrepare *pkt;
+printf("PRABA:Start:Sending old prepare packets\n");
+        while (iter.hasElement())
+        {
+printf("PRABA:Sending old prepare packet\n");
+            pkt = (PacketPrepare*) iter.nextElement();
+            rv = sendAndReceive(NW_PKT_PREPARE, pkt->getMarshalledBuffer(),
+                                           pkt->getBufferSize());
+            if (rv !=OK) return rv;
+        }
+printf("PRABA:End:Sending old prepare packets\n");
+      }
+      //send all the prepare packets created after the last commit
+      ListIterator iter = curPrepareStore.getIterator();
+      PacketPrepare *pkt;
+printf("PRABA:Start:Sending new prepare packets\n");
+      while (iter.hasElement())
+      {
+          pkt = (PacketPrepare*) iter.nextElement();
+          rv = sendAndReceive(NW_PKT_PREPARE, pkt->getMarshalledBuffer(),
+                                         pkt->getBufferSize());
+          if (rv !=OK) 
+          {
+              prepareStore.append(pkt);
+              return rv;
+          }
+          prepareStore.append(pkt);
+printf("PRABA::Sending new prepare packet\n");
+      }
+      curPrepareStore.reset();
+printf("PRABA:End:Sending new prepare packets\n");
+    }
+
     //create COMMIT packet
     PacketCommit *pkt = new PacketCommit();
     int tid = txnUID.getID();
@@ -129,16 +159,14 @@ DbRetVal SqlLogConnection::commit()
     pkt->marshall();
     int *p = (int*) pkt->getMarshalledBuffer();
     NetworkClient *nwClient= nwTable.getNetworkClient();
-    //for all three modes, need to send the sql logs
-    rv = nwClient->send(NW_PKT_COMMIT, pkt->getMarshalledBuffer(), 
+    if (syncMode == TSYNC) {
+        rv = nwClient->send(NW_PKT_COMMIT, pkt->getMarshalledBuffer(), 
                                           pkt->getBufferSize());    
-    if (rv !=OK) 
-    {
-       printError(ErrOS, "Unable to send SQL Logs to peer site\n");
-       return ErrOS;
-    }
-    if (syncMode == TSYNC)
-    {
+        if (rv !=OK) 
+        {
+            printError(ErrOS, "Unable to send SQL Logs to peer site\n");
+            return ErrOS;
+        }
         rv = nwClient->receive();    
         if (rv !=OK) 
         {
@@ -224,12 +252,15 @@ DbRetVal SqlLogConnection::sendAndReceive(NetworkPacketType type, char *packet, 
 {
     NetworkClient* nwClient = nwTable.getNetworkClient();
     DbRetVal rv = OK, retRV=OK;
-    //printf("isCacheClient %d\n", nwClient->isCacheClient());
+    printf("isCacheClient %d\n", nwClient->isCacheClient());
+    printf("isConnected %d\n", nwClient->isConnected());
+/*
     if (!nwClient->isConnected()) {
         if (nwClient->isCacheClient()) return ErrOS; 
         //TODO::put this packet in send buffer.
         return OK;
     }
+*/
     rv = nwClient->send(type, packet, length);
     if (rv != OK) 
     {

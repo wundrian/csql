@@ -47,13 +47,14 @@ DbRetVal SqlGwStatement::prepare(char *stmtstr)
     //TODO::add procedures also in the below checking
     if (!strncasecmp(stmtstr,"INSERT", 6) == 0 &&
         !strncasecmp(stmtstr, "UPDATE", 6) ==0 &&
+        !strncasecmp(stmtstr, "SELECT", 6) ==0 &&
         !strncasecmp(stmtstr, "DELETE", 6) ==0) return rv;
 
     //prepare failed. means table not there in csql->uncached table
     //or sql statement is complex and csql parser failed
     if (adapter) rv = adapter->prepare(stmtstr);
     if (rv == OK) { 
-        printError(ErrWarning, "Handled by adapter %d\n", shouldCSqlHandle());
+        printError(ErrWarning, "Handled by csql %d\n", shouldCSqlHandle());
         if (!shouldCSqlHandle()) stmtHdlr = AdapterHandler;
         else stmtHdlr = CSqlAndAdapterHandler;
         printError(ErrWarning, "Handled  %d\n", stmtHdlr);

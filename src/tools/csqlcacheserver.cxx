@@ -33,8 +33,8 @@ static void sigTermHandler(int sig)
 
 void printUsage()
 {
-   printf("Usage: csqlreplserver \n");
-   printf("Description: Start the csql replication server.\n");
+   printf("Usage: csqlcacheserver \n");
+   printf("Description: Start the csql caching server.\n");
    return;
 }
 int main(int argc, char **argv)
@@ -100,9 +100,10 @@ int main(int argc, char **argv)
     }
     NetworkServer *nwServer;
 
-    nwServer = new UDPServer();
+    nwServer = new TCPServer();
     
     nwServer->setServerPort(port);
+    printf("Starting the cache server\n");
     rv = nwServer->start();
     if (rv != OK) {
         printf("Unable to start the server\n");

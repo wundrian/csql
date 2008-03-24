@@ -36,7 +36,8 @@ enum NetworkPacketType
     NW_PKT_EXECUTE =2,
     NW_PKT_COMMIT =3,
     NW_PKT_FREE =4,
-    NW_PKT_CONNECT =5
+    NW_PKT_CONNECT =5,
+    NW_PKT_DISCONNECT =6
 };
 class NetworkClient {
     protected:
@@ -84,6 +85,8 @@ class UDPClient : public NetworkClient{
 };
 class TCPClient : public NetworkClient{
     public:
+    int sockfd;
+    struct sockaddr_in srvAddr;
     TCPClient(){ isConnectedFlag =false; cacheClient = false;}
     DbRetVal send(NetworkPacketType type, char *buf, int len);
     DbRetVal receive();
@@ -105,8 +108,8 @@ class NetworkTable
     void destroy(){}
     DbRetVal readNetworkConfig();
     NetworkClient* getNetworkClient() { return nwClient; }
-    void connect();
-    void disconnect();
+    DbRetVal connect();
+    DbRetVal disconnect();
     DbRetVal connectIfNotConnected();
 };
 class NetworkFactory 
@@ -247,7 +250,9 @@ class UDPServer : public NetworkServer
 class TCPServer : public NetworkServer
 {
    public:
-   TCPServer() { port = 0; sockfd = -1; }
+   struct sockaddr_in clientAddress;
+   int clientfd;
+   TCPServer() { port = 0; sockfd = -1; clientfd = -1;}
    DbRetVal start();
    DbRetVal stop();
    DbRetVal handleClient();

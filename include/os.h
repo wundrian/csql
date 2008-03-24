@@ -34,6 +34,7 @@
 #include <math.h>
 #include <signal.h>
 #include <ctype.h>
+#include <sys/socket.h>
 #if defined(solaris)
     #include <sys/varargs.h>
 #endif
@@ -146,6 +147,9 @@ class os
     static int kill(pid_t pid, int sig);
     static bool atobool(char *value);
     static pid_t createProcess(const char* cmdName, const char *arg0, ...);
+    static pid_t fork();
+    static size_t send(int fd, const void *buf, size_t len, int flags);
+    static size_t recv(int fd, void *buf, size_t len, int flags);
 };
 
 #endif
