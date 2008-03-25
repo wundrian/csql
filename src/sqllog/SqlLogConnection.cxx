@@ -31,7 +31,7 @@ DbRetVal SqlLogConnection::addPacket(BasePacket* pkt)
 }
 DbRetVal SqlLogConnection::addPreparePacket(PacketPrepare* pkt)
 {
-    prepareStore.append(pkt);
+    curPrepareStore.append(pkt);
     return OK;
 }
 
