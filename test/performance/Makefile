@@ -42,7 +42,7 @@ DMLTest: DMLTest.c
 DMLThroughput: DMLThroughput.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 SQLTest: SQLTest.c
-	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc $(SYSLIBS)
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw $(SYSLIBS)
 DMLTestChar: DMLTestChar.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 DMLThreadTest: DMLThreadTest.c
