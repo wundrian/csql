@@ -59,11 +59,6 @@ DbRetVal DatabaseManagerImpl::openSystemDatabase()
     if (rv != OK) return rv;
     systemDatabase_ = db_;
     db_ = NULL;
-    if (NULL == systemDatabase_)
-    {
-        printError(ErrAlready, "Database is already opened");
-        return ErrAlready;
-    }
     printDebug(DM_Database, "Opened system database");
     logFinest(logger, "Opened system database");
     return OK;
