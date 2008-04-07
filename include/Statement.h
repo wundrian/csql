@@ -153,7 +153,7 @@ class SelStatement : public DmlStatement
     DbRetVal getParamFldInfo(int paramPos, FieldInfo *&info);
 
     void *fetch();
-    void *fetchAndPrint();
+    void *fetchAndPrint(bool SQL);
     void *next();
     void *getFieldValuePtr( int );
 };

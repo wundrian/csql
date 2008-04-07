@@ -328,7 +328,7 @@ bool getInput(bool fromFile)
         while(true)
         {
             printf("\t");
-            tuple = (char*)stmt->fetchAndPrint();
+            tuple = (char*)stmt->fetchAndPrint(false);
             printf("\n");
             if (tuple == NULL) { break; }
         }

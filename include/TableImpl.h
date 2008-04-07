@@ -187,7 +187,8 @@ class TableImpl:public Table
 
     DbRetVal setUndoLogging(bool flag) { undoFlag = flag; }
 
-
+    void printSQLIndexString();
+    char* getName() { return tblName_; }
     void setTableInfo(char *name, int tblid, size_t  length,
                        int numFld, int numIdx, void *chunk);
     friend class DatabaseManagerImpl;

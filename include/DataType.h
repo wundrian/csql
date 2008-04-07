@@ -83,6 +83,7 @@ class AllDataType
 {
     public:
     static long size(DataType type, int length =0);
+    static char* getSQLString(DataType type);
     static SQLSMALLINT convertToSQLType(DataType type);
     static SQLSMALLINT convertToSQL_C_Type(DataType type);
     static DataType convertFromSQLType(SQLSMALLINT type);

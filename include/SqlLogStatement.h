@@ -43,7 +43,7 @@ class SqlLogStatement: public AbsSqlStatement
     DbRetVal bindField(int pos, void* val);
 
     void* fetch();
-    void* fetchAndPrint();
+    void* fetchAndPrint(bool SQL);
     void* next();
     DbRetVal close();
     int noOfProjFields();

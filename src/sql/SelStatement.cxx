@@ -468,21 +468,65 @@ DbRetVal SelStatement::close()
     return table->close();
 }
 
-void* SelStatement::fetchAndPrint()
+void* SelStatement::fetchAndPrint(bool SQL)
 {
     void *tuple = table->fetch();
     if (NULL == tuple) return NULL;
     FieldValue *value;
     bool nullValueSet;
+    char stmt[128];
+    if (SQL) {
+        sprintf(stmt, "INSERT INTO %s VALUES(", table->getName());
+        printf("%s", stmt);
+    }
     for (int i = 0; i < totalFields; i++)
     {
         value = bindFields[i];
         nullValueSet = table->isFldNull(i+1);
         if (nullValueSet) 
-            printf("NULL\t");
-        else 
+            if (SQL) { 
+                if (i==0) 
+                    printf("NULL"); 
+                else
+                    printf(", NULL"); 
+            }
+            else printf("NULL\t");
+        else  {
+            if (SQL) {
+                switch(value->type)
+                {
+                    case typeString:
+                    case typeDate:
+                    case typeTime:
+                    case typeTimeStamp:
+                    {
+                        if (i==0) 
+                            printf(" '"); 
+                        else
+                            printf(", '");
+                        break;
+                    }
+                    default:
+                    {
+                        if (i!=0) 
+                           printf(",");
+                    }
+                }
+            }
             AllDataType::printVal(value->value, value->type, value->length);
+            if (SQL) {
+                switch(value->type)
+                {
+                    case typeString:
+                    case typeDate:
+                    case typeTime:
+                    case typeTimeStamp:
+                        printf("'");
+                }
+            } else printf("\t");
+        }
     }
+    if (SQL) printf(");\n");
     return tuple;
 }
 

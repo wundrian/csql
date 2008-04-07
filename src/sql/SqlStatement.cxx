@@ -96,11 +96,11 @@ void* SqlStatement::fetch()
     return selStmt->fetch();
 }
 
-void* SqlStatement::fetchAndPrint()
+void* SqlStatement::fetchAndPrint(bool SQL)
 {
     if (pData.getStmtType() != SelectStatement) return NULL;
     SelStatement *selStmt = (SelStatement*) stmt; 
-    return selStmt->fetchAndPrint();
+    return selStmt->fetchAndPrint(SQL);
 }
 
 DbRetVal SqlStatement::bindParam(int pos, void* value)

@@ -70,7 +70,7 @@ class SqlStatement: public AbsSqlStatement
     * execute should be called before calling this method.
     * @returns void* NULL if there is no tuple.
     */
-    void* fetchAndPrint();
+    void* fetchAndPrint(bool SQL);
 
 
     /** binds application buffer to the specified parameter position in the sql statement. 

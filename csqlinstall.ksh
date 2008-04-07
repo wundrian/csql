@@ -1,4 +1,4 @@
-#!/bin/ksh
+#!/bin/sh
 #Should run this command from the project root directory
 
 #TODO:validate it is project root by checking some files

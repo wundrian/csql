@@ -274,7 +274,7 @@ void* SqlOdbcStatement::fetch()
     return ptrToFirstField;
 }
 
-void* SqlOdbcStatement::fetchAndPrint()
+void* SqlOdbcStatement::fetchAndPrint(bool SQL)
 {
     if (!isPrepared) return NULL;
     int retValue = SQLFetch (hstmt);

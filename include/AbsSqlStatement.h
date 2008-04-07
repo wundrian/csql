@@ -90,7 +90,7 @@ class AbsSqlStatement
     * execute should be called before calling this method.
     * @returns void* NULL if there is no tuple.
     */
-    virtual void* fetchAndPrint() = 0;
+    virtual void* fetchAndPrint(bool SQL) = 0;
 
 
     /** binds application buffer to the specified parameter position in the sql statement. 

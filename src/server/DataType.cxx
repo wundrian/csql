@@ -372,6 +372,25 @@ long AllDataType::size(DataType type, int length )
     }
     return size;
 }
+char* AllDataType::getSQLString(DataType type)
+{
+    switch(type)
+    {
+        case typeInt: return "INT";
+        case typeLong: return "INT";
+        case typeLongLong: return "BIGINT";
+        case typeShort: return "SMALLINT";
+        case typeByteInt: return "TINYINT";
+        case typeDouble: return "REAL";
+        case typeFloat: return "FLOAT";
+        case typeDate: return "DATE";
+        case typeTime: return "TIME";
+        case typeTimeStamp: return "TIMESTAMP";
+        case typeString: return "CHAR";
+        default: return "UNKNOWN";
+    }
+}
+
 
 SQLSMALLINT AllDataType::convertToSQLType(DataType type)
 {
@@ -1465,63 +1484,63 @@ void AllDataType::printVal(void* src, DataType srcType, int length )
     {
         case typeInt:
         {
-            printf ("%d\t", *(int *)src); 
+            printf ("%d", *(int *)src); 
             break;
         }
         case typeLong:
         {
-            printf ("%ld\t", *(long *)src);
+            printf ("%ld", *(long *)src);
             break;
         }
         case typeLongLong:
         {
-            printf ("%lld\t", *(long long *)src); 
+            printf ("%lld", *(long long *)src); 
             break;
         }
         case typeShort:
         {
-            printf("%hd\t", *(short *)src); 
+            printf("%hd", *(short *)src); 
             break;
         }
         case typeByteInt:
         {
-            printf("%hd\t", *(char *)src); 
+            printf("%hd", *(char *)src); 
             break;
         }
 
         case typeFloat:
         {
-            printf("%f\t", *(float *)src);
+            printf("%f", *(float *)src);
             break;
         }
         case typeDouble:
         {
-            printf("%lf\t", *(double *)src); 
+            printf("%lf", *(double *)src); 
             break;
         }
 
         case typeString:
         {
-            printf("%s\t", (char*)src);
+            printf("%s", (char*)src);
             break;
         }
         case typeDate:
         {
             Date* dt = (Date*)src;
-            printf("%d/%d/%d\t", dt->year(),
+            printf("%d/%d/%d", dt->year(),
                                   dt->month(), dt->dayOfMonth());
             break;
         }
         case typeTime:
         {
             Time* tm = (Time*)src;
-            printf("%d:%d:%d.%d\t", tm->hours(), tm->minutes(), tm->seconds(), 0);
+            printf("%d:%d:%d.%d", tm->hours(), tm->minutes(), tm->seconds(), 0);
             break;
         }
         case typeTimeStamp:
         {
             TimeStamp* tm = (TimeStamp*)src;
-            printf("%d/%d/%d %d:%d:%d.%d\t", tm->year(),
+            printf("%d/%d/%d %d:%d:%d.%d", tm->year(),
                                 tm->month(), tm->dayOfMonth(), tm->hours(),
                                 tm->minutes(), tm->seconds(), 0 );
             break;

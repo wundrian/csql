@@ -140,9 +140,9 @@ void* SqlLogStatement::fetch()
     return NULL;
 }
 
-void* SqlLogStatement::fetchAndPrint()
+void* SqlLogStatement::fetchAndPrint(bool SQL)
 {
-    if (innerStmt) return innerStmt->fetchAndPrint();
+    if (innerStmt) return innerStmt->fetchAndPrint(SQL);
     return NULL;
 }
 

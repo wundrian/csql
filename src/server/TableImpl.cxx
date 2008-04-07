@@ -650,6 +650,20 @@ DbRetVal TableImpl::deleteIndexNode(Transaction *tr, void *indexPtr, IndexInfo *
     ret = idx->remove(this, tr, indexPtr, info, tuple, undoFlag);
     return ret;
 }
+void TableImpl::printSQLIndexString()
+{
+    CatalogTableINDEXFIELD cIndexField(sysDB_);
+    char fName[IDENTIFIER_LENGTH];
+    char *fldName = fName; 
+    DataType type;
+    for (int i = 0; i < numIndexes_ ; i++)
+    {
+        INDEX *iptr = (INDEX*) indexPtr_[i];
+        cIndexField.getFieldNameAndType((void*)iptr, fldName, type);
+        printf("CREATE INDEX %s on %s ( %s ) ", iptr->indName_, getName(), fldName);
+        if (((SingleFieldHashIndexInfo*) idxInfo[i])->isUnique) printf(" UNIQUE;\n"); else printf(";\n");
+    }
+}
 
 
 DbRetVal TableImpl::updateIndexNode(Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple)

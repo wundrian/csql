@@ -117,11 +117,11 @@ void* SqlGwStatement::fetch()
     return NULL;
 }
 
-void* SqlGwStatement::fetchAndPrint()
+void* SqlGwStatement::fetchAndPrint(bool SQL)
 {
     //TODO::this will never be handled by both. check the flag for this
-    if (adapter && shouldAdapterHandle()) return adapter->fetchAndPrint();
-    if (innerStmt && shouldCSqlHandle()) return innerStmt->fetchAndPrint();
+    if (adapter && shouldAdapterHandle()) return adapter->fetchAndPrint(SQL);
+    if (innerStmt && shouldCSqlHandle()) return innerStmt->fetchAndPrint(SQL);
     return NULL;
 }
 
