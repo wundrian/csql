@@ -21,7 +21,7 @@ INCL= -I$(CSQL_INSTALL_ROOT)/include
 LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsql
 
 TARGETS = \
-	dbapiexample
+	dbapiexample	insert	update	delete
 
 ifeq ($(PlatForm), supported)
 all: $(TARGETS)
@@ -32,6 +32,12 @@ endif
 
 dbapiexample: dbapiexample.o
 	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) $(SYSLIBS)
+insert: manDBAPIinsert.o
+	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) $(SYSLIBS)
+update: manDBAPIupdate.o
+	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) $(SYSLIBS)
+delete: manDBAPIdelete.o
+	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) $(SYSLIBS)
 
 clean:
-	rm -f *.o dbapiexample
+	rm -f *.o
