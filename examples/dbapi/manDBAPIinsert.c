@@ -44,8 +44,7 @@ int main()
 
 	// allocate fields to bind
     int id1 = 0;
-    char *setNames[10] = {"Praba", "Kishor", "Jiten", "Gopal", "Aruna",							  "Ravi", "Kiran" , "Sanjay", "Rajesh", "Arun", };
-	char getNames[10][20];
+    char *setNames[10] = {"Praba", "Kishor", "Jiten", "Gopal", "Aruna",							  "Ravi", "Kiran" , "Sanjay", "Rajesh", "Arun" };
 	float sal=0.0; 
 	char name[20];
     int icount =0, i = 0;
@@ -90,8 +89,6 @@ int main()
 	i = 0;
 	while(true)
     {
-		name[20] = getNames[i][20];
-
 		// fetch each tuple satisfying the condition
         char * tuple = (char*)table->fetch();
         if (tuple == NULL) {break;}
