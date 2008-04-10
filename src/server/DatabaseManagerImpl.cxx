@@ -102,6 +102,9 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
     shm_id = os::shm_create(key, size, 0666);
     if (-1 == shm_id)
     {
+		if (errno == EEXIST) {
+			printError(ErrOS, "Shared Memory already exists");
+		}
         printError(ErrOS, "Shared memory create failed");
         return ErrOS;
     }
