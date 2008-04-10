@@ -57,7 +57,7 @@ void* ChunkIterator::nextElement()
 
     //check whether there are any nodes in the current page
     int i = nodeOffset_;
-    while(nodeOffset_ <= noOfNodes_)
+    while(nodeOffset_ < noOfNodes_)
     {
         if (*((int*)data) == 0)
         {
