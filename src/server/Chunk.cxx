@@ -18,6 +18,7 @@
 #include<os.h>
 #include<Debug.h>
 #include<Config.h>
+#include<CatalogTables.h>
 
 // sets the size of the Chunk allocator for fixed size
 // allocator
@@ -209,16 +210,31 @@ void* Chunk::allocate(Database *db, DbRetVal *status)
         printDebug(DM_Alloc, "ChunkID:%d curPage does not have free nodes.", chunkID_);
         //there are no free data space in this page
         pageInfo->hasFreeSpace_ = 0;
-
-        data = (char*) allocateFromNewPage(db);
-        if (NULL == data)
+        if (chunkID_ == LockTableId || chunkID_ == TransHasTableId) 
         {
-            data = (char*) allocateFromFirstPage(db, noOfDataNodes);
-            if (data == NULL)
-            {
+           data = (char*) allocateFromFirstPage(db, noOfDataNodes);
+           if (NULL == data)
+           {
+              data = (char*) allocateFromNewPage(db);
+              if (data == NULL)
+              {
                 printError(ErrNoMemory, "No memory in any of the pages:Increase db size");
                 if (status != NULL) *status = ErrNoMemory;
-            }
+              }
+           }
+        } 
+        else 
+        {
+           data = (char*) allocateFromNewPage(db);
+           if (NULL == data)
+           {
+              data = (char*) allocateFromFirstPage(db, noOfDataNodes);
+              if (data == NULL)
+              {
+                printError(ErrNoMemory, "No memory in any of the pages:Increase db size");
+                if (status != NULL) *status = ErrNoMemory;
+              }
+           }
         }
         releaseChunkMutex(db->procSlot);
         return data;
@@ -277,35 +293,19 @@ void* Chunk::allocFromNewPageForVarSize(Database *db, size_t size)
         return NULL;
     }
 
-    Page *newPage = db->getFreePage();
-    if (NULL == newPage)
+    void *vnode = varSizeFirstFitAllocate(size);
+    if (vnode != NULL)
     {
-        void *data = varSizeFirstFitAllocate(size);
-        db->releaseAllocDatabaseMutex();
-        return data;
+       db->releaseAllocDatabaseMutex();
+       return vnode;
     }
+
+    Page *newPage = db->getFreePage();
     db->releaseAllocDatabaseMutex();
-
-/*
-//Do not remove the below code 
-//this will search from the firstPage for free slot first and then 
-//if it does not find, then it allocates new page.
-//Need to check performance before changing the algo
-void *vnode = varSizeFirstFitAllocate(size);
-if (vnode != NULL)
-{
-   db->releaseAllocDatabaseMutex();
-   return vnode;
-}
-Page *newPage = db->getFreePage();
-db->releaseAllocDatabaseMutex();
-
     if (NULL == newPage)
     {
         return NULL;
     }
-*/
-
 
     printDebug(DM_VarAlloc, "ChunkID:%d New Page: %x ", chunkID_, newPage);
     PageInfo *pInfo = (PageInfo*) newPage;
@@ -354,7 +354,6 @@ void* Chunk::allocateFromCurPageForVarSize(size_t size)
 //Allocates memory to store data of variable size
 void* Chunk::allocate(Database *db, size_t size, DbRetVal *status)
 {
-
     if (0 == size) return NULL;
     //check if the size is more than PAGE_SIZE
     //if it is more than the PAGE_SIZE, then allocate new
@@ -400,6 +399,9 @@ void* Chunk::allocate(Database *db, size_t size, DbRetVal *status)
 //Assumes chunk mutex is already taken, before calling this
 void* Chunk::varSizeFirstFitAllocate(size_t size)
 {
+    printDebug(DM_VarAlloc, "Chunk::varSizeFirstFitAllocate size:%d firstPage:%x",
+                                               size, firstPage_);
+
     Page *page = ((PageInfo*)firstPage_);
     size_t alignedSize = os::align(size);
     while(NULL != page)
@@ -412,12 +414,18 @@ void* Chunk::varSizeFirstFitAllocate(size_t size)
                 if( alignedSize < varInfo->size_)
                 {
                     splitDataBucket(varInfo, alignedSize);
-                    return (char*)varInfo + sizeof(VarSizeInfo);
+                    return ((char*)varInfo) + sizeof(VarSizeInfo);
+                }
+                else if (alignedSize == varInfo->size_) {
+                    varInfo->isUsed_ = 1;
+                    printDebug(DM_VarAlloc, "VarSizeFirstFitAllocate returning %x", ((char*)varInfo) +sizeof(VarSizeInfo));
+                    return ((char *) varInfo) + sizeof(VarSizeInfo);
                 }
             }
             varInfo = (VarSizeInfo*)((char*)varInfo + sizeof(VarSizeInfo)
                                     +varInfo->size_);
         }
+        printDebug(DM_VarAlloc, "Chunk:This page does not have free data nodes page:%x", page);
         page = ((PageInfo*) page)->nextPage_;
     }
     return NULL;
@@ -520,14 +528,20 @@ void Chunk::free(Database *db, void *ptr)
 //Note:IMPORTANT::assumes db lock is taken before calling this
 PageInfo* Chunk::getPageInfo(Database *db, void *ptr)
 {
-    char *inPtr = (char*)ptr;
-    PageInfo* pageInfo = ((PageInfo*)firstPage_);
+    if (allocSize_ < PAGE_SIZE - sizeof(PageInfo)) { 
+       int rem = (long) ptr % 8192;
+       return (PageInfo*)(((char*)ptr) - rem);
+    } else {
+        //large size allocator
+        char *inPtr = (char*)ptr;
+        PageInfo* pageInfo = ((PageInfo*)firstPage_);
 
-    while( pageInfo != NULL )
-    {
-        if (inPtr > (char*) pageInfo && ((char*)pageInfo + PAGE_SIZE) >inPtr)
+        while( pageInfo != NULL )
+        {
+          if (inPtr > (char*) pageInfo && pageInfo->nextPageAfterMerge_ >inPtr)
             return pageInfo;
-        pageInfo = (PageInfo*)(((PageInfo*)pageInfo)->nextPage_) ;
+        pageInfo = (PageInfo*)pageInfo->nextPage_ ;
+        }
     }
     return NULL;
 }

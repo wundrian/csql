@@ -174,35 +174,38 @@ DbRetVal Database::releaseDatabaseMutex(bool procAccount)
 //NOTE::IMPORTANT::assumes alloc database lock is taken before calling this
 Page* Database::getFreePage()
 {
-    Page* page = getFirstPage();
-    printDebug(DM_Alloc, "Database::getFreePage firstPage:%x",page);
+    //Page* page = getFirstPage();
+    Page* page = getCurrentPage();
+    //printDebug(DM_Alloc, "Database::getFreePage firstPage:%x",page);
+    printDebug(DM_Alloc, "Database::getFreePage currentpage:%x",page);
     PageInfo* pageInfo = ((PageInfo*)page);
-
+    char* endAddr = ((char*)getMetaDataPtr())  + getMaxSize();
+    int pageSize = PAGE_SIZE;
     while( 1 == pageInfo->isUsed_)
     {
         //If any pages are merged to store data larger than PAGE_SIZE
         //move to the next page after the merge and check whether it is used
         if ( pageInfo->nextPageAfterMerge_ == NULL) {
-            pageInfo = (PageInfo*)((char*)pageInfo + PAGE_SIZE);
+            pageInfo = (PageInfo*)((char*)pageInfo + pageSize);
             printDebug(DM_Alloc,"Normal Page:Moving to page:%x",pageInfo);
         }
         else {
             pageInfo = (PageInfo*)pageInfo->nextPageAfterMerge_;
             printDebug(DM_Alloc,"Merged Page:Moving to page:%x",pageInfo);
         }
-        if (!isValidAddress((char*) pageInfo))
+        if ((char*)pageInfo >= endAddr)
         {
             //printError(ErrSysInternal,"Invalid address %x",pageInfo);
             return NULL;
         }
 
     }
-    if (!isValidAddress(((char*) pageInfo) + PAGE_SIZE))
+    if (!isValidAddress(((char*) pageInfo) + pageSize))
     {
-        printError(ErrSysInternal, "Invalid address %x",((char*) pageInfo) + PAGE_SIZE);
+        printError(ErrSysInternal, "Invalid address %x",((char*) pageInfo) + pageSize);
         return NULL;
     }
-    //setCurrentPage((Page*) pageInfo);
+    setCurrentPage((Page*) pageInfo);
     printDebug(DM_Alloc,"Database::getFreePage returning page:%x",pageInfo);
     return (Page*) pageInfo ;
 }
@@ -216,14 +219,15 @@ Page* Database::getFreePage(size_t size)
     int multiple = size / PAGE_SIZE;
     int offset = ((multiple + 1) * PAGE_SIZE);
     printDebug(DM_Alloc, "Database::getFreePage firstPage:%x size:%ld",page, size);
-
+    char* endAddr = ((char*)getMetaDataPtr())  + getMaxSize();
+    int pageSize = PAGE_SIZE;
     while(true){
         while( 1 == pageInfo->isUsed_)
         {
             //If any pages are merged to store data larger than PAGE_SIZE
             //move to the next page after the merge and check whether it is used
             if ( pageInfo->nextPageAfterMerge_ == NULL) {
-                pageInfo = (PageInfo*)((char*)pageInfo + PAGE_SIZE);
+                pageInfo = (PageInfo*)((char*)pageInfo + pageSize);
                 printDebug(DM_Alloc,"Normal Page:Moving to page:%x",pageInfo);
             }
             else {
@@ -233,7 +237,7 @@ Page* Database::getFreePage(size_t size)
         }
         int i = 0;
         PageInfo *pInfo = pageInfo;
-        if (!isValidAddress(((char*)pInfo) + offset))
+        if ((((char*)pInfo) + offset) >= endAddr)
         {
             printError(ErrSysInternal,"Invalid address %x",((char*)pInfo) + offset);
             return NULL;
@@ -241,13 +245,13 @@ Page* Database::getFreePage(size_t size)
         for (i = 0; i< multiple + 1; i++)
         {
             if (1 == pInfo->isUsed_) break;
-            pInfo = (PageInfo*)((char*)pInfo + PAGE_SIZE);
+            pInfo = (PageInfo*)((char*)pInfo + pageSize);
         }
         if ( i == (multiple + 1))  break;
     }
 
     printDebug(DM_Alloc,"Database::getFreePage returning page:%x",pageInfo);
-    //setCurrentPage((Page*) pageInfo);
+    setCurrentPage((Page*) pageInfo);
     return (Page*) pageInfo ;
 }
 
@@ -436,11 +440,20 @@ Transaction* Database::getSystemDatabaseTrans(int slot)
 //used in case of system database
 ThreadInfo* Database::getThreadInfo(int slot)
 {
-    size_t offset = os::alignLong(sizeof (DatabaseMetaData));
-    offset = offset + os::alignLong( MAX_CHUNKS  * sizeof (Chunk));
-    offset = offset + os::alignLong( Conf::config.getMaxProcs()   * sizeof(Transaction));
-    offset = offset + slot * sizeof (ThreadInfo);
-    return (ThreadInfo*)(((char*) metaData_) +  offset);
+/*     size_t offset = os::alignLong(sizeof (DatabaseMetaData));
+     offset = offset + os::alignLong( MAX_CHUNKS  * sizeof (Chunk));
+     offset = offset + os::alignLong( Conf::config.getMaxProcs()   * sizeof(Transaction));
+     offset = offset + slot * sizeof (ThreadInfo);
+     return (ThreadInfo*)(((char*) metaData_) +  offset);
+*/
+
+    static size_t offset = os::alignLong(sizeof (DatabaseMetaData)) +
+                           os::alignLong( MAX_CHUNKS  * sizeof (Chunk)) +
+               os::alignLong( Conf::config.getMaxProcs()*sizeof(Transaction));
+	
+    size_t off = offset + slot * sizeof (ThreadInfo);
+    return (ThreadInfo*)(((char*) metaData_) +  off);
+
 }
 
 bool Database::isValidAddress(void* addr)
