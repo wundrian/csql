@@ -9,7 +9,7 @@ then
     REL_PATH=`pwd`/tools/csql
 fi
 
-$CSQL_INSTALL_ROOT/bin/csql -u root -p manager -s ${REL_PATH}/csql1.sql 2>err.out
+$CSQL_INSTALL_ROOT/bin/csql -u root -p manager -s ${REL_PATH}/csql1.sql 2>/dev/null
 if [ $? -ne 0 ]
 then
    exit 1;
