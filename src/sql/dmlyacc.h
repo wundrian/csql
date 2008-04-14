@@ -42,6 +42,7 @@
 #define TIME_TYPE 298
 #define BIGINT_TYPE 299
 #define FLOAT_TYPE 300
+#define TINYINT_TYPE 301
 typedef union
 {
    char *stringval;

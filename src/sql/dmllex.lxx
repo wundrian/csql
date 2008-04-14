@@ -127,6 +127,7 @@ operator        "<"|">"|">="|"<="|"="|"\!="|"<>"
                 if(strcasecmp(yytext,"TIMESTAMP") ==0) token = TIMESTAMP_TYPE;
                 if(strcasecmp(yytext,"CHAR") ==0) token = CHAR_TYPE;
                 if(strcasecmp(yytext,"BIGINT") ==0) token = BIGINT_TYPE;
+                if(strcasecmp(yytext,"TINYINT") ==0) token = TINYINT_TYPE;
                 if(strcasecmp(yytext,"FLOAT") ==0) token = FLOAT_TYPE;
 
                 if( token == FIELD )
