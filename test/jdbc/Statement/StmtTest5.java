@@ -32,7 +32,16 @@ public class StmtTest5
            rs = selStmt.executeQuery();
     	   while (rs.next())
            {
-    	         System.out.println("Tuple value is " + rs.getInt(1));
+    	         System.out.println("Tuple value is " + rs.getInt(1) + " "+
+                                                        rs.getShort(2) + " "+
+                                                        rs.getByte(3) + " "+
+                                                        rs.getLong(4) + " "+
+                                                        rs.getFloat(5) + " "+
+                                                        rs.getString(6) + " "+
+                                                        rs.getDate(7) + " "+
+                                                        rs.getTime(8) + " "+
+                                                        rs.getTimestamp(9) + " "
+                                                        );
            }
            rs.close();
            selStmt.close();
