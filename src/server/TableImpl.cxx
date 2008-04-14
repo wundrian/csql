@@ -503,6 +503,19 @@ DbRetVal TableImpl::updateTuple()
     if (undoFlag)
         ret = (*trans)->appendUndoLog(sysDB_, UpdateOperation, curTuple_, length_);
     if (ret != OK) return ret;
+    int addSize = 0;
+    if (numFlds_ < 31) 
+    {
+        addSize = 4; 
+        *(int*)((char*)(curTuple_) + (length_-addSize)) |= iNullInfo;
+    }
+    else 
+    {
+        addSize = os::align(numFlds_);
+        //TODO::Do not do blind memcpy. It should OR each and every char
+        //os::memcpy(((char*)(curTuple_) + (length_-addSize)), cNullInfo, addSize);
+
+    }
 
     DbRetVal rv = copyValuesFromBindBuffer(curTuple_, false);
     if (rv != OK) { 
@@ -510,19 +523,6 @@ DbRetVal TableImpl::updateTuple()
         (*trans)->removeFromHasList(db_, curTuple_); 
         return rv; 
     }
-    int addSize = 0;
-    if (numFlds_ < 31)
-    {
-        addSize = 4;
-        *(int*)((char*)(curTuple_) + (length_-addSize)) = iNullInfo;
-    }
-    else
-    {
-        addSize = os::align(numFlds_);
-        os::memcpy(((char*)(curTuple_) + (length_-addSize)), cNullInfo, addSize);
-
-    }
-
     return OK;
 }
 
@@ -574,19 +574,19 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
                     strcpy((char*)colPtr, (char*)def.bindVal_);
                     *(((char*)colPtr) + (def.length_-1)) = '\0';
                 }
-                else if (!def.isNull_)  setNullBit(fldpos);
+                else if (!def.isNull_ && isInsert)  setNullBit(fldpos);
                 colPtr = colPtr + os::align(def.length_);
                 break;
             case typeBinary:
-                if (NULL != def.bindVal_)
+                if (NULL != def.bindVal_ )
                     os::memcpy((char*)colPtr, (char*)def.bindVal_, def.length_);
-                else if (!def.isNull_)  setNullBit(fldpos);
+                else if (!def.isNull_ && isInsert)  setNullBit(fldpos);
                 colPtr = colPtr + os::align(def.length_);
                 break;
             default:
                 if (NULL != def.bindVal_)
                     AllDataType::copyVal(colPtr, def.bindVal_, def.type_);
-                else { if (!def.isNull_)  setNullBit(fldpos); }
+                else { if (!def.isNull_ && isInsert)  setNullBit(fldpos); }
                 colPtr = colPtr + os::align(AllDataType::size(def.type_));
                 break;
         }

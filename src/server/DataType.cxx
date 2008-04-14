@@ -1421,7 +1421,6 @@ void AllDataType::convertToDate( void* dest, void* src, DataType srcType )
         {
             Date *dt = (Date*) dest;
             dt->parseFrom((char*)src);
-printf("converting date %s\n", src);
             break;
         }
         default: ((char*)dest)[0] = '\0';
@@ -1446,7 +1445,6 @@ void AllDataType::convertToTime( void* dest, void* src, DataType srcType )
         {
             Time *dt = (Time*) dest;
             dt->parseFrom((char*)src);
-printf("converting time %s\n", src);
             break;
         }
         default: ((char*)dest)[0] = '\0';
@@ -1471,7 +1469,6 @@ void AllDataType::convertToTimeStamp( void* dest, void* src, DataType srcType )
         {
             TimeStamp *dt = (TimeStamp*) dest;
             dt->parseFrom((char*)src);
-printf("converting timestamp %s\n", src);
             break;
         }
         default: ((char*)dest)[0] = '\0';
