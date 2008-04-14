@@ -31,7 +31,7 @@ ROOT_DIR=`pwd`
 mkdir -p $TEST_RUN_ROOT
 SERVOUT=$TEST_RUN_ROOT/serv.out
 touch $SERVOUT
-$CSQL_INSTALL_ROOT/bin/csqlserver >$SERVOUT 2>$SERVOUT &
+$CSQL_INSTALL_ROOT/bin/csqlserver >${SERVOUT} &
 SERVER_PID=$!
 echo "Starting Server"
 sleep 5
@@ -42,8 +42,19 @@ do
     then
        continue
     fi
-    #echo "MODULE READ is $MODULE"
+    echo "MODULE READ is $MODULE"
 
+if [ "$MODULE" = "system/lock" ]
+then
+   echo "Restarting the server for lock module"
+   kill -9 ${SERVER_PID}
+   echo "csqlserver killed PID=${SERVER_PID}" >>$TEST_LOG
+   $CSQL_INSTALL_ROOT/bin/csqlserver >${SERVOUT} &
+   SERVER_PID=$!
+   echo "csqlserver restarted with PID=${SERVER_PID}" >>$TEST_LOG
+   echo "Restarting Server"
+   sleep 5
+fi
 TEST_SCRIPT_DIR=${ROOT_DIR}/${MODULE}
 TEST_RUN_DIR=${TEST_RUN_ROOT}/${MODULE}
 if [ -s "$TEST_RUN_DIR" ]
@@ -116,7 +127,7 @@ then
    mv ${SERVOUT} ${SERVOUT}.${SERVER_PID}.${CURTIME}
    kill -9 ${SERVER_PID}
    echo "csqlserver killed PID=${SERVER_PID}" >>$TEST_LOG
-   $CSQL_INSTALL_ROOT/bin/csqlserver >$SERVOUT 2>$SERVOUT &
+   $CSQL_INSTALL_ROOT/bin/csqlserver >${SERVOUT} &
    SERVER_PID=$!
    echo "csqlserver restarted with PID=${SERVER_PID}" >>$TEST_LOG
    echo "Restarting Server"
@@ -145,17 +156,17 @@ then
        else
            echo "Exp and current output not matched."
            echo "Test $test failed"  
-           echo "Exp and current output not matched." >>$TEST_LOG
+           echo "Exp and current output not matched." >>${TEST_LOG}
            echo "FAILED:Test $test failed" >>$TEST_LOG
            #TODO::Reinitalize the database, as it may be in corrupted state.
            CURTIME=`date +%s`
            mv ${SERVOUT} ${SERVOUT}.${SERVER_PID}.${CURTIME}
            echo "Refer ${SERVOUT}.${SERVER_PID}.${CURTIME} file for server log" >>$TEST_LOG
            kill -9 ${SERVER_PID}
-           echo "csqlserver killed PID=${SERVER_PID}" >>$TEST_LOG
-           $CSQL_INSTALL_ROOT/bin/csqlserver >$SERVOUT 2>$SERVOUT &
+           echo "csqlserver killed PID=${SERVER_PID}" >>${TEST_LOG}
+           $CSQL_INSTALL_ROOT/bin/csqlserver >${SERVOUT} &
            SERVER_PID=$!
-           echo "csqlserver restarted with PID=${SERVER_PID}" >>$TEST_LOG
+           echo "csqlserver restarted with PID=${SERVER_PID}" >>${TEST_LOG}
            echo "Restarting Server"
            sleep 5
         fi
@@ -177,9 +188,9 @@ else
    echo "Refer ${SERVOUT}.${SERVER_PID}.${CURTIME} file for server log" >>$TEST_LOG
    kill -9 ${SERVER_PID}
    echo "csqlserver killed PID=${SERVER_PID}" >>$TEST_LOG
-   $CSQL_INSTALL_ROOT/bin/csqlserver >$SERVOUT 2>$SERVOUT &
+   $CSQL_INSTALL_ROOT/bin/csqlserver >${SERVOUT} 2>${SERVOUT} &
    SERVER_PID=$!
-   echo "csqlserver restarted with PID=${SERVER_PID}" >>$TEST_LOG
+   echo "csqlserver restarted with PID=${SERVER_PID}" >>${TEST_LOG}
    echo "Restarting Server"
    sleep 5
 fi
@@ -188,6 +199,6 @@ done
 done < TestModules
 
 kill -9 ${SERVER_PID}
-echo "csqlserver killed PID=${SERVER_PID}" >>$TEST_LOG
+echo "csqlserver killed PID=${SERVER_PID}" >>${TEST_LOG}
 
 exit 0
