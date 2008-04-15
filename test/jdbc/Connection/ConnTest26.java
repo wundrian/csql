@@ -16,6 +16,7 @@ public class ConnTest26
            cStmt.execute("CREATE TABLE T1 (f1 integer, f2 char (20));");
 	   for (int i=0; i <10000; i++)
 		   con.commit();
+           con.close();
 	   Connection con2 = DriverManager.getConnection("jdbc:csql","root","manager");
 	   int count = 0;
 	   cStmt = con2.createStatement();
@@ -36,7 +37,6 @@ public class ConnTest26
 	   System.out.println("Total rows selected " + count);
            cStmt.execute("DROP TABLE T1;");
 	   con2.close();
-           con.close();
            if (count ==1 ) System.exit(0); else System.exit(1);
         }catch(Exception e) {
            System.out.println("Exception in Test: "+e);
