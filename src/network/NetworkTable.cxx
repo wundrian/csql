@@ -51,15 +51,15 @@ DbRetVal NetworkTable::readNetworkConfig()
            printError(ErrNotYet, "Only 2 hosts are allowed in this version"); 
            return ErrNotYet;
        }
-       printf("Count is %d\n", count);
+       printDebug(DM_Network, "Count is %d\n", count);
        fscanf(fp, "%d:%d:%s\n", &nwid, &port, hostname);
-       printf( "%d:%d:%s\n", nwid, port, hostname);
+       printDebug(DM_Network, "%d:%d:%s\n", nwid, port, hostname);
        NetworkClient* nClient;
        if (nwid == Conf::config.getNetworkID()) continue;
 
        nClient = NetworkFactory::createClient(TCP);
 
-       printf("nwid %d getCacheNetworkID %d\n", nwid,  Conf::config.getCacheNetworkID());
+       printDebug(DM_Network, "nwid %d getCacheNetworkID %d\n", nwid,  Conf::config.getCacheNetworkID());
        if (nwid == Conf::config.getCacheNetworkID()) nClient->setCacheClient();
        nClient->setHost(hostname, port, nwid);
        nwClient = nClient;
@@ -84,7 +84,6 @@ DbRetVal NetworkTable::connectIfNotConnected()
 {
    DbRetVal rv = OK;
    if (!nwClient->isConnected()) rv = nwClient->connect(); else rv =ErrAlready;
-   printf("PRABA:connectIfNotConnected  rv is %d\n", rv);
    return rv;
 }
 //disconnect from all hosts in the table

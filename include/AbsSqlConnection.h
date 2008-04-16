@@ -23,9 +23,14 @@
 
 enum TransSyncMode {
     OSYNC=1,
-    TSYNC=2
+    ASYNC=2,
+    OASYNC=3
 };
 
+enum TableSyncMode {
+    TABLE_OSYNC=1,
+    TABLE_ASYNC=2
+};
 /**
 * @class AbsSqlConnection
 *

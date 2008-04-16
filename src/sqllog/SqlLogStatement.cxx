@@ -44,12 +44,13 @@ DbRetVal SqlLogStatement::prepare(char *stmtstr)
     SqlLogConnection* logConn = (SqlLogConnection*)con;
     if (!logConn->isTableCached(innerStmt->getTableName())) return OK;
     isCached = true;
+    mode = TABLE_OSYNC;//TEMP::support only OSYNC 
 
     sid  = SqlLogStatement::stmtUID.getID();
     //TODO::if connected to peer then only send this packet
     PacketPrepare *pkt = new PacketPrepare();
     pkt->stmtID= sid;
-    pkt->syncMode = TSYNC;
+    pkt->syncMode = ASYNC;
     pkt->stmtString = stmtstr;
     pkt->noParams = innerStmt->noOfParamFields();
     FieldInfo *info = new FieldInfo();

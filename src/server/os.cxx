@@ -29,7 +29,8 @@ int os::munmap(caddr_t addr, size_t len)
 
 shared_memory_id os::shm_create(shared_memory_key key, size_t size, int flag)
 {
-    return ::shmget(key, size, IPC_CREAT | IPC_EXCL | flag);
+    //return ::shmget(key, size, IPC_CREAT | IPC_EXCL | flag);
+    return ::shmget(key, size, IPC_CREAT | flag);
 }
 
 shared_memory_id os::shm_open(shared_memory_key key, size_t size, int flag)

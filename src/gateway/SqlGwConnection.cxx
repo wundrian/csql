@@ -53,8 +53,7 @@ DbRetVal SqlGwConnection::beginTrans(IsolationLevel isoLevel, TransSyncMode smod
     if (innerConn && isCSqlConnected) rv =  innerConn->beginTrans(isoLevel, smode);
     if (rv != OK) return rv;
     if (adapter && isAdapterConnected) rv = adapter->beginTrans(isoLevel);
-    //printf("passed mode is %d\n", smode);
-    mode = smode;
+    //mode = smode;
     txnHdlr = CSqlHandler;
     return rv;
 }

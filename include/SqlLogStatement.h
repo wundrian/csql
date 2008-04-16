@@ -72,6 +72,7 @@ class SqlLogStatement: public AbsSqlStatement
     bool isSelect();
 
     bool isCached;
+    TableSyncMode mode;
     private:
 
     bool needLog;

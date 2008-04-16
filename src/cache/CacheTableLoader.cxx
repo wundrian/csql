@@ -39,12 +39,12 @@ DbRetVal CacheTableLoader::removeFromCacheTableFile()
     sprintf(tmpFileName, "%s.tmp", Conf::config.getTableConfigFile());
     tmpfp = fopen(tmpFileName,"w");
     if( tmpfp == NULL ) {
-        printError(ErrSysInit, "Invalid path/filename in CACHE_TABLE_FILE.\n");
+        printError(ErrSysInit, "Invalid path/filename in TABLE_CONFIG_FILE.\n");
 	return ErrSysInit;
     }
     fp = fopen(Conf::config.getTableConfigFile(),"r");
     if( fp == NULL ) {
-        printError(ErrSysInit, "cache.table file does not exist");
+        printError(ErrSysInit, "csqltable.conf file does not exist");
 	return ErrSysInit;
     }
     char tablename[IDENTIFIER_LENGTH];
@@ -62,7 +62,7 @@ DbRetVal CacheTableLoader::removeFromCacheTableFile()
     int ret = system(sysCommand);
     if (ret != 0) 
     {
-        printError(ErrSysInit, "Check cache.table file permission. unable to remove %s from file", tableName);
+        printError(ErrSysInit, "Check csqltable.conf file permission. unable to remove %s from file", tableName);
 	return ErrSysInit;
     }
     return OK;
@@ -74,7 +74,7 @@ DbRetVal CacheTableLoader::load(bool tabDefinition)
     DbRetVal rv = conn.open(userName, password);
     if (rv != OK) return ErrSysInit;
     DatabaseManager *dbMgr = (DatabaseManager*) conn.getDatabaseManager();
-    if (dbMgr == NULL) { printf("Auth failed\n"); return ErrSysInit; }
+    if (dbMgr == NULL) { printError(ErrSysInit, "Auth failed\n"); return ErrSysInit; }
     conn.startTransaction();
     rv = load(dbMgr, tabDefinition);
     conn.commit();
@@ -94,31 +94,31 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
     SQLHDBC hdbc;
     SQLHSTMT hstmt;
     retValue = SQLAllocHandle (SQL_HANDLE_ENV, SQL_NULL_HANDLE, &henv);
-    if (retValue) {printf("Unable to allocate ODBC handle \n"); return ErrSysInit; }
+    if (retValue) {printError(ErrSysInit, "Unable to allocate ODBC handle \n"); return ErrSysInit; }
     SQLSetEnvAttr(henv, SQL_ATTR_ODBC_VERSION, (void *) SQL_OV_ODBC3, 0);
     retValue = SQLAllocHandle (SQL_HANDLE_DBC, henv, &hdbc);
-    if (retValue) {printf("Unable to allocate ODBC handle \n"); return ErrSysInit; }
+    if (retValue) {printError(ErrSysInit, "Unable to allocate ODBC handle \n"); return ErrSysInit; }
     retValue = SQLDriverConnect(hdbc, NULL, (SQLCHAR*)dsn, SQL_NTS,
                          outstr, sizeof(outstr), &outstrlen,
                          SQL_DRIVER_NOPROMPT);
     if (SQL_SUCCEEDED(retValue)) {
-        printf("Connected to target database using dsn = %s\n", dsn);
+        printDebug(DM_Gateway, "Connected to target database using dsn = %s\n", dsn);
     } else {
         fprintf(stderr, "Failed to connect to target database\n");
         return ErrSysInit;
     }
 
     retValue=SQLAllocHandle (SQL_HANDLE_STMT, hdbc, &hstmt);
-    if (retValue) {printf("Unable to allocate ODBC handle \n"); return ErrSysInit; }
+    if (retValue) {printError(ErrSysInit, "Unable to allocate ODBC handle \n"); return ErrSysInit; }
     char stmtBuf[1024];
     sprintf(stmtBuf, "SELECT * FROM %s;", tableName);
     retValue = SQLPrepare (hstmt, (unsigned char *) stmtBuf, SQL_NTS);
-    if (retValue) {printf("Unable to Prepare ODBC statement \n"); return ErrSysInit; }
+    if (retValue) {printError(ErrSysInit, "Unable to Prepare ODBC statement \n"); return ErrSysInit; }
 
     if (tabDefinition) {
         short totalFields=0;
         retValue = SQLNumResultCols (hstmt, &totalFields);
-        if (retValue) {printf("Unable to retrieve ODBC total columns\n"); return ErrSysInit; }
+        if (retValue) {printError(ErrSysInit, "Unable to retrieve ODBC total columns\n"); return ErrSysInit; }
         UWORD                   icol;
         UCHAR                   colName[IDENTIFIER_LENGTH];
         SWORD                   colNameMax;
@@ -133,19 +133,73 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
             retValue = SQLDescribeCol(hstmt, icol, colName, colNameMax,
                                         &nameLength, &colType, &colLength,
                                         &scale, &nullable);
-            if (retValue) {printf("Unable to retrieve ODBC column info\n"); return ErrSysInit; }
+            if (retValue) {printError(ErrSysInit, "Unable to retrieve ODBC column info\n"); return ErrSysInit; }
  
-            //printf("Describe Column %s %d %d %d\n", szColName, pcbColName, colType, colLength);
+            printDebug(DM_Gateway, "Describe Column %s %d %d \n", colName, colType, colLength);
             icol++;
            tabDef.addField((char*) colName, AllDataType::convertFromSQLType(colType), colLength);
         }
         rv = dbMgr->createTable(tableName, tabDef);
-        if (rv != OK) { printf("Table creation failed in csql for %s\n", tableName); 
-        SQLDisconnect(hdbc); return rv;}
+        if (rv != OK) 
+        { 
+             printError(ErrSysInit, "Table creation failed in csql for %s\n", tableName); 
+             SQLDisconnect(hdbc); 
+             return ErrSysInit;
+        }
+        char columnname[124]; char indexname[124];
+        short type; short unique;
+        SQLHSTMT hstmtmeta;
+        retValue=SQLAllocHandle (SQL_HANDLE_STMT, hdbc, &hstmtmeta);
+        if (retValue) 
+        {
+            printError(ErrSysInit, "Unable to allocate ODBC handle \n"); 
+            return ErrSysInit; 
+        }
+
+        retValue = SQLStatistics(hstmtmeta, NULL, 0, NULL, SQL_NTS,
+                    (SQLCHAR*) tableName, SQL_NTS, SQL_INDEX_ALL, SQL_QUICK);
+        retValue = SQLBindCol(hstmtmeta, 4, SQL_C_SHORT,
+                          &unique, 2, NULL);
+        retValue = SQLBindCol(hstmtmeta, 6, SQL_C_CHAR,
+                          indexname, 129, NULL);
+        retValue = SQLBindCol(hstmtmeta, 7, SQL_C_SHORT,
+                          &type, 2, NULL);
+        retValue = SQLBindCol(hstmtmeta, 9, SQL_C_CHAR,
+                          columnname, 129,NULL);
+        while ((retValue = SQLFetch(hstmtmeta)) == SQL_SUCCESS)
+        {  //if (type != SQL_TABLE_STAT)
+            {   
+                printDebug(DM_Gateway, "Column: %-18s Index Name: %-18s unique:%hd type:%hd\n",
+                  columnname, indexname, unique, type);
+            }
+            if (type == 3) {
+               HashIndexInitInfo *info = new HashIndexInitInfo();
+               info->indType =  hashIndex;
+               info->bucketSize = 10007;
+               info->list.append(columnname);
+               strcpy(info->tableName, tableName);
+               char indname[128];
+               sprintf(indname, "%s_%s", tableName, indexname);
+               rv = dbMgr->createIndex(indname, info);
+               if (rv != OK) 
+               {
+                  printError(ErrSysInit, "Index creation failed in csql for %s\n", tableName); 
+                  SQLDisconnect(hdbc); 
+                  return ErrSysInit;
+               }
+               delete info;
+           } else {
+               printError(ErrSysInit,"CSQL does not support this index type\n");
+               SQLDisconnect(hdbc);
+               return ErrSysInit;
+           }
+       }// while meta data fetch for index creation
+       SQLCloseCursor (hstmtmeta);
+       SQLFreeHandle (SQL_HANDLE_STMT, hstmtmeta);
     }
     Table *table = dbMgr->openTable(tableName);
     if (table == NULL) {
-        printf("unable to open table %d\n", tableName);
+        printError(ErrSysInit,"unable to open table %d\n", tableName);
         dbMgr->closeTable(table);
         if (tabDefinition) dbMgr->dropTable(tableName);
         SQLDisconnect(hdbc);
@@ -209,11 +263,11 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
         }
         retValue = SQLBindCol (hstmt, fcount++, AllDataType::convertToSQLType(info->type),
                                valBuf, fieldsize, NULL);
-        if (retValue) {printf("Unable to bind columns in ODBC\n"); return ErrSysInit; }
+        if (retValue) {printError(ErrSysInit, "Unable to bind columns in ODBC\n"); return ErrSysInit; }
     }
     delete info;
     retValue = SQLExecute (hstmt);
-    if (retValue) {printf("Unable to execute ODBC statement\n"); return ErrSysInit; }
+    if (retValue) {printError(ErrSysInit, "Unable to execute ODBC statement\n"); return ErrSysInit; }
     while(true)
     {
         retValue = SQLFetch (hstmt);
@@ -270,7 +324,7 @@ DbRetVal CacheTableLoader::unload(bool tabDefinition)
     DbRetVal rv = conn.open(userName, password);
     if (rv != OK) return ErrSysInit;
     DatabaseManager *dbMgr = (DatabaseManager*) conn.getDatabaseManager();
-    if (dbMgr == NULL) { printf("Auth failed\n"); return ErrSysInit; }
+    if (dbMgr == NULL) { printError(ErrSysInit, "Auth failed\n"); return ErrSysInit; }
     if (!tabDefinition)
     {
         Table *table = dbMgr->openTable(tableName);
@@ -311,7 +365,7 @@ DbRetVal CacheTableLoader::recoverAllCachedTables()
         fscanf(fp, "%d:%s\n", &mode, tablename);
         if (mode ==2 )  //just replicated table and not cached
             continue;
-        printf("Recovering Table from target db: %s\n", tablename);
+        printDebug(DM_Gateway, "Recovering Table from target db: %s\n", tablename);
         setTable(tablename);
         load();
     }

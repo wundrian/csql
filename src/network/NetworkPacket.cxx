@@ -24,14 +24,14 @@
 
 DbRetVal PacketPrepare::marshall()
 {
+    printDebug(DM_Network, "PacketPrepare::marshall called\n");
     bufferSize  = sizeof(int) * 4 + strlen(stmtString) + 1;
-    printf("NOOFPARAMS %d size %d\n", noParams, bufferSize);
-    printf("stmt length %s size %d\n", stmtString, strlen(stmtString));
-printf("noParams is %d\n", noParams);
+    printDebug(DM_Network, "NOOFPARAMS %d buffer size %d\n", noParams, bufferSize);
+    printDebug(DM_Network, "stmt %s size %d\n", stmtString, strlen(stmtString));
+    printDebug(DM_Network, "noParams is %d\n", noParams);
     if (noParams >0)
         bufferSize = bufferSize + 2 * sizeof(int) * noParams;
     buffer = (char*) malloc(bufferSize);
-    printf("start of the buffer %x\n", buffer);
     *(int*)buffer = stmtID;
     char *bufIter = buffer + sizeof(int);
     *(int*)bufIter = syncMode;
@@ -46,14 +46,15 @@ printf("noParams is %d\n", noParams);
        memcpy(bufIter, length, sizeof(int) * noParams);
        bufIter = bufIter + sizeof(int)* noParams; 
     }
-    printf("stmtString is in  %x\n", bufIter);
     strcpy(bufIter, stmtString);
+    printDebug(DM_Network, "PacketPrepare::marshall ended\n");
     return OK;
 }
 DbRetVal PacketPrepare::unmarshall()
 {
+    printDebug(DM_Network, "PacketPrepare::unmarshall called\n");
     stmtID = *(int*)buffer;
-    printf("start of the buffer is %x\n", buffer);
+    printDebug(DM_Network, "start of the buffer is %x\n", buffer);
     char *bufIter = buffer + sizeof (int);
     syncMode = *(int*)bufIter;
     bufIter = bufIter + sizeof(int);
@@ -68,8 +69,9 @@ DbRetVal PacketPrepare::unmarshall()
         bufIter = bufIter + sizeof(int) * noParams;
     }
     stmtString = bufIter;
-    printf("stmtString ptr is %x\n", stmtString);
+    printDebug(DM_Network, "stmtString ptr is %x\n", stmtString);
     stmtString[stmtLength+1] = '\0';
+    printDebug(DM_Network, "PacketPrepare::unmarshall ended\n");
     return OK;
 }
 DbRetVal PacketFree::marshall()
@@ -77,7 +79,6 @@ DbRetVal PacketFree::marshall()
     bufferSize  = sizeof(int);
     buffer = (char*) malloc(bufferSize);
     *(int*)buffer = stmtID;
-    //printf("PacketFree marshall with stmtid %d\n", stmtID);
     return OK;
 }
 DbRetVal PacketFree::unmarshall()
@@ -107,7 +108,6 @@ DbRetVal PacketExecute::marshall()
 {
     bufferSize  = sizeof(int)+ sizeof(int);
     BindSqlField* bindField = NULL;
-    //printf("noParams %d\n", noParams);
     for (int i = 0 ; i < noParams; i++)
     {
         bindField = (BindSqlField*) paramList.get(i+1);
@@ -124,7 +124,6 @@ DbRetVal PacketExecute::marshall()
         AllDataType::copyVal(bufIter, bindField->value, bindField->type,bindField->length);
         bufIter = bufIter + AllDataType::size(bindField->type, bindField->length);
     }
-    //printf("PacketExecute marshall with stmtid %d\n", stmtID);
     return OK;
 }
 DbRetVal PacketExecute::unmarshall()
@@ -141,7 +140,6 @@ DbRetVal PacketExecute::unmarshall()
        //TODO::Also check teh srcNetworkID
        if (stmt->stmtID == stmtID ) break;
     } 
-    //printf("PKTEXEC stmtid %d params %d\n", stmtID, noParams);
     if (noParams == 0) return OK;
     paramValues = new char*[noParams];
     ListIterator paramIter = stmt->paramList.getIterator();
@@ -159,7 +157,6 @@ void PacketCommit::setExecPackets(int tid, List list)
 {
     txnID = tid;
     noOfStmts = list.size();
-    //printf("totalstmts %d\n", noOfStmts);
     stmtBufSize = new int[noOfStmts];
     stmtBuffer = new char*[noOfStmts];
     PacketExecute* pkt = NULL;
@@ -167,15 +164,11 @@ void PacketCommit::setExecPackets(int tid, List list)
     for (int i = 0 ; i < noOfStmts; i++)
     {
         pkt = (PacketExecute*) list.get(i+1);
-        //printf("pkt ptr from PACKETCommit is %x\n", pkt);
-        if (pkt == NULL) printf("pkt is null.should never happen\n");
+        if (pkt == NULL) printError(ErrSysFatal, "pkt is null.should never happen\n");
         stmtBufSize[i] = pkt->getBufferSize();
-        //printf("Inside loop exec pkt size is %d\n", stmtBufSize[i]);
         stmtBuffer[i] = pkt->getMarshalledBuffer();
-        //printf("Inside loop exec %d %d\n", *(int*)stmtBuffer[i], 
         //                             *(int*)(((char*)stmtBuffer[i]) + 4));
         totalSize = totalSize + stmtBufSize[i];
-        //printf(" stmt no %d totalSize = %d\n", i+1, totalSize);
     }
     totalSize = sizeof(int) + sizeof(int) + noOfStmts * sizeof(int) +
                totalSize;
@@ -184,7 +177,6 @@ void PacketCommit::setExecPackets(int tid, List list)
 }
 DbRetVal PacketCommit::marshall()
 {
-    //printf("Marshalling commit packet %d %d\n", txnID, noOfStmts);
     buffer = (char*) malloc(bufferSize);
     *(int*)buffer = txnID;
     char* bufIter = (char*) buffer + sizeof(int);
@@ -194,7 +186,6 @@ DbRetVal PacketCommit::marshall()
     bufIter = (char*) bufIter + noOfStmts* sizeof(int);
     for (int i=0; i < noOfStmts; i++)
     {
-        //printf("stmtbufsize %d\n", stmtBufSize[i]);
         memcpy(bufIter, stmtBuffer[i], stmtBufSize[i]);
         bufIter = bufIter + stmtBufSize[i];
     }
@@ -214,7 +205,6 @@ DbRetVal PacketCommit::unmarshall()
     {
        stmtBuffer[i] = bufIter;
        bufIter = bufIter + stmtBufSize[i];
-       //printf("stmtbufsize %d\n", stmtBufSize[i]);
     }
 }
 //call unmarshall  before calling this

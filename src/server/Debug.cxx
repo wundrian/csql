@@ -29,6 +29,10 @@ int DebugDM_Table = 0;
 int DebugDM_Predicate = 0;
 int DebugDM_TableIterator = 0;
 int DebugDM_Process=0;
+int DebugDM_Network=0;
+int DebugDM_Gateway=0;
+int DebugDM_Adapter=0;
+int DebugDM_SqlLog=0;
 
 int printError1(DbRetVal val, char* fname, int lno, char *format, ...)
 {
@@ -70,6 +74,10 @@ int printDebug1(int module, char *fname, int lno, char *format, ...)
      case DM_Iterator: { if (!DebugDM_TableIterator) return 1; break; }
      case DM_Predicate: { if (!DebugDM_Predicate) return 1; break; }
      case DM_Process: { if (!DebugDM_Process) return 1; break; }
+     case DM_Network: { if (!DebugDM_Network) return 1; break; }
+     case DM_Gateway: { if (!DebugDM_Gateway) return 1; break; }
+     case DM_Adapter: { if (!DebugDM_Adapter) return 1; break; }
+     case DM_SqlLog: { if (!DebugDM_SqlLog) return 1; break; }
 
   }
 

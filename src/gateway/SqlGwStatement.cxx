@@ -29,13 +29,12 @@ DbRetVal SqlGwStatement::prepare(char *stmtstr)
     stmtHdlr = NoHandler;
     if (innerStmt) rv = innerStmt->prepare(stmtstr);
     SqlLogStatement *stmt = (SqlLogStatement*) innerStmt;
-    printf("rv from prepare is %d hdlr %d\n", rv, stmtHdlr);
     if (rv == OK) {
         if (!stmt->isCached) { 
             stmtHdlr = CSqlHandler;
             return rv;  
         }else {
-            if (conn->mode != OSYNC) {
+            if (stmt->mode != TABLE_OSYNC) {
                 stmtHdlr = CSqlHandler;
                 return rv;
             }else {
@@ -54,10 +53,10 @@ DbRetVal SqlGwStatement::prepare(char *stmtstr)
     //or sql statement is complex and csql parser failed
     if (adapter) rv = adapter->prepare(stmtstr);
     if (rv == OK) { 
-        printError(ErrWarning, "Handled by csql %d\n", shouldCSqlHandle());
+        printDebug(DM_Gateway, "Handled by csql %d\n", shouldCSqlHandle());
         if (!shouldCSqlHandle()) stmtHdlr = AdapterHandler;
         else stmtHdlr = CSqlAndAdapterHandler;
-        printError(ErrWarning, "Handled  %d\n", stmtHdlr);
+        printDebug(DM_Gateway, "Handled  %d\n", stmtHdlr);
     }
     else
         printError(ErrSysInit, "Both csql and adapter could not prepare\n");

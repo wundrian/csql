@@ -29,7 +29,7 @@ DbRetVal SqlOdbcConnection::connect (char *user, char * pass)
     retVal = SQLAllocHandle (SQL_HANDLE_ENV, SQL_NULL_HANDLE, &envHdl);
     if (retVal) 
     {
-        printf("Unable to allocate ODBC handle \n"); 
+        printError(ErrSysInit, "Unable to allocate ODBC handle \n"); 
         return ErrSysInit; 
     }
     SQLSetEnvAttr(envHdl, SQL_ATTR_ODBC_VERSION, (void *) SQL_OV_ODBC3, 0);
@@ -37,7 +37,7 @@ DbRetVal SqlOdbcConnection::connect (char *user, char * pass)
     retVal = SQLAllocHandle (SQL_HANDLE_DBC, envHdl, &dbHdl);
     if (retVal) 
     {
-        printf("Unable to allocate ODBC handle \n"); 
+        printError(ErrSysInit, "Unable to allocate ODBC handle \n"); 
         return ErrSysInit; 
     }
     SQLCHAR outstr[1024];

@@ -34,12 +34,10 @@ DbRetVal SqlOdbcStatement::prepare(char *stmtstr)
     retValue=SQLAllocHandle (SQL_HANDLE_STMT, conn->dbHdl, &hstmt);
     if (retValue) return ErrBadCall;
     retValue = SQLPrepare (hstmt, (unsigned char *) stmtstr, SQL_NTS);
-    //printf("retvalue from prepare is %d %s\n", retValue, stmtstr);
     if (retValue) return ErrBadCall;
     isPrepared = true;
     short totalFields=0;
     retValue = SQLNumResultCols (hstmt, &totalFields);
-    //printf("Total project fields %d\n", totalFields);
     if (retValue) return ErrBadCall;
     BindSqlProjectField *bindProjField = NULL;
     UWORD                   icol;
@@ -92,7 +90,6 @@ DbRetVal SqlOdbcStatement::prepare(char *stmtstr)
                               bindProjField->targetvalue, fieldsize, NULL);
         if (retValue) return ErrBadCall; 
         bindList.append(bindProjField);
-        //printf("appending to bindlist %d\n", icol);
         icol++;
        
     }
@@ -100,7 +97,6 @@ DbRetVal SqlOdbcStatement::prepare(char *stmtstr)
     BindSqlField *bindField;
     retValue = SQLNumParams (hstmt, &totalFields);
     if (retValue) return ErrBadCall;
-    //printf("SQLNUMParams returned %d\n", totalFields);
     icol = 1; colNameMax = IDENTIFIER_LENGTH;
     SWORD                   cType=0;
     SQLULEN                 cLength=0;
@@ -147,7 +143,6 @@ DbRetVal SqlOdbcStatement::prepare(char *stmtstr)
                       cType, fieldsize, scale, bindField->targetvalue, 
                       fieldsize, NULL);
         if (retValue) return ErrBadCall;
-        //printf("adding to param list\n");
         paramList.append(bindField);
         icol++;
     }
@@ -166,7 +161,6 @@ DbRetVal SqlOdbcStatement::execute(int &rowsAffected)
 {
     DbRetVal rv = OK;
     if (!isPrepared) return OK;
-    //printf("Adapter calling execute\n");
     ListIterator iter = paramList.getIterator();
     BindSqlField *bindField = NULL;
     while (iter.hasElement())
@@ -209,7 +203,6 @@ DbRetVal SqlOdbcStatement::execute(int &rowsAffected)
         }
     }
     int retValue = SQLExecute (hstmt);
-    printf("EXECUTE returned %d\n", retValue);
     if (retValue) return ErrBadCall;
     return rv;
 }
@@ -225,6 +218,11 @@ DbRetVal SqlOdbcStatement::bindField(int pos, void* value)
 {
     if (!isPrepared) return OK;
     BindSqlProjectField *bindField = (BindSqlProjectField*)bindList.get(pos);
+    if (NULL == bindField) 
+    {
+        printError(ErrBadArg, "Could not get the projection list. Should be called only for SELECT statement");
+        return ErrBadArg;
+    }
     bindField->value = value;
     return OK;
 }
@@ -232,7 +230,6 @@ void* SqlOdbcStatement::fetch()
 {
     if (!isPrepared) return NULL;
     int retValue = SQLFetch (hstmt);
-    //printf("SQLFETCH return value %d\n", retValue);
     if (retValue) return NULL;
     ListIterator iter = bindList.getIterator();
     BindSqlProjectField *bindField = NULL;
@@ -270,7 +267,6 @@ void* SqlOdbcStatement::fetch()
         } 
         if (ptrToFirstField == NULL) ptrToFirstField=bindField->value;
     }
-    //printf("ptrToFirstField is %x\n", ptrToFirstField);
     return ptrToFirstField;
 }
 
@@ -503,7 +499,6 @@ void SqlOdbcStatement::setDateParam(int paramPos, Date value)
     //if (bindField->type != typeDate) return;
     //*(Date*)(bindField->value) = value;
     AllDataType::convertToString(bindField->value, &value, typeDate);
-    //printf("Param value contains %s\n", bindField->value);
 
 }
 void SqlOdbcStatement::setTimeParam(int paramPos, Time value)
@@ -522,5 +517,4 @@ void SqlOdbcStatement::setTimeStampParam(int paramPos, TimeStamp value)
     //if (bindField->type != typeTimeStamp) return;
     //*(TimeStamp*)(bindField->value) = value;
     AllDataType::convertToString(bindField->value, &value, typeTimeStamp);
-    //printf("Param value contains %s\n", bindField->value);
 }

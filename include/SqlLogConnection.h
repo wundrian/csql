@@ -62,7 +62,7 @@ class SqlLogConnection : public AbsSqlConnection
     DbRetVal populateCachedTableList();
 
     public:
-    SqlLogConnection(){innerConn = NULL; syncMode = TSYNC;}
+    SqlLogConnection(){innerConn = NULL; syncMode = ASYNC;}
 
     bool isTableCached(char *name);
 

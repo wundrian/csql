@@ -44,6 +44,8 @@ DbRetVal SqlLogConnection::removePreparePacket(int stmtid)
         pkt = (PacketPrepare*)iter.nextElement();
         if (pkt->stmtID == stmtid) dpkt = pkt;
     }
+    if (dpkt == NULL) return OK;
+    //TEMP:mask below error for now
     if (dpkt == NULL)
     {
         printError(ErrNotFound, "Prepare packet not found in list for %d\n", stmtid);
@@ -61,9 +63,7 @@ DbRetVal SqlLogConnection::connect (char *user, char *pass)
     if (innerConn) rv = innerConn->connect(user,pass);
     if (rv != OK) return rv;
     if (!Conf::config.useReplication() && !Conf::config.useCache()) return OK;
-    rv = nwTable.initialize();
     if (rv !=OK) { innerConn->disconnect(); return rv; }
-    //nwTable.connect();
 
     //populate cacheList if not populated by another thread in same process
     //TODO::cacheList requires mutex guard
@@ -78,8 +78,6 @@ DbRetVal SqlLogConnection::disconnect()
     if (innerConn) rv =innerConn->disconnect();
     if (rv != OK) return rv;
     if (!Conf::config.useReplication() && !Conf::config.useCache()) return OK;
-    nwTable.disconnect();
-    nwTable.destroy();
     return rv;
 }
 DbRetVal SqlLogConnection::beginTrans(IsolationLevel isoLevel, TransSyncMode mode)
@@ -113,53 +111,16 @@ DbRetVal SqlLogConnection::commit()
         }
         return rv; 
     }
-    if (syncMode == TSYNC) {
-      rv  = nwTable.connectIfNotConnected();
-      if (rv != OK && rv != ErrAlready) return ErrOS;
-      if (rv == OK) {
-        //send all prepare packets to client
-        ListIterator iter = prepareStore.getIterator();
-        PacketPrepare *pkt;
-printf("PRABA:Start:Sending old prepare packets\n");
-        while (iter.hasElement())
-        {
-printf("PRABA:Sending old prepare packet\n");
-            pkt = (PacketPrepare*) iter.nextElement();
-            rv = sendAndReceive(NW_PKT_PREPARE, pkt->getMarshalledBuffer(),
-                                           pkt->getBufferSize());
-            if (rv !=OK) return rv;
-        }
-printf("PRABA:End:Sending old prepare packets\n");
-      }
-      //send all the prepare packets created after the last commit
-      ListIterator iter = curPrepareStore.getIterator();
-      PacketPrepare *pkt;
-printf("PRABA:Start:Sending new prepare packets\n");
-      while (iter.hasElement())
-      {
-          pkt = (PacketPrepare*) iter.nextElement();
-          rv = sendAndReceive(NW_PKT_PREPARE, pkt->getMarshalledBuffer(),
-                                         pkt->getBufferSize());
-          if (rv !=OK) 
-          {
-              prepareStore.append(pkt);
-              return rv;
-          }
-          prepareStore.append(pkt);
-printf("PRABA::Sending new prepare packet\n");
-      }
-      curPrepareStore.reset();
-printf("PRABA:End:Sending new prepare packets\n");
-    }
-
-    //create COMMIT packet
+    if (syncMode == ASYNC) {
+    //TODO::put the packet in global log store
+    /*
     PacketCommit *pkt = new PacketCommit();
     int tid = txnUID.getID();
     pkt->setExecPackets(tid, logStore);
     pkt->marshall();
     int *p = (int*) pkt->getMarshalledBuffer();
     NetworkClient *nwClient= nwTable.getNetworkClient();
-    if (syncMode == TSYNC) {
+    if (syncMode == ASYNC) {
         rv = nwClient->send(NW_PKT_COMMIT, pkt->getMarshalledBuffer(), 
                                           pkt->getBufferSize());    
         if (rv !=OK) 
@@ -174,10 +135,7 @@ printf("PRABA:End:Sending new prepare packets\n");
           return ErrPeerExecFailed;
         }
         //TODO::remove all sql logs nodes and the list which contains ptr to it
-    }else //(syncMode == ASYNC)
-    {
-         //TODO:: add head of the list of sql logs (for one txn) to 
-         //global log ship list
+        */
     }
     
     ListIterator logStoreIter = logStore.getIterator();
@@ -250,6 +208,7 @@ bool SqlLogConnection::isTableCached(char *tblName)
 
 DbRetVal SqlLogConnection::sendAndReceive(NetworkPacketType type, char *packet, int length)
 {
+    return OK;
     NetworkClient* nwClient = nwTable.getNetworkClient();
     DbRetVal rv = OK, retRV=OK;
     printf("isCacheClient %d\n", nwClient->isCacheClient());
