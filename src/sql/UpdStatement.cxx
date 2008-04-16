@@ -492,7 +492,7 @@ DbRetVal UpdStatement::resolveForAssignment()
             printError(ErrSysFatal, "Should never happen. value NULL after iteration");
             return ErrSysFatal;
         }
-        if (0 == value->paramNo) continue;
+        if (0 == cValue->paramNo) continue;
         params[cValue->paramNo -1 ] = cValue;
     }
     return OK;
