@@ -223,7 +223,8 @@ void* TableImpl::fetchNoBind()
         if (OK != lockRet)
         { 
             printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
-            return NULL;
+            curTuple_ = NULL;
+			return NULL;
         }
 
     }
@@ -242,7 +243,8 @@ void* TableImpl::fetchNoBind()
             if (OK != lockRet)
             { 
                 printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
-                return NULL;
+                curTuple_ = NULL;
+				return NULL;
             }
             if (!status) break; 
             tries--;
@@ -280,6 +282,7 @@ void* TableImpl::fetchNoBind(DbRetVal &rv)
         if (OK != lockRet)
         {
             printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
+			curTuple_ = NULL;
             rv = ErrLockTimeOut;
             return NULL;
         }
@@ -300,6 +303,7 @@ void* TableImpl::fetchNoBind(DbRetVal &rv)
             if (OK != lockRet)
             {
                 printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
+				curTuple_ = NULL;
                 rv = ErrLockTimeOut;
                 return NULL;
             }
@@ -312,9 +316,8 @@ void* TableImpl::fetchNoBind(DbRetVal &rv)
         if (tries == 0)
         {
             printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
-            rv = ErrLockTimeOut;
-            printf("rv is set to %d\n", rv);
             curTuple_ = NULL;
+            rv = ErrLockTimeOut;
             return NULL;
         }
     }
