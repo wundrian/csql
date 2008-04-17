@@ -34,9 +34,7 @@ int main()
     if (*status1 != 0 || *status2 != 0) ret = 1;
     dbMgr->dropTable("t1");
     conn.close();
-    //return ret;
-    //Hardcoded to fail: It is giving wrong message. Check that and remove this
-    return 1;
+    return ret;
 }
 void* runTest1(void *message)
 {
@@ -72,6 +70,7 @@ void* runTest2(void *message)
     int *retval = new int();
     *retval = 0;
     rv = insert(dbMgr, 100, false);
+    if (rv != OK) { printf("Test Passed:second thread did not insert\n"); *retval = 0; }
     if (rv == OK) { printf("Test Failed:second thread inserted\n"); *retval = 1; }
     insertDone = 1;
     conn.commit();

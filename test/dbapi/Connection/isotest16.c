@@ -34,9 +34,7 @@ int main()
     if (*status1 != 0 || *status2 != 0) ret = 1;
     dbMgr->dropTable("t1");
     conn.close();
-    //return ret;
-    //Hardcoded to fail: It is giving wrong message. Check that and remove this
-    return 1;
+    return ret;
 }
 void* runTest1(void *message)
 {

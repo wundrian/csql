@@ -69,6 +69,7 @@ void* runTest2(void *message)
     int *retval = new int();
     *retval = 0;
     rv = select(dbMgr, 200, false);
+    if (rv != OK) { printf("Test Passed:second thread could not select\n"); *retval = 0; }
     if (rv == OK) { printf("Test Failed:second thread could select\n"); *retval = 1; }
     selectDone = 1;
     conn.commit();

@@ -49,7 +49,8 @@ DbRetVal select(DatabaseManager *dbMgr, int val, bool isSleep, bool checkUpd=fal
     char *tuple;
     DbRetVal rv = table->execute();
     if (rv != OK)  { dbMgr->closeTable(table); return ErrUnknown; }
-    tuple = (char*)table->fetch() ;
+    tuple = (char*)table->fetch(rv) ;
+	if (rv != OK) return rv;
     if (tuple == NULL) {
         printf("Tuple not found\n"); 
         dbMgr->closeTable(table); 
@@ -58,7 +59,7 @@ DbRetVal select(DatabaseManager *dbMgr, int val, bool isSleep, bool checkUpd=fal
     printf("ThreadID: %lu Tuple %d %s\n", os::getthrid(), id, name);
     if (isSleep) ::sleep(5);
     dbMgr->closeTable(table);
-    if ( checkUpd && strcmp(name, "KANCHANA") != 0) return ErrUnknown;
+    if ( checkUpd && strcmp(name, "KANCHANA") != 0)  return ErrUnknown; 
     return OK;
 }
 DbRetVal update(DatabaseManager *dbMgr, int val, bool isSleep, char *updname = NULL)
@@ -76,7 +77,8 @@ DbRetVal update(DatabaseManager *dbMgr, int val, bool isSleep, char *updname = N
     char *tuple;
     DbRetVal rv = table->execute();
     if (rv != OK)  { dbMgr->closeTable(table); return ErrUnknown; }
-    tuple = (char*)table->fetch() ;
+    tuple = (char*)table->fetch(rv);
+	if (rv != OK) return rv;
     if (tuple == NULL) {dbMgr->closeTable(table); return ErrUnknown; }
     if (!updname) strcpy(name, "KANCHANA");
     else strcpy(name, updname);
@@ -103,7 +105,8 @@ DbRetVal remove(DatabaseManager *dbMgr, int val, bool isSleep)
     char *tuple;
     DbRetVal rv = table->execute();
     if (rv != OK)  { dbMgr->closeTable(table); return ErrUnknown; }
-    tuple = (char*)table->fetch() ;
+    tuple = (char*)table->fetch(rv);
+	if (rv != OK) return rv;
     if (tuple == NULL) {dbMgr->closeTable(table); return ErrUnknown; }
     rv = table->deleteTuple(); 
     if (rv != OK) { dbMgr->closeTable(table); return ErrUnknown; }

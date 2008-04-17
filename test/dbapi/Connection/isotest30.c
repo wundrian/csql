@@ -53,11 +53,11 @@ void* runTest1(void *message)
     int *retval = new int();
     *retval = 0;
     rv = select(dbMgr, 100, true);
-    if (rv != OK) { printf("Test Failed:first thread read failed \n"); *retval = 1; }
+    if (rv != OK) { printf("Test Failed:first thread first read failed \n"); *retval = 1; }
     selectDone = 1;
     while (updateDone !=1) ::sleep(1);
-    rv = select(dbMgr, 100, true, true);
-    if (rv != OK) { printf("Test Failed:first thread read failed %d \n", rv); *retval = 1; }
+    rv = select(dbMgr, 100, true, false);
+    if (rv != OK) { printf("Test Failed:first thread second read failed %d \n", rv); *retval = 1; }
     select2Done=1;
     conn.commit();
     rv  = conn.close();
@@ -77,6 +77,7 @@ void* runTest2(void *message)
     int *retval = new int();
     *retval = 0;
     rv = update(dbMgr, 100, true);
+    if (rv != OK) { printf("Test Passed:second thread did not update\n"); *retval = 0; }
     if (rv == OK) { printf("Test Failed:second thread updated\n"); *retval = 1; }
     updateDone = 1;
     while(select2Done !=1) ::sleep(1);

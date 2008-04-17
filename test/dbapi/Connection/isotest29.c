@@ -76,6 +76,7 @@ void* runTest2(void *message)
     int *retval = new int();
     *retval = 0;
     rv = remove(dbMgr, 100, true);
+    if (rv != OK) { printf("Test Passed: second thread did not delete\n"); *retval = 0; }
     if (rv == OK) { printf("Test Failed:second thread deleted\n"); *retval = 1; }
     conn.commit();
     deleteDone =1;

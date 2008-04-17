@@ -57,7 +57,7 @@ void* runTest1(void *message)
     selectDone=1;
     while (updateDone != 1) {::sleep(1); }
     rv = select(dbMgr, 100, true, true);
-    if (rv == OK) { printf("Test Failed:first thread read succeeded \n"); *retval = 1; }
+    if (rv == OK) { printf("Test passed:first thread read succeeded \n"); *retval = 0; }
     allDone =1;
     conn.commit();
     rv  = conn.close();
