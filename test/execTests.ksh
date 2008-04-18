@@ -47,7 +47,7 @@ do
 if [ "$MODULE" = "system/lock" ]
 then
    echo "Restarting the server for lock module"
-   kill -9 ${SERVER_PID}
+   kill ${SERVER_PID}
    echo "csqlserver killed PID=${SERVER_PID}" >>$TEST_LOG
    $CSQL_INSTALL_ROOT/bin/csqlserver >${SERVOUT} &
    SERVER_PID=$!
@@ -125,7 +125,7 @@ then
    #TODO::Reinitalize the database, as it may be in corrupted state.
    CURTIME=`date +%s`
    mv ${SERVOUT} ${SERVOUT}.${SERVER_PID}.${CURTIME}
-   kill -9 ${SERVER_PID}
+   kill ${SERVER_PID}
    echo "csqlserver killed PID=${SERVER_PID}" >>$TEST_LOG
    $CSQL_INSTALL_ROOT/bin/csqlserver >${SERVOUT} &
    SERVER_PID=$!
@@ -162,7 +162,7 @@ then
            CURTIME=`date +%s`
            mv ${SERVOUT} ${SERVOUT}.${SERVER_PID}.${CURTIME}
            echo "Refer ${SERVOUT}.${SERVER_PID}.${CURTIME} file for server log" >>$TEST_LOG
-           kill -9 ${SERVER_PID}
+           kill ${SERVER_PID}
            echo "csqlserver killed PID=${SERVER_PID}" >>${TEST_LOG}
            $CSQL_INSTALL_ROOT/bin/csqlserver >${SERVOUT} &
            SERVER_PID=$!
@@ -186,7 +186,7 @@ else
    CURTIME=`date +%s`
    mv ${SERVOUT} ${SERVOUT}.${SERVER_PID}.${CURTIME}
    echo "Refer ${SERVOUT}.${SERVER_PID}.${CURTIME} file for server log" >>$TEST_LOG
-   kill -9 ${SERVER_PID}
+   kill ${SERVER_PID}
    echo "csqlserver killed PID=${SERVER_PID}" >>$TEST_LOG
    $CSQL_INSTALL_ROOT/bin/csqlserver >${SERVOUT} 2>${SERVOUT} &
    SERVER_PID=$!
@@ -198,7 +198,7 @@ fi
 done
 done < TestModules
 
-kill -9 ${SERVER_PID}
+kill ${SERVER_PID}
 echo "csqlserver killed PID=${SERVER_PID}" >>${TEST_LOG}
 
 exit 0
