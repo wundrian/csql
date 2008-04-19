@@ -21,7 +21,7 @@ INCL= -I$(CSQL_INSTALL_ROOT)/include
 LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlsql -lcsql -lcsqlsqllog -lcsqlnw
 
 TARGETS = \
-	sqlapiexample
+	sqlapiexample 	insert	update	delete
 
 ifeq ($(PlatForm), supported)
 all: $(TARGETS)
@@ -32,6 +32,12 @@ endif
 
 sqlapiexample: sqlapiexample.o
 	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) $(SYSLIBS)
+insert: manSQLAPIinsert.o
+	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) $(SYSLIBS)
+update: manSQLAPIupdate.o
+	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) $(SYSLIBS)
+delete: manSQLAPIdelete.o
+	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) $(SYSLIBS)
 
 clean:
-	rm -f *.o sqlapiexample
+	rm -f *.o sqlapiexample insert update delete
