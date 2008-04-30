@@ -171,9 +171,13 @@ DbRetVal DatabaseManagerImpl::deleteDatabase(const char *name)
     {
         shm_id = os::shm_open(Conf::config.getSysDbKey(), 100, 0666);
         os::shmctl(shm_id, IPC_RMID);
+		delete systemDatabase_;
+		systemDatabase_ = NULL;
     } else {
         shm_id = os::shm_open(Conf::config.getUserDbKey(), 100, 0666);
         os::shmctl(shm_id, IPC_RMID);
+		delete db_;
+		db_ = NULL;
     }
     logFinest(logger, "Deleted database %s" , name);
     return OK;
