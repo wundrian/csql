@@ -777,7 +777,7 @@ DbRetVal TableImpl::unlock()
 TableImpl::~TableImpl()
 {
     if (NULL != iter ) { delete iter; iter = NULL; }
-    if (NULL != idxInfo) { delete idxInfo; idxInfo = NULL; }
+    if (NULL != idxInfo) { delete[] idxInfo; idxInfo = NULL; }
     if (NULL != indexPtr_) { delete[] indexPtr_; indexPtr_ = NULL;  }
     if (NULL != idxInfo) 
     {
