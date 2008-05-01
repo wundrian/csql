@@ -14,7 +14,12 @@ DbRetVal createTable(DatabaseManager *dbMgr)
     idxInfo->isPrimary = true;
     idxInfo->indType = hashIndex;
     rv = dbMgr->createIndex("indx1", idxInfo);
-    if (rv != OK) { printf("Index creation failed\n"); return ErrUnknown; }
+    if (rv != OK) { 
+        printf("Index creation failed\n"); 
+        delete idxInfo;
+        return ErrUnknown; 
+    }
+    delete idxInfo;
     return OK;
 }
 DbRetVal insert(DatabaseManager *dbMgr, int val, bool isSleep)
@@ -28,7 +33,7 @@ DbRetVal insert(DatabaseManager *dbMgr, int val, bool isSleep)
     char *tuple;
     int ret;
     ret = table->insertTuple();
-    if (ret != 0)  return ErrLockTimeOut;
+    if (ret != 0) { dbMgr->closeTable(table);  return ErrLockTimeOut; }
     printf("Inserted tuple : %d %s\n", val, name);
     if (isSleep) ::sleep(5);
     dbMgr->closeTable(table);
