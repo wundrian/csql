@@ -8,6 +8,8 @@
 // T1 should read updated tuple by T2
 void* runTest1(void *p);
 void* runTest2(void *p);
+int *p1RetVal = NULL;
+int *p2RetVal = NULL;
 int selectDone =0, updateDone=0, allDone=0;
 int main()
 {
@@ -38,6 +40,8 @@ int main()
     if (*status1 != 0 || *status2 != 0) ret = 1;
     dbMgr->dropTable("t1");
     conn.close();
+    if (p1RetVal) { delete p1RetVal; p1RetVal = NULL; }
+    if (p2RetVal) { delete p2RetVal; p2RetVal = NULL; }
     return ret;
 }
 void* runTest1(void *message)
@@ -55,18 +59,18 @@ void* runTest1(void *message)
 
     if (rv != OK) return NULL;
     printf("Thread and pid is %d %lu\n", os::getpid(), os::getthrid());
-    int *retval = new int();
-    *retval = 0;
+    p1RetVal = new int();
+    *p1RetVal = 0;
     rv = select(dbMgr, 100, true);
-    if (rv != OK) { printf("Test Failed:first thread read failed \n"); *retval = 1; }
+    if (rv != OK) { printf("Test Failed:first thread read failed \n"); *p1RetVal = 1; }
     selectDone = 1;
     while (updateDone != 1) {::sleep(1); }
     rv = select(dbMgr, 100, true, true);
-    if (rv == OK) { printf("Test Failed:first thread read succeeded \n"); *retval = 1; }
+    if (rv == OK) { printf("Test Failed:first thread read succeeded \n"); *p1RetVal = 1; }
     allDone = 1;
     conn.commit();
     rv  = conn.close();
-    pthread_exit(retval);
+    pthread_exit(p1RetVal);
 }
 void* runTest2(void *message)
 {
@@ -85,14 +89,14 @@ void* runTest2(void *message)
     printf("Thread and pid is %d %lu\n", os::getpid(), os::getthrid());
     while (selectDone != 1) {::sleep(1); }
 
-    int *retval = new int();
-    *retval = 0;
+    p2RetVal = new int();
+    *p2RetVal = 0;
     rv = update(dbMgr, 100, true);
-    if (rv != OK) { printf("Test Failed:second thread failed to update\n"); *retval = 1; }
+    if (rv != OK) { printf("Test Failed:second thread failed to update\n"); *p2RetVal = 1; }
     updateDone = 1;
     while (allDone !=1) ::sleep(1);
     conn.commit();
     conn.close();
-    pthread_exit(retval);
+    pthread_exit(p2RetVal);
 }
 

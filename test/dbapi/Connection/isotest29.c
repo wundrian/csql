@@ -9,9 +9,10 @@
 int selectDone=0, deleteDone=0;
 void* runTest1(void *p);
 void* runTest2(void *p);
+int *p1RetVal = NULL;
+int *p2RetVal = NULL;
 int main()
 {
-
     Connection conn;
     DbRetVal rv = conn.open("root", "manager");
     if (rv != OK) { printf("Error during connection %d\n", rv); return 1; }
@@ -38,6 +39,8 @@ int main()
     if (*status1 != 0 || *status2 != 0) ret = 1;
     dbMgr->dropTable("t1");
     conn.close();
+    if (p1RetVal) { delete p1RetVal; p1RetVal = NULL; }
+    if (p2RetVal) { delete p2RetVal; p2RetVal = NULL; }
     return ret;
 }
 void* runTest1(void *message)
@@ -50,17 +53,17 @@ void* runTest1(void *message)
     rv = conn.startTransaction(READ_REPEATABLE);
     if (rv != OK) return NULL;
     printf("Thread and pid is %d %lu\n", os::getpid(), os::getthrid());
-    int *retval = new int();
-    *retval = 0;
+    p1RetVal = new int();
+    *p1RetVal = 0;
     rv = select(dbMgr, 100, true);
-    if (rv != OK) { printf("Test Failed:first thread failed to select\n"); *retval = 1; }
+    if (rv != OK) { printf("Test Failed:first thread failed to select\n"); *p1RetVal = 1; }
     selectDone = 1;
     while (deleteDone !=1) ::sleep(1);
     rv = select(dbMgr, 100, true);
-    if (rv != OK) { printf("Test Failed:first thread read failed \n"); *retval = 1; }
+    if (rv != OK) { printf("Test Failed:first thread read failed \n"); *p1RetVal = 1; }
     conn.commit();
     rv  = conn.close();
-    pthread_exit(retval);
+    pthread_exit(p1RetVal);
 }
 void* runTest2(void *message)
 {
@@ -73,14 +76,14 @@ void* runTest2(void *message)
     if (rv != OK) return NULL;
     printf("Thread and pid is %d %lu\n", os::getpid(), os::getthrid());
     while (selectDone !=1) ::sleep(1);
-    int *retval = new int();
-    *retval = 0;
+    p2RetVal = new int();
+    *p2RetVal = 0;
     rv = remove(dbMgr, 100, true);
-    if (rv != OK) { printf("Test Passed: second thread did not delete\n"); *retval = 0; }
-    if (rv == OK) { printf("Test Failed:second thread deleted\n"); *retval = 1; }
+    if (rv != OK) { printf("Test Passed: second thread did not delete\n"); *p2RetVal = 0; }
+    if (rv == OK) { printf("Test Failed:second thread deleted\n"); *p2RetVal = 1; }
     conn.commit();
     deleteDone =1;
     conn.close();
-    pthread_exit(retval);
+    pthread_exit(p2RetVal);
 }
 
