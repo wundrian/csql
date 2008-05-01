@@ -28,12 +28,13 @@ void Condition::reset()
 }
 Condition::~Condition()
 {
-    //delete pred;
-    //pred = NULL;
+    if (pred) delete pred;
+    pred = NULL;
 }
 void Condition::setTerm(const char* fName1, ComparisionOp op,
                         const char *fName2)
 {
+    if (pred) delete pred;
     pred = new PredicateImpl();
     pred->setTerm(fName1, op, fName2);
 }
@@ -41,18 +42,21 @@ void Condition::setTerm(const char* fName1, ComparisionOp op,
 //Operand should be of the same type of the field.This is must
 void Condition::setTerm(const char* fName1, ComparisionOp op, void *opnd)
 {
+    if (pred) delete pred;
     pred = new PredicateImpl();
     pred->setTerm(fName1, op, opnd);
 }
 
 void Condition::setTerm(const char* fName1, ComparisionOp op, void **opnd)
 {
+    if (pred) delete pred;
     pred = new PredicateImpl();
     pred->setTerm(fName1, op, opnd);
 }
 
 void Condition::setTerm(Predicate *p1, LogicalOp op, Predicate *p2 )
 {
+    if (pred) delete pred;
     pred = new PredicateImpl();
     pred->setTerm(p1, op, p2);
 }
