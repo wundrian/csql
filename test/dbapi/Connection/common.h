@@ -55,7 +55,7 @@ DbRetVal select(DatabaseManager *dbMgr, int val, bool isSleep, bool checkUpd=fal
     DbRetVal rv = table->execute();
     if (rv != OK)  { dbMgr->closeTable(table); return ErrUnknown; }
     tuple = (char*)table->fetch(rv) ;
-	if (rv != OK) return rv;
+	if (rv != OK) { dbMgr->closeTable(table); return rv; } // dont remove this line
     if (tuple == NULL) {
         printf("Tuple not found\n"); 
         dbMgr->closeTable(table); 
@@ -83,7 +83,7 @@ DbRetVal update(DatabaseManager *dbMgr, int val, bool isSleep, char *updname = N
     DbRetVal rv = table->execute();
     if (rv != OK)  { dbMgr->closeTable(table); return ErrUnknown; }
     tuple = (char*)table->fetch(rv);
-	if (rv != OK) return rv;
+	if (rv != OK) { dbMgr->closeTable(table); return rv; } // do not remove this line
     if (tuple == NULL) {dbMgr->closeTable(table); return ErrUnknown; }
     if (!updname) strcpy(name, "KANCHANA");
     else strcpy(name, updname);
@@ -111,7 +111,7 @@ DbRetVal remove(DatabaseManager *dbMgr, int val, bool isSleep)
     DbRetVal rv = table->execute();
     if (rv != OK)  { dbMgr->closeTable(table); return ErrUnknown; }
     tuple = (char*)table->fetch(rv);
-	if (rv != OK) return rv;
+	if (rv != OK) { dbMgr->closeTable(table); return rv; }
     if (tuple == NULL) {dbMgr->closeTable(table); return ErrUnknown; }
     rv = table->deleteTuple(); 
     if (rv != OK) { dbMgr->closeTable(table); return ErrUnknown; }
