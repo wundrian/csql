@@ -47,8 +47,16 @@ class TupleIterator
 
     TupleIterator(){}
     public:
+    
     TupleIterator(Predicate *p, ScanType t, IndexInfo *i, void *cptr, int pslot)
     { pred_ = p ; scanType_ = t; info = i; chunkPtr_ = cptr; procSlot =pslot;}
+    
+    ~TupleIterator() 
+	{ 
+        if (bIter) delete bIter; 
+        bIter = NULL; 
+    }
+    
     DbRetVal open();
     void* next();
     DbRetVal close();
