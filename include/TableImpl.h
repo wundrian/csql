@@ -49,7 +49,7 @@ class TupleIterator
     public:
     
     TupleIterator(Predicate *p, ScanType t, IndexInfo *i, void *cptr, int pslot)
-    { pred_ = p ; scanType_ = t; info = i; chunkPtr_ = cptr; procSlot =pslot;}
+    { bIter = NULL; pred_ = p ; scanType_ = t; info = i; chunkPtr_ = cptr; procSlot =pslot;}
     
     ~TupleIterator() 
 	{ 
