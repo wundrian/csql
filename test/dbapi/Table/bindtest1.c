@@ -31,6 +31,7 @@ int main()
     if (rv != OK) ret = 1;
     rv  = table->bindFld("f5", &id2);
     if (rv == OK) ret = 1;
+    dbMgr->closeTable(table);
     dbMgr->dropTable("t1");
     conn.close();
     return ret;
