@@ -47,6 +47,7 @@ int main()
     idxInfo->isPrimary = true;
     rv = dbMgr->createIndex("indx1", idxInfo);
     if (rv == OK) { printf("Index creation passed\n"); return 1; }
+    delete idxInfo;
     dbMgr->dropTable("t1");
     conn.close();
     return 0;
