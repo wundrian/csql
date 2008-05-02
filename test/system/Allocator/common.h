@@ -7,8 +7,13 @@ DbRetVal createIndex(DatabaseManager *dbMgr, char *tblname, char *fldname, char 
     idxInfo->indType = hashIndex;
     idxInfo->isUnique = true;
     DbRetVal rv = dbMgr->createIndex(indname, idxInfo);
-    if (rv != OK) { printf("Index creation failed\n"); return rv; }
+    if (rv != OK) { 
+        printf("Index creation failed\n"); 
+        delete idxInfo;  
+        return rv; 
+    }
     printf("Index created for %s\n", fldname);
+    delete idxInfo;
     return OK;
 }
 DbRetVal createTable(DatabaseManager *dbMgr, char *tblname)
