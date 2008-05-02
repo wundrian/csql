@@ -128,7 +128,8 @@ class TableImpl:public Table
 
     public:
     TableImpl() { db_ = NULL; chunkPtr_ = NULL; iter = NULL;
-        idxInfo = NULL; indexPtr_ = NULL; scanType_ = unknownScan; pred_ = NULL; useIndex_ = -1;
+        idxInfo = NULL; indexPtr_ = NULL; scanType_ = unknownScan; 
+        pred_ = NULL; useIndex_ = -1; numFlds_ = 0;
         iNullInfo = 0; cNullInfo = NULL; isIntUsedForNULL = true; 
         iNotNullInfo = 0; cNotNullInfo = NULL;
         isPlanCreated = false; undoFlag = true;}
