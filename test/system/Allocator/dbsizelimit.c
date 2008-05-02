@@ -40,6 +40,7 @@ int main()
         if (rv != OK) break;
         conn.commit();
     }
+    dbMgr->closeTable(table);
     dbMgr->dropTable("t1");
     conn.close();
     return 0;
