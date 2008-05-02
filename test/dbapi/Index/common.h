@@ -12,6 +12,7 @@ int createIndex(DatabaseManager *dbMgr, bool unique)
     DbRetVal rv = dbMgr->createIndex("indx1", idxInfo);
     if (rv != OK) { printf("Index creation failed\n"); return 1; }
     printf("Index created\n");
+    delete idxInfo;
     return 0;
 }
 int createTable(DatabaseManager *dbMgr)
