@@ -504,7 +504,7 @@ DbRetVal DatabaseManagerImpl::dropTable(const char *name)
     rv = cTable.getChunkAndTblPtr(name, chunk, tptr);
     if (OK != rv) {
         systemDatabase_->releaseDatabaseMutex();
-        printError(ErrSysInternal, "Table %s does not exist");
+        printError(ErrSysInternal, "Table %s does not exist", name);
         return ErrSysInternal;
     }
     rv = lMgr_->getExclusiveLock(chunk, NULL);
