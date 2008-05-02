@@ -34,7 +34,7 @@ int main()
     rv = dbMgr->createIndex("indx2", idxInfo);
     if (rv != OK) { printf("Index creation failed\n"); return -1; }
     printf("Index created for f2\n");
-
+    delete idxInfo;
     Table *table = dbMgr->openTable("t1");
     if (table == NULL) { printf("Unable to open table\n"); return -1; }
     int id1 = 0, id2=0;

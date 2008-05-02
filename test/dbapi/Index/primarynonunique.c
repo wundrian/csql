@@ -29,7 +29,7 @@ int main()
     rv = dbMgr->createIndex("indx1", idxInfo);
     int ret = 0;
     if (rv == OK) ret =1;
-
+    delete idxInfo;
     dbMgr->dropTable("t1");
     conn.close();
     return ret;

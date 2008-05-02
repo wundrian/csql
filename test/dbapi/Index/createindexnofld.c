@@ -25,6 +25,7 @@ int main()
     int ret =0;
     rv = dbMgr->createIndex("indx1", idxInfo);
     if (rv == OK) ret =1;
+    delete idxInfo;
     dbMgr->dropTable("t1");
     conn.close();
     return ret;
