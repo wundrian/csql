@@ -54,7 +54,13 @@ int main()
         for (int j =0; j < 100000; j++)
         {
             rv = conn.startTransaction();
-            if (rv != OK) exit(1);
+            //if (rv != OK) exit(1);
+            if (rv != OK) { 
+                dbMgr->closeTable(table); 
+                dbMgr->dropTable("t1"); 
+                conn.close();  
+                return 1; 
+            }
             id= i*100000+j;
             strcpy(name, "KARAN");
             ret = table->insertTuple();
