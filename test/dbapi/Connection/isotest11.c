@@ -24,12 +24,13 @@ int main()
 
     pthread_join(thr[0], (void**)&status1);
     pthread_join(thr[1], (void**)&status2);
-    dbMgr->dropTable("t1");
-    conn.close();
+    ret = 0;
+    if (*status1 != 0 || *status2 != 0) ret = 1;
     if (p1RetVal) { delete p1RetVal; p1RetVal = NULL; }
     if (p2RetVal) { delete p2RetVal; p2RetVal = NULL; }
-    if (*status1 != 0 || *status2 != 0) return 1;
- return 0;
+    dbMgr->dropTable("t1");
+    conn.close();
+    return ret;
 }
 void* runTest1(void *message)
 {
