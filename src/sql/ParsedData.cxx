@@ -15,6 +15,7 @@
   ***************************************************************************/
 #include "Parser.h"
 #include <CSql.h>
+#include<PredicateImpl.h>
 
 
 void ParsedData::insertValue(char *val)
@@ -70,26 +71,30 @@ void ParsedData::insertUpdateValue(char *fName, char *val)
 
 Predicate* ParsedData::insertPredicate(char *fName, ComparisionOp op, void **val)
 {
-    Condition cond;
-    cond.setTerm(fName, op, val);
-    return cond.getPredicate();
+    PredicateImpl *pImpl = new PredicateImpl();
+    pImpl->setTerm(fName, op, val);
+    return (Predicate*) pImpl;
 }
 Predicate* ParsedData::insertPredicate(char *fName1, ComparisionOp op, char *fName2)
 {
-    Condition cond;
-    cond.setTerm(fName1, op, fName2);
-    return cond.getPredicate();
+    PredicateImpl *pImpl = new PredicateImpl();
+    pImpl->setTerm(fName1, op, fName2);
+    return (Predicate*) pImpl;
 }
 
 Predicate* ParsedData::insertPredicate(Predicate *p1, LogicalOp op, Predicate *p2)
 {
-    Condition cond;
-    cond.setTerm(p1, op, p2);
-    return cond.getPredicate();
+    PredicateImpl *pImpl = new PredicateImpl();
+    pImpl->setTerm(p1, op, p2);
+    return (Predicate*) pImpl;
 }
 
 void ParsedData::reset()
 {
+    ListIterator fNameIter = fieldNameList.getIterator();
+    fNameIter.reset();
+    while (fNameIter.hasElement())
+        delete (Identifier *) fNameIter.nextElement();
     fieldNameList.reset();
     ListIterator iter = fieldValueList.getIterator();
     FieldValue *value;
@@ -98,6 +103,7 @@ void ParsedData::reset()
         value = (FieldValue*)iter.nextElement();
         free(value->parsedString);
         free(value->value);
+        delete value;
     }
     fieldValueList.reset();
     predicate.reset();
@@ -109,6 +115,7 @@ void ParsedData::reset()
         condVal = (ConditionValue*)iter.nextElement();
         free(condVal->parsedString);
         free(condVal->value);
+        delete condVal;
     }
     conditionValueList.reset();
 
@@ -119,6 +126,7 @@ void ParsedData::reset()
         updFldVal = (UpdateFieldValue*)iter.nextElement();
         free(updFldVal->parsedString);
         free(updFldVal->value);
+        delete updFldVal;
     }
     updFldValList.reset();
     
