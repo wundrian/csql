@@ -263,6 +263,9 @@ DbRetVal SelStatement::resolve()
         }
         if ('*' == name->fldName[0]) 
         {
+            iter.reset();
+            while (iter.hasElement())
+                delete (FieldName *) iter.nextElement();
             rv = resolveStar();
             if (rv != OK)
             { 
@@ -347,6 +350,10 @@ DbRetVal SelStatement::resolveStar()
         parsedData->insertField(fName);
         table->bindFld(fName, newVal->value);
     }
+    fNameIter.reset();
+    while (fNameIter.hasElement())
+        delete (Identifier *) fNameIter.nextElement();
+    fNameList.reset();
     delete fInfo;
     return OK;
 }
