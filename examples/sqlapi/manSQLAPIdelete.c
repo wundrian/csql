@@ -53,6 +53,7 @@ int main()
         printf("%d  | %s\t| %6.2f\n", eid, ename, salary);
     rv = con->commit();
     if(rv!=OK) { delete stmt; delete con; return 7; }
+    stmt->close();
     stmt->free();
 
     strcpy(statement,"DROP TABLE EMP;");
