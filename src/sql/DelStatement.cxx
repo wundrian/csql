@@ -26,6 +26,10 @@ DelStatement::DelStatement()
 }
 
 DelStatement::~DelStatement() {
+    if (table) {
+        table->setCondition(NULL);
+        if (dbMgr) dbMgr->closeTable(table);
+    }
     if (totalParams) {
         free(params);
         params =  NULL;
