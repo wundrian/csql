@@ -106,7 +106,7 @@ assign_list_L: ',' assign_stmt
 assign_stmt: ident OPERATOR value 
         { 
             parsedData->insertUpdateValue( (char*) $1, (char*) $3);
-            free( $1 ); free( $3 ); 
+            free( $1 ); free($2);free( $3 ); 
         }
         ;
  
@@ -150,7 +150,7 @@ condition: ident OPERATOR value
             Predicate *pred;
             void **ptr = parsedData->insertCondValueAndGetPtr((char*)$1, (char*)$3);
             pred = parsedData->insertPredicate((char*) $1, op, ptr);
-            free( $1 ); free( $3 ); 
+            free( $1 ); free($2); free( $3 ); 
             $$=pred;
         }
         | ident OPERATOR ident
@@ -158,7 +158,7 @@ condition: ident OPERATOR value
             ComparisionOp  op = AllDataType::getComparisionOperator((char*)$2);
             Predicate *pred;
             pred = parsedData->insertPredicate((char*) $1, op, (char*) $3);
-            free( $1 ); free( $3 );
+            free( $1 ); free($2); free( $3 );
             $$=pred;
         }
 
