@@ -34,6 +34,10 @@ UpdStatement::~UpdStatement() {
         params =  NULL;
         //free(paramValues);
         //paramValues = NULL;
+        if (table) {
+            table->setCondition(NULL);
+            if (dbMgr) dbMgr->closeTable(table);
+        }
     }
 }
 DbRetVal UpdStatement::getParamFldInfo(int paramPos, FieldInfo *&info)
