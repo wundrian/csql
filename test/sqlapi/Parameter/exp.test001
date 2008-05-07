@@ -1,0 +1,125 @@
+Table created
+noOfParamField Returns=10
+
+***********************************************
+1 FIELD INFORMATION ::
+Field Name :
+Data type of the field :0
+length of the field :4
+Offset :0
+Default value :
+Null field :0
+Default value :0
+***********************************************
+
+***********************************************
+2 FIELD INFORMATION ::
+Field Name :
+Data type of the field :3
+length of the field :2
+Offset :0
+Default value :
+Null field :0
+Default value :0
+***********************************************
+
+***********************************************
+3 FIELD INFORMATION ::
+Field Name :
+Data type of the field :30
+length of the field :31
+Offset :0
+Default value :
+Null field :0
+Default value :0
+***********************************************
+
+***********************************************
+4 FIELD INFORMATION ::
+Field Name :
+Data type of the field :11
+length of the field :4
+Offset :0
+Default value :
+Null field :0
+Default value :0
+***********************************************
+
+***********************************************
+5 FIELD INFORMATION ::
+Field Name :
+Data type of the field :11
+length of the field :4
+Offset :0
+Default value :
+Null field :0
+Default value :0
+***********************************************
+
+***********************************************
+6 FIELD INFORMATION ::
+Field Name :
+Data type of the field :20
+length of the field :4
+Offset :0
+Default value :
+Null field :0
+Default value :0
+***********************************************
+
+***********************************************
+7 FIELD INFORMATION ::
+Field Name :
+Data type of the field :21
+length of the field :4
+Offset :0
+Default value :
+Null field :0
+Default value :0
+***********************************************
+
+***********************************************
+8 FIELD INFORMATION ::
+Field Name :
+Data type of the field :22
+length of the field :8
+Offset :0
+Default value :
+Null field :0
+Default value :0
+***********************************************
+
+***********************************************
+9 FIELD INFORMATION ::
+Field Name :
+Data type of the field :0
+length of the field :4
+Offset :0
+Default value :
+Null field :0
+Default value :0
+***********************************************
+
+***********************************************
+10 FIELD INFORMATION ::
+Field Name :
+Data type of the field :2
+length of the field :8
+Offset :0
+Default value :
+Null field :0
+Default value :0
+***********************************************
+Total rows inserted 10
+F1=0 | F2=10 | F3=jitendra | F4=5.500000 | F5=10.500000 | DATE=2007-1-21 | TIME=12:29:30 | TIMESTAMP=2007-1-21 12:29:30 | F9=20 | F10=12000  
+F1=1 | F2=10 | F3=jitendra | F4=5.500000 | F5=10.500000 | DATE=2007-1-21 | TIME=12:29:30 | TIMESTAMP=2007-1-21 12:29:30 | F9=20 | F10=12000  
+F1=2 | F2=10 | F3=jitendra | F4=5.500000 | F5=10.500000 | DATE=2007-1-21 | TIME=12:29:30 | TIMESTAMP=2007-1-21 12:29:30 | F9=20 | F10=12000  
+F1=3 | F2=10 | F3=jitendra | F4=5.500000 | F5=10.500000 | DATE=2007-1-21 | TIME=12:29:30 | TIMESTAMP=2007-1-21 12:29:30 | F9=20 | F10=12000  
+F1=4 | F2=10 | F3=jitendra | F4=5.500000 | F5=10.500000 | DATE=2007-1-21 | TIME=12:29:30 | TIMESTAMP=2007-1-21 12:29:30 | F9=20 | F10=12000  
+F1=5 | F2=10 | F3=jitendra | F4=5.500000 | F5=10.500000 | DATE=2007-1-21 | TIME=12:29:30 | TIMESTAMP=2007-1-21 12:29:30 | F9=20 | F10=12000  
+F1=6 | F2=10 | F3=jitendra | F4=5.500000 | F5=10.500000 | DATE=2007-1-21 | TIME=12:29:30 | TIMESTAMP=2007-1-21 12:29:30 | F9=20 | F10=12000  
+F1=7 | F2=10 | F3=jitendra | F4=5.500000 | F5=10.500000 | DATE=2007-1-21 | TIME=12:29:30 | TIMESTAMP=2007-1-21 12:29:30 | F9=20 | F10=12000  
+F1=8 | F2=10 | F3=jitendra | F4=5.500000 | F5=10.500000 | DATE=2007-1-21 | TIME=12:29:30 | TIMESTAMP=2007-1-21 12:29:30 | F9=20 | F10=12000  
+F1=9 | F2=10 | F3=jitendra | F4=5.500000 | F5=10.500000 | DATE=2007-1-21 | TIME=12:29:30 | TIMESTAMP=2007-1-21 12:29:30 | F9=20 | F10=12000  
+Total row fetched=10
+Table dropped
