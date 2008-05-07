@@ -17,7 +17,7 @@ int main()
     if (dbMgr == NULL) { printf("Auth failed\n"); return -1;}
     TableDef tabDef;
     tabDef.addField("f1", typeInt, 0, NULL, true);
-    tabDef.addField("f2", typeString, 1020);
+    tabDef.addField("f2", typeString, 196);
     rv = dbMgr->createTable("t1", tabDef);
     if (rv != OK) { printf("Table creation failed\n"); return -1; }
     HashIndexInitInfo *idxInfo = new HashIndexInitInfo();
@@ -52,6 +52,28 @@ int main()
     printf("Tuples found: %d\n", count);
     table->close();
     conn.commit();
+
+
+    Condition p1;
+    int valTerm = 0;
+    p1.setTerm("f1", OpEquals, &valTerm);
+    table->setCondition(&p1);
+    int icount=0;
+    for(int i = 0; i< 20000; i++)
+    {
+        rv = conn.startTransaction();
+        if (rv != OK) while (rv !=OK) rv = conn.startTransaction();
+        valTerm = i;
+        rv = table->execute();
+        tuple = (char*)table->fetch() ;
+        if (tuple == NULL)  break;
+        icount++;
+        table->close();
+        conn.commit();
+    }
+    printf("Index Tuples found: %d\n", icount);
+
+
 
     dbMgr->closeTable(table);
 
@@ -99,15 +121,20 @@ void* runInsTest(void *message)
         id= i;
         strcpy(name, "PRABAKARAN0123456750590");
         ret = table->insertTuple();
-        while (ret == ErrLockTimeOut)  { ret = table->insertTuple(); }
-        if (ret != 0) break;
+        while (ret == ErrLockTimeOut)  
+        { 
+            conn.rollback();
+            conn.startTransaction();
+            ret = table->insertTuple(); 
+        }
+        if (ret != 0) { printf("RETURNING EARLY: %d\n", ret); break;}
         icount++;
         conn.commit();
-        if (icount %10000 ==0) printf("%d\n", i);
+        //if (icount %10000 ==0) printf("%d\n", i);
     }
     timer.stop();
    char msgBuf[1024];
-   sprintf(msgBuf,"Insert: Thread %d: Total rows :%d Time taken:%lld ms\n",val, icount, timer.avg()/1000/1000);
+   sprintf(msgBuf,"Insert: Thread %lu %d: Total rows :%d Time taken:%lld ms\n",os::getthrid(), val, icount, timer.avg()/1000/1000);
    os::write(1,msgBuf,strlen(msgBuf));
    dbMgr->closeTable(table); 
    rv  = conn.close();
@@ -149,7 +176,8 @@ void* runSelTest(void *message)
         valTerm = i;
         rv = table->execute();
         tuple = (char*)table->fetch() ;
-        if (tuple != NULL) icount++;
+        if (tuple == NULL)  break;
+        icount++;
         table->close();
         conn.commit();
     }
