@@ -44,11 +44,12 @@ DbRetVal releaseAllResources(Database *sysdb, ThreadInfo *info )
     {
         if (info->has_[i] != NULL) 
         {
-            printf("Dead Procs: %d %lu holding mutex %x %s) \n", info->pid_, info->thrid_, info->has_[i], info->has_[i]->name);
-            logFine(logger, "Dead Procs: %d %lu holding mutex %x %s) \n", info->pid_, info->thrid_, info->has_[i], info->has_[i]->name);
+            printf("Dead Procs: %d %lu holding mutex %x %s \n", info->pid_, info->thrid_, info->has_[i], info->has_[i]->name);
+            logFine(logger, "Dead Procs: %d %lu holding mutex %x %s \n", info->pid_, info->thrid_, info->has_[i], info->has_[i]->name);
             //TODO::recovery of mutexes 
             //info->has_[i]->recoverMutex();
             srvStop = 1;
+            return ErrSysFatal;
         }
     }
     TransactionManager *tm = new TransactionManager();
