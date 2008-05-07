@@ -344,9 +344,9 @@ void Config::print()
     printf(" useCache %d\n", useCache());
     printf(" getDSN %s\n", getDSN());
     printf(" getTableConfigFile %s\n", getTableConfigFile());
-    printf(" useReplication %d\n", useReplication());
-    printf(" getReplConfigFile %s\n", getReplConfigFile());
-    printf(" getMaxLogStoreSize %ld\n", getMaxLogStoreSize());
-    printf(" getNetworkID %d\n", getNetworkID());
-    printf(" getCacheNetworkID %d\n", getCacheNetworkID());
+    //printf(" useReplication %d\n", useReplication());
+    //printf(" getReplConfigFile %s\n", getReplConfigFile());
+    //printf(" getMaxLogStoreSize %ld\n", getMaxLogStoreSize());
+    //printf(" getNetworkID %d\n", getNetworkID());
+    //printf(" getCacheNetworkID %d\n", getCacheNetworkID());
 }
