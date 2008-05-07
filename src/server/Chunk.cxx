@@ -411,7 +411,7 @@ void* Chunk::varSizeFirstFitAllocate(size_t size)
         {
             if (0 == varInfo->isUsed_)
             {
-                if( alignedSize < varInfo->size_)
+                if( alignedSize +sizeof(VarSizeInfo) < varInfo->size_)
                 {
                     splitDataBucket(varInfo, alignedSize);
                     return ((char*)varInfo) + sizeof(VarSizeInfo);
@@ -684,6 +684,7 @@ void Chunk::splitDataBucket(VarSizeInfo *varInfo, size_t needSize)
                sizeof(VarSizeInfo) +  varInfo->size_);
     varInfo->isUsed_ = 0;
     varInfo->size_  = remSpace;
+    printDebug(DM_VarAlloc, "Remaining space is %d\n", remSpace);
     return;
 }
 
