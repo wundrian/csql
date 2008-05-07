@@ -15,3 +15,6 @@ tools/catalog
 tools/csql
 jdbc/Connection
 jdbc/Statement
+sqlapi/Connect
+sqlapi/Parameter
+sqlapi/Select
