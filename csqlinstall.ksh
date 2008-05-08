@@ -36,13 +36,13 @@ ln -s libcsqlsqllog.so libcsqlsqllog
 cp ${root_dir}/src/sql/Statement.h ${install_dir}/include
 cp ${root_dir}/src/sql/Parser.h ${install_dir}/include
 cd ${install_dir}/include
- mkdir ${install_dir}/include/odbc
- cp ${root_dir}/include/odbc/* ${install_dir}/include/odbc
 
 #rm Allocator.h CatalogTables.h Database.h 
 #rm DatabaseManagerImpl.h
 #rm Globals.h Index.h Lock.h PredicateImpl.h
 #rm Process.h SessionImpl.h TableImpl.h Transaction.h UserManagerImpl.h 
+cd ${install_dir}/bin
+rm csqlcacheserver  csqlreplserver  repltable
 
 cp ${root_dir}/README.INSTALL ${install_dir}/README
 cp ${root_dir}/Doxyfile ${install_dir}
