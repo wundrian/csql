@@ -18,3 +18,8 @@ jdbc/Statement
 sqlapi/Connect
 sqlapi/Parameter
 sqlapi/Select
+odbc/Connect
+odbc/NonSelectDML
+odbc/Parameters
+odbc/Select
+odbc/Transaction
