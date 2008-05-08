@@ -107,7 +107,9 @@ int main(int argc, char **argv)
            }
             iter.reset();
             char sqlstring[1024];
+            bool flag=false;
             while (iter.hasElement()) {
+                 if (!flag) { printf("SET AUTOCOMMIT OFF;\n"); flag=true; } 
                  elem = (Identifier*) iter.nextElement();
                  sprintf(sqlstring, "SELECT * FROM %s;", elem->name);
                  sqlconn->beginTrans();
