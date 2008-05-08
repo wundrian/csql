@@ -40,6 +40,19 @@ UpdStatement::~UpdStatement() {
         }
     }
 }
+void* UpdStatement::getParamValuePtr( int pos )
+{
+    ConditionValue *cValue;
+    UpdateFieldValue *uValue;
+    if (pos <= totalAssignParams) {
+        uValue = (UpdateFieldValue*) params[pos-1];
+      return( (void*) uValue->value );
+    } else {
+        cValue = (ConditionValue*) params[pos-1];
+      return( (void*) cValue->value );
+    }
+}
+
 DbRetVal UpdStatement::getParamFldInfo(int paramPos, FieldInfo *&info)
 {
     if (paramPos <=0 || paramPos > totalParams) return ErrBadArg;

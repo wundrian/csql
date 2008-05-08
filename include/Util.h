@@ -181,6 +181,7 @@ class UniqueID
    UniqueID() { startID = 1; mutex.init(); }
    int getID()
    {
+      //TODO::change mutex to atomic increment instruction
       if (mutex.getLock(-1, false) != 0) return 0;
       startID++;
       mutex.releaseLock(-1, false); 

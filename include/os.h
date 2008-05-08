@@ -90,7 +90,7 @@ enum MapMode
 #define LOCK_BUCKET_SIZE 2048
 #define MAX_CHUNKS 20
 #define PAGE_SIZE Conf::config.getPageSize()
-#define MAX_MUTEX_PER_THREAD 5
+#define MAX_MUTEX_PER_THREAD 3
 #define MAX_THREADS_PER_PROCESS 30
 #define MAX_FILE_PATH_LEN 1024
 

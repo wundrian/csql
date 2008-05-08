@@ -561,7 +561,6 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
         }
         if (def.isDefault_ && NULL == def.bindVal_ && isInsert)
         {
-            printf("inside the if\n");
             void *dest = AllDataType::alloc(def.type_, def.length_);
             AllDataType::convert(typeString, def.defaultValueBuf_, def.type_, dest);
             AllDataType::copyVal(colPtr, dest, def.type_, def.length_);

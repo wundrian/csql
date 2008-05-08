@@ -31,6 +31,11 @@ Connection::~Connection()
 
 DbRetVal Connection::open(const char *username, const char *password)
 {
+    if (username == NULL || password == NULL ) 
+    {
+        printError(ErrBadArg, "Username or password should not be NULL\n");
+        return ErrBadArg;
+    }
     if (strlen(username) > 64 || strlen(password) >64) return ErrBadArg;
     if (session == NULL) session = new SessionImpl(); 
     else

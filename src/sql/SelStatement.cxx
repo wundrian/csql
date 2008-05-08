@@ -474,6 +474,45 @@ DbRetVal SelStatement::close()
 {
     return table->close();
 }
+void* SelStatement::getParamValuePtr( int pos )
+{
+    ConditionValue *p = (ConditionValue*) params [pos-1];
+    return ( (void*) p->value );
+}
+
+char* SelStatement::getFieldName ( int pos )
+{
+    //TODO::if not yet prepared return error
+    //TODO::check the upper limit for projpos
+    ListIterator iter = parsedData->getFieldNameList().getIterator();
+    int position =0;
+    while (iter.hasElement())
+    {
+        if (position == pos) {
+              FieldName *name = (FieldName*) iter.nextElement();
+              if (NULL == name)
+              {
+                  printError(ErrSysFatal, "Should never happen. Field Name list has NULL");
+                  return (char*) 0;
+              }
+              return name->fldName;
+      }
+        position++;
+    }
+    return (char*) 0;
+}
+
+DataType SelStatement::getFieldType( int pos )
+{
+    FieldValue *v = bindFields[pos];
+    return ( (DataType) v->type );
+}
+
+int SelStatement::getFieldLength( int pos )
+{
+    FieldValue *v = bindFields[pos];
+    return ( (int) v->type );
+}
 
 void* SelStatement::fetchAndPrint(bool SQL)
 {

@@ -131,6 +131,32 @@ DbRetVal SqlStatement::close()
     SelStatement *selStmt = (SelStatement*) stmt; 
     return selStmt->close();
 }
+void* SqlStatement::getParamValuePtr( int pos )
+{
+    //if (pData.getStmtType() != SelectStatement) return 0;
+    DmlStatement *dmlStmt = (DmlStatement*) stmt;
+    return( (void*) dmlStmt->getParamValuePtr( pos ) );
+}
+
+char* SqlStatement::getFieldName( int pos )
+{
+    if (pData.getStmtType() != SelectStatement) return 0;
+    SelStatement *selStmt = (SelStatement*) stmt;
+    return( (char*) selStmt->getFieldName( pos ) );
+}
+
+DataType SqlStatement::getFieldType( int pos )
+{
+    if (pData.getStmtType() != SelectStatement) return typeUnknown;
+    SelStatement *selStmt = (SelStatement*) stmt;
+    return( (DataType) selStmt->getFieldType( pos ) );
+}
+int SqlStatement::getFieldLength( int pos )
+{
+    if (pData.getStmtType() != SelectStatement) return 0;
+    SelStatement *selStmt = (SelStatement*) stmt;
+    return( (int) selStmt->getFieldLength( pos ) );
+}
 
 void* SqlStatement::getFieldValuePtr( int pos )
 {

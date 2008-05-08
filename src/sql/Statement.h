@@ -85,6 +85,7 @@ class DmlStatement : public Statement
 
 
     virtual DbRetVal resolve()=0;
+    virtual void* getParamValuePtr( int pos )=0;
     virtual ~DmlStatement(){}
 };
 
@@ -107,7 +108,7 @@ class InsStatement : public DmlStatement
     DbRetVal setDateParam(int paramNo, Date value);
     DbRetVal setTimeParam(int paramNo, Time value);
     DbRetVal setTimeStampParam(int paramNo, TimeStamp value);
-
+    void* getParamValuePtr( int );
     DbRetVal resolve();
     InsStatement();
     ~InsStatement();
@@ -152,6 +153,11 @@ class SelStatement : public DmlStatement
     int noOfProjFields();
     DbRetVal getProjFldInfo (int projpos, FieldInfo *&fInfo);
     DbRetVal getParamFldInfo(int paramPos, FieldInfo *&info);
+    
+    void *getParamValuePtr( int );
+    DataType getFieldType( int );
+    int getFieldLength( int );
+    char* getFieldName( int );
 
     void *fetch();
     void *fetchAndPrint(bool SQL);
@@ -176,7 +182,7 @@ class UpdStatement : public DmlStatement
     DbRetVal setDateParam(int paramNo, Date value);
     DbRetVal setTimeParam(int paramNo, Time value);
     DbRetVal setTimeStampParam(int paramNo, TimeStamp value);
-
+    void* getParamValuePtr(int);
     DbRetVal getParamFldInfo(int paramPos, FieldInfo *&info);
 
 
@@ -207,7 +213,7 @@ class DelStatement : public DmlStatement
     DbRetVal setTimeStampParam(int paramNo, TimeStamp value);
 
     DbRetVal getParamFldInfo(int paramPos, FieldInfo *&info);
-
+    void* getParamValuePtr(int);
     DbRetVal resolve();
     DelStatement();
     ~DelStatement();

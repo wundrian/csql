@@ -124,6 +124,26 @@ class SqlStatement: public AbsSqlStatement
     */
     int noOfProjFields();
 
+     /** get Param value pointer after fetch is done.
+     * @returns address void*
+     */
+     void* getParamValuePtr( int pos );
+
+     /** get FieldValue->type
+     * @returns DataType
+     */
+     DataType getFieldType( int pos );
+
+     /** get FieldValue->length
+     * @returns int
+     */
+     int getFieldLength( int pos );
+
+     /** get FieldName
+     * @returns address char*
+     */
+     char* getFieldName ( int pos );
+
     /**Retrieves the total number of parameters in the statement
     * @returns int no of parameters
     */

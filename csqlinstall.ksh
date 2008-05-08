@@ -24,6 +24,8 @@ mv libcsqlsql libcsqlsql.so
 mv libcsqljdbc libcsqljdbc.so
 mv libcsqlnw libcsqlnw.so
 mv libcsqlsqllog libcsqlsqllog.so
+mv libcsqlodbc libcsqlodbc.so
+ln -s libcsqlodbc.so libcsqlodbc
 ln -s libcsql.so libcsql 
 ln -s libcsqlsql.so libcsqlsql
 ln -s libcsqljdbc.so libcsqljdbc
@@ -34,6 +36,9 @@ ln -s libcsqlsqllog.so libcsqlsqllog
 cp ${root_dir}/src/sql/Statement.h ${install_dir}/include
 cp ${root_dir}/src/sql/Parser.h ${install_dir}/include
 cd ${install_dir}/include
+ mkdir ${install_dir}/include/odbc
+ cp ${root_dir}/include/odbc/* ${install_dir}/include/odbc
+
 #rm Allocator.h CatalogTables.h Database.h 
 #rm DatabaseManagerImpl.h
 #rm Globals.h Index.h Lock.h PredicateImpl.h

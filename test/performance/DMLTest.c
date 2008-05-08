@@ -164,7 +164,6 @@ int main()
     dbMgr->dropTable("t1");
     printf("Table dropped\n");
 
-
     conn.close();
     return 0;
 }

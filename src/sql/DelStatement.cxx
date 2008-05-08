@@ -213,6 +213,12 @@ DbRetVal DelStatement::setTimeParam(int paramNo, Time value)
     *(Time*)cValue->value = value; 
     return OK;
 }
+ void* DelStatement::getParamValuePtr( int pos )
+ {
+     ConditionValue *cValue = (ConditionValue*) params [pos-1];
+     return ( (void*) cValue->value );
+ }
+
 DbRetVal DelStatement::setTimeStampParam(int paramNo, TimeStamp value)
 {
     if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
