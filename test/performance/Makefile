@@ -29,6 +29,7 @@ TARGETS = \
         DMLThroughput \
         DMLTestChar \
         DMLThreadTest \
+        ODBCTest \
         JDBCTest \
 	Range
        
@@ -49,6 +50,8 @@ DMLThreadTest: DMLThreadTest.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 Range: Range.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+ODBCTest: ODBCTest.c
+	$(CPlus) $(CPlusFlags) -lcsqlodbc -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 JDBCTest: JDBCTest.java
 	$(JAVAC) JDBCTest.java
 
