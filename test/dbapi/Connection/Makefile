@@ -22,7 +22,7 @@ INCL= -I$(CSQL_INSTALL_ROOT)/include
 LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsql
 
 TARGETS = \
-        test001 test002 test003 test004 test005 test006 test007 test008 \
+    test001 test003 test004 test005 test006 test007 test008 \
 	test009 test010 test011 test012 test013 test014 test015 test016 \
 	test017 \
 	test051 test052 test053 test054 test055 test056 test057 test058 \
@@ -33,7 +33,8 @@ TARGETS = \
 	test079 test080 \
 	test081 test082 test083 test084 test085 test086 test087 test088 \
 	test089 test090 \
-	test101 test102
+	test101 test102 \
+	serverOff
        
 
 ifeq ($(PlatForm), supported)
@@ -42,7 +43,7 @@ endif
 
 test001: conntest1.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
-test002: conntest2.c
+serverOff: conntest2.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test003: conntest3.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
