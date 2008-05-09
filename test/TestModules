@@ -13,6 +13,7 @@ system/lock
 system/trans
 tools/catalog
 tools/csql
+tools/csqldump
 jdbc/Connection
 jdbc/Statement
 sqlapi/Connect
