@@ -213,7 +213,7 @@ int main()
     stmt->free();
     
 
-   /* strcpy(statement,"DROP TABLE T1;");
+    strcpy(statement,"DROP TABLE T1;");
     rv = stmt->prepare(statement);
     if(rv!=OK)
     {
@@ -229,7 +229,7 @@ int main()
       return 9;
     }
     stmt->free();
-    printf("Table dropped\n");*/
+    printf("Table dropped\n");
     
     delete stmt;
     delete con;
