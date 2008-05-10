@@ -15,11 +15,15 @@ then
     exit 1;
 fi
 
-$CSQL_INSTALL_ROOT/bin/csqldump
+$CSQL_INSTALL_ROOT/bin/csqldump >tmp.out
 if [ $? -ne 0 ]
 then
     exit 2;
 fi
+
+head -n 13 tmp.out
+tail tmp.out
+rm -f tmp.out
 
 $CSQL_INSTALL_ROOT/bin/csql -u root -p manager -s $REL_PATH/drop.sql > /dev/null 2>&1
 
