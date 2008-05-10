@@ -2,7 +2,7 @@
 
 ################### Settings ########################################
 #Timeout value for the hanging scripts
-HANG_TIMEOUT=60
+HANG_TIMEOUT=150
 
 ################### TIMEOUT HANDLER #################################
 timeout_handler() {
