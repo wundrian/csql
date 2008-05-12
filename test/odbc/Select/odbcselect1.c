@@ -108,11 +108,12 @@ int  InsertTest(SQLHANDLE env,SQLHANDLE dbc,SQLHANDLE stmt)
          f1++;
          f2++;
          f4++;
-         date.month = date.month+1;
+        // date.month = date.month+1;
          date.day = date.day+1; 
          ret = SQLExecute(stmt);
          checkrc(ret,__LINE__);
-        
+         date.month = date.month+1;
+                 
          ret = SQLTransact(env,dbc,SQL_COMMIT);
          checkrc(ret,__LINE__);
          count++;
