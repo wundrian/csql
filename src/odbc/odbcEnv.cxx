@@ -113,10 +113,11 @@ SQLRETURN CSqlOdbcEnv::SQLEndTran(
     iter = dbcList_.begin();
     while( iter != dbcList_.end() )
     {
-        if( (*iter)->chkStateForSQLEndTran() == SQL_SUCCESS )
+        if( (*iter)->chkStateForSQLEndTran() == SQL_SUCCESS ) {
             if( (*iter)->SQLEndTran( completionType ) == SQL_ERROR )
-                return( SQL_ERROR );
-
+                return( SQL_ERROR ); 
+        } 
+        else return ( SQL_ERROR );
         iter++;
     }
 
