@@ -29,6 +29,7 @@ int main()
    }
    printf("After closing the connection, commit failed\n");
    printf("Test script pased\n");
+   delete con;
    return 0;
 }
    
