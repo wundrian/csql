@@ -224,11 +224,17 @@ class SqlStatement: public AbsSqlStatement
     * @return bool true if it is select stmt, false otherwise
     */
     bool isSelect();
+    
+    /**Returns whether the statement is prepared or not
+    * @return bool true if it is prepared, false otherwise
+    */
+    bool isPrepared();
 
     private:
     SqlConnection *sqlCon;
     Statement *stmt;
     ParsedData pData;
+    bool isPrepd;
     friend class SqlFactory;
 };
 
