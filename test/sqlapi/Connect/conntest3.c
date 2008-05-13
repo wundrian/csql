@@ -35,6 +35,8 @@ int main()
      return 3;
   }
   printf("Test script passed\n");
+  delete stmt;
+  delete con;
   return 0;
 }
   
