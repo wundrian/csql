@@ -25,6 +25,7 @@ int main()
    }
   printf("Connection closed\n");
   printf("Test script passed\n");
+  delete con;
   return 0;
 }
   
