@@ -4,19 +4,19 @@
  *  Author : Jitendra Lenka
  */
 
-
+#include<SqlStatement.h>
 #include<AbsSqlStatement.h>
 #include<SqlFactory.h>
 int main()
 {
    DbRetVal rv = OK;
-   AbsSqlConnection *con = SqlFactory::createConnection(CSql);
+   SqlConnection *con = new SqlConnection();
    rv = con->connect("root","manager");
    if(rv !=OK)return 1;
    printf("Connection opened\n");
      
-   AbsSqlStatement *stmt = SqlFactory::createStatement(CSql);
-   stmt->setConnection(con);
+   SqlStatement *stmt = new SqlStatement();
+   stmt->setSqlConnection(con);
    char statement[200];
    strcpy(statement,"CREATE TABLE T1(F1 INT,F2 INT);");
    
@@ -43,21 +43,6 @@ int main()
    stmt->free();
    printf("One record inserted\n");
    
-   /*// update statement 
-
-   printf("update T1 set F2=100\n");
-   strcpy(statement,"UPDATE T1 SET F2=100;");
-   
-   rv = stmt->prepare(statement);
-   if(rv !=OK) { delete stmt; delete con; return 7; }
-
-    
-    rv = stmt->execute(rows);
-    if(rv!=OK){ printf ("Hello\n"); return 8; }
-    rv  = con->commit(); if(rv!=OK)return 9;
-    printf("One row updated\n");*/
-
-  
     strcpy(statement,"SELECT F2 FROM T1 ;");
     rv = stmt->prepare(statement);
     if(rv!=OK) { delete stmt; delete con; return 10; }
@@ -68,31 +53,29 @@ int main()
     if(rv!=OK)return 11;
     stmt->execute(rows);
     int count=0;
-    
-     rv = con->disconnect(); //close the connection 
+    stmt->close();
+	stmt->free();
+    rv = con->disconnect(); //close the connection 
      
     void *rettype;
     if(rv!=OK)return 8;
-    while(1)
-    {    
-      
-        rettype = (char*)stmt->fetch();
-        if(rettype==NULL)
-        {
-           printf("After close the connection,fetch failed\n ");
-           strcpy(statement,"DROP TABLE T1;");
-           rv = stmt->prepare(statement);
-           rv = stmt->execute(rows);
-           if(rv==OK){printf("Table Dropped successfully\n");}
-           
-           delete stmt;
-           delete con;
-           return 0;
-        }
-        
-       printf("Test script Failed\n");
+    rettype = (char*)stmt->fetch(rv);
+    if(rettype==NULL && rv == OK) {
+        printf("After closing the connection,fetch failed\n");
+		con->connect("root", "manager");
+		stmt->setSqlConnection(con);
+        strcpy(statement,"DROP TABLE T1;");
+        rv = stmt->prepare(statement);
+        rv = stmt->execute(rows);
+        if(rv==OK){printf("Table Dropped successfully\n");}
+		stmt->free();
+        delete stmt;
+        delete con;
+		printf("Test script passed\n");
+        return 0;
     }
-
+        
+    printf("Test script Failed\n");
     delete stmt;
     delete con;
     return 7;
