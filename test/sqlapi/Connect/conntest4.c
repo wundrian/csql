@@ -40,7 +40,9 @@ int main()
     delete stmt;
     return 4;
   }
-
+  stmt->free();
   printf("Test script passed\n");
+  delete stmt;
+  delete con;
   return 0;
 }  
