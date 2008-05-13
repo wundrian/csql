@@ -45,6 +45,10 @@ void SqlStatement::setSqlConnection(SqlConnection *conn)
 DbRetVal SqlStatement::prepare(char *stmtstr)
 {
     DbRetVal rv = OK;
+    if (! sqlCon->isConnectionOpen()) {
+        printError(ErrNotOpen, "Connection not open");
+        return ErrNotOpen;
+    }
     lexInput = stmtstr;
     parsedData = &pData;
     yy_scan_string( stmtstr );
@@ -85,19 +89,42 @@ bool SqlStatement::isSelect()
 DbRetVal SqlStatement::execute(int &rowsAffected)
 {
     DbRetVal rv = OK;
+    if (! sqlCon->isConnectionOpen()) {
+        printError(ErrNotOpen, "Connection not open");
+        return ErrNotOpen;
+    }
     rv = stmt->execute(rowsAffected);
     return rv;
 }
 
 void* SqlStatement::fetch()
 {
+    if (! sqlCon->isConnectionOpen()) {
+        printError(ErrNotOpen, "Connection not open");
+        return NULL;
+    }
     if (pData.getStmtType() != SelectStatement) return NULL;
     SelStatement *selStmt = (SelStatement*) stmt; 
     return selStmt->fetch();
 }
 
+void* SqlStatement::fetch(DbRetVal &rv)
+{
+    if (! sqlCon->isConnectionOpen()) {
+        printError(ErrNotOpen, "Connection not open");
+        return NULL;
+    }
+    if (pData.getStmtType() != SelectStatement) return NULL;
+    SelStatement *selStmt = (SelStatement*) stmt; 
+    return selStmt->fetch(rv);
+}
+
 void* SqlStatement::fetchAndPrint(bool SQL)
 {
+    if (! sqlCon->isConnectionOpen()) {
+        printError(ErrNotOpen, "Connection not open");
+        return NULL;
+    }
     if (pData.getStmtType() != SelectStatement) return NULL;
     SelStatement *selStmt = (SelStatement*) stmt; 
     return selStmt->fetchAndPrint(SQL);

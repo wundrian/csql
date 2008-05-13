@@ -160,6 +160,7 @@ class SelStatement : public DmlStatement
     char* getFieldName( int );
 
     void *fetch();
+    void *fetch(DbRetVal &rv);
     void *fetchAndPrint(bool SQL);
     void *next();
     void *getFieldValuePtr( int );

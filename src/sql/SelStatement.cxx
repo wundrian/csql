@@ -470,6 +470,25 @@ void* SelStatement::fetch()
     return tuple;
 }
 
+void* SelStatement::fetch(DbRetVal &rv)
+{
+    void *tuple = table->fetch(rv);
+    if (NULL == tuple) return NULL;
+    //copy values to binded buffer
+    FieldValue *value;
+    for (int i = 0; i < totalFields; i++)
+    {
+        value = bindFields[i];
+        if (bindFieldValues[i] == NULL) 
+        {
+            printError(ErrBadCall, "Fields are not binded properly. Should never happen");
+            return NULL;
+        }
+        AllDataType::copyVal(bindFieldValues[i], value->value, value->type, value->length);
+    }
+    return tuple;
+}
+
 DbRetVal SelStatement::close()
 {
     return table->close();

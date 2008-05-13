@@ -63,6 +63,7 @@ class SqlStatement: public AbsSqlStatement
     * @returns void* NULL if there is no tuple.
     */
     void* fetch();
+    void* fetch(DbRetVal &rv);
     
 
     /**fetches the next tuple from the result of the execution of sql select query 

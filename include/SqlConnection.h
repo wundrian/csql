@@ -26,21 +26,29 @@
 class SqlConnection : public AbsSqlConnection
 {
     Connection conn;
+    bool isConnOpen;
     public:
-    SqlConnection(){innerConn = NULL; }
+    SqlConnection(){innerConn = NULL; isConnOpen = false; }
 
     /** opens connection to the sql engine
     *   @param user username for authentication
     *   @param pass password for authentication
     *   @return DbRetVal
     */
-    DbRetVal connect (char *user, char * pass) 
-        { return conn.open(user, pass); }
+    DbRetVal connect (char *user, char * pass) {
+        DbRetVal ret = conn.open(user, pass);
+        if (ret == OK) isConnOpen = true;
+        return ret;
+    }
 
     /** closes connection to the database and releases all the resources
     *   @return DbRetVal 
     */
-    DbRetVal disconnect () { return conn.close(); }
+    DbRetVal disconnect () { 
+        DbRetVal ret = conn.close(); 
+        if (ret == OK) isConnOpen = false;
+        return ret;
+    }
 
     /** Commits active transaction. 
     *   It makes all the changes made in the current transaction permanent and <br/>
@@ -73,6 +81,8 @@ class SqlConnection : public AbsSqlConnection
         { return conn.startTransaction(isoLevel); }
 
     Connection& getConnObject(){  return conn; }
+    bool isConnectionOpen() { if (isConnOpen) return true; return false; };
+
     friend class SqlFactory;
 };
 
