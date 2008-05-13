@@ -299,7 +299,13 @@ DbRetVal InsStatement::resolve()
     }
     delete fInfo;
     totalParams = paramPos -1;
-    if (0 == totalParams) return OK;
+    if (0 == totalParams) {
+        iter.reset();
+        while(iter.hasElement())
+            delete (Identifier *) iter.nextElement();
+        fieldNameList.reset();
+		return OK;
+	}	
     params = (void**) malloc ( totalParams * sizeof(FieldValue*));
     paramValues = (char**) malloc( totalParams * sizeof(char*));
     memset(params, 0, totalParams * sizeof(FieldValue*));
@@ -321,12 +327,10 @@ DbRetVal InsStatement::resolve()
         params[value->paramNo -1 ] = value;
     }
     // memory to be deallocated created by table->getFieldNameList
-    if( 0 == parsedData->getFieldNameList().size() ) {
-        iter.reset();
-        while(iter.hasElement())
-            delete (Identifier *) iter.nextElement();
-        fieldNameList.reset();
-    } 
+    iter.reset();
+    while(iter.hasElement())
+        delete (Identifier *) iter.nextElement();
+    fieldNameList.reset();
     return OK;
 }
 
