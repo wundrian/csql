@@ -54,6 +54,7 @@ enum DbRetVal
     ErrNoEffect      = -26,
     ErrNotCached     = -27,
     ErrSyntax        = -28,
+    ErrNotPrepared   = -29,
 //  add new error type here
     ErrUnknown       = -98,
     ErrWarning       = -99,
