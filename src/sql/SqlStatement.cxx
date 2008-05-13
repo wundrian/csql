@@ -30,6 +30,7 @@ SqlStatement::SqlStatement()
 {
     sqlCon = NULL;
     stmt = NULL;
+    isPrepd = false;
 }
 void SqlStatement::setConnection(AbsSqlConnection *conn)
 {
@@ -49,6 +50,7 @@ DbRetVal SqlStatement::prepare(char *stmtstr)
         printError(ErrNotOpen, "Connection not open");
         return ErrNotOpen;
     }
+    if(isPrepared()) free();
     lexInput = stmtstr;
     parsedData = &pData;
     yy_scan_string( stmtstr );
@@ -72,6 +74,7 @@ DbRetVal SqlStatement::prepare(char *stmtstr)
     }
     parsedData = NULL;
     yyrestart(yyin);
+    isPrepd = true;
     return OK;
 }
 
@@ -86,12 +89,18 @@ bool SqlStatement::isSelect()
     return false;
 }
 
+bool SqlStatement::isPrepared() { return isPrepd; }
+
 DbRetVal SqlStatement::execute(int &rowsAffected)
 {
     DbRetVal rv = OK;
     if (! sqlCon->isConnectionOpen()) {
         printError(ErrNotOpen, "Connection not open");
         return ErrNotOpen;
+    }
+    if (! isPrepared()) {
+        printError(ErrNotPrepared, "Statement Not Prepared");
+        return ErrNotPrepared;
     }
     rv = stmt->execute(rowsAffected);
     return rv;
@@ -101,6 +110,10 @@ void* SqlStatement::fetch()
 {
     if (! sqlCon->isConnectionOpen()) {
         printError(ErrNotOpen, "Connection not open");
+        return NULL;
+    }
+    if (! isPrepared()) {
+        printError(ErrNotPrepared, "Statement Not Prepared");
         return NULL;
     }
     if (pData.getStmtType() != SelectStatement) return NULL;
@@ -114,6 +127,10 @@ void* SqlStatement::fetch(DbRetVal &rv)
         printError(ErrNotOpen, "Connection not open");
         return NULL;
     }
+    if (! isPrepared()) {
+        printError(ErrNotPrepared, "Statement Not Prepared");
+        return NULL;
+    }
     if (pData.getStmtType() != SelectStatement) return NULL;
     SelStatement *selStmt = (SelStatement*) stmt; 
     return selStmt->fetch(rv);
@@ -123,6 +140,10 @@ void* SqlStatement::fetchAndPrint(bool SQL)
 {
     if (! sqlCon->isConnectionOpen()) {
         printError(ErrNotOpen, "Connection not open");
+        return NULL;
+    }
+    if (! isPrepared()) {
+        printError(ErrNotPrepared, "Statement Not Prepared");
         return NULL;
     }
     if (pData.getStmtType() != SelectStatement) return NULL;
@@ -230,9 +251,12 @@ DbRetVal SqlStatement::getParamFldInfo (int parampos, FieldInfo *&fInfo)
 
 DbRetVal SqlStatement::free()
 {
+    if (! isPrepared()) return OK;
     delete stmt;
     stmt = NULL;
     pData.reset();
+    isPrepd = false;
+    return OK;
 }
 
 void SqlStatement::setShortParam(int paramPos, short value)
