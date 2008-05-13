@@ -30,10 +30,10 @@ UpdStatement::UpdStatement()
 UpdStatement::~UpdStatement() {
     if (totalParams) {
         //TODO::below free cause memory corruption.
-        //free(params);
+        free(params);
         params =  NULL;
-        //free(paramValues);
-        //paramValues = NULL;
+        free(paramValues);
+        paramValues = NULL;
 	}
         if (table) {
             table->setCondition(NULL);
