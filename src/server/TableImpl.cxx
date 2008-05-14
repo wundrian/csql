@@ -566,6 +566,7 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
             AllDataType::copyVal(colPtr, dest, def.type_, def.length_);
             colPtr = colPtr + os::align(AllDataType::size(def.type_, def.length_));
             fldpos++;
+            free (dest); 
             continue;
         }
         switch(def.type_)
