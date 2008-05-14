@@ -326,11 +326,13 @@ DbRetVal InsStatement::resolve()
         if (value->paramNo == 0) continue;
         params[value->paramNo -1 ] = value;
     }
-    // memory to be deallocated created by table->getFieldNameList
-    iter.reset();
-    while(iter.hasElement())
-        delete (Identifier *) iter.nextElement();
-    fieldNameList.reset();
+   // memory to be deallocated created by table->getFieldNameList
+    if( 0 == parsedData->getFieldNameList().size() ) {
+        iter.reset();
+        while(iter.hasElement())
+            delete (Identifier *) iter.nextElement();
+        fieldNameList.reset();
+    }
     return OK;
 }
 
