@@ -31,6 +31,13 @@ How to run
 4. Run the class file created by make
 	$java jdbcexample
 
+Note: For running gateway example , makesure that you configure csql.conf and csqltable.conf with appropriate values. Add 1:t1 in the csqltable.conf and create table t1 in MySQL using isql tool as follows
+$isql myodbc3
+SQL>CREATE TABLE t1 (f1 integer, f2 char (196), primary key(f1));
+and then run 
+        $java gwexample
+Refer usermanual for more information on how to configure caching for MySQL.
+
 Output of example:
 ------------------
 Table t1 created
