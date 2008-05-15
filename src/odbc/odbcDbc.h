@@ -3,7 +3,7 @@
 
 #ifndef _ODBC_DBC_H_
 #define _ODBC_DBC_H_
-
+#include<SqlFactory.h>
 // State's of Connection Handle.
 typedef enum 
 {
@@ -29,7 +29,8 @@ class CSqlOdbcDbc
         CSqlOdbcEnv        *parentEnv_;    // Parent Environment Handle.
         std::vector<CSqlOdbcStmt*>   stmtList_;      // Statement handle list.
         std::vector<CSqlOdbcDesc*>   descList_;      // Descriptor handle list.
-        SqlConnection  fsqlConn_;      // FastSQL connection object. // CSQL
+        AbsSqlConnection  *fsqlConn_;      // CSQL connection object 
+        int mode_; //1->csql , 2->gateway
         SQLUINTEGER curAccessMode_;
         IsolationLevel curIsolationLevel_;
 

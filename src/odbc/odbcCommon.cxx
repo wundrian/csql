@@ -327,51 +327,59 @@ void getInputBuffer(void **buffer,SQLSMALLINT type,SQLUINTEGER length)
 //Called from SQLExecute
 //Destination here can be directly the database bound buffer or 
 //it may be ird
-void copyFromOdbc(void *destData,SQLUINTEGER destLen,void *odbcData,SQLUINTEGER odbcLen,SQLSMALLINT type)
+void copyFromOdbc(AbsSqlStatement *stmt, int paramNo, SQLUINTEGER destLen,void *odbcData,SQLUINTEGER odbcLen,SQLSMALLINT type)
 {
     //No point in continuing further
-    if(destData == NULL || odbcData == NULL)
+    if(odbcData == NULL)
         return;
     switch( type )
     {
         case typeShort:
-            *(short*)destData = *(short*)odbcData;
-printf("short value is %x %hd\n", destData, *(short*)odbcData);
+            //*(short*)destData = *(short*)odbcData;
+            stmt->setShortParam(paramNo, *(short*)odbcData);
             break;
         case typeInt:
-            *(int*)destData = *(int*)odbcData;
+            //*(int*)destData = *(int*)odbcData;
+            stmt->setIntParam(paramNo, *(int*)odbcData);
             break;
         case typeLong:
-            *(long*)destData = *(long*)odbcData;
+            //*(long*)destData = *(long*)odbcData;
+            stmt->setLongParam(paramNo, *(long*)odbcData);
             break;
         case typeLongLong:
-            *(long long*)destData = *(long long*)odbcData;
+            //*(long long*)destData = *(long long*)odbcData;
+            stmt->setLongLongParam(paramNo, *(long long *)odbcData);
             break;
-        case typeByteInt:
-            *(char*)destData = *(char*)odbcData;
+        case typeByteInt: {
+            //*(char*)destData = *(char*)odbcData;
+            ByteInt bt(*(char*)odbcData);
+             stmt->setByteIntParam(paramNo, bt);
             break;
+        }
 /*        case csqlSqlTbit:
             *(unsigned char*)destData = *(unsigned char*)odbcData;
             break;*/
 
         case typeFloat:
-            *(float*)destData = *(float*)odbcData;
+            //*(float*)destData = *(float*)odbcData;
+            stmt->setFloatParam(paramNo, *(float*)odbcData);
             break;
 
         case typeDouble:
-            *(double*)destData = *(double*)odbcData;
+            //*(double*)destData = *(double*)odbcData;
+            stmt->setDoubleParam(paramNo, *(double*)odbcData);
             break;
 
 //        case csqlSqlTlongDouble:
 //        case csqlSqlTnumeric:
         case typeDecimal:
-            *(long double*)destData = *(long double*)odbcData;
+            //*(long double*)destData = *(long double*)odbcData;
+            // TODO
             break;
 
-
         case typeString:
-//        case csqlSqlTvarString:
-            if(odbcLen < destLen)
+            stmt->setStringParam(paramNo, (char*) odbcData);
+            /*if(odbcLen < destLen)
             {
                 strcpy( (char*)destData, (char*)odbcData);
                 *((char*)destData+odbcLen)='\0';
@@ -380,43 +388,38 @@ printf("short value is %x %hd\n", destData, *(short*)odbcData);
             {
                 strncpy((char*)destData,(char*)odbcData,(destLen-1));
                 *((char*)destData+destLen)='\0';
-            }
+            }*/
             
             break;
-        case typeDate:
-            (*(Date *)destData).set((*(SQL_DATE_STRUCT *)odbcData).year,
-                                                                     (*(SQL_DATE_STRUCT *)odbcData).month,
-                                                                     (*(SQL_DATE_STRUCT *)odbcData).day);
+        case typeDate: {
+            Date dt;
+            dt.set((*(SQL_DATE_STRUCT *)odbcData).year,
+                   (*(SQL_DATE_STRUCT *)odbcData).month,
+                   (*(SQL_DATE_STRUCT *)odbcData).day);
+            stmt->setDateParam(paramNo, dt);
             break;
-        case typeTime:
-            (*(Time *)destData).set((*(SQL_TIME_STRUCT *)odbcData).hour,
-                                                                     (*(SQL_TIME_STRUCT *)odbcData).minute,
-                                                                     (*(SQL_TIME_STRUCT *)odbcData).second);
+        }
+        case typeTime: {
+            Time tm;
+            tm.set((*(SQL_TIME_STRUCT *)odbcData).hour,
+                   (*(SQL_TIME_STRUCT *)odbcData).minute,
+                   (*(SQL_TIME_STRUCT *)odbcData).second);
+            stmt->setTimeParam(paramNo, tm);
             break;
-        case typeTimeStamp:
-            (*(TimeStamp *)destData).setDate((*(SQL_TIMESTAMP_STRUCT *)odbcData).year,
-                                                                              (*(SQL_TIMESTAMP_STRUCT *)odbcData).month,
-                                                                              (*(SQL_TIMESTAMP_STRUCT *)odbcData).day);
-            (*(TimeStamp *)destData).setTime((*(SQL_TIMESTAMP_STRUCT*)odbcData).hour,
-                                                                              (*(SQL_TIMESTAMP_STRUCT *)odbcData).minute,
-                                                                              (*(SQL_TIMESTAMP_STRUCT *)odbcData).second);
-
+        }
+        case typeTimeStamp: {
+            TimeStamp ts;
+            ts.setDate((*(SQL_TIMESTAMP_STRUCT *)odbcData).year,
+                       (*(SQL_TIMESTAMP_STRUCT *)odbcData).month,
+                       (*(SQL_TIMESTAMP_STRUCT *)odbcData).day);
+            ts.setTime((*(SQL_TIMESTAMP_STRUCT*)odbcData).hour,
+                       (*(SQL_TIMESTAMP_STRUCT *)odbcData).minute,
+                       (*(SQL_TIMESTAMP_STRUCT *)odbcData).second);
+            stmt->setTimeStampParam(paramNo, ts);
             break;
-        case typeBinary:
-//        case csqlSqlTvarBinary:                        
- //            memset((unsigned char*)destData,0,destLen);
-            if(odbcLen <= destLen)
-            {
-                memcpy( (unsigned char*)destData,(unsigned char*)odbcData, 
-                    odbcLen);
-            }
-            else
-            {
-                memcpy( (unsigned char*)destData,(unsigned char*)odbcData, 
-                    (destLen));
-            }
-            break;
-    }
+        }
+   }
+    
 }
 
 //Copies data from the database onto the application buffer 
@@ -426,7 +429,6 @@ printf("short value is %x %hd\n", destData, *(short*)odbcData);
 SQLINTEGER copyToOdbc(void *odbcData,SQLUINTEGER odbcLen,void *sourceData,SQLUINTEGER sourceLen,SQLSMALLINT type)
 {
     SQLINTEGER ind;
-    //No point in continuing
     if(odbcData == NULL || sourceData == NULL)
         return -1;
     switch( type )

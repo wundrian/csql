@@ -17,7 +17,7 @@ public class JSqlStatement
 
     // Wrappers Below
 
-    public native void alloc();
+    public native void alloc(int mode);
     public native void free();
     public native void freeStmt();
 

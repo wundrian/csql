@@ -10,7 +10,7 @@
 #include <sqlext.h>
 
 // SQLAPI Interface
-#include <SqlStatement.h>
+#include <AbsSqlStatement.h>
 
 // Forward Declaration
 class CSqlOdbcEnv;
@@ -39,7 +39,7 @@ SQLRETURN isValidCType( SQLSMALLINT type );
 SQLRETURN isValidSQLType( SQLSMALLINT type );
 
 // Type conversion functions
-void copyFromOdbc(void *destData, SQLUINTEGER destLen, 
+void copyFromOdbc(AbsSqlStatement *stmt, int paramNo, SQLUINTEGER destLen, 
 		  void *odbcData, SQLUINTEGER odbcLen, SQLSMALLINT type);
 SQLINTEGER copyToOdbc(void *odbcData, SQLUINTEGER odbcLen, 
 		      void *sourceData, SQLUINTEGER sourceLen,SQLSMALLINT type);

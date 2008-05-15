@@ -63,7 +63,7 @@ SQLRETURN CSqlOdbcStmt::SQLAllocHandle(
         inputDbc->state_ = C5;
     ((CSqlOdbcStmt*) *outputHandle)->parentDbc_ = inputDbc;
     //CSqlOdbcError::printDbg("proxy:stmt:setConnection");
-    ((CSqlOdbcStmt*) *outputHandle)->fsqlStmt_.setConnection( &inputDbc->fsqlConn_ ); 
+    //((CSqlOdbcStmt*) *outputHandle)->fsqlStmt_->setConnection( inputDbc->fsqlConn_ ); 
 
     return( SQL_SUCCESS );
 }
@@ -132,14 +132,14 @@ SQLRETURN CSqlOdbcStmt::SQLFreeStmt(
     // Can we proceed
     if( chkStateForSQLFreeStmt() != SQL_SUCCESS )
         return( SQL_ERROR );
-
+    if (!fsqlStmt_) return (SQL_SUCCESS);
     switch( option )
     {
         case SQL_CLOSE:         // // Free resultset
-                                // if( fsqlStmt_.isSelect() == true ) // CSQL
+                                // if( fsqlStmt_->isSelect() == true ) // CSQL
                                 // {
                                 //    //CSqlOdbcError::printDbg("proxy:stmt:getResultSet");
-                                //    CSqlResultSet *resultSet_ = fsqlStmt_.getResultSet(); // CSQL
+                                //    CSqlResultSet *resultSet_ = fsqlStmt_->getResultSet(); // CSQL
                                 //    if( resultSet_ && resultSet_->isOpen() == true )
                                 //    {
                                 //        resultSet_->close();
@@ -149,7 +149,7 @@ SQLRETURN CSqlOdbcStmt::SQLFreeStmt(
                                 // cursor states
                                 if( isPrepared_ ) 
                                 {
-                                    if( fsqlStmt_.isSelect() == true ) // CSQL
+                                    if( fsqlStmt_->isSelect() == true ) // CSQL
                                         state_ = S3;    // With Cursor
                                     else
                                         state_ = S2;    // Without Cursor
@@ -160,7 +160,7 @@ SQLRETURN CSqlOdbcStmt::SQLFreeStmt(
                                     apd_.freeAllDesc();
                                     ipd_.freeAllDesc();
                                     ird_.freeAllDesc();
-                                    fsqlStmt_.free(); // CSQL
+                                    fsqlStmt_->free(); // CSQL
                                     state_ = S1;
                                 }
 
@@ -178,7 +178,6 @@ SQLRETURN CSqlOdbcStmt::SQLFreeStmt(
         default: err_.set( ERROR_OPTRANGE ); 
                 return( SQL_ERROR );
     }
-
     return( SQL_SUCCESS );
 }
 
@@ -487,13 +486,22 @@ SQLRETURN CSqlOdbcStmt::SQLPrepare(
     }
 
     // If Stmt is already prepared.
-    if( state_ >= S2 )
+    if( state_ >= S2 ) {
         resetStmt();
+    }
+
+    if (parentDbc_->mode_ ==1)
+        fsqlStmt_ = SqlFactory::createStatement(CSql);
+    else if (parentDbc_->mode_ ==2)
+        fsqlStmt_ = SqlFactory::createStatement(CSqlGateway);
+    else if (parentDbc_->mode_ ==3)
+        fsqlStmt_ = SqlFactory::createStatement(CSqlAdapter);
+    fsqlStmt_->setConnection( parentDbc_->fsqlConn_ ); 
 
     // Prepare
     //CSqlOdbcError::printDbg("proxy:stmt:prepare");
     DbRetVal rv=OK;
-    if( (rv=fsqlStmt_.prepare( (char*) statementText ))!= OK) // CSQL
+    if( (rv=fsqlStmt_->prepare( (char*) statementText ))!= OK) // CSQL
     {
         state_ = S1;
         err_.set(ERROR_GENERAL);
@@ -519,7 +527,7 @@ SQLRETURN CSqlOdbcStmt::SQLPrepare(
         }*/
         return( SQL_ERROR );
     }
-    if( fsqlStmt_.isSelect() != true ) // CSQL
+    if( fsqlStmt_->isSelect() != true ) // CSQL
         state_ = S2;    // With cursor
     else
         state_ = S3;    // Without cursor
@@ -547,14 +555,14 @@ SQLRETURN CSqlOdbcStmt::SQLExecute() // TODO
     if( chkStateForSQLExecute() != SQL_SUCCESS )
         return( SQL_ERROR );
 
-    if( fsqlStmt_.noOfParamFields() > 0 )
+    if( fsqlStmt_->noOfParamFields() > 0 )
     {
 
         // Iterate through all apd_;
         CSqlOdbcDesc *appParamDesc;
         CSqlOdbcDescList::iterator apdIter;
         apdIter = apd_.begin();
-        CSqlOdbcDesc *dbzParamDesc;
+        CSqlOdbcDesc *csqlParamDesc;
         CSqlOdbcDescList::iterator ipdIter;
         ipdIter = ipd_.begin();
 
@@ -566,11 +574,11 @@ SQLRETURN CSqlOdbcStmt::SQLExecute() // TODO
         while( (apdIter != apd_.end()) || (ipdIter != ipd_.end()) )
         {
             appParamDesc=*apdIter;
-            dbzParamDesc=*ipdIter;
-            if((paramNum) <= fsqlStmt_.noOfParamFields())
+            csqlParamDesc=*ipdIter;
+            if((paramNum) <= fsqlStmt_->noOfParamFields())
             {
 		FieldInfo *finfo = new FieldInfo();
-		if( fsqlStmt_.getParamFldInfo(paramNum, finfo ) != OK ) return( SQL_ERROR );
+		if( fsqlStmt_->getParamFldInfo(paramNum, finfo ) != OK ) return( SQL_ERROR );
                 sourceType=getCSqlType(appParamDesc->cType_);
                 destType=finfo->type;
                 sourceLength=(int)appParamDesc->length_;
@@ -602,19 +610,19 @@ SQLRETURN CSqlOdbcStmt::SQLExecute() // TODO
                         }
                         if(destType == typeString) //|| destType == typeVarString)
                         {
-                            //fsqlStmt_.allocParam(paramNum,sourceLength); // CSQL TODO
+                            //fsqlStmt_->allocParam(paramNum,sourceLength); // CSQL TODO
                             destLength=sourceLength;
                         }
                         if(sourceType == destType) 
 				//|| (sourceType == typeString && destType == typeVarString) 
 				//|| (sourceType == typeBinary && destType == typeVarBinary))
                         {
-                            copyFromOdbc(fsqlStmt_.getParamValuePtr(paramNum), destLength, appParamDesc->dataPtr_, sourceLength,destType); // CSQL TODO
+                            copyFromOdbc(fsqlStmt_, paramNum, destLength, appParamDesc->dataPtr_, sourceLength,destType); // CSQL TODO
                         } else 
                         {
-                            getInputBuffer(&dbzParamDesc->dataPtr_ ,sourceType,sourceLength);
-                            copyFromOdbc(fsqlStmt_.getParamValuePtr(paramNum), destLength, appParamDesc->dataPtr_, sourceLength, sourceType);
-                            //convert(sourceType,dbzParamDesc->dataPtr_,destType, fsqlStmt_.getParamPtr( paramNum),sourceLength,destLength); // CSQL TODO
+                            getInputBuffer(&csqlParamDesc->dataPtr_ ,sourceType,sourceLength);
+                            copyFromOdbc(fsqlStmt_, paramNum, destLength, appParamDesc->dataPtr_, sourceLength, sourceType);
+                            //convert(sourceType,csqlParamDesc->dataPtr_,destType, fsqlStmt_->getParamPtr( paramNum),sourceLength,destLength); // CSQL TODO
                         }
                     }
                 }
@@ -633,7 +641,7 @@ SQLRETURN CSqlOdbcStmt::SQLExecute() // TODO
 
     // Get the result
     int rowsAffected=0;
-    DbRetVal rv = fsqlStmt_.execute( rowsAffected );
+    DbRetVal rv = fsqlStmt_->execute( rowsAffected );
     if( rowsAffected < 0 )
     {
         if( isPrepared_ ) state_ = S2; else resetStmt();
@@ -655,7 +663,7 @@ SQLRETURN CSqlOdbcStmt::SQLExecute() // TODO
     }
 
     // Set Stmt State
-    if( fsqlStmt_.isSelect() == true )
+    if( fsqlStmt_->isSelect() == true )
     {
         rowsAffected_ = -1;
         state_ = S5;
@@ -775,7 +783,7 @@ SQLRETURN CSqlOdbcStmt::SQLFetch()
         return( SQL_ERROR );
 
     void *tuple;
-    tuple = fsqlStmt_.next();
+    tuple = fsqlStmt_->next();
 
     if( ! tuple ) // IF Row not found.
     {
@@ -798,7 +806,7 @@ SQLRETURN CSqlOdbcStmt::SQLFetch()
         CSqlOdbcDescList::iterator ardIter;
         ardIter = ard_.begin();
         //Get the input parameter data
-        CSqlOdbcDesc *dbzColDesc;
+        CSqlOdbcDesc *csqlColDesc;
         CSqlOdbcDescList::iterator irdIter;
         irdIter = ird_.begin();
 
@@ -806,20 +814,22 @@ SQLRETURN CSqlOdbcStmt::SQLFetch()
         int colNum=-1,sourceLength=-1,destLength=-1;
         SQLINTEGER ind;
         void* sourceData = NULL;
+        FieldInfo *info = new FieldInfo();
         while( (ardIter != ard_.end()) || (irdIter != ird_.end()) )
         {
             appColDesc = *ardIter;
-            dbzColDesc = *irdIter;
+            csqlColDesc = *irdIter;
             
             colNum = appColDesc->col_ - 1;
-            sourceType = fsqlStmt_.getFieldType(colNum);
+            fsqlStmt_->getProjFldInfo(colNum, info);
+            sourceType = info->type;
             destType = getCSqlType(appColDesc->cType_);
-            sourceLength = fsqlStmt_.getFieldLength(colNum);
+            sourceLength = info->length;
             destLength = (int)appColDesc->length_;
             
             if( sourceType != typeUnknown && destType != typeUnknown )
             {
-                sourceData = fsqlStmt_.getFieldValuePtr( colNum );
+                sourceData = fsqlStmt_->getFieldValuePtr( colNum );
                 if(sourceData == NULL)
                 {
                     if (appColDesc->indPtr_ != NULL)
@@ -841,7 +851,7 @@ SQLRETURN CSqlOdbcStmt::SQLFetch()
                     }
                     else
                     {
-                        //convert(sourceType,sourceData,destType, dbzColDesc->dataPtr_,sourceLength,destLength);
+                        //convert(sourceType,sourceData,destType, csqlColDesc->dataPtr_,sourceLength,destLength);
                         if(appColDesc->indPtr_ != NULL)
                             *((SQLINTEGER *)(appColDesc->indPtr_))=
 			    copyToOdbc(appColDesc->dataPtr_,destLength, sourceData, sourceLength, sourceType);
@@ -884,7 +894,7 @@ SQLRETURN CSqlOdbcStmt::SQLCloseCursor()
         return( SQL_ERROR );
 
     // Close the cursor
-    fsqlStmt_.close();
+    fsqlStmt_->close();
     state_ = S3;   
     return( SQL_SUCCESS );
 }
@@ -1014,14 +1024,14 @@ SQLRETURN CSqlOdbcStmt::SQLNumResultCols(
         return( SQL_ERROR );
 
     // If DML
-    if( fsqlStmt_.isSelect() == false )
+    if( fsqlStmt_->isSelect() == false )
     {
         *columnCount=0;
         return (SQL_SUCCESS);
     }
 
     // If Select
-    SQLSMALLINT count = fsqlStmt_.noOfProjFields();
+    SQLSMALLINT count = fsqlStmt_->noOfProjFields();
     if( count < 1 ) // Assume atleast one column is projected
         return( SQL_ERROR );
 
@@ -1125,34 +1135,39 @@ SQLRETURN  CSqlOdbcStmt::SQLDescribeCol(
     }
 
     // If DML
-    if( fsqlStmt_.isSelect() == false )
+    if( fsqlStmt_->isSelect() == false )
         return( SQL_ERROR );
 
     // If SELECT
-    if(columnNumber > fsqlStmt_.noOfProjFields())
+    if(columnNumber > fsqlStmt_->noOfProjFields())
     {
         err_.set( ERROR_COLNUM );
         return( SQL_ERROR );
     }
-    if(columnName != NULL)
-        strncpy( (char*)columnName, (char*)fsqlStmt_.getFieldName( columnNumber-1 ), bufferLength );
+    if(columnName == NULL) {
+        err_.set( ERROR_COLNUM );
+        return( SQL_ERROR );
+    }
+    FieldInfo *info = new FieldInfo();
+    fsqlStmt_->getProjFldInfo(columnNumber, info);
+        strncpy( (char*)columnName, (char*)info->fldName, bufferLength );
     if(nameLength != NULL)
-        *nameLength=(short)strlen((const char*)fsqlStmt_.getFieldName( columnNumber-1 )); // HARDCODED - TO DO, need support for n/w layer & sql layer
+        *nameLength=(short)strlen((const char*)info->fldName); // HARDCODED - TO DO, need support for n/w layer & sql layer
     if(dataType != NULL)
-        *dataType = (SQLSMALLINT) getSQLType(fsqlStmt_.getFieldType( columnNumber-1 )); // Need to convert from SQL<->ODBC - TO DO
+        *dataType = (SQLSMALLINT) getSQLType(info->type); // Need to convert from SQL<->ODBC - TO DO
     if(columnSize != NULL)
     {
-        *columnSize = (SQLUINTEGER) fsqlStmt_.getFieldLength( columnNumber-1 );
-        SQLSMALLINT sqlType=getSQLType(fsqlStmt_.getFieldType( columnNumber-1 ));
+        *columnSize = (SQLUINTEGER) info->length;
+        SQLSMALLINT sqlType=getSQLType(info->type);
         if(sqlType == SQL_CHAR )
             *columnSize = *columnSize -1;
     }
     
     /*if(decimalDigits != NULL) // CSQL TODO
-        *decimalDigits = (SQLSMALLINT) fsqlStmt_.getPrecision( columnNumber-1 ); 
+        *decimalDigits = (SQLSMALLINT) fsqlStmt_->getPrecision( columnNumber-1 ); 
     if(nullable != NULL)
         *nullable = rsMetaData->isNullable( columnNumber-1 )?SQL_NULLABLE_N:SQL_NO_NULLS_N; */
-    if(strlen((char*)fsqlStmt_.getFieldName( columnNumber-1 )) > bufferLength)
+    if(strlen((char*)info->fldName) > bufferLength)
     {
         err_.set( ERROR_DATATRUNC );
         return( SQL_SUCCESS_WITH_INFO );
@@ -1222,10 +1237,14 @@ SQLRETURN  CSqlOdbcStmt::SQLColAttribute(
         return( SQL_ERROR );
     }
     // If DML
-    if( fsqlStmt_.isSelect() == false )
+    if( fsqlStmt_->isSelect() == false )
         return( SQL_ERROR );
+
+    FieldInfo *info = new FieldInfo();
+    fsqlStmt_->getProjFldInfo(columnNumber, info);
+
     // If SELECT
-    if(columnNumber > fsqlStmt_.noOfProjFields())
+    if(columnNumber > fsqlStmt_->noOfProjFields())
     {
         err_.set( ERROR_COLNUM );
         return( SQL_ERROR );
@@ -1236,27 +1255,27 @@ SQLRETURN  CSqlOdbcStmt::SQLColAttribute(
         case SQL_COLUMN_NAME:
             if(characterAttributePtr != NULL)
             {
-                strncpy( (char*)characterAttributePtr, (char*)fsqlStmt_.getFieldName( columnNumber-1 ),bufferLength);
+                strncpy( (char*)characterAttributePtr, (char*)info->fldName, bufferLength);
                 if(stringLengthPtr != NULL)
-                    *stringLengthPtr=(short)strlen((char*)fsqlStmt_.getFieldName( columnNumber-1 ));
+                    *stringLengthPtr=(short)strlen((char*)info->fldName);
             }
             break;
         case SQL_DESC_COUNT:
         case SQL_COLUMN_COUNT:
             if(numericAttributePtr != NULL)
-                *(SQLINTEGER*)numericAttributePtr=fsqlStmt_.noOfProjFields();
+                *(SQLINTEGER*)numericAttributePtr=fsqlStmt_->noOfProjFields();
             break;
         case SQL_DESC_TYPE:
         case SQL_COLUMN_TYPE:
             if(numericAttributePtr != NULL)
-                *(SQLINTEGER *)numericAttributePtr=getSQLType(fsqlStmt_.getFieldType( columnNumber-1 ));
+                *(SQLINTEGER *)numericAttributePtr=getSQLType(info->type);
             break;
         case SQL_DESC_LENGTH:
         case SQL_COLUMN_LENGTH:
             if(numericAttributePtr != NULL)
             {
-                SQLSMALLINT sqlType=getSQLType(fsqlStmt_.getFieldType( columnNumber-1 ));
-                *(SQLINTEGER *)numericAttributePtr=(SQLUINTEGER) fsqlStmt_.getFieldLength( columnNumber-1 );
+                SQLSMALLINT sqlType=getSQLType(info->type);
+                *(SQLINTEGER *)numericAttributePtr=(SQLUINTEGER) info->length;
                 if(sqlType == SQL_CHAR)
                     *(SQLINTEGER *)numericAttributePtr=*(SQLINTEGER *)numericAttributePtr -1;
             }
@@ -1279,7 +1298,7 @@ SQLRETURN  CSqlOdbcStmt::SQLColAttribute(
         case SQL_DESC_UNSIGNED:
             if(numericAttributePtr != NULL)
             {
-                SQLSMALLINT sqlType=getSQLType(fsqlStmt_.getFieldType( columnNumber-1 ));
+                SQLSMALLINT sqlType=getSQLType(info->type);
                 if((sqlType != SQL_TIME) && (sqlType != SQL_DATE) && (sqlType != SQL_TIMESTAMP)
                     && (sqlType != SQL_CHAR) && (sqlType != SQL_VARCHAR) && (sqlType != SQL_BINARY)
                     && (sqlType != SQL_VARBINARY) && (sqlType != SQL_BIT))
@@ -1295,7 +1314,7 @@ SQLRETURN  CSqlOdbcStmt::SQLColAttribute(
         case SQL_DESC_TYPE_NAME:
             if(characterAttributePtr != NULL)
             {
-                SQLSMALLINT sqlType=getSQLType(fsqlStmt_.getFieldType( columnNumber-1 ));
+                SQLSMALLINT sqlType=getSQLType(info->type);
                 strncpy((char*)characterAttributePtr,(char *)(getSQLTypeName(sqlType)),bufferLength);
                 if(stringLengthPtr != NULL)
                     *stringLengthPtr=(int)strlen((char *)getSQLTypeName(sqlType));
@@ -1312,7 +1331,7 @@ SQLRETURN  CSqlOdbcStmt::SQLColAttribute(
         case SQL_DESC_CASE_SENSITIVE:  
             if(numericAttributePtr != NULL)
             {
-                SQLSMALLINT sqlType=getSQLType(fsqlStmt_.getFieldType( columnNumber-1 ));
+                SQLSMALLINT sqlType=getSQLType(info->type);
                 if((sqlType != SQL_CHAR) && (sqlType != SQL_VARCHAR))
                     *(SQLINTEGER*)numericAttributePtr=SQL_FALSE;
                 else
@@ -1322,7 +1341,7 @@ SQLRETURN  CSqlOdbcStmt::SQLColAttribute(
         case SQL_DESC_SEARCHABLE:
             if(numericAttributePtr != NULL)
             {
-                SQLSMALLINT sqlType=getSQLType(fsqlStmt_.getFieldType( columnNumber-1 ));
+                SQLSMALLINT sqlType=getSQLType(info->type);
                 if((sqlType != SQL_CHAR) && (sqlType != SQL_VARCHAR))
                     *(SQLINTEGER*)numericAttributePtr=SQL_PRED_BASIC;
                 else
@@ -1407,15 +1426,15 @@ SQLRETURN CSqlOdbcStmt::SQLDescribeParam(
     }
 
     //CSqlOdbcError::printDbg("proxy:stmt:getMetaData");
-    //CSqlParamMetaData *paramMetaData = fsqlStmt_.getParamMetaData();
-    if(paramNumber > fsqlStmt_.noOfParamFields())
+    //CSqlParamMetaData *paramMetaData = fsqlStmt_->getParamMetaData();
+    if(paramNumber > fsqlStmt_->noOfParamFields())
     {
         err_.set( ERROR_PARAMNUM );
         return( SQL_ERROR );
     }
 
     FieldInfo *finfo = new FieldInfo();
-    if( fsqlStmt_.getParamFldInfo( paramNumber-1, finfo ) != OK ) return( SQL_ERROR );
+    if( fsqlStmt_->getParamFldInfo( paramNumber-1, finfo ) != OK ) return( SQL_ERROR );
     if(dataType != NULL)
         *dataType = (SQLSMALLINT) getSQLType(finfo->type); 
     if(paramSize != NULL)
@@ -1438,7 +1457,9 @@ void CSqlOdbcStmt::resetStmt( void ) // TO DO
     SQLFreeStmt( SQL_CLOSE );
     SQLFreeStmt( SQL_UNBIND );
     SQLFreeStmt( SQL_RESET_PARAMS );
-    fsqlStmt_.free();
+    if (fsqlStmt_) fsqlStmt_->free();
+    delete fsqlStmt_;
+    fsqlStmt_ = NULL;
     isPrepared_ = false;
     state_ = S1;
 }

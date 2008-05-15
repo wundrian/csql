@@ -13,13 +13,17 @@ extern "C" {
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_csql_jdbc_JSqlConnection_alloc
-  (JNIEnv *env, jobject obj)
+  (JNIEnv *env, jobject obj, jint mode)
 {
     jclass cls;
     jfieldID fid;
 
     // Create new SqlConnection
-    AbsSqlConnection *con = SqlFactory::createConnection(CSql);
+    AbsSqlConnection *con;
+    if (mode ==1 )
+        con = SqlFactory::createConnection(CSql);
+    else
+        con = SqlFactory::createConnection(CSqlGateway);
 
     cls = env->GetObjectClass( obj );
     fid = env->GetFieldID( cls, "sqlConPtr", "J");

@@ -20,6 +20,7 @@ public final class JdbcSqlDriver extends JSqlError implements Driver, JSqlErrorT
             System.out.println ("CSql JDBC Driver: " + e);
         }
     }
+    public int mode;
     public boolean acceptsURL(String url)
     {
         //pattern jdbc:csql:
@@ -42,6 +43,12 @@ public final class JdbcSqlDriver extends JSqlError implements Driver, JSqlErrorT
                         if( t.equalsIgnoreCase("csql") )
                         {
                             tokenNo++;
+                            mode = 1;
+                            continue;
+                        }else if (t.equalsIgnoreCase("gateway") )
+                        {
+                            tokenNo++;
+                            mode = 2;
                             continue;
                         }
                         break;
@@ -70,7 +77,7 @@ public final class JdbcSqlDriver extends JSqlError implements Driver, JSqlErrorT
 
         uName = info.getProperty("user");
         pword = info.getProperty("password");
-        JdbcSqlConnection con = new JdbcSqlConnection(uName, pword);
+        JdbcSqlConnection con = new JdbcSqlConnection(mode, uName, pword);
         return((Connection) con);
     }
     public DriverPropertyInfo[] getPropertyInfo (String connectString,

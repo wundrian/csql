@@ -182,7 +182,11 @@ int main(int argc, char **argv)
     if (opt == 1) {
         if (Conf::config.useCache()) {
             printf("Database server recovering cached tables...\n");
-            system("cachetable -U root -P manager -R");
+            int ret = system("cachetable -U root -P manager -R");
+            if (ret != 0) { 
+                printf("Cached Tables recovery failed %d\n", ret);
+                return 2;
+            }
             printf("Cached Tables recovered\n");
         } else {
             printf("Cache mode is not set in csql.conf. Cannot recover\n");

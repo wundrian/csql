@@ -30,7 +30,7 @@ class CSqlOdbcDesc
 
         // DataType info.
         SQLSMALLINT     cType_;         // C datatype identifier.
-        SQLSMALLINT     dbzType_;       // Equivalent Datablitz Type.
+        SQLSMALLINT     csqlType_;       // Equivalent CSQL Type.
         SQLSMALLINT     sqlType_;
     
     // METHODS

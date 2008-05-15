@@ -93,7 +93,7 @@ CSqlOdbcDesc::CSqlOdbcDesc( void ) :
     indPtr_( 0 ),
     cType_( -1 ),
     sqlType_( -1 ),
-    dbzType_( -1 ),
+    csqlType_( -1 ),
     paramType_( SQL_PARAM_TYPE_UNKNOWN )
 {
     schemaName_[0] = '\0';

@@ -21,18 +21,20 @@ public final class JdbcSqlConnection extends JSqlError implements Connection, JS
     private boolean transRunning = false;
     private int isoLevel = 2; //->READ_COMMITTED
     private boolean readOnly = false;
+    public int mode = 1;
 
     public JSqlConnection getConnection()
     {
         return jniConn;
     }
 
-    JdbcSqlConnection(String username, String password) throws SQLException
+    JdbcSqlConnection(int imode, String username, String password) throws SQLException
     {
         if( password == null || username == null ) throw getException(CSQL_AUTHEN_ERR);
         if (username.length() > 64 || password.length() > 64) throw getException(CSQL_AUTHEN_ERR);
         jniConn = new JSqlConnection();
-        jniConn.alloc();
+        jniConn.alloc(imode);
+        mode = imode;
         int rv = jniConn.connect(username, password);
         if (rv != 0) 
         {

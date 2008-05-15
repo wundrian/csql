@@ -53,7 +53,8 @@ int main(int argc, char **argv)
     char filename[512];
     filename [0] ='\0';
     int c = 0, opt=0;
-    while ((c = getopt(argc, argv, "u:p:s:?")) != EOF) 
+    bool gateway=false;
+    while ((c = getopt(argc, argv, "u:p:s:g?")) != EOF) 
     {
         switch (c)
         {
@@ -61,6 +62,7 @@ int main(int argc, char **argv)
             case 'p' : strcpy(password , argv[optind - 1]); break;
             case 's' : strcpy(filename , argv[optind - 1]); break;
             case '?' : { opt = 1; break; } //print help 
+            case 'g' : { gateway = true; break; } //print help 
             default: printf("Wrong args\n"); exit(1);
 
         }
@@ -89,12 +91,16 @@ int main(int argc, char **argv)
     }
     
     DbRetVal rv = OK;
-    conn = SqlFactory::createConnection(CSql);
-    //conn = SqlFactory::createConnection(CSqlGateway);
+    if (gateway)
+      conn = SqlFactory::createConnection(CSqlGateway);
+    else
+      conn = SqlFactory::createConnection(CSql);
     rv = conn->connect(username,password);
     if (rv != OK) return 1;
-    stmt =  SqlFactory::createStatement(CSql);
-    //stmt =  SqlFactory::createStatement(CSqlGateway);
+    if (gateway)
+      stmt =  SqlFactory::createStatement(CSqlGateway);
+    else
+      stmt =  SqlFactory::createStatement(CSql);
     stmt->setConnection(conn);
     //rv = conn->beginTrans(READ_COMMITTED, TSYNC);
     rv = conn->beginTrans();

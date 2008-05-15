@@ -17,8 +17,8 @@ public class JdbcSqlStatement extends JSqlError implements Statement, JSqlErrorT
     JdbcSqlStatement( Connection con )
     {
         jniStmt = new JSqlStatement();
-        jniStmt.alloc();
         conn = (JdbcSqlConnection) con;  
+        jniStmt.alloc(conn.mode);
         jniStmt.setConnectionPtr( conn.getConnection().getPtr() ); 
         isClosed = false;
         isPrepared = false;

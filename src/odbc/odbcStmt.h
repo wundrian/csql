@@ -54,8 +54,7 @@ class CSqlOdbcStmt
         CSqlOdbcDescList ipd_;     // Implimentation Parameter Descriptor
                                   // populated during SQLPrepare()
 
-        // FastSQL Statement Object 
-        SqlStatement fsqlStmt_; // CSQL
+        AbsSqlStatement *fsqlStmt_; // CSQL
 
         // Statement Attributes
         

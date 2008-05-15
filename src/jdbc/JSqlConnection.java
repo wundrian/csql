@@ -13,7 +13,7 @@ public class JSqlConnection
     }
 
     // Wrappers 
-    public native void alloc();
+    public native void alloc(int mode);
     public native void free();
 
     public native int connect(String user, String pass);

@@ -16,12 +16,16 @@ extern "C" {
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_csql_jdbc_JSqlStatement_alloc
-  (JNIEnv *env, jobject obj)
+  (JNIEnv *env, jobject obj, jint mode)
 {
     jclass cls;
     jfieldID fid;
 
-    AbsSqlStatement *stmt = SqlFactory::createStatement(CSql);
+    AbsSqlStatement *stmt;
+    if (mode ==1 )
+        stmt = SqlFactory::createStatement(CSql);
+    else
+        stmt = SqlFactory::createStatement(CSqlGateway);
 
     cls = env->GetObjectClass( obj );
     fid = env->GetFieldID( cls, "sqlStmtPtr", "J");

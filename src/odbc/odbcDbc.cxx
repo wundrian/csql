@@ -15,6 +15,7 @@ CSqlOdbcDbc::CSqlOdbcDbc( void ) :
         parentEnv_( 0 ),
         state_( C1 ),
         err_( SQL_HANDLE_DBC ),
+        mode_ (1), 
         curAccessMode_( ACCESSMODE_READ_WRITE ),
         curIsolationLevel_( READ_REPEATABLE ),
         accessMode_( ACCESSMODE_READ_WRITE ),
@@ -105,6 +106,27 @@ SQLRETURN CSqlOdbcDbc::SQLFreeHandle(
     return( SQL_SUCCESS );
 }
 
+SQLRETURN SQLDriverConnect(
+     SQLHDBC     ConnectionHandle,
+     SQLHWND     WindowHandle,
+     SQLCHAR *     InConnectionString,
+     SQLSMALLINT     StringLength1,
+     SQLCHAR *     OutConnectionString,
+     SQLSMALLINT     BufferLength,
+     SQLSMALLINT *     StringLength2Ptr,
+     SQLUSMALLINT     DriverCompletion)
+{
+    printf("Connection string is %s\n", InConnectionString);
+    // Validate handle
+    if( isValidHandle( ConnectionHandle, SQL_HANDLE_DBC ) != SQL_SUCCESS )
+                 return( SQL_INVALID_HANDLE );
+    
+    return( ((CSqlOdbcDbc*) ConnectionHandle)->SQLConnect((SQLCHAR*)"a", 
+                      (SQLSMALLINT)strlen("a"), (SQLCHAR*)"root", (SQLSMALLINT)strlen("root"), 
+                      (SQLCHAR*)"manager", (SQLSMALLINT)strlen("manager")) );
+   
+}
+
 SQLRETURN SQLConnect(           // All param's are IN
     SQLHDBC ConnectionHandle,
     SQLCHAR *ServerName,
@@ -145,14 +167,30 @@ SQLRETURN CSqlOdbcDbc::SQLConnect(           // All param's are IN
         err_.set( ERROR_BUFLEN );
         return( SQL_ERROR );
     }
+    if (fsqlConn_ != NULL)
+    {
+        err_.set( ERROR_CONNINUSE);
+        return ( SQL_ERROR );
+    }
+    if (strcasecmp((char*)serverName, "gateway") == 0)
+    {
+        fsqlConn_ = SqlFactory::createConnection(CSqlGateway);
+        mode_ = 2;
+    }else if (strcasecmp((char*)serverName, "adapter") == 0){
+        fsqlConn_ = SqlFactory::createConnection(CSqlAdapter);
+        mode_ = 3;
+    }else{
+        fsqlConn_ = SqlFactory::createConnection(CSql);
+        mode_ = 1;
+    }
 
-    rc = fsqlConn_.connect( (char*) user, (char*) pass );
+    rc = fsqlConn_->connect( (char*) user, (char*) pass );
     if( rc != OK )
     {
         err_.set( ERROR_CONNREJCTD);
         return( SQL_ERROR );
     }
-    rc = fsqlConn_.beginTrans( isolationLevel_ );
+    rc = fsqlConn_->beginTrans( isolationLevel_ );
     if( rc != OK )
     {
         err_.set( ERROR_INVTRANSTATE );
@@ -173,8 +211,8 @@ SQLRETURN SQLDisconnect(
     // Validate Handle
     if( isValidHandle( ConnectionHandle, SQL_HANDLE_DBC ) != SQL_SUCCESS )
         return( SQL_INVALID_HANDLE );
-
-    return( ((CSqlOdbcDbc*) ConnectionHandle)->SQLDisconnect() );
+    SQLRETURN ret = ( ((CSqlOdbcDbc*) ConnectionHandle)->SQLDisconnect() );
+    return ret;
 }
 
 SQLRETURN CSqlOdbcDbc::SQLDisconnect( void )
@@ -198,13 +236,14 @@ SQLRETURN CSqlOdbcDbc::SQLDisconnect( void )
     }
 
     // Commit the transaction
-    if( fsqlConn_.commit() != OK )
+    if( fsqlConn_->commit() != OK )
         return( SQL_ERROR );
         
     // Disconnect
-    if( fsqlConn_.disconnect() != OK )
+    if( fsqlConn_->disconnect() != OK )
         return( SQL_ERROR );
 
+    delete fsqlConn_;
     // Change the state of Dbc
     state_ = C2;
 
@@ -241,19 +280,19 @@ SQLRETURN CSqlOdbcDbc::SQLEndTran(
     {
         case SQL_COMMIT:
 
-		    if( fsqlConn_.commit() != OK )
+		    if( fsqlConn_->commit() != OK )
 			return( SQL_ERROR );
 
-                    if( fsqlConn_.beginTrans( curIsolationLevel_ ) != OK )
+                    if( fsqlConn_->beginTrans( curIsolationLevel_ ) != OK )
 			return( SQL_ERROR );
 
                     break;
 
         case SQL_ROLLBACK:
-                    if( fsqlConn_.rollback() != OK )
+                    if( fsqlConn_->rollback() != OK )
                         return( SQL_ERROR );
 
-                    rc = fsqlConn_.beginTrans( curIsolationLevel_ );
+                    rc = fsqlConn_->beginTrans( curIsolationLevel_ );
                     break;
 
         default:    err_.set( ERROR_OPTRANGE );
@@ -274,6 +313,7 @@ SQLRETURN SQLSetConnectOption(
     SQLUSMALLINT Option,
     SQLUINTEGER Value)
 {
+printf("PRABA::I AM CALLED in setconnect otpion\n");
     return( SQLSetConnectAttr( ConnectionHandle, Option, (SQLPOINTER) Value, 0) );
 }
 
@@ -283,6 +323,7 @@ SQLRETURN SQLSetConnectAttr(
     SQLPOINTER Value,
     SQLINTEGER StringLength)
 {
+printf("PRABA::I AM CALLEDn conn attr\n");
    // Validate handle
    if( isValidHandle( ConnectionHandle, SQL_HANDLE_DBC ) != SQL_SUCCESS )
         return( SQL_INVALID_HANDLE );

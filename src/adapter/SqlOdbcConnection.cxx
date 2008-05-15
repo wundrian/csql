@@ -22,6 +22,7 @@
 
 DbRetVal SqlOdbcConnection::connect (char *user, char * pass)
 {
+printf("PRABA::CONNECT START\n");
     DbRetVal rv = OK;
     char dsn[72];
     sprintf(dsn, "DSN=%s;", Conf::config.getDSN());
@@ -47,9 +48,34 @@ DbRetVal SqlOdbcConnection::connect (char *user, char * pass)
                          SQL_DRIVER_NOPROMPT);
     if (!SQL_SUCCEEDED(retVal)) {
         printError(ErrSysInit, "Failed to connect to target database using dsn=%s\n", dsn);
-        rv = ErrNoConnection;
+
+    SQLINTEGER   i = 0;
+    SQLINTEGER   native;
+    SQLCHAR      state[ 7 ];
+    SQLCHAR      text[256];
+    SQLSMALLINT  len;
+    SQLRETURN    ret;
+
+    fprintf(stderr,
+            "\n"
+            "The driver reported the following diagnostics whilst running "
+            "\n\n");
+
+    do
+    {
+        ret = SQLGetDiagRec(SQL_HANDLE_DBC, dbHdl, ++i, state, &native, text,
+                            sizeof(text), &len );
+
+       if (SQL_SUCCEEDED(ret))
+            printf("%s:%ld:%ld:%s\n", state, i, native, text);
     }
+    while( ret == SQL_SUCCESS );
+ rv = ErrNoConnection;
+ rv = OK; //masking the error:tmp
+    }
+    printError(ErrSysInit, "Connecting with dsn=%s\n", dsn);
     SQLSetConnectAttr(dbHdl, SQL_ATTR_AUTOCOMMIT, SQL_AUTOCOMMIT_OFF, 0);
+printf("PRABA::CONNECT END\n");
     return rv;
     
 }
