@@ -313,6 +313,7 @@ void* SqlOdbcStatement::fetchAndPrint(bool SQL)
             }
         }
         if (ptrToFirstField == NULL) ptrToFirstField=bindField->targetvalue;
+        printf("\t");
     }
 
     return ptrToFirstField;

@@ -22,7 +22,6 @@
 
 DbRetVal SqlOdbcConnection::connect (char *user, char * pass)
 {
-printf("PRABA::CONNECT START\n");
     DbRetVal rv = OK;
     char dsn[72];
     sprintf(dsn, "DSN=%s;", Conf::config.getDSN());
@@ -73,9 +72,8 @@ printf("PRABA::CONNECT START\n");
  rv = ErrNoConnection;
  rv = OK; //masking the error:tmp
     }
-    printError(ErrSysInit, "Connecting with dsn=%s\n", dsn);
+    //printError(ErrSysInit, "Connecting with dsn=%s\n", dsn);
     SQLSetConnectAttr(dbHdl, SQL_ATTR_AUTOCOMMIT, SQL_AUTOCOMMIT_OFF, 0);
-printf("PRABA::CONNECT END\n");
     return rv;
     
 }

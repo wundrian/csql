@@ -31,7 +31,6 @@ SQLRETURN CSqlOdbcEnv::SQLAllocHandle(
     SQLHANDLE   inputHandle,    // IN
     SQLHANDLE   *outputHandle ) // OUT
 {   
-printf("PRABA::I AM CALLED\n");
     // Error in parameters
     if( inputHandle != SQL_NULL_HANDLE )
     {

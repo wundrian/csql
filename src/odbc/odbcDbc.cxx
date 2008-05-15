@@ -313,7 +313,6 @@ SQLRETURN SQLSetConnectOption(
     SQLUSMALLINT Option,
     SQLUINTEGER Value)
 {
-printf("PRABA::I AM CALLED in setconnect otpion\n");
     return( SQLSetConnectAttr( ConnectionHandle, Option, (SQLPOINTER) Value, 0) );
 }
 
@@ -323,7 +322,6 @@ SQLRETURN SQLSetConnectAttr(
     SQLPOINTER Value,
     SQLINTEGER StringLength)
 {
-printf("PRABA::I AM CALLEDn conn attr\n");
    // Validate handle
    if( isValidHandle( ConnectionHandle, SQL_HANDLE_DBC ) != SQL_SUCCESS )
         return( SQL_INVALID_HANDLE );
