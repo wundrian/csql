@@ -27,3 +27,13 @@ CSQL - Version 1.2 - Beta
 4.Support for DDL in SQL Engine
 5.NOT NULL, UNIQUE, PRIMARY KEY support 
 6.CSQL- Interactive SQL Tool
+
+CSQL - Version 2.0 - GA
+-----------------------
+1.Primitive ODBC Driver
+2.ODBC Adapter for MySQL
+3.Gateway with Synchronous mode
+4.csqldump tool to take backup of tables and its records
+5.Memory leak fixes using Valgrind
+6.Improved test coverage in DBAPI, SQLAPI, JDBC, ODBC interfaces
+7.Updated user manual
