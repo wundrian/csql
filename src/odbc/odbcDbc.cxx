@@ -244,6 +244,7 @@ SQLRETURN CSqlOdbcDbc::SQLDisconnect( void )
         return( SQL_ERROR );
 
     delete fsqlConn_;
+    fsqlConn_ = NULL;
     // Change the state of Dbc
     state_ = C2;
 
