@@ -251,7 +251,6 @@ DbRetVal SqlStatement::getParamFldInfo (int parampos, FieldInfo *&fInfo)
 
 DbRetVal SqlStatement::free()
 {
-    if (! isPrepared()) return OK;
     delete stmt;
     stmt = NULL;
     pData.reset();
