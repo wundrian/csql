@@ -44,12 +44,13 @@ int main()
 
   strcpy(statement,"DROP TABLE T1;");
   rv = stmt->prepare(statement);
-  if(rv==OK)
+  if(rv!=OK)
   {
      printf("Test script failed\n");
      return 3;
   }
   printf("Test script passed\n");
+  stmt->execute(rows);
   stmt->free();
   delete stmt;
   delete con;

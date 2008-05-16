@@ -93,6 +93,7 @@ int main()
      rv = stmt->prepare(statement);
      rv = stmt->execute(rows);
      if(rv==OK)printf("Table dropped\n");
+     stmt->free();
      delete stmt;
      delete con;
      return 0;

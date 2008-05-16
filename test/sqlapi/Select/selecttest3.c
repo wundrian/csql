@@ -89,12 +89,11 @@ int main()
   if(rv !=OK)
   {
      printf("test script passed\n");
-     
       strcpy(statement,"DROP TABLE T1;");
       rv = stmt->prepare(statement);
       rv = stmt->execute(rows);
       if(rv==OK){printf("Table dropped\n");}
-     
+     stmt->free();
      delete stmt;
      delete con;
      return 0;
