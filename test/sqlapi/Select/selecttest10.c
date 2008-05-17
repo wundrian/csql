@@ -84,16 +84,16 @@ int main()
 	if(rv!=OK)break;
 	
          	
-        stmt->setIntParam(1,f1var);
+    stmt->setIntParam(1,f1var);
 	stmt->setShortParam(2,f2var);
 	//stmt->setStringParam(3,f3var);
-	stmt->setFloatParam(4,f4var);
-	stmt->setFloatParam(5,f5var);
-	stmt->setDateParam(6,f6var);
-	stmt->setTimeParam(7,f7var);
-	stmt->setTimeStampParam(8,f8var);
-	stmt->setIntParam(9,f9var);
-	stmt->setLongLongParam(10,f10var);
+	stmt->setFloatParam(3,f4var);
+	stmt->setFloatParam(4,f5var);
+	stmt->setDateParam(5,f6var);
+	stmt->setTimeParam(6,f7var);
+	stmt->setTimeStampParam(7,f8var);
+	stmt->setIntParam(8,f9var);
+	stmt->setLongLongParam(9,f10var);
 
 	rv = stmt->execute(rows);
 	if(rv!=OK)break;
