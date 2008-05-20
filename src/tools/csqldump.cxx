@@ -21,7 +21,7 @@
 #include <SqlStatement.h>
 void printUsage()
 {
-   printf("Usage: csqldump [-u username] [-p passwd] [-n noOfStmtsPerCommit] \n");
+   printf("Usage: csqldump [-u username] [-p passwd] [-n noOfStmtsPerCommit] [-T tableName]\n");
    printf("       n -> number of statements per commit\n");
    printf("            Default value is 100. If system db size is big, then it shall be increased.\n");
    return;
@@ -34,16 +34,18 @@ int main(int argc, char **argv)
     username [0] = '\0';
     char password[IDENTIFIER_LENGTH];
     password [0] = '\0';
+    char tblName[IDENTIFIER_LENGTH];
     int c = 0, opt = 0;
     int noOfStmts =100;
     char name[IDENTIFIER_LENGTH];
-    while ((c = getopt(argc, argv, "u:p:n:?")) != EOF) 
+    while ((c = getopt(argc, argv, "u:p:n:T:?")) != EOF) 
     {
         switch (c)
         {
             case 'u' : { strcpy(username, argv[optind - 1]); opt=1; break; }
             case 'p' : { strcpy(password, argv[optind - 1]); opt=1; break; }
             case 'n' : { noOfStmts = atoi(argv[optind - 1]); opt = 5; break; }
+            case 'T' : { strcpy(tblName,  argv[optind - 1]); opt = 15; break; }
             case '?' : { opt = 10; break; } //print help 
             default: opt=1; //list all the tables
 
@@ -70,19 +72,18 @@ int main(int argc, char **argv)
     if (rv != OK) return 1;
     DatabaseManagerImpl *dbMgr = (DatabaseManagerImpl*) conn.getDatabaseManager();
     if (dbMgr == NULL) { printf("Auth failed\n"); return 2;}
-    List tableList = dbMgr->getAllTableNames();
-    ListIterator iter = tableList.getIterator();
-    Identifier *elem = NULL;
-    int ret =0;
-    opt=5;
+    if (opt == 0 || opt == 1) opt = 5;
     if (opt == 5) {
+        List tableList = dbMgr->getAllTableNames();
+        ListIterator iter = tableList.getIterator();
+        Identifier *elem = NULL;
         int count =0;
         while (iter.hasElement())
         {
             elem = (Identifier*) iter.nextElement();
             printf("CREATE TABLE %s (", elem->name);
             Table *table = dbMgr->openTable(elem->name);
-	    FieldInfo *info = new FieldInfo();
+	        FieldInfo *info = new FieldInfo();
             List fNameList = table->getFieldNameList();
             ListIterator fNameIter = fNameList.getIterator();
             count++;
@@ -104,38 +105,100 @@ int main(int argc, char **argv)
             table->printSQLIndexString();
             delete info;
             dbMgr->closeTable(table);
+       }
+       iter.reset();
+       char sqlstring[1024];
+       bool flag=false;
+       while (iter.hasElement()) {
+           if (!flag) { printf("SET AUTOCOMMIT OFF;\n"); flag=true; } 
+           elem = (Identifier*) iter.nextElement();
+           sprintf(sqlstring, "SELECT * FROM %s;", elem->name);
+           sqlconn->beginTrans();
+           DbRetVal rv = stmt->prepare(sqlstring);
+           int rows = 0;
+           rv = stmt->execute(rows);
+           void *tuple = NULL;
+           rows = 0;
+           while(true) {
+               tuple = stmt->fetchAndPrint(true);
+               if (tuple == NULL) break;
+               rows++;
+               if (rows % noOfStmts ==0) {
+                   sqlconn->commit();
+                   sqlconn->beginTrans();
+                   printf("COMMIT;\n");
+               }
            }
-            iter.reset();
-            char sqlstring[1024];
-            bool flag=false;
-            while (iter.hasElement()) {
-                 if (!flag) { printf("SET AUTOCOMMIT OFF;\n"); flag=true; } 
-                 elem = (Identifier*) iter.nextElement();
-                 sprintf(sqlstring, "SELECT * FROM %s;", elem->name);
-                 sqlconn->beginTrans();
-                 DbRetVal rv = stmt->prepare(sqlstring);
-                 int rows = 0;
-                 rv = stmt->execute(rows);
-                 void *tuple = NULL;
-                 rows = 0;
-                 while(true) {
-                     tuple = stmt->fetchAndPrint(true);
-                     if (tuple == NULL) break;
-                     rows++;
-                     if (rows % noOfStmts ==0) {
-                         sqlconn->commit();
-                         sqlconn->beginTrans();
-                         printf("COMMIT;\n");
-                     }
-                 }
-                 if (rows % noOfStmts !=0) { sqlconn->commit(); printf("COMMIT;\n"); }
-                 stmt->close();
-                 stmt->free();
-         }   
-
+           if (rows % noOfStmts !=0) { sqlconn->commit(); printf("COMMIT;\n"); }
+           stmt->close();
+           stmt->free();
+       }   
+       conn.close();
+       sqlconn->disconnect();
+       delete sqlconn;
+       delete stmt;
+       return 0;
     } 
+    if (opt == 15) {
+        Table *table = dbMgr->openTable(tblName);
+        if (table == NULL) {
+            printf("csqldump: Table \'%s\' does not exist\n", tblName);
+            conn.close();
+            sqlconn->disconnect();
+            delete sqlconn;
+            delete stmt;
+            return 3;
+        }
+        printf("CREATE TABLE %s (", tblName);
+	    FieldInfo *info = new FieldInfo();
+        List fNameList = table->getFieldNameList();
+        ListIterator fNameIter = fNameList.getIterator();
+        bool firstField=true;
+        Identifier *elem = NULL;
+        while (fNameIter.hasElement()) {
+            elem = (Identifier*) fNameIter.nextElement();
+            table->getFieldInfo((const char*)elem->name, info);
+            if (firstField) {
+                printf("%s %s ", elem->name, AllDataType::getSQLString(info->type));
+                firstField = false;
+            }
+            else
+                printf(", %s %s ", elem->name, AllDataType::getSQLString(info->type));
+            if (info->type == typeString) printf("(%d)",info->length -1);
+            if (info->isNull) printf(" NOT NULL ");
+            if (info->isDefault) printf(" DEFAULT '%s' ", info->defaultValueBuf);
+        }
+        printf(");\n");
+        table->printSQLIndexString();
+        delete info;
+        char sqlstring[1024];
+        bool flag=false;
+        if (!flag) { printf("SET AUTOCOMMIT OFF;\n"); flag=true; } 
+        sprintf(sqlstring, "SELECT * FROM %s;", tblName);
+        sqlconn->beginTrans();
+        DbRetVal rv = stmt->prepare(sqlstring);
+        int rows = 0;
+        rv = stmt->execute(rows);
+        void *tuple = NULL;
+        rows = 0;
+        while(true) {
+            tuple = stmt->fetchAndPrint(true);
+            if (tuple == NULL) break;
+            rows++;
+            if (rows % noOfStmts ==0) {
+                sqlconn->commit();
+                sqlconn->beginTrans();
+                printf("COMMIT;\n");
+            }
+        }       
+        if (rows % noOfStmts !=0) { sqlconn->commit(); printf("COMMIT;\n"); }
+        stmt->close();
+        stmt->free();
+    }   
     conn.close();
     sqlconn->disconnect();
+    delete sqlconn;
+    delete stmt;
     
-    return ret;
+    return 0;
 }
