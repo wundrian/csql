@@ -24,3 +24,4 @@ odbc/NonSelectDML
 odbc/Parameters
 odbc/Select
 odbc/Transaction
+cache/Recovery
