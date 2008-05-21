@@ -140,7 +140,7 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
 {
     SingleFieldHashIndexInfo *info = (SingleFieldHashIndexInfo*) indInfo;
     INDEX *iptr = (INDEX*)indexPtr;
-
+    DbRetVal rc = OK;
     DataType type = info->type;
     char *name = info->fldName;
     int offset  = info->offset;
@@ -198,16 +198,22 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     else
     {
         BucketList list(head);
-        list.insert((Chunk*)iptr->hashNodeChunk_, tbl->db_, keyPtr, tuple);
+        rc = list.insert((Chunk*)iptr->hashNodeChunk_, tbl->db_, keyPtr, tuple);
+        if (rc !=OK) {
+            bucket->mutex_.releaseLock(tbl->db_->procSlot);
+            return rc;
+        }
+        
     }
-    DbRetVal rc = OK;
     if (undoFlag) {
 
          rc = tr->appendLogicalUndoLog(tbl->sysDB_, InsertHashIndexOperation,
                                  tuple, sizeof(void*), indexPtr);
         if (rc !=OK)
         {
-            //TODO::remove it from the bucketlist
+            BucketList list(head);
+            rc = list.remove((Chunk*)iptr->hashNodeChunk_, tbl->db_, keyPtr);
+            if (rc !=OK) printError(ErrSysFatal, "double failure on undo log insert followed by hash bucket list remove\n");
         }
     }
 
