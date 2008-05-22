@@ -396,8 +396,17 @@ DbRetVal CatalogTableINDEXFIELD::insert(FieldNameList &fldList, void *indexPtr,
     fldList.resetIter();
     int i =0;
     char *fName =NULL;
+    void *data = NULL;
+    ChunkIterator ifIter = fChunk->getIterator();
     while (NULL != (fName = fldList.nextFieldName()))
     {
+        ifIter = fChunk->getIterator();
+        while ((data = ifIter.nextElement()) != NULL) {
+            if (0 == strcmp(((FIELD *)((INDEXFIELD *) data)->fieldPtr)->fldName_, fName) && ((INDEXFIELD *)data)->tablePtr == tblPtr) {
+                printError(ErrAlready, "Index on field \'%s\' already exists on table \'%s\' by name \'%s\'", ((FIELD *)((INDEXFIELD *)data)->fieldPtr)->fldName_, ((TABLE *)((INDEXFIELD *)data)->tablePtr)->tblName_, ((INDEX *)((INDEXFIELD *)data)->indexPtr)->indName_);
+                return ErrAlready;
+            }
+        }  
         void *fieldptr = fChunk->allocate(systemDatabase_);
         if (NULL == fieldptr)
         {
