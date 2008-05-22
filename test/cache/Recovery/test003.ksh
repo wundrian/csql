@@ -2,13 +2,14 @@
 
 #Run this test only under csql/test or on this directory.
 #Otherwise, it may fail
-
+CSQL_CONF=${PWD}/cache/Recovery/csql.conf
 input=${PWD}/cache/Recovery/createt1.sql
 REL_PATH=.
-if [ -s "$input" ]
+if [ -s "$input" -a -s "$CSQL_CONF" ]
 then
     REL_PATH=${PWD}/cache/Recovery
 fi
+export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
 
 isql myodbc3 < $REL_PATH/createt1.sql > /dev/null 2>&1
 
