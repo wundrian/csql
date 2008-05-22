@@ -883,6 +883,7 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
     if (OK != rv)
     {
         delete[] fptr;
+        cIndex.remove(indName, (void *&)chunkInfo, (void *&)hChunk, (void *&)tupleptr);
         deleteUserChunk(hChunk);
         deleteUserChunk(chunkInfo);
         systemDatabase_->releaseDatabaseMutex();
