@@ -25,7 +25,7 @@ LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsql
 TARGETS = \
         test001 \
         test002 \
-        test003 \
+        insert \
         test004 \
         test005 \
         test006 \
@@ -42,7 +42,7 @@ test001: inserttest1.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test002: inserttest2.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
-test003: inserttest3.c
+insert: inserttest3.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test004: insertnulltest1.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
