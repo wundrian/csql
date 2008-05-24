@@ -426,7 +426,7 @@ DbRetVal SelStatement::resolveForCondition()
             value->paramNo = paramPos++;
         }
         if (!value->paramNo) 
-            AllDataType::strToValue(value->value, value->parsedString, fInfo->type);
+            AllDataType::strToValue(value->value, value->parsedString, fInfo->type, fInfo->length);
     }
     delete fInfo;
     totalParams = paramPos -1;

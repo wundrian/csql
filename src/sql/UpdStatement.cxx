@@ -470,7 +470,7 @@ DbRetVal UpdStatement::resolveForAssignment()
             cValue->paramNo = paramPos++;
         }
         if (!cValue->paramNo) 
-            AllDataType::strToValue(cValue->value, cValue->parsedString, fInfo->type);
+            AllDataType::strToValue(cValue->value, cValue->parsedString, fInfo->type, fInfo->length);
     }
 
 
