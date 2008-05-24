@@ -32,6 +32,20 @@ void ParsedData::insertValue(char *val)
     fieldValueList.append(newVal);
 }
 
+void ParsedData::insertInValue(char *val)
+{
+    FieldValue *newVal = new FieldValue();
+    if (val == NULL) 
+        newVal->parsedString = NULL;
+    else 
+        newVal->parsedString = strdup(val);
+    newVal->value = NULL;
+    newVal->paramNo = 0;
+    newVal->type = typeUnknown;
+    newVal->length = 0;
+    inValueList.append(newVal);
+}
+
 void** ParsedData::insertCondValueAndGetPtr(char *fldName, char *val)
 {
     ConditionValue *newVal = new ConditionValue();
@@ -106,6 +120,7 @@ void ParsedData::reset()
         delete value;
     }
     fieldValueList.reset();
+    inValueList.reset();
     predicate.reset();
 
     iter = conditionValueList.getIterator();

@@ -77,6 +77,20 @@ value_list_L: ',' value
         }
         ;
         
+invalue_list: invalue_list invalue_list_L
+        | value
+	{
+            parsedData->insertInValue((char*)$1);
+            free($1);
+        }
+        ;
+invalue_list_L: ',' value 
+	{
+            parsedData->insertInValue((char*)$2);
+            free($2);
+        }
+        ;
+        
 delete_statement: DELETE FROM ident where_clause_opt semicolon_opt
 	{
             parsedData->setStmtType(DeleteStatement);
@@ -175,9 +189,9 @@ condition: ident OPERATOR value
             free( $1 );  free( $4 );  free( $6 );
             $$= finalPred;
         }
-        | ident not_opt IN '(' value_list ')'
+        | ident not_opt IN '(' invalue_list ')'
         {
-            ListIterator valIter = parsedData->getFieldValueList().getIterator();
+            ListIterator valIter = parsedData->getInValueList().getIterator();
             FieldValue *value1, *value2;
             Predicate *pred1, *pred2, *finalPred;
             void **ptr1, **ptr2;
