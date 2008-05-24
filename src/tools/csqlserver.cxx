@@ -185,6 +185,8 @@ int main(int argc, char **argv)
             int ret = system("cachetable -U root -P manager -R");
             if (ret != 0) { 
                 printf("Cached Tables recovery failed %d\n", ret);
+                logger.stopLogger();
+                session.destroySystemDatabase();
                 return 2;
             }
             printf("Cached Tables recovered\n");
