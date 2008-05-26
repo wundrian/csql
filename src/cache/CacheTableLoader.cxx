@@ -27,7 +27,7 @@ DbRetVal CacheTableLoader::addToCacheTableFile()
     //TODO::if already table present in the file, it means that the
     //table is replicated. in this case change mode from
     //2 to 3 (repl to replcache)
-    fprintf(fp, "%d:%d:%s\n", 1, tableName);
+    fprintf(fp, "%d:%s\n", 1, tableName);
     fclose(fp);
     return OK;
 }
@@ -254,7 +254,7 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
             case typeTimeStamp:
                 bBuf = new BindBuffer();
                 bBuf->csql = valBuf;
-                bBuf->type = typeDate;
+                bBuf->type = typeTimeStamp;
                 fieldsize = sizeof(TIMESTAMP_STRUCT);
                 bBuf->targetdb = malloc(fieldsize);
                 valBuf = bBuf->targetdb;
