@@ -1,4 +1,4 @@
-/*  connect ,disconnect and again connect ,it should fail.
+/*  connect ,disconnect and again connect ,it should pass. 
 
  *  AUTHOR : Jitendra Lenka
  */
