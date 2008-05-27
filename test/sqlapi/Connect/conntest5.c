@@ -10,13 +10,13 @@
 int main()
 {
    DbRetVal rv = OK;
-   AbsSqlConnection *con = SqlFactory :: createConnection(CSql);
+   AbsSqlConnection *con = SqlFactory::createConnection(CSql);  
    rv = con->connect("root","manager");
    if(rv !=OK)return 1;
    printf("Connection opened\n");
      
-   SqlStatement *stmt = new SqlStatement();
-   stmt->setSqlConnection(con);
+   AbsSqlStatement *stmt = SqlFactory::createStatement(CSql);
+   stmt->setConnection(con);
    char statement[200];
    strcpy(statement,"CREATE TABLE T1(F1 INT,F2 INT);");
    
@@ -59,11 +59,11 @@ int main()
      
     void *rettype;
     if(rv!=OK)return 8;
-    rettype = (char*)stmt->fetch(rv);
+    rettype = (char*)stmt->fetch();
     if(rettype==NULL && rv == OK) {
         printf("After closing the connection,fetch failed\n");
 		con->connect("root", "manager");
-		stmt->setSqlConnection(con);
+		stmt->setConnection(con);
         strcpy(statement,"DROP TABLE T1;");
         rv = stmt->prepare(statement);
         rv = stmt->execute(rows);
