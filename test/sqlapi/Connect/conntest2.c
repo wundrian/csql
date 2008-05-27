@@ -4,12 +4,12 @@
  */
 
 
-#include<SqlStatement.h>
-#include<CSql.h>
+#include<AbsSqlStatement.h>
+#include<SqlFactory.h>
 int main()
 {
    DbRetVal rv = OK;
-   SqlConnection *con = new SqlConnection();
+   AbsSqlConnection *con = SqlFactory :: createConnection(CSql);
    rv = con->connect("root","manager");
    if(rv!=OK)return 1;
    printf("Connection opened\n");
