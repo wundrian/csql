@@ -7,13 +7,13 @@
  *  Author : Jitendra Lenka.
  */
 
-#include<SqlStatement.h>
+#include<AbsSqlStatement.h>
 #include<CSql.h>
 #include<Info.h>
 int main()
 {
   DbRetVal rv = OK;
-  SqlConnection *con= new SqlConnection();
+  AbsSqlConnection *con = SqlFactory :: createConnection(CSql);  
   rv = con->connect("root","manager");
   if(rv!=OK)return 1;
 
