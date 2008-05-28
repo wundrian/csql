@@ -1,5 +1,5 @@
 /*   prepare,execute,prepare....,
- *   second prepare should fail saying "stmt not freed"
+ *   second prepare should pass.
 
  *   Author : Jitendra Lenka
  */
@@ -44,7 +44,7 @@ int main()
 
   strcpy(statement,"DROP TABLE T1;");
   rv = stmt->prepare(statement);
-  if(rv==OK)
+  if(rv!=OK)
   {
      printf("Test script failed\n");
      delete stmt;
