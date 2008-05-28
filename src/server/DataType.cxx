@@ -35,7 +35,6 @@ int Date::parseFrom(const char *s) {
 
     if (!isValidDate(year, month, day))
         return -1;
-    printf("%d %d %d\n", year, month, day);
     return set(year,month,day);
 }
 
@@ -394,8 +393,6 @@ char* AllDataType::getSQLString(DataType type)
 
 SQLSMALLINT AllDataType::convertToSQLType(DataType type)
 {
-    //printf("CSQL TYPE is %d\n", type);
-
     switch(type)
     {
         case typeInt:
@@ -430,8 +427,6 @@ SQLSMALLINT AllDataType::convertToSQLType(DataType type)
 }
 SQLSMALLINT AllDataType::convertToSQL_C_Type(DataType type)
 {
-    //printf("CSQL TYPE is %d\n", type);
-
     switch(type)
     {
         case typeInt:
@@ -465,7 +460,6 @@ SQLSMALLINT AllDataType::convertToSQL_C_Type(DataType type)
 
 DataType  AllDataType::convertFromSQLType(SQLSMALLINT type)
 {
-    //printf("SQL TYPE is %d\n", type);
     switch(type)
     {
         case SQL_INTEGER :
@@ -1374,7 +1368,6 @@ void AllDataType::convertToString( void* dest, void* src, DataType srcType )
         case typeString:
         {
             strcpy((char*)dest, (char*)src);
-            printf("copy string to string %s %s\n", dest, src);
             break;
         }
         case typeDate:
@@ -1382,7 +1375,6 @@ void AllDataType::convertToString( void* dest, void* src, DataType srcType )
             Date* dt = (Date*)src;
             sprintf((char*) dest, "%d/%d/%d", dt->year(),
                                   dt->month(), dt->dayOfMonth());
-            printf("converto date src is %s\n", src);
             break;
         }
         case typeTime:
