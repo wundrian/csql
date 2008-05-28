@@ -1,6 +1,6 @@
 INCLUDES = -I$(top_srcdir)/include $(all_includes) -I$(top_srcdir)/src/sql
 METASOURCES = AUTO
-bin_PROGRAMS = csql catalog cachetable csqlserver csqlreplserver repltable csqlcacheserver csqldump
+bin_PROGRAMS = csql catalog cachetable csqlserver csqlreplserver repltable csqlcacheserver csqldump cacheverify
 csql_SOURCES = isql.cxx
 csql_LDADD = $(top_builddir)/src/server/.libs/libcsql $(top_builddir)/src/sql/.libs/libcsqlsql $(top_builddir)/src/sqllog/.libs/libcsqlsqllog $(top_builddir)/src/network/.libs/libcsqlnw $(top_builddir)/src/adapter/.libs/libcsqlodbcadapter $(top_builddir)/src/gateway/.libs/libcsqlgw  -lrt -lpthread -lcrypt -lodbc
 
@@ -12,6 +12,11 @@ cachetable_LDADD = $(top_builddir)/src/cache/libcacheload.la \
 	$(top_builddir)/src/server/libcsql.la $(top_builddir)/src/adapter/libcsqlodbcadapter.la 
 cachetable_LDFLAGS = -lcrypt -lodbc
 cachetable_SOURCES = cachetable.cxx
+
+cacheverify_LDADD = $(top_builddir)/src/cache/libcacheload.la \
+	$(top_builddir)/src/server/libcsql.la $(top_builddir)/src/adapter/libcsqlodbcadapter.la 
+cacheverify_LDFLAGS = -lcrypt -lodbc
+cacheverify_SOURCES = cacheverify.cxx
 
 repltable_LDADD = $(top_builddir)/src/cache/libcacheload.la \
 	$(top_builddir)/src/server/libcsql.la \
