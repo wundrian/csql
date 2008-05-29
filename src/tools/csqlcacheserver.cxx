@@ -90,7 +90,7 @@ int main(int argc, char **argv)
         tval.tv_sec = timeout.tv_sec;
         tval.tv_usec = timeout.tv_usec;
         ret = os::select(0, NULL, 0, 0, &tval);
-        printf("Getting the updates\n");
+        printf("Checking for cache updates\n");
         ret = getRecordsFromTargetDb(1);       
         if (ret !=0) srvStop = 1;
         //ret = getRecordsFromTargetDb(2);       
