@@ -22,12 +22,11 @@ drop the table object
 
 How to run
 ----------
-1. Set the CSQL_CONFIG_FILE environment variable to absolute path of csql.conf file.
-	$export CSQL_CONFIG_FILE=/tmp/csql.conf
-2. Set the LD_LIBRARY_PATH environment variable to csql library path
-	$export LD_LIBRARY_PATH=$CSQL_INSTALL_ROOT/lib:$LD_LIBRARY_PATH
+1. Set the necessary enviroment variables using the setup script
+   under the csql root directory
+        $. ./setupenv.ksh
 
-3. Run the csql tool with appropriate sql script as input
+2. Run the csql tool with appropriate sql script as input
 	$csql -u root -p manager -s create.sql
 
 Output of example:

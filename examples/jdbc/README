@@ -21,14 +21,11 @@ How to compile
 
 How to run
 ----------
-1. Set the CSQL_CONFIG_FILE environment variable to absolute path of csql.conf file.
-	$export CSQL_CONFIG_FILE=/tmp/csql.conf
-2. Set the LD_LIBRARY_PATH environment variable to csql library path
-	$export LD_LIBRARY_PATH=$CSQL_INSTALL_ROOT/lib:$LD_LIBRARY_PATH
+1. Set the necessary enviroment variables using the setup script
+   under the csql root directory
+        $. ./setupenv.ksh
 
-3. Set the CLASSPATH environment variable to csql jdbc jar 
-	$export CLASSPATH=.:$CLASSPATH:$CSQL_INSTALL_ROOT/lib/CSqlJdbcDriver.jar
-4. Run the class file created by make
+2. Run the class file created by make
 	$java jdbcexample
 
 Note: For running gateway example , makesure that you configure csql.conf and csqltable.conf with appropriate values. Add 1:t1 in the csqltable.conf and create table t1 in MySQL using isql tool as follows

@@ -17,14 +17,6 @@ int main()
     stmt->free();
     printf("Table t1 created\n");
 
-    strcpy(statement, "CREATE INDEX t1idx on t1 (f1);");
-    rv = stmt->prepare(statement);
-    if (rv != OK) {delete stmt; delete con; return -1; }
-    rv = stmt->execute(rows);
-    if (rv != OK) {delete stmt; delete con; return -1; }
-    stmt->free();
-    printf("Index created on t1(f1) \n");
-
     strcpy(statement, "INSERT INTO t1 (f1, f2) VALUES (?, ?);");
     int id1 =10;
     char name[20];
