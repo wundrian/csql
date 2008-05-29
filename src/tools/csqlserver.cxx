@@ -23,7 +23,8 @@
 #include<CacheTableLoader.h>
 char* version = "csql-linux-i686-1.2Beta";
 int srvStop =0;
-pid_t replpid;
+pid_t replpid=0;
+pid_t cachepid=0;
 static void sigTermHandler(int sig)
 {
     printf("Received signal %d\nStopping the server\n", sig);
@@ -114,7 +115,17 @@ DbRetVal logActiveProcs(Database *sysdb)
     sysdb->releaseProcessTableMutex(false);
     return OK;
 }
-
+void startCacheServer()
+{
+     printf("Starting Cache Recv Server\n");
+     char execName[1024];
+     sprintf(execName, "%s/bin/csqlcacheserver", os::getenv("CSQL_INSTALL_ROOT"));
+     printf("filename is %s\n", execName);
+     cachepid = os::createProcess(execName, "-s");
+     if (cachepid != -1)
+         printf("Cache Recv Server Started pid=%d\n", replpid);
+     return;
+}
 
 void printUsage()
 {
@@ -208,6 +219,7 @@ int main(int argc, char **argv)
             printf("Repl Server Started pid=%d\n", replpid);
         
     }
+    if (Conf::config.useCache() && Conf::config.useTwoWayCache()) startCacheServer();
 
     printf("Database server started\n");
 
@@ -222,9 +234,11 @@ int main(int argc, char **argv)
 
         //TODO::check repl server is alive, if not restart it
         
+        //TODO::if it fails to start 5 times, exit
+        if (cachepid !=0  && checkDead(cachepid)) startCacheServer();
+        
     }
-    //TODO::kill replication server process
-   
+    os::kill(cachepid, SIGTERM);
     logFine(logger, "Server Exiting");
     logActiveProcs(sysdb);
     printf("Server Exiting\n");

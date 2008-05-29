@@ -69,6 +69,7 @@ class SqlOdbcStatement: public AbsSqlStatement
     void setTimeParam(int paramPos, Time value);
     void setTimeStampParam(int paramPos, TimeStamp value);
     bool isSelect();
+    void getPrimaryKeyFieldName(char *tablename, char *pkfieldname);
 
     private:
     bool isPrepared;

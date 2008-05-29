@@ -82,6 +82,10 @@ int Config::storeKeyVal(char *key, char *value)
            { cVal.nwResponseTimeout = atoi(value);  }
     else if (strcasestr(key, "NETWORK_CONNECT_TIMEOUT") != NULL)
            { cVal.nwConnectTimeout = atoi(value);  }
+    else if (strcasestr(key, "ENABLE_BIDIRECTIONAL_CACHE") != NULL)
+           { cVal.isTwoWay = os::atobool(value);  }
+    else if (strcasestr(key, "CACHE_RECEIVER_WAIT_SECS") != NULL)
+           { cVal.cacheWaitSecs = atoi(value);  }
     else  return 1;
     return 0;
 }
@@ -272,6 +276,11 @@ int Config::validateValues()
         printError(ErrBadArg,  "NETWORK_CONNECT_TIMEOUT should be 0 to 60");
         return 1;
     }
+    if (cVal.cacheWaitSecs <1)
+    {
+        printError(ErrBadArg,  "CACHE_RECEIVER_WAIT_SECS should be >1");
+        return 1;
+    }
     return 0;
 }
 
@@ -340,6 +349,8 @@ void Config::print()
     printf(" useCache %d\n", useCache());
     printf(" getDSN %s\n", getDSN());
     printf(" getTableConfigFile %s\n", getTableConfigFile());
+    printf(" isTwoWayCache %d\n", useTwoWayCache());
+    printf(" getCacheWaitSecs %d\n", getCacheWaitSecs());
     //printf(" useReplication %d\n", useReplication());
     //printf(" getReplConfigFile %s\n", getReplConfigFile());
     //printf(" getMaxLogStoreSize %ld\n", getMaxLogStoreSize());

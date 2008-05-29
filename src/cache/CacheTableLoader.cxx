@@ -352,15 +352,20 @@ DbRetVal CacheTableLoader::refresh()
 DbRetVal CacheTableLoader::recoverAllCachedTables()
 {
     FILE *fp;
+    Connection conn;
+    DbRetVal rv = conn.open(userName, password);
+    //Note: if connection is not open, configuration veriables may be incorrect
+
     fp = fopen(Conf::config.getTableConfigFile(),"r");
     if( fp == NULL ) {
         printError(ErrSysInit, "cachetable.conf file does not exist");
 	return OK;
     }
+    conn.close();
     //TODO::take exclusive lock on database
     char tablename[IDENTIFIER_LENGTH];
     int mode;
-    DbRetVal rv = OK;
+    rv = OK;
     while(!feof(fp))
     {
         fscanf(fp, "%d:%s\n", &mode, tablename);
@@ -368,6 +373,7 @@ DbRetVal CacheTableLoader::recoverAllCachedTables()
             continue;
         printDebug(DM_Gateway, "Recovering Table from target db: %s\n", tablename);
         setTable(tablename);
+        printf("Recovering table %s\n", tablename);
         rv = load();
         if (rv != OK) return rv;
     }

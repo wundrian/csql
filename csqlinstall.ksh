@@ -42,7 +42,7 @@ cd ${install_dir}/include
 #rm Globals.h Index.h Lock.h PredicateImpl.h
 #rm Process.h SessionImpl.h TableImpl.h Transaction.h UserManagerImpl.h 
 cd ${install_dir}/bin
-rm csqlcacheserver  csqlreplserver  repltable
+rm csqlreplserver  repltable
 
 cp ${root_dir}/README.INSTALL ${install_dir}/README
 cp ${root_dir}/Doxyfile ${install_dir}

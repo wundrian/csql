@@ -15,6 +15,7 @@
   ***************************************************************************/
 #include <AbsSqlConnection.h>
 #include <AbsSqlStatement.h>
+#include <SqlOdbcStatement.h>
 #include <SqlFactory.h>
 #include <CSql.h>
 
@@ -68,11 +69,20 @@ int main(int argc, char **argv)
         printf("Cache is set to OFF in csql.conf file\n");
         return 1;
     } 
+    AbsSqlStatement *stmt = SqlFactory::createStatement(CSqlAdapter);
+    stmt->setConnection(targetconn);
+    rv = stmt->prepare("create table csql_log_int(tablename char(64), pkid int, operation int, id int not null unique auto_increment)engine='innodb';");
+    targetconn->beginTrans();
+    int rows=0;
+    stmt->execute(rows);
+    targetconn->commit();
+    stmt->free();
+    delete stmt;
 
     printf("Cache server started\n");
     int ret = 0;
     struct timeval timeout, tval;
-    timeout.tv_sec = 5; //TODO::should be an csql.conf parameter
+    timeout.tv_sec = Conf::config.getCacheWaitSecs();
     timeout.tv_usec = 0;
     
     while(!srvStop)
@@ -82,7 +92,6 @@ int main(int argc, char **argv)
         ret = os::select(0, NULL, 0, 0, &tval);
         printf("Getting the updates\n");
         ret = getRecordsFromTargetDb(1);       
-        printf("Return value is %d\n", ret);
         if (ret !=0) srvStop = 1;
         //ret = getRecordsFromTargetDb(2);       
         if (ret !=0) srvStop = 1;
@@ -123,6 +132,11 @@ int getRecordsFromTargetDb(int mode)
       if (rv != OK) 
       {
           printError(ErrSysInit, "Unable to execute stmt in target db");
+          targetconn->rollback();
+          stmt->free();
+          delstmt->free();
+          delete stmt;
+          delete delstmt;
           return 1;
       }
       if (stmt->fetch() != NULL) {
@@ -132,15 +146,16 @@ int getRecordsFromTargetDb(int mode)
           if (table == NULL)
           {
               printError(ErrSysInit, "Table %s not exist in csql", tablename);
+              targetconn->rollback();
+              stmt->free();
+              delstmt->free();
+              delete stmt;
+              delete delstmt;
               break;
           }
-          if (op == 3) //DELETE
-          {
-              ret = remove(table, pkid);
-          }else if (op == 2)// UPDATE
+          if (op == 2)//DELETE
           {
               ret = remove(table,pkid);
-              ret = insert(table, pkid);
           }
           else //INSERT
           {
@@ -152,11 +167,18 @@ int getRecordsFromTargetDb(int mode)
           //Remove record from csql_log_XXX table
           delstmt->setIntParam(1, id);
           rv = delstmt->execute(rows);
-          if (rv != OK) printf("log record not deleted from the target db %d\n", rv);
+          if (rv != OK) 
+          {
+              printf("log record not deleted from the target db %d\n", rv);
+              targetconn->rollback();
+              stmt->free();
+              delstmt->free();
+              delete stmt;
+              delete delstmt;
+          }
           
           rv = targetconn->commit();
           //create table csql_log_int(tablename char(64), pkid int, op int, id int not null unique auto_increment);
-          //insert ino csql_log_int(tablename, pkid, op) values ('t1', 100, 1);
      }
      else {
          stmt->close();
@@ -164,14 +186,21 @@ int getRecordsFromTargetDb(int mode)
      }
      stmt->close();
    }
+   stmt->free();
+   delstmt->free();
+   delete stmt;
+   delete delstmt;
    return 0;
 }
 int insert(Table *table, int pkid)
 {
     AbsSqlStatement *stmt = SqlFactory::createStatement(CSqlAdapter);
     stmt->setConnection(targetconn);
+    SqlOdbcStatement *ostmt = (SqlOdbcStatement*) stmt;
+    char pkfieldname[128];
+    ostmt->getPrimaryKeyFieldName(table->getName(), pkfieldname);
     char sbuf[1024];
-    sprintf(sbuf, "SELECT * FROM %s where f1 = %d;", table->getName(), pkid);
+    sprintf(sbuf, "SELECT * FROM %s where %s = %d;", table->getName(), pkfieldname, pkid);
     //TODO::get the primary key field name from the table interface. need to implement it
     DbRetVal rv = stmt->prepare(sbuf);
     if (rv != OK) return 1;
@@ -180,13 +209,16 @@ int insert(Table *table, int pkid)
     ListIterator fNameIter = fNameList.getIterator();
     FieldInfo *info = new FieldInfo();
     int fcount =1; void *valBuf; int fieldsize=0;
+    void *buf[128];//TODO:resticts to support only 128 fields in table
     Identifier *elem = NULL;
     while (fNameIter.hasElement()) {
         elem = (Identifier*) fNameIter.nextElement();
         table->getFieldInfo((const char*)elem->name, info);
         valBuf = AllDataType::alloc(info->type, info->length);
+        buf[fcount] = valBuf;
         table->bindFld(elem->name, valBuf);
         stmt->bindField(fcount++, valBuf);
+        
     }
     delete info;
     int rows=0;
@@ -197,23 +229,38 @@ int insert(Table *table, int pkid)
         table->insertTuple();
         //Note:insert may fail if the record is inserted from this cache
     }
+    for (int i=1; i < fcount; i++) {
+        free(buf[i]);
+    }
+    stmt->free();
+    delete stmt;
     conn.commit();      
     return 0;
 }
 int remove(Table *table, int pkid)
 {
     DbRetVal rv = OK;
+    AbsSqlStatement *stmt = SqlFactory::createStatement(CSqlAdapter);
+    stmt->setConnection(targetconn);
+    SqlOdbcStatement *ostmt = (SqlOdbcStatement*) stmt;
+    char pkfieldname[128];
+    ostmt->getPrimaryKeyFieldName(table->getName(), pkfieldname);
+    delete stmt;
     Condition p1;
-    //TODO::get the primary key field name from the table interface. need to implement it
-    p1.setTerm("f1", OpEquals, &pkid);
+    p1.setTerm(pkfieldname, OpEquals, &pkid);
     table->setCondition(&p1);
     rv = conn.startTransaction();
     if (rv != OK) return 1;
     rv = table->execute();
-    if (rv != OK)  { conn.rollback(); return 1;}
+    if (rv != OK)  
+    {
+        table->setCondition(NULL); 
+        conn.rollback();
+        return 1;
+    }
     if (table->fetch() != NULL)
-    rv = table->deleteTuple();
-    //Note:Delete may fail if the record is deleted from this cache
+        rv = table->deleteTuple();
+        //Note:Delete may fail if the record is deleted from this cache
     table->setCondition(NULL);
     rv = conn.commit();
     if (rv != OK) return 1;

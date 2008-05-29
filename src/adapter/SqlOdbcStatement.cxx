@@ -519,3 +519,19 @@ void SqlOdbcStatement::setTimeStampParam(int paramPos, TimeStamp value)
     //*(TimeStamp*)(bindField->value) = value;
     AllDataType::convertToString(bindField->value, &value, typeTimeStamp);
 }
+
+void SqlOdbcStatement::getPrimaryKeyFieldName(char *tablename, char *pkfieldname)
+{
+    if (pkfieldname == NULL) return;
+    SqlOdbcConnection *conn = (SqlOdbcConnection*)con;
+    int retValue=SQLAllocHandle (SQL_HANDLE_STMT, conn->dbHdl, &hstmt);
+    if (retValue) return ;
+    char columnName[128];
+    SQLINTEGER cbData;     // Output length of data
+    SQLPrimaryKeys(hstmt, NULL, 0, NULL, 0, (SQLCHAR*) tablename, SQL_NTS);
+    SQLFetch(hstmt);
+    SQLGetData(hstmt, 4, SQL_C_CHAR, (SQLCHAR*) columnName, sizeof(columnName),&cbData);
+    strcpy(pkfieldname, columnName);
+    SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
+    return;
+}

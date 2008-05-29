@@ -38,6 +38,8 @@ class ConfigValues
     bool isCache;
     char dsn[IDENTIFIER_LENGTH];
     char tableConfigFile[MAX_FILE_PATH_LEN];
+    bool isTwoWay;
+    int  cacheWaitSecs;
 
     bool isReplication;
     char replConfigFile[MAX_FILE_PATH_LEN];
@@ -74,6 +76,8 @@ class ConfigValues
         networkID=-1;
         nwResponseTimeout=3;
         nwConnectTimeout=5;
+        isTwoWay=true;
+        cacheWaitSecs =10;
     }
 };
 
@@ -112,6 +116,8 @@ class Config
     inline int getCacheNetworkID() { return cVal.cacheNetworkID; }
     inline int getNetworkResponseTimeout() { return cVal.nwResponseTimeout; }
     inline int getNetworkConnectTimeout() { return cVal.nwConnectTimeout; }
+    inline bool useTwoWayCache() { return cVal.isTwoWay; }
+    inline int getCacheWaitSecs() { return cVal.cacheWaitSecs; }
 };
 
 class Conf
