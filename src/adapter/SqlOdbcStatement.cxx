@@ -60,14 +60,14 @@ DbRetVal SqlOdbcStatement::prepare(char *stmtstr)
         strncpy(bindProjField->fName, (char*)colName, IDENTIFIER_LENGTH);
         bindProjField->fName[IDENTIFIER_LENGTH] = '\0';
         bindProjField->type = AllDataType::convertFromSQLType(colType);
-        bindProjField->length = colLength;
+        bindProjField->length = colLength +1;
         bindProjField->value = NULL;
         bindProjField->targetvalue = NULL;
         int fieldsize =0;
         switch(bindProjField->type)
         {
             case typeString:
-                fieldsize = colLength;
+                fieldsize = colLength+1;
                 bindProjField->targetvalue = malloc(fieldsize); 
                 break;
             case typeDate:
