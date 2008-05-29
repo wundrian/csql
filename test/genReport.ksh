@@ -20,15 +20,15 @@ echo "           MODULE                       TESTPASSED     TESTFAILED   "
 echo "===================================================================="
 while read MODULE
 do
-    echo $MODULE | grep "#" >/dev/null
+    echo $MODULE | grep "#" >/dev/null 2>/dev/null
     if [ $? -eq 0 ] 
     then
        continue
     fi
     TEST_RUN_DIR=${TEST_RUN_ROOT}/${MODULE}
     TEST_LOG=$TEST_RUN_DIR/testlog
-    TESTPASSED=`grep PASSED $TEST_LOG | wc -l 2>/dev/null`
-    TESTFAILED=`grep FAILED $TEST_LOG | wc -l 2>/dev/null`
+    TESTPASSED=`grep PASSED $TEST_LOG | wc -l  2>/dev/null`
+    TESTFAILED=`grep FAILED $TEST_LOG | wc -l  2>/dev/null`
     printf "%25s\t\t %5d\t\t %5d\t\t\n" $MODULE $TESTPASSED $TESTFAILED
     (( TOTALPASSED = TOTALPASSED + TESTPASSED ))
     (( TOTALFAILED = TOTALFAILED + TESTFAILED ))

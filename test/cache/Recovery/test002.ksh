@@ -50,7 +50,7 @@ then
     exit 5;
 fi
 
-kill $pid > /dev/null 2>&1
+kill -9 $pid > /dev/null 2>&1
 if [ $? -ne 0 ]
 then
     exit 6;

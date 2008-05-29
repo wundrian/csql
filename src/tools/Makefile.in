@@ -59,9 +59,12 @@ cachetable_DEPENDENCIES = $(top_builddir)/src/cache/libcacheload.la \
 	$(top_builddir)/src/adapter/libcsqlodbcadapter.la
 am_cacheverify_OBJECTS = cacheverify.$(OBJEXT)
 cacheverify_OBJECTS = $(am_cacheverify_OBJECTS)
-cacheverify_DEPENDENCIES = $(top_builddir)/src/cache/libcacheload.la \
-	$(top_builddir)/src/server/libcsql.la \
-	$(top_builddir)/src/adapter/libcsqlodbcadapter.la
+cacheverify_DEPENDENCIES = $(top_builddir)/src/sql/libcsqlsql.la \
+	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la \
+	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+	$(top_builddir)/src/server/libcsql.la
 am_catalog_OBJECTS = catalog.$(OBJEXT)
 catalog_OBJECTS = $(am_catalog_OBJECTS)
 catalog_DEPENDENCIES = $(top_builddir)/src/server/libcsql.la
@@ -248,8 +251,12 @@ cachetable_LDADD = $(top_builddir)/src/cache/libcacheload.la \
 
 cachetable_LDFLAGS = -lcrypt -lodbc
 cachetable_SOURCES = cachetable.cxx
-cacheverify_LDADD = $(top_builddir)/src/cache/libcacheload.la \
-	$(top_builddir)/src/server/libcsql.la $(top_builddir)/src/adapter/libcsqlodbcadapter.la 
+cacheverify_LDADD = $(top_builddir)/src/sql/libcsqlsql.la \
+	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la \
+	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+	$(top_builddir)/src/server/libcsql.la -lrt -lpthread -lcrypt
 
 cacheverify_LDFLAGS = -lcrypt -lodbc
 cacheverify_SOURCES = cacheverify.cxx
@@ -597,6 +604,7 @@ uninstall-am: uninstall-binPROGRAMS uninstall-info-am
 	pdf pdf-am ps ps-am tags uninstall uninstall-am \
 	uninstall-binPROGRAMS uninstall-info-am
 
+	$(top_builddir)/src/server/libcsql.la $(top_builddir)/src/adapter/libcsqlodbcadapter.la 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

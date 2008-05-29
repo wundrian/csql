@@ -13,7 +13,12 @@ cachetable_LDADD = $(top_builddir)/src/cache/libcacheload.la \
 cachetable_LDFLAGS = -lcrypt -lodbc
 cachetable_SOURCES = cachetable.cxx
 
-cacheverify_LDADD = $(top_builddir)/src/cache/libcacheload.la \
+cacheverify_LDADD = $(top_builddir)/src/sql/libcsqlsql.la \
+	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la \
+	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+	$(top_builddir)/src/server/libcsql.la -lrt -lpthread -lcrypt
 	$(top_builddir)/src/server/libcsql.la $(top_builddir)/src/adapter/libcsqlodbcadapter.la 
 cacheverify_LDFLAGS = -lcrypt -lodbc
 cacheverify_SOURCES = cacheverify.cxx

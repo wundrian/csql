@@ -1,5 +1,4 @@
 #!/bin/sh
-
 #Run this test only under csql/test or on this directory.
 #Otherwise, it may fail
 executable=${PWD}/dbapi/Table/insert
@@ -14,10 +13,6 @@ export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
 
 $CSQL_INSTALL_ROOT/bin/csqlserver >/dev/null 2>&1 &
 pid=$!
-if [ $? -ne 0 ]
-then
-    exit 1;
-fi
 sleep 5
 
 $REL_PATH/insert
@@ -26,7 +21,7 @@ then
     exit 2;
 fi
 
-kill $pid > /dev/null 2>&1
+kill -9 $pid 
 if [ $? -ne 0 ]
 then
     exit 3;

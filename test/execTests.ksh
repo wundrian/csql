@@ -10,12 +10,12 @@ if [ $CMD_PID != "" ]
 then
     HANG_FLAG=Yes
     echo "HANG_FLAG is set here"
-    kill $CMD_PID 2>/dev/null
+    kill -9 $CMD_PID 2>/dev/null
 fi
 }
 
 ##################### Test Executor main starts here ##################
-
+echo MY pid is $$
 #TEST_RUN_DIR should be set before running this
 if [ ! "$TEST_RUN_ROOT" ]
 then
@@ -47,7 +47,7 @@ do
 if [ "$MODULE" = "system/lock" ]
 then
    echo "Restarting the server for lock module"
-   kill ${SERVER_PID}
+   kill -9 ${SERVER_PID}
    echo "csqlserver killed PID=${SERVER_PID}" >>$TEST_LOG
    $CSQL_INSTALL_ROOT/bin/csqlserver >${SERVOUT} &
    SERVER_PID=$!
@@ -116,7 +116,7 @@ echo "Test Ended at : `date` "
 echo "Test Ended at : `date` " >>$TEST_LOG
 unset CMD_PID
 trap "" USR1
-kill ${SLEEP_PID} 2>/dev/null
+kill -9 ${SLEEP_PID} 2>/dev/null
 
 if [ "$HANG_FLAG" = "Yes" ]
 then
@@ -125,7 +125,7 @@ then
    #TODO::Reinitalize the database, as it may be in corrupted state.
    CURTIME=`date +%s`
    mv ${SERVOUT} ${SERVOUT}.${SERVER_PID}.${CURTIME}
-   kill ${SERVER_PID}
+   kill -9 ${SERVER_PID}
    echo "csqlserver killed PID=${SERVER_PID}" >>$TEST_LOG
    $CSQL_INSTALL_ROOT/bin/csqlserver >${SERVOUT} &
    SERVER_PID=$!
@@ -162,7 +162,7 @@ then
            CURTIME=`date +%s`
            mv ${SERVOUT} ${SERVOUT}.${SERVER_PID}.${CURTIME}
            echo "Refer ${SERVOUT}.${SERVER_PID}.${CURTIME} file for server log" >>$TEST_LOG
-           kill ${SERVER_PID}
+           kill -9 ${SERVER_PID}
            echo "csqlserver killed PID=${SERVER_PID}" >>${TEST_LOG}
            $CSQL_INSTALL_ROOT/bin/csqlserver >${SERVOUT} &
            SERVER_PID=$!
@@ -186,19 +186,19 @@ else
    CURTIME=`date +%s`
    mv ${SERVOUT} ${SERVOUT}.${SERVER_PID}.${CURTIME}
    echo "Refer ${SERVOUT}.${SERVER_PID}.${CURTIME} file for server log" >>$TEST_LOG
-   kill ${SERVER_PID}
+   kill -9 ${SERVER_PID}
    echo "csqlserver killed PID=${SERVER_PID}" >>$TEST_LOG
    $CSQL_INSTALL_ROOT/bin/csqlserver >${SERVOUT} 2>${SERVOUT} &
    SERVER_PID=$!
    echo "csqlserver restarted with PID=${SERVER_PID}" >>${TEST_LOG}
    echo "Restarting Server"
-   sleep 5
+   sleep 5 
 fi
 
 done
 done < TestModules
 
-kill ${SERVER_PID}
+kill -9 ${SERVER_PID}
 echo "csqlserver killed PID=${SERVER_PID}" >>${TEST_LOG}
 
 exit 0

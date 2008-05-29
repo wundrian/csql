@@ -8,6 +8,7 @@
  */
 
 #include<AbsSqlStatement.h>
+#include<SqlFactory.h>
 #include<CSql.h>
 #include<Info.h>
 int main()
@@ -17,8 +18,8 @@ int main()
   rv = con->connect("root","manager");
   if(rv!=OK)return 1;
 
-  SqlStatement *stmt = new SqlStatement();
-  stmt->setSqlConnection(con);
+  AbsSqlStatement *stmt = SqlFactory :: createStatement(CSql);
+  stmt->setConnection(con);
   char statement[200];
   strcpy(statement,"CREATE TABLE T1(F1 INT,F2 SMALLINT,F3 CHAR(30),F4 FLOAT,F5 FLOAT,F6 DATE,F7 TIME,F8 TIMESTAMP,F9 INT,F10 BIGINT);");
   
