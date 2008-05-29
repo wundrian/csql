@@ -123,7 +123,7 @@ void startCacheServer()
      printf("filename is %s\n", execName);
      cachepid = os::createProcess(execName, "-s");
      if (cachepid != -1)
-         printf("Cache Recv Server Started pid=%d\n", replpid);
+         printf("Cache Recv Server Started pid=%d\n", cachepid);
      return;
 }
 
