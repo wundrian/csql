@@ -137,7 +137,7 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
  
             printDebug(DM_Gateway, "Describe Column %s %d %d \n", colName, colType, colLength);
             icol++;
-           tabDef.addField((char*) colName, AllDataType::convertFromSQLType(colType), colLength);
+           tabDef.addField((char*) colName, AllDataType::convertFromSQLType(colType), colLength +1);
         }
         rv = dbMgr->createTable(tableName, tabDef);
         if (rv != OK) 
