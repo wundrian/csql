@@ -72,7 +72,7 @@ int main(int argc, char **argv)
     printf("Cache server started\n");
     int ret = 0;
     struct timeval timeout, tval;
-    timeout.tv_sec = 30; //TODO::should be an csql.conf parameter
+    timeout.tv_sec = 5; //TODO::should be an csql.conf parameter
     timeout.tv_usec = 0;
     
     while(!srvStop)
@@ -151,12 +151,16 @@ int getRecordsFromTargetDb(int mode)
           rv = targetconn->beginTrans();
           //Remove record from csql_log_XXX table
           delstmt->setIntParam(1, id);
-          delstmt->execute(rows);
-          if (rows != 1) printf("log record not deleted from the target db\n");
+          rv = delstmt->execute(rows);
+          if (rv != OK) printf("log record not deleted from the target db %d\n", rv);
           
           rv = targetconn->commit();
           //create table csql_log_int(tablename char(64), pkid int, op int, id int not null unique auto_increment);
           //insert ino csql_log_int(tablename, pkid, op) values ('t1', 100, 1);
+     }
+     else {
+         stmt->close();
+         break;
      }
      stmt->close();
    }
@@ -191,6 +195,7 @@ int insert(Table *table, int pkid)
     conn.startTransaction();
     if (stmt->fetch() != NULL) {
         table->insertTuple();
+        //Note:insert may fail if the record is inserted from this cache
     }
     conn.commit();      
     return 0;
@@ -207,8 +212,8 @@ int remove(Table *table, int pkid)
     rv = table->execute();
     if (rv != OK)  { conn.rollback(); return 1;}
     if (table->fetch() != NULL)
-        rv = table->deleteTuple();
-    if (rv != OK)  { conn.rollback(); return 1;}
+    rv = table->deleteTuple();
+    //Note:Delete may fail if the record is deleted from this cache
     table->setCondition(NULL);
     rv = conn.commit();
     if (rv != OK) return 1;
