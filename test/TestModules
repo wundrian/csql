@@ -25,3 +25,6 @@ odbc/Parameters
 odbc/Select
 odbc/Transaction
 cache/Recovery
+adapter/Connect
+adapter/Parameter
+adapter/Select
