@@ -28,6 +28,7 @@ pid_t cachepid=0;
 static void sigTermHandler(int sig)
 {
     printf("Received signal %d\nStopping the server\n", sig);
+    os::kill(cachepid, SIGTERM);
     srvStop = 1;
 }
 
