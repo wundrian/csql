@@ -21,7 +21,7 @@ INCL= -I$(CSQL_INSTALL_ROOT)/include
 
 LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlodbc 
 
-TARGETS =  ODBCman1 ODBCman2 ODBCman3 ODBCman4 ODBCman5 ODBCman6  
+TARGETS =  ODBCman1 ODBCman2 ODBCman3 ODBCman4 ODBCman5 ODBCman6  odbcexample
 
 ifeq ($(PlatForm), supported)
 all: $(TARGETS)
@@ -42,6 +42,8 @@ ODBCman4:ODBCman4.o
 ODBCman5:ODBCman5.o
 	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) $(SYSLIBS)
 ODBCman6:ODBCman6.o
+	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) $(SYSLIBS)
+odbcexample:odbcexample.o
 	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) $(SYSLIBS)
 
 clean:
