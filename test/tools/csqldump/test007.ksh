@@ -37,5 +37,6 @@ then
 fi
 
 kill -9 $pid > /dev/null 2>&1
+ipcrm -M 1234 -M 4321
 
 exit 0;

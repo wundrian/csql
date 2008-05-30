@@ -35,10 +35,6 @@ do
 done >> /tmp/csql/csqltable.conf
 
 $CSQL_INSTALL_ROOT/bin/csqlserver -c >/dev/null 2>&1 &
-if [ $? -ne 0 ]
-then
-    exit 4;
-fi
 pid=$!
 sleep 5
 
@@ -55,6 +51,7 @@ if [ $? -ne 0 ]
 then
     exit 6;
 fi
+ipcrm -M 1199 -M 2277
 
 isql myodbc3 < $REL_PATH/drop.sql > /dev/null 2>&1
 if [ $? -ne 0 ]

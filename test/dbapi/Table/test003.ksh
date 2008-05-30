@@ -26,5 +26,6 @@ if [ $? -ne 0 ]
 then
     exit 3;
 fi
+ipcrm -M 7117 -M 1771
 
 exit 0;
