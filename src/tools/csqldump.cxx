@@ -24,6 +24,7 @@ void printUsage()
    printf("Usage: csqldump [-u username] [-p passwd] [-n noOfStmtsPerCommit] [-T tableName]\n");
    printf("       n -> number of statements per commit\n");
    printf("            Default value is 100. If system db size is big, then it shall be increased.\n");
+   printf("       T -> Will dump only the table specified with this option.\n");
    return;
   
 }
