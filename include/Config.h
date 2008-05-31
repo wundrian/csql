@@ -27,6 +27,7 @@ class ConfigValues
     int sysDbKey;
     int userDbKey;
     char logFile[MAX_FILE_PATH_LEN];
+    char dbFile[MAX_FILE_PATH_LEN];
     long mapAddr;
     int mutexSecs;
     int mutexUSecs;
@@ -59,6 +60,7 @@ class ConfigValues
         sysDbKey = 2222;
         userDbKey = 5555;
         strcpy(logFile, "/tmp/log/log.out");
+        strcpy(dbFile, "/tmp/csql/csql.db");
         mapAddr=400000000;
         mutexSecs=0;
         mutexUSecs=10;
@@ -99,6 +101,7 @@ class Config
     inline int getSysDbKey() { return cVal.sysDbKey; }
     inline int getUserDbKey() { return cVal.userDbKey; }
     inline char* getLogFile() { return cVal.logFile; }
+    inline char* getDbFile() { return cVal.dbFile; }
     inline long getMapAddress() { return cVal.mapAddr; }
     inline int getMutexSecs() { return cVal.mutexSecs; }
     inline int getMutexUSecs() { return cVal.mutexUSecs; }

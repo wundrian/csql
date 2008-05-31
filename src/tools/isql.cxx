@@ -30,6 +30,7 @@ FILE *fp;
 AbsSqlConnection *conn;
 AbsSqlStatement *stmt;
 
+bool gateway=false, silent=false;
 bool autocommitmode = true;
 IsolationLevel isoLevel = READ_COMMITTED;
 void printHelp();
@@ -53,8 +54,7 @@ int main(int argc, char **argv)
     char filename[512];
     filename [0] ='\0';
     int c = 0, opt=0;
-    bool gateway=false;
-    while ((c = getopt(argc, argv, "u:p:s:g?")) != EOF) 
+    while ((c = getopt(argc, argv, "u:p:s:gS?")) != EOF) 
     {
         switch (c)
         {
@@ -62,6 +62,7 @@ int main(int argc, char **argv)
             case 'p' : strcpy(password , argv[optind - 1]); break;
             case 's' : strcpy(filename , argv[optind - 1]); break;
             case '?' : { opt = 1; break; } //print help 
+            case 'S' : { silent = true; break; } //silent 
             case 'g' : { gateway = true; break; } //print help 
             default: printf("Wrong args\n"); exit(1);
 
@@ -141,13 +142,13 @@ bool handleTransaction(char *st)
     else if (strncasecmp (st, "SET AUTOCOMMIT ON", 17) == 0)
     {
         autocommitmode = true;
-        printf("AUTOCOMMIT Mode is set to ON\n");
+        if (!silent) printf("AUTOCOMMIT Mode is set to ON\n");
         return true;
     }
     else if (strncasecmp (st, "SET AUTOCOMMIT OFF", 18) == 0)
     {
         autocommitmode = false;
-        printf("AUTOCOMMIT Mode is set to OFF\n");
+        if (!silent) printf("AUTOCOMMIT Mode is set to OFF\n");
         return true;
     }
     else if (strncasecmp (st, "SET ISOLATION LEVEL UNCOMMITTED", 31) == 0)
@@ -317,11 +318,11 @@ bool getInput(bool fromFile)
     }
     if (stmtType == OTHER)
     {
-        printf("Statement Executed: Rows Affected = %d\n", rows);
+        if (!silent) printf("Statement Executed: Rows Affected = %d\n", rows);
     }
     else if (stmtType == DDL)
     {
-        printf("Statement Executed\n");
+        if (!silent) printf("Statement Executed\n");
     }
     else
     {

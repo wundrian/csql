@@ -48,6 +48,8 @@ int Config::storeKeyVal(char *key, char *value)
            { cVal.userDbKey = atoi(value);  }
     else if (strcasestr(key, "LOG_FILE") != NULL)
            { strcpy(cVal.logFile , value);  }
+    else if (strcasestr(key, "DATABASE_FILE") != NULL)
+           { strcpy(cVal.dbFile , value);  }
     else if (strcasestr(key, "MAP_ADDRESS") != NULL)
            { cVal.mapAddr = atol(value);  }
     else if (strcasestr(key, "MUTEX_TIMEOUT_SECS") != NULL)
@@ -149,7 +151,11 @@ int Config::validateValues()
         printError(ErrBadArg,  "LOG_FILE is set to NULL");
         return 1;
     }
-    //TODO::Check for the existence of the log file
+    if (0 == strcmp(cVal.dbFile,""))
+    {
+        printError(ErrBadArg,  "LOG_FILE is set to NULL");
+        return 1;
+    }
     if (cVal.mapAddr < 400000000 || cVal.mapAddr > 2000000000)
     {
         printError(ErrBadArg,  "MAP_ADDRESS should be >= 400000000 and <= 2000000000");
@@ -339,6 +345,7 @@ void Config::print()
     printf(" getSysDbKey %d\n", getSysDbKey());
     printf(" getUserDbKey %d\n", getUserDbKey());
     printf(" getLogFile %s\n", getLogFile());
+    printf(" getDatabaseFile %s\n", getDbFile());
     printf(" getMapAddress %ld\n", getMapAddress());
     printf(" getMutexSecs %d\n", getMutexSecs());
     printf(" getMutexUSecs %d\n", getMutexUSecs());

@@ -13,6 +13,7 @@
  *   GNU General Public License for more details.                          *
  *                                                                         *
   ***************************************************************************/
+#include <math.h>
 #include <os.h>
 #include <Debug.h>
 

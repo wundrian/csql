@@ -25,10 +25,10 @@ char* version = "csql-linux-i686-1.2Beta";
 int srvStop =0;
 pid_t replpid=0;
 pid_t cachepid=0;
+void dumpData();
 static void sigTermHandler(int sig)
 {
     printf("Received signal %d\nStopping the server\n", sig);
-    os::kill(cachepid, SIGTERM);
     srvStop = 1;
 }
 
@@ -191,6 +191,16 @@ int main(int argc, char **argv)
     timeout.tv_sec = 5;
     timeout.tv_usec = 0;
     Database* sysdb = session.getSystemDatabase();
+    if (FILE *file = fopen(Conf::config.getDbFile(), "r"))
+    {
+        fclose(file);
+        char cmd[1024];
+        sprintf(cmd, "csql -S -s %s",Conf::config.getDbFile()); 
+        int ret = system(cmd);
+        if (ret != 0) { 
+            printf("Tables cannot be recovered. DB file corrupted\n");
+        }
+    }
     if (opt == 1) {
         if (Conf::config.useCache()) {
             printf("Database server recovering cached tables...\n");
@@ -240,6 +250,7 @@ int main(int argc, char **argv)
         
     }
     os::kill(cachepid, SIGTERM);
+    dumpData();
     logFine(logger, "Server Exiting");
     logActiveProcs(sysdb);
     printf("Server Exiting\n");
@@ -247,4 +258,14 @@ int main(int argc, char **argv)
     logger.stopLogger();
     session.destroySystemDatabase();
     return 0;
+}
+void dumpData()
+{
+    char cmd[1024];
+    sprintf(cmd, "csqldump >%s",Conf::config.getDbFile()); 
+    int ret = system(cmd);
+    if (ret != 0) { 
+        printf("Table cannot be written. Recovery will fail\n");
+    }
+    return;
 }
