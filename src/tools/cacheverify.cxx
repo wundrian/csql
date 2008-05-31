@@ -146,7 +146,7 @@ DbRetVal verifyPrimKeyFldVal(const char *tblName)
     int trgtDbVal = 0;
     int rows = 0;
     List valListInTrgtDb;
-    sprintf(statement, "select f1 from %s;", tblName);
+    sprintf(statement, "select %s from %s;", fieldName, tblName);
     rv = con->beginTrans();
     rv = stmt->prepare(statement);
     if(rv != OK) { 
