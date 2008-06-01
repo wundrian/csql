@@ -29,6 +29,24 @@ void printUsage()
   
 }
 
+bool isCached(char *tblName)
+{
+    FILE *fp = fopen(Conf::config.getTableConfigFile(),"r");
+    if( fp == NULL ) {
+        printError(ErrSysInit, "csqltable.conf file does not exist");
+        return ErrSysInit;
+    }
+    char ctablename[IDENTIFIER_LENGTH];
+    int mode;
+    bool isCached=false;
+    while(!feof(fp))
+    {
+        fscanf(fp, "%d:%s\n", &mode, ctablename);
+        if (strcmp (ctablename, tblName) == 0) { isCached=true; break; }
+    }
+    fclose(fp);
+    return isCached;
+}
 int main(int argc, char **argv)
 {
     char username[IDENTIFIER_LENGTH];
@@ -72,6 +90,7 @@ int main(int argc, char **argv)
     DbRetVal rv = conn.open(username, password);
     if (rv != OK) return 1;
     DatabaseManagerImpl *dbMgr = (DatabaseManagerImpl*) conn.getDatabaseManager();
+    
     if (dbMgr == NULL) { printf("Auth failed\n"); return 2;}
     if (opt == 0 || opt == 1) opt = 5;
     if (opt == 5) {
@@ -82,6 +101,7 @@ int main(int argc, char **argv)
         while (iter.hasElement())
         {
             elem = (Identifier*) iter.nextElement();
+            if (isCached(elem->name)) continue;
             printf("CREATE TABLE %s (", elem->name);
             Table *table = dbMgr->openTable(elem->name);
 	        FieldInfo *info = new FieldInfo();
@@ -111,8 +131,9 @@ int main(int argc, char **argv)
        char sqlstring[1024];
        bool flag=false;
        while (iter.hasElement()) {
-           if (!flag) { printf("SET AUTOCOMMIT OFF;\n"); flag=true; } 
            elem = (Identifier*) iter.nextElement();
+           if (isCached(elem->name)) continue;
+           if (!flag) { printf("SET AUTOCOMMIT OFF;\n"); flag=true; } 
            sprintf(sqlstring, "SELECT * FROM %s;", elem->name);
            sqlconn->beginTrans();
            DbRetVal rv = stmt->prepare(sqlstring);
