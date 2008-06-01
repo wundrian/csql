@@ -24,6 +24,8 @@ INCL= -I$(CSQL_INSTALL_ROOT)/include
 LIBS= -L$(CSQL_INSTALL_ROOT)/lib -rdynamic -lcsql
 
 TARGETS = \
+        SQLGWTest \
+        SQLAdapterTest \
         SQLTest \
         DMLTest \
         DMLThroughput \
@@ -43,6 +45,10 @@ DMLTest: DMLTest.c
 DMLThroughput: DMLThroughput.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 SQLTest: SQLTest.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw $(SYSLIBS)
+SQLGWTest: SQLGWTest.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw $(SYSLIBS)
+SQLAdapterTest: SQLAdapterTest.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw $(SYSLIBS)
 DMLTestChar: DMLTestChar.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)

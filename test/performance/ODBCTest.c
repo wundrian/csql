@@ -296,7 +296,7 @@ SQLHSTMT hstmt;
 		   (SQLSMALLINT) strlen ("root"),
 		   (SQLCHAR *) "manager",
 		   (SQLSMALLINT) strlen (""));
-  
+ 
   SQLCHAR outstr[1024];
   SQLSMALLINT outstrlen;
 
@@ -304,7 +304,8 @@ SQLHSTMT hstmt;
   rc = SQLDriverConnect(hdbc, NULL, (SQLCHAR*)"DSN=myodbc3;", SQL_NTS,
 			 outstr, sizeof(outstr), &outstrlen,
 			 SQL_DRIVER_NOPROMPT);
-*/
+  */
+
   if (SQL_SUCCEEDED(rc)) {
     printf("Connected\n");
     //printf("Returned connection string was:\n\t%s\n", outstr);
