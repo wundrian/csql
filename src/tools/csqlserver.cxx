@@ -21,7 +21,7 @@
 #include<Transaction.h>
 #include<Lock.h>
 #include<CacheTableLoader.h>
-char* version = "csql-linux-i686-1.2Beta";
+char* version = "csql-linux-i686-2.0GA";
 int srvStop =0;
 pid_t replpid=0;
 pid_t cachepid=0;
