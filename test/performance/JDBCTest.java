@@ -8,10 +8,8 @@ public class JDBCTest
           Class.forName("csql.jdbc.JdbcSqlDriver");
           Connection con = DriverManager.getConnection("jdbc:csql", "root", "manager");
           Statement cStmt = con.createStatement();
-          cStmt.execute("CREATE TABLE T1 (f1 integer, f2 char (194));");
+          cStmt.execute("CREATE TABLE T1 (f1 integer, f2 char (194), primary key(f1));");
           System.out.println("Table t1 created");
-          cStmt.execute("CREATE INDEX IDX ON T1 (f1) PRIMARY;");
-          System.out.println("Primary Index created on T1 (f1) ");
           cStmt.close();
           con.commit();
 
