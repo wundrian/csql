@@ -1467,56 +1467,57 @@ void AllDataType::convertToTimeStamp( void* dest, void* src, DataType srcType )
     }
 }
 
-void AllDataType::printVal(void* src, DataType srcType, int length )
-{
+int AllDataType::printVal(void* src, DataType srcType, int length )
+{ 
+    int count = 0;
     switch(srcType)
     {
         case typeInt:
         {
-            printf ("%d", *(int *)src); 
+            count = printf ("%d", *(int *)src); 
             break;
         }
         case typeLong:
         {
-            printf ("%ld", *(long *)src);
+            count = printf ("%ld", *(long *)src);
             break;
         }
         case typeLongLong:
         {
-            printf ("%lld", *(long long *)src); 
+            count = printf ("%lld", *(long long *)src); 
             break;
         }
         case typeShort:
         {
-            printf("%hd", *(short *)src); 
+            count = printf("%hd", *(short *)src); 
             break;
         }
         case typeByteInt:
         {
-            printf("%hd", *(char *)src); 
+            count = printf("%hd", *(char *)src); 
             break;
         }
 
         case typeFloat:
         {
-            printf("%f", *(float *)src);
+            count = printf("%f", *(float *)src);
             break;
         }
         case typeDouble:
         {
-            printf("%lf", *(double *)src); 
+            count = printf("%lf", *(double *)src); 
             break;
         }
 
         case typeString:
         {
-            printf("%s", (char*)src);
+            count = printf("%s", (char*)src);
             break;
         }
         case typeDate:
         {
             Date* dt = (Date*)src;
-            printf("%d/%d/%d", dt->year(),
+            count = printf("%d/%d/%d", dt->year(),
                                   dt->month(), dt->dayOfMonth());
             break;
         }
@@ -1529,14 +1530,14 @@ void AllDataType::printVal(void* src, DataType srcType, int length )
         case typeTimeStamp:
         {
             TimeStamp* tm = (TimeStamp*)src;
-            printf("%d/%d/%d %d:%d:%d.%d", tm->year(),
+            count = printf("%d/%d/%d %d:%d:%d.%d", tm->year(),
                                 tm->month(), tm->dayOfMonth(), tm->hours(),
                                 tm->minutes(), tm->seconds(), 0 );
             break;
         }
         default: { printf("DataType not supported\n"); break; }
     }
-
+    return count;
 }
 
 
