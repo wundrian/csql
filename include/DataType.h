@@ -125,7 +125,7 @@ class AllDataType
 
     static void* alloc(DataType type, int length =0);
     static void strToValue(void *dest, char *src, DataType type, int length=0);
-    static void printVal(void *src, DataType type, int length);
+    static int printVal(void *src, DataType type, int length);
 
 
 };
