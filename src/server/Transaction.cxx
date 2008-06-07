@@ -24,11 +24,12 @@ DbRetVal Transaction::insertIntoHasList(Database *sysdb, LockHashNode *node)
 {
     //allocate lock node
     Chunk *chunk = sysdb->getSystemDatabaseChunk(TransHasTableId);
-    TransHasNode *hasNode = (TransHasNode*)chunk->allocate(sysdb);
+    DbRetVal rv = OK;
+    TransHasNode *hasNode = (TransHasNode*)chunk->allocate(sysdb, &rv);
     if (NULL == hasNode)
     {
-        printError(ErrNoMemory, "No memory to allocate Lock node");
-        return ErrNoMemory;
+        printError(rv, "Could not allocate Lock node");
+        return rv;
     }
     printDebug(DM_Transaction, "insertIntoHasList new TransHasNode created:%x",
                                                        hasNode);
@@ -104,8 +105,9 @@ bool Transaction::findInHasList(Database *sysdb, LockHashNode *node)
 DbRetVal Transaction::appendUndoLog(Database *sysdb, OperationType type,
                                                void *data, size_t size)
 {
-    UndoLogInfo *logInfo = createUndoLog(sysdb, type, data, size);
-    if (logInfo == NULL) return ErrNoMemory;
+    DbRetVal rv =OK;
+    UndoLogInfo *logInfo = createUndoLog(sysdb, type, data, size, &rv);
+    if (logInfo == NULL) return rv;
     os::memcpy((char*)logInfo + sizeof(UndoLogInfo), data, size);
     addAtBegin(logInfo);
     printDebug(DM_Transaction, "creating undo log and append %x optype:%d",
@@ -118,22 +120,23 @@ DbRetVal Transaction::appendUndoLog(Database *sysdb, OperationType type,
 DbRetVal Transaction::appendLogicalUndoLog(Database *sysdb, OperationType type, void *data,
                        size_t size, void* indexPtr)
 {
-    UndoLogInfo *logInfo = createUndoLog(sysdb, type, data, size);
-    if (logInfo == NULL) return ErrNoMemory;
+    DbRetVal rv = OK;
+    UndoLogInfo *logInfo = createUndoLog(sysdb, type, data, size, &rv);
+    if (logInfo == NULL) return rv;
     char **indPtr = (char**)((char*)logInfo + sizeof(UndoLogInfo));
     *indPtr = (char*)  indexPtr;
     addAtBegin(logInfo);
     printDebug(DM_Transaction, "creating logical undo log and append %x optype:%d",
                                                logInfo, type);
-    return OK;
+    return rv;
 }
 
 UndoLogInfo* Transaction::createUndoLog(Database *sysdb, OperationType type, void *data,
-                       size_t size)
+                       size_t size, DbRetVal *rv)
 {
     Chunk *chunk = sysdb->getSystemDatabaseChunk(UndoLogTableID);
     UndoLogInfo *logInfo = (UndoLogInfo*)chunk->allocate(sysdb,
-                                                size + sizeof(UndoLogInfo));
+                                                size + sizeof(UndoLogInfo), rv);
     if (logInfo == NULL) return NULL;
     logInfo->opType_ = type;
     logInfo->ptrToTuple_ = data;

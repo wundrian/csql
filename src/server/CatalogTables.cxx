@@ -23,12 +23,13 @@ DbRetVal CatalogTableTABLE::insert(const char *name, int id, size_t size,
                     int numFlds, void* chunk, void *&tptr)
 {
     Chunk *tChunk = systemDatabase_->getSystemDatabaseChunk(TableTableId);
-    tptr = tChunk->allocate(systemDatabase_);
+    DbRetVal rv = OK;
+    tptr = tChunk->allocate(systemDatabase_, &rv);
     if (NULL == tptr)
     {
-        printError(ErrNoMemory,
-                   "No memory to allocate for TABLE catalog table");
-        return ErrNoMemory;
+        printError(rv,
+                   "Could not allocate memory for for TABLE catalog table");
+        return rv;
     }
     TABLE *tableInfo = (TABLE*)tptr;
     strcpy(tableInfo->tblName_, name);
@@ -107,14 +108,15 @@ List CatalogTableTABLE::getTableList()
 DbRetVal CatalogTableFIELD::insert(FieldIterator &iter, int tblID, void *tptr)
 {
     Chunk *fChunk = systemDatabase_->getSystemDatabaseChunk(FieldTableId);
+    DbRetVal rv = OK;
     while (iter.hasElement())
     {
-        void *fptr = fChunk->allocate(systemDatabase_);
+        void *fptr = fChunk->allocate(systemDatabase_, &rv);
         if (NULL == fptr)
         {
-            printError(ErrNoMemory,
-                   "No memory to allocate for FIELD catalog table");
-            return ErrNoMemory;
+            printError(rv,
+                   "Could not allocate for FIELD catalog table");
+            return rv;
         }
         FIELD *fldInfo = (FIELD*)fptr;
         FieldDef fDef = iter.nextElement();
@@ -239,13 +241,13 @@ DbRetVal CatalogTableINDEX::insert(const char *name, void *tptr, int numFlds, bo
 
     }
 
- 
-    tupleptr = tChunk->allocate(systemDatabase_);
+    DbRetVal rv =OK; 
+    tupleptr = tChunk->allocate(systemDatabase_, &rv);
     if (NULL == tupleptr)
     {
-        printError(ErrNoMemory,
-                   "No memory to allocate for INDEX catalog table");
-        return ErrNoMemory;
+        printError(rv,
+                   "Could not allocate for INDEX catalog table");
+        return rv;
     }
     INDEX *indexInfo = (INDEX*)tupleptr;
     strcpy(indexInfo->indName_, name);
@@ -407,12 +409,13 @@ DbRetVal CatalogTableINDEXFIELD::insert(FieldNameList &fldList, void *indexPtr,
                 return ErrAlready;
             }
         }  
-        void *fieldptr = fChunk->allocate(systemDatabase_);
+        DbRetVal rv = OK;
+        void *fieldptr = fChunk->allocate(systemDatabase_, &rv);
         if (NULL == fieldptr)
         {
-            printError(ErrNoMemory,
-                   "No memory to allocate for USER catalog table");
-            return ErrNoMemory;
+            printError(rv,
+                   "Could not allocate for USER catalog table");
+            return rv;
         }
         INDEXFIELD *fldInfo = (INDEXFIELD*)fieldptr;
         fldInfo->tablePtr = tblPtr;
@@ -465,12 +468,13 @@ DbRetVal CatalogTableINDEXFIELD::getFieldNameAndType(void *index,
 DbRetVal CatalogTableUSER::insert(const char *name, const char *pass)
 {
     Chunk *tChunk = systemDatabase_->getSystemDatabaseChunk(UserTableId);
-    USER *usrInfo = (USER*)tChunk->allocate(systemDatabase_);
+    DbRetVal rv = OK;
+    USER *usrInfo = (USER*)tChunk->allocate(systemDatabase_, &rv);
     if (NULL == usrInfo)
     {
-        printError(ErrNoMemory,
-                   "No memory to allocate for USER catalog table");
-        return ErrNoMemory;
+        printError(rv,
+                   "Could not allocate for USER catalog table");
+        return rv;
     }
     strcpy(usrInfo->userName_, name);
     strcpy(usrInfo->password_, os::encrypt(pass, "A0"));

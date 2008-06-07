@@ -160,6 +160,19 @@ int os::select(int nfds, fd_set *readfds, fd_set *writefds,
 {
     return ::select(nfds, readfds, writefds, exceptfds, timeout);
 }
+int os::sleep(int secs)
+{ 
+    return ::sleep(secs);
+}
+int os::usleep(int msecs)
+{ 
+    struct timeval timeout;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = msecs;
+    os::select(0,0,0,0, &timeout);
+    return 0;
+}
+
 
 
 char* os::getenv(const char *envVarName)

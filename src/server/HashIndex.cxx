@@ -188,7 +188,13 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     if (!head)
     {
         printDebug(DM_HashIndex, "HashIndex insert head is empty");
-        HashIndexNode *firstNode= (HashIndexNode*)(((Chunk*)iptr->hashNodeChunk_)->allocate(tbl->db_));
+        DbRetVal rv = OK;
+        HashIndexNode *firstNode= (HashIndexNode*)(((Chunk*)iptr->hashNodeChunk_)->allocate(tbl->db_, &rv));
+        if (firstNode == NULL)
+        {
+            bucket->mutex_.releaseLock(tbl->db_->procSlot);
+            return rv;
+        }
         firstNode->ptrToKey_ = keyPtr;
         firstNode->ptrToTuple_ = tuple;
         firstNode->next_ = NULL;
@@ -201,6 +207,7 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         rc = list.insert((Chunk*)iptr->hashNodeChunk_, tbl->db_, keyPtr, tuple);
         if (rc !=OK) {
             bucket->mutex_.releaseLock(tbl->db_->procSlot);
+            printf("PRABA::bucket insert failed here with rc %d\n", rc);
             return rc;
         }
         
@@ -258,6 +265,7 @@ DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     if (SplCase == rc) 
     { 
        printDebug(DM_HashIndex, "Removing hash index node from head with only none node"); 
+       printError(ErrWarning, "Removing hash index node from head with only none node"); 
        bucket1->bucketList_ = 0; 
        rc = OK;
     }
@@ -374,7 +382,15 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     //if the index key is updated.
     if (!head2)
     {
-        HashIndexNode *firstNode= (HashIndexNode*)(((Chunk*)iptr->hashNodeChunk_)->allocate(tbl->db_));
+        DbRetVal rv = OK;
+        HashIndexNode *firstNode= (HashIndexNode*)(((Chunk*)iptr->hashNodeChunk_)->allocate(tbl->db_, &rv));
+        if (firstNode == NULL)
+        { 
+            printError(rv, "Error in allocating hash node");
+            bucket1->mutex_.releaseLock(tbl->db_->procSlot);
+            bucket->mutex_.releaseLock(tbl->db_->procSlot);
+            return rv;
+        }
         firstNode->ptrToKey_ = keyPtr;
         firstNode->ptrToTuple_ = tuple;
         firstNode->next_ = NULL;

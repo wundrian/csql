@@ -373,6 +373,7 @@ void* Chunk::allocate(Database *db, size_t size, DbRetVal *status)
     if (ret != 0)
     {
         printError(ErrLockTimeOut,"Unable to acquire chunk Mutex");
+        *status = ErrLockTimeOut;
         return NULL;
     }
     if (alignedSize > PAGE_SIZE)

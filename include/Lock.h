@@ -78,7 +78,7 @@ class LockManager
     Database *systemDatabase_;
 
     private:
-    LockHashNode* allocLockNode(LockInfo &info, void *tuple);
+    LockHashNode* allocLockNode(LockInfo &info, void *tuple, DbRetVal *rv);
     void deallocLockNode(LockHashNode *head, Bucket *bucket);
     Bucket* getLockBucket(void *tuple);
 

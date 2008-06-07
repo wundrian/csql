@@ -102,7 +102,7 @@ int Database::initAllocDatabaseMutex()
 DbRetVal Database::getAllocDatabaseMutex(bool procAccount) 
 {
     int ret= metaData_->dbAllocMutex_.getLock(procAccount);
-    if (ret) return ErrSysInternal; else return OK;
+    if (ret) return ErrLockTimeOut; else return OK;
 }
 DbRetVal Database::releaseAllocDatabaseMutex(bool procAccount)
 {
@@ -119,7 +119,7 @@ int Database::initTransTableMutex()
 DbRetVal Database::getTransTableMutex()
 {
     int ret = metaData_->dbTransTableMutex_.getLock(procSlot);
-    if (ret) return ErrSysInternal; else return OK;
+    if (ret) return ErrLockTimeOut; else return OK;
 }
 DbRetVal Database::releaseTransTableMutex()
 {
@@ -136,7 +136,7 @@ int Database::initProcessTableMutex()
 DbRetVal Database::getProcessTableMutex(bool procAccount)
 {
     int ret = metaData_->dbProcTableMutex_.getLock(-1, procAccount);
-    if (ret) return ErrSysInternal; else return OK;
+    if (ret) return ErrLockTimeOut; else return OK;
 }
 DbRetVal Database::releaseProcessTableMutex(bool procAccount)
 {
@@ -153,7 +153,7 @@ int Database::initDatabaseMutex()
 DbRetVal Database::getDatabaseMutex(bool procAccount)
 {
     int ret = metaData_->dbMutex_.getLock(procSlot, procAccount);
-    if (ret) return ErrSysInternal; else return OK;
+    if (ret) return ErrLockTimeOut; else return OK;
 }
 DbRetVal Database::releaseDatabaseMutex(bool procAccount)
 {

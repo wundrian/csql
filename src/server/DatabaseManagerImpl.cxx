@@ -309,10 +309,11 @@ Chunk* DatabaseManagerImpl::createUserChunk(size_t size)
 {
     //Allocate new node in system database to store
     Chunk *chunk = getSystemTableChunk(UserChunkTableId);
-    void *ptr = chunk->allocate(systemDatabase_);
+    DbRetVal rv = OK;
+    void *ptr = chunk->allocate(systemDatabase_, &rv);
     if (NULL == ptr)
     {
-         printError(ErrNoMemory, "Allocation failed for User chunk catalog table");
+         printError(rv, "Allocation failed for User chunk catalog table");
          return NULL;
     }
     Chunk *chunkInfo = (Chunk*)ptr;
@@ -838,14 +839,14 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
         return ErrSysInternal;
     }
     //create memory for holding the bucket pointers
-    void *buckets = chunkInfo->allocate(db_);
+    void *buckets = chunkInfo->allocate(db_, &rv);
     if (NULL == buckets)
     {
         delete[] fptr;
         deleteUserChunk(chunkInfo);
         systemDatabase_->releaseDatabaseMutex();
-        printError(ErrNoMemory, "Unable to allocate memory for bucket");
-        return ErrNoMemory;
+        printError(rv, "Unable to allocate memory for bucket");
+        return rv;
     }
     Bucket *buck = (Bucket*) buckets;
     initHashBuckets(buck, bucketSize);

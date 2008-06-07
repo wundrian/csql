@@ -129,6 +129,8 @@ class os
     static int select(int nfds, fd_set *readfds, fd_set *writefds,
                       fd_set *exceptfds, struct timeval * timeout);
 
+    static int usleep(int microsecs);
+    static int sleep(int secs);
     static shared_memory_id shm_create(shared_memory_key key, size_t size, int flag);
     static shared_memory_id shm_open(shared_memory_key key, size_t size, int flag);
     static void*  shm_attach(shared_memory_id id, const void *ptr, int flag);

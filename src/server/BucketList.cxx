@@ -17,11 +17,11 @@
 #include<Allocator.h>
 #include<Database.h>
 #include<Debug.h>
-
 DbRetVal BucketList::insert(Chunk *chunk, Database *db, void *key, void*tuple)
 {
     DbRetVal rv = OK;
-    HashIndexNode *newNode= (HashIndexNode*) chunk->allocate(db, &rv);
+    HashIndexNode *newNode;// (HashIndexNode*) chunk->allocate(db, &rv);
+    newNode= (HashIndexNode*) chunk->allocate(db, &rv);
     if (NULL == newNode)
     {
         printError(rv, "Unable to allocate HashIndex node");

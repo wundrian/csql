@@ -59,7 +59,7 @@ int main()
     p1.setTerm("f1", OpEquals, &valTerm);
     table->setCondition(&p1);
     int icount=0;
-    for(int i = 0; i< 20000; i++)
+    for(int i = 0; i< 50000; i++)
     {
         rv = conn.startTransaction();
         if (rv != OK) while (rv !=OK) rv = conn.startTransaction();
@@ -113,6 +113,7 @@ void* runInsTest(void *message)
     int icount =0;
     NanoTimer timer;
     int val = *(int*)message;
+    int retrycnt=0;
     timer.start();
     for(i = val * 10000; i< (val *10000) +10000; i++)
     {
@@ -121,15 +122,41 @@ void* runInsTest(void *message)
         id= i;
         strcpy(name, "PRABAKARAN0123456750590");
         ret = table->insertTuple();
+        retrycnt=0;
         while (ret == ErrLockTimeOut)  
         { 
-            conn.rollback();
-            conn.startTransaction();
+            rv = conn.rollback();
+            if (rv != OK)  {
+                while (rv == ErrLockTimeOut) 
+                {
+                    printf("retrying abort\n");
+                    rv = conn.rollback();
+                }
+            }
+            if (retrycnt == 3) { ret = 1; break;}
+            rv = conn.startTransaction();
+            if (rv != OK) {
+                while (rv == ErrLockTimeOut) 
+                {
+                    printf("retrying startTransaction\n");
+                    rv = conn.startTransaction();
+                }
+            }
             ret = table->insertTuple(); 
+            retrycnt++;
+            
         }
         if (ret != 0) { printf("RETURNING EARLY: %d\n", ret); break;}
         icount++;
-        conn.commit();
+        rv = conn.commit();
+        if (rv != OK) {
+            printf("COMMIT returned %d\n", rv);
+            os::usleep(500);
+            while (rv == ErrLockTimeOut) { 
+                printf("retrying commit\n");
+                rv = conn.commit();
+            }
+        }
         //if (icount %10000 ==0) printf("%d\n", i);
     }
     timer.stop();
@@ -175,11 +202,18 @@ void* runSelTest(void *message)
         if (rv != OK) while (rv !=OK) rv = conn.startTransaction();
         valTerm = i;
         rv = table->execute();
+        if (rv != OK) {printf("Execute returned failure\n"); break;}
         tuple = (char*)table->fetch() ;
         if (tuple == NULL)  break;
         icount++;
         table->close();
-        conn.commit();
+        rv = conn.commit();
+        if (rv != OK) {
+            while (rv == ErrLockTimeOut) { 
+                printf("retrying commit\n");
+                rv = conn.commit();
+            }
+        }
     }
 
    timer.stop();

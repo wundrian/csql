@@ -83,7 +83,7 @@ class Transaction
     DbRetVal appendLogicalUndoLog(Database *sysdb, OperationType type, void *data,
                        size_t size, void* indexPtr);
     UndoLogInfo* createUndoLog(Database *sysdb, OperationType type, void *data,
-                       size_t size);
+                       size_t size, DbRetVal *rv);
     void addAtBegin(UndoLogInfo* logInfo);
 
     UndoLogInfo* popUndoLog();

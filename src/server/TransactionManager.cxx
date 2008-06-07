@@ -97,8 +97,8 @@ DbRetVal TransactionManager::startTransaction(LockManager *lMgr, IsolationLevel 
     DbRetVal rv = sysdb->getTransTableMutex();
     if (OK != rv)
     {
-        printError(ErrSysInternal, "Unable to acquire transtable mutex");
-        return ErrSysInternal;
+        printError(rv, "Unable to acquire transtable mutex");
+        return rv;
     }
     Transaction *iter = firstTrans;
     int i;
@@ -143,14 +143,14 @@ DbRetVal TransactionManager::commit(LockManager *lockManager)
     DbRetVal rv = sysdb->getTransTableMutex();
     if (OK != rv)
     {
-        printError(ErrSysInternal, "Unable to acquire transtable mutex");
-        return ErrSysInternal;
+        printError(rv, "Unable to acquire transtable mutex");
+        return rv;
     }
 
     if (trans->status_ != TransRunning)
     {
         sysdb->releaseTransTableMutex(); 
-        printError(ErrBadCall, "Transaction is not in running state\n");
+        printError(ErrBadCall, "Transaction is not in running state %d\n", trans->status_);
         return ErrBadCall;
     }
     trans->status_ = TransCommitting;
@@ -168,8 +168,8 @@ DbRetVal TransactionManager::commit(LockManager *lockManager)
     rv = sysdb->getTransTableMutex();
     if (OK != rv)
     {
-        printError(ErrSysInternal, "Unable to acquire transtable mutex");
-        return ErrSysInternal;
+        printError(rv, "Unable to acquire transtable mutex");
+        return rv;
     }
     trans->status_ = TransNotUsed;
     sysdb->releaseTransTableMutex();
@@ -192,8 +192,8 @@ DbRetVal TransactionManager::rollback(LockManager *lockManager, Transaction *t)
     DbRetVal rv= sysdb->getTransTableMutex();
     if (OK != rv)
     {
-        printError(ErrSysInternal, "Unable to acquire transtable mutex");
-        return ErrSysInternal;
+        printError(rv, "Unable to acquire transtable mutex");
+        return rv;
     }
 
     if (trans->status_ != TransRunning)
@@ -214,7 +214,13 @@ DbRetVal TransactionManager::rollback(LockManager *lockManager, Transaction *t)
        return ErrSysInternal;
     }
 
-    sysdb->getTransTableMutex();
+    rv = sysdb->getTransTableMutex();
+    if (OK != rv)
+    {
+        //nothing can be done.. go ahead and set it. 
+        //no harm. parallel starttransaction will miss this slot. thats ok
+        //as it is not leak
+    }
     trans->status_ = TransNotUsed;
     sysdb->releaseTransTableMutex();
     printDebug(DM_Transaction, "Aborted transaction:%x",trans);

@@ -330,7 +330,7 @@ DbRetVal TableImpl::insertTuple()
     void *tptr = ((Chunk*)chunkPtr_)->allocate(db_, &ret);
     if (NULL == tptr)
     {
-        printError(ret, "Unable to allocate from chunk");
+        printError(ret, "Unable to allocate record from chunk");
         return ret;
     }
 
@@ -377,8 +377,10 @@ DbRetVal TableImpl::insertTuple()
         }
         if (i != numIndexes_ )
         {
-            for (int j = 0; j < i ; j++)
+            for (int j = 0; j < i ; j++) {
+                printError(ErrWarning, "Deleting index node");
                 deleteIndexNode(*trans, indexPtr_[j], idxInfo[j], tptr);
+            }
             lMgr_->releaseLock(tptr);
             (*trans)->removeFromHasList(db_, tptr);
             ((Chunk*)chunkPtr_)->free(db_, tptr);
