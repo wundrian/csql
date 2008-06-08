@@ -141,8 +141,8 @@ DbRetVal TableImpl::execute()
     ret = iter->open();
     if (OK != ret)
     {
-        printError(ErrSysInternal,"Unable to open the iterator");
-        return ErrSysInternal;
+        printError(ret,"Unable to open the iterator");
+        return ret;
     }
     return OK;
 }
@@ -212,6 +212,7 @@ void* TableImpl::fetchNoBind()
         printError(ErrNotOpen,"Scan not open or Scan is closed\n");
         return NULL;
     }
+    void *prevTuple = curTuple_;
     curTuple_ = iter->next();
     if (NULL == curTuple_)
     {
@@ -223,8 +224,8 @@ void* TableImpl::fetchNoBind()
         if (OK != lockRet)
         { 
             printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
-            curTuple_ = NULL;
-			return NULL;
+            curTuple_ = prevTuple;
+            return NULL;
         }
 
     }
@@ -243,8 +244,8 @@ void* TableImpl::fetchNoBind()
             if (OK != lockRet)
             { 
                 printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
-                curTuple_ = NULL;
-				return NULL;
+                curTuple_ = prevTuple;
+                return NULL;
             }
             if (!status) break; 
             tries--;
@@ -255,7 +256,7 @@ void* TableImpl::fetchNoBind()
         if (tries == 0) 
         { 
             printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
-            curTuple_ = NULL;
+            curTuple_ = prevTuple;
             return NULL;
         }
     }
@@ -271,6 +272,7 @@ void* TableImpl::fetchNoBind(DbRetVal &rv)
         rv = ErrNotOpen;
         return NULL;
     }
+    void *prevTuple = curTuple_;
     curTuple_ = iter->next();
     if (NULL == curTuple_)
     {
@@ -282,8 +284,8 @@ void* TableImpl::fetchNoBind(DbRetVal &rv)
         if (OK != lockRet)
         {
             printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
-			curTuple_ = NULL;
             rv = ErrLockTimeOut;
+            curTuple_ = prevTuple;
             return NULL;
         }
 
@@ -303,7 +305,7 @@ void* TableImpl::fetchNoBind(DbRetVal &rv)
             if (OK != lockRet)
             {
                 printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
-				curTuple_ = NULL;
+                curTuple_ = prevTuple;
                 rv = ErrLockTimeOut;
                 return NULL;
             }
@@ -316,7 +318,7 @@ void* TableImpl::fetchNoBind(DbRetVal &rv)
         if (tries == 0)
         {
             printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
-            curTuple_ = NULL;
+            curTuple_ = prevTuple;
             rv = ErrLockTimeOut;
             return NULL;
         }
@@ -333,7 +335,6 @@ DbRetVal TableImpl::insertTuple()
         printError(ret, "Unable to allocate record from chunk");
         return ret;
     }
-
     ret = lMgr_->getExclusiveLock(tptr, trans);
     if (OK != ret)
     {
@@ -384,7 +385,8 @@ DbRetVal TableImpl::insertTuple()
             lMgr_->releaseLock(tptr);
             (*trans)->removeFromHasList(db_, tptr);
             ((Chunk*)chunkPtr_)->free(db_, tptr);
-            printError(ret, "Unable to insert index node for tuple %x", tptr);
+            //TMP::remove int derefernce
+            printError(ret, "PRABA:::Unable to insert index node for tuple %x %d", tptr, *(int*)tptr);
             return ret;
         }
     }
