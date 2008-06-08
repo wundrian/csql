@@ -1,6 +1,6 @@
 #include<CSql.h>
 #include<NanoTimer.h>
-#define THREADS 2
+#define THREADS 5
 void* runInsTest(void *p);
 void* runSelTest(void *p);
 int main()
@@ -86,7 +86,7 @@ int main()
         pthread_join(thr[i], (void**)&status);
     }
 
-    dbMgr->dropTable("t1");
+    //dbMgr->dropTable("t1");
     conn.close();
     return 0;
 }
@@ -144,9 +144,9 @@ void* runInsTest(void *message)
             }
             ret = table->insertTuple(); 
             retrycnt++;
-            
+            //ret =1; break; //temp to analyse issue
         }
-        if (ret != 0) { printf("RETURNING EARLY: %d\n", ret); break;}
+        if (ret != 0) { printf("RETURNING EARLY: %d with i:%d\n", ret, i); break;}
         icount++;
         rv = conn.commit();
         if (rv != OK) {
@@ -202,7 +202,17 @@ void* runSelTest(void *message)
         if (rv != OK) while (rv !=OK) rv = conn.startTransaction();
         valTerm = i;
         rv = table->execute();
-        if (rv != OK) {printf("Execute returned failure\n"); break;}
+        if (rv != OK) {
+            printf("Execute returned %d\n", rv);
+            os::usleep(500);
+            int retry=5;
+            while (rv == ErrLockTimeOut) { 
+                if (retry == 0) break;
+                printf("retrying execute\n");
+                rv = table->execute();
+                retry--;
+            }
+        }
         tuple = (char*)table->fetch() ;
         if (tuple == NULL)  break;
         icount++;
@@ -218,7 +228,7 @@ void* runSelTest(void *message)
 
    timer.stop();
    char msgBuf[1024];
-   sprintf(msgBuf,"Select: Thread %d: Total rows :%d Time taken:%lld ms\n",val, icount, timer.avg()/1000/1000);
+   sprintf(msgBuf,"Select: Thread %lu %d: Total rows :%d Time taken:%lld ms\n",os::getthrid(), val, icount, timer.avg()/1000/1000);
    os::write(1,msgBuf,strlen(msgBuf));
    dbMgr->closeTable(table);
    rv  = conn.close();
