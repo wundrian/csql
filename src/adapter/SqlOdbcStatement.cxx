@@ -527,6 +527,7 @@ void SqlOdbcStatement::getPrimaryKeyFieldName(char *tablename, char *pkfieldname
     int retValue=SQLAllocHandle (SQL_HANDLE_STMT, conn->dbHdl, &hstmt);
     if (retValue) return ;
     char columnName[128];
+    columnName[0] = '\0';
     SQLINTEGER cbData;     // Output length of data
     SQLPrimaryKeys(hstmt, NULL, 0, NULL, 0, (SQLCHAR*) tablename, SQL_NTS);
     SQLFetch(hstmt);
