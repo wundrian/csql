@@ -248,6 +248,7 @@ Page* Database::getFreePage(size_t size)
             pInfo = (PageInfo*)((char*)pInfo + pageSize);
         }
         if ( i == (multiple + 1))  break;
+        pageInfo = (PageInfo*)((char*)pInfo + pageSize);
     }
 
     printDebug(DM_Alloc,"Database::getFreePage returning page:%x",pageInfo);
