@@ -207,7 +207,6 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         rc = list.insert((Chunk*)iptr->hashNodeChunk_, tbl->db_, keyPtr, tuple);
         if (rc !=OK) {
             bucket->mutex_.releaseLock(tbl->db_->procSlot);
-            printf("PRABA::bucket insert failed here with rc %d\n", rc);
             return rc;
         }
         
@@ -265,7 +264,6 @@ DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     if (SplCase == rc) 
     { 
        printDebug(DM_HashIndex, "Removing hash index node from head with only none node"); 
-       printError(ErrWarning, "Removing hash index node from head with only none node"); 
        bucket1->bucketList_ = 0; 
        rc = OK;
     }

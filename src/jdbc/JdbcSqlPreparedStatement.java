@@ -16,6 +16,10 @@ import java.sql.ParameterMetaData;
 import java.sql.SQLException;
 import java.sql.Ref;
 import java.sql.Array;
+import java.sql.SQLXML;
+import java.sql.RowId;
+
+import java.sql.NClob;
 public final class JdbcSqlPreparedStatement extends JdbcSqlStatement
                    implements PreparedStatement
 {
@@ -232,5 +236,92 @@ public final class JdbcSqlPreparedStatement extends JdbcSqlStatement
     {
         throw getException(CSQL_NOT_SUPPORTED);
     }
+    //java 1.6 methods
+    public void setBlob(int  paramIndex, InputStream value ) throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public void setBlob(int  paramIndex, InputStream value, long length ) throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public void setClob(int  paramIndex, Reader value ) throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public void setClob(int  paramIndex, Reader value, long length ) throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public void setNCharacterStream(int  paramIndex, Reader value) 
+                                                     throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public void setNCharacterStream(int  paramIndex,Reader value,long length)
+                                                           throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public void setNClob(int  paramIndex, NClob value) 
+                                                  throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public void setNClob(int  paramIndex, Reader value) 
+                                                  throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public void setNClob(int  paramIndex, Reader value, long length) 
+                                                  throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public void setNString(int  paramIndex, String value) 
+                                                  throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public void setCharacterStream(int param, Reader reader) 
+                                            throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public void setCharacterStream(int param, Reader reader, long length) 
+                                            throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public void setBinaryStream(int parameterIndex, InputStream value) 
+                                           throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public void setBinaryStream(int parameterIndex, InputStream value, long length) 
+                                           throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public void setAsciiStream(int parameterIndex, InputStream value) 
+                                           throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public void setAsciiStream(int parameterIndex, InputStream value, long length) 
+                                           throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public void setSQLXML(int paramIndex, SQLXML xmlObj) throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public void setRowId(int paramIndex, RowId x) throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+
+    
 
 }

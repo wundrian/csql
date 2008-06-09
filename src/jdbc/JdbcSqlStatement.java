@@ -7,7 +7,7 @@ import java.sql.SQLWarning;
 
 public class JdbcSqlStatement extends JSqlError implements Statement, JSqlErrorType
 {
-    public boolean isClosed;
+    public boolean closedFlag;
     public boolean isPrepared;
     public int rowsAffect;
     public JSqlStatement jniStmt;
@@ -20,7 +20,7 @@ public class JdbcSqlStatement extends JSqlError implements Statement, JSqlErrorT
         conn = (JdbcSqlConnection) con;  
         jniStmt.alloc(conn.mode);
         jniStmt.setConnectionPtr( conn.getConnection().getPtr() ); 
-        isClosed = false;
+        closedFlag = false;
         isPrepared = false;
         rowsAffect = 0;
         rs = new JdbcSqlResultSet();
@@ -29,7 +29,7 @@ public class JdbcSqlStatement extends JSqlError implements Statement, JSqlErrorT
     {
         try
         {
-            if(!isClosed)
+            if(!closedFlag)
                 close();
             jniStmt.free();//praba
         }
@@ -69,14 +69,14 @@ public class JdbcSqlStatement extends JSqlError implements Statement, JSqlErrorT
 
     public void close() throws SQLException
     {
-        if(isClosed) return;
+        if(closedFlag) return;
         if(isPrepared)
         {
             if(jniStmt.isSelect() ) rs.close();
             jniStmt.freeStmt();
             //jniStmt.free(); Praba. this makes the stmt unusable after close
         }
-        isClosed = true;
+        closedFlag = true;
         return;
     }
 
@@ -251,6 +251,26 @@ public class JdbcSqlStatement extends JSqlError implements Statement, JSqlErrorT
     {
         throw getException(CSQL_NOT_SUPPORTED);
     }
-
+    //java 1.6 methods
+    public boolean isPoolable() 
+    {
+        return false;
+    }
+    public void setPoolable(boolean pool) 
+    {
+        return;
+    }
+    public boolean isWrapperFor(Class ifact) throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public Class unwrap(Class iface) throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public boolean isClosed() 
+    {
+        return closedFlag;
+    }
 
 }

@@ -11,6 +11,14 @@ import java.lang.String;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Properties;
+
+import java.sql.Clob;
+import java.sql.NClob;
+import java.sql.Blob;
+import java.sql.SQLXML;
+import java.sql.Struct;
+import java.sql.Array;
 
 public final class JdbcSqlConnection extends JSqlError implements Connection, JSqlErrorType
 {
@@ -297,6 +305,61 @@ public final class JdbcSqlConnection extends JSqlError implements Connection, JS
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setTypeMap(Map map) throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    //Java 1.6 methods
+    public Struct createStruct(String typeName, Object[] attributes) 
+                                                 throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public Array createArrayOf(String typeName, Object[] elements) 
+                                                 throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public Blob createBlob() throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public Clob createClob() throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public NClob createNClob() throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public SQLXML createSQLXML() throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public Properties getClientInfo() throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public String getClientInfo(String name) throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public void setClientInfo(String name , String value) 
+    {
+        return;
+    }
+    public void setClientInfo(Properties properties) 
+    {
+        return;
+    }
+    public boolean isValid(int timeout) throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public boolean isWrapperFor(Class ifact) throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public Class unwrap(Class iface) throws SQLException
     {
         throw getException(CSQL_NOT_SUPPORTED);
     }

@@ -21,33 +21,39 @@ import java.sql.Ref;
 import java.sql.Array;
 import java.sql.Types;
 
+import java.sql.RowId;
+import java.sql.SQLXML;
+import java.io.Reader;
+import java.sql.NClob;
+import java.sql.Wrapper;
+
 public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorType
 {
     public JdbcSqlStatement stmt; // This guy creates me
     public JdbcSqlResultSetMetaData rsmd;
 
-    public boolean isClosed;
+    public boolean closedFlag;
     long curRow;
 
 
     JdbcSqlResultSet()
     {
         rsmd = new JdbcSqlResultSetMetaData();
-        isClosed = false;
+        closedFlag = false;
         curRow = -1;
     }
     void setStmt( JdbcSqlStatement jdbcStmt )
     {
         stmt = jdbcStmt;
         rsmd.setStmt( jdbcStmt );
-        isClosed = false;
+        closedFlag = false;
         curRow = -1;
     }
     protected void finalize ()
     {
         try
         {
-            if(!isClosed) close();
+            if(!closedFlag) close();
         }
         catch(SQLException e)
         {
@@ -58,9 +64,9 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
     // API's
     public void close() throws SQLException
     {
-        if( isClosed ) return;
+        if( closedFlag ) return;
 
-        isClosed = true;
+        closedFlag = true;
         curRow = -1;
 	//rsmd.close(); //commented by praba
         //after close the app can reexecute.
@@ -71,7 +77,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
     // Move to next tuple
     public boolean next () throws SQLException
     {
-        if( isClosed ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag ) throw getException( CSQL_INVALID_STATE );
 
         if( 0 == stmt.jniStmt.next() )
         {
@@ -84,7 +90,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
     }
     public ResultSetMetaData getMetaData () throws SQLException
     {
-        if( isClosed ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag ) throw getException( CSQL_INVALID_STATE );
         return( rsmd );
     }
     public SQLWarning getWarnings() throws SQLException
@@ -97,7 +103,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
     }
     public int findColumn (String colName) throws SQLException
     {
-        if( isClosed ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag ) throw getException( CSQL_INVALID_STATE );
 
         int colnum = stmt.jniStmt.findColumn( colName );
         return( colnum );
@@ -112,12 +118,12 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
     }
     public Statement getStatement() throws SQLException
     {
-        if( isClosed ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag ) throw getException( CSQL_INVALID_STATE );
         return( stmt );
     }
     public boolean isFirst() throws SQLException
     {
-        if( isClosed ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag ) throw getException( CSQL_INVALID_STATE );
 
         if( curRow == 0 )
             return( true );
@@ -126,7 +132,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
     }
     public boolean isBeforeFirst() throws SQLException
     {
-        if( isClosed ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag ) throw getException( CSQL_INVALID_STATE );
 
         if( curRow == -1 )
             return( true );
@@ -135,7 +141,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
     }
     public boolean isAfterLast() throws SQLException
     {
-        if( isClosed ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag ) throw getException( CSQL_INVALID_STATE );
 
         if( curRow == -2 )
             return( true );
@@ -147,7 +153,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
     // SHORT
     public short getShort (int colNum ) throws SQLException
     {
-        if( isClosed || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
 
         short out = stmt.jniStmt.getShort( colNum - 1 );
 	if( false ) throw new SQLException();
@@ -155,14 +161,14 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
     }
     public short getShort (String colName ) throws SQLException
     {
-        if( isClosed ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag ) throw getException( CSQL_INVALID_STATE );
         return( getShort( findColumn( colName ) ) );
     }
 
     // INTEGER
     public int getInt (int colNum ) throws SQLException
     {
-        if( isClosed || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
 
         int out = stmt.jniStmt.getInt( colNum - 1 );
         if( false ) throw new SQLException();
@@ -170,14 +176,14 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
     }
     public int getInt (String colName) throws SQLException
     {
-        if( isClosed ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag ) throw getException( CSQL_INVALID_STATE );
         return( getInt( findColumn( colName ) ) );
     }
 
     // LONG
     public long getLong (int colNum) throws SQLException
     {
-        if( isClosed || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
 
         long out = stmt.jniStmt.getLong( colNum-1 );
         if( false ) throw new SQLException();
@@ -185,14 +191,14 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
     }
     public long getLong (String colName) throws SQLException
     {
-        if( isClosed ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag ) throw getException( CSQL_INVALID_STATE );
         return( getLong( findColumn( colName ) ) );
     }
 
     // BYTE
     public byte getByte (int colNum) throws SQLException
     {
-        if( isClosed || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
 
         byte out = stmt.jniStmt.getByte( colNum-1 );
         if( false ) throw new SQLException();
@@ -200,14 +206,14 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
     }
     public byte getByte (String colName) throws SQLException
     {
-        if( isClosed ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag ) throw getException( CSQL_INVALID_STATE );
         return( getByte( findColumn( colName ) ) );
     }
 
     // FLOAT
     public float getFloat (int colNum) throws SQLException
     {
-        if( isClosed || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
 
         float out = stmt.jniStmt.getFloat( colNum-1 );
         if( false ) throw new SQLException();
@@ -215,14 +221,14 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
     }
     public float getFloat (String colName) throws SQLException
     {
-        if( isClosed ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag ) throw getException( CSQL_INVALID_STATE );
         return( getFloat( findColumn( colName ) ) );
     }
 
     // DOUBLE
     public double getDouble (int colNum) throws SQLException
     {
-        if( isClosed || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
 
         double out = stmt.jniStmt.getDouble( colNum-1 );
         if( false ) throw new SQLException();
@@ -230,7 +236,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
     }
     public double getDouble (String colName) throws SQLException
     {
-        if( isClosed ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag ) throw getException( CSQL_INVALID_STATE );
         return( getDouble( findColumn( colName ) ) );
     }
 
@@ -238,7 +244,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
     public BigDecimal getBigDecimal( int colNum )
        throws SQLException
     {
-        if( isClosed || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
 
         throw getException( CSQL_NOT_SUPPORTED );
 
@@ -249,7 +255,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
     public BigDecimal getBigDecimal(String colName)
        throws SQLException
     {
-        if( isClosed ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag ) throw getException( CSQL_INVALID_STATE );
         return( getBigDecimal( findColumn( colName ) ) );
     }
     public BigDecimal getBigDecimal (int colNum, int scale)
@@ -266,7 +272,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
     // STRING/VARSTRING
     public String getString(int colNum) throws SQLException
     {
-        if( isClosed || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
 
         // Get value
         String out = stmt.jniStmt.getString( colNum-1 );
@@ -279,7 +285,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
     }
     public InputStream getAsciiStream(int colNum) throws SQLException
     {
-        if( isClosed || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
 
         String out = stmt.jniStmt.getString( colNum-1 );
 
@@ -292,7 +298,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
     public java.io.Reader getCharacterStream(int colNum)
        throws SQLException
     {
-        if( isClosed || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
 
         InputStream iS = getAsciiStream( colNum );
         if( iS == null )
@@ -309,7 +315,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
     // BOOLEAN
     public boolean getBoolean (int colNum) throws SQLException
     {
-        if( isClosed || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
 
         boolean out = stmt.jniStmt.getBoolean( colNum-1 );
 
@@ -323,7 +329,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
     // BINARY/VARBINARY
 	public byte [] getBytes(int colNum) throws SQLException
     {
-        if( isClosed || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
 
         throw getException( CSQL_NOT_SUPPORTED );
         //byte[] out = stmt.jniStmt.getBytes( colNum-1 );
@@ -337,7 +343,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
     // DATE
     public java.sql.Date getDate (int colNum) throws SQLException
     {
-        if( isClosed || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
 
         java.sql.Date out = stmt.jniStmt.getDate( colNum-1 );
 
@@ -361,7 +367,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
     // TIME
     public java.sql.Time getTime (int colNum) throws SQLException
     {
-        if( isClosed || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
 
         // Get value
         java.sql.Time out = stmt.jniStmt.getTime( colNum-1 );
@@ -387,7 +393,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
     public java.sql.Timestamp getTimestamp (int colNum)
         throws SQLException
     {
-        if( isClosed || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
 
         java.sql.Timestamp out = stmt.jniStmt.getTimestamp( colNum-1 );
 
@@ -413,7 +419,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
     {
         Object obj = new String("no obj");
 
-        if( isClosed || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
 
         switch ( rsmd.getColumnType( colNum ) )
         {
@@ -484,7 +490,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
     // UN-SUPPORTED API's
     public boolean wasNull () throws SQLException // TODO
     {
-        if( isClosed ) throw getException( CSQL_INVALID_STATE );
+        if( closedFlag ) throw getException( CSQL_INVALID_STATE );
         throw getException( CSQL_NOT_SUPPORTED );
         //return( stmt.jniStmt.wasNull() );
     }
@@ -795,7 +801,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
         throw getException( CSQL_NOT_SUPPORTED );
     }
     public    void updateObject(String colName, Object x, int scale)
-       throws SQLException
+                                                    throws SQLException
     {
         throw getException( CSQL_NOT_SUPPORTED );
     }
@@ -848,5 +854,238 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
 			  throws SQLException
     {
         throw getException( CSQL_NOT_SUPPORTED );
+    }
+    //java 1.6 methods
+    public void updateRowId(int colIndex, RowId x)
+                                             throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateRowId(String colLabel, RowId x)
+                                             throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateSQLXML(int colIndex, SQLXML x)
+                                             throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateSQLXML(String colLabel, SQLXML x)
+                                             throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateNClob(int colIndex, NClob x)
+                                             throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateNClob(int colIndex, Reader x)
+                                             throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateNClob(int colIndex, Reader x, long length)
+                                             throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateNClob(String colIndex, NClob x)
+                                             throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateNClob(String colIndex, Reader x)
+                                             throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateNClob(String colIndex, Reader x, long length)
+                                             throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateNString(int colIndex, String x)
+                                             throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateNString(String colIndex, String x)
+                                             throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateNCharacterStream(int colIndex, Reader x)
+                                             throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateNCharacterStream(int colIndex, Reader x, long length)
+                                             throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateNCharacterStream(String colIndex, Reader x)
+                                             throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateNCharacterStream(String colIndex, Reader x, long length)
+                                             throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateCharacterStream(int colIndex, Reader x)
+                                             throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateCharacterStream(String colIndex, Reader x)
+                                             throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateCharacterStream(int colIndex, Reader x, long length)
+                                             throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateCharacterStream(String colIndex, Reader x, long length)
+                                             throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateBinaryStream(int colIndex, InputStream x)
+                                             throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateBinaryStream(String colIndex, InputStream x)
+                                             throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateBinaryStream(int colIndex, InputStream x, long length)
+                                             throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateBinaryStream(String colIndex, InputStream x, long length)
+                                             throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateAsciiStream(int colIndex, InputStream x)
+                                             throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateAsciiStream(String colIndex, InputStream x)
+                                             throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateAsciiStream(int colIndex, InputStream x, long length)
+                                             throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateAsciiStream(String colIndex, InputStream x, long length)
+                                             throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateClob(int colNum, Reader x) throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateClob(String colNum, Reader x) throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateClob(int colNum, Reader x, long length) 
+                                                  throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateClob(String colNum, Reader x, long length) 
+                                                  throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateBlob(int colNum, InputStream x) throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateBlob(String colNum, InputStream x) throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateBlob(int colNum, InputStream x, long length) 
+                                                    throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public void updateBlob(String colNum, InputStream x, long length)
+                                                     throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public Reader getNCharacterStream(int colIndex) throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public Reader getNCharacterStream(String colLabel) throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public NClob getNClob(int colIndex) throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public NClob getNClob(String colLabel) throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public String getNString(int colIndex) throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public String getNString(String colLabel) throws SQLException
+    {
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+    public SQLXML getSQLXML(int colIndex) throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public SQLXML getSQLXML(String colLabel) throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public boolean isClosed()
+    {
+        return closedFlag;
+    }
+    public int getHoldability() throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public RowId getRowId(int val) throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public RowId getRowId(String val) throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public boolean isWrapperFor(Class ifact) throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public Class unwrap(Class iface) throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
     }
 }

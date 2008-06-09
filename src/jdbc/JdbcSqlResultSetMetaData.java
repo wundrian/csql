@@ -140,4 +140,14 @@ extends JSqlError implements ResultSetMetaData, JSqlErrorType
     {
         return( true );
     }
+    //java 1.6 methods
+    public boolean isWrapperFor(Class ifact) throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+    public Class unwrap(Class iface) throws SQLException
+    {
+        throw getException(CSQL_NOT_SUPPORTED);
+    }
+
 }
