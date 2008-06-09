@@ -1524,7 +1524,7 @@ int AllDataType::printVal(void* src, DataType srcType, int length )
         case typeTime:
         {
             Time* tm = (Time*)src;
-            printf("%d:%d:%d.%d", tm->hours(), tm->minutes(), tm->seconds(), 0);
+            count = printf("%d:%d:%d.%d", tm->hours(), tm->minutes(), tm->seconds(), 0);
             break;
         }
         case typeTimeStamp:
