@@ -15,7 +15,8 @@ if [ $? -ne 0 ]
 then 
     exit 1;
 fi
-
+rm -f /tmp/csql/csqltable.conf
+touch /tmp/csql/csqltable.conf
 $CSQL_INSTALL_ROOT/bin/csqldump -n 10
 
 if [ $? -ne 0 ]
