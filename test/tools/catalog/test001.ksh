@@ -18,14 +18,14 @@ then
 fi
 
 echo "Case 3: With wrong username :"
-$CSQL_INSTALL_ROOT/bin/catalog -u wronguser -p password 2>/tmp/tmptstlog
+$CSQL_INSTALL_ROOT/bin/catalog -u wronguser -p password >/dev/null 2>&1
 if [ $? -eq 0 ]
 then
    exit 1;
 fi
 
 echo "Case 4: With wrong password :" 
-$CSQL_INSTALL_ROOT/bin/catalog -u root -p password 2>/tmp/tmptstlog
+$CSQL_INSTALL_ROOT/bin/catalog -u root -p password >/dev/null 2>&1
 if [ $? -eq 0 ]
 then
    exit 1;
