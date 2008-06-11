@@ -1,4 +1,4 @@
-Statement prepare failed with error -19
+echo int data type testing;
 Statement Executed
 Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
@@ -14,8 +14,8 @@ echo select * from t1;
 	11	1	
 	12	1	
 	13	1	
-	-999999998	1	
-	999999998	1	
+	-2147483648	1	
+	2147483647	1	
 	
 echo select * from t1 where f1 = 10;
 ---------------------------------------------------------
@@ -30,21 +30,20 @@ echo select * from t1 where f1 != 12 AND f2 <= 13;
 	10	1	
 	11	1	
 	13	1	
-	-999999998	1	
-	999999998	1	
+	-2147483648	1	
+	2147483647	1	
 	
 echo select * from t1 where f1 = 12 AND f2 >= 22;
 ---------------------------------------------------------
 	f1	f2	
 ---------------------------------------------------------
-	12	1	
 	
 echo select * from t1 where f1 = 12 OR  f1 > 13;
 ---------------------------------------------------------
 	f1	f2	
 ---------------------------------------------------------
 	12	1	
-	999999998	1	
+	2147483647	1	
 	
 echo select * from t1 where f1 = 12 OR f2 < 13;
 ---------------------------------------------------------
@@ -54,8 +53,8 @@ echo select * from t1 where f1 = 12 OR f2 < 13;
 	11	1	
 	12	1	
 	13	1	
-	-999999998	1	
-	999999998	1	
+	-2147483648	1	
+	2147483647	1	
 	
 echo select * from t1 where f1 = 12 OR f2 <> 22;
 ---------------------------------------------------------
@@ -65,8 +64,8 @@ echo select * from t1 where f1 = 12 OR f2 <> 22;
 	11	1	
 	12	1	
 	13	1	
-	-999999998	1	
-	999999998	1	
+	-2147483648	1	
+	2147483647	1	
 	
 echo select * from t1 where NOT f1 = 12;
 ---------------------------------------------------------
@@ -75,8 +74,8 @@ echo select * from t1 where NOT f1 = 12;
 	10	1	
 	11	1	
 	13	1	
-	-999999998	1	
-	999999998	1	
+	-2147483648	1	
+	2147483647	1	
 	
 echo select * from t1 where f1 != 12;
 ---------------------------------------------------------
@@ -85,8 +84,8 @@ echo select * from t1 where f1 != 12;
 	10	1	
 	11	1	
 	13	1	
-	-999999998	1	
-	999999998	1	
+	-2147483648	1	
+	2147483647	1	
 	
 echo select * from t1 where NOT f1 != 12;
 ---------------------------------------------------------
@@ -99,17 +98,16 @@ echo select * from t1 where f1 = f2;
 	f1	f2	
 ---------------------------------------------------------
 	
-echo select * from t1 where f1 between 999999997 and 999999999;
+echo select * from t1 where f1 between 2147483646 and 2147483647;
 ---------------------------------------------------------
 	f1	f2	
 ---------------------------------------------------------
-	999999998	1	
+	2147483647	1	
 	
-echo select * from t1 where f1 between -999999999 and -999999997;
+echo select * from t1 where f1 between -2147483647 and -2147483648;
 ---------------------------------------------------------
 	f1	f2	
 ---------------------------------------------------------
-	-999999998	1	
 	
 echo update t1 set f2 = 2 where f1 != f2;
 Statement Executed: Rows Affected = 6
@@ -120,8 +118,8 @@ Statement Executed: Rows Affected = 6
 	11	2	
 	12	2	
 	13	2	
-	-999999998	2	
-	999999998	2	
+	-2147483648	2	
+	2147483647	2	
 	
 echo update t1 set f2 = 3 where f1 = 12;
 Statement Executed: Rows Affected = 1
@@ -132,8 +130,8 @@ Statement Executed: Rows Affected = 1
 	11	2	
 	12	3	
 	13	2	
-	-999999998	2	
-	999999998	2	
+	-2147483648	2	
+	2147483647	2	
 	
 Statement Executed: Rows Affected = 1
 ---------------------------------------------------------
@@ -142,7 +140,7 @@ Statement Executed: Rows Affected = 1
 	10	2	
 	11	2	
 	13	2	
-	-999999998	2	
-	999999998	2	
+	-2147483648	2	
+	2147483647	2	
 	
 Statement Executed
