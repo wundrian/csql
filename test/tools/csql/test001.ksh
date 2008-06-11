@@ -23,14 +23,14 @@ then
 fi
 
 echo "Case 3: With wrong username :" 
-$CSQL_INSTALL_ROOT/bin/csql -u wronguser -p password < ${REL_PATH}/quit.sql 2>/tmp/tmptstlog
+$CSQL_INSTALL_ROOT/bin/csql -u wronguser -p password < ${REL_PATH}/quit.sql >/dev/null 2>&1
 if [ $? -eq 0 ]
 then
    exit 1;
 fi
 
 echo "Case 4: With wrong password :" 
-$CSQL_INSTALL_ROOT/bin/csql -u root -p password < ${REL_PATH}/quit.sql 2>/tmp/tmptstlog
+$CSQL_INSTALL_ROOT/bin/csql -u root -p password < ${REL_PATH}/quit.sql >/dev/null 2>&1
 if [ $? -eq 0 ]
 then
    exit 1;
