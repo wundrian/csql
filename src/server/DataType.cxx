@@ -534,6 +534,80 @@ void AllDataType::copyVal(void* dest, void *src, DataType type, int length)
             break;
         }
 }
+void AllDataType::addVal(void* dest, void *src, DataType type)
+{
+    switch(type)
+    {
+        case typeInt:
+            *(int*)dest = *(int*)dest + *(int*)src;
+            break;
+        case typeLong:
+            *(long*)dest = *(long*)dest + *(long*)src;
+            break;
+        case typeLongLong:
+            *(long long*)dest = *(long long*)dest + *(long long*)src;
+            break;
+        case typeShort:
+            *(short*)dest = *(short*)dest + *(short*)src;
+            break;
+        case typeByteInt:
+            *(char*)dest = *(char*)dest + *(char*)src;
+            break;
+        case typeDouble:
+            *(double*)dest = *(double*)dest + *(double*)src;
+            break;
+        case typeFloat:
+            *(float*)dest = *(float*)dest + *(float*)src;
+            break;
+        case typeDecimal:
+            //TODO::for porting
+        case typeDate:
+        case typeTime:
+        case typeTimeStamp:
+        default:
+             break;
+     }
+     return;
+}
+
+void AllDataType::divVal(void* dest, int src, DataType type)
+{
+    switch(type)
+    {
+        case typeInt:
+            *(int*)dest = *(int*)dest / src;
+            break;
+        case typeLong:
+            *(long*)dest = *(long*)dest / src;
+            break;
+        case typeLongLong:
+            *(long long*)dest = *(long long*)dest / src;
+            break;
+        case typeShort:
+            *(short*)dest = *(short*)dest / src;
+            break;
+        case typeByteInt:
+            *(char*)dest = *(char*)dest / src;
+            break;
+        case typeDouble:
+            *(double*)dest = *(double*)dest / src;
+            break;
+        case typeFloat:
+            *(float*)dest = *(float*)dest / src;
+            break;
+        case typeDecimal:
+            //TODO::for porting
+        case typeDate:
+        case typeTime:
+        case typeTimeStamp:
+        default:
+             break;
+     }
+     return;
+}
+
+
+
 
 bool AllDataType::compareVal(void *val1, void *val2, ComparisionOp op,
                              DataType type, long length)

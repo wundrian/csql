@@ -46,12 +46,8 @@ enum IsolationLevel
 *     1.Connection Management (connect and disconnect) <br/>
 *     2.Transaction Management (start, commit, abort) <br/>
 *     3.Provides getter methods for database manager and user manager <br/>
-* <br/>
-* TODO: <br/>
-* 1.Isolation Level support needs to be added. Currently it supports REPEATABLE READ <br/>
-*   isolation level as the default. It will soon support READ COMMITTED and <br/>
-*   READ UNCOMMITTED isolation levels<br/>
-* 2.AutoCommit mode<br/>
+*     4.Isolation Level support. REPEATABLE READ, <br/>
+*       READ COMMITTED and READ UNCOMMITTED isolation levels<br/>
 * <br/>
 *  Note: <br/>
 *  SERIALIZABLE isolation level is not supported.

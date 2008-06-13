@@ -62,7 +62,7 @@ am_libcsql_la_OBJECTS = BucketIter.lo BucketList.lo CatalogTables.lo \
 	Mutex.lo os.lo PageInfo.lo PredicateImpl.lo SessionImpl.lo \
 	TableDef.lo TableImpl.lo Transaction.lo TransactionManager.lo \
 	TupleIterator.lo UserManagerImpl.lo HashIndex.lo Config.lo \
-	Process.lo
+	Process.lo AggTableImpl.lo
 libcsql_la_OBJECTS = $(am_libcsql_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -194,7 +194,7 @@ libcsql_la_SOURCES = BucketIter.cxx BucketList.cxx CatalogTables.cxx Chunk.cxx \
 	ChunkIterator.cxx Condition.cxx Connection.cxx Database.cxx DatabaseManagerImpl.cxx DataType.cxx \
 	Debug.cxx FieldList.cxx Index.cxx LockListIter.cxx LockManager.cxx Logger.cxx Mutex.cxx os.cxx \
 	PageInfo.cxx PredicateImpl.cxx SessionImpl.cxx TableDef.cxx TableImpl.cxx Transaction.cxx \
-	TransactionManager.cxx TupleIterator.cxx UserManagerImpl.cxx HashIndex.cxx Config.cxx Process.cxx
+	TransactionManager.cxx TupleIterator.cxx UserManagerImpl.cxx HashIndex.cxx Config.cxx Process.cxx AggTableImpl.cxx
 
 all: all-am
 
@@ -265,6 +265,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AggTableImpl.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BucketIter.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BucketList.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CatalogTables.Plo@am__quote@

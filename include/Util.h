@@ -29,8 +29,8 @@ class ListIterator
 {
     ListNode *iter;
     ListNode *start;
-    ListIterator();
     public:
+    ListIterator(){}
 
     ListIterator(ListNode *head) { iter = head; start = head; }
 

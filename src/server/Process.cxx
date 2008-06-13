@@ -150,7 +150,7 @@ DbRetVal ProcessManager::deregisterThread(int procSlot)
     {
         if (pInfo->has_[muti] !=  NULL) 
         {
-            printError(ErrSysFatal, "Probable data corruption.some mutexes are not freed\n");
+            printError(ErrSysFatal, "Probable data corruption.some mutexes are not freed %x %s\n",  pInfo->has_[muti], pInfo->has_[muti]->name);
             pInfo->has_[muti]->releaseLock(procSlot); 
             return ErrSysFatal;
         }

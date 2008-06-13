@@ -366,7 +366,6 @@ Chunk* DatabaseManagerImpl::createUserChunk(size_t size)
     return chunkInfo;
 }
 
-
 //Assumes that system database mutex is taken before calling this.
 DbRetVal DatabaseManagerImpl::deleteUserChunk(Chunk *chunk)
 {
