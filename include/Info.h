@@ -26,7 +26,7 @@ class FieldNameNode;
 * @class FieldNameList
 *
 * @brief Field name list used to specify composite key while creating index. <br/>
-* @author Prabakaran Thirumalai
+* 
 */
 class FieldNameList
 {
@@ -64,7 +64,7 @@ class FieldIterator;
 * Encapsulates the information or schema definition of a table.For Example say if <br/>
 * we need to create table with two fields, call addField method with necessary parameters<br/>
 * twice. Passed as argument to createTable method of DatabaseManager to create table.<br/>
-* @author Prabakaran Thirumalai
+* 
 */
 class TableDef
 {
@@ -140,7 +140,7 @@ enum IndexType
 *
 * @brief Represents index definition used to create index.
 * Encapsulates the information or definition of an index.<br/>
-* @author Prabakaran Thirumalai
+* 
 */
 class IndexInitInfo
 {
@@ -159,7 +159,7 @@ class IndexInitInfo
 *
 * @brief Represents hash index definition used to create index.
 * Encapsulates the information or definition of hash index.<br/>
-* @author Prabakaran Thirumalai
+* 
 */
 class HashIndexInitInfo : public IndexInitInfo
 {

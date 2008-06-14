@@ -28,7 +28,7 @@
 *     1.Add and Delete Users<br/>
 *     2.Change Password<br/>
 * <br/>
-* @author Prabakaran Thirumalai
+* 
 */
 
 class UserManager

@@ -38,7 +38,7 @@ class ParsedData;
 *     2.Iterator for retrieving rows from the table <br/>
 *     3.Parameter support for performance.<br/>
 * <br/>
-* @author Prabakaran Thirumalai
+* 
 */
 class AbsSqlStatement
 {

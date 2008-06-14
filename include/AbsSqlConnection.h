@@ -34,7 +34,7 @@ enum TableSyncMode {
 /**
 * @class AbsSqlConnection
 *
-* \brief{ Represents a database connection to sql engine.}
+* \brief Represents a database connection to sql engine.
 *
 * It represents the database connection to the sql engine.\n
 * All database operations shall be done within the context of the connection.\n 

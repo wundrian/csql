@@ -25,7 +25,7 @@ typedef int JulianRep;
 * @class DataType
 * Data Types supported by the database system.
 * <br/>
-* @author Prabakaran Thirumalai
+* 
 */
 enum DataType {
    typeInt         =  0, /**<integer type*/
@@ -53,7 +53,7 @@ enum DataType {
 * @class ComparisionOp
 * Comparision operators supported by the database system.
 * <br/>
-* @author Prabakaran Thirumalai
+* 
 */
 enum ComparisionOp {
     OpEquals = 0,
@@ -69,7 +69,7 @@ enum ComparisionOp {
 * @class LogicalOp
 * Logical operators supported by the database system.
 * <br/>
-* @author Prabakaran Thirumalai
+* 
 */
 enum LogicalOp {
     OpAnd = 0,
@@ -137,7 +137,7 @@ class AllDataType
 * @class ByteInt
 * Represents 8 bit integer.
 * <br/>
-* @author Prabakaran Thirumalai
+* 
 */
 class ByteInt {
 
@@ -188,7 +188,7 @@ class ByteInt {
 * @class Date
 * Represents Date Data type.
 * <br/>
-* @author Prabakaran Thirumalai
+* 
 */
 class Date {  // The class a user would declare to hold date
 
@@ -344,7 +344,7 @@ class Date {  // The class a user would declare to hold date
 * @class Time
 * Represents Time Data type.
 * <br/>
-* @author Prabakaran Thirumalai
+* 
 */
 class Time {  // The class a user would declare to hold time
     public:
@@ -451,7 +451,7 @@ class Time {  // The class a user would declare to hold time
 * @class TimeStamp
 * Represents TimeStamp Data type.
 * <br/>
-* @author Prabakaran Thirumalai
+* 
 */
 class TimeStamp {
 

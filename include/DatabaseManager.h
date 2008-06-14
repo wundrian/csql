@@ -29,7 +29,7 @@ class Table;
 *     1.Table Management (create, drop, open and close) <br/>
 *     2.Index Management (create and drop) <br/>
 * <br/>
-* @author Prabakaran Thirumalai
+* 
 */
 class DatabaseManager
 {

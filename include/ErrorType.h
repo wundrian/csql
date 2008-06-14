@@ -20,7 +20,7 @@
 * Database Return Value.
 * This contains all the error codes returned by all the exposed APIs<br>
 * <br/>
-* @author Prabakaran Thirumalai
+* 
 */
 
 enum DbRetVal

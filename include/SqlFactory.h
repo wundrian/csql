@@ -35,7 +35,7 @@ enum SqlApiImplType
 * @class SqlFactory
 *
 * @brief Factory class to create appropriate implementation of SQL API
-* @author Prabakaran Thirumalai
+* 
 */
 class SqlFactory
 {

@@ -37,7 +37,7 @@ class Predicate;
 *    Condtion rootCondition;<br/>
 *    rootCondition.setTerm(p1, OpAnd, p2);<br/>
 *    table->setCondition(rootCondition);<br/>
-* @author Prabakaran Thirumalai
+* 
 */
 class Condition
 {
@@ -97,7 +97,7 @@ class Condition
 * represents the leaf of the logical expression tree. This is designed using composite 
 * design pattern
 *
-* @author Prabakaran Thirumalai
+* 
 */
 class Predicate
 {

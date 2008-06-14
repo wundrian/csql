@@ -32,7 +32,7 @@ class Condition;
 *     3.delete <br/>
 *     4.select with predicate or condition<br/>
 * <br/>
-* @author Prabakaran Thirumalai
+* 
 */
 
 class FieldInfo;

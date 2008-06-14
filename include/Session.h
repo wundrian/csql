@@ -51,7 +51,7 @@ enum IsolationLevel
 * <br/>
 *  Note: <br/>
 *  SERIALIZABLE isolation level is not supported.
-* @author Prabakaran Thirumalai
+* 
 */
 
 class Connection
