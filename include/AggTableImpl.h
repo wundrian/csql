@@ -31,7 +31,8 @@ enum AggType
     AGG_MAX,
     AGG_SUM,
     AGG_AVG,
-    AGG_COUNT
+    AGG_COUNT,
+    AGG_UNKNOWN
 };
 class AggFldDef
 {
@@ -43,6 +44,16 @@ class AggFldDef
     void *appBuf;
     AggType atype;
     bool alreadyBinded;
+    AggFldDef()
+    {
+        strcpy(fldName, "");
+        type=typeUnknown;
+        length=0;
+        bindBuf=NULL;
+        appBuf=NULL;
+        atype=AGG_UNKNOWN;
+        alreadyBinded=false;
+    }
 };
 
 
@@ -67,7 +78,12 @@ class AggTableImpl:public Table
     DbRetVal getFieldInfo(const char *fieldName,  FieldInfo *&info)
         { return ErrBadCall; }
 
+    bool isGroupSet()
+        { 
+        if (groupFld.type == typeUnknown) return false; else return true;
+        }
     void* insertOrGet(); 
+
     void setTable(Table *impl){ tableHdl = impl;}
     void closeScan();
 
