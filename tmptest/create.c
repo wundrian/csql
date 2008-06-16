@@ -91,9 +91,9 @@ int main()
     AggTableImpl aggTable;
     int group1=0, sum1=0, max1=0, cnt1=0;
     aggTable.setTable(table);
-    aggTable.setGroup("f4", &group1);
-    aggTable.bindFld("f2", AGG_AVG, &sum1);
-    aggTable.bindFld("f2", AGG_MIN, &max1);
+    //aggTable.setGroup("f4", &group1);
+    aggTable.bindFld("f1", AGG_AVG, &sum1);
+    aggTable.bindFld("f2", AGG_MAX, &max1);
     aggTable.bindFld("f3", AGG_COUNT, &cnt1);
 
     conn.startTransaction();
@@ -111,25 +111,6 @@ int main()
     conn.commit();
     aggTable.close();
     
-    aggTable.setTable(table);
-    aggTable.setGroup("f4", &group1);
-    aggTable.bindFld("f2", AGG_MIN, &sum1);
-    aggTable.bindFld("f2", AGG_MAX, &max1);
-    aggTable.bindFld("f3", AGG_COUNT, &cnt1);
-
-    conn.startTransaction();
-    aggTable.execute();
-    printf("Tuple values:\n");
-    while(true)
-    {    
-        tuple = (char*)aggTable.fetch() ;
-        if (tuple == NULL) { break; }
-        printf("grpfld=%d sumfld=%d maxfld=%d cntfld=%d\n", group1, sum1,max1,cnt1);
-        icount++;
-    }
-    aggTable.closeScan();
-    aggTable.close();
-
     dbMgr->closeTable(table);
  //   dbMgr->dropTable("t1");
     printf("Table dropped\n");
