@@ -82,7 +82,10 @@ DbRetVal AggTableImpl::execute()
 {
     ListIterator iter = fldList.getIterator();
     AggFldDef  *def;
-    aggNodeSize = AllDataType::size(groupFld.type, groupFld.length);
+    if (isGroupSet())
+        aggNodeSize = AllDataType::size(groupFld.type, groupFld.length);
+    else 
+        aggNodeSize = 0;
     while (iter.hasElement())
     {
          def = (AggFldDef*) iter.nextElement();   
@@ -97,7 +100,10 @@ DbRetVal AggTableImpl::execute()
     {
         char *buffer = (char*)insertOrGet();
         iter.reset();
-        offset = AllDataType::size(groupFld.type, groupFld.length);
+        if (isGroupSet())
+            offset = AllDataType::size(groupFld.type, groupFld.length);
+        else
+            offset = 0;
         while (iter.hasElement())
         {
            def = (AggFldDef*) iter.nextElement(); 
@@ -142,7 +148,10 @@ DbRetVal AggTableImpl::execute()
     char *element;
     while (iter.hasElement()) {
         def = (AggFldDef*) iter.nextElement();   
-        offset = AllDataType::size(groupFld.type, groupFld.length);
+        if (isGroupSet())
+            offset = AllDataType::size(groupFld.type, groupFld.length);
+        else
+            offset = 0;
         switch(def->atype)
         {
             case AGG_AVG: {
@@ -167,6 +176,8 @@ void* AggTableImpl::insertOrGet()
     char *element;
     while (aiter.hasElement()) {
         element = (char*)aiter.nextElement();
+
+        if (!isGroupSet()) return element;
         if (AllDataType::compareVal(element, groupFld.bindBuf, OpEquals, 
                                              groupFld.type, groupFld.length))
         {
@@ -176,9 +187,15 @@ void* AggTableImpl::insertOrGet()
     element = (char*)malloc(aggNodeSize);
     ListIterator iter = fldList.getIterator();
     AggFldDef  *def;
-    AllDataType::copyVal(element, groupFld.bindBuf, groupFld.type, 
+    char *offset;
+    if (isGroupSet()) {
+        AllDataType::copyVal(element, groupFld.bindBuf, groupFld.type, 
                                                  groupFld.length);
-    char *offset = element + AllDataType::size(groupFld.type, groupFld.length);
+        offset = element + AllDataType::size(groupFld.type, groupFld.length);
+    }
+    else
+        offset = element;
+
     while (iter.hasElement())
     {
          def = (AggFldDef*) iter.nextElement();   
