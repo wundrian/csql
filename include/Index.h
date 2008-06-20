@@ -92,7 +92,7 @@ class HashIndex : public Index
     DbRetVal insert(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool undoFlag);
     DbRetVal remove(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool undoFlag);
     DbRetVal update(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool undoFlag);
-    static unsigned int computeHashBucket(DataType type, void *key, int noOfBuckets);
+    static unsigned int computeHashBucket(DataType type, void *key, int noOfBuckets, int length=0);
 
 };
 
@@ -110,21 +110,20 @@ class IndexInfo
 };
 
 //Used by TableImpl to cache information related to hash indexes on that table
-class SingleFieldHashIndexInfo :public IndexInfo
+class HashIndexInfo :public IndexInfo
 {
     public:
-    char  *fldName;
-    DataType type ;
+    FieldList idxFldList;
     char *indexPtr;
     int noOfBuckets;
     Bucket* buckets;
-    int fldPos;
+    int fldOffset;
     bool isUnique;
-    int offset;
-    int length;
+    DataType type;
+    int compLength;
     void print() 
     {
-        printf("SingleFieldHashIndexInfo fldname:%s type:%d indexPtr:%x noOfBuckets:%d buckets:%x isUnique:%d\n", fldName, type, indexPtr, noOfBuckets, buckets, isUnique);
+        printf("HashIndexInfo indexPtr:%x noOfBuckets:%d buckets:%x \n",indexPtr, noOfBuckets, buckets);
     }
 };
 #endif

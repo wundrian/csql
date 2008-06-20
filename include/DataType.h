@@ -45,6 +45,7 @@ enum DataType {
    typeString      =  30,
    typeBinary      =  31,
 
+   typeComposite   =  98,
    typeULong       =  99,
    typeUnknown     =  100
 };

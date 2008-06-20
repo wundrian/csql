@@ -246,6 +246,7 @@ class CatalogTableINDEXFIELD
     DbRetVal remove(void *iptr);
 
     DbRetVal getFieldNameAndType(void *iptr, char *&name, DataType &type);
+    DbRetVal getFieldInfo(void *index, FieldList &list);
 
 };
 #endif
