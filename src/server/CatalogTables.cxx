@@ -465,6 +465,41 @@ DbRetVal CatalogTableINDEXFIELD::getFieldNameAndType(void *index,
     return ErrNotExists;
 }
 
+DbRetVal CatalogTableINDEXFIELD::getFieldInfo(void *index, FieldList &list)
+{
+    Chunk *ifChunk;
+    ifChunk = systemDatabase_->getSystemDatabaseChunk(IndexFieldTableId);
+    ChunkIterator ifIter = ifChunk->getIterator();
+    void *data = NULL;
+    int rowCount =0;
+    while ((data = ifIter.nextElement())!= NULL)
+    {
+        if (((INDEXFIELD*)data)->indexPtr == index)
+        {
+            //add the information to the field list
+            FIELD *fTuple = (FIELD*)(((INDEXFIELD*)data)->fieldPtr);
+            FieldDef fldDef;
+            strcpy(fldDef.fldName_, fTuple->fldName_);
+            fldDef.fldName_[IDENTIFIER_LENGTH] = '\0';
+            fldDef.type_ = fTuple->type_;
+            fldDef.length_ = fTuple->length_;
+            fldDef.isDefault_ = fTuple->isDefault_;
+            os::memcpy(fldDef.defaultValueBuf_, fTuple->defaultValueBuf_,
+                                         DEFAULT_VALUE_BUF_LENGTH);
+            fldDef.isNull_ = fTuple->isNull_;
+            fldDef.isUnique_ = fTuple->isUnique_;
+            fldDef.isPrimary_ = fTuple->isPrimary_;
+            list.append(fldDef);
+        }
+        rowCount++;
+    }
+    if (!rowCount) { 
+         printError(ErrNotExists,"Index %x not exists in catalog table", index);
+         return ErrNotExists;
+    }
+    return OK;
+}
+
 DbRetVal CatalogTableUSER::insert(const char *name, const char *pass)
 {
     Chunk *tChunk = systemDatabase_->getSystemDatabaseChunk(UserTableId);

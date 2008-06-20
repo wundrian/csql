@@ -44,8 +44,28 @@ unsigned int hashString(char *strVal)
     }
     return hval;
 }
+unsigned int hashBinary(char *strVal, int length)
+{
+    unsigned int hval, g;
+    hval = 0;
+    char *str =strVal;
+    int iter = 0;
+    while (iter != length)
+    {
+        hval <<= 4;
+        hval += (unsigned int) *str++;
+        g = hval & ((unsigned int) 0xf << (32 - 4));
+        if (g != 0)
+	{
+	    hval ^= g >> (32 - 8);
+	    hval ^= g;
+	}
+        iter++;
+    }
+    return hval;
+}
 
-unsigned int HashIndex::computeHashBucket(DataType type, void *key, int noOfBuckets)
+unsigned int HashIndex::computeHashBucket(DataType type, void *key, int noOfBuckets, int length)
 
 {
     switch(type)
@@ -123,9 +143,11 @@ unsigned int HashIndex::computeHashBucket(DataType type, void *key, int noOfBuck
             unsigned int val = hashString((char*)key);
             return val % noOfBuckets;
         }
+        case typeComposite:
         case typeBinary:
         {
-            //TODO
+            unsigned int val = hashBinary((char*)key, length);
+            return val % noOfBuckets;
         }
         default:
         {
@@ -135,25 +157,21 @@ unsigned int HashIndex::computeHashBucket(DataType type, void *key, int noOfBuck
     return -1;
 }
 
-//TODO::composite keys are not supported currently
 DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *indInfo, void *tuple, bool undoFlag)
 {
-    SingleFieldHashIndexInfo *info = (SingleFieldHashIndexInfo*) indInfo;
+    HashIndexInfo *info = (HashIndexInfo*) indInfo;
     INDEX *iptr = (INDEX*)indexPtr;
     DbRetVal rc = OK;
-    DataType type = info->type;
-    char *name = info->fldName;
-    int offset  = info->offset;
     int noOfBuckets = info->noOfBuckets;
-    int length = info->length;
-
-    printDebug(DM_HashIndex, "Inserting hash index node for field %s", name);
+    int offset = info->fldOffset;
+    DataType type = info->type;
+    printDebug(DM_HashIndex, "Inserting hash index node for  %s", iptr->indName_);
     ChunkIterator citer = CatalogTableINDEX::getIterator(indexPtr);
     Bucket* buckets = (Bucket*)citer.nextElement();
     void *keyPtr =(void*)((char*)tuple + offset);
 
     int bucketNo = computeHashBucket(type,
-                        keyPtr, noOfBuckets);
+                        keyPtr, noOfBuckets, info->compLength);
     printDebug(DM_HashIndex, "HashIndex insert bucketno %d", bucketNo);
     Bucket *bucket =  &(buckets[bucketNo]);
 
@@ -175,7 +193,7 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         {
             bucketTuple = node->ptrToTuple_;
             if (AllDataType::compareVal((void*)((char*)bucketTuple +offset), 
-                   (void*)((char*)tuple +offset), OpEquals,type, length)) 
+                   (void*)((char*)tuple +offset), OpEquals,type, info->compLength)) 
             {
                 printError(ErrUnique, "Unique key violation");
                 bucket->mutex_.releaseLock(tbl->db_->procSlot);
@@ -228,23 +246,20 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
 }
 
 
-//TODO::composite keys are not supported currently
 DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *indInfo, void *tuple, bool undoFlag)
 {
     INDEX *iptr = (INDEX*)indexPtr;
 
-    SingleFieldHashIndexInfo *info = (SingleFieldHashIndexInfo*) indInfo;
+    HashIndexInfo *info = (HashIndexInfo*) indInfo;
     DataType type = info->type;
-    char *name = info->fldName;
-    int offset  = info->offset;
+    int offset  = info->fldOffset;
     int noOfBuckets = info->noOfBuckets;
 
-    printDebug(DM_HashIndex, "Removing hash index node for field %s", name);
     ChunkIterator citer = CatalogTableINDEX::getIterator(indexPtr);
     Bucket* buckets = (Bucket*)citer.nextElement();
     void *keyPtr =(void*)((char*)tuple + offset);
 
-    int bucket = HashIndex::computeHashBucket(type, keyPtr, noOfBuckets);
+    int bucket = HashIndex::computeHashBucket(type, keyPtr, noOfBuckets, info->compLength);
 
     Bucket *bucket1 = &buckets[bucket];
 
@@ -276,54 +291,68 @@ DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         }
     }
     bucket1->mutex_.releaseLock(tbl->db_->procSlot);
+    
     return rc;
 }
 
-//TODO::composite keys are not supported currently
 DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *indInfo, void *tuple, bool undoFlag)
 {
     INDEX *iptr = (INDEX*)indexPtr;
 
-    SingleFieldHashIndexInfo *info = (SingleFieldHashIndexInfo*) indInfo;
+    HashIndexInfo *info = (HashIndexInfo*) indInfo;
     DataType type = info->type;
-    char *name = info->fldName;
-    int offset  = info->offset;
+    int offset  = info->fldOffset;
     int noOfBuckets = info->noOfBuckets;
-
-    printDebug(DM_HashIndex, "Updating hash index node for field %s", name);
 
     //check whether the index key is updated or not
     //if it is not updated return from here
     void *keyPtr =(void*)((char*)tuple + offset);
+    char *kPtr= (char*)keyPtr;
     //Iterate through the bind list and check
-    FieldIterator fldIter = tbl->fldList_.getIterator();
-    void *newKey = NULL;
-    while (fldIter.hasElement())
+    FieldIterator idxFldIter = info->idxFldList.getIterator();
+    char *keyBindBuffer = (char*) malloc(info->compLength);
+    void *keyStartBuffer = (void*) keyBindBuffer;
+    bool keyUpdated = false;
+    while (idxFldIter.hasElement())
     {
+      FieldDef idef = idxFldIter.nextElement();
+      FieldIterator fldIter = tbl->fldList_.getIterator();
+      while (fldIter.hasElement())
+      {
         FieldDef def = fldIter.nextElement();
-        if (0 == strcmp(def.fldName_, name))
+        if (0 == strcmp(def.fldName_, idef.fldName_))
         {
-            if (NULL == def.bindVal_)
-                return OK;
-            bool result = AllDataType::compareVal(keyPtr, def.bindVal_,
-                                OpEquals, def.type_, def.length_);
-            if (result) return OK; else newKey = def.bindVal_;
+            if (NULL != def.bindVal_) { 
+                AllDataType::copyVal(keyBindBuffer, def.bindVal_, 
+                                               def.type_, def.length_);
+                keyBindBuffer = keyBindBuffer + AllDataType::size(def.type_, 
+                                                                def.length_);
+                keyUpdated = true;
+                break;
+            }
         }
+      }
     }
+    if (!keyUpdated) 
+    { 
+        //printf("PRABA::key not updated\n");
+        free(keyStartBuffer); 
+        return OK; 
+    }
+    //printf("PRABA::it is wrong coming here\n");
+    bool result = AllDataType::compareVal(kPtr, keyStartBuffer,
+                                OpEquals, info->type, info->compLength);
+    if (result) return OK; 
+
     printDebug(DM_HashIndex, "Updating hash index node: Key value is updated");
 
-    if (newKey == NULL)
-    { 
-        printError(ErrSysInternal,"Internal Error:: newKey is Null");
-        return ErrSysInternal;
-    }
     ChunkIterator citer = CatalogTableINDEX::getIterator(indexPtr);
 
     Bucket* buckets = (Bucket*)citer.nextElement();
 
     //remove the node whose key is updated
     int bucketNo = computeHashBucket(type,
-                        keyPtr, noOfBuckets);
+                        keyPtr, noOfBuckets, info->compLength);
     printDebug(DM_HashIndex, "Updating hash index node: Bucket for old value is %d", bucketNo);
     Bucket *bucket = &buckets[bucketNo];
 
@@ -338,7 +367,7 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     }
     //insert node for the updated key value
     int newBucketNo = computeHashBucket(type,
-                        newKey, noOfBuckets);
+                        keyStartBuffer, noOfBuckets);
     printDebug(DM_HashIndex, "Updating hash index node: Bucket for new value is %d", newBucketNo);
 
     Bucket *bucket1 = &buckets[newBucketNo];
@@ -413,5 +442,6 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     }
     bucket1->mutex_.releaseLock(tbl->db_->procSlot);
     bucket->mutex_.releaseLock(tbl->db_->procSlot);
+
     return rc;
 }

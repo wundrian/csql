@@ -173,16 +173,26 @@ DbRetVal TableImpl::createPlan()
            printDebug(DM_Predicate, "predicate does not involve NOT , OR operator");
           for (int i =0; i < numIndexes_; i++)
           {
-              char *fName = ((SingleFieldHashIndexInfo*)idxInfo[i])->fldName;
-              if (pred->pointLookupInvolved(fName))
+              HashIndexInfo* info = (HashIndexInfo*) idxInfo[i];
+              FieldIterator iter = info->idxFldList.getIterator();
+              while(iter.hasElement())
               {
-                 printDebug(DM_Predicate, "point lookup involved for field %s",fName);
-                 scanType_ = hashIndexScan;
-                 useIndex_ = i;
-                 isPlanCreated = true;
-                 return OK;
-              }
-           }
+                FieldDef def = iter.nextElement();
+                if (pred->pointLookupInvolved(def.fldName_))
+                {
+                  printDebug(DM_Predicate, "point lookup involved for field %s",def.fldName_);
+                  scanType_ = hashIndexScan;
+                  isPlanCreated = true;
+                  useIndex_ = i;
+                }
+                else 
+                {
+                    useIndex_ = -1;
+                    break;
+                }
+             }//while iter.hasElement()
+             if (useIndex_ != -1) return OK;
+           }//for
         }
     }
     scanType_ = fullTableScan;
@@ -667,7 +677,7 @@ void TableImpl::printSQLIndexString()
         INDEX *iptr = (INDEX*) indexPtr_[i];
         cIndexField.getFieldNameAndType((void*)iptr, fldName, type);
         printf("CREATE INDEX %s on %s ( %s ) ", iptr->indName_, getName(), fldName);
-        if (((SingleFieldHashIndexInfo*) idxInfo[i])->isUnique) printf(" UNIQUE;\n"); else printf(";\n");
+        if (((HashIndexInfo*) idxInfo[i])->isUnique) printf(" UNIQUE;\n"); else printf(";\n");
     }
 }
 
@@ -680,7 +690,7 @@ DbRetVal TableImpl::updateIndexNode(Transaction *tr, void *indexPtr, IndexInfo *
     //TODO::currently it updates irrespective of whether the key changed or not 
     //because of this commenting the whole index update code. relook at it and uncomment
 
-    //ret = idx->update(this, tr, indexPtr, info, tuple, undoFlag);
+    ret = idx->update(this, tr, indexPtr, info, tuple, undoFlag);
 
     return ret;
 }

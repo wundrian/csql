@@ -29,13 +29,24 @@ DbRetVal TupleIterator::open()
         *cIter = ((Chunk*)chunkPtr_)->getIterator();
     }else if (hashIndexScan == scanType_)
     {
-        SingleFieldHashIndexInfo *hIdxInfo = (SingleFieldHashIndexInfo*)info;
+        HashIndexInfo *hIdxInfo = (HashIndexInfo*)info;
         PredicateImpl *predImpl = (PredicateImpl*) pred_;
         bool isPtr = false;
-        void *keyPtr = (void*)predImpl->valPtrForIndexField(hIdxInfo->fldName);
+        FieldIterator iter = hIdxInfo->idxFldList.getIterator();
+        char *keyBuffer;
+        keyBuffer = (char*) malloc(hIdxInfo->compLength);
+        void *keyStartBuffer = (void*) keyBuffer, *keyPtr;
+        while(iter.hasElement())
+        {
+           FieldDef def = iter.nextElement();
+           keyPtr = (void*)predImpl->valPtrForIndexField(def.fldName_);
+           AllDataType::copyVal(keyBuffer, keyPtr, def.type_, def.length_); 
+           keyBuffer = keyBuffer + AllDataType::size(def.type_, def.length_);
+        }
 
         int bucketNo = HashIndex::computeHashBucket(hIdxInfo->type,
-                        keyPtr, hIdxInfo->noOfBuckets);
+                      keyStartBuffer, hIdxInfo->noOfBuckets, hIdxInfo->compLength);
+        free(keyStartBuffer);
         Bucket *bucket =  &(hIdxInfo->buckets[bucketNo]);
         int ret = bucket->mutex_.getLock(procSlot);
         if (ret != 0)
@@ -53,6 +64,7 @@ DbRetVal TupleIterator::open()
         printDebug(DM_HashIndex, "open:head for bucket %x is :%x", bucket, head);
         bIter  = new BucketIter(head);
         bucket->mutex_.releaseLock(procSlot);
+        
     }
     return OK;
 }

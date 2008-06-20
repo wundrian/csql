@@ -663,16 +663,31 @@ Table* DatabaseManagerImpl::openTable(const char *name)
     cIndex.getIndexPtrs(tptr, table->indexPtr_);
     for (int i =0 ; i < table->numIndexes_; i++ )
     {
-        SingleFieldHashIndexInfo *hIdxInfo = new SingleFieldHashIndexInfo();
+        HashIndexInfo *hIdxInfo = new HashIndexInfo();
         CatalogTableINDEXFIELD cIndexField(systemDatabase_);
-        cIndexField.getFieldNameAndType(table->indexPtr_[i], hIdxInfo->fldName,
-                                                      hIdxInfo->type);
+        cIndexField.getFieldInfo(table->indexPtr_[i], hIdxInfo->idxFldList);
         ChunkIterator citer = CatalogTableINDEX::getIterator(table->indexPtr_[i]);
         hIdxInfo->noOfBuckets = CatalogTableINDEX::getNoOfBuckets(table->indexPtr_[i]);
+        FieldIterator fIter = hIdxInfo->idxFldList.getIterator();
+        bool firstFld = true;
+        while (fIter.hasElement())
+        {
+            FieldDef def = fIter.nextElement();
+            if (firstFld)
+            {
+                hIdxInfo->fldOffset = table->fldList_.getFieldOffset(def.fldName_);
+                hIdxInfo->type = table->fldList_.getFieldType(def.fldName_);
+                hIdxInfo->compLength = table->fldList_.getFieldLength(def.fldName_);
+                firstFld = false;
+            }else {
+                hIdxInfo->type = typeComposite;
+                hIdxInfo->compLength = hIdxInfo->compLength +
+                         table->fldList_.getFieldLength(def.fldName_);
+            }
+        }
+
         hIdxInfo->isUnique = CatalogTableINDEX::getUnique(table->indexPtr_[i]);
         hIdxInfo->buckets = (Bucket*)citer.nextElement();
-        hIdxInfo->offset = table->fldList_.getFieldOffset(hIdxInfo->fldName);
-        hIdxInfo->length = table->fldList_.getFieldLength(hIdxInfo->fldName);
         table->idxInfo[i] = (IndexInfo*) hIdxInfo;
     }
     systemDatabase_->releaseDatabaseMutex();
@@ -764,9 +779,6 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
     {
         printError(ErrBadCall, "No Field name specified");
         return ErrBadCall;
-    }else if (totFlds >1) {
-        printError(ErrNotYet, "Composite keys not supported");
-        return ErrNotYet;
     }
     void *tptr =NULL;
     void *chunk = NULL;
@@ -860,7 +872,6 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
         printError(ErrSysInternal, "Unable to create chunk for storing hash index nodes");
         return ErrSysInternal;
     }
-
 
     //add row to INDEX
     void *tupleptr = NULL;

@@ -651,6 +651,7 @@ bool AllDataType::compareVal(void *val1, void *val2, ComparisionOp op,
        case typeString:
            result = AllDataType::compareStringVal(val1, val2, op);
            break;
+       case typeComposite:
        case typeBinary:
            result = AllDataType::compareBinaryVal(val1, val2, op, length);
            break;
