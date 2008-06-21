@@ -106,10 +106,10 @@ class List
         {
             if (elem == iter->element)
             {
+                if (iter == head) { head = iter->next; delete iter; return OK;}
                 prev->next = iter->next;
                 delete iter;
                 totalElements--;
-                if (iter == head) { head = NULL; return OK;}
                 return OK;
             }
             prev = iter;
