@@ -123,6 +123,9 @@ int UpdateTest(SQLHANDLE env,SQLHANDLE dbc,SQLHANDLE stmt)
    ret = SQLPrepare(stmt,(unsigned char*)"UPDATE T1 SET F10=? ,F8=?,F6=?,F5=?,F4=?,F3=? WHERE F2=? ",SQL_NTS);
    checkrc(ret,__LINE__);
 
+   SQLSMALLINT nop;
+   SQLNumParams(stmt,&nop);
+   printf("Number of parameters=%d\n",nop);
 
    ret = SQLBindParameter(stmt,1,SQL_PARAM_INPUT,SQL_C_SBIGINT,SQL_BIGINT,0,0,&f10temp,0,NULL);
    checkrc(ret,__LINE__);
@@ -146,10 +149,6 @@ int UpdateTest(SQLHANDLE env,SQLHANDLE dbc,SQLHANDLE stmt)
    checkrc(ret,__LINE__);
    //**************************************************************************************************
    
-   SQLSMALLINT nop;
-   SQLNumParams(stmt,&nop);
-   printf("Number of parameters=%d\n",nop);
-  
   f2temp=20;int count1=0;
   for(int i=0;i<5;i++)
   {
