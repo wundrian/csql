@@ -1384,7 +1384,7 @@ SQLRETURN CSqlOdbcStmt::SQLNumParams(
         return( SQL_ERROR );
     if(ParameterCount == NULL)
         return (SQL_ERROR);
-    *ParameterCount=(int)apd_.size();
+    *ParameterCount=fsqlStmt_->noOfParamFields();
 
     return SQL_SUCCESS;
 }
