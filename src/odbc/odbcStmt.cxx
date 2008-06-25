@@ -99,7 +99,6 @@ SQLRETURN CSqlOdbcStmt::SQLFreeHandle(
 
     // Set Dbc state_ = no statement.
     if( inputStmt->parentDbc_->stmtList_.size() == 0 )
-        if( inputStmt->parentDbc_->state_ == C5 )
             inputStmt->parentDbc_->state_ = C4;
 
     inputStmt->handleType_ = -1; // Make object invalid.
