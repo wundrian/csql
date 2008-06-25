@@ -59,6 +59,7 @@ int FetchTest(SQLHANDLE env, SQLHANDLE dbc, SQLHANDLE stmt)
       
     printf("Total row fetched=%d\n",count);
     if(count != 0)return 1;
+    return 0;
 } 
  
 //******************************************************************
