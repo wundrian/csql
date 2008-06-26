@@ -63,11 +63,18 @@ void** ParsedData::insertCondValueAndGetPtr(char *fldName, char *val)
 
 }
 
-void ParsedData::insertField(char *fName)
+void ParsedData::insertField(char *fName, AggType type)
 {
     FieldName *newVal = new FieldName();
     strcpy(newVal->fldName , fName);
+    newVal->aType = type;
     fieldNameList.append(newVal);
+}
+void ParsedData::insertGroupField(char *fName)
+{
+    FieldName *newVal = new FieldName();
+    strcpy(newVal->fldName , fName);
+    groupFieldNameList.append(newVal);
 }
 
 void ParsedData::insertUpdateValue(char *fName, char *val)

@@ -20,6 +20,7 @@
 #ifndef PARSER_H
 #define PARSER_H
 #include <CSql.h>
+#include <AggTableImpl.h>
 #include <os.h>
 #include <Util.h>
 enum StatementType
@@ -58,6 +59,12 @@ struct ConditionValue
 struct FieldName
 {
     char fldName[IDENTIFIER_LENGTH];
+    AggType aType; //used only in case of select projection
+    FieldName()
+    {
+        strcpy(fldName,"");
+        aType = AGG_UNKNOWN;
+    }
 };
 
 struct UpdateFieldValue
@@ -85,6 +92,8 @@ class ParsedData
     //and for projection list of select
     //also used to store primary or unique key fields in create statement
     List fieldNameList;
+
+    List groupFieldNameList;
 
     //holds pointer to condition values.
     List conditionValueList;
@@ -132,7 +141,8 @@ class ParsedData
     void** insertCondValueAndGetPtr(char *fName, char *value);
     void insertUpdateValue(char *fldName, char *value);
 
-    void insertField(char *fName);
+    void insertField(char *fName, AggType aggType= AGG_UNKNOWN);
+    void insertGroupField(char *fName);
     void clearFieldNameList();
 
 
@@ -150,6 +160,7 @@ class ParsedData
     void insertFieldValue(FieldValue *newVal) { fieldValueList.append(newVal); }
 
     List getFieldNameList() { return fieldNameList; }
+    List getGroupFieldNameList() { return groupFieldNameList; }
     List getConditionValueList() { return conditionValueList; }
     List getFieldValueList() { return fieldValueList; }
     List getInValueList() { return inValueList; }

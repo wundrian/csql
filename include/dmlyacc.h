@@ -1,7 +1,3 @@
-#ifndef YYERRCODE
-#define YYERRCODE 256
-#endif
-
 #define STRING 257
 #define FIELD 258
 #define NUMBER_STRING 259
@@ -13,38 +9,47 @@
 #define FROM 265
 #define WHERE 266
 #define BETWEEN 267
-#define AND 268
-#define OR 269
-#define NOT 270
-#define STAR 271
-#define INSERT 272
-#define INTO 273
-#define VALUES 274
-#define DELETE 275
-#define UPDATE 276
-#define SET 277
-#define NULL_VALUE 278
-#define CREATE 279
-#define TABLE 280
-#define PRIMARY 281
-#define KEY 282
-#define DEFAULT 283
-#define INDEX 284
-#define ON 285
-#define HASH 286
-#define TREE 287
-#define UNIQUE 288
-#define DROP 289
-#define INT_TYPE 290
-#define LONG_TYPE 291
-#define SHORT_TYPE 292
-#define DOUBLE_TYPE 293
-#define TIMESTAMP_TYPE 294
-#define DATE_TYPE 295
-#define CHAR_TYPE 296
-#define TIME_TYPE 297
-#define BIGINT_TYPE 298
-#define FLOAT_TYPE 299
+#define IN 268
+#define AND 269
+#define OR 270
+#define NOT 271
+#define STAR 272
+#define INSERT 273
+#define INTO 274
+#define VALUES 275
+#define DELETE 276
+#define UPDATE 277
+#define SET 278
+#define NULL_VALUE 279
+#define CREATE 280
+#define TABLE 281
+#define PRIMARY 282
+#define KEY 283
+#define DEFAULT 284
+#define INDEX 285
+#define ON 286
+#define HASH 287
+#define TREE 288
+#define UNIQUE 289
+#define DROP 290
+#define INT_TYPE 291
+#define LONG_TYPE 292
+#define SHORT_TYPE 293
+#define DOUBLE_TYPE 294
+#define TIMESTAMP_TYPE 295
+#define DATE_TYPE 296
+#define CHAR_TYPE 297
+#define TIME_TYPE 298
+#define BIGINT_TYPE 299
+#define FLOAT_TYPE 300
+#define TINYINT_TYPE 301
+#define MIN 302
+#define MAX 303
+#define AVG 304
+#define SUM 305
+#define COUNT 306
+#define GROUP 307
+#define BY 308
 typedef union
 {
    char *stringval;

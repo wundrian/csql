@@ -250,6 +250,16 @@ DbRetVal SelStatement::resolve()
     FieldName *name = NULL;
     FieldInfo *fInfo = new FieldInfo();
     DbRetVal rv = OK;
+    bool aggFlag = false;
+    AggTableImpl *aggTable = NULL;
+    //TODO::Projection should have only aggregates and field names in 
+    // group by list only
+    int groupFieldListSize =  parsedData->getGroupFieldNameList().size();
+    if (groupFieldListSize !=0) {
+       aggTable = new AggTableImpl();
+       aggTable->setTable(table);
+    }
+    bool isGroupFldInProjection = false;
     while (iter.hasElement())
     {
         name = (FieldName*)iter.nextElement();
@@ -295,14 +305,46 @@ DbRetVal SelStatement::resolve()
             newVal->length = fInfo->length;
             newVal->value = AllDataType::alloc(fInfo->type, fInfo->length);
             parsedData->insertFieldValue(newVal);
-            table->bindFld(name->fldName, newVal->value);
+            if (name->aType == AGG_UNKNOWN) {
+                if (groupFieldListSize == 0) {
+                    table->bindFld(name->fldName, newVal->value);
+                }else {
+                    delete newVal;
+                    FieldName *groupFldName = NULL;
+                    ListIterator giter = parsedData->getGroupFieldNameList().
+                                                         getIterator();
+                    while (giter.hasElement())
+                    {
+                        groupFldName = (FieldName*)giter.nextElement();
+                        if (strcmp(groupFldName->fldName, name->fldName) ==0) {
+                             isGroupFldInProjection = true;
+                             aggTable->setGroup(name->fldName, newVal->value);
+                         }
+                    }
+                    if (!isGroupFldInProjection) 
+                    {
+                        printError(ErrSyntax, "Projection should contain only group fields\n");
+                        delete fInfo;
+                        dbMgr->closeTable(table);
+                        table = NULL;
+                        return ErrSyntax;
+                    }
+                }
+            } else {
+               if (!aggFlag) {
+                  aggTable = new AggTableImpl();
+                  aggTable->setTable(table);
+                  aggFlag = true;
+               }
+               aggTable->bindFld(name->fldName, name->aType, newVal->value);
+            }
         }
     }
-    delete fInfo;
 
     rv = setBindFieldAndValues();
     if (rv != OK) 
     {
+        delete fInfo;
         dbMgr->closeTable(table);
         table = NULL;
         return rv;
@@ -313,11 +355,40 @@ DbRetVal SelStatement::resolve()
     rv = resolveForCondition();
     if (rv != OK) 
     {
+        delete fInfo;
         //TODO::free memory allocated for params
         table->setCondition(NULL);
         dbMgr->closeTable(table);
         table = NULL;
     }
+    if(aggFlag && !isGroupFldInProjection) {
+        ListIterator giter = parsedData->getGroupFieldNameList().getIterator();
+        while (giter.hasElement())
+        {
+            name = (FieldName*)giter.nextElement();
+            rv = table->getFieldInfo(name->fldName, fInfo);
+            if (ErrNotFound == rv)
+            {
+                dbMgr->closeTable(table);
+                table = NULL;
+                delete fInfo;
+                delete aggTable;
+                printError(ErrSyntaxError, "Field %s does not exist in table", 
+                                        name->fldName);
+                return ErrSyntaxError;
+            }
+            FieldValue *newVal = new FieldValue();
+            newVal->parsedString = NULL;
+            newVal->paramNo = 0;
+            newVal->type = fInfo->type;
+            newVal->length = fInfo->length;
+            newVal->value = AllDataType::alloc(fInfo->type, fInfo->length);
+            parsedData->insertFieldValue(newVal);
+            aggTable->setGroup(name->fldName, newVal->value);
+        }
+        table = aggTable;
+    }
+    delete fInfo;
     return rv;
 }
 DbRetVal SelStatement::resolveStar()

@@ -25,6 +25,7 @@ void yyerror(const char* Msg);
 %token <stringval> DELETE UPDATE SET NULL_VALUE
 %token <stringval> CREATE TABLE PRIMARY KEY DEFAULT INDEX ON HASH TREE UNIQUE DROP
 %token <stringval> INT_TYPE LONG_TYPE SHORT_TYPE DOUBLE_TYPE TIMESTAMP_TYPE DATE_TYPE CHAR_TYPE TIME_TYPE BIGINT_TYPE FLOAT_TYPE TINYINT_TYPE
+%token <stringval> MIN MAX AVG SUM COUNT GROUP BY
 %token ';' ',' '(' ')'
 %type <stringval> ident field value not_opt
 %type <predicate> conditions condition
@@ -37,7 +38,7 @@ command:  select_statement { YYACCEPT; }
         | ddl_statement { YYACCEPT; }
         ;
         
-select_statement: SELECT field_list FROM ident where_clause_opt semicolon_opt
+select_statement: SELECT field_list FROM ident where_clause_opt group_by_opt semicolon_opt
 	{
             parsedData->setStmtType(SelectStatement);
             parsedData->setTableName($4); 
@@ -127,7 +128,20 @@ assign_stmt: ident OPERATOR value
 where_clause_opt:  WHERE conditions
         |
         ;
-
+group_by_opt:  GROUP BY group_field_list
+        |
+        ;
+group_field_list: group_field_list group_field_list_L
+        | group_field 
+        ;
+group_field_list_L: ',' group_field
+        ;
+group_field:   ident
+        {
+            parsedData->insertGroupField((char*)$1);
+            free( $1 );
+        }
+        ;
 conditions: conditions AND conditions
 	{
             Predicate *pred;
@@ -224,6 +238,31 @@ not_opt: NOT
 field:   ident
         {
             parsedData->insertField((char*)$1);
+            free( $1 );
+        }
+        | MIN  '(' ident ')'
+        { 
+            parsedData->insertField((char*)$3, AGG_MIN);
+            free( $1 );
+        }
+        | MAX  '(' ident ')'
+        { 
+            parsedData->insertField((char*)$3, AGG_MAX);
+            free( $1 );
+        }
+        | SUM  '(' ident ')'
+        { 
+            parsedData->insertField((char*)$3, AGG_SUM);
+            free( $1 );
+        }
+        | AVG  '(' ident ')'
+        { 
+            parsedData->insertField((char*)$3, AGG_AVG);
+            free( $1 );
+        }
+        | COUNT  '(' ident ')'
+        { 
+            parsedData->insertField((char*)$3, AGG_COUNT);
             free( $1 );
         }
         | STAR

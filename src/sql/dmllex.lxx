@@ -129,6 +129,13 @@ operator        "<"|">"|">="|"<="|"="|"\!="|"<>"
                 if(strcasecmp(yytext,"BIGINT") ==0) token = BIGINT_TYPE;
                 if(strcasecmp(yytext,"TINYINT") ==0) token = TINYINT_TYPE;
                 if(strcasecmp(yytext,"FLOAT") ==0) token = FLOAT_TYPE;
+                if(strcasecmp(yytext,"MIN") ==0) token = MIN;
+                if(strcasecmp(yytext,"MAX") ==0) token = MAX;
+                if(strcasecmp(yytext,"SUM") ==0) token = SUM;
+                if(strcasecmp(yytext,"AVG") ==0) token = AVG;
+                if(strcasecmp(yytext,"COUNT") ==0) token = COUNT;
+                if(strcasecmp(yytext,"GROUP") ==0) token = GROUP;
+                if(strcasecmp(yytext,"BY") ==0) token = BY;
 
                 if( token == FIELD )
                     yylval.stringval = strdup((const char*)yytext);
