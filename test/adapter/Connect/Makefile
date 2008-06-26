@@ -26,7 +26,6 @@ TARGETS = \
 	test003\
 	test004\
 	test005\
-	test006\
 	test007\
 	test010\
 	test011
@@ -48,8 +47,6 @@ test003:conntest3.o
 test004:conntest4.o
 	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS)  -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw $(SYSLIBS)
 test005:conntest5.o
-	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw  $(SYSLIBS)
-test006:conntest6.o
 	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw  $(SYSLIBS)
 test007:conntest7.o
 	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw  $(SYSLIBS)
