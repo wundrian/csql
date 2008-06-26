@@ -153,7 +153,7 @@ int main()
      return 5;
   }
 
-  char f3var[20]="jitu";
+  char f3var[31]="jitu";
   
   stmt->bindField(1,&f8var);
   stmt->bindField(2,&f10var);
