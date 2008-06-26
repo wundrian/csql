@@ -25,12 +25,16 @@ mv libcsqljdbc libcsqljdbc.so
 mv libcsqlnw libcsqlnw.so
 mv libcsqlsqllog libcsqlsqllog.so
 mv libcsqlodbc libcsqlodbc.so
+mv libcsqlodbcadapter libcsqlodbcadapter.so
+mv libcsqlgw libcsqlgw.so
+ln -s libcsqlgw.so libcsqlgw
+ln -s libcsqlodbcadapter.so libcsqlodbcadapter
 ln -s libcsqlodbc.so libcsqlodbc
-ln -s libcsql.so libcsql 
-ln -s libcsqlsql.so libcsqlsql
-ln -s libcsqljdbc.so libcsqljdbc
-ln -s libcsqlnw.so libcsqlnw
 ln -s libcsqlsqllog.so libcsqlsqllog
+ln -s libcsqlnw.so libcsqlnw
+ln -s libcsqljdbc.so libcsqljdbc
+ln -s libcsqlsql.so libcsqlsql
+ln -s libcsql.so libcsql
 
 
 cp ${root_dir}/src/sql/Statement.h ${install_dir}/include
