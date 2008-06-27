@@ -1,62 +1,10 @@
 'T1' Table created
 10 Rows Inserted
 Total number of projection fields in the select statement=5
-
-FIELD  INFORMATION :
-
-***********************************************
-Field Name :F8
-Data type of the field :22
-length of the field :8
-Offset :56
-Default value Buffer :
-Null field :0
-Default value :0
-***********************************************
-
-***********************************************
-Field Name :F10
-Data type of the field :2
-length of the field :8
-Offset :68
-Default value Buffer :
-Null field :0
-Default value :0
-***********************************************
-
-***********************************************
-Field Name :F2
-Data type of the field :3
-length of the field :2
-Offset :4
-Default value Buffer :
-Null field :0
-Default value :0
-***********************************************
-
-***********************************************
-Field Name :F6
-Data type of the field :20
-length of the field :4
-Offset :48
-Default value Buffer :
-Null field :0
-Default value :0
-***********************************************
-
-***********************************************
-Field Name :F3
-Data type of the field :30
-length of the field :31
-Offset :8
-Default value Buffer :
-Null field :0
-Default value :0
-***********************************************
-F1=100 | F2=1 | F3=lakshya | F4=5.500000 | F5=10.500000 | DATE=2008-1-21 | TIME=12:29:30 | TIMESTAMP=2008-1-21 12:29:30 | F9=20 | F10=0  
-F1=100 | F2=1 | F3=lakshya | F4=5.500000 | F5=10.500000 | DATE=2008-1-21 | TIME=12:29:30 | TIMESTAMP=2008-1-21 12:29:30 | F9=20 | F10=0  
-F1=100 | F2=1 | F3=lakshya | F4=5.500000 | F5=10.500000 | DATE=2008-1-21 | TIME=12:29:30 | TIMESTAMP=2008-1-21 12:29:30 | F9=20 | F10=0  
-F1=100 | F2=1 | F3=lakshya | F4=5.500000 | F5=10.500000 | DATE=2008-1-21 | TIME=12:29:30 | TIMESTAMP=2008-1-21 12:29:30 | F9=20 | F10=0  
-F1=100 | F2=1 | F3=lakshya | F4=5.500000 | F5=10.500000 | DATE=2008-1-21 | TIME=12:29:30 | TIMESTAMP=2008-1-21 12:29:30 | F9=20 | F10=0  
+F1=100 | F2=1 | F3=lakshya | F4=5.500000 | F5=10.500000 | DATE=2008-1-21 | TIME=12:29:30 | TIMESTAMP=2008-1-21 12:29:30 | F9=20 | F10=12000  
+F1=100 | F2=1 | F3=lakshya | F4=5.500000 | F5=10.500000 | DATE=2008-1-21 | TIME=12:29:30 | TIMESTAMP=2008-1-21 12:29:30 | F9=20 | F10=12000  
+F1=100 | F2=1 | F3=lakshya | F4=5.500000 | F5=10.500000 | DATE=2008-1-21 | TIME=12:29:30 | TIMESTAMP=2008-1-21 12:29:30 | F9=20 | F10=12000  
+F1=100 | F2=1 | F3=lakshya | F4=5.500000 | F5=10.500000 | DATE=2008-1-21 | TIME=12:29:30 | TIMESTAMP=2008-1-21 12:29:30 | F9=20 | F10=12000  
+F1=100 | F2=1 | F3=lakshya | F4=5.500000 | F5=10.500000 | DATE=2008-1-21 | TIME=12:29:30 | TIMESTAMP=2008-1-21 12:29:30 | F9=20 | F10=12000  
 Total row fetched=5
 Table dropped

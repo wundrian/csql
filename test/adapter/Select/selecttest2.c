@@ -48,7 +48,7 @@ int main()
 
  int f1var = 99;
  short int f2var = 1;
- char f3var[20] = "lakshya";
+ char f3var[32] = "lakshya";
  float f4var = 5.5;
  float f5var = 10.50;
  Date f6var;
@@ -118,7 +118,6 @@ int main()
    // getParamFldInfo() 
     FieldInfo *field = new FieldInfo();
     
-    printf("\nFIELD  INFORMATION :\n");
     char fldName[20];
     DataType type;
     size_t length;
@@ -127,23 +126,6 @@ int main()
     bool isNull;
     bool isDefault;
 
-     for(int i=0;i<=4;i++)
-    {
-      
-         printf("\n***********************************************\n");
-         
-         rv = stmt->getProjFldInfo(i,field);
-        if(rv!=OK)return 1;
-         printf("Field Name :%s\n", field->fldName);
-         printf("Data type of the field :%d\n",field->type);
-         printf("length of the field :%d\n",field->length);
-         printf("Offset :%d\n",field->offset);
-         printf("Default value Buffer :%s\n",field->defaultValueBuf);
-         printf("Null field :%d\n",field->isNull);
-         printf("Default value :%d\n",field->isDefault);
-         printf("***********************************************\n");
-      
-   }
    delete field;
 
   if(rv !=OK)

@@ -119,7 +119,6 @@ int main()
    // getParamFldInfo() 
     FieldInfo *field = new FieldInfo();
     
-    printf("\nFIELD  INFORMATION :\n");
     char fldName[20];
     DataType type;
     size_t length;
@@ -128,24 +127,6 @@ int main()
     bool isNull;
     bool isDefault;
 
-     for(int i=0;i<=4;i++)
-    {
-      
-         printf("\n***********************************************\n");
-         
-         rv = stmt->getProjFldInfo(i,field);
-        if(rv!=OK)return 1;
-         printf("Field Name :%s\n", field->fldName);
-         printf("Data type of the field :%d\n",field->type);
-         printf("length of the field :%d\n",field->length);
-         printf("Offset :%d\n",field->offset);
-         printf("Default value Buffer :%s\n",field->defaultValueBuf);
-         printf("Null field :%d\n",field->isNull);
-         printf("Default value :%d\n",field->isDefault);
-         printf("***********************************************\n");
-      
-   }
-
   if(rv !=OK)
   {
      delete stmt;
@@ -153,7 +134,7 @@ int main()
      return 5;
   }
 
-  char f3var[20]="jitu";
+  char f3var[32]="jitu";
   
   stmt->bindField(1,&f8var);
   stmt->bindField(2,&f10var);
