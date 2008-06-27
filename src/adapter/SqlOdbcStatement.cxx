@@ -160,7 +160,7 @@ bool SqlOdbcStatement::isSelect()
 DbRetVal SqlOdbcStatement::execute(int &rowsAffected)
 {
     DbRetVal rv = OK;
-    if (!isPrepared) return OK;
+    if (!isPrepared) return ErrNotPrepared;
     ListIterator iter = paramList.getIterator();
     BindSqlField *bindField = NULL;
     while (iter.hasElement())
