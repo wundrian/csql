@@ -417,8 +417,9 @@ void SqlOdbcStatement::setShortParam(int paramPos, short value)
 {
     if (!isPrepared) return ;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
-    if (bindField->type != typeShort) return;
-    *(short*)(bindField->value) = value;
+    //if (bindField->type != typeShort) return;
+    //*(short*)(bindField->value) = value;
+    AllDataType::convertToString(bindField->value, &value, typeShort);
     return;
 }
 void SqlOdbcStatement::setIntParam(int paramPos, int value)
