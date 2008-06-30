@@ -106,9 +106,9 @@ SLEEP_PID=$!
 if [ "$expPresent" = "yes" ]
 then
     cp ${TEST_SCRIPT_DIR}/${EXP_FILE} ${TEST_EXEC_DIR}
-    ${test} > ${TEST_EXEC_DIR}/cur.${EXP_FILE} 2>&1 &
+    ${test} > ${TEST_EXEC_DIR}/cur.${EXP_FILE} 2>/dev/null &
 else
-    ${test} >> ${TEST_LOG} 2>&1 &
+    ${test} >> ${TEST_LOG} 2>/dev/null &
 fi
 CMD_PID=$!
 wait ${CMD_PID} 2>/dev/null
