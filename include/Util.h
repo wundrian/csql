@@ -94,11 +94,12 @@ class List
     }
     //Warning:Try to avoid using this method while using the iterator.The behavior 
     //is undefined. Instead set flag isRemove to yes and call nextElement of iterator.
-    DbRetVal remove(void *elem) 
+    DbRetVal remove(void *elem, bool err=true) 
     {
         if (NULL == head)
         {
-            printError(ErrNotExists, "There are no elements in the list. Empty list");
+            if (err) 
+               printError(ErrNotExists, "There are no elements in the list. Empty list");
             return ErrNotExists;
         }
         ListNode *iter = head, *prev = head;
@@ -115,7 +116,8 @@ class List
             prev = iter;
             iter = iter->next;
         }
-        printError(ErrNotFound, "There are no elements in the list");
+        if (err) 
+            printError(ErrNotFound, "There are no elements in the list");
         return ErrNotFound;
     }
 

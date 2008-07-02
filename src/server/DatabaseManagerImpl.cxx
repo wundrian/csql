@@ -734,7 +734,7 @@ void DatabaseManagerImpl::closeTable(Table *table)
     printDebug(DM_Database,"Closing table handle: %x", table);
     if (NULL == table) return;
     //table->unlock();
-    tableList.remove(table);
+    tableList.remove(table, false);
     delete table;
     logFinest(logger, "Closing Table");
 }
