@@ -199,7 +199,7 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
     }
     Table *table = dbMgr->openTable(tableName);
     if (table == NULL) {
-        printError(ErrSysInit,"unable to open table %d\n", tableName);
+        printError(ErrSysInit,"unable to open table %s\n", tableName);
         dbMgr->closeTable(table);
         if (tabDefinition) dbMgr->dropTable(tableName);
         SQLDisconnect(hdbc);
