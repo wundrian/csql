@@ -258,6 +258,7 @@ DbRetVal SelStatement::resolve()
     if (groupFieldListSize !=0) {
        aggTable = new AggTableImpl();
        aggTable->setTable(table);
+       aggFlag = true;
     }
     bool isGroupFldInProjection = false;
     while (iter.hasElement())
@@ -309,7 +310,7 @@ DbRetVal SelStatement::resolve()
                 if (groupFieldListSize == 0) {
                     table->bindFld(name->fldName, newVal->value);
                 }else {
-                    delete newVal;
+                    //delete newVal;
                     FieldName *groupFldName = NULL;
                     ListIterator giter = parsedData->getGroupFieldNameList().
                                                          getIterator();
@@ -386,6 +387,8 @@ DbRetVal SelStatement::resolve()
             parsedData->insertFieldValue(newVal);
             aggTable->setGroup(name->fldName, newVal->value);
         }
+    }
+    if (aggFlag) {
         table = aggTable;
     }
     delete fInfo;

@@ -151,6 +151,7 @@ void ParsedData::reset()
         delete updFldVal;
     }
     updFldValList.reset();
+    groupFieldNameList.reset();
     
     creFldList.removeAll();
     isUnique = false; 
