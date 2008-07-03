@@ -36,7 +36,7 @@ $CSQL_INSTALL_ROOT/bin/csqlserver -c >/dev/null 2>&1 &
 pid=$!
 sleep 5
 
-$CSQL_INSTALL_ROOT/bin/csql -s insert.sql >/dev/null 2>&1 
+$CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/insert.sql >/dev/null 2>&1 
 
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
@@ -51,7 +51,6 @@ fi
 kill $pid > /dev/null 2>&1
 
 isql myodbc3 < $REL_PATH/drop.sql > /dev/null 2>&1
-$CSQL_INSTALL_ROOT/bin/csql -s drop.sql >/dev/null 2>&1 
 
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
