@@ -1,6 +1,6 @@
 #!/bin/sh
 
-#  4a) After connect, csql goes down, then all select operations should go to MySQL directly for cached tables and MySQL tables.
+#  3. SELECT/INSERT/UPDATE/DELETE on MySQL table, when csqlserver is down should pass.
 
 #Run this test only under csql/test or on this directory.
 #Otherwise, it may fail
