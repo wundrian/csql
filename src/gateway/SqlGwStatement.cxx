@@ -86,9 +86,22 @@ bool SqlGwStatement::isSelect()
 DbRetVal SqlGwStatement::execute(int &rowsAffected)
 {
     DbRetVal rv = OK;
+    SqlGwConnection *conn = (SqlGwConnection*) con;
     if (adapter && shouldAdapterHandle()) rv = adapter->execute(rowsAffected);
     if (rv != OK) return rv;
+    if (shouldAdapterHandle()) 
+    {
+        GwHandler hdlr = conn->getTxnHandler();
+        if (hdlr == NoHandler) conn->setTxnHandler(AdapterHandler);
+        if (hdlr == CSqlHandler) conn->setTxnHandler(CSqlAndAdapterHandler);
+    }
     if (innerStmt && shouldCSqlHandle()) rv = innerStmt->execute(rowsAffected);
+    if (shouldCSqlHandle()) 
+    {
+        GwHandler hdlr = conn->getTxnHandler();
+        if (hdlr == NoHandler) conn->setTxnHandler(CSqlHandler);
+        if (hdlr == AdapterHandler) conn->setTxnHandler(CSqlAndAdapterHandler);
+    }
     return rv;
 }
 
