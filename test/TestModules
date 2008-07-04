@@ -25,7 +25,9 @@ odbc/Parameters
 odbc/Select
 odbc/Transaction
 cache/Recovery
+cache/DDL
 cache/Gateway
+cache/FailOver
 cache/CacheTable
 cache/CacheVerify
 adapter/Connect
