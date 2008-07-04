@@ -1,0 +1,26 @@
+#!/bin/sh
+
+#  4a) After connect, csql goes down, then all select operations should go to MySQL directly for cached tables and MySQL tables.
+
+#Run this test only under csql/test or on this directory.
+#Otherwise, it may fail
+
+CSQL_CONF=${PWD}/cache/FailOver/csql.conf
+input=${PWD}/cache/FailOver/csqlinput.sql
+REL_PATH=.
+if [ -s "$input" -a -s "$CSQL_CONF" ]
+then
+    REL_PATH=${PWD}/cache/FailOver
+fi
+export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
+
+isql myodbc3 < $REL_PATH/mysqlinputtest1.sql >/dev/null 2>&1 
+echo "table t1 inserted into target db"
+# edit /tmp/csql/csqltable.conf
+echo "csql server is down"
+$CSQL_INSTALL_ROOT/bin/csql -g -s $REL_PATH/csqlinput.sql
+
+isql myodbc3 < $REL_PATH/dropall.sql >/dev/null 2>&1
+rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
+touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
+exit 0;
