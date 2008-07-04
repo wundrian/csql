@@ -395,12 +395,24 @@ DbRetVal TableImpl::insertTuple()
             lMgr_->releaseLock(tptr);
             (*trans)->removeFromHasList(db_, tptr);
             ((Chunk*)chunkPtr_)->free(db_, tptr);
-            printError(ret, "Unable to insert index node for tuple %x", tptr);
+            //PRABA::TEMP
+            //printError(ret, "Unable to insert index node for tuple %x ", tptr);
+            printError(ret, "Unable to insert index node for tuple %x %d", tptr, *(int*)tptr);
             return ret;
         }
     }
     if (undoFlag)
         ret = (*trans)->appendUndoLog(sysDB_, InsertOperation, tptr, length_);
+    if (ret != OK) {
+        printError(ret, "Unable to create undo log for %x %d", tptr, *(int*)tptr);
+        for (int j = 0; j < numIndexes_ ; j++) {
+            printError(ErrWarning, "Deleting index node");
+            deleteIndexNode(*trans, indexPtr_[j], idxInfo[j], tptr);
+        }
+        lMgr_->releaseLock(tptr);
+        (*trans)->removeFromHasList(db_, tptr);
+        ((Chunk*)chunkPtr_)->free(db_, tptr);
+    }
     return ret;
 }
 

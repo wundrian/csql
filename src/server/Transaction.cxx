@@ -137,7 +137,10 @@ UndoLogInfo* Transaction::createUndoLog(Database *sysdb, OperationType type, voi
     Chunk *chunk = sysdb->getSystemDatabaseChunk(UndoLogTableID);
     UndoLogInfo *logInfo = (UndoLogInfo*)chunk->allocate(sysdb,
                                                 size + sizeof(UndoLogInfo), rv);
-    if (logInfo == NULL) return NULL;
+    if (logInfo == NULL) {
+        printError(*rv, "Unable to allocate undo log record\n");
+        return NULL;
+    }
     logInfo->opType_ = type;
     logInfo->ptrToTuple_ = data;
     logInfo->size_ = size;
