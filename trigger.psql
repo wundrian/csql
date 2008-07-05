@@ -1,0 +1,37 @@
+CREATE LANGUAGE plpgsql;
+CREATE FUNCTION log_insert() RETURNS trigger AS $triggerinsertp1$
+BEGIN
+insert into csql_log_int (tablename, pkid, operation) values ('p1', NEW.f1, 1);
+RETURN NEW;
+END;
+$triggerinsertp1$ LANGUAGE plpgsql;
+
+create trigger triggerinsertp1
+AFTER INSERT on p1
+FOR EACH ROW
+EXECUTE PROCEDURE log_insert();
+
+CREATE FUNCTION log_update() RETURNS trigger AS $triggerupdatep1$
+BEGIN
+insert into csql_log_int (tablename, pkid, operation) values ('p1', OLD.f1, 2);
+insert into csql_log_int (tablename, pkid, operation) values ('p1', NEW.f1, 1);
+RETURN NEW;
+END;
+$triggerupdatep1$ LANGUAGE plpgsql;
+
+create trigger triggerupdatep1
+AFTER UPDATE on p1
+FOR EACH ROW
+EXECUTE PROCEDURE log_update();
+
+CREATE FUNCTION log_delete() RETURNS trigger AS $triggerdeletep1$
+BEGIN
+insert into csql_log_int (tablename, pkid, operation) values ('p1', OLD.f1, 2);
+RETURN NEW;
+END;
+$triggerdeletep1$ LANGUAGE plpgsql;
+
+create trigger triggerdeletep1
+AFTER DELETE on p1
+FOR EACH ROW
+EXECUTE PROCEDURE log_delete();
