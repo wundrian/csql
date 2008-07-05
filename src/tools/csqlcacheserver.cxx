@@ -59,10 +59,10 @@ int main(int argc, char **argv)
     os::signal(SIGINT, sigTermHandler);
     os::signal(SIGTERM, sigTermHandler);
 
-    targetconn = SqlFactory::createConnection(CSqlAdapter);
-    DbRetVal rv = targetconn->connect("root", "manager");
+    DbRetVal rv = conn.open("root", "manager");
     if (rv != OK) return 1;
-    rv = conn.open("root", "manager");
+    targetconn = SqlFactory::createConnection(CSqlAdapter);
+    rv = targetconn->connect("root", "manager");
     if (rv != OK) return 1;
     if (!Conf::config.useCache())
     {
@@ -71,13 +71,13 @@ int main(int argc, char **argv)
     } 
     AbsSqlStatement *stmt = SqlFactory::createStatement(CSqlAdapter);
     stmt->setConnection(targetconn);
-    rv = stmt->prepare("create table csql_log_int(tablename char(64), pkid int, operation int, id int not null unique auto_increment)engine='innodb';");
+    /*rv = stmt->prepare("create table csql_log_int(tablename char(64), pkid int, operation int, id int not null unique auto_increment)engine='innodb';");
     targetconn->beginTrans();
     int rows=0;
     stmt->execute(rows);
     targetconn->commit();
     stmt->free();
-    delete stmt;
+    delete stmt;*/
 
     printf("Cache server started\n");
     int ret = 0;
@@ -113,19 +113,22 @@ int getRecordsFromTargetDb(int mode)
     AbsSqlStatement *delstmt = SqlFactory::createStatement(CSqlAdapter);
     delstmt->setConnection(targetconn);
     if (mode == 1 ) {
+        //rv = delstmt->prepare("DELETE from csql_log_int where id=?;");
+        if (rv != OK) {printf("Stmt prepare failed\n"); return 1; }
         rv = stmt->prepare("SELECT * FROM csql_log_int;");
-        rv = delstmt->prepare("DELETE FROM csql_log_int where id =?;");
     }
     else {
         rv = stmt->prepare("SELECT * FROM csql_log_char;");
-        rv = delstmt->prepare("DELETE FROM csql_log_char where id =?;");
+        if (rv != OK) {printf("Stmt prepare failed\n"); return 1; }
+        //rv = delstmt->prepare("DELETE from csql_log_char where id=?;");
     }
-    if (rv != OK) return 1;
+    if (rv != OK) {printf("Stmt prepare failed\n"); return 1; }
     stmt->bindField(1, tablename);
     stmt->bindField(2, &pkid);
     stmt->bindField(3, &op);
     stmt->bindField(4, &id);
     DatabaseManager *dbMgr = conn.getDatabaseManager();
+    char delStmtStr[1024];
     while(true) {
       rv = targetconn->beginTrans();
       rv = stmt->execute(rows);
@@ -165,7 +168,10 @@ int getRecordsFromTargetDb(int mode)
           rv = targetconn->commit();
           rv = targetconn->beginTrans();
           //Remove record from csql_log_XXX table
-          delstmt->setIntParam(1, id);
+          sprintf(delStmtStr, "DELETE from csql_log_int where id=%d ;", id);
+          rv = delstmt->prepare(delStmtStr);
+          if (rv != OK) {printf("FAILED\n"); return 1; }
+         // delstmt->setIntParam(1, id);
           rv = delstmt->execute(rows);
           if (rv != OK) 
           {
@@ -176,9 +182,9 @@ int getRecordsFromTargetDb(int mode)
               delete stmt;
               delete delstmt;
           }
-          
+          delstmt->free();
+         
           rv = targetconn->commit();
-          //create table csql_log_int(tablename char(64), pkid int, op int, id int not null unique auto_increment);
      }
      else {
          stmt->close();

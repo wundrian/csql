@@ -28,12 +28,13 @@ DbRetVal SqlOdbcStatement::prepare(char *stmtstr)
     DbRetVal rv = OK;
     if (innerStmt) rv = ErrBadCall;
     if (rv != OK) return rv;
-    int retValue;
+    int retValue =0;
     isPrepared = false;
     SqlOdbcConnection *conn = (SqlOdbcConnection*)con;
     retValue=SQLAllocHandle (SQL_HANDLE_STMT, conn->dbHdl, &hstmt);
     if (retValue) return ErrBadCall;
-    retValue = SQLPrepare (hstmt, (unsigned char *) stmtstr, SQL_NTS);
+    SQLCHAR* sstr= (SQLCHAR*)stmtstr;
+    retValue = SQLPrepare (hstmt, sstr, SQL_NTS);
     if (retValue) return ErrBadCall;
     isPrepared = true;
     short totalFields=0;
