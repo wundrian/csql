@@ -323,6 +323,10 @@ DbRetVal CacheTableLoader::unload(bool tabDefinition)
     Connection conn;
     DbRetVal rv = conn.open(userName, password);
     if (rv != OK) return ErrSysInit;
+    if (isTableCached() != OK) {
+        printError(ErrNotCached, "The table \'%s\' is not cached", tableName);
+        return ErrNotCached;
+    }
     DatabaseManager *dbMgr = (DatabaseManager*) conn.getDatabaseManager();
     if (dbMgr == NULL) { printError(ErrSysInit, "Auth failed\n"); return ErrSysInit; }
     if (!tabDefinition)
@@ -381,3 +385,25 @@ DbRetVal CacheTableLoader::recoverAllCachedTables()
     return OK;
 }
 
+DbRetVal CacheTableLoader::isTableCached()
+{
+    FILE *fp;
+    char tmpFileName[MAX_FILE_PATH_LEN];
+    fp = fopen(Conf::config.getTableConfigFile(),"r");
+    if( fp == NULL ) {
+        printError(ErrSysInit, "csqltable.conf file does not exist");
+        return ErrSysInit;
+    }
+    char tablename[IDENTIFIER_LENGTH];
+    int mode;
+    while(!feof(fp))
+    {
+        fscanf(fp, "%d:%s\n", &mode, tablename);
+        if (strcmp (tablename, tableName) == 0) {
+            fclose(fp);
+            return OK;
+        }
+    }
+    fclose(fp);
+    return ErrNotExists;
+}
