@@ -32,14 +32,14 @@ touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 
 $CSQL_INSTALL_ROOT/bin/csqldump 
 
+rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
+touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
+echo "1:t1" > /tmp/csql/csqltable.conf
 $CSQL_INSTALL_ROOT/bin/cachetable -t t1 -u > /dev/null 2>&1
 if [ $? -ne 0 ]
 then
    exit 2;
 fi
-
-rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
-touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 
 $CSQL_INSTALL_ROOT/bin/csqldump 
 
