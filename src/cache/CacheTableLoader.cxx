@@ -75,6 +75,19 @@ DbRetVal CacheTableLoader::load(bool tabDefinition)
     if (rv != OK) return ErrSysInit;
     DatabaseManager *dbMgr = (DatabaseManager*) conn.getDatabaseManager();
     if (dbMgr == NULL) { printError(ErrSysInit, "Auth failed\n"); return ErrSysInit; }
+    if (tabDefinition == false) {
+        Table *tbl = dbMgr->openTable(tableName);
+        if (tbl == NULL) {
+            conn.close();
+            return ErrNotExists;
+        }
+        if (tbl->numTuples()) {
+            printError(ErrNotEmpty, "The table '\%s\' is not empty", tableName);
+            dbMgr->closeTable(tbl);
+            conn.close();
+            return ErrNotEmpty;
+        }
+    }
     conn.startTransaction();
     rv = load(dbMgr, tabDefinition);
     conn.commit();
