@@ -150,7 +150,10 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
  
             printDebug(DM_Gateway, "Describe Column %s %d %d \n", colName, colType, colLength);
             icol++;
-           tabDef.addField((char*) colName, AllDataType::convertFromSQLType(colType), colLength +1);
+            if (nullable) 
+                tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType), colLength +1); 
+            else 
+                tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType), colLength +1, NULL, true);
         }
         rv = dbMgr->createTable(tableName, tabDef);
         if (rv != OK) 
@@ -190,6 +193,7 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
                info->indType =  hashIndex;
                info->bucketSize = 10007;
                info->list.append(columnname);
+               if (!unique) { info->isUnique = true; info->isPrimary = true; }
                strcpy(info->tableName, tableName);
                char indname[128];
                sprintf(indname, "%s_%s", tableName, indexname);
