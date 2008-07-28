@@ -59,4 +59,4 @@ find ${install_dir}/examples -name "CVS" -exec rm -rf {} \; 2>/dev/null
 cp -R ${root_dir}/docs ${install_dir}
 find ${install_dir}/docs -name "CVS" -exec rm -rf {} \; 2>/dev/null
 cd ${root_dir}
-echo "Build completed Succesfully"
+echo "Build completed Successfully"
