@@ -25,6 +25,6 @@ echo select * from t1 where f1 LIKE 'upper%letter';
 select * from t1 where f1 LIKE 'upp%letter';
 
 echo select * from t1 where f1 LIKE 'upper____letter';
-select * from t1 where f1 LIKE 'upp____letter';
+select * from t1 where f1 LIKE 'upper____letter';
 
 drop table t1;
