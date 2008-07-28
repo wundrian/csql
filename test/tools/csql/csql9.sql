@@ -17,17 +17,17 @@ echo  select * from t1 where f3 between 12 and 14;
 select * from t1 where f3 between 12 and 14;
 
 echo select * from t1 where f1 IN (12, 14, 50);
-echo select * from t1 where f1 IN (12, 14, 50);
+select * from t1 where f1 IN (12, 14, 50);
 
 echo select * from t1 where f1 IN (12, 14, 50) AND f3 IN (50);
-echo select * from t1 where f1 IN (12, 14, 50) AND f3 IN (50);
+select * from t1 where f1 IN (12, 14, 50) AND f3 IN (50);
 
 echo select * from t1 where f1 IN (12, 14, 50) OR f3 IN (50);
-echo select * from t1 where f1 IN (12, 14, 50) OR f3 IN (50);
+select * from t1 where f1 IN (12, 14, 50) OR f3 IN (50);
 
 echo select * from t1 where f1 IN (12, 14, 50) AND f3 between 12 and 14; 
-echo select * from t1 where f1 IN (12, 14, 50) AND f3 between 12 and 14;
+select * from t1 where f1 IN (12, 14, 50) AND f3 between 12 and 14;
 
 echo select * from t1 where f1 NOT IN (12, 14, 50);
-echo select * from t1 where f1 NOT IN (12, 14, 50);
+select * from t1 where f1 NOT IN (12, 14, 50);
 drop table t1;
