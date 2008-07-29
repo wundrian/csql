@@ -225,6 +225,19 @@ DbRetVal SelStatement::setTimeStampParam(int paramNo, TimeStamp value)
     return OK;
 }
 
+DbRetVal SelStatement::setBinaryParam(int paramNo, void *value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    ConditionValue *cValue = (ConditionValue*) params [paramNo-1];
+    if (NULL == cValue)
+    {
+        printError(ErrSysFatal, "condition value is null. Should never happen");
+        return ErrSysFatal;
+    }
+    memcpy(cValue->value, value, 2 * cValue->length);
+    return OK;
+}
+
 DbRetVal SelStatement::setBindField(int colNo, void *value)
 {
     if (colNo <=0) return ErrBadArg;
@@ -304,7 +317,10 @@ DbRetVal SelStatement::resolve()
             newVal->paramNo = 0;
             newVal->type = fInfo->type;
             newVal->length = fInfo->length;
-            newVal->value = AllDataType::alloc(fInfo->type, fInfo->length);
+        // for binary datatype input buffer size should be 2 times the length 
+			if(newVal->type == typeBinary) 
+                newVal->value = AllDataType::alloc(fInfo->type, 2 * fInfo->length);
+            else newVal->value = AllDataType::alloc(fInfo->type, fInfo->length);
             parsedData->insertFieldValue(newVal);
             if (name->aType == AGG_UNKNOWN) {
                 if (groupFieldListSize == 0) {
@@ -383,7 +399,10 @@ DbRetVal SelStatement::resolve()
             newVal->paramNo = 0;
             newVal->type = fInfo->type;
             newVal->length = fInfo->length;
-            newVal->value = AllDataType::alloc(fInfo->type, fInfo->length);
+        // for binary datatype input buffer size should be 2 times the length 
+			if (newVal->type == typeBinary)
+                newVal->value = AllDataType::alloc(fInfo->type, 2 * fInfo->length);
+            else newVal->value = AllDataType::alloc(fInfo->type, fInfo->length);
             parsedData->insertFieldValue(newVal);
             aggTable->setGroup(name->fldName, newVal->value);
         }
@@ -419,7 +438,10 @@ DbRetVal SelStatement::resolveStar()
         newVal->paramNo = 0;
         newVal->type = fInfo->type;
         newVal->length = fInfo->length;
-        newVal->value = AllDataType::alloc(fInfo->type, fInfo->length);
+        // for binary datatype input buffer size should be 2 times the length 
+		if(newVal->type == typeBinary) 
+            newVal->value = AllDataType::alloc(fInfo->type, 2 * fInfo->length);
+        else newVal->value = AllDataType::alloc(fInfo->type, fInfo->length);
         parsedData->insertFieldValue(newVal);
         parsedData->insertField(fName);
         table->bindFld(fName, newVal->value);
@@ -500,8 +522,10 @@ DbRetVal SelStatement::resolveForCondition()
 		    if(!value->opLike) // checks if 'LIKE' operator is used
                 value->paramNo = paramPos++;
         }
-        if (!value->paramNo) 
+        if (!value->paramNo) {
+		    // Here for binary dataType it is not strcpy'd bcos internally memcmp is done for predicates like f2 = 'abcd' where f2 is binary
             AllDataType::strToValue(value->value, value->parsedString, fInfo->type, fInfo->length);
+		}	
     }
     delete fInfo;
     totalParams = paramPos -1;
@@ -540,7 +564,7 @@ void* SelStatement::fetch()
             printError(ErrBadCall, "Fields are not binded properly. Should never happen");
             return NULL;
         }
-        AllDataType::copyVal(bindFieldValues[i], value->value, value->type, value->length);
+		AllDataType::copyVal(bindFieldValues[i], value->value, value->type, value->length);
     }
     return tuple;
 }
@@ -559,7 +583,7 @@ void* SelStatement::fetch(DbRetVal &rv)
             printError(ErrBadCall, "Fields are not binded properly. Should never happen");
             return NULL;
         }
-        AllDataType::copyVal(bindFieldValues[i], value->value, value->type, value->length);
+		AllDataType::copyVal(bindFieldValues[i], value->value, value->type, value->length);
     }
     return tuple;
 }
@@ -636,6 +660,7 @@ void* SelStatement::fetchAndPrint(bool SQL)
                 switch(value->type)
                 {
                     case typeString:
+                    case typeBinary:
                     case typeDate:
                     case typeTime:
                     case typeTimeStamp:
@@ -658,6 +683,7 @@ void* SelStatement::fetchAndPrint(bool SQL)
                 switch(value->type)
                 {
                     case typeString:
+                    case typeBinary:
                     case typeDate:
                     case typeTime:
                     case typeTimeStamp:

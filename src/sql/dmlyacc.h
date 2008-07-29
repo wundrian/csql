@@ -43,13 +43,14 @@
 #define BIGINT_TYPE 299
 #define FLOAT_TYPE 300
 #define TINYINT_TYPE 301
-#define MIN 302
-#define MAX 303
-#define AVG 304
-#define SUM 305
-#define COUNT 306
-#define GROUP 307
-#define BY 308
+#define BINARY_TYPE 302
+#define MIN 303
+#define MAX 304
+#define AVG 305
+#define SUM 306
+#define COUNT 307
+#define GROUP 308
+#define BY 309
 typedef union
 {
    char *stringval;

@@ -266,3 +266,9 @@ void SqlGwStatement::setTimeStampParam(int paramPos, TimeStamp value)
     if (innerStmt && shouldCSqlHandle()) innerStmt->setTimeStampParam(paramPos,value);
     return;
 }
+void SqlGwStatement::setBinaryParam(int paramPos, void *value)
+{
+    if (adapter && shouldAdapterHandle()) adapter->setBinaryParam(paramPos, value);
+    if (innerStmt && shouldCSqlHandle()) innerStmt->setBinaryParam(paramPos,value);
+}
+

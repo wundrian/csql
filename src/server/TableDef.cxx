@@ -46,11 +46,20 @@ int TableDef::addField(const char *name,  DataType type, size_t length,
     fldDef.fldName_[IDENTIFIER_LENGTH] = '\0';
     fldDef.type_ = type;
     fldDef.length_ = length;
+	fldDef.bindVal_=NULL;
     if (defaultValue != NULL)
     {
         fldDef.isDefault_ = true;
-        os::memcpy(fldDef.defaultValueBuf_, defaultValue,
-                                DEFAULT_VALUE_BUF_LENGTH);
+        if (typeBinary == type) {
+            const char *p = (const char *) defaultValue;
+            while (*p != '\0') {
+                if (! isxdigit((int)(*p++)) ) {
+                    printError(ErrBadArg, "Invalid hexadecimal value");
+                    return (int) ErrBadArg;
+                }
+            }
+        } 
+        os::memcpy(fldDef.defaultValueBuf_, defaultValue, DEFAULT_VALUE_BUF_LENGTH);
     }
     else
     {

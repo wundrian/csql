@@ -69,7 +69,8 @@ class SqlLogStatement: public AbsSqlStatement
     void setDateParam(int paramPos, Date value);
     void setTimeParam(int paramPos, Time value);
     void setTimeStampParam(int paramPos, TimeStamp value);
-    bool isSelect();
+    void setBinaryParam(int paramPos, void *value);
+	bool isSelect();
 
     bool isCached;
     TableSyncMode mode;

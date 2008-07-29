@@ -521,6 +521,14 @@ void SqlOdbcStatement::setTimeStampParam(int paramPos, TimeStamp value)
     //*(TimeStamp*)(bindField->value) = value;
     AllDataType::convertToString(bindField->value, &value, typeTimeStamp);
 }
+void SqlOdbcStatement::setBinaryParam(int paramPos, void *value)
+{
+    if (!isPrepared) return;
+	BindSqlField *bindField = (BindSqlField*) paramList.get(paramPos);
+	//if (bindField->type != typeTimeStamp) return;
+	// *(TimeStamp*)(bindField->value) = value;
+	AllDataType::convertToString(bindField->value, value, typeBinary, bindField->length);
+}
 
 void SqlOdbcStatement::getPrimaryKeyFieldName(char *tablename, char *pkfieldname)
 {

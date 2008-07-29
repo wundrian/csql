@@ -47,7 +47,7 @@ class Statement
     virtual DbRetVal setDateParam(int paramNo, Date value)=0;
     virtual DbRetVal setTimeParam(int paramNo, Time value)=0;
     virtual DbRetVal setTimeStampParam(int paramNo, TimeStamp value)=0;
-
+    virtual DbRetVal setBinaryParam(int paramNo, void *value)=0;
 
     virtual DbRetVal resolve()=0;
     virtual ~Statement(){}
@@ -82,7 +82,7 @@ class DmlStatement : public Statement
     virtual DbRetVal setDateParam(int paramNo, Date value)=0;
     virtual DbRetVal setTimeParam(int paramNo, Time value)=0;
     virtual DbRetVal setTimeStampParam(int paramNo, TimeStamp value)=0;
-
+    virtual DbRetVal setBinaryParam(int paramNo, void *value)=0;
 
     virtual DbRetVal resolve()=0;
     virtual void* getParamValuePtr( int pos )=0;
@@ -108,6 +108,7 @@ class InsStatement : public DmlStatement
     DbRetVal setDateParam(int paramNo, Date value);
     DbRetVal setTimeParam(int paramNo, Time value);
     DbRetVal setTimeStampParam(int paramNo, TimeStamp value);
+	DbRetVal setBinaryParam(int paramNo, void *value);
     void* getParamValuePtr( int );
     DbRetVal resolve();
     InsStatement();
@@ -141,6 +142,7 @@ class SelStatement : public DmlStatement
     DbRetVal setDateParam(int paramNo, Date value);
     DbRetVal setTimeParam(int paramNo, Time value);
     DbRetVal setTimeStampParam(int paramNo, TimeStamp value);
+    DbRetVal setBinaryParam(int paramNo, void *value);
 
     DbRetVal close();
     DbRetVal resolve();
@@ -183,6 +185,7 @@ class UpdStatement : public DmlStatement
     DbRetVal setDateParam(int paramNo, Date value);
     DbRetVal setTimeParam(int paramNo, Time value);
     DbRetVal setTimeStampParam(int paramNo, TimeStamp value);
+    DbRetVal setBinaryParam(int paramNo, void *value);
     void* getParamValuePtr(int);
     DbRetVal getParamFldInfo(int paramPos, FieldInfo *&info);
 
@@ -212,6 +215,7 @@ class DelStatement : public DmlStatement
     DbRetVal setDateParam(int paramNo, Date value);
     DbRetVal setTimeParam(int paramNo, Time value);
     DbRetVal setTimeStampParam(int paramNo, TimeStamp value);
+    DbRetVal setBinaryParam(int paramNo, void *value);
 
     DbRetVal getParamFldInfo(int paramPos, FieldInfo *&info);
     void* getParamValuePtr(int);
@@ -242,6 +246,7 @@ class DdlStatement : public Statement
     DbRetVal setDateParam(int paramNo, Date value) { }
     DbRetVal setTimeParam(int paramNo, Time value) { }
     DbRetVal setTimeStampParam(int paramNo, TimeStamp value) { }
+    DbRetVal setBinaryParam(int paramNo, void *value) { }
 };
 
 class CreateTblStatement : public DdlStatement

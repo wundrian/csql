@@ -365,6 +365,27 @@ DbRetVal UpdStatement::setTimeStampParam(int paramNo, TimeStamp value)
     return OK;
 }
 
+DbRetVal UpdStatement::setBinaryParam(int paramNo, void *value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    if (NULL == params[paramNo-1])
+    {
+        printError(ErrSysFatal, "param not set. Should never happen");
+        return ErrSysFatal;
+    }
+
+    ConditionValue *cValue;
+    UpdateFieldValue *uValue;
+    if (paramNo <= totalAssignParams) {
+        uValue = (UpdateFieldValue*) params[paramNo-1];
+        memcpy(uValue->value, value, 2 * uValue->length);
+    } else {
+        cValue = (ConditionValue*) params[paramNo-1];
+        memcpy(cValue->value, value, 2 * uValue->length);
+    }
+    return OK;
+}
+
 DbRetVal UpdStatement::resolve()
 {
     if (dbMgr == NULL) return ErrNoConnection;
@@ -417,7 +438,10 @@ DbRetVal UpdStatement::resolveForAssignment()
         }
         value->type = fInfo->type;
         value->length = fInfo->length;
-        value->value = AllDataType::alloc(fInfo->type, fInfo->length);
+        // for binary datatype input buffer size should be 2 times the length 
+        if (value->type == typeBinary)
+		    value->value = AllDataType::alloc(fInfo->type, 2 * fInfo->length);
+        else value->value = AllDataType::alloc(fInfo->type, fInfo->length);
         table->bindFld(value->fldName, value->value);
         if (value->parsedString == NULL) 
         {    
@@ -429,8 +453,12 @@ DbRetVal UpdStatement::resolveForAssignment()
         {
             value->paramNo = paramPos++;
         }
-        if (!value->paramNo) 
-            AllDataType::strToValue(value->value, value->parsedString, fInfo->type, value->length);
+        if (!value->paramNo) {
+            // for binary datatype buffer is just strcpy'd. It will be converted into binary datatype in copyValuesToBindBuffer in DBAPI
+            if (value->type == typeBinary)
+                strncpy((char *)value->value, value->parsedString, 2 * fInfo->length);
+            else AllDataType::strToValue(value->value, value->parsedString, fInfo->type, value->length);
+		}	
     }
     totalAssignParams = paramPos -1;
 
@@ -457,7 +485,10 @@ DbRetVal UpdStatement::resolveForAssignment()
         }
         cValue->type = fInfo->type;
         cValue->length = fInfo->length;
-        cValue->value = AllDataType::alloc(fInfo->type, fInfo->length);
+        // for binary datatype input buffer size should be 2 times the length 
+        if (cValue->type == typeBinary) 
+            cValue->value = AllDataType::alloc(fInfo->type, 2 * fInfo->length);
+        else cValue->value = AllDataType::alloc(fInfo->type, fInfo->length);
         if (cValue->parsedString == NULL)
         {
             delete fInfo;
@@ -470,10 +501,11 @@ DbRetVal UpdStatement::resolveForAssignment()
 		    if(! cValue->opLike) // checks if 'LIKE' operator is used
                 cValue->paramNo = paramPos++;
         }
-        if (!cValue->paramNo) 
-            AllDataType::strToValue(cValue->value, cValue->parsedString, fInfo->type, fInfo->length);
-    }
-
+        if (!cValue->paramNo) {
+		    // Here for binary dataType it is not strcpy'd bcos internally memcmp is done for predicates like f2 = 'abcd' where f2 is binary
+			AllDataType::strToValue(cValue->value, cValue->parsedString, fInfo->type, fInfo->length);
+        }
+	}
 
     delete fInfo;
     totalParams = paramPos -1;

@@ -17,6 +17,7 @@
 #define DATATYPE_H
 #include<sqlext.h>
 #include<sqltypes.h>
+#include<ErrorType.h>
 //#include<os.h>
 typedef int JulianRep;
 
@@ -111,7 +112,7 @@ class AllDataType
                                  ComparisionOp op, int length);
 
 
-    static void convert(DataType srcType, void *src, DataType destType, void *dest);
+    static void convert(DataType srcType, void *src, DataType destType, void *dest, int length=0);
     static void convertToInt(void* dest, void* src, DataType srcType);
     static void convertToLong(void* dest, void* src, DataType srcType);
     static void convertToLongLong(void* dest, void* src, DataType srcType);
@@ -119,16 +120,17 @@ class AllDataType
     static void convertToByteInt(void* dest, void* src, DataType srcType);
     static void convertToFloat(void* dest, void* src, DataType srcType);
     static void convertToDouble(void* dest, void* src, DataType srcType);
-    static void convertToString(void* dest, void* src, DataType srcType);
+    static void convertToString(void* dest, void* src, DataType srcType, int length=0);
     static void convertToDate(void* dest, void* src, DataType srcType);
     static void convertToTime(void* dest, void* src, DataType srcType);
     static void convertToTimeStamp(void* dest, void* src, DataType srcType);
+	static void convertToBinary(void* dest, void* src, DataType srcType, int length);
 
 
     static ComparisionOp getComparisionOperator(char *str);
 
     static void* alloc(DataType type, int length =0);
-    static void strToValue(void *dest, char *src, DataType type, int length=0);
+    static DbRetVal strToValue(void *dest, char *src, DataType type, int length=0);
     static int printVal(void *src, DataType type, int length);
 
 

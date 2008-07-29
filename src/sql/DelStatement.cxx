@@ -232,6 +232,19 @@ DbRetVal DelStatement::setTimeStampParam(int paramNo, TimeStamp value)
     return OK;
 }
 
+DbRetVal DelStatement::setBinaryParam(int paramNo, void *value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    ConditionValue *cValue = (ConditionValue*) params [paramNo-1];
+    if (NULL == cValue)
+    {
+        printError(ErrSysFatal, "condition value is null. Should never happen");
+        return ErrSysFatal;
+    }
+    memcpy(cValue->value, value, 2 * cValue->length);
+    return OK;
+}
+
 DbRetVal DelStatement::resolve()
 {
     if (dbMgr == NULL) return ErrNoConnection;
@@ -285,6 +298,7 @@ DbRetVal DelStatement::resolveForCondition()
         }
         value->type = fInfo->type;
         value->length = fInfo->length;
+        // for binary datatype input buffer size should be 2 times the length 
         value->value = AllDataType::alloc(fInfo->type, fInfo->length);
         if (value->parsedString == NULL)
         {
@@ -298,8 +312,10 @@ DbRetVal DelStatement::resolveForCondition()
 		    if (! value->opLike) // checks if 'LIKE' operator is used
                 value->paramNo = paramPos++;
         }
-        if (!value->paramNo) 
+        if (!value->paramNo) { 
+		    // Here for binary dataType it is not strcpy'd bcos internally memcmp is done for predicates like f2 = 'abcd' where f2 is binary
             AllDataType::strToValue(value->value, value->parsedString, fInfo->type, fInfo->length);
+		}	
     }
     delete fInfo;
     totalParams = paramPos -1;

@@ -302,4 +302,7 @@ void SqlStatement::setTimeStampParam(int paramPos, TimeStamp value)
 {
     stmt->setTimeStampParam(paramPos, value);
 }
-
+void SqlStatement::setBinaryParam(int paramPos, void *value)
+{
+    stmt->setBinaryParam(paramPos, value);
+}

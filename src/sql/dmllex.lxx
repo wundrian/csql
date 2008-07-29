@@ -125,6 +125,7 @@ operator        "<"|">"|">="|"<="|"="|"\!="|"<>"|"LIKE"|"like"
                 if(strcasecmp(yytext,"DATE") ==0) token = DATE_TYPE;
                 if(strcasecmp(yytext,"TIME") ==0) token = TIME_TYPE;
                 if(strcasecmp(yytext,"TIMESTAMP") ==0) token = TIMESTAMP_TYPE;
+                if(strcasecmp(yytext,"BINARY") ==0) token = BINARY_TYPE;
                 if(strcasecmp(yytext,"CHAR") ==0) token = CHAR_TYPE;
                 if(strcasecmp(yytext,"BIGINT") ==0) token = BIGINT_TYPE;
                 if(strcasecmp(yytext,"TINYINT") ==0) token = TINYINT_TYPE;

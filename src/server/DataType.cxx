@@ -15,6 +15,7 @@
   ***************************************************************************/
 #include<os.h>
 #include<DataType.h>
+#include<Debug.h>
 
 #define SmallestValJulDate (1721426)
 
@@ -363,6 +364,7 @@ long AllDataType::size(DataType type, int length )
             size = sizeof(TimeStamp);
             break;
         case typeString:
+        case typeBinary:
             size = length;
             break;
         default:
@@ -386,6 +388,7 @@ char* AllDataType::getSQLString(DataType type)
         case typeTime: return "TIME";
         case typeTimeStamp: return "TIMESTAMP";
         case typeString: return "CHAR";
+        case typeBinary: return "BINARY";
         default: return "UNKNOWN";
     }
 }
@@ -422,6 +425,8 @@ SQLSMALLINT AllDataType::convertToSQLType(DataType type)
            return SQL_TYPE_TIMESTAMP;
         case typeString:
             return SQL_CHAR;
+        case typeBinary:
+            return SQL_BINARY;
     }
     return SQL_INTEGER;
 }
@@ -454,6 +459,8 @@ SQLSMALLINT AllDataType::convertToSQL_C_Type(DataType type)
            return SQL_C_TYPE_TIMESTAMP;
         case typeString:
             return SQL_C_CHAR;
+        case typeBinary:
+            return SQL_C_BINARY;
     }
     return SQL_C_SLONG;
 }
@@ -481,6 +488,8 @@ DataType  AllDataType::convertFromSQLType(SQLSMALLINT type)
             return typeString;
         case SQL_VARCHAR:
             return typeString;
+        case SQL_BINARY:
+            return typeBinary;
     }
     return typeInt;
 }
@@ -528,7 +537,7 @@ void AllDataType::copyVal(void* dest, void *src, DataType type, int length)
                 break;
             }
         case typeBinary:
-            os::memcpy((char*)dest, (char*)src, length);
+            os::memcpy(dest, src, length);
             break;
         default:
             break;
@@ -564,6 +573,7 @@ void AllDataType::addVal(void* dest, void *src, DataType type)
         case typeDate:
         case typeTime:
         case typeTimeStamp:
+		case typeBinary:
         default:
              break;
      }
@@ -600,6 +610,7 @@ void AllDataType::divVal(void* dest, int src, DataType type)
         case typeDate:
         case typeTime:
         case typeTimeStamp:
+		case typeBinary:
         default:
              break;
      }
@@ -1107,6 +1118,11 @@ void* AllDataType::alloc(DataType type, int length)
             if (length == 0 ) return NULL;
             dest = malloc(length);
             break;
+        case typeBinary:
+		    if (length == 0 || length > 256 ) return NULL;
+			dest = malloc(length);
+			memset(dest, 0, length);
+			break;
         case typeDate:
             dest = malloc(sizeof(Date));
             break;
@@ -1119,7 +1135,7 @@ void* AllDataType::alloc(DataType type, int length)
     }
     return dest;
 }
-void AllDataType::strToValue(void* dest, char *src, DataType type, int length)
+DbRetVal AllDataType::strToValue(void* dest, char *src, DataType type, int length)
 {
     switch(type)
     {
@@ -1206,14 +1222,36 @@ void AllDataType::strToValue(void* dest, char *src, DataType type, int length)
             TimeStamp timeStampObj(y,m,d,h,mn,s);
             *(TimeStamp*)dest = timeStampObj;
             break; }
+        case typeBinary: {
+            memset ((void *) dest, 0, length * 2);
+            unsigned char c = 0;
+            const char *str = (const char *)src;
+            unsigned char *val = (unsigned char *)dest;
+            int i = 0;
+            while (i < length * 2) {
+                c = *str++; i++;
+               if (c == '\0') { *val = *val | c; break; }
+               if (!isxdigit((int)c)) {
+                   printError(ErrBadArg, "Invalid hexadecimal value");
+                   return ErrBadArg;
+               }
+               if (c <= '9') c -= '0';
+               else if (c >= 'a') c = c - 'a' + 10;
+               else c = c - 'A' + 10;
+               if (i % 2) { *val = c; *val <<= 4; }
+               else { *val = *val | c;  val++; }
+            }
+            break;
+        }
         default:
             break;
         }
+	return OK;
 }
 
 
 void AllDataType::convert(DataType srcType, void *src, 
-                          DataType destType, void *dest)
+                          DataType destType, void *dest, int length)
 {
     switch ((DataType) destType )
     {
@@ -1230,8 +1268,7 @@ void AllDataType::convert(DataType srcType, void *src,
         case typeDecimal:    convertToDouble(dest, src, srcType); break;
 
         case typeString:     convertToString(dest, src, srcType); break;
-
-        case typeBinary:
+        case typeBinary:     convertToBinary(dest, src, srcType,length); break;
         case typeDate:       convertToDate(dest, src, srcType); break;
         case typeTime:       convertToTime(dest, src, srcType); break;
         case typeTimeStamp:  convertToTimeStamp(dest, src, srcType); break;
@@ -1401,7 +1438,7 @@ void AllDataType::convertToDouble( void* dest, void* src, DataType srcType )
     }
 }
 
-void AllDataType::convertToString( void* dest, void* src, DataType srcType )
+void AllDataType::convertToString( void* dest, void* src, DataType srcType, int length )
 {
     switch(srcType)
     {
@@ -1468,6 +1505,24 @@ void AllDataType::convertToString( void* dest, void* src, DataType srcType )
                                 tm->minutes(), tm->seconds(), 0 );
             break;
         }
+        case typeBinary:
+        {
+            unsigned char *c = (unsigned char *) src;
+            unsigned char *str = (unsigned char *) dest;
+            unsigned char p = 0;
+            int i = 0;
+            while (i < length) {
+                p = *c >> 4;
+                if (p < 10) sprintf ((char *)str++, "%c", '0' + p);
+                else sprintf((char *)str++, "%c", 'A' + p - 10);
+                p = *c & 0xF;
+                if (p < 10) sprintf ((char *)str++, "%c", '0' + p);
+                else sprintf((char *)str++, "%c", 'A' + p - 10);
+                i++; c++;
+            }
+            break;
+        }
+
         default: ((char*)dest)[0] = '\0';
     }
 
@@ -1544,6 +1599,30 @@ void AllDataType::convertToTimeStamp( void* dest, void* src, DataType srcType )
     }
 }
 
+void AllDataType::convertToBinary(void *dest, void *src, DataType srcType, int length)
+{
+    switch(srcType)
+    {
+        case typeString:
+        {
+            unsigned char c = 0;
+            const char *str = (const char *)src;
+            unsigned char *val = (unsigned char *)dest;
+            int i = 0;
+            while (i < length * 2) {
+                c = *str++; i++;
+               if (c == '\0') { *val = *val | c; break; }
+               if (c <= '9') c -= '0';
+               else if (c >= 'a') c = c - 'a' + 10;
+               else c = c - 'A' + 10;
+               if (i % 2) { *val = c; *val <<= 4; }
+               else { *val = *val | c;  val++; }
+           }
+           break;
+        }
+    }
+}
+
 int AllDataType::printVal(void* src, DataType srcType, int length )
 { 
     int count = 0;
@@ -1610,6 +1689,23 @@ int AllDataType::printVal(void* src, DataType srcType, int length )
             count = printf("%d/%d/%d %d:%d:%d.%d", tm->year(),
                                 tm->month(), tm->dayOfMonth(), tm->hours(),
                                 tm->minutes(), tm->seconds(), 0 );
+            break;
+        }
+        case typeBinary:
+        {
+            unsigned char *c = (unsigned char *) src;
+            unsigned char p = 0;
+            int i = 0;
+            while (i < length) {
+                p = *c >> 4;
+                if (p < 10) printf ("%c", '0' + p);
+                else printf("%c", 'A' + p - 10);
+                p = *c & 0xF;
+                if (p < 10) printf ("%c", '0' + p);
+                else printf("%c", 'A' + p - 10);
+                i++; c++;
+            }
+            count = length * 2;
             break;
         }
         default: { printf("DataType not supported\n"); break; }

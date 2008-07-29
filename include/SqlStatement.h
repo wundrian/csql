@@ -219,6 +219,11 @@ class SqlStatement: public AbsSqlStatement
     * @param value TimeStamp - value to be set 
     */
     void setTimeStampParam(int paramPos, TimeStamp value);
+    /**Sets the value for the required parameter position in statement
+	* @param paramPos int - parameter position
+	* @param value Binary - value to be set 
+	*/
+	void setBinaryParam(int paramPos, void *value);
 
     /**Returns whether the statement prepared is select statement
     * @return bool true if it is select stmt, false otherwise

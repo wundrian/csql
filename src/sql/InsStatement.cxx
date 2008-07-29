@@ -227,6 +227,19 @@ DbRetVal InsStatement::setTimeStampParam(int paramNo, TimeStamp value)
     return OK;
 }
 
+DbRetVal InsStatement::setBinaryParam(int paramNo, void *value)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    FieldValue *fValue = (FieldValue*) params [paramNo-1];
+    if (NULL == fValue)
+    {
+        printError(ErrSysFatal, "field value is null. Should never happen");
+        return ErrSysFatal;
+    }
+    memcpy(fValue->value, value, 2 * fValue->length);
+    return OK;
+}
+
 DbRetVal InsStatement::resolve()
 {
     if (dbMgr == NULL) return ErrNoConnection;
@@ -287,15 +300,22 @@ DbRetVal InsStatement::resolve()
         }
         value->type = fInfo->type;
         value->length = fInfo->length;
-        value->value = AllDataType::alloc(fInfo->type, fInfo->length);
+		// for binary datatype input buffer size should be 2 times the length 
+        if (fInfo->type == typeBinary) 
+            value->value = AllDataType::alloc(fInfo->type, 2 * fInfo->length);
+        else value->value = AllDataType::alloc(fInfo->type, fInfo->length);
         if (value->parsedString == NULL) continue;
         table->bindFld(name->fldName, value->value);
         if (value->parsedString[0] == '?')
         {
             value->paramNo = paramPos++;
         }
-        if (!value->paramNo) 
-            AllDataType::strToValue(value->value, value->parsedString, fInfo->type, fInfo->length);
+        if (!value->paramNo) {
+            // for binary datatype buffer is just strcpy'd. It will be converted into binary datatype in copyValuesToBindBuffer in DBAPI
+		    if (value->type == typeBinary)
+                strncpy((char *)value->value, value->parsedString, 2 * fInfo->length);   
+            else AllDataType::strToValue(value->value, value->parsedString, fInfo->type, fInfo->length);
+		}
     }
     delete fInfo;
     totalParams = paramPos -1;
