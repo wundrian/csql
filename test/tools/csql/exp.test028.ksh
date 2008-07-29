@@ -54,4 +54,27 @@ echo select * from t1 where f1 LIKE 'upper____letter';
 ---------------------------------------------------------
 	uppercaseletter	LOWER	
 	
+echo select * from t1 where f1 like 'UP__R%SE';
+---------------------------------------------------------
+	f1	f2	
+---------------------------------------------------------
+	UPPERCASE	UPPER	
+	
+echo select * from t1 where f1 like 'UP__R%SE' and f2 = 'B';
+---------------------------------------------------------
+	f1	f2	
+---------------------------------------------------------
+	
+echo select * from t1 where f1 like 'UP__R%SE' and f2 = 'UPPER';
+---------------------------------------------------------
+	f1	f2	
+---------------------------------------------------------
+	UPPERCASE	UPPER	
+	
+echo select * from t1 where f1 like 'UP__R%SE' and f2 like 'UPPER';
+---------------------------------------------------------
+	f1	f2	
+---------------------------------------------------------
+	UPPERCASE	UPPER	
+	
 Statement Executed

@@ -27,4 +27,12 @@ select * from t1 where f1 LIKE 'upp%letter';
 echo select * from t1 where f1 LIKE 'upper____letter';
 select * from t1 where f1 LIKE 'upper____letter';
 
+echo select * from t1 where f1 like 'UP__R%SE';
+select * from t1 where f1 like 'UP__R%SE';
+echo select * from t1 where f1 like 'UP__R%SE' and f2 = 'B';
+select * from t1 where f1 like 'UP__R%SE' and f2 = 'B';
+echo select * from t1 where f1 like 'UP__R%SE' and f2 = 'UPPER';
+select * from t1 where f1 like 'UP__R%SE' and f2 = 'UPPER';
+echo select * from t1 where f1 like 'UP__R%SE' and f2 like 'UPPER';
+select * from t1 where f1 like 'UP__R%SE' and f2 like 'UP%ER';
 drop table t1;
