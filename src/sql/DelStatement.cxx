@@ -295,7 +295,8 @@ DbRetVal DelStatement::resolveForCondition()
 
         if (value->parsedString[0] == '?')
         {
-            value->paramNo = paramPos++;
+		    if (! value->opLike) // checks if 'LIKE' operator is used
+                value->paramNo = paramPos++;
         }
         if (!value->paramNo) 
             AllDataType::strToValue(value->value, value->parsedString, fInfo->type, fInfo->length);

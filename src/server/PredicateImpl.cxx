@@ -21,6 +21,7 @@
 #include<PredicateImpl.h>
 #include<Table.h>
 #include<TableImpl.h>
+#include<fnmatch.h>
 void PredicateImpl::print()
 {
     printf("FieldName1 %s, FieldName2 %s", fldName1, fldName2);
@@ -45,6 +46,14 @@ void PredicateImpl::setTerm(const char* fName1, ComparisionOp op,
 void PredicateImpl::setTerm(const char* fName1, ComparisionOp op, void *opnd)
 {
     strcpy(fldName1, fName1);
+    if (op == OpLike) {
+	    char *c = (char *) opnd;
+		while (*c != '\0') {
+		    if (*c == '_') *c = '?';
+			else if(*c == '%') *c = '*';
+			c++;
+		}
+	}
     compOp = op;
     operand = opnd;
     operandPtr = NULL;
@@ -198,7 +207,8 @@ DbRetVal PredicateImpl::evaluate(bool &result)
     }
     int ret = 0;
     printDebug(DM_Predicate, " fldname :%s ", fldName1);
-    result = AllDataType::compareVal(val1, val2, compOp, srcType,
+	if (compOp == OpLike) result = ! fnmatch(val2, val1, 0);
+    else result = AllDataType::compareVal(val1, val2, compOp, srcType,
                               table->getFieldLength(fldName1));
     return OK;
 }

@@ -467,7 +467,8 @@ DbRetVal UpdStatement::resolveForAssignment()
 
         if (cValue->parsedString[0] == '?')
         {
-            cValue->paramNo = paramPos++;
+		    if(! cValue->opLike) // checks if 'LIKE' operator is used
+                cValue->paramNo = paramPos++;
         }
         if (!cValue->paramNo) 
             AllDataType::strToValue(cValue->value, cValue->parsedString, fInfo->type, fInfo->length);

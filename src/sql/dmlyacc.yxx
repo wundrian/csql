@@ -175,8 +175,18 @@ conditions: conditions AND conditions
 condition: ident OPERATOR value 
 	{
             ComparisionOp  op = AllDataType::getComparisionOperator((char*)$2);
+			bool opLike = false;
+            if (op == OpLike) {
+                char *c = (char *)$3;
+                while (*c != '\0') {
+                    if (*c == '_') *c = '?';
+                    else if(*c == '%') *c = '*';
+                    c++;
+			    }
+				opLike = true;
+            }
             Predicate *pred;
-            void **ptr = parsedData->insertCondValueAndGetPtr((char*)$1, (char*)$3);
+            void **ptr = parsedData->insertCondValueAndGetPtr((char*)$1, (char*)$3, opLike);
             pred = parsedData->insertPredicate((char*) $1, op, ptr);
             free( $1 ); free($2); free( $3 ); 
             $$=pred;

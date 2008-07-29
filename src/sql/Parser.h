@@ -53,6 +53,7 @@ struct ConditionValue
     int paramNo; // 0 ->not a param. It stores the param position
     DataType type;
     int length;
+	bool opLike;
     char fName[IDENTIFIER_LENGTH];
 };
 
@@ -138,7 +139,10 @@ class ParsedData
 
     void insertValue(char *value);
     void insertInValue(char *value);
-    void** insertCondValueAndGetPtr(char *fName, char *value);
+	// third parameter is to avoid conflict between '?' between like operand and parameterized value in sql statement.
+	// eg: select * from t1 where f1 = ? and f2 like '_ti%';
+	// _ is converted to ? before it is processed
+    void** insertCondValueAndGetPtr(char *fName, char *value, bool opLike=false);
     void insertUpdateValue(char *fldName, char *value);
 
     void insertField(char *fName, AggType aggType= AGG_UNKNOWN);

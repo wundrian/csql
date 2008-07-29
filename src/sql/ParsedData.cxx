@@ -46,7 +46,7 @@ void ParsedData::insertInValue(char *val)
     inValueList.append(newVal);
 }
 
-void** ParsedData::insertCondValueAndGetPtr(char *fldName, char *val)
+void** ParsedData::insertCondValueAndGetPtr(char *fldName, char *val, bool opLike)
 {
     ConditionValue *newVal = new ConditionValue();
     if (val == NULL) 
@@ -58,6 +58,7 @@ void** ParsedData::insertCondValueAndGetPtr(char *fldName, char *val)
     newVal->type = typeUnknown;
     newVal->length = 0;
     strcpy(newVal->fName, fldName);
+	newVal->opLike = opLike;
     conditionValueList.append(newVal);
     return &(newVal->value);
 

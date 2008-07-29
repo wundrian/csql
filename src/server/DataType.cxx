@@ -1066,6 +1066,8 @@ ComparisionOp AllDataType::getComparisionOperator(char *str)
         op = OpEquals;
     else if (strcmp(str, "!=") == 0 || strcmp(str, "<>") == 0 )
         op = OpNotEquals;
+    else if (strcasecmp(str, "LIKE") == 0 )
+        op = OpLike;
     else
         op = OpInvalidComparisionOp;
     return op;
