@@ -674,8 +674,20 @@ void TableImpl::printSQLIndexString()
     for (int i = 0; i < numIndexes_ ; i++)
     {
         INDEX *iptr = (INDEX*) indexPtr_[i];
-        cIndexField.getFieldNameAndType((void*)iptr, fldName, type);
-        printf("CREATE INDEX %s on %s ( %s ) ", iptr->indName_, getName(), fldName);
+        //cIndexField.getFieldNameAndType((void*)iptr, fldName, type);
+        //printf("CREATE INDEX %s on %s ( %s ) ", iptr->indName_, getName(), fldName);
+        printf("CREATE INDEX %s on %s ( ", iptr->indName_, getName());
+        FieldList fldList;
+        cIndexField.getFieldInfo(iptr, fldList);
+        FieldIterator fIter = fldList.getIterator();
+        bool firstFld = true;
+        while(fIter.hasElement())
+        {
+            FieldDef def = fIter.nextElement();
+            if (firstFld) { printf(" %s ", def.fldName_); firstFld = false; }
+            else printf(" ,%s ", def.fldName_);
+        }
+        printf(" ) ");
         if (((HashIndexInfo*) idxInfo[i])->isUnique) printf(" UNIQUE;\n"); else printf(";\n");
     }
 }
