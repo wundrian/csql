@@ -29,7 +29,7 @@ int main()
     Table *table = dbMgr->openTable("t1");
     if (table == NULL) { printf("Unable to open table\n"); return 3; }
     int id;
-    char name[20]="PRABA";
+    char name[200]="PRABA";
     table->bindFld("f1", &id);
     table->bindFld("f2", name);
     int icount = 0;
