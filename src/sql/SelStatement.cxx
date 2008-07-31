@@ -258,6 +258,17 @@ DbRetVal SelStatement::resolve()
         printError(ErrNotExists, "Unable to open the table:Table not exists");
         return ErrNotExists;
     }
+    List fNameList = table->getFieldNameList();
+    ListIterator fNameIter = fNameList.getIterator();
+    Identifier *elem = NULL;
+    if (fNameIter.hasElement()) 
+        elem = (Identifier*) fNameIter.nextElement();
+    if (elem == NULL) 
+    {
+        printError(ErrNotExists, "No fields present in the table %s", parsedData->getTableName());
+        return ErrNotExists;
+    }
+
     //get the fieldname list and validate field names
     ListIterator iter = parsedData->getFieldNameList().getIterator();
     FieldName *name = NULL;
@@ -285,7 +296,7 @@ DbRetVal SelStatement::resolve()
             printError(ErrSysFatal, "Should never happen. Field Name list has NULL");
             return ErrSysFatal;
         }
-        if ('*' == name->fldName[0]) 
+        if ('*' == name->fldName[0] && name->aType != AGG_COUNT) 
         {
             iter.reset();
             while (iter.hasElement())
@@ -302,6 +313,7 @@ DbRetVal SelStatement::resolve()
             //as they all are deleted during resolveStar method.
             break;
         } else {
+            if ('*' == name->fldName[0]) strcpy(name->fldName, elem->name);
             rv = table->getFieldInfo(name->fldName, fInfo);
             if (ErrNotFound == rv)
             {
@@ -318,7 +330,7 @@ DbRetVal SelStatement::resolve()
             newVal->type = fInfo->type;
             newVal->length = fInfo->length;
         // for binary datatype input buffer size should be 2 times the length 
-			if(newVal->type == typeBinary) 
+	    if(newVal->type == typeBinary) 
                 newVal->value = AllDataType::alloc(fInfo->type, 2 * fInfo->length);
             else newVal->value = AllDataType::alloc(fInfo->type, fInfo->length);
             parsedData->insertFieldValue(newVal);

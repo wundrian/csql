@@ -275,6 +275,11 @@ field:   ident
             parsedData->insertField((char*)$3, AGG_COUNT);
             free( $1 );
         }
+        | COUNT  '(' STAR ')'
+        { 
+            parsedData->insertField("*", AGG_COUNT);
+            free( $1 );
+        }
         | STAR
         { 
             parsedData->insertField((char*)$1);
