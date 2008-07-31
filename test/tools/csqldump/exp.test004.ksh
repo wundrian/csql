@@ -1,5 +1,5 @@
 CREATE TABLE t1 (f1 INT  NOT NULL , f2 CHAR (30));
-CREATE INDEX t1_idx1_Primary on t1 ( f1 )  UNIQUE;
+CREATE INDEX t1_idx1_Primary on t1 (  f1  )  UNIQUE;
 SET AUTOCOMMIT OFF;
 INSERT INTO t1 VALUES(123, 'india');
 INSERT INTO t1 VALUES(72, 'Laxman72');

@@ -1,5 +1,5 @@
 CREATE TABLE vikas (fld5 INT  NOT NULL , name1 CHAR (30));
-CREATE INDEX vikas_idx1_Primary on vikas ( fld5 )  UNIQUE;
+CREATE INDEX vikas_idx1_Primary on vikas (  fld5  )  UNIQUE;
 SET AUTOCOMMIT OFF;
 INSERT INTO vikas VALUES(1, 'Lakshya1');
 INSERT INTO vikas VALUES(2, 'Lakshya2');
