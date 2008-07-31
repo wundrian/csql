@@ -32,9 +32,9 @@ DatabaseManagerImpl::~DatabaseManagerImpl()
 {
     //Note:Databases are closed by the session interface
     Table *tbl = NULL;
-    ListIterator iter = tableList.getIterator();
+    ListIterator iter = tableHandleList.getIterator();
     while ((tbl = (Table *)iter.nextElement()) != NULL) delete tbl;
-    tableList.reset();
+    tableHandleList.reset();
     delete tMgr_;
     delete lMgr_;
 }
@@ -700,7 +700,7 @@ Table* DatabaseManagerImpl::openTable(const char *name)
                                          name, chunk, table->numIndexes_);
     logFinest(logger, "Opening Table %s" , name);
 
-    tableList.append(table);
+    tableHandleList.append(table);
         
     return table;
 }
@@ -734,8 +734,7 @@ void DatabaseManagerImpl::closeTable(Table *table)
     printDebug(DM_Database,"Closing table handle: %x", table);
     if (NULL == table) return;
     //table->unlock();
-    tableList.remove(table, false);
-    delete table;
+    tableHandleList.remove(table, false);
     logFinest(logger, "Closing Table");
 }
 

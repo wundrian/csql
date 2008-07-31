@@ -59,7 +59,7 @@ class DatabaseManagerImpl : public DatabaseManager
     ProcessManager *pMgr_;
     int procSlot;
  
-    List tableList; // list of table handles 
+    List tableHandleList; // list of table handles 
 
     //only SessionImpl creates object of this class
     DatabaseManagerImpl() { systemDatabase_ = NULL; tMgr_ = NULL; lMgr_ =  NULL; 
