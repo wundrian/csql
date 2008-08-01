@@ -23,9 +23,6 @@ Go to the root directory and enter the following commands.
 $ export JDK_HOME=<path of jdk home>
 $ export PATH=$PATH:$JDK_HOME/bin
 $ ./build.ksh
-$ make
-$ make install
-$ ./csqlinstall.ksh
 
 This will create "install" directory under the current directory and places all the executables created in bin directory and libraries in lib directory. 
 If you want to install in some other directory then change the directory in --prefix option in build.ksh file before executing build.ksh script.

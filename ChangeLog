@@ -37,3 +37,12 @@ CSQL - Version 2.0 - GA
 5.Memory leak fixes using Valgrind
 6.Improved test coverage in DBAPI, SQLAPI, JDBC, ODBC interfaces
 7.Updated user manual
+
+CSQL - Version 2.1 - Beta
+-----------------------
+1.Composite Keys
+2.Binary Datatype
+3.cacheverify tool
+4.Aggregates and Group By support
+5.LIKE operator support
+6.Cache support for Postgres (Bi-directional)
