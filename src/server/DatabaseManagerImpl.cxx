@@ -671,6 +671,7 @@ Table* DatabaseManagerImpl::openTable(const char *name)
         CatalogTableINDEXFIELD cIndexField(systemDatabase_);
         cIndexField.getFieldInfo(table->indexPtr_[i], hIdxInfo->idxFldList);
         ChunkIterator citer = CatalogTableINDEX::getIterator(table->indexPtr_[i]);
+        hIdxInfo->indexPtr = table->indexPtr_[i];
         hIdxInfo->noOfBuckets = CatalogTableINDEX::getNoOfBuckets(table->indexPtr_[i]);
         FieldIterator fIter = hIdxInfo->idxFldList.getIterator();
         bool firstFld = true;
@@ -907,14 +908,38 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
         return ErrSysInternal;
     }
     delete[] fptr;
-    //TODO::If tuples present in this table, then
-    //create hash index nodes and store it
-    //Take table lock
     systemDatabase_->releaseDatabaseMutex();
-    printDebug(DM_Database, "Creating Hash Index Name:%s tblname:%s buckets:%x",
-                                   indName, tblName, buckets);
-    logFinest(logger, "Creating HashIndex %s on %s with bucket size %d", 
-                                   indName, tblName, buckets);
+    
+    //TODO:: Take table lock
+
+    // Following code is written by Kishor Amballi
+    TableImpl *tbl = (TableImpl *) openTable(tblName);
+    if (! tbl->numTuples()) { 
+        printDebug(DM_Database, "Creating Hash Index Name:%s tblname:%s buckets:%x", indName, tblName, buckets);
+        logFinest(logger, "Creating HashIndex %s on %s with bucket size %d", indName, tblName, buckets);
+        return OK;
+    }
+    HashIndexInfo *indxInfo = NULL;
+    int i = 0;
+    for (i = 0; i < tbl->numIndexes_; i++) {
+        if(((HashIndexInfo *)tbl->idxInfo[i])->indexPtr == tupleptr) {
+            indxInfo = (HashIndexInfo *) tbl->idxInfo[i];  
+            break;
+        }
+    }
+    void *recPtr = NULL;
+    ChunkIterator chIter = ((Chunk *)chunk)->getIterator();
+    while ((recPtr = chIter.nextElement()) != NULL) {
+        rv = tbl->insertIndexNode(*tbl->trans, tupleptr, indxInfo, recPtr);
+        if (rv == ErrUnique) {
+            closeTable(tbl);
+            dropIndex(indName);
+            return rv;
+        }
+    }
+    closeTable(tbl);
+    printDebug(DM_Database, "Creating Hash Index Name:%s tblname:%s buckets:%x", indName, tblName, buckets);
+    logFinest(logger, "Creating HashIndex %s on %s with bucket size %d", indName, tblName, buckets);
     return OK;
 }
 
