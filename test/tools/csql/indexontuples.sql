@@ -1,0 +1,12 @@
+create table t1 ( f1 int, f2 int);
+insert into t1 values(1, 1);
+insert into t1 values(1, 2);
+insert into t1 values(5, 5);
+insert into t1 values(2, 1);
+insert into t1 values(2, 2);
+echo select * from t1 where f1 = 5;
+select * from t1 where f1 = 5;
+echo create index ind on t1(f1);
+create index ind on t1(f1);
+echo select * from t1 where f1 = 5;
+select * from t1 where f1 = 5;
