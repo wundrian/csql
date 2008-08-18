@@ -157,8 +157,8 @@ DbRetVal AggTableImpl::execute()
                    AllDataType::divVal(element+offset,
                       *(int*)(element+offset+AllDataType::size(def->type, def->length)),
                       def->type);
-                   offset = offset +sizeof(int);
                }
+               offset = offset +sizeof(int);
             }
         }
         offset = offset + AllDataType::size(def->type, def->length);
