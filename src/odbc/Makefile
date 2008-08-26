@@ -77,14 +77,14 @@ HEADERS = $(noinst_HEADERS)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /home/csql/csql/missing --run aclocal-1.9
+ACLOCAL = ${SHELL} /home/csql/latest/aug/csql/missing --run aclocal-1.9
 AMDEP_FALSE = #
 AMDEP_TRUE = 
-AMTAR = ${SHELL} /home/csql/csql/missing --run tar
+AMTAR = ${SHELL} /home/csql/latest/aug/csql/missing --run tar
 AR = ar
-AUTOCONF = ${SHELL} /home/csql/csql/missing --run autoconf
-AUTOHEADER = ${SHELL} /home/csql/csql/missing --run autoheader
-AUTOMAKE = ${SHELL} /home/csql/csql/missing --run automake-1.9
+AUTOCONF = ${SHELL} /home/csql/latest/aug/csql/missing --run autoconf
+AUTOHEADER = ${SHELL} /home/csql/latest/aug/csql/missing --run autoheader
+AUTOMAKE = ${SHELL} /home/csql/latest/aug/csql/missing --run automake-1.9
 AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
@@ -94,7 +94,7 @@ CPPFLAGS =
 CXX = g++
 CXXCPP = g++ -E
 CXXDEPMODE = depmode=gcc3
-CXXFLAGS = -g  -I/usr/java/jdk1.6.0_10/include -I/usr/java/jdk1.6.0_10/include/linux
+CXXFLAGS = -g  -I/opt/java/jdk1.6.0_04/include -I/opt/java/jdk1.6.0_04/include/linux
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
@@ -113,14 +113,14 @@ INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = ${SHELL} $(install_sh) -c -s
 LDFLAGS = 
 LEX = flex
-LEXLIB = -lfl
+LEXLIB = 
 LEX_OUTPUT_ROOT = lex.yy
 LIBOBJS = 
 LIBS = 
 LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LN_S = ln -s
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} /home/csql/csql/missing --run makeinfo
+MAKEINFO = ${SHELL} /home/csql/latest/aug/csql/missing --run makeinfo
 OBJEXT = o
 PACKAGE = csql
 PACKAGE_BUGREPORT = 
@@ -167,7 +167,7 @@ host_vendor = pc
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = /home/csql/csql/install-sh
+install_sh = /home/csql/latest/aug/csql/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -176,7 +176,7 @@ mandir = ${datarootdir}/man
 mkdir_p = mkdir -p --
 oldincludedir = /usr/include
 pdfdir = ${docdir}
-prefix = /home/csql/csql/install
+prefix = /home/csql/latest/aug/csql/install
 program_transform_name = s,x,x,
 psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
@@ -187,7 +187,7 @@ INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/src/sql -I$(top_srcdir)/inclu
 METASOURCES = AUTO
 lib_LTLIBRARIES = libcsqlodbc.la
 libcsqlodbc_la_LDFLAGS = -avoid-version -module \
-	$(top_builddir)/src/server/.libs/libcsql \
+	$(top_builddir)/src/storage/.libs/libcsql \
 	$(top_builddir)/src/sql/.libs/libcsqlsql \
 	$(top_builddir)/src/gateway/.libs/libcsqlgw \
 	$(top_builddir)/src/network/.libs/libcsqlnw \
