@@ -23,6 +23,8 @@
 #include<Debug.h>
 #include<Util.h>
 
+
+extern char ChunkName[MAX_CHUNKS][CHUNK_NAME_LEN];
 class FieldList;
 class FieldNameList;
 class FieldIterator;

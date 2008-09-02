@@ -181,6 +181,14 @@ class UniqueID
    Mutex mutex;
    public:
    UniqueID() { startID = 1; mutex.init(); }
+
+
+   void setID(int id)
+   {
+        startID = id;mutex.init();
+   }
+
+
    int getID()
    {
       //TODO::change mutex to atomic increment instruction

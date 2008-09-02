@@ -3,7 +3,7 @@ Case 1: With no option:
   <No tables exist></No tables exist>
 </TableNames>
 Case 2: With ? option:
-Usage: catalog [-u username] [-p passwd] [-l] [-i] [-d] [-T table] [-I index] [-D <lock|trans|proc>]
+Usage: catalog [-u username] [-p passwd] [-l] [-i] [-d] [-T table] [-I index] [-D <lock|trans|proc|chunk>]
        l -> list all table with field information
        i -> reinitialize catalog tables. Drops all tables.
        d -> print db usage statistics

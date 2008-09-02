@@ -309,6 +309,8 @@ DbRetVal Database::createSystemDatabaseChunk(AllocType type, size_t size, int id
     }
     chunk = getSystemDatabaseChunk(id);
 
+    chunk->setChunkNameForSystemDB(id);
+
     if (FixedSizeAllocator == type) chunk->setSize(size);
     //getDatabaseMutex();
     if (chunk->allocSize_ > PAGE_SIZE)
@@ -482,5 +484,14 @@ Bucket* Database::getLockHashBuckets()
     Chunk *tChunk = getSystemDatabaseChunk(LockTableHashBucketId);
     ChunkIterator iter = tChunk->getIterator();
     return (Bucket*)iter.nextElement();
+}
+void Database::setUniqueChunkID(int id)
+{
+        (metaData_->chunkUniqueID_).setID(id);
+}
+
+int Database::getUniqueIDForChunk()
+{
+        return ((metaData_->chunkUniqueID_).getID());
 }
 

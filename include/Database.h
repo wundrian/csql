@@ -18,7 +18,7 @@
 #include<os.h>
 #include<Allocator.h>
 #include<Debug.h>
-
+#include<Util.h>
 
 class Bucket;
 class Transaction;
@@ -53,12 +53,14 @@ class DatabaseMetaData
     Mutex dbTransTableMutex_;
 
     Mutex dbProcTableMutex_;
+    //To generate unique id
+    UniqueID chunkUniqueID_;
 
     //This is where all hash index nodes are stored for all the
     //indexes in this database
     Chunk *hashIndexChunk_;
 
-    unsigned char reserved_[1024];
+    unsigned char reserved_[996];
 };
 
 
@@ -100,6 +102,8 @@ class Database
     void incrementChunk() { (metaData_->noOfChunks_)++;}
     void decrementChunk() { (metaData_->noOfChunks_)--;}
 
+    int getUniqueIDForChunk();
+
     const char* getName();
     int getDatabaseID();
     long getMaxSize();
@@ -119,7 +123,7 @@ class Database
     void setMetaDataPtr(DatabaseMetaData *ptr) {metaData_ = ptr; }
     void setFirstPage(Page *ptr);
     void setHashIndexChunk(Chunk* chunk);
-
+    void setUniqueChunkID(int id);
 
     // Gets the free page
     // Each page is segmented by PAGE_SIZE, so it checks the pageInfo

@@ -19,7 +19,7 @@
 #include <TableImpl.h>
 void printUsage()
 {
-   printf("Usage: catalog [-u username] [-p passwd] [-l] [-i] [-d] [-T table] [-I index] [-D <lock|trans|proc>]\n");
+   printf("Usage: catalog [-u username] [-p passwd] [-l] [-i] [-d] [-T table] [-I index] [-D <lock|trans|proc|chunk>]\n");
    printf("       l -> list all table with field information\n");
    printf("       i -> reinitialize catalog tables. Drops all tables.\n");
    printf("       d -> print db usage statistics\n");
@@ -39,7 +39,7 @@ int main(int argc, char **argv)
     password [0] = '\0';
     int c = 0, opt = 0;
     char name[IDENTIFIER_LENGTH];
-    while ((c = getopt(argc, argv, "u:p:T:I:D:lid?")) != EOF) 
+    while ((c = getopt(argc, argv, "u:p:T:I:D:licd?")) != EOF) 
     {
         switch (c)
         {
@@ -192,6 +192,50 @@ int main(int argc, char **argv)
         {
             dbMgr->printDebugProcInfo();
         }
+         else if(strcmp(name,"chunk") ==0)
+    	{
+	Database *db = dbMgr->sysDb();
+	Chunk *chunk;
+	int id=1;
+	printf("<Chunk information>\n");
+	printf("  <System Chunk >\n");
+	chunk=db->getSystemDatabaseChunk(UserChunkTableId);
+	chunk->print();
+	while(id<MAX_CHUNKS)
+	{
+		chunk=db->getSystemDatabaseChunk(id);
+		if((chunk->getChunkID())!=0){
+			chunk->print();
+		}
+		id++;
+	}
+	printf("  </System Chunk >\n");
+	printf("  <User Chunk >\n");
+	chunk=db->getSystemDatabaseChunk(UserChunkTableId);
+	size_t size=chunk->getSize();
+	int noOfDataNodes=os::floor((PAGE_SIZE - sizeof(PageInfo))/size);
+	Page* page=chunk->getFirstPage();
+	int i=0;
+	Chunk *chk;
+	while(page)
+	{
+		char *data = ((char*)page) + sizeof(PageInfo);
+		for (i = 0; i< noOfDataNodes; i++)
+		{
+			if (*((int*)data) == 1) 
+			{
+				chk=(Chunk*)((int*)data+1);
+				chk->print(); 
+			}
+			data = data + size;
+		}
+		page = (PageInfo*)(((PageInfo*)page)->nextPage_) ;
+			
+	}
+
+	printf("  </User Chunk >\n");
+	printf("</Chunk information>\n");
+    	}
         else {
            printf("Wrong argument passed\n");
            printUsage();

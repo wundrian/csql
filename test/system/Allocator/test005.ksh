@@ -49,4 +49,4 @@ then
    exit 3;
 fi
 
-exit 0
+exit 0;

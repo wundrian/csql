@@ -1,0 +1,593 @@
+echo create table t2 and constraints with three integer fields and primary key f1;
+Statement Executed
+Statement Executed
+Table  created
+Case 1: With c  option after table creation:
+<Chunk information>
+  <System Chunk >
+        <Chunk Id> 0 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > UserChunkTableId </ChunkName> 
+                <TotalDataNodes> 6 </TotalDataNodes> 
+                <SizeOfDataNodes> 112 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 1 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > LockTableHashBucketId </ChunkName> 
+                <TotalDataNodes> 1 </TotalDataNodes> 
+                <SizeOfDataNodes> 57348 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 2 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > LockTableMutexId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 49156 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 3 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > LockTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 20 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 4 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > TransHasTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 12 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 5 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > UndoLogTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 0 </SizeOfDataNodes> 
+                <Allocation Type> VariableSizeAllocator </Allocation Type>
+        <Chunk Id> 10 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > DatabaseTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 148 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 11 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > UserTableId </ChunkName> 
+                <TotalDataNodes> 1 </TotalDataNodes> 
+                <SizeOfDataNodes> 260 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 12 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > TableTableId </ChunkName> 
+                <TotalDataNodes> 2 </TotalDataNodes> 
+                <SizeOfDataNodes> 152 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 13 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > FieldTableId </ChunkName> 
+                <TotalDataNodes> 5 </TotalDataNodes> 
+                <SizeOfDataNodes> 196 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 14 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > AccessTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 260 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 15 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > IndexTableId </ChunkName> 
+                <TotalDataNodes> 2 </TotalDataNodes> 
+                <SizeOfDataNodes> 164 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 16 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > IndexFieldTableId </ChunkName> 
+                <TotalDataNodes> 2 </TotalDataNodes> 
+                <SizeOfDataNodes> 16 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+  </System Chunk >
+  <User Chunk >
+        <Chunk Id> 117 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > t1 </ChunkName> 
+                <TotalDataNodes> 10 </TotalDataNodes> 
+                <SizeOfDataNodes> 16 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 118 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > t2 </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 20 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 119 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > t2_idx1_Primary </ChunkName> 
+                <TotalDataNodes> 1 </TotalDataNodes> 
+                <SizeOfDataNodes> 28256 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 120 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > t2_idx1_Primary </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 16 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 121 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > t2Uniqueidx </ChunkName> 
+                <TotalDataNodes> 1 </TotalDataNodes> 
+                <SizeOfDataNodes> 28256 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 122 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > t2Uniqueidx </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 16 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+  </User Chunk >
+</Chunk information>
+echo insert into t2 20 tuples;
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Tuples insered
+Case 2: With c  option after insert 20 tuples:
+<Chunk information>
+  <System Chunk >
+        <Chunk Id> 0 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > UserChunkTableId </ChunkName> 
+                <TotalDataNodes> 6 </TotalDataNodes> 
+                <SizeOfDataNodes> 112 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 1 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > LockTableHashBucketId </ChunkName> 
+                <TotalDataNodes> 1 </TotalDataNodes> 
+                <SizeOfDataNodes> 57348 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 2 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > LockTableMutexId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 49156 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 3 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > LockTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 20 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 4 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > TransHasTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 12 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 5 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > UndoLogTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 0 </SizeOfDataNodes> 
+                <Allocation Type> VariableSizeAllocator </Allocation Type>
+        <Chunk Id> 10 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > DatabaseTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 148 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 11 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > UserTableId </ChunkName> 
+                <TotalDataNodes> 1 </TotalDataNodes> 
+                <SizeOfDataNodes> 260 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 12 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > TableTableId </ChunkName> 
+                <TotalDataNodes> 2 </TotalDataNodes> 
+                <SizeOfDataNodes> 152 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 13 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > FieldTableId </ChunkName> 
+                <TotalDataNodes> 5 </TotalDataNodes> 
+                <SizeOfDataNodes> 196 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 14 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > AccessTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 260 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 15 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > IndexTableId </ChunkName> 
+                <TotalDataNodes> 2 </TotalDataNodes> 
+                <SizeOfDataNodes> 164 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 16 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > IndexFieldTableId </ChunkName> 
+                <TotalDataNodes> 2 </TotalDataNodes> 
+                <SizeOfDataNodes> 16 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+  </System Chunk >
+  <User Chunk >
+        <Chunk Id> 117 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > t1 </ChunkName> 
+                <TotalDataNodes> 10 </TotalDataNodes> 
+                <SizeOfDataNodes> 16 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 118 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > t2 </ChunkName> 
+                <TotalDataNodes> 20 </TotalDataNodes> 
+                <SizeOfDataNodes> 20 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 119 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > t2_idx1_Primary </ChunkName> 
+                <TotalDataNodes> 1 </TotalDataNodes> 
+                <SizeOfDataNodes> 28256 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 120 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > t2_idx1_Primary </ChunkName> 
+                <TotalDataNodes> 20 </TotalDataNodes> 
+                <SizeOfDataNodes> 16 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 121 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > t2Uniqueidx </ChunkName> 
+                <TotalDataNodes> 1 </TotalDataNodes> 
+                <SizeOfDataNodes> 28256 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 122 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > t2Uniqueidx </ChunkName> 
+                <TotalDataNodes> 20 </TotalDataNodes> 
+                <SizeOfDataNodes> 16 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+  </User Chunk >
+</Chunk information>
+echo delete 10 tuples;
+Statement Executed: Rows Affected = 10
+10 tuples deleted
+Case 3: With c  option after deleting 10 tuples :
+<Chunk information>
+  <System Chunk >
+        <Chunk Id> 0 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > UserChunkTableId </ChunkName> 
+                <TotalDataNodes> 6 </TotalDataNodes> 
+                <SizeOfDataNodes> 112 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 1 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > LockTableHashBucketId </ChunkName> 
+                <TotalDataNodes> 1 </TotalDataNodes> 
+                <SizeOfDataNodes> 57348 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 2 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > LockTableMutexId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 49156 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 3 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > LockTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 20 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 4 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > TransHasTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 12 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 5 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > UndoLogTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 0 </SizeOfDataNodes> 
+                <Allocation Type> VariableSizeAllocator </Allocation Type>
+        <Chunk Id> 10 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > DatabaseTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 148 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 11 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > UserTableId </ChunkName> 
+                <TotalDataNodes> 1 </TotalDataNodes> 
+                <SizeOfDataNodes> 260 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 12 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > TableTableId </ChunkName> 
+                <TotalDataNodes> 2 </TotalDataNodes> 
+                <SizeOfDataNodes> 152 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 13 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > FieldTableId </ChunkName> 
+                <TotalDataNodes> 5 </TotalDataNodes> 
+                <SizeOfDataNodes> 196 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 14 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > AccessTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 260 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 15 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > IndexTableId </ChunkName> 
+                <TotalDataNodes> 2 </TotalDataNodes> 
+                <SizeOfDataNodes> 164 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 16 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > IndexFieldTableId </ChunkName> 
+                <TotalDataNodes> 2 </TotalDataNodes> 
+                <SizeOfDataNodes> 16 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+  </System Chunk >
+  <User Chunk >
+        <Chunk Id> 117 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > t1 </ChunkName> 
+                <TotalDataNodes> 10 </TotalDataNodes> 
+                <SizeOfDataNodes> 16 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 118 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > t2 </ChunkName> 
+                <TotalDataNodes> 10 </TotalDataNodes> 
+                <SizeOfDataNodes> 20 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 119 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > t2_idx1_Primary </ChunkName> 
+                <TotalDataNodes> 1 </TotalDataNodes> 
+                <SizeOfDataNodes> 28256 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 120 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > t2_idx1_Primary </ChunkName> 
+                <TotalDataNodes> 10 </TotalDataNodes> 
+                <SizeOfDataNodes> 16 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 121 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > t2Uniqueidx </ChunkName> 
+                <TotalDataNodes> 1 </TotalDataNodes> 
+                <SizeOfDataNodes> 28256 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 122 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > t2Uniqueidx </ChunkName> 
+                <TotalDataNodes> 10 </TotalDataNodes> 
+                <SizeOfDataNodes> 16 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+  </User Chunk >
+</Chunk information>
+echo drop index t2Uniqueidx;
+Statement Executed
+Index droped
+Case 4: With c  option after Index droped :
+<Chunk information>
+  <System Chunk >
+        <Chunk Id> 0 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > UserChunkTableId </ChunkName> 
+                <TotalDataNodes> 4 </TotalDataNodes> 
+                <SizeOfDataNodes> 112 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 1 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > LockTableHashBucketId </ChunkName> 
+                <TotalDataNodes> 1 </TotalDataNodes> 
+                <SizeOfDataNodes> 57348 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 2 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > LockTableMutexId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 49156 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 3 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > LockTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 20 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 4 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > TransHasTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 12 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 5 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > UndoLogTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 0 </SizeOfDataNodes> 
+                <Allocation Type> VariableSizeAllocator </Allocation Type>
+        <Chunk Id> 10 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > DatabaseTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 148 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 11 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > UserTableId </ChunkName> 
+                <TotalDataNodes> 1 </TotalDataNodes> 
+                <SizeOfDataNodes> 260 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 12 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > TableTableId </ChunkName> 
+                <TotalDataNodes> 2 </TotalDataNodes> 
+                <SizeOfDataNodes> 152 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 13 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > FieldTableId </ChunkName> 
+                <TotalDataNodes> 5 </TotalDataNodes> 
+                <SizeOfDataNodes> 196 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 14 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > AccessTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 260 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 15 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > IndexTableId </ChunkName> 
+                <TotalDataNodes> 1 </TotalDataNodes> 
+                <SizeOfDataNodes> 164 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 16 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > IndexFieldTableId </ChunkName> 
+                <TotalDataNodes> 1 </TotalDataNodes> 
+                <SizeOfDataNodes> 16 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+  </System Chunk >
+  <User Chunk >
+        <Chunk Id> 117 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > t1 </ChunkName> 
+                <TotalDataNodes> 10 </TotalDataNodes> 
+                <SizeOfDataNodes> 16 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 118 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > t2 </ChunkName> 
+                <TotalDataNodes> 10 </TotalDataNodes> 
+                <SizeOfDataNodes> 20 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 119 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > t2_idx1_Primary </ChunkName> 
+                <TotalDataNodes> 1 </TotalDataNodes> 
+                <SizeOfDataNodes> 28256 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 120 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > t2_idx1_Primary </ChunkName> 
+                <TotalDataNodes> 10 </TotalDataNodes> 
+                <SizeOfDataNodes> 16 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+  </User Chunk >
+</Chunk information>
+echo drop t1 and t2 tables;
+Statement Executed
+Statement Executed
+t1,t2 table droped with index
+Case 4: With c  option after drop t1,t2 :
+<Chunk information>
+  <System Chunk >
+        <Chunk Id> 0 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > UserChunkTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 112 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 1 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > LockTableHashBucketId </ChunkName> 
+                <TotalDataNodes> 1 </TotalDataNodes> 
+                <SizeOfDataNodes> 57348 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 2 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > LockTableMutexId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 49156 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 3 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > LockTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 20 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 4 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > TransHasTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 12 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 5 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > UndoLogTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 0 </SizeOfDataNodes> 
+                <Allocation Type> VariableSizeAllocator </Allocation Type>
+        <Chunk Id> 10 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > DatabaseTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 148 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 11 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > UserTableId </ChunkName> 
+                <TotalDataNodes> 1 </TotalDataNodes> 
+                <SizeOfDataNodes> 260 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 12 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > TableTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 152 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 13 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > FieldTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 196 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 14 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > AccessTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 260 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 15 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > IndexTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 164 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+        <Chunk Id> 16 </Chunk Id> 
+                <TotalPages> 1 </TotalPages> 
+                <ChunkName > IndexFieldTableId </ChunkName> 
+                <TotalDataNodes> 0 </TotalDataNodes> 
+                <SizeOfDataNodes> 16 </SizeOfDataNodes> 
+                <Allocation Type> FixedSizeAllocator </Allocation Type>
+  </System Chunk >
+  <User Chunk >
+  </User Chunk >
+</Chunk information>

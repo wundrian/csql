@@ -107,7 +107,7 @@ class Chunk
     //This is the start of the data
     //Iterator should start from this page
     Page *firstPage_;
-
+    char chunkName[CHUNK_NAME_LEN];
     Mutex chunkMutex_;
 
     public:
@@ -116,12 +116,16 @@ class Chunk
     //for fixed size allocator
     void setSize(size_t size);
 
+    void setChunkNameForSystemDB(int id);
+    void setChunkName(char const *name){strcpy(chunkName,name);}
+    char *getChunkName(){return chunkName;}
+
     size_t getSize()                  { return allocSize_; }
     void setChunkID(unsigned int id)           { chunkID_ = id; }
     int getChunkID()                  { return chunkID_; }
     void setAllocType(AllocType type) { allocType_ = type; }
     AllocType getAllocType()          { return allocType_; }
-
+    Page* getFirstPage(){ return firstPage_; }
 
     PageInfo* getPageInfo(Database *db, void *ptr);
     void* allocate(Database *db, DbRetVal *status = NULL);
@@ -130,7 +134,7 @@ class Chunk
 
     void  free(Database *db, void* ptr);
     ChunkIterator getIterator();
-    void print(){}
+    void print();
 
     long getTotalDataNodes();
     int totalPages();

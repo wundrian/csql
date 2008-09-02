@@ -18,6 +18,8 @@
 #include<Allocator.h>
 #include<Field.h>
 #include<Debug.h>
+char ChunkName[MAX_CHUNKS][CHUNK_NAME_LEN]={"UserChunkTableId","LockTableHashBucketId","LockTableMutexId","LockTableId","TransHasTableId","UndoLogTableId","","","","","DatabaseTableId","UserTableId","TableTableId","FieldTableId","AccessTableId","IndexTableId","IndexFieldTableId",""};
+
 
 DbRetVal CatalogTableTABLE::insert(const char *name, int id, size_t size,
                     int numFlds, void* chunk, void *&tptr)

@@ -93,7 +93,7 @@ enum MapMode
 #define MAX_MUTEX_PER_THREAD 3
 #define MAX_THREADS_PER_PROCESS 30
 #define MAX_FILE_PATH_LEN 1024
-
+#define CHUNK_NAME_LEN 64
 
 #define BIT(x) (1 << (x))
 #define SETBITS(x,y) ((x) |= (y))

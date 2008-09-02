@@ -571,7 +571,17 @@ long Chunk::getTotalDataNodes()
 
     //TODO::for large size allocator
     if (allocSize_ >PAGE_SIZE)//->each page has only one data node
-        return 0;
+   {	
+	Page *page = ((PageInfo*)firstPage_);
+        while(NULL != page)
+        {
+                //current it page wise  later this will done
+                if(1==*(int*)(((char*)page)+sizeof(PageInfo)))
+                        totalNodes++;
+                page = ((PageInfo*) page)->nextPage_;
+        }
+        return totalNodes;
+   }
 
     int noOfDataNodes=os::floor((PAGE_SIZE - sizeof(PageInfo))/allocSize_);
     PageInfo* pageInfo = ((PageInfo*)firstPage_);
@@ -699,5 +709,30 @@ void Chunk::createDataBucket(Page *page, size_t totalSize, size_t needSize)
     return;
 }
 
+void Chunk::setChunkNameForSystemDB(int id)
+{
+                strcpy(chunkName,ChunkName[id]);
+}
 
+void Chunk::print()
+{
+        printf("        <Chunk Id> %d </Chunk Id> \n",chunkID_);
+        printf("                <TotalPages> %d </TotalPages> \n",totalPages());
+        printf("                <ChunkName > %s </ChunkName> \n",getChunkName());
+        printf("                <TotalDataNodes> %d </TotalDataNodes> \n",getTotalDataNodes());
+        printf("                <SizeOfDataNodes> %d </SizeOfDataNodes> \n",getSize());
+        printf("                <Allocation Type> ");
+        if(allocType_==0)
+        {
+                printf("FixedSizeAllocator ");
+        }else if(allocType_==1)
+        {
+                printf("VariableSizeAllocator ");
+        }else
+        {
+                printf("UnknownAllocator ");
+
+        }
+        printf("</Allocation Type>\n");
+}
 

@@ -134,7 +134,7 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
     db_->initTransTableMutex();
     db_->initDatabaseMutex();
     db_->initProcessTableMutex();
-
+    db_->setUniqueChunkID(100);
     //compute the first page after book keeping information
     size_t offset = os::alignLong(sizeof (DatabaseMetaData));
     //Only for system db chunk array, trans array and proc array will be there
@@ -362,7 +362,7 @@ Chunk* DatabaseManagerImpl::createUserChunk(size_t size)
         chunkInfo->setAllocType(FixedSizeAllocator);
 
     //TODO::Generate chunkid::use tableid
-    chunkInfo->setChunkID(-1);
+    chunkInfo->setChunkID(db_->getUniqueIDForChunk()); 
     db_->incrementChunk();
     printDebug(DM_Database, "Creating new User chunk chunkID:%d size: %d firstPage:%x",
                                -1, chunkInfo->allocSize_, firstPageInfo);
@@ -456,6 +456,7 @@ DbRetVal DatabaseManagerImpl::createTable(const char *name, TableDef &def)
     }
     printDebug(DM_Database,"Created UserChunk:%x", ptr);
 
+    ptr->setChunkName(name);
     //add row to TABLE
     int tblID = ((Chunk*)ptr)->getChunkID();
     rv = cTable.insert(name, tblID, sizeofTuple,
@@ -855,6 +856,7 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
         printError(ErrSysInternal, "Unable to create chunk");
         return ErrSysInternal;
     }
+    chunkInfo->setChunkName(indName);
     //create memory for holding the bucket pointers
     void *buckets = chunkInfo->allocate(db_, &rv);
     if (NULL == buckets)
@@ -878,7 +880,7 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
         printError(ErrSysInternal, "Unable to create chunk for storing hash index nodes");
         return ErrSysInternal;
     }
-
+    hChunk->setChunkName(indName);
     //add row to INDEX
     void *tupleptr = NULL;
     CatalogTableINDEX cIndex(systemDatabase_);
