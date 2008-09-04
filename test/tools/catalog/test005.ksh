@@ -1,7 +1,7 @@
 #!/bin/sh
 # Test Case
-# check options -c with empty database
-#create table t1 (f1,f2) check with -c
+# check options -D chunk with empty database
+#create table t1 (f1,f2) check with -D chunk
 
 QUITFILE=${PWD}/tools/csql/quit.sql
 REL_PATH=.
@@ -10,7 +10,7 @@ then
     REL_PATH=`pwd`/tools/catalog
 fi
 
-echo "Case 1: With -c option with empty database"
+echo "Case 1: With -D chunk option with empty database"
 $CSQL_INSTALL_ROOT/bin/catalog -u root -p manager -D chunk
 if [ $? -ne 0 ]
 then
@@ -23,7 +23,7 @@ then
    exit 2;
 fi
 
-echo "Case 2: With c  option after table creation:"
+echo "Case 2: With -D chunk  option after table creation:"
 $CSQL_INSTALL_ROOT/bin/catalog -u root -p manager -D chunk
 if [ $? -ne 0 ]
 then

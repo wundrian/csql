@@ -2,7 +2,7 @@ echo create table t2 and constraints with three integer fields and primary key f
 Statement Executed
 Statement Executed
 Table  created
-Case 1: With c  option after table creation:
+Case 1: With -D chunk  option after table creation:
 <Chunk information>
   <System Chunk >
         <Chunk Id> 0 </Chunk Id> 
@@ -145,7 +145,7 @@ Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
 Tuples insered
-Case 2: With c  option after insert 20 tuples:
+Case 2: With -D chunk  option after insert 20 tuples:
 <Chunk information>
   <System Chunk >
         <Chunk Id> 0 </Chunk Id> 
@@ -269,7 +269,7 @@ Case 2: With c  option after insert 20 tuples:
 echo delete 10 tuples;
 Statement Executed: Rows Affected = 10
 10 tuples deleted
-Case 3: With c  option after deleting 10 tuples :
+Case 3: With -D chunk option after deleting 10 tuples :
 <Chunk information>
   <System Chunk >
         <Chunk Id> 0 </Chunk Id> 
@@ -393,7 +393,7 @@ Case 3: With c  option after deleting 10 tuples :
 echo drop index t2Uniqueidx;
 Statement Executed
 Index droped
-Case 4: With c  option after Index droped :
+Case 4: With -D chunk  option after Index droped :
 <Chunk information>
   <System Chunk >
         <Chunk Id> 0 </Chunk Id> 
@@ -506,7 +506,7 @@ echo drop t1 and t2 tables;
 Statement Executed
 Statement Executed
 t1,t2 table droped with index
-Case 4: With c  option after drop t1,t2 :
+Case 5: With -D chunk  option after drop t1,t2 :
 <Chunk information>
   <System Chunk >
         <Chunk Id> 0 </Chunk Id> 

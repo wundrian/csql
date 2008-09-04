@@ -1,4 +1,4 @@
-Case 1: With -c option with empty database
+Case 1: With -D chunk option with empty database
 <Chunk information>
   <System Chunk >
         <Chunk Id> 0 </Chunk Id> 
@@ -95,7 +95,7 @@ Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
-Case 2: With c  option after table creation:
+Case 2: With -D chunk  option after table creation:
 <Chunk information>
   <System Chunk >
         <Chunk Id> 0 </Chunk Id> 
