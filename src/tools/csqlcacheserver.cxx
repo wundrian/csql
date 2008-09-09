@@ -105,7 +105,7 @@ int getRecordsFromTargetDb(int mode)
 {
     int pkid;
     char tablename[64];
-    int op, id;
+    int op, id,caId;
     int rows =0;
     DbRetVal rv = OK;
     AbsSqlStatement *stmt = SqlFactory::createStatement(CSqlAdapter);
@@ -114,8 +114,8 @@ int getRecordsFromTargetDb(int mode)
     delstmt->setConnection(targetconn);
     if (mode == 1 ) {
         //rv = delstmt->prepare("DELETE from csql_log_int where id=?;");
+        rv = stmt->prepare("SELECT * FROM csql_log_int where cacheid = ?;");
         if (rv != OK) {printf("Stmt prepare failed\n"); return 1; }
-        rv = stmt->prepare("SELECT * FROM csql_log_int;");
     }
     else {
         rv = stmt->prepare("SELECT * FROM csql_log_char;");
@@ -127,6 +127,10 @@ int getRecordsFromTargetDb(int mode)
     stmt->bindField(2, &pkid);
     stmt->bindField(3, &op);
     stmt->bindField(4, &id);
+    stmt->bindField(5, &caId);
+    caId =Conf::config.getCacheID();
+    stmt->setIntParam(1, caId);
+
     DatabaseManager *dbMgr = conn.getDatabaseManager();
     char delStmtStr[1024];
     while(true) {
@@ -143,48 +147,50 @@ int getRecordsFromTargetDb(int mode)
           return 1;
       }
       if (stmt->fetch() != NULL) {
-          printf("Row value is %s %d %d\n", tablename, pkid, op);
-          Table *table = dbMgr->openTable(tablename);
-          int ret = 0;
-          if (table == NULL)
-          {
-              printError(ErrSysInit, "Table %s not exist in csql", tablename);
-              targetconn->rollback();
-              stmt->free();
-              delstmt->free();
-              delete stmt;
-              delete delstmt;
-              break;
-          }
-          if (op == 2)//DELETE
-          {
-              ret = remove(table,pkid);
-          }
-          else //INSERT
-          {
-              ret = insert(table, pkid);
-          }
-          dbMgr->closeTable(table);
-          rv = targetconn->commit();
-          rv = targetconn->beginTrans();
+          printf("Row value is %s %d %d %d\n", tablename, pkid, op,caId);
+	 
+            	Table *table = dbMgr->openTable(tablename);
+          	int ret = 0;
+          	if (table == NULL)
+          	{
+              		printError(ErrSysInit, "Table %s not exist in csql", tablename);
+              		targetconn->rollback();
+            		stmt->free();
+              		delstmt->free();
+              		delete stmt;
+              		delete delstmt;
+              		break;
+          	}
+          	if (op == 2)//DELETE
+          	{
+              		ret = remove(table,pkid);
+          	}
+          	else //INSERT
+          	{
+              		ret = insert(table, pkid);
+          	}
+          	dbMgr->closeTable(table);
+          	rv = targetconn->commit();
+          	rv = targetconn->beginTrans();
           //Remove record from csql_log_XXX table
-          sprintf(delStmtStr, "DELETE from csql_log_int where id=%d ;", id);
-          rv = delstmt->prepare(delStmtStr);
-          if (rv != OK) {printf("FAILED\n"); return 1; }
-         // delstmt->setIntParam(1, id);
-          rv = delstmt->execute(rows);
-          if (rv != OK) 
-          {
-              printf("log record not deleted from the target db %d\n", rv);
-              targetconn->rollback();
-              stmt->free();
-              delstmt->free();
-              delete stmt;
-              delete delstmt;
-          }
-          delstmt->free();
+          	sprintf(delStmtStr, "DELETE from csql_log_int where id=%d ;", id);
+          	rv = delstmt->prepare(delStmtStr);
+          	if (rv != OK) {printf("FAILED\n"); return 1; }
+         	// delstmt->setIntParam(1, id);
+          	rv = delstmt->execute(rows);
+          	if (rv != OK) 
+          	{
+              		printf("log record not deleted from the target db %d\n", rv);
+              		targetconn->rollback();
+              		stmt->free();
+              		delstmt->free();
+              		delete stmt;
+              		delete delstmt;
+          	}
+          	delstmt->free();
          
-          rv = targetconn->commit();
+          	rv = targetconn->commit();
+	
      }
      else {
          stmt->close();

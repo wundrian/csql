@@ -70,6 +70,8 @@ int Config::storeKeyVal(char *key, char *value)
            { strcpy(cVal.tableConfigFile , value);  }
     else if (strcasestr(key, "CACHE_TABLE") != NULL)
            { cVal.isCache = os::atobool(value); }
+    else if(strcasestr(key,"CACHE_ID")!=NULL)
+	   { cVal.cacheId = atoi(value);}
     else if (strcasestr(key, "REPLICATION") != NULL)
            { cVal.isReplication = os::atobool(value); }
     else if (strcasestr(key, "NETWORK_CONFIG_FILE") != NULL)

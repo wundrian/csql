@@ -162,7 +162,8 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
              SQLDisconnect(hdbc); 
              return ErrSysInit;
         }
-        char columnname[124]; char indexname[124];
+        char columnname[IDENTIFIER_LENGTH]; 
+	char indexname[IDENTIFIER_LENGTH];
         short type; short unique;
         SQLHSTMT hstmtmeta;
         retValue=SQLAllocHandle (SQL_HANDLE_STMT, hdbc, &hstmtmeta);
@@ -172,8 +173,42 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
             return ErrSysInit; 
         }
 
+	retValue=SQLPrimaryKeys(hstmtmeta, NULL, SQL_NTS, NULL, SQL_NTS, (SQLCHAR*) tableName, SQL_NTS);
+        retValue = SQLBindCol(hstmtmeta, 4, SQL_C_CHAR,columnname, 129,NULL);
+        HashIndexInitInfo *inf = new HashIndexInitInfo();
+        if(SQLFetch( hstmtmeta ) == SQL_SUCCESS)
+	{
+               inf->list.append(columnname);
+	       while( SQLFetch( hstmtmeta ) == SQL_SUCCESS )
+               {
+               	   inf->list.append(columnname);
+	       }
+               inf->indType =  hashIndex;
+               inf->bucketSize = 10007;
+               inf->isUnique = true; inf->isPrimary = true;
+               strcpy(inf->tableName, tableName);
+               char indname[128];
+               strcpy(indexname,"PRIMARY");
+               sprintf(indname, "%s_%s", tableName, indexname);
+               rv = dbMgr->createIndex(indexname, inf);
+               if (rv != OK)
+               {
+                   printError(ErrSysInit, "Index creation failed in csql for %s\n", tableName);
+                   SQLDisconnect(hdbc);
+                   return ErrSysInit;
+               }
+	}
+	else
+	{
+	     if(Conf::config.useTwoWayCache())
+	     {
+		 printError(ErrSysInit, "Bidirectonal caching fail for no primary key in %s \n", tableName);
+             }	 
+	}
+	retValue = SQLCloseCursor(hstmtmeta);
+
         retValue = SQLStatistics(hstmtmeta, NULL, 0, NULL, SQL_NTS,
-                    (SQLCHAR*) tableName, SQL_NTS, SQL_INDEX_ALL, SQL_QUICK);
+                    (SQLCHAR*) tableName, SQL_NTS, SQL_INDEX_UNIQUE, SQL_QUICK);
         retValue = SQLBindCol(hstmtmeta, 4, SQL_C_SHORT,
                           &unique, 2, NULL);
         retValue = SQLBindCol(hstmtmeta, 6, SQL_C_CHAR,
@@ -188,13 +223,27 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
                 printDebug(DM_Gateway, "Column: %-18s Index Name: %-18s unique:%hd type:%hd\n",
                   columnname, indexname, unique, type);
             }
+	    bool isPrimary=false;
+
+	    inf->list.resetIter();
+	    char *name = NULL;
+	    while ((name=inf->list.nextFieldName())!=NULL)
+	    {
+		if(0==strcmp(columnname,name))
+		{	
+			isPrimary=true;
+			break;
+		}
+	    }
+	    if(isPrimary){continue;}
+
             if (type == 3) {
                HashIndexInitInfo *info = new HashIndexInitInfo();
                info->indType =  hashIndex;
                info->bucketSize = 10007;
                info->list.append(columnname);
-               if (!unique) { info->isUnique = true; info->isPrimary = true; }
-               strcpy(info->tableName, tableName);
+               if (!unique) {info->isUnique = true; info->isPrimary = false;}
+	       strcpy(info->tableName, tableName);
                char indname[128];
                sprintf(indname, "%s_%s", tableName, indexname);
                rv = dbMgr->createIndex(indname, info);

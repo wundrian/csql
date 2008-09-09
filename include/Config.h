@@ -35,7 +35,8 @@ class ConfigValues
     int lockSecs;
     int lockUSecs;
     int lockRetries;
-
+    
+    int cacheId;
     bool isCache;
     char dsn[IDENTIFIER_LENGTH];
     char tableConfigFile[MAX_FILE_PATH_LEN];
@@ -68,6 +69,7 @@ class ConfigValues
         lockSecs =0;
         lockUSecs = 10;
         lockRetries = 10;
+	cacheId=1;
         isCache = false;
         cacheNetworkID =-1;
         strcpy(dsn, "myodbc3");
@@ -93,7 +95,6 @@ class Config
     public:
     int readAllValues(char *filename);
     void print();
-
     inline int getPageSize() { return cVal.pageSize; }
     inline int getMaxProcs() { return cVal.maxProcs; }
     inline long getMaxSysDbSize() { return cVal.maxSysSize; }
@@ -109,6 +110,7 @@ class Config
     inline int getLockSecs() { return cVal.lockSecs; }
     inline int getLockUSecs() { return cVal.lockUSecs; }
     inline int getLockRetries() { return cVal.lockRetries; }
+    inline int getCacheID(){ return cVal.cacheId;}
     inline bool useCache() { return cVal.isCache; }
     inline char* getDSN() { return cVal.dsn; }
     inline char* getTableConfigFile() { return cVal.tableConfigFile; }
