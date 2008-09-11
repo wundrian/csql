@@ -190,7 +190,7 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
                char indname[128];
                strcpy(indexname,"PRIMARY");
                sprintf(indname, "%s_%s", tableName, indexname);
-               rv = dbMgr->createIndex(indexname, inf);
+               rv = dbMgr->createIndex(indname, inf);
                if (rv != OK)
                {
                    printError(ErrSysInit, "Index creation failed in csql for %s\n", tableName);
