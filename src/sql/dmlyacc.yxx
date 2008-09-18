@@ -4,7 +4,6 @@
 #include "Parser.h"
 
 class Predicate;
-
 ParsedData *parsedData;
 extern char yytext[];
 int yylex( void );
@@ -296,7 +295,7 @@ value:    STRING { $$ = $1; }
         | NULL_VALUE { $$ = (char*) 0; }
         ;
 
-ddl_statement: CREATE TABLE ident '(' create_defn_list ')' semicolon_opt
+ddl_statement: CREATE TABLE ident '(' create_defn_list_con ')' semicolon_opt
         {
             parsedData->setStmtType(CreateTableStatement);
             parsedData->setTableName($3); 
@@ -353,8 +352,11 @@ opt_constr_type:
             parsedData->setPrimary(false);
         }
         ;
+create_defn_list_con:create_defn_list
+	|create_defn_list ',' constraint_defn
+	;
 create_defn_list: create_defn_list create_defn_list_L
-        | create_defn 
+        | create_defn
         ;
 
 create_defn_list_L: ',' create_defn
@@ -364,7 +366,6 @@ create_defn: field_defn
         {
             parsedData->insertFldDef();
         }
-        | constraint_defn
         ;
 
 field_defn: field_name field_type size_opt null_expr_opt default_expr_opt
@@ -402,7 +403,7 @@ constraint_defn: primary_key_constraint
 
 primary_key_constraint: PRIMARY KEY '(' field_list ')'
         {
-            parsedData->setPrimary(true);
+           parsedData->setPrimary(true);
         }
         ;
 
