@@ -122,10 +122,7 @@ int main(int argc, char **argv)
 }
 bool handleTransaction(char *st)
 {
-    //char stmt[40];
     while (isspace (*st)|| *st == '(' ) st++; // Skip white spaces
-   // strncpy(stmt,st,6);
-    //stmt[6]='\0';
     if (strcasecmp (st, "COMMIT;") == 0 ||
         strcasecmp (st, "commit;") == 0 )
     {
