@@ -843,7 +843,7 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
             return ErrBadArg;
         }
 	 if(isPrimary){fInfo->isPrimary_=true;fInfo->isUnique_=true;}
-	 if(isUnique){finfo->isUnique_=true;}
+	 if(isUnique){fInfo->isUnique_=true;}
     }
     //create chunk to store the meta data of the index created
     //for latches and bucket pointers
