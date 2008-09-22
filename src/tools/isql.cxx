@@ -122,48 +122,51 @@ int main(int argc, char **argv)
 }
 bool handleTransaction(char *st)
 {
+    //char stmt[40];
     while (isspace (*st)|| *st == '(' ) st++; // Skip white spaces
-    if (strncasecmp (st, "COMMIT", 6) == 0 ||
-        strncasecmp (st, "commit", 6) == 0 )
+   // strncpy(stmt,st,6);
+    //stmt[6]='\0';
+    if (strcasecmp (st, "COMMIT;") == 0 ||
+        strcasecmp (st, "commit;") == 0 )
     {
         conn->commit();
         //conn->beginTrans(isoLevel, TSYNC);
         conn->beginTrans(isoLevel);
         return true;
     }
-    else if (strncasecmp (st, "ROLLBACK", 8) == 0|| 
-        strncasecmp (st, "rollback", 8) == 0)
+    else if (strcasecmp (st, "ROLLBACK;") == 0|| 
+        strcasecmp (st, "rollback;") == 0)
     {
         conn->rollback();
         //conn->beginTrans(isoLevel, TSYNC);
         conn->beginTrans(isoLevel);
         return true;
     }
-    else if (strncasecmp (st, "SET AUTOCOMMIT ON", 17) == 0)
+    else if (strcasecmp (st, "SET AUTOCOMMIT ON;") == 0)
     {
         autocommitmode = true;
         if (!silent) printf("AUTOCOMMIT Mode is set to ON\n");
         return true;
     }
-    else if (strncasecmp (st, "SET AUTOCOMMIT OFF", 18) == 0)
+    else if (strcasecmp (st, "SET AUTOCOMMIT OFF;") == 0)
     {
         autocommitmode = false;
         if (!silent) printf("AUTOCOMMIT Mode is set to OFF\n");
         return true;
     }
-    else if (strncasecmp (st, "SET ISOLATION LEVEL UNCOMMITTED", 31) == 0)
+    else if (strcasecmp (st, "SET ISOLATION LEVEL UNCOMMITTED;") == 0)
     {
         isoLevel = READ_UNCOMMITTED;
         printf("Isolation Level is set to READ_UNCOMMITTED\n");
         return true;
     }
-    else if (strncasecmp (st, "SET ISOLATION LEVEL COMMITTED", 29) == 0)
+    else if (strcasecmp (st, "SET ISOLATION LEVEL COMMITTED;") == 0)
     {
         isoLevel = READ_COMMITTED;
         printf("Isolation Level is set to READ_COMMITTED\n");
         return true;
     }
-    else if (strncasecmp (st, "SET ISOLATION LEVEL REPEATABLE", 30) == 0)
+    else if (strcasecmp (st, "SET ISOLATION LEVEL REPEATABLE;") == 0)
     {
         isoLevel = READ_REPEATABLE;
         printf("Isolation Level is set to READ_REPEATABLE\n");
@@ -185,7 +188,7 @@ bool handleEchoAndComment(char *st)
     {
         printHelp();
         return true;
-    }else if (strncasecmp(st, "show tables", 11) == 0)
+    }else if (strcasecmp(st, "show tables;") == 0)
     {
       Connection conn;
       conn.open("root","manager");
