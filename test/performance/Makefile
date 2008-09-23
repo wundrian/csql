@@ -31,6 +31,9 @@ TARGETS = \
         DMLThroughput \
         DMLTestChar \
         DMLThreadTest \
+	DMLThreadTest1 \
+	DMLThreadTest2 \
+	DMLThreadTest3 \
         ODBCTest \
         JDBCTest \
 	Range
@@ -54,6 +57,13 @@ DMLTestChar: DMLTestChar.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 DMLThreadTest: DMLThreadTest.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+DMLThreadTest1: DMLThreadTest1.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+DMLThreadTest2: DMLThreadTest2.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+DMLThreadTest3: DMLThreadTest3.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+
 Range: Range.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 ODBCTest: ODBCTest.c
