@@ -23,11 +23,16 @@ class CacheTableLoader
     char tableName[IDENTIFIER_LENGTH];
     char userName[IDENTIFIER_LENGTH];
     char password[IDENTIFIER_LENGTH];
-
+    char conditionVal[IDENTIFIER_LENGTH]; //added newly
     public:
-    CacheTableLoader(){strcpy(tableName,"");}
+    CacheTableLoader()
+    {
+        strcpy(tableName,"");
+        strcpy(conditionVal,"");
+    }
     void setConnParam(char *user, char *pass){ strcpy(userName, user); strcpy(password, pass); }
     void setTable(char *tablename) { strcpy(tableName,tablename); }
+    void setCondition(char *condition){strcpy(conditionVal,condition);} //new one
     DbRetVal addToCacheTableFile();
     DbRetVal removeFromCacheTableFile();
     DbRetVal load(bool tabDef=true);
@@ -37,6 +42,7 @@ class CacheTableLoader
     DbRetVal recoverAllCachedTables();
     DbRetVal load(DatabaseManager *dbMgr, bool tabDef);
     DbRetVal isTableCached();
+    DbRetVal isTablePresent(char *table,char *condition);// new one by :Jitendra
 };
 
 class BindBuffer

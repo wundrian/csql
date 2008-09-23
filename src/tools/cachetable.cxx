@@ -18,7 +18,7 @@
 
 void printUsage()
 {
-   printf("Usage: cachetable [-U username] [-P passwd] -t tablename \n"
+   printf("Usage: cachetable [-U username] [-P passwd] -t tablename -c \"condition\"\n"
           "       [-R] [-s] [-r]\n");
    printf("       username -> username to connect with csql.\n");
    printf("       passwd -> password for the above username to connect with csql.\n");
@@ -39,10 +39,12 @@ int main(int argc, char **argv)
     password [0] = '\0';
     int c = 0, opt = 10;
     char tablename[IDENTIFIER_LENGTH];
+    char condition[IDENTIFIER_LENGTH];
     char syncModeStr[IDENTIFIER_LENGTH];
+    bool conditionval = false;
     bool tableDefinition = true;
     bool tableNameSpecified = false;
-    while ((c = getopt(argc, argv, "U:P:t:Rsru?")) != EOF) 
+    while ((c = getopt(argc, argv, "U:P:t:c:Rsru?")) != EOF) 
     {
         switch (c)
         {
@@ -53,6 +55,8 @@ int main(int argc, char **argv)
                          tableNameSpecified = true; 
                          break; 
                        }
+            
+            case 'c' : {strcpy(condition,argv[optind - 1]); conditionval = true; break; }// condition for selelcted records by :Jitendra
             case '?' : { opt = 10; break; } //print help 
             case 'R' : { opt = 3; break; } //recover all the tables
             case 's' : { tableDefinition=false; break; } //do not get the schema information from target db
@@ -76,12 +80,15 @@ int main(int argc, char **argv)
     DbRetVal rv = OK;
     CacheTableLoader cacheLoader;
     cacheLoader.setConnParam(username, password);
+    
+    if(conditionval){
+    cacheLoader.setCondition(condition);}// new one
     if (opt==2) {
         cacheLoader.setTable(tablename);
         rv = cacheLoader.load(tableDefinition);
         if (rv != OK) exit (1);
-        rv = cacheLoader.addToCacheTableFile();
-        if (rv != OK) exit (2);
+        rv = cacheLoader.isTablePresent(tablename,condition);
+        if(rv !=OK)exit(1);
     }else if (opt==3) //recover
     {
         rv = cacheLoader.recoverAllCachedTables();

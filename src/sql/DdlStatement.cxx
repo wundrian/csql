@@ -127,9 +127,47 @@ DbRetVal CreateIdxStatement::execute(int &rowsAffected)
     return rv;
 }
 
+// function for not to drop cached table
+DbRetVal isTableCached(char *tabName) // function added by :Jitendra
+{
+       
+    DbRetVal rv =OK;
+    FILE *fp;
+    fp = fopen(Conf::config.getTableConfigFile(),"r");
+    if(fp==NULL)
+    {
+        printError(ErrSysInit, "csqltable.conf file does not exist");
+        return ErrSysInit;
+    }
+    char tablename[IDENTIFIER_LENGTH];
+      tablename[0] = '\0';
+    char condition[IDENTIFIER_LENGTH];
+      condition[0]='\0';
+    int mode;
+    while(!feof(fp))
+    {
+        fscanf(fp,"%d:%s %s\n",&mode,tablename,condition);
+        if(strcmp(tablename,tabName) ==0){
+      
+        fclose(fp);
+        return ErrNoPrivilege;}
+    }
+    fclose(fp);
+    return rv;
+}      
+
 DbRetVal DropTblStatement::execute(int &rowsAffected)
 {
-    DbRetVal rv = OK;
+    DbRetVal rv = OK; // newly added
+    char *tab;
+    tab = parsedData->getTableName();
+    
+    rv = isTableCached(tab);
+    if(rv !=OK)
+    {
+	printf("cached table can't be dropped,Table can be unloaded by \"cachetable -t <tableName> -u\"\n");
+        return ErrNoPrivilege;
+    } // upto this
     rv = dbMgr->dropTable(parsedData->getTableName());
     return rv;
 }

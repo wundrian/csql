@@ -37,11 +37,12 @@ bool isCached(char *tblName)
         return ErrSysInit;
     }
     char ctablename[IDENTIFIER_LENGTH];
+    char condition[IDENTIFIER_LENGTH];
     int mode;
     bool isCached=false;
     while(!feof(fp))
     {
-        fscanf(fp, "%d:%s\n", &mode, ctablename);
+        fscanf(fp, "%d:%s %s\n", &mode, ctablename,condition);
         if (strcmp (ctablename, tblName) == 0) { isCached=true; break; }
     }
     fclose(fp);
