@@ -29,7 +29,7 @@ rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 
 # check with correct username and correct password
-$CSQL_INSTALL_ROOT/bin/cachetable -U root -P manager -t t1 > /dev/null 2>&1
+$CSQL_INSTALL_ROOT/bin/cachetable -U root -P manager -t t1 >/dev/null 2>&1
 if [ $? -ne 0 ]
 then
    exit 2;
@@ -56,10 +56,13 @@ then
    exit 5;
 fi
  
-$CSQL_INSTALL_ROOT/bin/csql -s ${REL_PATH}/drop.sql > /dev/null 2>&1
-isql myodbc3 < ${REL_PATH}/drop.sql >/dev/null 2>&1
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
+
+$CSQL_INSTALL_ROOT/bin/csql -s ${REL_PATH}/drop.sql > /dev/null 2>&1
+isql myodbc3 < ${REL_PATH}/drop.sql >/dev/null 2>&1
+#rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
+#touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 
 exit 0;
 

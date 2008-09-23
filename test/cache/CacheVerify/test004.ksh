@@ -28,7 +28,7 @@ fi
 
 rm -f /tmp/csql/csqltable.conf
 touch /tmp/csql/csqltable.conf
-echo "1:t1" >/tmp/csql/csqltable.conf
+echo "1:t1 NULL" >/tmp/csql/csqltable.conf
 
 $CSQL_INSTALL_ROOT/bin/cachetable -t t1 -R>/dev/null 2>&1 
 if [ $? -ne 0 ]
@@ -54,6 +54,8 @@ then
     exit 5;
 fi
 
+rm -f /tmp/csql/csqltable.conf
+touch /tmp/csql/csqltable.conf
 isql myodbc3 < ${REL_PATH}/drop.sql > /dev/null 2>&1
 $CSQL_INSTALL_ROOT/bin/csql -s ${REL_PATH}/drop.sql > /dev/null 2>&1
 

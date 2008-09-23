@@ -30,7 +30,8 @@ fi
 
 rm -f /tmp/csql/csqltable.conf
 touch /tmp/csql/csqltable.conf
-echo "1:t1" >/tmp/csql/csqltable.conf
+
+echo "1:t1 NULL" >/tmp/csql/csqltable.conf
 
 $CSQL_INSTALL_ROOT/bin/cachetable -t t1
 if [ $? -ne 0 ]

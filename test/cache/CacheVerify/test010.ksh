@@ -33,7 +33,7 @@ then
     exit 2;
 fi
 
-echo "1:t1" > /tmp/csql/csqltable.conf
+echo "1:t1 NULL" > /tmp/csql/csqltable.conf
 
 $CSQL_INSTALL_ROOT/bin/cacheverify -t t1
 if [ $? -ne 0 ]

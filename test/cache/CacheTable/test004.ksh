@@ -33,10 +33,10 @@ then
     exit 2;
 fi
 
-$CSQL_INSTALL_ROOT/bin/csql -s ${REL_PATH}/drop.sql > /dev/null 2>&1
-isql myodbc3 < ${REL_PATH}/drop.sql >/dev/null 2>&1
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
+$CSQL_INSTALL_ROOT/bin/csql -s ${REL_PATH}/drop.sql > /dev/null 2>&1
+isql myodbc3 < ${REL_PATH}/drop.sql >/dev/null 2>&1
 
 exit 0;
 

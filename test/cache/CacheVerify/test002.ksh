@@ -25,6 +25,8 @@ then
    exit 1;
 fi
 
+rm -f /tmp/csql/csqltable.conf
+touch /tmp/csql/csqltable.conf
 #$CSQL_INSTALL_ROOT/bin/csql -s ${REL_PATH}/inputtest4.sql > /dev/null 2>&1
 $CSQL_INSTALL_ROOT/bin/cachetable -t t1 > /dev/null 2>&1
 if [ $? -ne 0 ]
@@ -32,8 +34,6 @@ then
    exit 1;
 fi
 
-touch /tmp/csql/csqltable.conf
-echo "1:t1" > /tmp/csql/csqltable.conf
 
 # check with correct username and correct password
 $CSQL_INSTALL_ROOT/bin/cacheverify -U root -P manager -t t1 > /dev/null 2>&1
@@ -63,6 +63,8 @@ then
    exit 5;
 fi
  
+rm -f /tmp/csql/csqltable.conf
+touch /tmp/csql/csqltable.conf
 $CSQL_INSTALL_ROOT/bin/csql -s ${REL_PATH}/drop.sql > /dev/null 2>&1
 isql myodbc3 < ${REL_PATH}/drop.sql >/dev/null 2>&1
 

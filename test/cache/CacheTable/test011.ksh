@@ -20,10 +20,10 @@ echo table t1 and t2 are created with records in target db
 
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
-for (( a=1; a<3; a++ ))
-do
-    echo "1:t$a"
-done >> /tmp/csql/csqltable.conf
+
+# write to csqltable.conf
+echo "1:t1 NULL" > /tmp/csql/csqltable.conf
+echo "2:t2 t2f1<5" >> /tmp/csql/csqltable.conf
 
 $CSQL_INSTALL_ROOT/bin/cachetable -R 
 if [ $? -ne 0 ]

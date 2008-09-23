@@ -17,7 +17,7 @@ isql myodbc3 < $REL_PATH/createt1.sql > /dev/null 2>&1
 
 rm -f /tmp/csql/csqltable.conf
 touch /tmp/csql/csqltable.conf
-echo "1:t1" > /tmp/csql/csqltable.conf
+echo "1:t1 NULL" > /tmp/csql/csqltable.conf
 
 mv ~/.odbc.ini  /tmp
 

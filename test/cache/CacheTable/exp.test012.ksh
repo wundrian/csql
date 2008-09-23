@@ -1,6 +1,6 @@
 table t1 and t2 are created with records in target db
-Recovering table t1
-Recovering table t2
+Recovering table t1 NULL
+Recovering table t2 t2f1>5
 ---------------------------------------------------------
 	t1f1	t2f2	
 ---------------------------------------------------------
@@ -18,11 +18,6 @@ Recovering table t2
 ---------------------------------------------------------
 	t2f1	t2f2	
 ---------------------------------------------------------
-	1	11	
-	2	21	
-	3	31	
-	4	41	
-	5	51	
 	6	61	
 	7	71	
 	8	81	

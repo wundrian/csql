@@ -19,11 +19,8 @@ isql myodbc3 < $REL_PATH/mysqlinputtest1.sql > /dev/null 2>&1
 # edit /tmp/csql/csqltable.conf
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
-for (( a=1; a<2; a++ ))
-do
-    echo "1:t$a"
-done >> /tmp/csql/csqltable.conf
-$CSQL_INSTALL_ROOT/bin/csqlserver -c >/dev/null 2>&1 &
+echo "1:t1 NULL" >/tmp/csql/csqltable.conf
+$CSQL_INSTALL_ROOT/bin/csqlserver -c > /dev/null 2>&1 &
 pid=$!
 sleep 5
 $CSQL_INSTALL_ROOT/bin/csql -g -s $REL_PATH/csqlinputtest1.sql 

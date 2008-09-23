@@ -1,4 +1,4 @@
-Usage: cachetable [-U username] [-P passwd] -t tablename 
+Usage: cachetable [-U username] [-P passwd] -t tablename -c "condition"
        [-R] [-s] [-r]
        username -> username to connect with csql.
        passwd -> password for the above username to connect with csql.
