@@ -210,73 +210,90 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
         SWORD                   nullable;
         TableDef tabDef;
         icol = 1; colNameMax = IDENTIFIER_LENGTH;
+	char columnname[IDENTIFIER_LENGTH];
+        char indexname[IDENTIFIER_LENGTH];
+        short type; short unique;
+        SQLHSTMT hstmtmeta;
+        retValue=SQLAllocHandle (SQL_HANDLE_STMT, hdbc, &hstmtmeta);
+        if (retValue)
+        {
+            printError(ErrSysInit, "Unable to allocate ODBC handle \n");
+            return ErrSysInit;
+        }
+        retValue=SQLPrimaryKeys(hstmtmeta, NULL, SQL_NTS, NULL, SQL_NTS, (SQLCHAR*) tableName, SQL_NTS);
+        retValue = SQLBindCol(hstmtmeta, 4, SQL_C_CHAR,columnname, 129,NULL);
+        HashIndexInitInfo *inf = new HashIndexInitInfo();
+        bool isPriIndex=false;
+        char indname[IDENTIFIER_LENGTH];
+        if(SQLFetch( hstmtmeta ) == SQL_SUCCESS)
+        {
+               inf->list.append(columnname);
+               while( SQLFetch( hstmtmeta ) == SQL_SUCCESS )
+               {
+                   inf->list.append(columnname);
+               }
+               inf->indType =  hashIndex;
+               inf->bucketSize = 10007;
+               inf->isUnique = true; inf->isPrimary = true;
+               strcpy(inf->tableName, tableName);
+               strcpy(indexname,"PRIMARY");
+               sprintf(indname, "%s_%s", tableName, indexname);
+               isPriIndex=true;
+        }
+        char *name = NULL;
         while (icol <= totalFields) {
             retValue = SQLDescribeCol(hstmt, icol, colName, colNameMax,
                                         &nameLength, &colType, &colLength,
                                         &scale, &nullable);
             if (retValue) {printError(ErrSysInit, "Unable to retrieve ODBC column info\n"); return ErrSysInit; }
- 
+
             printDebug(DM_Gateway, "Describe Column %s %d %d \n", colName, colType, colLength);
             icol++;
-            if (nullable) 
-                tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType), colLength +1); 
-            else 
+            bool isPriFld=false;
+            if (nullable) {
+                inf->list.resetIter();
+                while ((name=inf->list.nextFieldName())!=NULL)
+                {
+                        if(0==strcmp((char*)colName,name))
+                        {
+                                tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType), colLength +1, NULL, true);
+                                isPriFld=true;
+                                break;
+                        }
+                }
+                if(!isPriFld){tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType), colLength +1); }
+            }
+            else
                 tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType), colLength +1, NULL, true);
         }
         rv = dbMgr->createTable(tableName, tabDef);
-        if (rv != OK) 
-        { 
-             printError(ErrSysInit, "Table creation failed in csql for %s\n", tableName); 
-             SQLDisconnect(hdbc); 
+        if (rv != OK)
+        {
+             printError(ErrSysInit, "Table creation failed in csql for %s\n", tableName);
+             SQLDisconnect(hdbc);
              return ErrSysInit;
         }
-        char columnname[IDENTIFIER_LENGTH]; 
-	char indexname[IDENTIFIER_LENGTH];
-        short type; short unique;
-        SQLHSTMT hstmtmeta;
-        retValue=SQLAllocHandle (SQL_HANDLE_STMT, hdbc, &hstmtmeta);
-        if (retValue) 
-        {
-            printError(ErrSysInit, "Unable to allocate ODBC handle \n"); 
-            return ErrSysInit; 
-        }
 
-	retValue=SQLPrimaryKeys(hstmtmeta, NULL, SQL_NTS, NULL, SQL_NTS, (SQLCHAR*) tableName, SQL_NTS);
-        retValue = SQLBindCol(hstmtmeta, 4, SQL_C_CHAR,columnname, 129,NULL);
-        HashIndexInitInfo *inf = new HashIndexInitInfo();
-        if(SQLFetch( hstmtmeta ) == SQL_SUCCESS)
-	{
-               inf->list.append(columnname);
-	       while( SQLFetch( hstmtmeta ) == SQL_SUCCESS )
-               {
-               	   inf->list.append(columnname);
-	       }
-               inf->indType =  hashIndex;
-               inf->bucketSize = 10007;
-               inf->isUnique = true; inf->isPrimary = true;
-               strcpy(inf->tableName, tableName);
-               char indname[128];
-               strcpy(indexname,"PRIMARY");
-               sprintf(indname, "%s_%s", tableName, indexname);
-               rv = dbMgr->createIndex(indname, inf);
+        if(isPriIndex){
+        rv = dbMgr->createIndex(indname, inf);
                if (rv != OK)
                {
                    printError(ErrSysInit, "Index creation failed in csql for %s\n", tableName);
                    SQLDisconnect(hdbc);
                    return ErrSysInit;
                }
-	}
-	else
-	{
-	     if(Conf::config.useTwoWayCache())
-	     {
-		 printError(ErrSysInit, "Bidirectonal caching fail for no primary key in %s \n", tableName);
-             }	 
-	}
-	retValue = SQLCloseCursor(hstmtmeta);
-
+        }
+        else
+        {
+             if(Conf::config.useTwoWayCache())
+             {
+                 printError(ErrSysInit, "Bidirectonal caching fail for no primary key in %s \n", tableName);
+                 return ErrSysInit;
+             }
+        }
+        retValue = SQLCloseCursor(hstmtmeta);
         retValue = SQLStatistics(hstmtmeta, NULL, 0, NULL, SQL_NTS,
-                    (SQLCHAR*) tableName, SQL_NTS, SQL_INDEX_UNIQUE, SQL_QUICK);
+                    (SQLCHAR*) tableName, SQL_NTS, SQL_INDEX_ALL, SQL_QUICK);
         retValue = SQLBindCol(hstmtmeta, 4, SQL_C_SHORT,
                           &unique, 2, NULL);
         retValue = SQLBindCol(hstmtmeta, 6, SQL_C_CHAR,
@@ -287,38 +304,35 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
                           columnname, 129,NULL);
         while ((retValue = SQLFetch(hstmtmeta)) == SQL_SUCCESS)
         {  //if (type != SQL_TABLE_STAT)
-            {   
+            {
                 printDebug(DM_Gateway, "Column: %-18s Index Name: %-18s unique:%hd type:%hd\n",
                   columnname, indexname, unique, type);
             }
-	    bool isPrimary=false;
-
-	    inf->list.resetIter();
-	    char *name = NULL;
-	    while ((name=inf->list.nextFieldName())!=NULL)
-	    {
-		if(0==strcmp(columnname,name))
-		{	
-			isPrimary=true;
-			break;
-		}
-	    }
-	    if(isPrimary){continue;}
-
+            bool isPrimary=false;
+            inf->list.resetIter();
+            while ((name=inf->list.nextFieldName())!=NULL)
+            {
+                if(0==strcmp(columnname,name))
+                {
+                        isPrimary=true;
+                        break;
+                }
+            }
+            if(isPrimary){continue;}
             if (type == 3) {
                HashIndexInitInfo *info = new HashIndexInitInfo();
                info->indType =  hashIndex;
                info->bucketSize = 10007;
                info->list.append(columnname);
                if (!unique) {info->isUnique = true; info->isPrimary = false;}
-	       strcpy(info->tableName, tableName);
+               strcpy(info->tableName, tableName);
                char indname[128];
                sprintf(indname, "%s_%s", tableName, indexname);
                rv = dbMgr->createIndex(indname, info);
-               if (rv != OK) 
+               if (rv != OK)
                {
-                  printError(ErrSysInit, "Index creation failed in csql for %s\n", tableName); 
-                  SQLDisconnect(hdbc); 
+                  printError(ErrSysInit, "Index creation failed in csql for %s\n", tableName);
+                  SQLDisconnect(hdbc);
                   return ErrSysInit;
                }
                delete info;
