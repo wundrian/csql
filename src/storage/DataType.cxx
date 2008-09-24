@@ -1160,9 +1160,9 @@ DbRetVal AllDataType::strToValue(void* dest, char *src, DataType type, int lengt
             *(short*)dest = val;
             break; }
         case typeByteInt: {
-            char val;
-            sscanf( src, "%c",  &val);
-            *(char*)dest = val;
+            int val;
+            sscanf( src, "%d",  &val);
+            *(char*)dest = *(char *)&val;
             break; }
         case typeDouble: {
             double val;
