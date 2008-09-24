@@ -1,7 +1,7 @@
 CREATE LANGUAGE plpgsql;
 CREATE FUNCTION log_insert_t1() RETURNS trigger AS $triggerinsertt1$
 BEGIN
-insert into csql_log_int (tablename, pkid, operation) values ('t1', NEW.f1, 1);
+insert into csql_log_int (tablename, pkid, operation, cacheid) values ('t1', NEW.f1, 1, 1);
 RETURN NEW;
 END;
 $triggerinsertt1$ LANGUAGE plpgsql;
@@ -13,8 +13,8 @@ EXECUTE PROCEDURE log_insert_t1();
 
 CREATE FUNCTION log_update_t1() RETURNS trigger AS $triggerupdatet1$
 BEGIN
-insert into csql_log_int (tablename, pkid, operation) values ('t1', OLD.f1, 2);
-insert into csql_log_int (tablename, pkid, operation) values ('t1', NEW.f1, 1);
+insert into csql_log_int (tablename, pkid, operation, cacheid) values ('t1', OLD.f1, 2, 1);
+insert into csql_log_int (tablename, pkid, operation, cacheid) values ('t1', NEW.f1, 1, 1);
 RETURN NEW;
 END;
 $triggerupdatet1$ LANGUAGE plpgsql;
@@ -26,7 +26,7 @@ EXECUTE PROCEDURE log_update_t1();
 
 CREATE FUNCTION log_delete_t1() RETURNS trigger AS $triggerdeletet1$
 BEGIN
-insert into csql_log_int (tablename, pkid, operation) values ('t1', OLD.f1, 2);
+insert into csql_log_int (tablename, pkid, operation, cacheid) values ('t1', OLD.f1, 2, 1);
 RETURN NEW;
 END;
 $triggerdeletet1$ LANGUAGE plpgsql;
