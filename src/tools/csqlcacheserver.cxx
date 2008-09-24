@@ -108,13 +108,16 @@ int getRecordsFromTargetDb(int mode)
     int op, id,caId;
     int rows =0;
     DbRetVal rv = OK;
+    char StmtStr[1024];
+    caId =Conf::config.getCacheID();
     AbsSqlStatement *stmt = SqlFactory::createStatement(CSqlAdapter);
     stmt->setConnection(targetconn);
     AbsSqlStatement *delstmt = SqlFactory::createStatement(CSqlAdapter);
     delstmt->setConnection(targetconn);
     if (mode == 1 ) {
         //rv = delstmt->prepare("DELETE from csql_log_int where id=?;");
-        rv = stmt->prepare("SELECT * FROM csql_log_int where cacheid = ?;");
+      	sprintf(StmtStr, "SELECT * FROM csql_log_int where cacheid = %d;", caId);
+        rv = stmt->prepare(StmtStr);
         if (rv != OK) {printf("Stmt prepare failed\n"); return 1; }
     }
     else {
@@ -126,13 +129,10 @@ int getRecordsFromTargetDb(int mode)
     stmt->bindField(1, tablename);
     stmt->bindField(2, &pkid);
     stmt->bindField(3, &op);
-    stmt->bindField(4, &id);
-    stmt->bindField(5, &caId);
-    caId =Conf::config.getCacheID();
-    stmt->setIntParam(1, caId);
+    stmt->bindField(4, &caId);
+    stmt->bindField(5, &id);
 
     DatabaseManager *dbMgr = conn.getDatabaseManager();
-    char delStmtStr[1024];
     while(true) {
       rv = targetconn->beginTrans();
       rv = stmt->execute(rows);
@@ -173,8 +173,8 @@ int getRecordsFromTargetDb(int mode)
           	rv = targetconn->commit();
           	rv = targetconn->beginTrans();
           //Remove record from csql_log_XXX table
-          	sprintf(delStmtStr, "DELETE from csql_log_int where id=%d ;", id);
-          	rv = delstmt->prepare(delStmtStr);
+          	sprintf(StmtStr, "DELETE from csql_log_int where id=%d ;", id);
+          	rv = delstmt->prepare(StmtStr);
           	if (rv != OK) {printf("FAILED\n"); return 1; }
          	// delstmt->setIntParam(1, id);
           	rv = delstmt->execute(rows);
