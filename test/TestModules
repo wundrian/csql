@@ -29,6 +29,7 @@ cache/DDL
 cache/Gateway
 cache/FailOver
 cache/CacheTable
+cache/Bidirectional
 cache/CacheVerify
 adapter/Connect
 adapter/Parameter
