@@ -115,7 +115,7 @@ class TableImpl:public Table
     DbRetVal copyValuesFromBindBuffer(void *tuple, bool isInsert=true);
     DbRetVal copyValuesToBindBuffer(void *tuple);
     void setNullBit(int fldpos);
-
+    void clearNullBit(int fldpos);
     DbRetVal insertIndexNode(Transaction *trans, void *indexPtr, IndexInfo *info, void *tuple);
     DbRetVal updateIndexNode(Transaction *trans, void *indexPtr, IndexInfo *info, void *tuple);
     DbRetVal deleteIndexNode(Transaction *trans, void *indexPtr, IndexInfo *info, void *tuple);

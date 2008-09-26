@@ -50,7 +50,6 @@ bool TableImpl::isFldNull(int colpos)
 {
     if (!curTuple_) return false;
     if (colpos <1 || colpos > numFlds_) return false;
-    char *nullOffset = (char*)curTuple_ - 4;
     if (isIntUsedForNULL) {
         int nullVal = *(int*)((char*)curTuple_ + (length_ - 4));
         if (BITSET(nullVal, colpos)) return true;
@@ -532,10 +531,20 @@ DbRetVal TableImpl::updateTuple()
         ret = (*trans)->appendUndoLog(sysDB_, UpdateOperation, curTuple_, length_);
     if (ret != OK) return ret;
     int addSize = 0;
+    if (numFlds_ < 31){ 
+	addSize=4;
+	iNullInfo |= *(int*)((char*)(curTuple_) + (length_- addSize));
+    }
+    DbRetVal rv = copyValuesFromBindBuffer(curTuple_, false);
+    if (rv != OK) { 
+        lMgr_->releaseLock(curTuple_); 
+        (*trans)->removeFromHasList(db_, curTuple_); 
+        return rv; 
+    }
+    
     if (numFlds_ < 31) 
     {
-        addSize = 4; 
-        *(int*)((char*)(curTuple_) + (length_-addSize)) |= iNullInfo;
+        *(int*)((char*)(curTuple_) + (length_-addSize)) = iNullInfo;
     }
     else 
     {
@@ -543,13 +552,6 @@ DbRetVal TableImpl::updateTuple()
         //TODO::Do not do blind memcpy. It should OR each and every char
         //os::memcpy(((char*)(curTuple_) + (length_-addSize)), cNullInfo, addSize);
 
-    }
-
-    DbRetVal rv = copyValuesFromBindBuffer(curTuple_, false);
-    if (rv != OK) { 
-        lMgr_->releaseLock(curTuple_); 
-        (*trans)->removeFromHasList(db_, curTuple_); 
-        return rv; 
     }
     return OK;
 }
@@ -599,6 +601,7 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
             case typeString:
                 if (NULL != def.bindVal_)
                 {
+		    if(!isInsert && isFldNull(fldpos)){clearNullBit(fldpos);}
                     strcpy((char*)colPtr, (char*)def.bindVal_);
                     *(((char*)colPtr) + (def.length_-1)) = '\0';
                 }
@@ -607,6 +610,7 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
                 break;
             case typeBinary:
                 if (NULL != def.bindVal_ ) {
+		    		if(!isInsert && isFldNull(fldpos)){clearNullBit(fldpos);}
 			        DbRetVal rv = AllDataType::strToValue(colPtr, (char *) def.bindVal_, def.type_, def.length_);
                     if (rv != OK) return ErrBadArg;
 				}
@@ -614,8 +618,9 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
                 colPtr = colPtr + os::align(def.length_);
                 break;
             default:
-                if (NULL != def.bindVal_)
-                    AllDataType::copyVal(colPtr, def.bindVal_, def.type_);
+                if (NULL != def.bindVal_){
+		    if(!isInsert && isFldNull(fldpos)){clearNullBit(fldpos);}
+                    AllDataType::copyVal(colPtr, def.bindVal_, def.type_);}
                 else { if (!def.isNull_ && isInsert)  setNullBit(fldpos); }
                 colPtr = colPtr + os::align(AllDataType::size(def.type_));
                 break;
@@ -623,6 +628,13 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
         fldpos++;
     }
     return OK;
+}
+void TableImpl::clearNullBit(int fldpos)
+{
+    if (isIntUsedForNULL){
+        CLEARBIT(iNullInfo, fldpos);}
+    else
+        cNullInfo[fldpos-1] = 0;
 }
 void TableImpl::setNullBit(int fldpos)
 {
