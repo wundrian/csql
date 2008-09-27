@@ -21,6 +21,7 @@ void printUsage()
 {
    printf("Usage: catalog [-u username] [-p passwd] [-l] [-i] [-d] [-T table] [-I index] [-D <lock|trans|proc|chunk>]\n");
    printf("       l -> list all table with field information\n");
+   printf("            list all Index information\n");
    printf("       i -> reinitialize catalog tables. Drops all tables.\n");
    printf("       d -> print db usage statistics\n");
    printf("       T -> list table information\n");
