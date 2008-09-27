@@ -48,6 +48,17 @@ Case 2: With -l option after for primary flag checking:
       </FieldInfo>
   </TableInfo> 
 </Table Information of all tables>
+<Index Information of all Indexs>
+    <Index Name> t4_idx1_Primary </Index Name> 
+        <Index Type> Hash Index </Index Type> 
+        <Table Name> t4 </Table Name> 
+        <Field Name> f1 </Field Name> 
+    <Index Name> t5_idx1_Primary </Index Name> 
+        <Index Type> Hash Index </Index Type> 
+        <Table Name> t5 </Table Name> 
+        <Field Name> f1 </Field Name> 
+        <Field Name> f2 </Field Name> 
+</Index Information of all Indexs>
 case 3 : drop two table 
 Statement Executed
 Statement Executed
