@@ -165,3 +165,13 @@ Recovering table t6 NULL
       </FieldInfo>
   </TableInfo> 
 </Table Information of all tables>
+<Index Information of all Indexs>
+    <Index Name> t5_PRIMARY </Index Name> 
+        <Index Type> Hash Index </Index Type> 
+        <Table Name> t5 </Table Name> 
+        <Field Name> f2 </Field Name> 
+    <Index Name> t5_f1 </Index Name> 
+        <Index Type> Hash Index </Index Type> 
+        <Table Name> t5 </Table Name> 
+        <Field Name> f1 </Field Name> 
+</Index Information of all Indexs>
