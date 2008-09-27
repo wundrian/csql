@@ -190,7 +190,7 @@ class INDEX
     int noOfBuckets_;
     bool isUnique_;
     void *hashNodeChunk_;
-
+    
 };
 
 class CatalogTableINDEX
@@ -249,6 +249,7 @@ class CatalogTableINDEXFIELD
 
     DbRetVal getFieldNameAndType(void *iptr, char *&name, DataType &type);
     DbRetVal getFieldInfo(void *index, FieldList &list);
+    void printAllIndex();
 
 };
 #endif
