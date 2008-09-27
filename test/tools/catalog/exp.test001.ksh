@@ -5,6 +5,7 @@ Case 1: With no option:
 Case 2: With ? option:
 Usage: catalog [-u username] [-p passwd] [-l] [-i] [-d] [-T table] [-I index] [-D <lock|trans|proc|chunk>]
        l -> list all table with field information
+            list all Index information
        i -> reinitialize catalog tables. Drops all tables.
        d -> print db usage statistics
        T -> list table information
