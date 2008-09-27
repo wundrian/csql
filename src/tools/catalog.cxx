@@ -125,6 +125,11 @@ int main(int argc, char **argv)
         }
         if (count == 0) printf("  <No tables exist></No tables exist>\n");
         printf("</Table Information of all tables>\n");
+        printf("<Index Information of all Indexs>\n");
+        CatalogTableINDEXFIELD cIndexField(dbMgr->sysDb()); 
+	cIndexField.printAllIndex();
+	printf("</Index Information of all Indexs>\n");
+
     }else if (opt == 3)
     {
         if (!dbMgr->isAnyOneRegistered()) {

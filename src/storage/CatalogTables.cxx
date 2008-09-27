@@ -502,6 +502,32 @@ DbRetVal CatalogTableINDEXFIELD::getFieldInfo(void *index, FieldList &list)
     return OK;
 }
 
+void CatalogTableINDEXFIELD::printAllIndex()
+{
+    Chunk *chunk=systemDatabase_->getSystemDatabaseChunk(IndexFieldTableId);        
+    ChunkIterator ifIter = chunk->getIterator();
+    void *data = NULL;
+    char indexName[IDENTIFIER_LENGTH] = {'\0'};
+    while ((data = ifIter.nextElement())!= NULL)
+    {
+	if(strcmp(indexName,((INDEX*)(((INDEXFIELD*)data)->indexPtr))->indName_)!=0)
+	{
+       	    printf("    <Index Name> %s </Index Name> \n",((INDEX*)(((INDEXFIELD*)data)->indexPtr))->indName_);
+       	    if(0==((INDEX*)(((INDEXFIELD*)data)->indexPtr))->indexType_)
+      	        printf("        <Index Type> Hash Index </Index Type> \n");
+       	    else
+       	        printf("        <Index Type> Tree Index </Index Type> \n");
+       	    printf("        <Table Name> %s </Table Name> \n",((TABLE*)(((INDEXFIELD*)data)->tablePtr))->tblName_);
+       	    printf("        <Field Name> %s </Field Name> \n",((FIELD*)(((INDEXFIELD*)data)->fieldPtr))->fldName_);
+	}
+	else
+	{
+       	    printf("        <Field Name> %s </Field Name> \n",((FIELD*)(((INDEXFIELD*)data)->fieldPtr))->fldName_);
+	}
+	strcpy(indexName,((INDEX*)(((INDEXFIELD*)data)->indexPtr))->indName_);
+    }
+}
+
 DbRetVal CatalogTableUSER::insert(const char *name, const char *pass)
 {
     Chunk *tChunk = systemDatabase_->getSystemDatabaseChunk(UserTableId);
