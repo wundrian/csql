@@ -17,10 +17,15 @@ if [ $? -ne 0 ]
 then
    exit 1;
 fi
-$CSQL_INSTALL_ROOT/bin/csqldump -T t1
-$CSQL_INSTALL_ROOT/bin/csql -u root -p manager -s ${REL_PATH}/drop.sql
+$CSQL_INSTALL_ROOT/bin/catalog -u root -p manager -l 
 if [ $? -ne 0 ]
 then
-   exit 1;
+   exit 2;
 fi
 
+$CSQL_INSTALL_ROOT/bin/csql -u root -p manager -s ${REL_PATH}/drop1.sql
+if [ $? -ne 0 ]
+then
+   exit 3;
+fi
+exit 0;	
