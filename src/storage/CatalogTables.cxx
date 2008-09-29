@@ -261,6 +261,7 @@ DbRetVal CatalogTableINDEX::insert(const char *name, void *tptr, int numFlds, bo
     indexInfo->hashNodeChunk_ = hChunk;
     indexInfo->noOfBuckets_ = bucketSize;
     indexInfo->isUnique_ = isUnique;
+    indexInfo->fstIndFld_=NULL;
     printDebug(DM_SystemDatabase,"One Row inserted into INDEX %x %s",tupleptr, name);
     return OK;
 }
@@ -393,26 +394,51 @@ char* CatalogTableINDEX::getName(void *iptr)
 
 DbRetVal CatalogTableINDEXFIELD::insert(FieldNameList &fldList, void *indexPtr,
                                          void *tblPtr, char **&fptr)
-{
 
-    Chunk *fChunk;
-    fChunk = systemDatabase_->getSystemDatabaseChunk(IndexFieldTableId);
-    fldList.resetIter();
-    int i =0;
+{
+    Chunk *tChunk;
+    tChunk = systemDatabase_->getSystemDatabaseChunk(IndexTableId);
+    ChunkIterator iter = tChunk->getIterator();	
+    INDEXFIELD *fInd=NULL;
     char *fName =NULL;
     void *data = NULL;
-    ChunkIterator ifIter = fChunk->getIterator();
+    bool isFldInd=false;
+    while ((data = iter.nextElement())!= NULL)
+    {
+        if ((((INDEX*)data)->tblPtr_==tblPtr) && (((INDEX*)indexPtr)->numFlds_ == ((INDEX*)data)->numFlds_) && (data != indexPtr) )
+        {
+	    fldList.resetIter();
+		    while (NULL != (fName = fldList.nextFieldName()))
+		    {
+			isFldInd=false;
+                        fInd=(INDEXFIELD*)((INDEX*)data)->fstIndFld_ ;
+			while (fInd)
+		    	{
+		    	    if (0 == strcmp(((FIELD *) fInd->fieldPtr)->fldName_, fName))
+			    {
+				isFldInd=true;
+				break;
+			    }
+			    fInd=fInd->next;
+                    	}
+			if(!isFldInd) break;
+		    }
+		    if(isFldInd)
+		    {
+                	printError(ErrAlready, "Index on this field  already exists on table \'%s\' by name \'%s\'", ((TABLE *)tblPtr)->tblName_, ((INDEX *)data)->indName_);
+			return ErrAlready;
+		    }
+            }
+
+    }
+
+    tChunk = systemDatabase_->getSystemDatabaseChunk(IndexFieldTableId);
+    fldList.resetIter();
+    int i =0;
     while (NULL != (fName = fldList.nextFieldName()))
     {
-        ifIter = fChunk->getIterator();
-        while ((data = ifIter.nextElement()) != NULL) {
-            if (0 == strcmp(((FIELD *)((INDEXFIELD *) data)->fieldPtr)->fldName_, fName) && ((INDEXFIELD *)data)->tablePtr == tblPtr) {
-                printError(ErrAlready, "Index on field \'%s\' already exists on table \'%s\' by name \'%s\'", ((FIELD *)((INDEXFIELD *)data)->fieldPtr)->fldName_, ((TABLE *)((INDEXFIELD *)data)->tablePtr)->tblName_, ((INDEX *)((INDEXFIELD *)data)->indexPtr)->indName_);
-                return ErrAlready;
-            }
-        }  
         DbRetVal rv = OK;
-        void *fieldptr = fChunk->allocate(systemDatabase_, &rv);
+        void *fieldptr = tChunk->allocate(systemDatabase_, &rv);
         if (NULL == fieldptr)
         {
             printError(rv,
@@ -423,6 +449,8 @@ DbRetVal CatalogTableINDEXFIELD::insert(FieldNameList &fldList, void *indexPtr,
         fldInfo->tablePtr = tblPtr;
         fldInfo->fieldPtr = (FIELD*)fptr[i++];
         fldInfo->indexPtr = indexPtr;
+	fldInfo->next=(INDEXFIELD*)((INDEX*)indexPtr)->fstIndFld_;
+	((INDEX *)indexPtr)->fstIndFld_=fldInfo;
         printDebug(DM_SystemDatabase,"One Row inserted into INDEXFIELD %x", fldInfo);
     }
     return OK;

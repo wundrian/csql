@@ -190,7 +190,7 @@ class INDEX
     int noOfBuckets_;
     bool isUnique_;
     void *hashNodeChunk_;
-    
+    void *fstIndFld_;//pointer to fisrt index field 
 };
 
 class CatalogTableINDEX
@@ -233,7 +233,7 @@ class INDEXFIELD
     void* indexPtr; //pointer to tuple in catalog table INDEX
     void* tablePtr; //pointer to tuple in catalog table TABLE
     void* fieldPtr; //pointer to tuple in catalog table FIELD
-
+    INDEXFIELD *next;
 };
 
 class CatalogTableINDEXFIELD
