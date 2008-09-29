@@ -73,13 +73,13 @@ Recovering table t6 NULL
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > IndexTableId </ChunkName> 
                 <TotalDataNodes> 2 </TotalDataNodes> 
-                <SizeOfDataNodes> 164 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 168 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 16 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > IndexFieldTableId </ChunkName> 
                 <TotalDataNodes> 2 </TotalDataNodes> 
-                <SizeOfDataNodes> 16 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 20 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
   </System Chunk >
   <User Chunk >
