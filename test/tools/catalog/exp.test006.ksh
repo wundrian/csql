@@ -75,13 +75,13 @@ Case 1: With -D chunk  option after table creation:
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > IndexTableId </ChunkName> 
                 <TotalDataNodes> 2 </TotalDataNodes> 
-                <SizeOfDataNodes> 164 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 168 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 16 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > IndexFieldTableId </ChunkName> 
                 <TotalDataNodes> 2 </TotalDataNodes> 
-                <SizeOfDataNodes> 16 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 20 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
   </System Chunk >
   <User Chunk >
@@ -212,13 +212,13 @@ Case 2: With -D chunk  option after insert 20 tuples:
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > IndexTableId </ChunkName> 
                 <TotalDataNodes> 2 </TotalDataNodes> 
-                <SizeOfDataNodes> 164 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 168 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 16 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > IndexFieldTableId </ChunkName> 
                 <TotalDataNodes> 2 </TotalDataNodes> 
-                <SizeOfDataNodes> 16 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 20 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
   </System Chunk >
   <User Chunk >
@@ -330,13 +330,13 @@ Case 3: With -D chunk option after deleting 10 tuples :
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > IndexTableId </ChunkName> 
                 <TotalDataNodes> 2 </TotalDataNodes> 
-                <SizeOfDataNodes> 164 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 168 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 16 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > IndexFieldTableId </ChunkName> 
                 <TotalDataNodes> 2 </TotalDataNodes> 
-                <SizeOfDataNodes> 16 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 20 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
   </System Chunk >
   <User Chunk >
@@ -448,13 +448,13 @@ Case 4: With -D chunk  option after Index droped :
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > IndexTableId </ChunkName> 
                 <TotalDataNodes> 1 </TotalDataNodes> 
-                <SizeOfDataNodes> 164 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 168 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 16 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > IndexFieldTableId </ChunkName> 
                 <TotalDataNodes> 1 </TotalDataNodes> 
-                <SizeOfDataNodes> 16 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 20 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
   </System Chunk >
   <User Chunk >
@@ -554,13 +554,13 @@ Case 5: With -D chunk  option after drop t2 :
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > IndexTableId </ChunkName> 
                 <TotalDataNodes> 0 </TotalDataNodes> 
-                <SizeOfDataNodes> 164 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 168 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 16 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > IndexFieldTableId </ChunkName> 
                 <TotalDataNodes> 0 </TotalDataNodes> 
-                <SizeOfDataNodes> 16 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 20 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
   </System Chunk >
   <User Chunk >
