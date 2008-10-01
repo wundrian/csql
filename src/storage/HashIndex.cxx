@@ -160,7 +160,7 @@ unsigned int HashIndex::computeHashBucket(DataType type, void *key, int noOfBuck
 DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *indInfo, void *tuple, bool undoFlag)
 {
     HashIndexInfo *info = (HashIndexInfo*) indInfo;
-    INDEX *iptr = (INDEX*)indexPtr;
+    CINDEX *iptr = (CINDEX*)indexPtr;
     DbRetVal rc = OK;
     int noOfBuckets = info->noOfBuckets;
     int offset = info->fldOffset;
@@ -248,7 +248,7 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
 
 DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *indInfo, void *tuple, bool undoFlag)
 {
-    INDEX *iptr = (INDEX*)indexPtr;
+    CINDEX *iptr = (CINDEX*)indexPtr;
 
     HashIndexInfo *info = (HashIndexInfo*) indInfo;
     DataType type = info->type;
@@ -297,7 +297,7 @@ DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
 
 DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *indInfo, void *tuple, bool undoFlag)
 {
-    INDEX *iptr = (INDEX*)indexPtr;
+    CINDEX *iptr = (CINDEX*)indexPtr;
 
     HashIndexInfo *info = (HashIndexInfo*) indInfo;
     DataType type = info->type;

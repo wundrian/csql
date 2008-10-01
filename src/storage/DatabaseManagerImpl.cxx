@@ -603,7 +603,7 @@ Table* DatabaseManagerImpl::openTable(const char *name)
         printError(ErrNotExists, "Table not exists %s", name);
         return NULL;
     }
-    TABLE *tTuple = (TABLE*)tptr;
+    CTABLE *tTuple = (CTABLE*)tptr;
     table->setTableInfo(tTuple->tblName_, tTuple->tblID_, tTuple->length_,
                         tTuple->numFlds_, tTuple->numIndexes_, tTuple->chunkPtr_);
     /*rv = table->lock(true); //take shared lock
@@ -827,7 +827,7 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
     }
     for (int i=0; i <totFlds; i++)
     {
-        FIELD* fInfo = (FIELD*)fptr[i];
+        CFIELD* fInfo = (CFIELD*)fptr[i];
         if (fInfo->type_ == typeFloat || fInfo->type_ == typeDouble || fInfo->type_ == typeTimeStamp) 
         {
             printError(ErrBadArg, "HashIndex cannot be created for float or double or timestamp type");

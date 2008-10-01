@@ -61,7 +61,7 @@ enum CatalogTableID
 };
 
 
-class TABLE
+class CTABLE
 {
     public:
     char tblName_[IDENTIFIER_LENGTH];
@@ -96,7 +96,7 @@ class CatalogTableTABLE
 };
 
 
-class FIELD
+class CFIELD
 {
     public:
     char fldName_[IDENTIFIER_LENGTH];
@@ -138,7 +138,7 @@ class CatalogTableFIELD
     DbRetVal getFieldPtrs(FieldNameList &fldList,void *tptr, char **&array);
 };
 
-class USER
+class CUSER
 {
     public:
     char userName_[IDENTIFIER_LENGTH];
@@ -160,14 +160,14 @@ class CatalogTableUSER
 
 };
 
-class ACCESS
+class CACCESS
 {
     public:
     char userName_[IDENTIFIER_LENGTH];
     char dbName_[IDENTIFIER_LENGTH];
 };
 
-class DATABASEFILE
+class CDATABASEFILE
 {
     public:
     int dbID_;
@@ -178,7 +178,7 @@ class DATABASEFILE
 };
 
 
-class INDEX
+class CINDEX
 {
     public:
     char indName_[IDENTIFIER_LENGTH];
@@ -227,13 +227,13 @@ class CatalogTableINDEX
 };
 
 
-class INDEXFIELD
+class CINDEXFIELD
 {
     public:
     void* indexPtr; //pointer to tuple in catalog table INDEX
     void* tablePtr; //pointer to tuple in catalog table TABLE
     void* fieldPtr; //pointer to tuple in catalog table FIELD
-    INDEXFIELD *next;
+    CINDEXFIELD *next;
 };
 
 class CatalogTableINDEXFIELD

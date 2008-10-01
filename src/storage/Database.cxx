@@ -407,19 +407,19 @@ void Database::createSystemTables()
 void Database::createMetaDataTables()
 {
     createSystemDatabaseChunk(FixedSizeAllocator,
-                                  sizeof(DATABASEFILE), DatabaseTableId);
+                                  sizeof(CDATABASEFILE), DatabaseTableId);
     createSystemDatabaseChunk(FixedSizeAllocator,
-                                  sizeof(USER), UserTableId);
+                                  sizeof(CUSER), UserTableId);
     createSystemDatabaseChunk(FixedSizeAllocator,
-                                  sizeof(TABLE), TableTableId);
+                                  sizeof(CTABLE), TableTableId);
     createSystemDatabaseChunk(FixedSizeAllocator,
-                                  sizeof(FIELD), FieldTableId);
+                                  sizeof(CFIELD), FieldTableId);
     createSystemDatabaseChunk(FixedSizeAllocator,
-                                  sizeof(ACCESS), AccessTableId);
+                                  sizeof(CACCESS), AccessTableId);
     createSystemDatabaseChunk(FixedSizeAllocator,
-                                  sizeof(INDEX), IndexTableId);
+                                  sizeof(CINDEX), IndexTableId);
     createSystemDatabaseChunk(FixedSizeAllocator,
-                                  sizeof(INDEXFIELD), IndexFieldTableId);
+                                  sizeof(CINDEXFIELD), IndexFieldTableId);
 }
 
 //used in case of system database

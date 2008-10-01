@@ -661,7 +661,7 @@ DbRetVal TableImpl::copyValuesToBindBuffer(void *tuplePtr)
 //-1 index not supported
 DbRetVal TableImpl::insertIndexNode(Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple)
 {
-    INDEX *iptr = (INDEX*)indexPtr;
+    CINDEX *iptr = (CINDEX*)indexPtr;
     DbRetVal ret = OK;
     printDebug(DM_Table, "Inside insertIndexNode type %d", iptr->indexType_);
     Index* idx = Index::getIndex(iptr->indexType_);
@@ -671,7 +671,7 @@ DbRetVal TableImpl::insertIndexNode(Transaction *tr, void *indexPtr, IndexInfo *
 
 DbRetVal TableImpl::deleteIndexNode(Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple)
 {
-    INDEX *iptr = (INDEX*)indexPtr;
+    CINDEX *iptr = (CINDEX*)indexPtr;
     DbRetVal ret = OK;
     Index* idx = Index::getIndex(iptr->indexType_);
     ret = idx->remove(this, tr, indexPtr, info, tuple, undoFlag);
@@ -685,7 +685,7 @@ void TableImpl::printSQLIndexString()
     DataType type;
     for (int i = 0; i < numIndexes_ ; i++)
     {
-        INDEX *iptr = (INDEX*) indexPtr_[i];
+        CINDEX *iptr = (CINDEX*) indexPtr_[i];
         //cIndexField.getFieldNameAndType((void*)iptr, fldName, type);
         //printf("CREATE INDEX %s on %s ( %s ) ", iptr->indName_, getName(), fldName);
         printf("CREATE INDEX %s on %s ( ", iptr->indName_, getName());
@@ -707,7 +707,7 @@ void TableImpl::printSQLIndexString()
 
 DbRetVal TableImpl::updateIndexNode(Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple)
 {
-    INDEX *iptr = (INDEX*)indexPtr;
+    CINDEX *iptr = (CINDEX*)indexPtr;
     DbRetVal ret = OK;
     Index* idx = Index::getIndex(iptr->indexType_);
     //TODO::currently it updates irrespective of whether the key changed or not 

@@ -33,7 +33,7 @@ DbRetVal CatalogTableTABLE::insert(const char *name, int id, size_t size,
                    "Could not allocate memory for for TABLE catalog table");
         return rv;
     }
-    TABLE *tableInfo = (TABLE*)tptr;
+    CTABLE *tableInfo = (CTABLE*)tptr;
     strcpy(tableInfo->tblName_, name);
     tableInfo->tblID_ = id;
     tableInfo->length_ = size;
@@ -52,12 +52,12 @@ DbRetVal CatalogTableTABLE::remove(const char *name, void *&chunk, void *&tptr)
     void *data = NULL;
     while ((data = iter.nextElement())!= NULL)
     {
-         if (0 == strcmp(((TABLE*)data)->tblName_, name))
+         if (0 == strcmp(((CTABLE*)data)->tblName_, name))
          {
              //remove this element and store the tblPtr
              //there will be only one row for this table(Primary key)
              tptr = (void*) data;
-             chunk = (Chunk*) ((TABLE*)data)->chunkPtr_;
+             chunk = (Chunk*) ((CTABLE*)data)->chunkPtr_;
              break;
          }
     }
@@ -81,10 +81,10 @@ DbRetVal CatalogTableTABLE::getChunkAndTblPtr(const char *name,
     ChunkIterator iter = chk->getIterator();;
     while (NULL != (tptr = iter.nextElement()))
     {
-         if (strcmp(((TABLE*)tptr)->tblName_, name) == 0)
+         if (strcmp(((CTABLE*)tptr)->tblName_, name) == 0)
          {
              //there will be only one row for this table(Primary key)
-             chunk = (Chunk*) ((TABLE*)tptr)->chunkPtr_;
+             chunk = (Chunk*) ((CTABLE*)tptr)->chunkPtr_;
              return OK;
          }
     }
@@ -101,7 +101,7 @@ List CatalogTableTABLE::getTableList()
     while (NULL != (tptr = iter.nextElement()))
     {
          Identifier *elem = new Identifier();
-         strcpy(elem->name, ((TABLE*)tptr)->tblName_);
+         strcpy(elem->name, ((CTABLE*)tptr)->tblName_);
          tableList.append(elem);
     }
     return tableList;
@@ -120,7 +120,7 @@ DbRetVal CatalogTableFIELD::insert(FieldIterator &iter, int tblID, void *tptr)
                    "Could not allocate for FIELD catalog table");
             return rv;
         }
-        FIELD *fldInfo = (FIELD*)fptr;
+        CFIELD *fldInfo = (CFIELD*)fptr;
         FieldDef fDef = iter.nextElement();
         strcpy(fldInfo->fldName_, fDef.fldName_);
         fldInfo->tblID_ = tblID;
@@ -149,7 +149,7 @@ DbRetVal CatalogTableFIELD::remove(void *tptr)
     void *data = NULL;
     while ((data = fIter.nextElement())!= NULL)
     {
-        if (((FIELD*)data)->tblPtr_ == tptr)
+        if (((CFIELD*)data)->tblPtr_ == tptr)
         {
             //remove this element
             fChunk->free(systemDatabase_, data);
@@ -166,10 +166,10 @@ void CatalogTableFIELD::getFieldInfo(void* tptr, FieldList &list)
     void *data = NULL;
     while (NULL != (data = fIter.nextElement()))
     {
-        if (((FIELD*)data)->tblPtr_ == tptr)
+        if (((CFIELD*)data)->tblPtr_ == tptr)
         {
             //add the information to the field list
-            FIELD *fTuple = (FIELD*)data;
+            CFIELD *fTuple = (CFIELD*)data;
             FieldDef fldDef;
             strcpy(fldDef.fldName_, fTuple->fldName_);
             fldDef.fldName_[IDENTIFIER_LENGTH] = '\0';
@@ -202,9 +202,9 @@ DbRetVal CatalogTableFIELD::getFieldPtrs(FieldNameList &fldList,void *tptr, char
         found = false;
         while (NULL != (data = fIter.nextElement()))
         {
-            if (((FIELD*)data)->tblPtr_ == tptr)
+            if (((CFIELD*)data)->tblPtr_ == tptr)
             {
-                 if(0 == strcmp((char*)((FIELD*)data)->fldName_, fName))
+                 if(0 == strcmp((char*)((CFIELD*)data)->fldName_, fName))
                  {
                      found = true;
                      //if (! ((FIELD*)data)->isNull_) rv = ErrBadCall;
@@ -234,10 +234,10 @@ DbRetVal CatalogTableINDEX::insert(const char *name, void *tptr, int numFlds, bo
     void *data = NULL;
     while ((data = iter.nextElement())!= NULL)
     {
-	    if (0 == strcmp(((INDEX*)data)->indName_, name))
+	    if (0 == strcmp(((CINDEX*)data)->indName_, name))
 	    {
 		    printError(ErrAlready, "Index with name \'%s\' already exists "
-				    "on the table \'%s\'.", name, ((TABLE *)tptr)->tblName_);
+				    "on the table \'%s\'.", name, ((CTABLE *)tptr)->tblName_);
 		    return ErrAlready;
 	    }
 
@@ -251,7 +251,7 @@ DbRetVal CatalogTableINDEX::insert(const char *name, void *tptr, int numFlds, bo
                    "Could not allocate for INDEX catalog table");
         return rv;
     }
-    INDEX *indexInfo = (INDEX*)tupleptr;
+    CINDEX *indexInfo = (CINDEX*)tupleptr;
     strcpy(indexInfo->indName_, name);
     indexInfo->tblID_ = -1; //Not used currently
     indexInfo->tblPtr_ = tptr;
@@ -274,12 +274,12 @@ DbRetVal CatalogTableINDEX::remove(const char *name, void *&chunk, void *&hchunk
     void *data = NULL;
     while ((data = iter.nextElement())!= NULL)
     {
-         if (0 == strcmp(((INDEX*)data)->indName_, name))
+         if (0 == strcmp(((CINDEX*)data)->indName_, name))
          {
              //remove this element and store the tuple ptr
              //there will be only one row for this table(Primary key)
-             chunk = (Chunk*) ((INDEX*)data)->chunkPtr_;
-             hchunk = (Chunk*) ((INDEX*)data)->hashNodeChunk_;
+             chunk = (Chunk*) ((CINDEX*)data)->chunkPtr_;
+             hchunk = (Chunk*) ((CINDEX*)data)->hashNodeChunk_;
              iptr = (void*) data;
              break;
          }
@@ -304,12 +304,12 @@ DbRetVal CatalogTableINDEX::get(const char *name, void *&chunk, void *&hchunk, v
     void *data = NULL;
     while ((data = iter.nextElement())!= NULL)
     {
-         if (0 == strcmp(((INDEX*)data)->indName_, name))
+         if (0 == strcmp(((CINDEX*)data)->indName_, name))
          {
              //remove this element and store the tuple ptr
              //there will be only one row for this table(Primary key)
-             chunk = (Chunk*) ((INDEX*)data)->chunkPtr_;
-             hchunk = (Chunk*) ((INDEX*)data)->hashNodeChunk_;
+             chunk = (Chunk*) ((CINDEX*)data)->chunkPtr_;
+             hchunk = (Chunk*) ((CINDEX*)data)->hashNodeChunk_;
              iptr = (void*) data;
              break;
          }
@@ -330,7 +330,7 @@ int CatalogTableINDEX::getNumIndexes(void *tptr)
     int numIndex =0;
     while (NULL != (iptr = iter.nextElement()))
     {
-         if (((INDEX*)iptr)->tblPtr_ == tptr) numIndex++;
+         if (((CINDEX*)iptr)->tblPtr_ == tptr) numIndex++;
     }
     return numIndex;
 }
@@ -345,8 +345,8 @@ char* CatalogTableINDEX::getIndexName(void *tptr, int position)
     int curPos =0;
     while (NULL != (iptr = iter.nextElement()))
     {
-         if (((INDEX*)iptr)->tblPtr_ == tptr) curPos++;
-         if ( curPos == position ) return ((INDEX*)iptr)->indName_;
+         if (((CINDEX*)iptr)->tblPtr_ == tptr) curPos++;
+         if ( curPos == position ) return ((CINDEX*)iptr)->indName_;
     }
     return NULL;
 
@@ -360,7 +360,7 @@ void CatalogTableINDEX::getIndexPtrs(void *tptr, char **&array)
     int i=0;
     while (NULL != (iptr = iter.nextElement()))
     {
-         if (((INDEX*)iptr)->tblPtr_ == tptr)
+         if (((CINDEX*)iptr)->tblPtr_ == tptr)
          {
              array[i++] = (char*) iptr;
          }
@@ -370,25 +370,25 @@ void CatalogTableINDEX::getIndexPtrs(void *tptr, char **&array)
 
 ChunkIterator CatalogTableINDEX::getIterator(void *iptr)
 {
-    INDEX *index = (INDEX*)iptr;
+    CINDEX *index = (CINDEX*)iptr;
     return ((Chunk*)index->chunkPtr_)->getIterator();
 }
 
 
 int CatalogTableINDEX::getNoOfBuckets(void *iptr)
 {
-    INDEX *index = (INDEX*)iptr;
+    CINDEX *index = (CINDEX*)iptr;
     return index->noOfBuckets_;
 }
 
 int CatalogTableINDEX::getUnique(void *iptr)
 {
-    INDEX *index = (INDEX*)iptr;
+    CINDEX *index = (CINDEX*)iptr;
     return index->isUnique_;
 }
 char* CatalogTableINDEX::getName(void *iptr)
 {
-    INDEX *index = (INDEX*)iptr;
+    CINDEX *index = (CINDEX*)iptr;
     return index->indName_;
 }
 
@@ -399,22 +399,22 @@ DbRetVal CatalogTableINDEXFIELD::insert(FieldNameList &fldList, void *indexPtr,
     Chunk *tChunk;
     tChunk = systemDatabase_->getSystemDatabaseChunk(IndexTableId);
     ChunkIterator iter = tChunk->getIterator();	
-    INDEXFIELD *fInd=NULL;
+    CINDEXFIELD *fInd=NULL;
     char *fName =NULL;
     void *data = NULL;
     bool isFldInd=false;
     while ((data = iter.nextElement())!= NULL)
     {
-        if ((((INDEX*)data)->tblPtr_==tblPtr) && (((INDEX*)indexPtr)->numFlds_ == ((INDEX*)data)->numFlds_) && (data != indexPtr) )
+        if ((((CINDEX*)data)->tblPtr_==tblPtr) && (((CINDEX*)indexPtr)->numFlds_ == ((CINDEX*)data)->numFlds_) && (data != indexPtr) )
         {
 	    fldList.resetIter();
 		    while (NULL != (fName = fldList.nextFieldName()))
 		    {
 			isFldInd=false;
-                        fInd=(INDEXFIELD*)((INDEX*)data)->fstIndFld_ ;
+                        fInd=(CINDEXFIELD*)((CINDEX*)data)->fstIndFld_ ;
 			while (fInd)
 		    	{
-		    	    if (0 == strcmp(((FIELD *) fInd->fieldPtr)->fldName_, fName))
+		    	    if (0 == strcmp(((CFIELD *) fInd->fieldPtr)->fldName_, fName))
 			    {
 				isFldInd=true;
 				break;
@@ -425,7 +425,7 @@ DbRetVal CatalogTableINDEXFIELD::insert(FieldNameList &fldList, void *indexPtr,
 		    }
 		    if(isFldInd)
 		    {
-                	printError(ErrAlready, "Index on this field  already exists on table \'%s\' by name \'%s\'", ((TABLE *)tblPtr)->tblName_, ((INDEX *)data)->indName_);
+                	printError(ErrAlready, "Index on this field  already exists on table \'%s\' by name \'%s\'", ((CTABLE *)tblPtr)->tblName_, ((CINDEX *)data)->indName_);
 			return ErrAlready;
 		    }
             }
@@ -445,12 +445,12 @@ DbRetVal CatalogTableINDEXFIELD::insert(FieldNameList &fldList, void *indexPtr,
                    "Could not allocate for USER catalog table");
             return rv;
         }
-        INDEXFIELD *fldInfo = (INDEXFIELD*)fieldptr;
+        CINDEXFIELD *fldInfo = (CINDEXFIELD*)fieldptr;
         fldInfo->tablePtr = tblPtr;
-        fldInfo->fieldPtr = (FIELD*)fptr[i++];
+        fldInfo->fieldPtr = (CFIELD*)fptr[i++];
         fldInfo->indexPtr = indexPtr;
-	fldInfo->next=(INDEXFIELD*)((INDEX*)indexPtr)->fstIndFld_;
-	((INDEX *)indexPtr)->fstIndFld_=fldInfo;
+	fldInfo->next=(CINDEXFIELD*)((CINDEX*)indexPtr)->fstIndFld_;
+	((CINDEX *)indexPtr)->fstIndFld_=fldInfo;
         printDebug(DM_SystemDatabase,"One Row inserted into INDEXFIELD %x", fldInfo);
     }
     return OK;
@@ -464,7 +464,7 @@ DbRetVal CatalogTableINDEXFIELD::remove(void *iptr)
     void *data = NULL;
     while ((data = fIter.nextElement())!= NULL)
     {
-        if (((INDEXFIELD*)data)->indexPtr == iptr)
+        if (((CINDEXFIELD*)data)->indexPtr == iptr)
         {
             //remove this element
             fChunk->free(systemDatabase_, data);
@@ -483,11 +483,11 @@ DbRetVal CatalogTableINDEXFIELD::getFieldNameAndType(void *index,
     void *data = NULL;
     while ((data = ifIter.nextElement())!= NULL)
     {
-        if (((INDEXFIELD*)data)->indexPtr == index)
+        if (((CINDEXFIELD*)data)->indexPtr == index)
         {
             //store the field name
-            name = ((FIELD*)(((INDEXFIELD*)data)->fieldPtr))->fldName_;
-            type = ((FIELD*)(((INDEXFIELD*)data)->fieldPtr))->type_;
+            name = ((CFIELD*)(((CINDEXFIELD*)data)->fieldPtr))->fldName_;
+            type = ((CFIELD*)(((CINDEXFIELD*)data)->fieldPtr))->type_;
             return OK;
         }
     }
@@ -504,10 +504,10 @@ DbRetVal CatalogTableINDEXFIELD::getFieldInfo(void *index, FieldList &list)
     int rowCount =0;
     while ((data = ifIter.nextElement())!= NULL)
     {
-        if (((INDEXFIELD*)data)->indexPtr == index)
+        if (((CINDEXFIELD*)data)->indexPtr == index)
         {
             //add the information to the field list
-            FIELD *fTuple = (FIELD*)(((INDEXFIELD*)data)->fieldPtr);
+            CFIELD *fTuple = (CFIELD*)(((CINDEXFIELD*)data)->fieldPtr);
             FieldDef fldDef;
             strcpy(fldDef.fldName_, fTuple->fldName_);
             fldDef.fldName_[IDENTIFIER_LENGTH] = '\0';
@@ -538,21 +538,21 @@ void CatalogTableINDEXFIELD::printAllIndex()
     char indexName[IDENTIFIER_LENGTH] = {'\0'};
     while ((data = ifIter.nextElement())!= NULL)
     {
-	if(strcmp(indexName,((INDEX*)(((INDEXFIELD*)data)->indexPtr))->indName_)!=0)
+	if(strcmp(indexName,((CINDEX*)(((CINDEXFIELD*)data)->indexPtr))->indName_)!=0)
 	{
-       	    printf("    <Index Name> %s </Index Name> \n",((INDEX*)(((INDEXFIELD*)data)->indexPtr))->indName_);
-       	    if(0==((INDEX*)(((INDEXFIELD*)data)->indexPtr))->indexType_)
+       	    printf("    <Index Name> %s </Index Name> \n",((CINDEX*)(((CINDEXFIELD*)data)->indexPtr))->indName_);
+       	    if(0==((CINDEX*)(((CINDEXFIELD*)data)->indexPtr))->indexType_)
       	        printf("        <Index Type> Hash Index </Index Type> \n");
        	    else
        	        printf("        <Index Type> Tree Index </Index Type> \n");
-       	    printf("        <Table Name> %s </Table Name> \n",((TABLE*)(((INDEXFIELD*)data)->tablePtr))->tblName_);
-       	    printf("        <Field Name> %s </Field Name> \n",((FIELD*)(((INDEXFIELD*)data)->fieldPtr))->fldName_);
+       	    printf("        <Table Name> %s </Table Name> \n",((CTABLE*)(((CINDEXFIELD*)data)->tablePtr))->tblName_);
+       	    printf("        <Field Name> %s </Field Name> \n",((CFIELD*)(((CINDEXFIELD*)data)->fieldPtr))->fldName_);
 	}
 	else
 	{
-       	    printf("        <Field Name> %s </Field Name> \n",((FIELD*)(((INDEXFIELD*)data)->fieldPtr))->fldName_);
+       	    printf("        <Field Name> %s </Field Name> \n",((CFIELD*)(((CINDEXFIELD*)data)->fieldPtr))->fldName_);
 	}
-	strcpy(indexName,((INDEX*)(((INDEXFIELD*)data)->indexPtr))->indName_);
+	strcpy(indexName,((CINDEX*)(((CINDEXFIELD*)data)->indexPtr))->indName_);
     }
 }
 
@@ -560,7 +560,7 @@ DbRetVal CatalogTableUSER::insert(const char *name, const char *pass)
 {
     Chunk *tChunk = systemDatabase_->getSystemDatabaseChunk(UserTableId);
     DbRetVal rv = OK;
-    USER *usrInfo = (USER*)tChunk->allocate(systemDatabase_, &rv);
+    CUSER *usrInfo = (CUSER*)tChunk->allocate(systemDatabase_, &rv);
     if (NULL == usrInfo)
     {
         printError(rv,
@@ -581,14 +581,14 @@ DbRetVal CatalogTableUSER::authenticate(const char *name, const char *pass,
     void *data = NULL;
     while (NULL != (data = iter.nextElement()))
     {
-        if (strcmp(((USER*)data)->userName_, name) == 0)
+        if (strcmp(((CUSER*)data)->userName_, name) == 0)
         {
             //verify the password
             char * enpass = os::encrypt(pass,"A0");
-            if (0 == strcmp(enpass, ((USER*)data)->password_))
+            if (0 == strcmp(enpass, ((CUSER*)data)->password_))
             {
                 isAuthenticated = true;
-                if (0 == strcmp(((USER*)data)->userName_, DBAUSER))
+                if (0 == strcmp(((CUSER*)data)->userName_, DBAUSER))
                     isDba = true; else isDba = false;
                 return OK;
             }
@@ -605,7 +605,7 @@ DbRetVal CatalogTableUSER::remove(const char *name)
     void *data = NULL;
     while ((data = iter.nextElement())!= NULL)
     {
-        if (strcmp(((USER*)data)->userName_, name) == 0)
+        if (strcmp(((CUSER*)data)->userName_, name) == 0)
         {
             //remove this element
             tChunk->free(systemDatabase_, data);
@@ -623,10 +623,10 @@ DbRetVal CatalogTableUSER::changePass(const char *name, const char *pass)
     void *data = NULL;
     while (NULL != (data = iter.nextElement()))
     {
-        if (strcmp(((USER*)data)->userName_, name) == 0)
+        if (strcmp(((CUSER*)data)->userName_, name) == 0)
         {
             //change the password
-            strcpy(((USER*)data)->password_, os::encrypt(pass, "A0"));
+            strcpy(((CUSER*)data)->password_, os::encrypt(pass, "A0"));
             return OK;
         }
     }
