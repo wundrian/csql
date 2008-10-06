@@ -25,8 +25,8 @@ echo select * from t1;
 ---------------------------------------------------------
 	10	india	1234321	
 	10	INDIA	NULL	
-	10	orissa	NULL	
-	10	NULL	NULL	
+	10	orissa	123432	
+	10	NULL	123432	
 	
 echo update t1 set f2='hello';
 Statement Executed: Rows Affected = 4
@@ -36,8 +36,8 @@ echo select * from t1;
 ---------------------------------------------------------
 	10	hello	1234321	
 	10	hello	NULL	
-	10	hello	NULL	
-	10	hello	NULL	
+	10	hello	123432	
+	10	hello	123432	
 	
 echo update t1 set f3=10000;
 Statement Executed: Rows Affected = 4
