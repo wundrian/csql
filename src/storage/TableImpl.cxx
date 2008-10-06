@@ -533,7 +533,7 @@ DbRetVal TableImpl::updateTuple()
     int addSize = 0;
     if (numFlds_ < 31){ 
 	addSize=4;
-	iNullInfo |= *(int*)((char*)(curTuple_) + (length_- addSize));
+	iNullInfo = *(int*)((char*)(curTuple_) + (length_- addSize));
     }
     DbRetVal rv = copyValuesFromBindBuffer(curTuple_, false);
     if (rv != OK) { 
