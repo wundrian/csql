@@ -82,6 +82,7 @@ class AggTableImpl:public Table
     void setTable(Table *impl){ tableHdl = impl;}
     Table* getTableHdl(){ return tableHdl; }
     void closeScan();
+    void *getBindFldAddr(const char *name);
     DbRetVal bindFld(const char *name, void *val);
     DbRetVal bindFld(const char *name, AggType aggType, void *val);
     DbRetVal setGroup(const char *name, void *val);

@@ -158,6 +158,7 @@ class TableImpl:public Table
 
     //binding
     DbRetVal bindFld(const char *name, void *val);
+    void *getBindFldAddr(const char *name);
 
     void markFldNull(const char *name);
     void markFldNull(int colpos);

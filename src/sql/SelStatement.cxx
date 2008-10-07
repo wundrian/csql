@@ -284,6 +284,7 @@ DbRetVal SelStatement::resolve()
        aggTable->setTable(table);
        aggFlag = true;
     }
+    List bindFldList;
     bool isGroupFldInProjection = false;
     while (iter.hasElement())
     {
@@ -296,6 +297,7 @@ DbRetVal SelStatement::resolve()
             printError(ErrSysFatal, "Should never happen. Field Name list has NULL");
             return ErrSysFatal;
         }
+	bool isBindFld=false;
         if ('*' == name->fldName[0] && name->aType != AGG_COUNT) 
         {
             iter.reset();
@@ -325,51 +327,70 @@ DbRetVal SelStatement::resolve()
                 return ErrSyntaxError;
             }
             FieldValue *newVal = new FieldValue();
+            strcpy(newVal->fldName,name->fldName);
             newVal->parsedString = NULL;
             newVal->paramNo = 0;
             newVal->type = fInfo->type;
             newVal->length = fInfo->length;
-        // for binary datatype input buffer size should be 2 times the length 
-	    if(newVal->type == typeBinary) 
-                newVal->value = AllDataType::alloc(fInfo->type, 2 * fInfo->length);
-            else newVal->value = AllDataType::alloc(fInfo->type, fInfo->length);
-            parsedData->insertFieldValue(newVal);
-            if (name->aType == AGG_UNKNOWN) {
-                if (groupFieldListSize == 0) {
-                    table->bindFld(name->fldName, newVal->value);
-                }else {
-                    //delete newVal;
-                    FieldName *groupFldName = NULL;
-                    ListIterator giter = parsedData->getGroupFieldNameList().
-                                                         getIterator();
-                    while (giter.hasElement())
-                    {
-                        groupFldName = (FieldName*)giter.nextElement();
-                        if (strcmp(groupFldName->fldName, name->fldName) ==0) {
-                             isGroupFldInProjection = true;
-                             aggTable->setGroup(name->fldName, newVal->value);
-                         }
-                    }
-                    if (!isGroupFldInProjection) 
-                    {
-                        printError(ErrSyntax, "Projection should contain only group fields\n");
-                        delete fInfo;
-                        dbMgr->closeTable(table);
-                        table = NULL;
-                        return ErrSyntax;
-                    }
+	   
+            FieldName *bFldName=NULL;
+            ListIterator it = bindFldList.getIterator();
+            while (it.hasElement())
+            {
+                bFldName = (FieldName*)it.nextElement();
+                if(0==strcmp(bFldName->fldName,name->fldName))
+                {
+                    newVal->value=table->getBindFldAddr(name->fldName);
+                    newVal->isAllocVal=false;
+                    isBindFld=true;
+                    break;			
                 }
-            } else {
-               if (!aggFlag) {
-                  aggTable = new AggTableImpl();
-                  aggTable->setTable(table);
-                  aggFlag = true;
-               }
-               aggTable->bindFld(name->fldName, name->aType, newVal->value);
             }
+	    
+        // for binary datatype input buffer size should be 2 times the length 
+	    if(!isBindFld){
+	        if(newVal->type == typeBinary) 
+                    newVal->value = AllDataType::alloc(fInfo->type, 2 * fInfo->length);
+                else newVal->value = AllDataType::alloc(fInfo->type, fInfo->length);
+                newVal->isAllocVal=true;;
+                if (name->aType == AGG_UNKNOWN) {
+                    if (groupFieldListSize == 0) {
+                        table->bindFld(name->fldName, newVal->value);
+                    }else {
+                    //delete newVal;
+                        FieldName *groupFldName = NULL;
+                        ListIterator giter = parsedData->getGroupFieldNameList().
+                                                         getIterator();
+                        while (giter.hasElement())
+                        {
+                            groupFldName = (FieldName*)giter.nextElement();
+                            if (strcmp(groupFldName->fldName, name->fldName) ==0) {
+                                isGroupFldInProjection = true;
+                                aggTable->setGroup(name->fldName, newVal->value);
+                            }
+                        }
+                        if (!isGroupFldInProjection) 
+                        {
+                            printError(ErrSyntax, "Projection should contain only group fields\n");
+                            delete fInfo;
+                            dbMgr->closeTable(table);
+                            table = NULL;
+                            return ErrSyntax;
+                        }
+                   }
+                } else {
+                   if (!aggFlag) {
+                      aggTable = new AggTableImpl();
+                      aggTable->setTable(table);
+                      aggFlag = true;
+                   }
+                   aggTable->bindFld(name->fldName, name->aType, newVal->value);
+                }
+	    }
+            parsedData->insertFieldValue(newVal);
         }
+        if(!isBindFld) bindFldList.append(name);
     }
-
     rv = setBindFieldAndValues();
     if (rv != OK) 
     {
@@ -407,6 +428,7 @@ DbRetVal SelStatement::resolve()
                 return ErrSyntaxError;
             }
             FieldValue *newVal = new FieldValue();
+            strcpy(newVal->fldName,name->fldName);
             newVal->parsedString = NULL;
             newVal->paramNo = 0;
             newVal->type = fInfo->type;
@@ -415,6 +437,7 @@ DbRetVal SelStatement::resolve()
 			if (newVal->type == typeBinary)
                 newVal->value = AllDataType::alloc(fInfo->type, 2 * fInfo->length);
             else newVal->value = AllDataType::alloc(fInfo->type, fInfo->length);
+	    newVal->isAllocVal=true;
             parsedData->insertFieldValue(newVal);
             aggTable->setGroup(name->fldName, newVal->value);
         }
@@ -446,6 +469,7 @@ DbRetVal SelStatement::resolveStar()
             return ErrSysFatal;
         }
         newVal = new FieldValue();
+        strcpy(newVal->fldName,fName);
         newVal->parsedString = NULL;
         newVal->paramNo = 0;
         newVal->type = fInfo->type;
@@ -454,6 +478,7 @@ DbRetVal SelStatement::resolveStar()
 		if(newVal->type == typeBinary) 
             newVal->value = AllDataType::alloc(fInfo->type, 2 * fInfo->length);
         else newVal->value = AllDataType::alloc(fInfo->type, fInfo->length);
+	newVal->isAllocVal=true;
         parsedData->insertFieldValue(newVal);
         parsedData->insertField(fName);
         table->bindFld(fName, newVal->value);
@@ -658,7 +683,7 @@ void* SelStatement::fetchAndPrint(bool SQL)
     for (int i = 0; i < totalFields; i++)
     {
         value = bindFields[i];
-        nullValueSet = table->isFldNull(i+1);
+        nullValueSet = table->isFldNull(value->fldName);
         if (nullValueSet) 
             if (SQL) { 
                 if (i==0) 

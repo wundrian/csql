@@ -113,7 +113,20 @@ DbRetVal FieldList::updateBindVal(const char *fldName, void *val )
     printError(ErrNotFound, "Field not present in the list");
     return ErrNotFound;
 }
-
+void *FieldList::getBindField(const char *fldName)
+{
+	FieldNode *iter = head;
+	while(NULL != iter)
+	{
+	    if (strcmp(iter->fldDef.fldName_, fldName) == 0)
+            {
+		return	iter->fldDef.bindVal_;
+	    }
+	    iter = iter ->next;
+	}
+	printError(ErrNotFound, "Field not present in the list");
+    	return NULL;
+}
 DbRetVal FieldList::getFieldInfo(const char *fldName, FieldInfo *&info)
 {
     FieldNode *iter = head;

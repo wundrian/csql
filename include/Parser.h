@@ -37,12 +37,14 @@ enum StatementType
 };
 
 struct FieldValue
-{
+{   
+    char fldName[IDENTIFIER_LENGTH];
     char *parsedString;
     void *value;
     int paramNo; // 0 ->not a param. It stores the param position
     DataType type;
     int length;
+    bool isAllocVal;
 };
 
 
@@ -53,7 +55,7 @@ struct ConditionValue
     int paramNo; // 0 ->not a param. It stores the param position
     DataType type;
     int length;
-	bool opLike;
+    bool opLike;
     char fName[IDENTIFIER_LENGTH];
 };
 

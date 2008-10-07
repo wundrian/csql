@@ -531,9 +531,16 @@ DbRetVal TableImpl::updateTuple()
         ret = (*trans)->appendUndoLog(sysDB_, UpdateOperation, curTuple_, length_);
     if (ret != OK) return ret;
     int addSize = 0;
+    int iNullVal=iNullInfo;
     if (numFlds_ < 31){ 
 	addSize=4;
-	iNullInfo = *(int*)((char*)(curTuple_) + (length_- addSize));
+	if(!iNullVal){ 
+            iNullInfo = *(int*)((char*)(curTuple_) + (length_- addSize));
+        } 
+	else
+	{
+            *(int*)((char*)(curTuple_) + (length_-addSize)) |= iNullInfo;    
+	}
     }
     DbRetVal rv = copyValuesFromBindBuffer(curTuple_, false);
     if (rv != OK) { 
@@ -544,7 +551,11 @@ DbRetVal TableImpl::updateTuple()
     
     if (numFlds_ < 31) 
     {
-        *(int*)((char*)(curTuple_) + (length_-addSize)) = iNullInfo;
+        if (!iNullVal) { 
+		*(int*)((char*)(curTuple_) + (length_-addSize)) = iNullInfo;
+		iNullInfo=0;
+        }
+	else iNullInfo=iNullVal;
     }
     else 
     {
@@ -825,3 +836,9 @@ TableImpl::~TableImpl()
     fldList_.removeAll();
 
 }
+
+void *TableImpl::getBindFldAddr(const char *name)
+{
+	return fldList_.getBindField(name);
+}
+

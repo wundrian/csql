@@ -25,10 +25,12 @@ void ParsedData::insertValue(char *val)
         newVal->parsedString = NULL;
     else 
         newVal->parsedString = strdup(val);
+    strcpy(newVal->fldName," ");
     newVal->value = NULL;
     newVal->paramNo = 0;
     newVal->type = typeUnknown;
     newVal->length = 0;
+    newVal->isAllocVal=false;
     fieldValueList.append(newVal);
 }
 
@@ -39,10 +41,12 @@ void ParsedData::insertInValue(char *val)
         newVal->parsedString = NULL;
     else 
         newVal->parsedString = strdup(val);
+    strcpy(newVal->fldName," ");
     newVal->value = NULL;
     newVal->paramNo = 0;
     newVal->type = typeUnknown;
     newVal->length = 0;
+    newVal->isAllocVal=false;
     inValueList.append(newVal);
 }
 
@@ -124,7 +128,7 @@ void ParsedData::reset()
     {
         value = (FieldValue*)iter.nextElement();
         free(value->parsedString);
-        free(value->value);
+        if (value->isAllocVal) free(value->value);
         delete value;
     }
     fieldValueList.reset();

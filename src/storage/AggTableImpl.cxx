@@ -23,6 +23,13 @@ AggTableImpl::AggTableImpl()
 AggTableImpl::~AggTableImpl()
 {
 }
+void *AggTableImpl::getBindFldAddr(const char *name)
+{
+	return NULL;
+}
+
+
+
 DbRetVal AggTableImpl::bindFld(const char *name, void *val)
 {
     return ErrBadCall;
