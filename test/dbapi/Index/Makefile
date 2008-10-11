@@ -32,18 +32,18 @@ TARGETS = \
         test009 \
         test010 \
         test011 \
-        test003
+        test003 test012
        
 
 ifeq ($(PlatForm), supported)
 all: $(TARGETS)
 endif
 
-test001: uniqueindex1.c
+test001: uniqueindex1.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
-test002: uniqueindex2.c
+test002: uniqueindex2.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
-test003: uniqueindex3.c
+test003: uniqueindex3.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test004: twoindex1.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
@@ -61,7 +61,8 @@ test010: createindexnofld.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test011: primarynonunique.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
-
+test012: index1.c common.h
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 clean:
 	rm -f $(TARGETS)
 
