@@ -32,7 +32,7 @@ TARGETS = \
         test009 \
         test010 \
         test011 \
-        test003 test012
+        test003 test012 test013
        
 
 ifeq ($(PlatForm), supported)
@@ -62,6 +62,8 @@ test010: createindexnofld.c
 test011: primarynonunique.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test012: index1.c common.h
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test013:multiplecompositeindex1.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 clean:
 	rm -f $(TARGETS)

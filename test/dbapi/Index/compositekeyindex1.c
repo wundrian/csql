@@ -1,6 +1,6 @@
 #include<CSql.h>
 //creating index with two fields
-//It should fail saying not supported
+//It should be Passed
 int main()
 {
 
@@ -25,10 +25,10 @@ int main()
     idxInfo->list.append("f2");
     idxInfo->indType = hashIndex;
     rv = dbMgr->createIndex("indx1", idxInfo);
-    int ret = 0;
-    if (rv != OK) ret =1;
+    if(rv != OK) { printf("Composite Index creation Failed\n"); return 1; } 
+    printf("Composite Index created\n");
     delete idxInfo;
     dbMgr->dropTable("t1");
     conn.close();
-    return ret;
+    return 0;
 }
