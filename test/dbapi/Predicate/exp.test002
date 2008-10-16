@@ -1,23 +1,25 @@
 Table created
-Index created
-Operator test for 0
-tuple value is 0 PRABAKARAN0123456750590 
-tuple value is 1 PRABAKARAN0123456750590 
-tuple value is 2 PRABAKARAN0123456750590 
-tuple value is 4 PRABAKARAN0123456750590 
-Operator test for 1
-tuple value is 3 PRABAKARAN0123456750590 
-Operator test for 2
-tuple value is 3 PRABAKARAN0123456750590 
-tuple value is 4 PRABAKARAN0123456750590 
-Operator test for 3
-tuple value is 4 PRABAKARAN0123456750590 
-Operator test for 4
-tuple value is 0 PRABAKARAN0123456750590 
-tuple value is 1 PRABAKARAN0123456750590 
-tuple value is 2 PRABAKARAN0123456750590 
-tuple value is 3 PRABAKARAN0123456750590 
-Operator test for 5
-tuple value is 0 PRABAKARAN0123456750590 
-tuple value is 1 PRABAKARAN0123456750590 
-tuple value is 2 PRABAKARAN0123456750590 
+Operator Test for 0
+Tuple is 10 NIHAR10 
+Operator Test for 1
+Tuple is 6 NIHAR6 
+Tuple is 7 NIHAR7 
+Tuple is 8 NIHAR8 
+Tuple is 9 NIHAR9 
+Tuple is 11 NIHAR11 
+Operator Test for 2
+Tuple is 6 NIHAR6 
+Tuple is 7 NIHAR7 
+Tuple is 8 NIHAR8 
+Tuple is 9 NIHAR9 
+Operator Test for 3
+Tuple is 6 NIHAR6 
+Tuple is 7 NIHAR7 
+Tuple is 8 NIHAR8 
+Tuple is 9 NIHAR9 
+Tuple is 10 NIHAR10 
+Operator Test for 4
+Tuple is 11 NIHAR11 
+Operator Test for 5
+Tuple is 10 NIHAR10 
+Tuple is 11 NIHAR11 
