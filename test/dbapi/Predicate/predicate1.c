@@ -1,32 +1,26 @@
-//Testing Not operator with all comparision operator on int data type.
-//Five tuples are inserted and then selected using single term predicates
-//all with NOT operator
 /*
-a. NOT(f1 = 3)
-b. NOT(f1 != 3)
-c. NOT(f1 < 3)
-d. NOT(f1 <= 3)
-e. NOT(f1 > 3)
-f. NOT(f1 >=10)
-(notpredicate1.c) 
- */
+a. f1=10
+b. f1!= 10
+c. f1<10
+d. f1<=10
+e. f1>10
+f. f1>=10
+*/
 #include<CSql.h>
-
-int id = 0;
-char name[196] = "PRABAKARAN";
+int id=0;
+char name[100];//="NIHAR";
 int select(Table *table, ComparisionOp op)
 {
-    printf("Operator test for %d\n", op);
+    printf("Operator Test for %d\n",op);
     Condition p1;
-    int val1 = 3;
-    p1.setTerm("f1", op, &val1);
-    Condition p2;
-    p2.setTerm(p1.getPredicate(), OpNot);
-    table->setCondition(&p2);
+    int val1=10;
+    p1.setTerm("f1",op,&val1);
+    table->setCondition(&p1);
     table->execute();
     void *tuple;
-    while ((tuple = (char*) table->fetch())) {
-        printf("tuple value is %d %s \n", id, name);
+    while((tuple=(char*) table->fetch()))
+    {
+	printf("Tuple is %d %s \n",id,name);
     }
     table->close();
     return 0;
@@ -34,9 +28,8 @@ int select(Table *table, ComparisionOp op)
 
 int main()
 {
-
     Connection conn;
-    DbRetVal rv = conn.open("root", "manager");
+    DbRetVal rv=conn.open("root","manager");
     if (rv != OK)
     {
        printf("Error during connection %d\n", rv);
@@ -46,7 +39,7 @@ int main()
     if (dbMgr == NULL) { printf("Auth failed\n"); return 2;}
     TableDef tabDef;
     tabDef.addField("f1", typeInt, 0, NULL, true );
-    tabDef.addField("f2", typeString, 196);
+    tabDef.addField("f2", typeString, 100);
     rv = dbMgr->createTable("t1", tabDef);
     if (rv != OK) { printf("Table creation failed\n"); return 3; }
     printf("Table created\n");
@@ -67,17 +60,18 @@ int main()
     char *tuple;
     int ret;
     int i;
+    char nam[100];
     rv =conn.startTransaction();
-    for(i = 0; i< 5; i++)
+    for(i = 6; i< 12; i++)
     {
         if (rv != OK) exit(5);
         id= i;
-        strcpy(name, "PRABAKARAN0123456750590");
+        sprintf(nam,"%s%d","NIHAR",i);
+        strcpy(name, nam);
         ret = table->insertTuple();
         if (ret != 0) break;
     }
     conn.commit();
-
     conn.startTransaction();
     select(table, OpEquals);
     conn.commit();
@@ -108,3 +102,4 @@ int main()
     conn.close();
     return 0;
 }
+       

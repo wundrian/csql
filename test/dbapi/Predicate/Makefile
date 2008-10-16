@@ -22,7 +22,7 @@ INCL= -I$(CSQL_INSTALL_ROOT)/include
 LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsql
 
 TARGETS = \
-        test001 test002 \
+        test001 test001a test002 test002a\
         test003 test003a test003b test003c \
         test004 test004a test004b test004c \
         test005 test005a test005b test005c \
@@ -41,7 +41,11 @@ endif
 
 test001: notpredicate1.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
-test002: notpredicate1.c
+test001a: notpredicate1.c
+	$(CPlus) -DWITHINDEX $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test002: predicate1.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test002a:predicate1.c
 	$(CPlus) -DWITHINDEX $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test003: andpredicate1.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
