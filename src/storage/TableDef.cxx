@@ -31,6 +31,11 @@ int TableDef::addField(const char *name,  DataType type, size_t length,
                  const void *defaultValue, bool notNull)
 {
     if (name == NULL) return (int)ErrBadArg;
+    if(strlen(name)>64)
+    {
+        printError(ErrBadRange,"Field name shpuldnot exceed 64 character");
+        return (int)ErrBadRange;
+    }
     // The following code checks for duplicates
     FieldIterator iter = getFieldIterator();
     while (iter.hasElement())

@@ -419,6 +419,11 @@ DbRetVal DatabaseManagerImpl::createTable(const char *name, TableDef &def)
 {
     DbRetVal rv = OK;
     int fldCount = def.getFieldCount();
+    if(0==fldCount)
+    {
+        printError(ErrNotExists,"Table can't be created without Field");
+        return ErrNotExists;
+    }
     //If total field count is less than 32, then 1 integer is used to store all null
     //information, if it is more then 1 char is used to store null information 
     //of each field
