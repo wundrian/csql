@@ -4,6 +4,7 @@ dbapi/Connection
 dbapi/Index
 dbapi/DataType
 dbapi/Table
+dbapi/TableDef
 dbapi/UserManager
 dbapi/Predicate
 system/config
