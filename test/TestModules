@@ -5,6 +5,7 @@ dbapi/Index
 dbapi/DataType
 dbapi/Table
 dbapi/TableDef
+dbapi/DatabaseManager
 dbapi/UserManager
 dbapi/Predicate
 system/config
