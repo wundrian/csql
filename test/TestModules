@@ -17,6 +17,7 @@ tools/csql
 tools/csqldump
 jdbc/Connection
 jdbc/Statement
+jdbc/Gateway
 sqlapi/Connect
 sqlapi/Parameter
 sqlapi/Select
