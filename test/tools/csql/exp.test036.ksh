@@ -34,6 +34,10 @@ echo create index indx16 on t1 (f1,f3,f2);
 Statement Executed
 echo create index indx17 on t1 (f1,f3,f2);
 Statement Executed
+echo create table t4 (f1 int);
+Statement Executed
+echo create index indx18 on t4(f1,f1);
+Statement Executed
 <Table Information of all tables>
   <TableInfo> 
     <TableName> t2 </TableName>
@@ -128,6 +132,18 @@ Statement Executed
         <FieldName> f4 </FieldName>
         <Type> 4 </Type>
         <Length> 1 </Length>
+        <Primary> 0 </Primary>
+        <Null> 0 </Null>
+        <Default> 0 </Default>
+        <DefaultValue>  </DefaultValue>
+      </FieldInfo>
+  </TableInfo> 
+  <TableInfo> 
+    <TableName> t4 </TableName>
+      <FieldInfo>
+        <FieldName> f1 </FieldName>
+        <Type> 0 </Type>
+        <Length> 4 </Length>
         <Primary> 0 </Primary>
         <Null> 0 </Null>
         <Default> 0 </Default>
@@ -235,4 +251,6 @@ echo drop table t2;
 echo drop table t3;
 Statement Executed
 Statement Executed
+Statement Executed
+echo drop table t4;
 Statement Executed

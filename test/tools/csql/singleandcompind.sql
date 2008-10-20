@@ -34,4 +34,8 @@ echo create index indx16 on t1 (f1,f3,f2);
 create index indx16 on t3 (f1,f3,f2);
 echo create index indx17 on t1 (f1,f3,f2);
 create index indx17 on t3 (f1,f4,f2);
+echo create table t4 (f1 int);
+create table t4 (f1 int);
+echo create index indx18 on t4(f1,f1);
+create index indx18 on t4(f1,f1);
 
