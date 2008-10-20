@@ -17,6 +17,8 @@ void yyerror(const char* Msg);
    void *predicate;
 }
 
+%left OR 
+%left AND
 %token <stringval> STRING FIELD NUMBER_STRING BINARY_STRING DOUBLE OPERATOR PARAMETER
 %token <stringval> SELECT FROM WHERE BETWEEN IN AND OR NOT
 %token <stringval> STAR
@@ -27,8 +29,7 @@ void yyerror(const char* Msg);
 %token <stringval> MIN MAX AVG SUM COUNT GROUP BY
 %token ';' ',' '(' ')'
 %type <stringval> ident field value not_opt
-%type <predicate> conditions condition
-
+%type <predicate> conditions condition 
 %%
 command:  select_statement { YYACCEPT; }
         | insert_statement { YYACCEPT; }
@@ -141,34 +142,44 @@ group_field:   ident
             free( $1 );
         }
         ;
-conditions: conditions AND conditions
+conditions: conditions OR conditions
 	{
-            Predicate *pred;
-            pred = parsedData->insertPredicate((Predicate*) $1, OpAnd, (Predicate*) $3);
-            parsedData->setCondition((Predicate*)pred);
-            $$= pred;
-
-        }
-        | conditions OR conditions
-        {
             Predicate *pred;
             pred = parsedData->insertPredicate((Predicate*) $1, OpOr, (Predicate*) $3);
             parsedData->setCondition((Predicate*)pred);
             $$= pred;
+
         }
-        | NOT conditions
+        | conditions AND conditions
         {
             Predicate *pred;
-            pred = parsedData->insertPredicate((Predicate*) $2, OpNot, NULL);
+            pred = parsedData->insertPredicate((Predicate*) $1, OpAnd, (Predicate*) $3);
             parsedData->setCondition((Predicate*)pred);
             $$= pred;
         }
-        | '(' conditions ')' { }
-        | condition
+        | '(' conditions ')' { $$=$2; }
+        | NOT '(' conditions ')'
         {
-            parsedData->setCondition((Predicate*)$1);
-            //((Predicate*)$1)->print();
-            $$=$1;
+            Predicate *pred;
+            pred = parsedData->insertPredicate((Predicate*) $3, OpNot, NULL);
+            parsedData->setCondition((Predicate*)pred);
+            $$= pred;
+
+        }
+        | not_opt condition
+        {
+            if( $1 == (char*) 1 )
+            {
+                Predicate *pred;
+                pred = parsedData->insertPredicate((Predicate*) $2, OpNot, NULL);
+                parsedData->setCondition((Predicate*)pred);
+                $$= pred;
+            }
+            else
+            {
+                parsedData->setCondition((Predicate*)$2);
+                $$=$2;
+            }
         }
         ;
 condition: ident OPERATOR value 
@@ -248,6 +259,7 @@ field:   ident
         {
             parsedData->insertField((char*)$1);
             free( $1 );
+            
         }
         | MIN  '(' ident ')'
         { 
