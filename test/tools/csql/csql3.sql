@@ -47,4 +47,6 @@ echo select * from t1 where f1 = 12 + f2;
 select * from t1 where f1 = 12 + f2;
 echo select * from t1 where f1 =  f2;
 select * from t1 where f1 = f2;
+echo select * from t1 where f1=12 and f1<=13 or f1>=11;
+select * from t1 where f1=12 and f1<=13 or f1>=11;
 drop table t1;

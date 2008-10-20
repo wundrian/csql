@@ -1,5 +1,3 @@
-[Parser: syntax error] +12
-[Parser: syntax error] +
 echo Same as csql2 but with primary key;
 Statement Executed
 Statement Executed: Rows Affected = 1
@@ -135,6 +133,16 @@ echo select * from t1 where f1 =  f2;
 ---------------------------------------------------------
 	f1	f2	
 ---------------------------------------------------------
+	50	50	
+	
+echo select * from t1 where f1=12 and f1<=13 or f1>=11;
+---------------------------------------------------------
+	f1	f2	
+---------------------------------------------------------
+	11	21	
+	12	22
+	13	23
+	14	24	
 	50	50	
 	
 Statement Executed
