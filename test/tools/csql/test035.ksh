@@ -12,7 +12,7 @@ then
     REL_PATH=`pwd`/tools/csql
 fi
 
-$CSQL_INSTALL_ROOT/bin/csql -u root -p manager -s ${REL_PATH}/uniqueindontuples.sql
+$CSQL_INSTALL_ROOT/bin/csql -u root -p manager -s ${REL_PATH}/uniqueindontuples.sql 2>&1
 if [ $? -ne 0 ]
 then
    exit 1;
