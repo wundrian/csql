@@ -120,6 +120,7 @@ operator        "<"|">"|">="|"<="|"="|"\!="|"<>"|"LIKE"|"like"
                 if(strcasecmp(yytext,"INTEGER") ==0) token = INT_TYPE;
                 if(strcasecmp(yytext,"LONG") ==0) token = LONG_TYPE;
                 if(strcasecmp(yytext,"DOUBLE") ==0) token = DOUBLE_TYPE;
+                if(strcasecmp(yytext,"REAL") ==0) token = DOUBLE_TYPE;
                 if(strcasecmp(yytext,"SHORT") ==0) token = SHORT_TYPE;
                 if(strcasecmp(yytext,"SMALLINT") ==0) token = SHORT_TYPE;
                 if(strcasecmp(yytext,"DATE") ==0) token = DATE_TYPE;
