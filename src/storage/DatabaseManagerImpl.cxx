@@ -409,6 +409,8 @@ DbRetVal DatabaseManagerImpl::deleteUserChunk(Chunk *chunk)
     chunk->firstPage_ = NULL;
     chunk->destroyMutex();
     db_->decrementChunk();
+    Chunk *userChunk = getSystemTableChunk(UserChunkTableId);
+    userChunk->free(systemDatabase_,chunk);
     printDebug(DM_Database,"deleting user chunk:%x",chunk);
     return OK;
 }

@@ -408,27 +408,27 @@ DbRetVal CatalogTableINDEXFIELD::insert(FieldNameList &fldList, void *indexPtr,
         if ((((CINDEX*)data)->tblPtr_==tblPtr) && (((CINDEX*)indexPtr)->numFlds_ == ((CINDEX*)data)->numFlds_) && (data != indexPtr) )
         {
 	    fldList.resetIter();
-		    while (NULL != (fName = fldList.nextFieldName()))
+	    while (NULL != (fName = fldList.nextFieldName()))
+	    {
+		isFldInd=false;
+                fInd=(CINDEXFIELD*)((CINDEX*)data)->fstIndFld_ ;
+		while (fInd)
+	    	{
+	    	    if (0 == strcmp(((CFIELD *) fInd->fieldPtr)->fldName_, fName))
 		    {
-			isFldInd=false;
-                        fInd=(CINDEXFIELD*)((CINDEX*)data)->fstIndFld_ ;
-			while (fInd)
-		    	{
-		    	    if (0 == strcmp(((CFIELD *) fInd->fieldPtr)->fldName_, fName))
-			    {
-				isFldInd=true;
-				break;
-			    }
-			    fInd=fInd->next;
-                    	}
-			if(!isFldInd) break;
+			isFldInd=true;
+			break;
 		    }
-		    if(isFldInd)
-		    {
-                	printError(ErrAlready, "Index on this field  already exists on table \'%s\' by name \'%s\'", ((CTABLE *)tblPtr)->tblName_, ((CINDEX *)data)->indName_);
-			return ErrAlready;
-		    }
-            }
+		    fInd=fInd->next;
+               	}
+		if(!isFldInd) break;
+	    }
+	    if(isFldInd)
+	    {
+               	printError(ErrAlready, "Index on this field  already exists on table \'%s\' by name \'%s\'", ((CTABLE *)tblPtr)->tblName_, ((CINDEX *)data)->indName_);
+		return ErrAlready;
+	    }
+       }
 
     }
 
@@ -438,11 +438,28 @@ DbRetVal CatalogTableINDEXFIELD::insert(FieldNameList &fldList, void *indexPtr,
     while (NULL != (fName = fldList.nextFieldName()))
     {
         DbRetVal rv = OK;
+        fInd=(CINDEXFIELD*)((CINDEX*)indexPtr)->fstIndFld_;
+        while(fInd)
+        {
+             if (0 == strcmp(((CFIELD *) fInd->fieldPtr)->fldName_, fName))
+             {
+                 printError(ErrAlready,"Composite Index Can't be created with same Name");
+                 fInd=(CINDEXFIELD*)((CINDEX*)indexPtr)->fstIndFld_;
+                 CINDEXFIELD *fldI;
+                 while(fInd)
+                 {   
+                     fldI=fInd;
+                     fInd=fInd->next;
+                     tChunk->free(systemDatabase_,fldI); 
+                 }
+                 return ErrAlready;
+             }
+             fInd=fInd->next;
+        }
         void *fieldptr = tChunk->allocate(systemDatabase_, &rv);
         if (NULL == fieldptr)
         {
-            printError(rv,
-                   "Could not allocate for USER catalog table");
+            printError(rv, "Could not allocate for USER catalog table");
             return rv;
         }
         CINDEXFIELD *fldInfo = (CINDEXFIELD*)fieldptr;
