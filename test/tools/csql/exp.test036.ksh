@@ -37,7 +37,7 @@ Statement Executed
 echo create table t4 (f1 int);
 Statement Executed
 echo create index indx18 on t4(f1,f1);
-Statement Executed
+Statement execute failed with error -4
 <Table Information of all tables>
   <TableInfo> 
     <TableName> t2 </TableName>
