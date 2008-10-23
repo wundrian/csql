@@ -1223,7 +1223,7 @@ DbRetVal AllDataType::strToValue(void* dest, char *src, DataType type, int lengt
             *(TimeStamp*)dest = timeStampObj;
             break; }
         case typeBinary: {
-            memset ((void *) dest, 0, length * 2);
+            memset ((void *) dest, 0, length);
             unsigned char c = 0;
             const char *str = (const char *)src;
             unsigned char *val = (unsigned char *)dest;
