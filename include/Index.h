@@ -53,6 +53,7 @@ class BucketList
     public:
     BucketList(){ head = NULL;}
     BucketList(HashIndexNode *h){ head = h; }
+    void *getBucketListHead(){ return head;}
     DbRetVal insert(Chunk *chunk, Database *db, void *key, void *tuple);
     DbRetVal remove(Chunk *chunk, Database *db, void *key);
     BucketIter getIterator()

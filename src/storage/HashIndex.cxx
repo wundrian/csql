@@ -384,6 +384,7 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         BucketList list1(head1);
         printDebug(DM_HashIndex, "Updating hash index node: Removing node from list with head %x", head1);
         list1.remove((Chunk*)iptr->hashNodeChunk_, tbl->db_, keyPtr);
+        bucket->bucketList_=list1.getBucketListHead();
     }
     else
     {

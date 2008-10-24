@@ -55,9 +55,13 @@ DbRetVal BucketList::remove(Chunk *chunk, Database *db, void *keyPtr)
     {
         if (ite->ptrToKey_ ==  keyPtr)
         {
+            if ( ite == head) { 
+                head = ite->next_; 
+                chunk->free(db, ite); 
+                return SplCase; 
+            }
             prev->next_ = ite->next_;
             chunk->free(db, ite);
-            if ( ite == head) { head = NULL; return SplCase; }
             return OK;
         }
         prev = ite;
