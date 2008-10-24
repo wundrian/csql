@@ -310,7 +310,11 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     char *kPtr= (char*)keyPtr;
     //Iterate through the bind list and check
     FieldIterator idxFldIter = info->idxFldList.getIterator();
-    char *keyBindBuffer = (char*) malloc(info->compLength);
+    char *keyBindBuffer ;
+    if(type==typeBinary)
+       keyBindBuffer = (char*) malloc(2 * info->compLength);
+    else
+       keyBindBuffer = (char*) malloc(info->compLength);
     void *keyStartBuffer = (void*) keyBindBuffer;
     bool keyUpdated = false;
     while (idxFldIter.hasElement())
@@ -323,10 +327,19 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         if (0 == strcmp(def.fldName_, idef.fldName_))
         {
             if (NULL != def.bindVal_) { 
-                AllDataType::copyVal(keyBindBuffer, def.bindVal_, 
+                if(type==typeBinary){
+                    AllDataType::copyVal(keyBindBuffer, def.bindVal_,
+                                               def.type_, 2*def.length_);
+                    keyStartBuffer=calloc(1,info->compLength);
+                    AllDataType::convertToBinary(keyStartBuffer, keyBindBuffer, typeString, info->compLength);
+                    free(keyBindBuffer);
+                }else
+                {
+                    AllDataType::copyVal(keyBindBuffer, def.bindVal_, 
                                                def.type_, def.length_);
-                keyBindBuffer = keyBindBuffer + AllDataType::size(def.type_, 
+                    keyBindBuffer = keyBindBuffer + AllDataType::size(def.type_, 
                                                                 def.length_);
+                }
                 keyUpdated = true;
                 break;
             }
@@ -343,7 +356,6 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     bool result = AllDataType::compareVal(kPtr, keyStartBuffer,
                                 OpEquals, info->type, info->compLength);
     if (result) return OK; 
-
     printDebug(DM_HashIndex, "Updating hash index node: Key value is updated");
 
     ChunkIterator citer = CatalogTableINDEX::getIterator(indexPtr);
@@ -367,7 +379,7 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     }
     //insert node for the updated key value
     int newBucketNo = computeHashBucket(type,
-                        keyStartBuffer, noOfBuckets);
+                        keyStartBuffer, noOfBuckets, info->compLength);
     printDebug(DM_HashIndex, "Updating hash index node: Bucket for new value is %d", newBucketNo);
 
     Bucket *bucket1 = &buckets[newBucketNo];
@@ -389,6 +401,8 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     else
     {
         printError(ErrSysInternal,"Update: Bucket list is null");
+        bucket1->mutex_.releaseLock(tbl->db_->procSlot);
+        bucket->mutex_.releaseLock(tbl->db_->procSlot);
         return ErrSysInternal;
     }
     DbRetVal rc = OK;
