@@ -22,23 +22,38 @@ then
    exit 1;
 fi
 
-echo "Case 3: With wrong username :" 
+echo "Case 3: With wrong username and wrong password :" 
 $CSQL_INSTALL_ROOT/bin/csql -u wronguser -p password < ${REL_PATH}/quit.sql >/dev/null 2>&1
 if [ $? -eq 0 ]
 then
+   echo passed
    exit 1;
 fi
+echo failed
 
-echo "Case 4: With wrong password :" 
+echo "Case 4: With wrong username :" 
+$CSQL_INSTALL_ROOT/bin/csql -u wronguser -p manager < ${REL_PATH}/quit.sql >/dev/null 2>&1
+if [ $? -eq 0 ]
+then
+   echo Passed 
+   exit 1;
+fi
+echo Failed
+
+echo "Case 5: With wrong password :" 
 $CSQL_INSTALL_ROOT/bin/csql -u root -p password < ${REL_PATH}/quit.sql >/dev/null 2>&1
 if [ $? -eq 0 ]
 then
+   echo passed
    exit 1;
 fi
+echo failed
 
-echo "Case 5: With correct user name  and password :"
+echo "Case 6: With correct user name  and password :"
 $CSQL_INSTALL_ROOT/bin/csql -u root -p manager < ${REL_PATH}/quit.sql
 if [ $? -ne 0 ]
 then
+   echo failed 
    exit 1;
 fi
+echo passed
