@@ -20,7 +20,7 @@ int main()
   AbsSqlStatement *stmt =  SqlFactory :: createStatement(CSql);
   stmt->setConnection(con);
   char statement[200];
-  strcpy(statement,"CREATE TABLE T1(F1 INT,F2 SMALLINT,F3 CHAR(30),F4 FLOAT,F5 FLOAT,F6 DATE,F7 TIME,F8 TIMESTAMP,F9 INT,F10 BIGINT);");
+  strcpy(statement,"CREATE TABLE T1(F1 INT,F2 SMALLINT,F3 CHAR(30),F4 FLOAT,F5 FLOAT,F6 DATE,F7 TIME,F8 TIMESTAMP,F9 INT,F10 BIGINT, F11 BINARY(4));");
   
    int rows = 0;
    rv = stmt->prepare(statement);
@@ -44,7 +44,7 @@ int main()
 
    // insert into table
 
-   strcpy(statement,"INSERT INTO T1 VALUES(?,?,?,?,?,?,?,?,?,?);");
+   strcpy(statement,"INSERT INTO T1 VALUES(?,?,?,?,?,?,?,?,?,?,?);");
    int f1var = 100;
    short int f2var = 10;
    char f3var[20]="jitendra";
@@ -62,7 +62,7 @@ int main()
 
    int f9var = 20;
    long long f10var = 12000;
-
+   char f11var[8]="23fe";
    rv = stmt->prepare(statement);
    if(rv!=OK)
    {
@@ -88,7 +88,7 @@ int main()
     bool isNull;
     bool isDefault;
     
-    for(int i=1;i<=10;i++)
+    for(int i=1;i<=11;i++)
     {
          printf("\n***********************************************\n");
          printf("%d FIELD INFORMATION ::\n",i);;   
@@ -121,7 +121,7 @@ int main()
         stmt->setTimeStampParam(8,f8var);
         stmt->setIntParam(9,f9var);
         stmt->setLongLongParam(10,f10var);
-
+        stmt->setBinaryParam(11,f11var);
         rv = stmt->execute(rows);
         if(rv!=OK)break;
     	rv = con->commit();
@@ -155,7 +155,7 @@ int main()
     stmt->bindField(8,&f8var);
     stmt->bindField(9,&f9var);
     stmt->bindField(10,&f10var);
-
+    stmt->bindField(11,f11var);
     count=0;
     rv = con->beginTrans();
     if(rv!=OK)return 6;
@@ -163,7 +163,9 @@ int main()
     while(stmt->fetch() !=NULL)
     {
         printf("F1=%d | F2=%hd | F3=%s | F4=%f | F5=%f | DATE=%d-%d-%d | TIME=%d:%d:%d | TIMESTAMP=%d-%d-%d %d:%d:%d | F9=%d | F10=%lld  \n",f1var,f2var,f3var,f4var,f5var,f6var.year(),f6var.month(),f6var.dayOfMonth(),f7var.hours(),f7var.minutes(),f7var.seconds(),f8var.year(),f8var.month(),f8var.dayOfMonth(),f8var.hours(),f8var.minutes(),f8var.seconds(),f9var,f10var); 
-      
+        printf(" | ");
+        AllDataType::printVal(f11var,typeBinary,4);
+        printf("\n");
         count++;
     }
 
