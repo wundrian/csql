@@ -271,15 +271,18 @@ DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     }
     HashIndexNode *head = (HashIndexNode*) bucket1->bucketList_;
 
-    if (!head) { printError(ErrNotExists, "Hash index does not exist:should never happen\n"); return ErrNotExists; }
+    if (!head) { printError(ErrNotExists, "Hash index does not exist:should never happen\n"); 
+       bucket1->mutex_.releaseLock(tbl->db_->procSlot);
+       return ErrNotExists; 
+    }
     BucketList list(head);
     printDebug(DM_HashIndex, "Removing hash index node from head %x", head);
 
     DbRetVal rc = list.remove((Chunk*)iptr->hashNodeChunk_, tbl->db_, keyPtr);
     if (SplCase == rc) 
     { 
-       printDebug(DM_HashIndex, "Removing hash index node from head with only none node"); 
-       bucket1->bucketList_ = 0; 
+       printDebug(DM_HashIndex, "Removing hash index node from head "); 
+       bucket1->bucketList_ = list.getBucketListHead(); 
        rc = OK;
     }
     if (undoFlag) {
