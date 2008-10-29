@@ -1,1 +1,2 @@
+SELECT * FROM T1 WHERE f1=?AND f2=? AND f3=?
 Tuple value is 2 3 4 2 1002.0 Nihar2 2008-03-21 18:00:00 2008-03-21 18:00:00.0 
