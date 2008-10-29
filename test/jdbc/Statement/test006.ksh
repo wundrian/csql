@@ -6,6 +6,7 @@ then
     REL_PATH=`pwd`/jdbc/Statement
 fi
 export CLASSPATH=$CLASSPATH:${REL_PATH}
+echo "
 java StmtTest6
 if [ $? -ne 0 ]
 then

@@ -1,4 +1,4 @@
-//select tuple with WHERE clause having param for some fields(SELECT * FROM T1 WHERE f1=?AND f2=? AND f3=?)
+//update tuple with SET and WHERE clause having params (UPDATE T1 SET f2=?, f10=? WHERE f1=?AND f9=?) (StmtTest7.java)
 import java.sql.*;
 public class StmtTest7
 {
