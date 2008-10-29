@@ -381,7 +381,7 @@ DbRetVal UpdStatement::setBinaryParam(int paramNo, void *value)
         memcpy(uValue->value, value, 2 * uValue->length);
     } else {
         cValue = (ConditionValue*) params[paramNo-1];
-        memcpy(cValue->value, value, 2 * uValue->length);
+        AllDataType::convertToBinary(cValue->value,value,typeString,cValue->length);
     }
     return OK;
 }
@@ -487,7 +487,12 @@ DbRetVal UpdStatement::resolveForAssignment()
         cValue->length = fInfo->length;
         // for binary datatype input buffer size should be 2 times the length 
         if (cValue->type == typeBinary) 
-            cValue->value = AllDataType::alloc(fInfo->type, 2 * fInfo->length);
+        {
+            if(cValue->parsedString[0] == '?')
+                cValue->value = AllDataType::alloc(fInfo->type, fInfo->length);
+            else 
+                cValue->value = AllDataType::alloc(fInfo->type, 2 * fInfo->length);
+        }
         else cValue->value = AllDataType::alloc(fInfo->type, fInfo->length);
         if (cValue->parsedString == NULL)
         {

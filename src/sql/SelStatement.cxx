@@ -234,7 +234,7 @@ DbRetVal SelStatement::setBinaryParam(int paramNo, void *value)
         printError(ErrSysFatal, "condition value is null. Should never happen");
         return ErrSysFatal;
     }
-    memcpy(cValue->value, value, 2 * cValue->length);
+    AllDataType::convertToBinary(cValue->value,value,typeString,cValue->length);
     return OK;
 }
 
