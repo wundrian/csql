@@ -84,9 +84,9 @@ int main()
     int out1, out2, out3;
     joinTable.bindFld("t1.f1", &out1);
     joinTable.bindFld("t1.f2", &out2);
-    joinTable.bindFld("t2.f2", &out3);
+    joinTable.bindFld("t2.f1", &out3);
 
-    joinTable.setJoinCondition("t1.f2", OpEquals, "t2.f1");
+    //joinTable.setJoinCondition("t1.f1", OpEquals, "t2.f1");
 
     conn.startTransaction();
     joinTable.execute();
