@@ -86,6 +86,13 @@ DbRetVal CacheTableLoader :: isTablePresent(char *cachetable,char *cacheconditio
         FILE *fp;
   	Connection conn;
 	rv = conn.open(userName,password);
+	if(rv !=OK) return ErrSysInit;
+	// check for CACHE_TABLE variable
+	if(!Conf::config.useCache())
+	{
+		printf("Cache is set to False in csql.conf\n");
+		return ErrNotOpen;
+	}
 	
 	fp = fopen(Conf :: config.getTableConfigFile(),"r");
 	if(fp == NULL)
@@ -133,6 +140,14 @@ DbRetVal CacheTableLoader::load(bool tabDefinition)
     Connection conn;
     DbRetVal rv = conn.open(userName, password);
     if (rv != OK) return ErrSysInit;
+    // check for CACHE_TABLE variable
+     if(!Conf::config.useCache())
+     {
+         printf("Cache is set to False in csql.conf\n");                             
+	 return ErrNotOpen;
+    }
+	  
+
     DatabaseManager *dbMgr = (DatabaseManager*) conn.getDatabaseManager();
     if (dbMgr == NULL) { printError(ErrSysInit, "Auth failed\n"); return ErrSysInit; }
     if (tabDefinition == false) {
@@ -471,6 +486,12 @@ DbRetVal CacheTableLoader::unload(bool tabDefinition)
     Connection conn;
     DbRetVal rv = conn.open(userName, password);
     if (rv != OK) return ErrSysInit;
+    if(!Conf::config.useCache())
+    {
+          printf("Cache is set to False in csql.conf\n");
+          return ErrNotOpen;
+    }
+	  
     if (isTableCached() != OK) {
         printError(ErrNotCached, "The table \'%s\' is not cached", tableName);
         return ErrNotCached;
@@ -506,6 +527,15 @@ DbRetVal CacheTableLoader::recoverAllCachedTables()
     FILE *fp;
     Connection conn;
     DbRetVal rv = conn.open(userName, password);
+    if(rv !=OK) return ErrSysInit;
+    if(!Conf::config.useCache())
+    {
+        printf("Cache is set to False in csql.conf\n");
+        return ErrNotOpen;
+    }
+	  
+
+
     //Note: if connection is not open, configuration veriables may be incorrect
 
     fp = fopen(Conf::config.getTableConfigFile(),"r");
