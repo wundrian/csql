@@ -210,3 +210,22 @@ int Mutex::destroy()
 #endif
     return 0;
 }
+
+int Mutex::recoverMutex()
+{
+    int ret=0;
+#if defined(sparc) || defined(i686)
+    /*int *lw = &lock;
+    if (*lw == 0) return 0;
+    __asm__ __volatile__("movl $0, %%eax; xchgl (%%ecx), %%eax" :
+                      "=m" (*lw) :
+                      "ecx" (lw) :
+                      "eax");   
+    */
+    lock = 0;
+#else
+    ret = pthread_mutex_unlock(&mutex_);
+#endif
+    return ret;
+}
+    

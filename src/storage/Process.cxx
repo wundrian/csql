@@ -65,9 +65,9 @@ void ThreadInfo::print()
 //as it is handled in the connection class open and close methods.
 DbRetVal ProcessManager::registerThread()
 {
-    mutex.getLock(false);
+    mutex.getLock(-1, false);
     noThreads++;
-    mutex.releaseLock(false);
+    mutex.releaseLock(-1, false);
     DbRetVal rv = systemDatabase->getProcessTableMutex(false);
     if (OK != rv)
     {
@@ -106,9 +106,9 @@ DbRetVal ProcessManager::registerThread()
 }
 DbRetVal ProcessManager::deregisterThread(int procSlot)
 {
-    mutex.getLock(false);
+    mutex.getLock(-1, false);
     noThreads--;
-    mutex.releaseLock(false);
+    mutex.releaseLock(-1, false);
     DbRetVal rv = systemDatabase->getProcessTableMutex(false);
     if (OK != rv)
     {

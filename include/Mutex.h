@@ -38,6 +38,7 @@ class Mutex
     int getLock(int procSlot, bool procAccount=true);
     int releaseLock(int procSlot, bool procAccount=true);
     int destroy();
+    int recoverMutex();
 };
 
 #endif

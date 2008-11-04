@@ -75,7 +75,7 @@ class Database
     //Only DatabaseManager creates this object
     //initialization is done only in DatabaseManager during
     //create, delete, open, close database methods
-    Database() { metaData_ = NULL; }
+    Database() { metaData_ = NULL; procSlot = -1; }
     DatabaseMetaData *metaData_;
 
 
@@ -149,6 +149,8 @@ class Database
     DbRetVal getProcessTableMutex(bool procAccount = true);
     DbRetVal releaseProcessTableMutex(bool procAccount = true);
 
+    DbRetVal recoverMutex(Mutex *mut);  
+    
     int procSlot;
     void setProcSlot(int slot) { procSlot =slot;}
     //checks whether the ptr falls in the range of the database file size

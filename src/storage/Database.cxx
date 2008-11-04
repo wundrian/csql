@@ -101,12 +101,12 @@ int Database::initAllocDatabaseMutex()
 }
 DbRetVal Database::getAllocDatabaseMutex(bool procAccount) 
 {
-    int ret= metaData_->dbAllocMutex_.getLock(procAccount);
+    int ret= metaData_->dbAllocMutex_.getLock(procSlot, procAccount);
     if (ret) return ErrLockTimeOut; else return OK;
 }
 DbRetVal Database::releaseAllocDatabaseMutex(bool procAccount)
 {
-    metaData_->dbAllocMutex_.releaseLock(procAccount);
+    metaData_->dbAllocMutex_.releaseLock(procSlot, procAccount);
     return OK;
 }
 
@@ -135,12 +135,12 @@ int Database::initProcessTableMutex()
 }
 DbRetVal Database::getProcessTableMutex(bool procAccount)
 {
-    int ret = metaData_->dbProcTableMutex_.getLock(-1, procAccount);
+    int ret = metaData_->dbProcTableMutex_.getLock(procSlot, procAccount);
     if (ret) return ErrLockTimeOut; else return OK;
 }
 DbRetVal Database::releaseProcessTableMutex(bool procAccount)
 {
-    metaData_->dbProcTableMutex_.releaseLock(-1, procAccount);
+    metaData_->dbProcTableMutex_.releaseLock(procSlot, procAccount);
     return OK;
 }
 
@@ -495,3 +495,8 @@ int Database::getUniqueIDForChunk()
         return ((metaData_->chunkUniqueID_).getID());
 }
 
+DbRetVal Database::recoverMutex(Mutex *mut)
+{
+    //TODO: operations need to be undone before recovering the mutex.
+    mut->recoverMutex();    
+}    
