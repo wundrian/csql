@@ -20,7 +20,7 @@ count=120
 while [ ${count} -gt 0 ]
 do 
   count=`expr ${count} - 1`
-  $CSQL_INSTALL_ROOT/bin/catalog >/tmp/testlog
+  $CSQL_INSTALL_ROOT/bin/catalog >/dev/null
   if [ $? -ne 0 ]
   then
     echo "create table failed"
