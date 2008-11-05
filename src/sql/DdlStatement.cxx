@@ -133,12 +133,9 @@ DbRetVal isTableCached(char *tabName) // function added by :Jitendra
        
     DbRetVal rv =OK;
     FILE *fp;
+    if (!Conf::config.useCache()) return OK;
     fp = fopen(Conf::config.getTableConfigFile(),"r");
-    if(fp==NULL)
-    {
-        printError(ErrSysInit, "csqltable.conf file does not exist");
-        return ErrSysInit;
-    }
+    if(fp==NULL) return OK;
     char tablename[IDENTIFIER_LENGTH];
       tablename[0] = '\0';
     char condition[IDENTIFIER_LENGTH];
