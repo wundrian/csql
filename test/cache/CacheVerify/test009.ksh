@@ -24,7 +24,7 @@ then
     REL_PATH=${PWD}/cache/CacheVerify
 fi
 
-isql myodbc3 < ${REL_PATH}/mysqlinput.sql >/dev/null 2>&1
+isql $DSN < ${REL_PATH}/mysqlinput.sql >/dev/null 2>&1
 if [ $? -ne 0 ]
 then
     exit 1;
@@ -37,7 +37,7 @@ then
 fi
 
 echo "1:t1 NULL" > /tmp/csql/csqltable.conf
-isql myodbc3 < ${REL_PATH}/mysqlupdate.sql >/dev/null 2>&1
+isql $DSN < ${REL_PATH}/mysqlupdate.sql >/dev/null 2>&1
 if [ $? -ne 0 ]
 then
     exit 3;
@@ -70,7 +70,7 @@ fi
 
 rm -f /tmp/csql/csqltable.conf
 touch /tmp/csql/csqltable.conf
-isql myodbc3 < $REL_PATH/drop.sql >/dev/null 2>&1
+isql $DSN < $REL_PATH/drop.sql >/dev/null 2>&1
 $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/drop.sql >/dev/null 2>&1
 
 exit 0;

@@ -22,7 +22,7 @@ then
     REL_PATH=${PWD}/cache/CacheVerify
 fi
 
-isql myodbc3 < ${REL_PATH}/mysqlinput.sql >/dev/null 2>&1
+isql $DSN < ${REL_PATH}/mysqlinput.sql >/dev/null 2>&1
 if [ $? -ne 0 ]
 then
     exit 1;

@@ -18,7 +18,7 @@ then
     REL_PATH=${PWD}/cache/CacheTable
 fi
 
-isql myodbc3 < ${REL_PATH}/inputtest4.sql >/dev/null 2>&1
+isql $DSN < ${REL_PATH}/inputtest4.sql >/dev/null 2>&1
 if [ $? -ne 0 ]
 then
     exit 1;
@@ -34,7 +34,7 @@ then
     touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 
     $CSQL_INSTALL_ROOT/bin/csql -s ${REL_PATH}/drop.sql > /dev/null 2>&1
-    isql myodbc3 < ${REL_PATH}/drop.sql >/dev/null 2>&1
+    isql $DSN < ${REL_PATH}/drop.sql >/dev/null 2>&1
     exit 2;
 fi
 
@@ -49,12 +49,12 @@ then
     touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 
     $CSQL_INSTALL_ROOT/bin/csql -s ${REL_PATH}/drop.sql > /dev/null 2>&1
-    isql myodbc3 < ${REL_PATH}/drop.sql >/dev/null 2>&1
+    isql $DSN < ${REL_PATH}/drop.sql >/dev/null 2>&1
     exit 3;
 fi
 
 
-isql myodbc3 < ${REL_PATH}/insert.sql >/dev/null 2>&1
+isql $DSN < ${REL_PATH}/insert.sql >/dev/null 2>&1
 
 # again reload table  with -r option.
 $CSQL_INSTALL_ROOT/bin/cachetable -t t1 -r >/dev/null 2>&1
@@ -64,7 +64,7 @@ then
     touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 
     $CSQL_INSTALL_ROOT/bin/csql -s ${REL_PATH}/drop.sql > /dev/null 2>&1
-    isql myodbc3 < ${REL_PATH}/drop.sql >/dev/null 2>&1
+    isql $DSN < ${REL_PATH}/drop.sql >/dev/null 2>&1
     exit 4;
 fi
 
@@ -77,13 +77,13 @@ then
     touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 
     $CSQL_INSTALL_ROOT/bin/csql -s ${REL_PATH}/drop.sql > /dev/null 2>&1
-    isql myodbc3 < ${REL_PATH}/drop.sql >/dev/null 2>&1
+    isql $DSN < ${REL_PATH}/drop.sql >/dev/null 2>&1
     exit 5;
 fi
 
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 $CSQL_INSTALL_ROOT/bin/csql -s ${REL_PATH}/drop.sql > /dev/null 2>&1
-isql myodbc3 < ${REL_PATH}/drop.sql >/dev/null 2>&1
+isql $DSN < ${REL_PATH}/drop.sql >/dev/null 2>&1
 exit 0;
 

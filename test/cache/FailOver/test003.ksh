@@ -14,13 +14,13 @@ then
 fi
 export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
 
-isql myodbc3 < $REL_PATH/mysqlinputtest1.sql >/dev/null 2>&1 
+isql $DSN < $REL_PATH/mysqlinputtest1.sql >/dev/null 2>&1 
 echo "table t1 inserted into target db"
 # edit /tmp/csql/csqltable.conf
 echo "csql server is down"
 $CSQL_INSTALL_ROOT/bin/csql -g -s $REL_PATH/csqlinput.sql
 
-isql myodbc3 < $REL_PATH/dropall.sql >/dev/null 2>&1
+isql $DSN < $REL_PATH/dropall.sql >/dev/null 2>&1
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 exit 0;

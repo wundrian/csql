@@ -13,14 +13,14 @@ then
     REL_PATH=${PWD}/cache/Bidirectional
 fi
 
-isql myodbc3 < $REL_PATH/mysqlcreatelogtable.sql >/dev/null 2>&1 &
+isql $DSN < $REL_PATH/mysqlcreatelogtable.sql >/dev/null 2>&1 &
 echo Log table created in target DB
 
-isql myodbc3 < $REL_PATH/create.sql >/dev/null 2>&1 
+isql $DSN < $REL_PATH/create.sql >/dev/null 2>&1 
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
-isql myodbc3 <$REL_PATH/trigger.sql >/dev/null
-isql myodbc3 <$REL_PATH/trigger1.sql  >/dev/null
+isql $DSN <$REL_PATH/trigger.sql >/dev/null
+isql $DSN <$REL_PATH/trigger1.sql  >/dev/null
 
 export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
 
@@ -40,15 +40,15 @@ then
     exit 1 
 fi
 echo "Delete some record from target database"
-isql myodbc3 < ${REL_PATH}/delete.sql >/dev/null 2>&1
+isql $DSN < ${REL_PATH}/delete.sql >/dev/null 2>&1
 sleep 15 
 $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/select.sql
 
 $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/drop.sql > /dev/null 2>&1
-isql myodbc3 < ${REL_PATH}/drop.sql >/dev/null 2>&1
+isql $DSN < ${REL_PATH}/drop.sql >/dev/null 2>&1
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
-isql myodbc3 < $REL_PATH/mysqldeletelogtable.sql >/dev/null 2>&1 
+isql $DSN < $REL_PATH/mysqldeletelogtable.sql >/dev/null 2>&1 
 kill -2 $pid
 ipcrm -M 4000 -M 4500
 exit 0;

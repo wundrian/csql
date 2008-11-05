@@ -9,6 +9,10 @@
 #Run this test only under csql/test or on this directory.
 #Otherwise, it may fail
 
+dropAll() {
+isql $DSN < ${REL_PATH}/drop.sql >/dev/null 2>&1
+$CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/drop.sql > /dev/null 2>&1
+}
 input=${PWD}/cache/CacheTable/inputtest4.sql
 REL_PATH=.
 if [ -s "$input" ]
@@ -16,7 +20,7 @@ then
     REL_PATH=${PWD}/cache/CacheTable
 fi
 
-isql myodbc3 < ${REL_PATH}/inputtest4.sql >/dev/null 2>&1
+isql $DSN < ${REL_PATH}/inputtest4.sql >/dev/null 2>&1
 
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
@@ -24,6 +28,7 @@ touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 $CSQL_INSTALL_ROOT/bin/cachetable -t t1 > /dev/null 2>&1
 if [ $? -ne 0 ]
 then
+   dropAll
    exit 1;
 fi
 
@@ -38,16 +43,18 @@ echo "1:t1" > /tmp/csql/csqltable.conf
 $CSQL_INSTALL_ROOT/bin/cachetable -t t1 -u > /dev/null 2>&1
 if [ $? -ne 0 ]
 then
+   dropAll
    exit 2;
 fi
 
 $CSQL_INSTALL_ROOT/bin/csqldump 
 
-isql myodbc3 < ${REL_PATH}/insert.sql >/dev/null 2>&1
+isql $DSN < ${REL_PATH}/insert.sql >/dev/null 2>&1
 
 $CSQL_INSTALL_ROOT/bin/cachetable -t t1 > /dev/null 2>&1
 if [ $? -ne 0 ]
 then
+   dropAll
    exit 3;
 fi
 
@@ -58,10 +65,7 @@ $CSQL_INSTALL_ROOT/bin/csqldump
 
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
-
-
-$CSQL_INSTALL_ROOT/bin/csql -s ${REL_PATH}/drop.sql > /dev/null 2>&1
-isql myodbc3 < ${REL_PATH}/drop.sql >/dev/null 2>&1
+dropAll
 
 exit 0;
 

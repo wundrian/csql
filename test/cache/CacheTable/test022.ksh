@@ -12,7 +12,7 @@ then
     REL_PATH=${PWD}/cache/CacheTable
 fi
 export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
-isql myodbc3 < ${REL_PATH}/createt5.sql >/dev/null 2>&1
+isql $DSN < ${REL_PATH}/createt5.sql >/dev/null 2>&1
 echo table t5 is created with records in target db
 
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
@@ -42,7 +42,7 @@ then
 fi
 $CSQL_INSTALL_ROOT/bin/cachetable -U root -P manager -t t5 -u
 $CSQL_INSTALL_ROOT/bin/cachetable -U root -P manager -t t6 -u
-isql myodbc3 < ${REL_PATH}/drop5.sql >/dev/null 2>&1
+isql $DSN < ${REL_PATH}/drop5.sql >/dev/null 2>&1
 $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/drop5.sql > /dev/null 2>&1
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db

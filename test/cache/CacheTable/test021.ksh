@@ -12,7 +12,7 @@ then
     REL_PATH=${PWD}/cache/CacheTable
 fi
 export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
-isql myodbc3 < ${REL_PATH}/create1.sql >/dev/null 2>&1
+isql $DSN < ${REL_PATH}/create1.sql >/dev/null 2>&1
 echo table t4 is created with records in target db
 $CSQL_INSTALL_ROOT/bin/csqlserver >/dev/null 2>&1 &
 pid=$!
@@ -43,7 +43,7 @@ then
 fi
 
 $CSQL_INSTALL_ROOT/bin/cachetable -U root -P manager -t t4 -u 
-isql myodbc3 < ${REL_PATH}/drop1.sql >/dev/null 2>&1
+isql $DSN < ${REL_PATH}/drop1.sql >/dev/null 2>&1
 $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/drop1.sql > /dev/null 2>&1
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db

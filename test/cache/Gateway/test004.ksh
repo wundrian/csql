@@ -21,13 +21,13 @@ sleep 5
 
 $CSQL_INSTALL_ROOT/bin/csql -g -s $REL_PATH/csqlinputtest1.sql 2>/dev/null
 $CSQL_INSTALL_ROOT/bin/csql -g -s $REL_PATH/selectstar.sql 2>/dev/null
-isql myodbc3 < $REL_PATH/selectstar.sql
+isql $DSN < $REL_PATH/selectstar.sql
 $CSQL_INSTALL_ROOT/bin/csql -g -s $REL_PATH/select.sql 2>/dev/null
 $CSQL_INSTALL_ROOT/bin/csql -g -s $REL_PATH/update.sql 2>/dev/null
 $CSQL_INSTALL_ROOT/bin/csql -g -s $REL_PATH/delete.sql 2>/dev/null
 $CSQL_INSTALL_ROOT/bin/csql -g -s $REL_PATH/selectstar.sql 2>/dev/null
-isql myodbc3 < $REL_PATH/selectstar.sql 2>/dev/null
-isql myodbc3 < $REL_PATH/dropall.sql > /dev/null 2>&1
+isql $DSN < $REL_PATH/selectstar.sql 2>/dev/null
+isql $DSN < $REL_PATH/dropall.sql > /dev/null 2>&1
 kill -9 $pid 
 ipcrm -M 1199 -M 2277
 exit 0;

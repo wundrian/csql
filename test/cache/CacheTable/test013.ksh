@@ -15,7 +15,7 @@ then
     REL_PATH=${PWD}/cache/CacheTable
 fi
 
-isql myodbc3 < ${REL_PATH}/create.sql >/dev/null 2>&1
+isql $DSN < ${REL_PATH}/create.sql >/dev/null 2>&1
 echo table t1 and t2 are created with records in target db
 
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
@@ -30,7 +30,7 @@ if [ $? -ne 0 ]
 then
     rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
     touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
-    isql myodbc3 < ${REL_PATH}/dropall.sql >/dev/null 2>&1
+    isql $DSN < ${REL_PATH}/dropall.sql >/dev/null 2>&1
     $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/dropall.sql > /dev/null 2>&1
     exit 1;
 fi
@@ -42,14 +42,14 @@ if [ $? -eq 0 ]
 then
     rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
     touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
-    isql myodbc3 < ${REL_PATH}/dropall.sql >/dev/null 2>&1
+    isql $DSN < ${REL_PATH}/dropall.sql >/dev/null 2>&1
     $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/dropall.sql > /dev/null 2>&1
     exit 2;
 fi
 
 rm /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
-isql myodbc3 < ${REL_PATH}/dropall.sql >/dev/null 2>&1
+isql $DSN < ${REL_PATH}/dropall.sql >/dev/null 2>&1
 $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/dropall.sql > /dev/null 2>&1
 exit 0;
 

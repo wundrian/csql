@@ -18,7 +18,6 @@ tools/csql
 tools/csqldump
 jdbc/Connection
 jdbc/Statement
-jdbc/Gateway
 sqlapi/Connect
 sqlapi/Parameter
 sqlapi/Select
@@ -27,13 +26,3 @@ odbc/NonSelectDML
 odbc/Parameters
 odbc/Select
 odbc/Transaction
-cache/Recovery
-cache/DDL
-cache/Gateway
-cache/FailOver
-cache/CacheTable
-cache/Bidirectional
-cache/CacheVerify
-adapter/Connect
-adapter/Parameter
-adapter/Select

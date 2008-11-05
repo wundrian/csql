@@ -15,7 +15,7 @@ then
     REL_PATH=${PWD}/cache/CacheTable
 fi
 
-isql myodbc3 < ${REL_PATH}/create.sql >/dev/null 2>&1
+isql $DSN < ${REL_PATH}/create.sql >/dev/null 2>&1
 echo table t1 and t2 are created with records in target db
 
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
@@ -34,7 +34,7 @@ fi
 $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/selectstar.sql 
 
 $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/deletefromt1csql.sql 
-isql myodbc3 < $REL_PATH/deletefromt2mysql.sql
+isql $DSN < $REL_PATH/deletefromt2mysql.sql
 
 $CSQL_INSTALL_ROOT/bin/cachetable -t t1 -r 
 if [ $? -ne 0 ]
@@ -53,7 +53,7 @@ $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/selectstar.sql
 
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
-isql myodbc3 < ${REL_PATH}/dropall.sql >/dev/null 2>&1
+isql $DSN < ${REL_PATH}/dropall.sql >/dev/null 2>&
 $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/dropall.sql > /dev/null 2>&1
 exit 0;
 

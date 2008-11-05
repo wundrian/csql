@@ -15,7 +15,7 @@ then
 fi
 export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
 
-isql myodbc3 < $REL_PATH/mysqlinputtest1.sql >/dev/null 2>&1 
+isql $DSN < $REL_PATH/mysqlinputtest1.sql >/dev/null 2>&1 
 echo "table t1(to be cached) inserted into target db"
 # edit /tmp/csql/csqltable.conf
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
@@ -30,7 +30,7 @@ pid=$!
 sleep 5
 echo "table t1 cached into csql"
 
-isql myodbc3 < $REL_PATH/mysqlinputtest2.sql >/dev/null 2>&1
+isql $DSN < $REL_PATH/mysqlinputtest2.sql >/dev/null 2>&1
 echo "table t2(not cached) inserted into target db"
 $CSQL_INSTALL_ROOT/bin/csql -g -s $REL_PATH/csqlinputt3.sql >/dev/null 2>&1
 echo "table t3 inserted into csql db"
@@ -41,7 +41,7 @@ kill -9 $pid
 ipcrm -M 1199 -M 2277
 echo "csql server is down"
 wait $bgproc
-isql myodbc3 < $REL_PATH/dropall.sql >/dev/null 2>&1
+isql $DSN < $REL_PATH/dropall.sql >/dev/null 2>&1
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 exit 0;

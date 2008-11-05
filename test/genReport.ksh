@@ -1,5 +1,11 @@
 #!/bin/sh
 ##################Test Report Generator main starts here##############
+FILE=TestModules
+#FILE=CacheTestModules
+if [ $1 = "Cache" ]
+then
+   FILE=CacheTestModules
+fi
 
 #TEST_RUN_DIR should be set before running this
 if [ ! "$TEST_RUN_ROOT" ]
@@ -33,7 +39,7 @@ do
     (( TOTALPASSED = TOTALPASSED + TESTPASSED ))
     (( TOTALFAILED = TOTALFAILED + TESTFAILED ))
 
-done < TestModules
+done < $FILE
 
 TOTSTRING=TOTAL
 echo "===================================================================="

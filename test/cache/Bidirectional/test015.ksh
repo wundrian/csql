@@ -55,12 +55,12 @@ echo "delete from t$a where f2 >19;"
 done >> $REL_PATH/deletefrom100table.sql
 echo "Update file created"
 
-isql myodbc3 < $REL_PATH/mysqlcreatelogtable.sql >/dev/null 2>&1 
+isql $DSN < $REL_PATH/mysqlcreatelogtable.sql >/dev/null 2>&1 
 echo Log table created in target DB
-isql myodbc3 < $REL_PATH/create100table.sql >/dev/null
+isql $DSN < $REL_PATH/create100table.sql >/dev/null
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
-isql myodbc3 <$REL_PATH/deletetrigger100.sql >/dev/null
+isql $DSN <$REL_PATH/deletetrigger100.sql >/dev/null
 
 export CSQL_CONFIG_FILE=$REL_PATH/csql1.conf
 
@@ -78,7 +78,7 @@ $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/selectfrom100.sql
 if [ $? -ne 0 ]
 then
     echo "unable to locate cache 1"
-    isql myodbc3 < ${REL_PATH}/drop100table.sql >/dev/null 2>&1
+    isql $DSN < ${REL_PATH}/drop100table.sql >/dev/null 2>&1
     rm -f $REL_PATH/create100table.sql
     rm -f $REL_PATH/deletefrom100table.sql 
     rm -f $REL_PATH/selectfrom100.sql
@@ -89,17 +89,17 @@ then
 fi
 
 echo "Delete some record in target database"
-isql myodbc3 < ${REL_PATH}/deletefrom100table.sql >/dev/null 2>&1 
+isql $DSN < ${REL_PATH}/deletefrom100table.sql >/dev/null 2>&1 
 sleep 30
 echo "Records in csql after Delete some recode from target DB"
 $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/selectfrom100.sql
 
 $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/drop100table.sql > /dev/null 2>&1
-isql myodbc3 < ${REL_PATH}/drop100table.sql >/dev/null 2>&1
+isql $DSN < ${REL_PATH}/drop100table.sql >/dev/null 2>&1
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
-isql myodbc3 < $REL_PATH/dropdeletetrigger.sql >/dev/null 2>&1
-isql myodbc3 < $REL_PATH/mysqldeletelogtable.sql >/dev/null 2>&1
+isql $DSN < $REL_PATH/dropdeletetrigger.sql >/dev/null 2>&1
+isql $DSN < $REL_PATH/mysqldeletelogtable.sql >/dev/null 2>&1
 kill -2 $pid
 ipcrm -M 4000 -M 4500
 

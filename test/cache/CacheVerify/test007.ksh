@@ -29,7 +29,7 @@ then
     exit 1;
 fi
 
-isql myodbc3 < ${REL_PATH}/mysqldelete.sql >/dev/null 2>&1
+isql $DSN < ${REL_PATH}/mysqldelete.sql >/dev/null 2>&1
 if [ $? -ne 0 ]
 then
     exit 2;

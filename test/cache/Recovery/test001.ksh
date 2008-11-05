@@ -12,8 +12,8 @@ fi
 export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
 
 
-isql myodbc3 < $REL_PATH/drop.sql > /dev/null 2>&1
-isql myodbc3 < $REL_PATH/createt1.sql > /dev/null 2>&1
+isql $DSN < $REL_PATH/drop.sql > /dev/null 2>&1
+isql $DSN < $REL_PATH/createt1.sql > /dev/null 2>&1
 
 rm -f /tmp/csql/csqltable.conf
 touch /tmp/csql/csqltable.conf
@@ -28,11 +28,11 @@ sleep 3
 if [ $? -ne 0 ]
 then
     mv /tmp/.odbc.ini ~
-    isql myodbc3 < $REL_PATH/drop.sql > /dev/null 2>&1
+    isql $DSN < $REL_PATH/drop.sql > /dev/null 2>&1
     exit 1;
 fi
 
 mv /tmp/.odbc.ini  ~
-isql myodbc3 < $REL_PATH/drop.sql > /dev/null 2>&1
+isql $DSN < $REL_PATH/drop.sql > /dev/null 2>&1
 
 exit 0;

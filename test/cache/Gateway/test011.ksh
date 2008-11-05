@@ -13,14 +13,14 @@ then
 fi
 export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
 
-isql myodbc3 < $REL_PATH/mysqlinputtest1.sql > /dev/null 2>&1
-isql myodbc3 < $REL_PATH/selectstar.sql
+isql $DSN < $REL_PATH/mysqlinputtest1.sql > /dev/null 2>&1
+isql $DSN < $REL_PATH/selectstar.sql
 $CSQL_INSTALL_ROOT/bin/csqlserver >/dev/null 2>&1 &
 pid=$!
 sleep 5
 $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/csqlinputtest10.sql >/dev/null 2>&1
 $CSQL_INSTALL_ROOT/bin/csql -g -s $REL_PATH/selectstar.sql
-isql myodbc3 < $REL_PATH/dropall.sql > /dev/null 2>&1
+isql $DSN < $REL_PATH/dropall.sql > /dev/null 2>&1
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 kill -9 $pid 

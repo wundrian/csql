@@ -13,8 +13,8 @@ then
 fi
 export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
 
-isql myodbc3 < $REL_PATH/mysqlinputtest5.sql > /dev/null 2>&1
-isql myodbc3 < $REL_PATH/mysqlinputtest8.sql > /dev/null 2>&1
+isql $DSN < $REL_PATH/mysqlinputtest5.sql > /dev/null 2>&1
+isql $DSN < $REL_PATH/mysqlinputtest8.sql > /dev/null 2>&1
 
 # edit /tmp/csql/csqltable.conf
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
@@ -30,7 +30,7 @@ sleep 5
 
 $CSQL_INSTALL_ROOT/bin/csql -g -s $REL_PATH/join.sql
 
-isql myodbc3 < $REL_PATH/dropall.sql > /dev/null 2>&1
+isql $DSN < $REL_PATH/dropall.sql > /dev/null 2>&1
 kill -9 $pid 
 ipcrm -M 1199 -M 2277
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
