@@ -34,6 +34,9 @@ then
     exit 1
 fi
 DBFILE=`grep DATABASE_FILE $CSQL_CONFIG_FILE| awk -F= '{ print $2}'`
+CACHECONFFILE=`grep TABLE_CONFIG_FILE $CSQL_CONFIG_FILE| awk -F= '{ print $2}'`
+rm $DBFILE
+rm $CACHECONFFILE
 echo $DBFILE
 ROOT_DIR=`pwd`
 mkdir -p $TEST_RUN_ROOT
