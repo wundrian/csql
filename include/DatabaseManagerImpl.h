@@ -81,6 +81,8 @@ class DatabaseManagerImpl : public DatabaseManager
 
     DbRetVal createHashIndex(const char *indName, const char *tableName,
                         FieldNameList &fldList, int bucketSize, bool isUnique, bool isPrimary = false);
+    DbRetVal createTreeIndex(const char *indName, const char *tableName,
+             FieldNameList &fldList, int bucketSize, bool isUnique, bool isPrimary = false);
     void initHashBuckets(Bucket *buck, int bucketSize);
 
     DbRetVal dropIndexInt(const char *name, bool takeLock);

@@ -679,6 +679,7 @@ Table* DatabaseManagerImpl::openTable(const char *name)
         cIndexField.getFieldInfo(table->indexPtr_[i], hIdxInfo->idxFldList);
         ChunkIterator citer = CatalogTableINDEX::getIterator(table->indexPtr_[i]);
         hIdxInfo->indexPtr = table->indexPtr_[i];
+        hIdxInfo->indType = ((CINDEX*)hIdxInfo->indexPtr)->indexType_;
         hIdxInfo->noOfBuckets = CatalogTableINDEX::getNoOfBuckets(table->indexPtr_[i]);
         FieldIterator fIter = hIdxInfo->idxFldList.getIterator();
         bool firstFld = true;
@@ -763,9 +764,10 @@ DbRetVal DatabaseManagerImpl::createIndex(const char *indName, IndexInitInfo *in
     }
     else if (info->indType == treeIndex)
     {
-        //TODO::tree index
-        printError(ErrNotYet, "Tree Index not supported\n");
-        return ErrNotYet;
+        HashIndexInitInfo *hInfo = (HashIndexInitInfo*) info;
+        rv = createTreeIndex(indName, info->tableName, info->list, 
+                          hInfo->bucketSize, info->isUnique, info->isPrimary);
+
     }else {
         printError(ErrBadCall, "Index type not supported\n");
         return ErrBadCall;
@@ -952,6 +954,110 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
     logFinest(logger, "Creating HashIndex %s on %s with bucket size %d", indName, tblName, buckets);
     return OK;
 }
+DbRetVal DatabaseManagerImpl::createTreeIndex(const char *indName, const char *tblName,
+                      FieldNameList &fldList, int nodeSize, bool isUnique, bool isPrimary)
+{
+    if (nodeSize < 20 || nodeSize > 20000)
+    {
+        printError(ErrBadRange,"Tree Index Node size %d not in range 20-20000",
+                                 nodeSize);
+        return ErrBadRange;
+    }
+    int totFlds = fldList.size();
+    if (totFlds == 0)
+    {
+        printError(ErrBadCall, "No Field name specified");
+        return ErrBadCall;
+    }
+    void *tptr =NULL;
+    void *chunk = NULL;
+    DbRetVal rv = systemDatabase_->getDatabaseMutex();
+    if (OK != rv)
+    {
+        printError(ErrSysInternal, "Unable to get database mutex");
+        return ErrSysInternal;
+    }
+    //check whether table exists
+    
+    CatalogTableTABLE cTable(systemDatabase_);
+    cTable.getChunkAndTblPtr(tblName, chunk, tptr);
+    if (NULL == tptr)
+    {
+        systemDatabase_->releaseDatabaseMutex();
+        printError(ErrNotExists, "Table does not exist %s", tblName);
+        return ErrNotExists;
+    }
+    char **fptr = new char* [totFlds];
+    CatalogTableFIELD cField(systemDatabase_);
+    rv = cField.getFieldPtrs(fldList, tptr, fptr);
+    if (OK != rv)
+    {
+        delete[] fptr;
+        systemDatabase_->releaseDatabaseMutex();
+        if (rv != ErrBadCall) {
+            printError(ErrNotExists, "Field does not exist");
+            return ErrNotExists;
+        }
+    }
+    for (int i=0; i <totFlds; i++)
+    {
+        CFIELD* fInfo = (CFIELD*)fptr[i];
+        if (!fInfo->isNull_ && isPrimary )
+        {
+            printError(ErrBadArg, "Primary Index cannot be created on field without NOTNULL constraint");
+            delete[] fptr;
+            systemDatabase_->releaseDatabaseMutex();
+            return ErrBadArg;
+        }
+    }
+    int chunkSize = sizeof(TreeNode)+(nodeSize * sizeof(void*));
+    printDebug(DM_HashIndex, "Creating chunk for storing tree nodes of size %d\n", chunkSize);
+
+    Chunk* chunkInfo = createUserChunk(chunkSize);
+    if (NULL == chunkInfo)
+    {
+        delete[] fptr;
+        systemDatabase_->releaseDatabaseMutex();
+        printError(ErrSysInternal, "Unable to create chunk");
+        return ErrSysInternal;
+    }
+    void *tupleptr = NULL;
+    CatalogTableINDEX cIndex(systemDatabase_);
+    rv = cIndex.insert(indName, tptr, fldList.size(), isUnique,
+                        chunkInfo, nodeSize, NULL, tupleptr);
+    if (OK != rv)
+    {
+        delete[] fptr;
+        deleteUserChunk(chunkInfo);
+        systemDatabase_->releaseDatabaseMutex();
+        printError(ErrSysInternal, "Catalog table updation failed in INDEX table");
+        return ErrSysInternal;
+    }
+    CatalogTableINDEXFIELD cIndexField(systemDatabase_);
+    rv = cIndexField.insert(fldList, tupleptr, tptr, fptr);
+
+    if (OK != rv)
+    {
+        delete[] fptr;
+        void *hChunk = NULL;
+        cIndex.remove(indName, (void *&)chunkInfo, (void *&)hChunk, (void *&)tupleptr);
+        deleteUserChunk(chunkInfo);
+        systemDatabase_->releaseDatabaseMutex();
+        printError(ErrSysInternal, "Catalog table updation failed in INDEXFIELD table");
+        return ErrSysInternal;
+    }
+    delete[] fptr;
+    //TODO::if tuples already present in this table, then create tree index '
+    //nodes
+    systemDatabase_->releaseDatabaseMutex();
+    printDebug(DM_Database, "Creating Tree Index Name:%s tblname:%s node size:%x",
+                                   indName, tblName, nodeSize);
+    logFinest(logger, "Creating TreeIndex %s on %s with node size %d",
+                                   indName, tblName, nodeSize);
+    return OK;
+}
+
+
 
 void DatabaseManagerImpl::initHashBuckets(Bucket *buck, int bucketSize)
 {
@@ -1006,6 +1112,7 @@ DbRetVal DatabaseManagerImpl::dropIndexInt(const char *name, bool takeLock)
     printDebug(DM_Database, "Removing from INDEXFIELD %s",name);
 
     //delete the index chunk
+    CINDEX *iptr = (CINDEX*)tptr;
     rv = deleteUserChunk((Chunk*)chunk);
     if (OK != rv)
     {
@@ -1014,17 +1121,21 @@ DbRetVal DatabaseManagerImpl::dropIndexInt(const char *name, bool takeLock)
         return ErrSysInternal;
     }
     //delete the index hash node chunk
-    rv = deleteUserChunk((Chunk*)hchunk);
-    if (OK != rv)
-    {
-        if (takeLock) systemDatabase_->releaseDatabaseMutex();
-        printError(ErrSysInternal, "Unable to delete the index hash node chunk");
-        return ErrSysInternal;
+    if (iptr->indexType_ == hashIndex) {
+        rv = deleteUserChunk((Chunk*)hchunk);
+        if (OK != rv)
+        {
+            if (takeLock) systemDatabase_->releaseDatabaseMutex();
+            printError(ErrSysInternal, "Unable to delete the index hash node chunk");
+            return ErrSysInternal;
+        }
     }
     if (takeLock) systemDatabase_->releaseDatabaseMutex();
     Chunk *chunkNode = systemDatabase_->getSystemDatabaseChunk(UserChunkTableId);
     chunkNode->free(systemDatabase_, (Chunk *) chunk);
-    chunkNode->free(systemDatabase_, (Chunk *) hchunk);
+    if (iptr->indexType_ == hashIndex) {
+        chunkNode->free(systemDatabase_, (Chunk *) hchunk);
+    }
 
     //TODO::If tuples present in this table, then
     //free all hash index nodes for this table.

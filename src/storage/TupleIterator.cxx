@@ -64,11 +64,47 @@ DbRetVal TupleIterator::open()
         printDebug(DM_HashIndex, "open:head for bucket %x is :%x", bucket, head);
         bIter  = new BucketIter(head);
         bucket->mutex_.releaseLock(procSlot);
-        
+    }else if (treeIndexScan == scanType_)
+    {
+        HashIndexInfo *hIdxInfo = (HashIndexInfo*)info;
+        PredicateImpl *predImpl = (PredicateImpl*) pred_;
+        bool isPtr = false;
+        FieldIterator iter = hIdxInfo->idxFldList.getIterator();
+        void *keyPtr; ComparisionOp op;
+        if(iter.hasElement())
+        {
+           FieldDef def = iter.nextElement();
+           keyPtr = (void*)predImpl->valPtrForIndexField(def.fldName_);
+           op = predImpl->opForIndexField(def.fldName_);
+        }
+        CINDEX *iptr = (CINDEX*) hIdxInfo->indexPtr;
+        tIter = new TreeIter((TreeNode*)iptr->hashNodeChunk_);
+        tIter->setSearchKey(keyPtr, op);
+        tIter->setFldOffset(hIdxInfo->fldOffset);
+        tIter->setTypeLength(hIdxInfo->type, hIdxInfo->compLength);
     }
+
+    
     return OK;
 }
 
+//not returing previous tuple for all iterators and for tree iterator.
+//it just decrements the nodeOffset for tree iterator.
+void* TupleIterator::prev()
+{
+    PredicateImpl *predImpl = (PredicateImpl*) pred_;
+    void *tuple = NULL;
+    if (treeIndexScan == scanType_)
+    {
+        if (NULL == tIter) return NULL;
+        tuple = tIter->prev();
+        predImpl->setTuple(tuple);
+        if(NULL == tuple) {
+            printDebug(DM_HashIndex, "prev::tuple is null");
+        }
+    }
+    return tuple;
+}
 
 void* TupleIterator::next()
 {
@@ -128,6 +164,21 @@ void* TupleIterator::next()
             //    return tuple;
         }
 
+    }else if (treeIndexScan == scanType_)
+    {
+        if (NULL == tIter) return NULL;
+        bool result = false;
+        while (!result)
+        {
+            tuple = tIter->next();
+            if(NULL == tuple) {
+                printDebug(DM_HashIndex, "next::tuple is null");
+                return NULL;
+           }
+           predImpl->setTuple(tuple);
+           rv = predImpl->evaluate(result);
+           if (rv != OK) return NULL;
+        }
     }
     return tuple;
 }
@@ -142,7 +193,12 @@ DbRetVal TupleIterator::close()
     {
             delete bIter;
             bIter = NULL;
-        }
+    } else if (scanType_ == treeIndexScan)
+    {
+        delete tIter;
+        tIter = NULL;
+    }
+
     scanType_ = unknownScan;
     return OK;
 }

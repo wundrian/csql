@@ -46,7 +46,7 @@ echo select * from t1 where f1=10 and f2=6 and f3=10;
 ---------------------------------------------------------
 	
 CREATE TABLE t1 (f1 INT  NOT NULL , f2 INT  NOT NULL , f3 INT );
-CREATE INDEX t1_idx1_Primary on t1 (  f1  ,f2  )  UNIQUE;
+CREATE INDEX t1_idx1_Primary on t1 (  f1  ,f2  )  HASH  UNIQUE;
 SET AUTOCOMMIT OFF;
 INSERT INTO t1 VALUES(1,1,1);
 INSERT INTO t1 VALUES(2,1,2);

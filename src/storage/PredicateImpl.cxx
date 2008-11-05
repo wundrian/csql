@@ -255,6 +255,48 @@ bool PredicateImpl::pointLookupInvolved(const char *fname)
     }
     return false;
 }
+bool PredicateImpl::rangeQueryInvolved(const char *fname)
+{
+    bool rhsResult, lhsResult;
+    if (NULL != lhs)
+    {
+        lhsResult = lhs->rangeQueryInvolved(fname);
+    }
+    if (NULL != rhs)
+    {
+        rhsResult = rhs->rangeQueryInvolved(fname);
+    }
+    if (NULL != lhs)
+    {
+            switch(logicalOp)
+            {
+                case OpAnd:
+                     if (lhsResult || rhsResult) return true;  else return false;
+                     break;
+                case OpOr:
+                     return false;
+                     break;
+                case OpNot:
+                default:
+                     return false;
+                     break;
+        }
+    }
+    //Means it is relational expression
+    //first operand is always field identifier
+    if (OpLessThan == compOp || OpLessThanEquals == compOp ||
+        OpGreaterThan == compOp || OpGreaterThanEquals == compOp)
+    {
+         //for expressions f1 == f2 use full scan, so return false
+        if(NULL == operand && NULL == operandPtr) return false;
+        if(0 == strcmp(fldName1, fname))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 
 void* PredicateImpl::valPtrForIndexField(const char *fname)
 {
@@ -275,7 +317,7 @@ void* PredicateImpl::valPtrForIndexField(const char *fname)
     }
     //Means it is relational expression
     //first operand is always field identifier
-    if (OpEquals == compOp)
+    //if (OpEquals == compOp)
     {
         if(0 == strcmp(fldName1, fname)) 
         {
@@ -284,3 +326,26 @@ void* PredicateImpl::valPtrForIndexField(const char *fname)
     }
     return NULL;
 }
+ComparisionOp PredicateImpl::opForIndexField(const char *fname)
+{
+    ComparisionOp lhsRet, rhsRet;
+    if (NULL != lhs)
+    {
+        lhsRet = lhs->opForIndexField(fname);
+    }
+    if (NULL != rhs)
+    {
+        rhsRet = rhs->opForIndexField(fname);
+    }
+    if (NULL != lhs)
+    {
+        if ( lhsRet !=  NULL) return lhsRet;
+        if ( rhsRet !=  NULL) return rhsRet;
+    }
+    if(0 == strcmp(fldName1, fname))
+    {
+        return compOp;
+    }
+    return OpInvalidComparisionOp;
+}
+

@@ -256,7 +256,10 @@ DbRetVal CatalogTableINDEX::insert(const char *name, void *tptr, int numFlds, bo
     indexInfo->tblID_ = -1; //Not used currently
     indexInfo->tblPtr_ = tptr;
     indexInfo->numFlds_ = numFlds;
-    indexInfo->indexType_ = hashIndex;
+    if (NULL == hChunk)
+        indexInfo->indexType_ = treeIndex;
+    else
+        indexInfo->indexType_ = hashIndex;
     indexInfo->chunkPtr_ = chunk;
     indexInfo->hashNodeChunk_ = hChunk;
     indexInfo->noOfBuckets_ = bucketSize;

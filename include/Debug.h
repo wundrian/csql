@@ -25,6 +25,7 @@ extern int DebugDM_UndoLog;
 extern int DebugDM_RedoLog;
 extern int DebugDM_Index;
 extern int DebugDM_HashIndex;
+extern int DebugDM_TreeIndex;
 extern int DebugDM_SystemDatabase;
 extern int DebugDM_Database;
 extern int DebugDM_Table;
@@ -51,6 +52,7 @@ enum DebugModule
     DM_RedoLog,
     DM_Index,
     DM_HashIndex,
+    DM_TreeIndex,
     DM_SystemDatabase,
     DM_Database,
     DM_Table,
@@ -65,8 +67,8 @@ enum DebugModule
 static char moduleNames[][20] =
 {
     "Alloc", "VariableAlloc", "Lock", "Trans", "UndoLog", "RedoLog", "Index",
-    "HashIndex", "SysDb", "Db", "Table", "Predicate", "Iter", "Procmgmt",
-    "Network", "Gateway", "Adapter", "SqlLog"
+    "HashIndex", "TreeIndex", "SysDb", "Db", "Table", "Predicate", "Iter", 
+    "Procmgmt", "Network", "Gateway", "Adapter", "SqlLog"
 };
 
 extern int printDebug1(int module, char *fname, int lineno, char *format, ...);

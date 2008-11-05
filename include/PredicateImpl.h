@@ -58,6 +58,7 @@ class PredicateImpl:public Predicate
     void setTerm(Predicate *p1, LogicalOp op, Predicate *p2 = NULL);
 
     void* valPtrForIndexField(const char *name);
+    ComparisionOp opForIndexField(const char *name);
 
     DbRetVal evaluate(bool &result);
 
@@ -69,8 +70,9 @@ class PredicateImpl:public Predicate
     //and does not have OR, NOT operator
     // TODO:: expression like !(f1 !=100) wont be optimized for now
     bool pointLookupInvolved(const char *fName);
+    bool rangeQueryInvolved(const char *fName);
 
-   void print();
+    void print();
 
 };
 

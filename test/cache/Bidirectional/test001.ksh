@@ -49,7 +49,7 @@ isql myodbc3 < ${REL_PATH}/drop.sql >/dev/null 2>&1
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 
-kill -2 $pid
+kill -9 $pid
 ipcrm -M 4000 -M 4500
 exit 0;
 

@@ -28,7 +28,7 @@ done >> /tmp/csql/csqltable.conf
 
 $CSQL_INSTALL_ROOT/bin/csqlserver -c >/dev/null 2>&1 &
 pid=$!
-sleep 5
+sleep 60
 
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db

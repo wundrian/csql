@@ -19,7 +19,7 @@ echo select * from t1 where f1 = 5;
 	5	5	
 	
 CREATE TABLE t1 (f1 INT , f2 INT );
-CREATE INDEX ind on t1 (  f1  ) ;
+CREATE INDEX ind on t1 (  f1  )  HASH ;
 SET AUTOCOMMIT OFF;
 INSERT INTO t1 VALUES(1,1);
 INSERT INTO t1 VALUES(1,2);

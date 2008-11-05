@@ -41,6 +41,7 @@ class TupleIterator
     ScanType scanType_;
     ChunkIterator *cIter;
     BucketIter *bIter;
+    TreeIter *tIter;
     IndexInfo *info;
     void *chunkPtr_;
     int procSlot;
@@ -59,6 +60,7 @@ class TupleIterator
     
     DbRetVal open();
     void* next();
+    void* prev();//used only for tree iter during deleteTuple
     DbRetVal close();
 
 };

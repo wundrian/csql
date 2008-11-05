@@ -24,6 +24,7 @@ class Chunk;
 class Database;
 class Transaction;
 class TableImpl;
+class CINDEX;
 
 class Bucket
 {
@@ -38,6 +39,28 @@ class HashIndexNode
     void *ptrToTuple_;
     HashIndexNode *next_;
 };
+
+class IndexInfo;
+class TreeNode
+{
+    public:
+    Mutex mutex_;
+    void *min_;
+    void *max_;
+    int noElements_;
+    int balance_;
+    TreeNode *next_;
+    TreeNode *prev_;
+    //Note::after this array of pointer to tuples are stored
+
+    DbRetVal insert(Database *db, IndexInfo *info, void *indexPtr, void *tuple);
+    DbRetVal insert(int position, Database *db, IndexInfo *indInfo, CINDEX *iptr, void *tuple, TreeNode *iter);
+    DbRetVal remove(Database *db, IndexInfo *info, void *indexPtr, void *tuple);
+    DbRetVal update(Database *db, IndexInfo *info, void *indexPtr, void *tuple);
+    void displayAll(IndexInfo *indInfo, void *indexPtr);
+    void displayAll(int offset);
+};
+
 class BucketIter
 {
     HashIndexNode *iter;
@@ -66,12 +89,15 @@ class BucketList
 };
 class HashIndex;
 class IndexInfo;
+class HashIndexInfo;
+class TreeIndex;
 class Index
 {
     // create (one) object for each indexing mechanisms here 
     // Also need to make changes to getIndex() and destroy() methods 
     // accordingly for new index machanism.
     static HashIndex *hIdx;
+    static TreeIndex *tIdx;
     static long usageCount;
     public:
     static Index* getIndex(IndexType type);
@@ -97,6 +123,46 @@ class HashIndex : public Index
 
 };
 
+class TreeIndex : public Index
+{
+
+    TreeNode* locateNode(TreeNode *iter, void *tuple, IndexInfo *indInfo);
+    DbRetVal removeElement(TreeNode *iter, void *tuple, HashIndexInfo *info);
+    public:
+    DbRetVal insert(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool undoFlag);
+    DbRetVal remove(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool undoFlag);
+    DbRetVal update(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool undoFlag);
+
+};
+class TreeIter
+{
+    TreeNode *iter;
+    int fldOffset;
+    DataType type;
+    int length;
+    ComparisionOp op;
+    bool asc;
+    void *searchKey;
+    bool firstCall;
+    int nodeOffset;
+    bool recordsOver;
+
+    void* locateNode();
+    void* locateElement();
+
+    public:
+    TreeIter(){}
+    TreeIter(TreeNode *head) { iter = head; firstCall = true; recordsOver=false;}
+    void setSearchKey(void *key, ComparisionOp cop, bool ascending = true)
+    {
+        searchKey = key; op = cop; asc =ascending;
+    }
+    void setFldOffset(int off) { fldOffset = off; }
+    void setTypeLength(DataType t, int l) { type =t ; length =l; }
+    void* prev();
+    void* next();
+};
+
 enum IndexIntType
 {
         hashOneField = 1,
@@ -107,7 +173,7 @@ enum IndexIntType
 class IndexInfo
 {
     public:
-    IndexType type;
+    IndexType indType;
 };
 
 //Used by TableImpl to cache information related to hash indexes on that table

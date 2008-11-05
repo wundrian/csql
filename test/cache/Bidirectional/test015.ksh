@@ -71,7 +71,7 @@ done >> /tmp/csql/csqltable.conf
 
 $CSQL_INSTALL_ROOT/bin/csqlserver -c >/dev/null 2>&1 &
 pid=$!
-sleep 5
+sleep 30
 echo "server  started"
 
 $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/selectfrom100.sql
@@ -90,7 +90,7 @@ fi
 
 echo "Delete some record in target database"
 isql myodbc3 < ${REL_PATH}/deletefrom100table.sql >/dev/null 2>&1 
-sleep 15
+sleep 30
 echo "Records in csql after Delete some recode from target DB"
 $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/selectfrom100.sql
 

@@ -180,12 +180,22 @@ DbRetVal TableImpl::createPlan()
                 if (pred->pointLookupInvolved(def.fldName_))
                 {
                   printDebug(DM_Predicate, "point lookup involved for field %s",def.fldName_);
-                  scanType_ = hashIndexScan;
+                  if(hashIndex == info->indType) scanType_ = hashIndexScan;
+                  else scanType_ = treeIndexScan;
                   isPlanCreated = true;
                   useIndex_ = i;
                 }
-                else 
+                else if (pred->rangeQueryInvolved(def.fldName_))
                 {
+                  printDebug(DM_Predicate, "range lookup involved for field %s",def.fldName_);
+                  if (treeIndex == info->indType)
+                  {
+                     scanType_ = treeIndexScan;
+                     isPlanCreated = true;
+                     useIndex_ = i;
+                     break; //no composite index for tree index
+                  }
+                }else {
                     useIndex_ = -1;
                     break;
                 }
@@ -451,6 +461,7 @@ DbRetVal TableImpl::deleteTuple()
     ((Chunk*)chunkPtr_)->free(db_, curTuple_);
     if (undoFlag)
         ret = (*trans)->appendUndoLog(sysDB_, DeleteOperation, curTuple_, length_);
+    iter->prev();
     return ret;
 }
 
@@ -697,8 +708,6 @@ void TableImpl::printSQLIndexString()
     for (int i = 0; i < numIndexes_ ; i++)
     {
         CINDEX *iptr = (CINDEX*) indexPtr_[i];
-        //cIndexField.getFieldNameAndType((void*)iptr, fldName, type);
-        //printf("CREATE INDEX %s on %s ( %s ) ", iptr->indName_, getName(), fldName);
         printf("CREATE INDEX %s on %s ( ", iptr->indName_, getName());
         FieldList fldList;
         cIndexField.getFieldInfo(iptr, fldList);
@@ -711,6 +720,8 @@ void TableImpl::printSQLIndexString()
             else printf(" ,%s ", def.fldName_);
         }
         printf(" ) ");
+        if (iptr->indexType_ == hashIndex) printf(" HASH ");
+        else printf(" TREE ");
         if (((HashIndexInfo*) idxInfo[i])->isUnique) printf(" UNIQUE;\n"); else printf(";\n");
     }
 }

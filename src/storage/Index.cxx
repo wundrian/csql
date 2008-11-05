@@ -19,6 +19,7 @@
 #include<Debug.h>
 
 HashIndex* Index::hIdx = NULL;
+TreeIndex* Index::tIdx = NULL;
 long Index::usageCount = 0;
 
 Index* Index::getIndex(IndexType type)
@@ -27,8 +28,9 @@ Index* Index::getIndex(IndexType type)
     {
         if (NULL == hIdx) hIdx = new HashIndex();
         return hIdx;
+    }else if (type == treeIndex) {
+        if (NULL == tIdx) tIdx = new TreeIndex();
+        return tIdx;
     }
     return NULL;
 }
-
-
