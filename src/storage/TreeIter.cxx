@@ -48,7 +48,7 @@ void* TreeIter::next()
             firstCall = false;
             nodeOffset = 1;
             char **rec = (char**)((char*) iter + sizeof(TreeNode));
-            iter->displayAll(fldOffset);
+            //iter->displayAll(fldOffset);
             return *rec;
         }
         else if (OpGreaterThan == op || OpGreaterThanEquals == op || 
@@ -56,7 +56,7 @@ void* TreeIter::next()
         {
             void *rec = locateNode();
             firstCall = false;
-            iter->displayAll(fldOffset);
+            //iter->displayAll(fldOffset);
             return rec;
         }
         firstCall = false;
