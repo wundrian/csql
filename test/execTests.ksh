@@ -27,6 +27,14 @@ then
     echo "CSQL_INSTALL_ROOT should be set before running the tests"
     exit 1
 fi
+
+if [ ! "$CSQL_CONFIG_FILE" ]
+then
+    echo "setupenv.ksh should be run before running the tests"
+    exit 1
+fi
+DBFILE=`grep DATABASE_FILE $CSQL_CONFIG_FILE| awk -F= '{ print $2}'`
+echo $DBFILE
 ROOT_DIR=`pwd`
 mkdir -p $TEST_RUN_ROOT
 SERVOUT=$TEST_RUN_ROOT/serv.out
@@ -50,6 +58,7 @@ then
    kill -9 ${SERVER_PID}
    ipcrm -M 2222 -M 3333 
    echo "csqlserver killed PID=${SERVER_PID}" >>$TEST_LOG
+   rm $DBFILE
    $CSQL_INSTALL_ROOT/bin/csqlserver >${SERVOUT} &
    SERVER_PID=$!
    echo "csqlserver restarted with PID=${SERVER_PID}" >>$TEST_LOG
@@ -167,6 +176,7 @@ then
            kill -9 ${SERVER_PID}
            ipcrm -M 2222 -M 3333 
            echo "csqlserver killed PID=${SERVER_PID}" >>${TEST_LOG}
+           rm $DBFILE
            $CSQL_INSTALL_ROOT/bin/csqlserver >${SERVOUT} &
            SERVER_PID=$!
            echo "csqlserver restarted with PID=${SERVER_PID}" >>${TEST_LOG}
@@ -192,6 +202,7 @@ else
    kill -9 ${SERVER_PID}
    ipcrm -M 2222 -M 3333
    echo "csqlserver killed PID=${SERVER_PID}" >>$TEST_LOG
+   rm $DBFILE
    $CSQL_INSTALL_ROOT/bin/csqlserver >${SERVOUT} 2>${SERVOUT} &
    SERVER_PID=$!
    echo "csqlserver restarted with PID=${SERVER_PID}" >>${TEST_LOG}
@@ -205,5 +216,6 @@ done < TestModules
 kill -9 ${SERVER_PID}
 ipcrm -M 2222 -M 3333 
 echo "csqlserver killed PID=${SERVER_PID}" >>${TEST_LOG}
+rm $DBFILE
 
 exit 0
