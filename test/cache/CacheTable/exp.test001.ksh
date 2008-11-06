@@ -1,5 +1,5 @@
-Usage: cachetable [-U username] [-P passwd] -t tablename -c "condition"
-       [-R] [-s] [-r]
+Usage: cachetable [-U username] [-P passwd] -t tablename -c "condition" -f "selected field names"
+[-R] [-s] [-r]
        username -> username to connect with csql.
        passwd -> password for the above username to connect with csql.
        tablename -> table name to be cached in csql from target db.
