@@ -28,15 +28,28 @@ DbRetVal CacheTableLoader::addToCacheTableFile()
     //table is replicated. in this case change mode from
     //2 to 3 (repl to replcache)
     
-    if(strcmp(conditionVal,"")!=0)
+    if((strcmp(conditionVal,"")!=0)&&(strcmp(fieldlistVal,"")!=0))
     {
-	fprintf(fp,"%d:%s %s\n",2,tableName,conditionVal);
+	fprintf(fp,"%d:%s %s %s\n",2,tableName,conditionVal,fieldlistVal);
+    }
+    else if((strcmp(conditionVal,"")!=0)&&(strcmp(fieldlistVal,"")==0))
+    {
+	strcpy(fieldlistVal,"NULL");
+	fprintf(fp,"%d:%s %s %s\n",2,tableName,conditionVal,fieldlistVal);
+    }
+    else if((strcmp(conditionVal,"")==0)&&(strcmp(fieldlistVal,"")!=0))
+    {
+    	 strcpy(conditionVal,"NULL");
+	 fprintf(fp,"%d:%s %s %s\n",2,tableName,conditionVal,fieldlistVal);
     }
     else
     {
+    	strcpy(fieldlistVal,"NULL");
 	strcpy(conditionVal,"NULL");
-	fprintf(fp,"%d:%s %s\n",1,tableName,conditionVal);
-    }
+	fprintf(fp,"%d:%s %s %s\n",1,tableName,conditionVal,fieldlistVal);
+    }	
+
+
    
     fclose(fp);
     return OK;
@@ -59,12 +72,13 @@ DbRetVal CacheTableLoader::removeFromCacheTableFile()
     }
     char tablename[IDENTIFIER_LENGTH];
     char condition[IDENTIFIER_LENGTH];
+    char field[IDENTIFIER_LENGTH];
     int mode;
     while(!feof(fp))
     {
-        fscanf(fp, "%d:%s %s\n", &mode, tablename,condition);
+        fscanf(fp, "%d:%s %s %s\n", &mode, tablename,condition,field);
         if (strcmp (tablename, tableName) == 0) continue;
-        fprintf(tmpfp, "%d:%s %s\n", mode, tablename,condition);
+        fprintf(tmpfp, "%d:%s %s %s\n", mode, tablename,condition,field);
     }
     fclose(tmpfp);
     fclose(fp);
@@ -80,7 +94,7 @@ DbRetVal CacheTableLoader::removeFromCacheTableFile()
 }
 
 // new function is added by: Jitendra 
-DbRetVal CacheTableLoader :: isTablePresent(char *cachetable,char *cachecondition)
+DbRetVal CacheTableLoader :: isTablePresent(char *cachetable,char *cachecondition,char *fieldlistvalue)
 {
 	DbRetVal rv = OK;
         FILE *fp;
@@ -100,21 +114,24 @@ DbRetVal CacheTableLoader :: isTablePresent(char *cachetable,char *cacheconditio
 	
 	char tablename[IDENTIFIER_LENGTH];
 	char condition[IDENTIFIER_LENGTH];
+	char field[IDENTIFIER_LENGTH];
 	int mode;
 	
 	while(!feof(fp))
 	{
 		tablename[0] = '\0'; condition[0] = '\0';
-		fscanf(fp,"%d:%s %s\n",&mode,tablename,condition);
+		fscanf(fp,"%d:%s %s %s\n",&mode,tablename,condition,field);
 	
 		if(strcmp(cachecondition,"")==0)  strcpy(cachecondition,"NULL");
+                if(strcmp(fieldlistvalue,"")==0)  strcpy(fieldlistvalue,"NULL");
+
         
 	        if(tablename[0]=='\0')
        		{
 		     DbRetVal rv = addToCacheTableFile();
                      return OK;
         	}
-        	else if((strcmp(cachetable,tablename)==0) && (strcmp(cachecondition,condition)==0))
+        	else if((strcmp(cachetable,tablename)==0) && (strcmp(cachecondition,condition)==0) && (strcmp(fieldlistvalue,field)==0))
         	{
                      return OK;
         	}
@@ -191,14 +208,22 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
     if (retValue) {printError(ErrSysInit, "Unable to allocate ODBC handle \n"); return ErrSysInit; }
     char stmtBuf[1024];
     
-    if((strcmp(conditionVal,"")==0) || (strcmp(conditionVal,"NULL")==0))
+    if(((strcmp(conditionVal,"")==0) || (strcmp(conditionVal,"NULL")==0)) && ((strcmp(fieldlistVal,"")==0) || (strcmp(fieldlistVal,"NULL")==0)))
     {
        sprintf(stmtBuf, "SELECT * FROM %s;", tableName);
     }
-    else
+    else if(((strcmp(conditionVal,"")!=0) || (strcmp(conditionVal,"NULL")!=0)) && ((strcmp(fieldlistVal,"")==0) || (strcmp(fieldlistVal,"NULL")==0)))
     {
        sprintf(stmtBuf,"SELECT * FROM %s where %s;",tableName,conditionVal);
+
     }
+    else if(((strcmp(conditionVal,"")==0) || (strcmp(conditionVal,"NULL")==0)) && ((strcmp(fieldlistVal,"")!=0) || (strcmp(fieldlistVal,"NULL")!=0)))
+    {
+    	sprintf(stmtBuf,"SELECT %s FROM %s;",fieldlistVal,tableName);
+    }	
+    else
+    sprintf(stmtBuf,"SELECT %s FROM %s where %s;",fieldlistVal,tableName,conditionVal);
+
     retValue = SQLPrepare (hstmt, (unsigned char *) stmtBuf, SQL_NTS);
     if (retValue) {printError(ErrSysInit, "Unable to Prepare ODBC statement \n"); return ErrSysInit; }
 
@@ -528,17 +553,19 @@ DbRetVal CacheTableLoader::recoverAllCachedTables()
     //TODO::take exclusive lock on database
     char tablename[IDENTIFIER_LENGTH];
     char condition[IDENTIFIER_LENGTH];
+    char field[IDENTIFIER_LENGTH];
     int mode;
     rv = OK;
     while(!feof(fp))
     {
-        fscanf(fp, "%d:%s %s\n", &mode, tablename,condition);
+        fscanf(fp, "%d:%s %s %s\n", &mode, tablename,condition,field);
         //if (mode ==2 )  //just replicated table and not cached
         //continue;
         printDebug(DM_Gateway, "Recovering Table from target db: %s\n", tablename);
         setCondition(condition);
         setTable(tablename);
-        printf("Recovering table %s %s\n", tablename,condition);
+	setField(field);
+        printf("Recovering table %s %s %s\n", tablename,condition,field);
         rv = load();
         if (rv != OK) return rv;
     }
@@ -557,10 +584,11 @@ DbRetVal CacheTableLoader::isTableCached()
     }
     char tablename[IDENTIFIER_LENGTH];
     char condition[IDENTIFIER_LENGTH];
+    char field[IDENTIFIER_LENGTH];
     int mode;
     while(!feof(fp))
     {
-        fscanf(fp, "%d:%s %s\n", &mode, tablename,condition);
+        fscanf(fp, "%d:%s %s %s\n", &mode, tablename,condition,field);
         if (strcmp (tablename, tableName) == 0) {
             fclose(fp);
             return OK;

@@ -18,8 +18,7 @@
 
 void printUsage()
 {
-   printf("Usage: cachetable [-U username] [-P passwd] -t tablename -c \"condition\"\n"
-          "       [-R] [-s] [-r]\n");
+   printf("Usage: cachetable [-U username] [-P passwd] -t tablename -c \"condition\" -f \"selected field names\"\n[-R] [-s] [-r]\n");
    printf("       username -> username to connect with csql.\n");
    printf("       passwd -> password for the above username to connect with csql.\n");
    printf("       tablename -> table name to be cached in csql from target db.\n");
@@ -40,11 +39,13 @@ int main(int argc, char **argv)
     int c = 0, opt = 10;
     char tablename[IDENTIFIER_LENGTH];
     char condition[IDENTIFIER_LENGTH];
+    char fieldlist[IDENTIFIER_LENGTH];
     char syncModeStr[IDENTIFIER_LENGTH];
     bool conditionval = false;
+    bool fieldlistval = false;
     bool tableDefinition = true;
     bool tableNameSpecified = false;
-    while ((c = getopt(argc, argv, "U:P:t:c:Rsru?")) != EOF) 
+    while ((c = getopt(argc, argv, "U:P:t:c:f:Rsru?")) != EOF) 
     {
         switch (c)
         {
@@ -57,6 +58,7 @@ int main(int argc, char **argv)
                        }
             
             case 'c' : {strcpy(condition,argv[optind - 1]); conditionval = true; break; }// condition for selelcted records by :Jitendra
+	    case 'f' : {strcpy(fieldlist,argv[optind - 1]);fieldlistval = true ;break; }
             case '?' : { opt = 10; break; } //print help 
             case 'R' : { opt = 3; break; } //recover all the tables
             case 's' : { tableDefinition=false; break; } //do not get the schema information from target db
@@ -83,11 +85,13 @@ int main(int argc, char **argv)
     
     if(conditionval){
     cacheLoader.setCondition(condition);}// new one
+    if(fieldlistval){
+    cacheLoader.setField(fieldlist);}
     if (opt==2) {
         cacheLoader.setTable(tablename);
         rv = cacheLoader.load(tableDefinition);
         if (rv != OK) exit (1);
-        rv = cacheLoader.isTablePresent(tablename,condition);
+        rv = cacheLoader.isTablePresent(tablename,condition,fieldlist);
         if(rv !=OK)exit(1);
     }else if (opt==3) //recover
     {
