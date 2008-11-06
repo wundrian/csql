@@ -630,10 +630,12 @@ int main(int argc, char **argv)
         return 4;
     }
     char tablename[IDENTIFIER_LENGTH];
+    char condition[IDENTIFIER_LENGTH];
+    char field[IDENTIFIER_LENGTH];
     int mode;
     bool filePresent = false;
     while(!feof(fp)) {
-        fscanf(fp, "%d:%s\n", &mode, tablename);
+        fscanf(fp, "%d:%s %s %s\n", &mode, tablename,condition,field);
         if (mode ==2 )  //just replicated table and not cached
             continue;
         if (strcmp(tableName, tablename) == 0) {
