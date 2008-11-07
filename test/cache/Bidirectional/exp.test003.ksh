@@ -1,5 +1,5 @@
 log table created in target db.
-Recovering table t1 NULL
+Recovering table t1 NULL NULL
 ConfigValues
  getPageSize 8192
  getMaxProcs 100
