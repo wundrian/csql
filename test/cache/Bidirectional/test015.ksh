@@ -66,7 +66,7 @@ export CSQL_CONFIG_FILE=$REL_PATH/csql1.conf
 
 for (( a=1; a<=100; a++ ))
 do
-    echo "1:t$a NULL"
+    echo "1:t$a NULL NULL NULL"
 done >> /tmp/csql/csqltable.conf
 
 $CSQL_INSTALL_ROOT/bin/csqlserver -c >/dev/null 2>&1 &

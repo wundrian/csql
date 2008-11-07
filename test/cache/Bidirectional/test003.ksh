@@ -26,7 +26,7 @@ export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
 
 for (( a=1; a<3; a++ ))
 do
-    echo "1:t$a NULL"
+    echo "1:t$a NULL NULL NULL"
 done >> /tmp/csql/csqltable.conf
 
 $CSQL_INSTALL_ROOT/bin/csqlserver -c 2>/dev/null  & 
