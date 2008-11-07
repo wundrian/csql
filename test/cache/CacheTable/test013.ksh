@@ -15,6 +15,8 @@ then
     REL_PATH=${PWD}/cache/CacheTable
 fi
 
+cp $CSQL_CONFIG_FILE /tmp/csql.conf
+echo DSN=$DSN >>$CSQL_CONFIG_FILE
 isql $DSN < ${REL_PATH}/create.sql >/dev/null 2>&1
 echo table t1 and t2 are created with records in target db
 
@@ -32,6 +34,7 @@ then
     touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
     isql $DSN < ${REL_PATH}/dropall.sql >/dev/null 2>&1
     $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/dropall.sql > /dev/null 2>&1
+cp /tmp/csql.conf $CSQL_CONFIG_FILE
     exit 1;
 fi
 
@@ -44,6 +47,7 @@ then
     touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
     isql $DSN < ${REL_PATH}/dropall.sql >/dev/null 2>&1
     $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/dropall.sql > /dev/null 2>&1
+cp /tmp/csql.conf $CSQL_CONFIG_FILE
     exit 2;
 fi
 
@@ -51,5 +55,6 @@ rm /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 isql $DSN < ${REL_PATH}/dropall.sql >/dev/null 2>&1
 $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/dropall.sql > /dev/null 2>&1
+cp /tmp/csql.conf $CSQL_CONFIG_FILE
 exit 0;
 

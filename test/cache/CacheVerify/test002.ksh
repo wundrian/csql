@@ -18,10 +18,12 @@ if [ -s "$input" ]
 then
     REL_PATH=${PWD}/cache/CacheVerify
 fi
-
+cp $CSQL_CONFIG_FILE /tmp/csql.conf
+echo DSN=$DSN >>$CSQL_CONFIG_FILE
 isql $DSN < ${REL_PATH}/inputtest4.sql >/dev/null 2>&1
 if [ $? -ne 0 ]
 then
+   cp /tmp/csql.conf $CSQL_CONFIG_FILE
    exit 1;
 fi
 
@@ -31,6 +33,7 @@ touch /tmp/csql/csqltable.conf
 $CSQL_INSTALL_ROOT/bin/cachetable -t t1 > /dev/null 2>&1
 if [ $? -ne 0 ]
 then
+   cp /tmp/csql.conf $CSQL_CONFIG_FILE
    exit 1;
 fi
 
@@ -39,6 +42,7 @@ fi
 $CSQL_INSTALL_ROOT/bin/cacheverify -U root -P manager -t t1 > /dev/null 2>&1
 if [ $? -ne 0 ]
 then
+   cp /tmp/csql.conf $CSQL_CONFIG_FILE
    exit 2;
 fi
 
@@ -46,6 +50,7 @@ fi
 $CSQL_INSTALL_ROOT/bin/cacheverify -U root -P MANAGER -t t1 > /dev/null 2>&1
 if [ $? -eq 0 ]
 then
+   cp /tmp/csql.conf $CSQL_CONFIG_FILE
    exit 3;
 fi
 
@@ -53,6 +58,7 @@ fi
 $CSQL_INSTALL_ROOT/bin/cacheverify -U ROOT -P manager -t t1 > /dev/null 2>&1
 if [ $? -eq 0 ]
 then
+   cp /tmp/csql.conf $CSQL_CONFIG_FILE
    exit 4;
 fi
 
@@ -60,6 +66,7 @@ fi
 $CSQL_INSTALL_ROOT/bin/cacheverify -U ROOT -P MANAGER -t t1 > /dev/null 2>&1
 if [ $? -eq 0 ]
 then
+   cp /tmp/csql.conf $CSQL_CONFIG_FILE
    exit 5;
 fi
  
@@ -68,5 +75,6 @@ touch /tmp/csql/csqltable.conf
 $CSQL_INSTALL_ROOT/bin/csql -s ${REL_PATH}/drop.sql > /dev/null 2>&1
 isql $DSN < ${REL_PATH}/drop.sql >/dev/null 2>&1
 
+   cp /tmp/csql.conf $CSQL_CONFIG_FILE
 exit 0;
 

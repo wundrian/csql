@@ -12,7 +12,8 @@ if [ -s "$input" ]
 then
     REL_PATH=${PWD}/cache/Bidirectional
 fi
-
+#cp $CSQL_CONFIG_FILE /tmp/csql.conf
+#echo DSN=$DSN >>$CSQL_CONFIG_FILE
 isql $DSN < $REL_PATH/mysqldeletelogtable.sql >/dev/null 2>&1 &
 echo No log table in target DB
 
@@ -23,7 +24,7 @@ isql $DSN <$REL_PATH/trigger.sql >/dev/null
 isql $DSN <$REL_PATH/trigger1.sql  >/dev/null
 
 export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
-
+echo DSN=$DSN >>$CSQL_CONFIG_FILE
 for (( a=1; a<3; a++ ))
 do
     echo "1:t$a NULL NULL NULL"
@@ -37,6 +38,7 @@ $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/select.sql
 if [ $? -ne 0 ]
 then
     echo "unable to locate cache 1"
+#    cp /tmp/csql.conf $CSQL_CONFIG_FILE
     exit 1 
 fi
 
@@ -51,5 +53,6 @@ touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 
 kill -9 $pid
 ipcrm -M 4000 -M 4500
+ #   cp /tmp/csql.conf $CSQL_CONFIG_FILE
 exit 0;
 

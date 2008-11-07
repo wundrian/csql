@@ -29,28 +29,35 @@ then
     exit 1;
 fi
 
+cp $CSQL_CONFIG_FILE /tmp/csql.conf
+echo DSN=$DSN >>$CSQL_CONFIG_FILE
 isql $DSN < ${REL_PATH}/mysqldelete.sql >/dev/null 2>&1
 if [ $? -ne 0 ]
 then
+   cp /tmp/csql.conf $CSQL_CONFIG_FILE
     exit 2;
 fi
 
 $CSQL_INSTALL_ROOT/bin/cacheverify -t t1
 if [ $? -ne 0 ]
 then
+   cp /tmp/csql.conf $CSQL_CONFIG_FILE
     exit 3;
 fi
 
 $CSQL_INSTALL_ROOT/bin/cacheverify -t t1 -p
 if [ $? -ne 0 ]
 then
+   cp /tmp/csql.conf $CSQL_CONFIG_FILE
     exit 4;
 fi
 
 $CSQL_INSTALL_ROOT/bin/cacheverify -t t1 -f
 if [ $? -ne 0 ]
 then
+   cp /tmp/csql.conf $CSQL_CONFIG_FILE
     exit 5;
 fi
 
+   cp /tmp/csql.conf $CSQL_CONFIG_FILE
 exit 0;

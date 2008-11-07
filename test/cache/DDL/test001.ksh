@@ -13,7 +13,7 @@ then
     REL_PATH=${PWD}/cache/DDL
 fi
 export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
-
+echo DSN=$DSN >> $CSQL_CONFIG_FILE
 $CSQL_INSTALL_ROOT/bin/csqlserver >/dev/null 2>&1 &
 pid=$!
 sleep 5

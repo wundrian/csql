@@ -12,6 +12,7 @@ then
     REL_PATH=${PWD}/cache/CacheTable
 fi
 export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
+echo DSN=$DSN >> $CSQL_CONFIG_FILE
 isql $DSN < ${REL_PATH}/createt5.sql >/dev/null 2>&1
 echo table t5 is created with records in target db
 

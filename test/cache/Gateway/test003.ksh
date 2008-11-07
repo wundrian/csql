@@ -17,7 +17,7 @@ then
     REL_PATH=${PWD}/cache/Gateway
 fi
 export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
-
+echo DSN=$DSN >> $CSQL_CONFIG_FILE
 # edit /tmp/csql/csqltable.conf
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db

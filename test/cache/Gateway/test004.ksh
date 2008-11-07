@@ -12,7 +12,7 @@ then
     REL_PATH=${PWD}/cache/Gateway
 fi
 export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
-
+echo DSN=$DSN >> $CSQL_CONFIG_FILE
 # edit /tmp/csql/csqltable.conf
 
 $CSQL_INSTALL_ROOT/bin/csqlserver >/dev/null 2>&1 &

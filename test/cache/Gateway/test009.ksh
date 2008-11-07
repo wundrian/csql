@@ -12,7 +12,7 @@ then
     REL_PATH=${PWD}/cache/Gateway
 fi
 export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
-
+echo DSN=$DSN >> $CSQL_CONFIG_FILE
 isql $DSN < $REL_PATH/mysqlinputtest5.sql > /dev/null 2>&1
 isql $DSN < $REL_PATH/mysqlinputtest8.sql > /dev/null 2>&1
 

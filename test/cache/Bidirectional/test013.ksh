@@ -56,6 +56,8 @@ done >>$REL_PATH/dropinserttrigger.sql
 echo "drop trigger file generated"
 
 
+#cp $CSQL_CONFIG_FILE /tmp/csql.conf
+#echo DSN=$DSN >>$CSQL_CONFIG_FILE
 isql $DSN < $REL_PATH/mysqlcreatelogtable.sql >/dev/null 2>&1 
 echo Log table created in target DB
 isql $DSN < $REL_PATH/create100table.sql >/dev/null
@@ -64,6 +66,7 @@ touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 isql $DSN <$REL_PATH/inserttrigger100.sql >/dev/null
 
 export CSQL_CONFIG_FILE=$REL_PATH/csql1.conf
+echo DSN=$DSN >>$CSQL_CONFIG_FILE
 
 for (( a=1; a<=100; a++ ))
 do
@@ -86,6 +89,7 @@ then
     rm -f $REL_PATH/drop100table.sql
     rm -f $REL_PATH/inserttrigger100.sql
     rm -f $REL_PATH/dropinserttrigger.sql
+#    cp /tmp/csql.conf $CSQL_CONFIG_FILE
     exit 1
 fi
 
@@ -111,4 +115,5 @@ rm -f $REL_PATH/selectfrom100.sql
 rm -f $REL_PATH/drop100table.sql
 rm -f $REL_PATH/inserttrigger100.sql
 rm -f $REL_PATH/dropinserttrigger.sql
+ #   cp /tmp/csql.conf $CSQL_CONFIG_FILE
 exit 0;

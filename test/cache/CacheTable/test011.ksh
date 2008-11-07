@@ -10,8 +10,11 @@
 dropAll() {
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
+#cp $CSQL_CONFIG_FILE /tmp/csql.conf
+#echo DSN=$DSN >>$CSQL_CONFIG_FILE
 isql $DSN < ${REL_PATH}/dropall.sql >/dev/null 2>&1
 $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/dropall.sql > /dev/null 2>&1
+#cp /tmp/csql.conf $CSQL_CONFIG_FILE
 }
 
 
@@ -22,6 +25,8 @@ then
     REL_PATH=${PWD}/cache/CacheTable
 fi
 
+cp $CSQL_CONFIG_FILE /tmp/csql.conf
+echo DSN=$DSN >>$CSQL_CONFIG_FILE
 isql $DSN < ${REL_PATH}/create.sql >/dev/null 2>&1
 echo table t1 and t2 are created with records in target db
 
@@ -36,6 +41,7 @@ $CSQL_INSTALL_ROOT/bin/cachetable -R
 if [ $? -ne 0 ]
 then
     dropAll
+cp /tmp/csql.conf $CSQL_CONFIG_FILE
     exit 1;
 fi
 
@@ -43,6 +49,7 @@ $CSQL_INSTALL_ROOT/bin/cachetable -t t1 -u
 if [ $? -ne 0 ]
 then
     dropAll
+cp /tmp/csql.conf $CSQL_CONFIG_FILE
     exit 2;
 fi
 echo table t1 unloaded
@@ -50,6 +57,7 @@ $CSQL_INSTALL_ROOT/bin/cachetable -t t2 -u
 if [ $? -ne 0 ]
 then
     dropAll
+cp /tmp/csql.conf $CSQL_CONFIG_FILE
     exit 3;
 fi
 echo table t2 unloaded
@@ -57,6 +65,7 @@ grep t1 /tmp/csql/csqltable.conf
 if [ $? -eq 0 ]
 then 
     dropAll
+cp /tmp/csql.conf $CSQL_CONFIG_FILE
     exit 4;
 fi
 
@@ -64,8 +73,10 @@ grep t2 /tmp/csql/csqltable.conf
 if [ $? -eq 0 ]
 then 
     dropAll
+cp /tmp/csql.conf $CSQL_CONFIG_FILE
     exit 5;
 fi
 dropAll
+cp /tmp/csql.conf $CSQL_CONFIG_FILE
 exit 0;
 

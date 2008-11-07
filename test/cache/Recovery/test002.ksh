@@ -10,7 +10,7 @@ then
     REL_PATH=${PWD}/cache/Recovery
 fi
 export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
-
+echo DSN=$DSN >> $CSQL_CONFIG_FILE
 isql $DSN < $REL_PATH/create.sql > /dev/null 2>&1
 
 if [ $? -ne 0 ]
