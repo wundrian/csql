@@ -21,6 +21,7 @@
 class CacheTableLoader
 {
     char tableName[IDENTIFIER_LENGTH];
+    char fieldName[IDENTIFIER_LENGTH];
     char userName[IDENTIFIER_LENGTH];
     char password[IDENTIFIER_LENGTH];
     char conditionVal[IDENTIFIER_LENGTH]; //added newly
@@ -30,12 +31,17 @@ class CacheTableLoader
     {
         strcpy(tableName,"");
         strcpy(conditionVal,"");
+        strcpy(fieldName,"");
 	strcpy(fieldlistVal,"");
     }
     void setConnParam(char *user, char *pass){ strcpy(userName, user); strcpy(password, pass); }
     void setTable(char *tablename) { strcpy(tableName,tablename); }
     void setCondition(char *condition){strcpy(conditionVal,condition);} //new one
-    void setField(char *field) {strcpy(fieldlistVal,field);}
+    void setFieldName(char *fldname){ strcpy(fieldName,fldname);}
+    DbRetVal addToCacheTableFile(bool isDirect);
+    static int getTableMode(char  *tabname);
+    void setFieldListVal(char *field) {strcpy(fieldlistVal,field);}
+
     DbRetVal addToCacheTableFile();
     DbRetVal removeFromCacheTableFile();
     DbRetVal load(bool tabDef=true);
@@ -45,7 +51,8 @@ class CacheTableLoader
     DbRetVal recoverAllCachedTables();
     DbRetVal load(DatabaseManager *dbMgr, bool tabDef);
     DbRetVal isTableCached();
-    DbRetVal isTablePresent(char *table,char *condition,char *field);// new one by :Jitendra
+    DbRetVal isTablePresent();// new one by :Jitendra
+    bool isFieldExist(char *fieldname);
 };
 
 class BindBuffer
@@ -55,4 +62,20 @@ class BindBuffer
     void *targetdb;
     DataType type;
 };
+class CacheTableInfo
+{
+    public:
+    char tableName[IDENTIFIER_LENGTH];
+    char fieldName[IDENTIFIER_LENGTH];
+    char projFieldlist[IDENTIFIER_LENGTH];
+    char condition[IDENTIFIER_LENGTH];
 
+    void setTableName(char *tblName){strcpy(tableName,tblName);}
+    void setFieldName(char *fldName){strcpy(fieldName,fldName);}
+    void setProjFieldList(char *fieldlist){ strcpy(projFieldlist,fieldlist);}
+    void setCondition(char *cond){ strcpy(condition,cond);}
+    char *getTableName(){return tableName;}
+    char *getFieldName(){return fieldName;}
+    char *getCondition(){ return condition;}
+    char *getProjFieldList(){return projFieldlist;}
+};

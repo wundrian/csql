@@ -128,7 +128,7 @@ class os
     static int   memcmp(const void *s1, const void *s2, size_t size);
     static int select(int nfds, fd_set *readfds, fd_set *writefds,
                       fd_set *exceptfds, struct timeval * timeout);
-
+    
     static int usleep(int microsecs);
     static int sleep(int secs);
     static shared_memory_id shm_create(shared_memory_key key, size_t size, int flag);

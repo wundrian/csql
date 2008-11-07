@@ -174,13 +174,14 @@ DbRetVal SqlLogConnection::populateCachedTableList()
         return ErrSysInit;
     }
     char tablename[IDENTIFIER_LENGTH];
+    char fieldname[IDENTIFIER_LENGTH];
     char condition[IDENTIFIER_LENGTH];
     char field[IDENTIFIER_LENGTH];
     int cmode;
     CachedTable *node;
     while(!feof(fp))
     {
-        fscanf(fp, "%d:%s %s %s\n", &cmode, tablename,condition,field);
+        fscanf(fp, "%d:%s %s %s %s\n", &cmode, tablename,fieldname,condition,field);
         node = new CachedTable();
         strcpy(node->tableName, tablename);
         cacheList.append(node);

@@ -30,7 +30,7 @@ class SqlGwStatement: public AbsSqlStatement
     public:
     SqlGwStatement(){innerStmt = NULL; adapter = NULL; con = NULL;}
     void setAdapter(AbsSqlStatement *stmt) { adapter = stmt; }
-
+    int mode;
     void setConnection(AbsSqlConnection *conn)
     {
         if (innerStmt) innerStmt->setConnection(conn->getInnerConnection());
@@ -53,7 +53,7 @@ class SqlGwStatement: public AbsSqlStatement
     int noOfProjFields();
 
     void* getFieldValuePtr( int pos );
-
+    AbsSqlStatement *getInnerStatement(){ return innerStmt;}
     DbRetVal free();
 
     int noOfParamFields();

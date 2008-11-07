@@ -33,7 +33,7 @@ class SqlLogStatement: public AbsSqlStatement
         if (innerStmt) innerStmt->setConnection(conn->getInnerConnection());
         con = conn;
     }
-
+    AbsSqlStatement *getInnerStatement(){ return innerStmt;}
     bool isNonSelectDML(char *stmtstr);
     DbRetVal prepare(char *stmt);
 

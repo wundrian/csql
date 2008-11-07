@@ -15,7 +15,7 @@
   ***************************************************************************/
 #include<CacheTableLoader.h>
 #include<Util.h>
-DbRetVal CacheTableLoader::addToCacheTableFile()
+DbRetVal CacheTableLoader::addToCacheTableFile(bool isDirect)
 {
     FILE *fp;
     fp = fopen(Conf::config.getTableConfigFile(),"a");
@@ -27,30 +27,54 @@ DbRetVal CacheTableLoader::addToCacheTableFile()
     //TODO::if already table present in the file, it means that the
     //table is replicated. in this case change mode from
     //2 to 3 (repl to replcache)
-    
-    if((strcmp(conditionVal,"")!=0)&&(strcmp(fieldlistVal,"")!=0))
-    {
-	fprintf(fp,"%d:%s %s %s\n",2,tableName,conditionVal,fieldlistVal);
-    }
-    else if((strcmp(conditionVal,"")!=0)&&(strcmp(fieldlistVal,"")==0))
-    {
-	strcpy(fieldlistVal,"NULL");
-	fprintf(fp,"%d:%s %s %s\n",2,tableName,conditionVal,fieldlistVal);
-    }
-    else if((strcmp(conditionVal,"")==0)&&(strcmp(fieldlistVal,"")!=0))
-    {
-    	 strcpy(conditionVal,"NULL");
-	 fprintf(fp,"%d:%s %s %s\n",2,tableName,conditionVal,fieldlistVal);
-    }
-    else
-    {
-    	strcpy(fieldlistVal,"NULL");
-	strcpy(conditionVal,"NULL");
-	fprintf(fp,"%d:%s %s %s\n",1,tableName,conditionVal,fieldlistVal);
-    }	
+    if( strcmp(fieldName,"")==0 ){ strcpy(fieldName,"NULL"); }
+    if(isDirect)
+    { 
+        if((strcmp(conditionVal,"")!=0)&&(strcmp(fieldlistVal,"")!=0))
+        {
+	    fprintf(fp,"%d:%s %s %s %s\n",6,tableName,fieldName,conditionVal,fieldlistVal);
+        }
+        else if((strcmp(conditionVal,"")!=0)&&(strcmp(fieldlistVal,"")==0))
+        {
+	    strcpy(fieldlistVal,"NULL");
+	    fprintf(fp,"%d:%s %s %s %s\n",6,tableName,fieldName,conditionVal,fieldlistVal);
+        }
+        else if((strcmp(conditionVal,"")==0)&&(strcmp(fieldlistVal,"")!=0))
+        {
+    	     strcpy(conditionVal,"NULL");
+	     fprintf(fp,"%d:%s %s %s %s\n",6,tableName,fieldName,conditionVal,fieldlistVal);
+        }
+        else 
+        {
+    	    strcpy(fieldlistVal,"NULL");
+	    strcpy(conditionVal,"NULL");
+	    fprintf(fp,"%d:%s %s %s %s\n",5,tableName,fieldName,conditionVal,fieldlistVal);
+        }	
+   }
+   else
+   {
+       if((strcmp(conditionVal,"")!=0)&&(strcmp(fieldlistVal,"")!=0))
+       {
+           fprintf(fp,"%d:%s %s %s %s\n",2,tableName,fieldName,conditionVal,fieldlistVal);
+       }
+       else if((strcmp(conditionVal,"")!=0)&&(strcmp(fieldlistVal,"")==0))
+       {
+           strcpy(fieldlistVal,"NULL");
+           fprintf(fp,"%d:%s %s %s %s\n",2,tableName,fieldName,conditionVal,fieldlistVal);
+       }
+       else if((strcmp(conditionVal,"")==0)&&(strcmp(fieldlistVal,"")!=0))
+       {
+            strcpy(conditionVal,"NULL");
+            fprintf(fp,"%d:%s %s %s %s\n",2,tableName,fieldName,conditionVal,fieldlistVal);
+       }
+       else
+       {
+           strcpy(fieldlistVal,"NULL");
+           strcpy(conditionVal,"NULL");
+           fprintf(fp,"%d:%s %s %s %s\n",1,tableName,fieldName,conditionVal,fieldlistVal);
+       }
 
-
-   
+   }
     fclose(fp);
     return OK;
 }
@@ -71,14 +95,15 @@ DbRetVal CacheTableLoader::removeFromCacheTableFile()
 	return ErrSysInit;
     }
     char tablename[IDENTIFIER_LENGTH];
+    char fieldname[IDENTIFIER_LENGTH];
     char condition[IDENTIFIER_LENGTH];
     char field[IDENTIFIER_LENGTH];
     int mode;
     while(!feof(fp))
     {
-        fscanf(fp, "%d:%s %s %s\n", &mode, tablename,condition,field);
+        fscanf(fp, "%d:%s %s %s %s\n", &mode, tablename,fieldname,condition,field);
         if (strcmp (tablename, tableName) == 0) continue;
-        fprintf(tmpfp, "%d:%s %s %s\n", mode, tablename,condition,field);
+        fprintf(tmpfp, "%d:%s %s %s %s\n", mode, tablename,fieldname,condition,field);
     }
     fclose(tmpfp);
     fclose(fp);
@@ -94,7 +119,7 @@ DbRetVal CacheTableLoader::removeFromCacheTableFile()
 }
 
 // new function is added by: Jitendra 
-DbRetVal CacheTableLoader :: isTablePresent(char *cachetable,char *cachecondition,char *fieldlistvalue)
+DbRetVal CacheTableLoader :: isTablePresent()
 {
 	DbRetVal rv = OK;
         FILE *fp;
@@ -114,38 +139,25 @@ DbRetVal CacheTableLoader :: isTablePresent(char *cachetable,char *cacheconditio
 	
 	char tablename[IDENTIFIER_LENGTH];
 	char condition[IDENTIFIER_LENGTH];
+	char fieldname[IDENTIFIER_LENGTH];
 	char field[IDENTIFIER_LENGTH];
 	int mode;
 	
 	while(!feof(fp))
 	{
 		tablename[0] = '\0'; condition[0] = '\0';
-		fscanf(fp,"%d:%s %s %s\n",&mode,tablename,condition,field);
+		fscanf(fp,"%d:%s %s %s %s\n",&mode,tablename,fieldname,condition,field);
 	
-		if(strcmp(cachecondition,"")==0)  strcpy(cachecondition,"NULL");
-                if(strcmp(fieldlistvalue,"")==0)  strcpy(fieldlistvalue,"NULL");
-
-        
-	        if(tablename[0]=='\0')
-       		{
-		     DbRetVal rv = addToCacheTableFile();
-                     return OK;
-        	}
-        	else if((strcmp(cachetable,tablename)==0) && (strcmp(cachecondition,condition)==0) && (strcmp(fieldlistvalue,field)==0))
+        	if(strcmp(tableName,tablename)==0)
         	{
+                     fclose(fp);
                      return OK;
-        	}
-        	else
-        	{
-            		rv = removeFromCacheTableFile();
-             		if(rv !=OK) return rv;
-             		rv = addToCacheTableFile();
-             		if(rv ==OK) return rv; 
         	}
         }  
         fclose(fp);
-	return rv;
+	return ErrNotExists;
 }
+
 
 
 DbRetVal CacheTableLoader::load(bool tabDefinition)
@@ -222,7 +234,7 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
     	sprintf(stmtBuf,"SELECT %s FROM %s;",fieldlistVal,tableName);
     }	
     else
-    sprintf(stmtBuf,"SELECT %s FROM %s where %s;",fieldlistVal,tableName,conditionVal);
+        sprintf(stmtBuf,"SELECT %s FROM %s where %s;",fieldlistVal,tableName,conditionVal);
 
     retValue = SQLPrepare (hstmt, (unsigned char *) stmtBuf, SQL_NTS);
     if (retValue) {printError(ErrSysInit, "Unable to Prepare ODBC statement \n"); return ErrSysInit; }
@@ -272,6 +284,33 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
                isPriIndex=true;
         }
         char *name = NULL;
+        bool iskeyfieldExist=true;
+        if(isPriIndex && (strcmp(fieldlistVal,"")!=0) && (strcmp(fieldlistVal,"NULL")!=0))
+        {
+            inf->list.resetIter();
+            while ((name=inf->list.nextFieldName())!=NULL)
+            {
+                        iskeyfieldExist=isFieldExist(name);
+                        if(!iskeyfieldExist) { break; }
+            }
+        }
+        if(((strcmp(fieldName,"")!=0) && (strcmp(fieldName,"NULL")!=0)) && !(isFieldExist(fieldName)))
+        {
+            if(Conf::config.useTwoWayCache() && (strcmp(fieldlistVal,"")!=0) && (strcmp(fieldlistVal,"NULL")!=0))
+            {
+                 printError(ErrSysInit, "Bidirectonal caching fail for no primary key in %s \n", tableName);
+                 return ErrSysInit;
+            }
+        }
+        
+        if(!iskeyfieldExist && ((strcmp(fieldName,"")==0) || (strcmp(fieldName,"NULL")==0)))
+        {
+            if(Conf::config.useTwoWayCache())
+             {
+                 printError(ErrSysInit, "Bidirectonal caching fail for no primary key in %s \n", tableName);
+                 return ErrSysInit;
+             }
+        } else if(!iskeyfieldExist){ isPriIndex=false;}
         while (icol <= totalFields) {
             retValue = SQLDescribeCol(hstmt, icol, colName, colNameMax,
                                         &nameLength, &colType, &colLength,
@@ -304,8 +343,7 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
              SQLDisconnect(hdbc);
              return ErrSysInit;
         }
-
-        if(isPriIndex){
+        if(isPriIndex ){
         rv = dbMgr->createIndex(indname, inf);
                if (rv != OK)
                {
@@ -316,7 +354,7 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
         }
         else
         {
-             if(Conf::config.useTwoWayCache())
+             if(Conf::config.useTwoWayCache() && iskeyfieldExist)
              {
                  printError(ErrSysInit, "Bidirectonal caching fail for no primary key in %s \n", tableName);
                  return ErrSysInit;
@@ -540,8 +578,6 @@ DbRetVal CacheTableLoader::recoverAllCachedTables()
     DbRetVal rv = conn.open(userName, password);
     if(rv !=OK) return ErrSysInit;
 
-
-
     //Note: if connection is not open, configuration veriables may be incorrect
 
     fp = fopen(Conf::config.getTableConfigFile(),"r");
@@ -552,19 +588,21 @@ DbRetVal CacheTableLoader::recoverAllCachedTables()
     conn.close();
     //TODO::take exclusive lock on database
     char tablename[IDENTIFIER_LENGTH];
+    char fieldname[IDENTIFIER_LENGTH];
     char condition[IDENTIFIER_LENGTH];
     char field[IDENTIFIER_LENGTH];
     int mode;
     rv = OK;
     while(!feof(fp))
     {
-        fscanf(fp, "%d:%s %s %s\n", &mode, tablename,condition,field);
+        fscanf(fp, "%d:%s %s %s %s\n", &mode, tablename,fieldname,condition,field);
         //if (mode ==2 )  //just replicated table and not cached
         //continue;
         printDebug(DM_Gateway, "Recovering Table from target db: %s\n", tablename);
         setCondition(condition);
         setTable(tablename);
-	setField(field);
+        setFieldName(fieldname);
+	setFieldListVal(field);
         printf("Recovering table %s %s %s\n", tablename,condition,field);
         rv = load();
         if (rv != OK) return rv;
@@ -583,12 +621,13 @@ DbRetVal CacheTableLoader::isTableCached()
         return ErrSysInit;
     }
     char tablename[IDENTIFIER_LENGTH];
+    char fieldname[IDENTIFIER_LENGTH];
     char condition[IDENTIFIER_LENGTH];
     char field[IDENTIFIER_LENGTH];
     int mode;
     while(!feof(fp))
     {
-        fscanf(fp, "%d:%s %s %s\n", &mode, tablename,condition,field);
+        fscanf(fp, "%d:%s %s %s %s\n", &mode, tablename,fieldname,condition,field);
         if (strcmp (tablename, tableName) == 0) {
             fclose(fp);
             return OK;
@@ -596,4 +635,54 @@ DbRetVal CacheTableLoader::isTableCached()
     }
     fclose(fp);
     return ErrNotExists;
+}
+
+int CacheTableLoader::getTableMode(char *tabname)
+{
+    FILE *fp;
+    fp = fopen(Conf::config.getTableConfigFile(),"r");
+    if( fp == NULL ) {
+        printError(ErrSysInit, "cachetable.conf file does not exist");
+        fclose(fp);
+        return 0;
+    }
+    char tablename[IDENTIFIER_LENGTH];
+    char fieldname[IDENTIFIER_LENGTH];
+    char condition[IDENTIFIER_LENGTH];
+    char field[IDENTIFIER_LENGTH];
+    int mode;
+    while(!feof(fp))
+    {
+	fscanf(fp,"%d:%s %s %s %s\n",&mode,tablename,fieldname,fieldname,condition);
+        if(0==strcmp(tabname,tablename)){
+              fclose(fp);
+              return mode;
+        }
+    }
+   fclose(fp);
+   return 0;
+}
+
+
+bool CacheTableLoader::isFieldExist(char *fieldname)
+{
+    char tmpfieldname[IDENTIFIER_LENGTH];
+    int i=0,j=0;
+    while(fieldlistVal[j]!=0)
+    {
+        if(fieldlistVal[j] != ',')
+            tmpfieldname[i++]=fieldlistVal[j++];
+        else
+        {
+           tmpfieldname[i]='\0';
+           if(strcmp(fieldname,tmpfieldname)==0)
+               return true;
+           else { i=0; j++; }
+        }   
+    }
+    tmpfieldname[i]='\0';
+    if(strcmp(fieldname,tmpfieldname)==0)
+        return true;
+    else
+        return false;
 }

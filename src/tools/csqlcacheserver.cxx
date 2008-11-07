@@ -18,11 +18,16 @@
 #include <SqlOdbcStatement.h>
 #include <SqlFactory.h>
 #include <CSql.h>
+#include <CacheTableLoader.h>
 
 int insert(Table *table, int pkid);
 int remove(Table *table, int pkid);
 int getRecordsFromTargetDb(int mode);
-
+void createCacheTableList();
+DbRetVal getCacheField(char *tblName,char *fldName);
+DbRetVal getCacheProjField(char *tblName,char *fielflist);
+DbRetVal getCacheCondition(char *tblName,char *condition);
+List cacheTableList;
 int srvStop =0;
 static void sigTermHandler(int sig)
 {
@@ -58,7 +63,6 @@ int main(int argc, char **argv)
 
     os::signal(SIGINT, sigTermHandler);
     os::signal(SIGTERM, sigTermHandler);
-
     DbRetVal rv = conn.open("root", "manager");
     if (rv != OK) return 1;
     targetconn = SqlFactory::createConnection(CSqlAdapter);
@@ -81,22 +85,32 @@ int main(int argc, char **argv)
 
     printf("Cache server started\n");
     int ret = 0;
+    struct stat ofstatus,nfstatus;
+    ret=stat(Conf::config.getTableConfigFile(),&ofstatus);
     struct timeval timeout, tval;
     timeout.tv_sec = Conf::config.getCacheWaitSecs();
     timeout.tv_usec = 0;
-    
+    createCacheTableList();
     while(!srvStop)
     {
         tval.tv_sec = timeout.tv_sec;
         tval.tv_usec = timeout.tv_usec;
         ret = os::select(0, NULL, 0, 0, &tval);
         printf("Checking for cache updates\n");
+        ret=stat(Conf::config.getTableConfigFile(),&nfstatus);
+        if(ofstatus.st_mtime != nfstatus.st_mtime)
+        {
+            cacheTableList.reset();
+            createCacheTableList();
+            ofstatus.st_mtime = nfstatus.st_mtime;
+        }
         ret = getRecordsFromTargetDb(1);       
         if (ret !=0) srvStop = 1;
         //ret = getRecordsFromTargetDb(2);       
         if (ret !=0) srvStop = 1;
     }
     printf("Cache Server Exiting\n");
+    cacheTableList.reset();
     conn.close();
     targetconn->disconnect();
     return 0;
@@ -210,11 +224,31 @@ int insert(Table *table, int pkid)
     stmt->setConnection(targetconn);
     SqlOdbcStatement *ostmt = (SqlOdbcStatement*) stmt;
     char pkfieldname[128];
-    ostmt->getPrimaryKeyFieldName(table->getName(), pkfieldname);
+    DbRetVal rv=getCacheField(table->getName(), pkfieldname);
+    if(rv!=OK){
+        ostmt->getPrimaryKeyFieldName(table->getName(), pkfieldname);
+    }
+    char fieldlist[IDENTIFIER_LENGTH];
+    char condition[IDENTIFIER_LENGTH];
     char sbuf[1024];
-    sprintf(sbuf, "SELECT * FROM %s where %s = %d;", table->getName(), pkfieldname, pkid);
+    rv=getCacheProjField(table->getName(),fieldlist);
+    if(rv!=OK){
+        rv=getCacheCondition(table->getName(),condition);
+        if(rv!=OK){
+            sprintf(sbuf, "SELECT * FROM %s where %s = %d;", table->getName(), pkfieldname, pkid);
+        } else {
+            sprintf(sbuf, "SELECT * FROM %s where %s = %d and %s ;", table->getName(), pkfieldname, pkid,condition);
+        }
+    } else {
+        rv=getCacheCondition(table->getName(),condition);
+        if(rv!=OK){
+            sprintf(sbuf, "SELECT %s FROM %s where %s = %d;",fieldlist,table->getName(), pkfieldname, pkid);
+        } else {
+            sprintf(sbuf, "SELECT %s FROM %s where %s = %d and %s;",fieldlist,table->getName(), pkfieldname, pkid,condition);
+        }
+    }
     //TODO::get the primary key field name from the table interface. need to implement it
-    DbRetVal rv = stmt->prepare(sbuf);
+    rv = stmt->prepare(sbuf);
     if (rv != OK) return 1;
 
     List fNameList = table->getFieldNameList();
@@ -256,7 +290,10 @@ int remove(Table *table, int pkid)
     stmt->setConnection(targetconn);
     SqlOdbcStatement *ostmt = (SqlOdbcStatement*) stmt;
     char pkfieldname[128];
-    ostmt->getPrimaryKeyFieldName(table->getName(), pkfieldname);
+    rv=getCacheField(table->getName(), pkfieldname);
+    if(rv!=OK){
+        ostmt->getPrimaryKeyFieldName(table->getName(), pkfieldname);
+    }
     delete stmt;
     Condition p1;
     p1.setTerm(pkfieldname, OpEquals, &pkid);
@@ -278,4 +315,84 @@ int remove(Table *table, int pkid)
     if (rv != OK) return 1;
     return 0;
 }
+void createCacheTableList()
+{
+    FILE *fp;
+    fp = fopen(Conf::config.getTableConfigFile(),"r");
+    if( fp == NULL ) {
+        printError(ErrSysInit, "cachetable.conf file does not exist");
+        fclose(fp);
+    }
+    char tablename[IDENTIFIER_LENGTH];
+    char fieldname[IDENTIFIER_LENGTH];
+    char condition[IDENTIFIER_LENGTH];
+    char field[IDENTIFIER_LENGTH];
+    int mode;
+    while(!feof(fp))
+    {
+        fscanf(fp,"%d:%s %s %s %s\n",&mode,tablename,fieldname,condition,field);
+        CacheTableInfo  *cacheTable=new CacheTableInfo();
+        cacheTable->setTableName(tablename);
+        cacheTable->setFieldName(fieldname);
+        cacheTable->setProjFieldList(field);
+        cacheTable->setCondition(condition);
+        cacheTableList.append(cacheTable);
+    }
+   // printf("Table %s is not cached\n",tabname);
+    fclose(fp);
+   
+}
 
+DbRetVal getCacheCondition(char *tblName,char *condition)
+{
+    ListIterator iter=cacheTableList.getIterator();
+    CacheTableInfo  *cacheTable;
+    while(iter.hasElement())
+    {
+        cacheTable=(CacheTableInfo*)iter.nextElement();
+        if(strcmp(cacheTable->getTableName(),tblName)==0){
+            if(strcmp(cacheTable->getCondition(),"NULL")!=0)
+            {
+                strcpy(condition,cacheTable->getCondition());
+                return OK;
+            }
+        }
+    }
+    return ErrNotExists;
+}
+
+DbRetVal getCacheProjField(char *tblName,char *fieldlist)
+{
+    ListIterator iter=cacheTableList.getIterator();
+    CacheTableInfo  *cacheTable;
+    while(iter.hasElement())
+    {
+        cacheTable=(CacheTableInfo*)iter.nextElement();
+        if(strcmp(cacheTable->getTableName(),tblName)==0){
+            if(strcmp(cacheTable->getProjFieldList(),"NULL")!=0)
+            {
+                strcpy(fieldlist,cacheTable->getProjFieldList());
+                return OK;
+            }
+        }
+    }
+    return ErrNotExists;
+}
+DbRetVal getCacheField(char *tblName,char *fldName)
+{
+    ListIterator iter=cacheTableList.getIterator();
+    CacheTableInfo  *cacheTable;
+    while(iter.hasElement())    
+    {
+        cacheTable=(CacheTableInfo*)iter.nextElement();
+        if(strcmp(cacheTable->getTableName(),tblName)==0){
+            if(strcmp(cacheTable->getFieldName(),"NULL")!=0)
+            {
+                strcpy(fldName,cacheTable->getFieldName());
+		return OK;
+            }
+        }
+            
+    }
+    return ErrNotExists;
+}

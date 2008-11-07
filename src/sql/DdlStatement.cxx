@@ -140,13 +140,14 @@ DbRetVal isTableCached(char *tabName) // function added by :Jitendra
       tablename[0] = '\0';
     char condition[IDENTIFIER_LENGTH];
       condition[0]='\0';
+    char fieldname[IDENTIFIER_LENGTH];
+    fieldname[0]='\0';
     char field[IDENTIFIER_LENGTH]; field[0]='\0';
     int mode;
     while(!feof(fp))
     {
-        fscanf(fp,"%d:%s %s %s\n",&mode,tablename,condition,field);
+        fscanf(fp,"%d:%s %s %s %s\n",&mode,tablename,fieldname,condition,field);
         if(strcmp(tablename,tabName) ==0){
-      
         fclose(fp);
         return ErrNoPrivilege;}
     }

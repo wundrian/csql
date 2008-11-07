@@ -18,15 +18,18 @@
 
 void printUsage()
 {
-   printf("Usage: cachetable [-U username] [-P passwd] -t tablename -c \"condition\" -f \"selected field names\"\n[-R] [-s] [-r]\n");
+   printf("Usage: cachetable [-U username] [-P passwd] -t tablename[-D] -c \"condition\" -f \"selected field names\" -p fieldname\n"
+          "       [-R] [-s] [-r]\n");
    printf("       username -> username to connect with csql.\n");
    printf("       passwd -> password for the above username to connect with csql.\n");
    printf("       tablename -> table name to be cached in csql from target db.\n");
+   printf("       fieldname -> field name to be specified for the bidirectional caching on which trigger to be run .\n");
    printf("       R -> recover all cached tables from the target database.\n");
    printf("       s -> load only the records from target db. Assumes table is already created in csql\n");
    printf("       r -> reload the table. get the latest image of table from target db\n");
    printf("       u -> unload the table. if used with -s option, removes only records and preserves the schema\n");
    printf("       no option -> get table definition and records from target db and create in csql.\n");
+   printf("       D -> Enable direct access option to target database\n");
    return;
 }
 
@@ -37,7 +40,9 @@ int main(int argc, char **argv)
     char password[IDENTIFIER_LENGTH];
     password [0] = '\0';
     int c = 0, opt = 10;
+    bool isDirect=false;
     char tablename[IDENTIFIER_LENGTH];
+    char fieldname[IDENTIFIER_LENGTH];
     char condition[IDENTIFIER_LENGTH];
     char fieldlist[IDENTIFIER_LENGTH];
     char syncModeStr[IDENTIFIER_LENGTH];
@@ -45,7 +50,8 @@ int main(int argc, char **argv)
     bool fieldlistval = false;
     bool tableDefinition = true;
     bool tableNameSpecified = false;
-    while ((c = getopt(argc, argv, "U:P:t:c:f:Rsru?")) != EOF) 
+    bool fieldNameSpecified = false;
+    while ((c = getopt(argc, argv, "U:P:t:f:c:p:RDsru?")) != EOF) 
     {
         switch (c)
         {
@@ -56,7 +62,13 @@ int main(int argc, char **argv)
                          tableNameSpecified = true; 
                          break; 
                        }
-            
+            case 'p' : { strcpy(fieldname, argv[optind - 1]);
+                         if(opt==2){fieldNameSpecified = true;break;}
+                       }
+
+            case 'D' : {
+                         if(opt==2) {isDirect=true;break;}
+                       }
             case 'c' : {strcpy(condition,argv[optind - 1]); conditionval = true; break; }// condition for selelcted records by :Jitendra
 	    case 'f' : {strcpy(fieldlist,argv[optind - 1]);fieldlistval = true ;break; }
             case '?' : { opt = 10; break; } //print help 
@@ -86,13 +98,21 @@ int main(int argc, char **argv)
     if(conditionval){
     cacheLoader.setCondition(condition);}// new one
     if(fieldlistval){
-    cacheLoader.setField(fieldlist);}
+    cacheLoader.setFieldListVal(fieldlist);}
     if (opt==2) {
         cacheLoader.setTable(tablename);
-        rv = cacheLoader.load(tableDefinition);
-        if (rv != OK) exit (1);
-        rv = cacheLoader.isTablePresent(tablename,condition,fieldlist);
-        if(rv !=OK)exit(1);
+        if(fieldNameSpecified){ cacheLoader.setFieldName(fieldname); }
+        rv = cacheLoader.isTableCached();
+        if(rv!=OK){
+            rv = cacheLoader.load(tableDefinition);
+            if(rv == OK){
+               cacheLoader.addToCacheTableFile(isDirect);
+            }else exit(2);
+        } else
+        {
+            printf("Table is already cached, unload table by \" cachetable -t <tablename> -u\" and then try \n");
+            exit(3);
+        }
     }else if (opt==3) //recover
     {
         rv = cacheLoader.recoverAllCachedTables();

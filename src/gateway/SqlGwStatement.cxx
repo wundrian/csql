@@ -19,7 +19,7 @@
  ***************************************************************************/
 #include <SqlGwStatement.h>
 #include <SqlLogStatement.h>
-
+#include <CacheTableLoader.h>
 DbRetVal SqlGwStatement::prepare(char *stmtstr)
 {
     DbRetVal rv = OK;
@@ -29,7 +29,8 @@ DbRetVal SqlGwStatement::prepare(char *stmtstr)
     stmtHdlr = NoHandler;
     if (innerStmt) rv = innerStmt->prepare(stmtstr);
     SqlLogStatement *stmt = (SqlLogStatement*) innerStmt;
-    if (rv == OK) {
+    mode =CacheTableLoader::getTableMode((stmt->getInnerStatement())->getTableName());
+    if ((rv == OK)&& ((mode!=5 && mode!=6)||innerStmt->isSelect())) {
         if (!stmt->isCached) { 
             stmtHdlr = CSqlHandler;
             return rv;  
