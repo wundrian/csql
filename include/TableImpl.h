@@ -150,7 +150,16 @@ class TableImpl:public Table
         { return fldList_.getFieldLength(name); }
 
     DbRetVal getFieldInfo(const char *fieldName,  FieldInfo *&info)
-        { return fldList_.getFieldInfo(fieldName, info); }
+    { 
+        char tblName[IDENTIFIER_LENGTH];
+        char fldName[IDENTIFIER_LENGTH];
+        getTableNameAlone((char*)fieldName, tblName);
+        getFieldNameAlone((char*)fieldName, fldName);
+        if (0 == strcmp(tblName, "") || 0 ==strcmp(tblName, getName()))
+            return fldList_.getFieldInfo(fldName, info); 
+        else
+            return ErrNotExists;
+    }
 
     List getFieldNameList();
 

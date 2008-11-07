@@ -38,11 +38,11 @@ command:  select_statement { YYACCEPT; }
         | ddl_statement { YYACCEPT; }
         ;
         
-select_statement: SELECT field_list FROM ident where_clause_opt group_by_opt semicolon_opt
+select_statement: SELECT field_list FROM table_list where_clause_opt group_by_opt semicolon_opt
 	{
             parsedData->setStmtType(SelectStatement);
-            parsedData->setTableName($4); 
-            free($4);
+            //parsedData->setTableName($4); 
+            //free($4);
         }
         ;
 
@@ -50,6 +50,11 @@ field_list: field_list field_list_L
         | field 
         ;
 field_list_L: ',' field
+        ;
+table_list: table_list table_list_L
+        | table 
+        ;
+table_list_L: ',' table
         ;
         
 insert_statement: INSERT INTO ident field_list_opt VALUES '(' value_list ')' semicolon_opt
@@ -255,6 +260,12 @@ not_opt: NOT
 	| 
 	{ $$=(char*) 0; }
 	;
+table:   ident
+        {
+            parsedData->insertTableName((char*)$1);
+            free( $1 );
+        }
+        ;
 field:   ident
         {
             parsedData->insertField((char*)$1);

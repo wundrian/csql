@@ -149,6 +149,7 @@ class SelStatement : public DmlStatement
     SelStatement();
     ~SelStatement();
 
+    DbRetVal openTables();
 
     DbRetVal setBindField(int pos, void* value);
 

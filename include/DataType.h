@@ -64,7 +64,7 @@ enum ComparisionOp {
     OpLessThanEquals,
     OpGreaterThan,
     OpGreaterThanEquals,
-	OpLike, // for Like operator
+    OpLike, // for Like operator
     OpInvalidComparisionOp
 };
 

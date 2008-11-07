@@ -132,6 +132,7 @@ enum JoinType
 class JoinProjFieldInfo
 {
     public:
+    char tabFieldName[IDENTIFIER_LENGTH*2];
     char tableName[IDENTIFIER_LENGTH];
     char fieldName[IDENTIFIER_LENGTH];
     DataType type;
@@ -177,6 +178,7 @@ class JoinTableImpl:public Table
     List projList;
     Table *leftTableHdl;
     Table *rightTableHdl;
+    bool availableLeft;
 
     JoinType jType;
     ListIterator rsIter;
@@ -184,13 +186,13 @@ class JoinTableImpl:public Table
     bool rightExhausted;
     DbRetVal copyValuesToBindBuffer(void *tuple);
     JoinCondition jCondition;
+    Predicate *pred;
 
     public:
     JoinTableImpl();
     virtual ~JoinTableImpl();
 
-    DbRetVal getFieldInfo(const char *fieldName,  FieldInfo *&info)
-        { return ErrBadCall; }
+    DbRetVal getFieldInfo(const char *fieldName,  FieldInfo *&info);
 
     void setTable(Table *left, Table *right)
     { leftTableHdl = left; rightTableHdl = right; }
@@ -201,10 +203,10 @@ class JoinTableImpl:public Table
     DbRetVal bindFld(const char *name, void *val);
     DbRetVal setJoinCondition(const char *fldname1, ComparisionOp op,  
                               const char *fldname2);
-    void getFieldNameAlone(char*, char*);
-    void getTableNameAlone(char*, char*);
 
-    void setCondition(Condition *p){}
+     void setCondition(Condition *p)
+     { if (p) pred = p->getPredicate(); else pred = NULL;}
+
     void markFldNull(const char *name){}
     void markFldNull(int colpos){}
     bool isFldNull(const char *name){return false;}
@@ -222,7 +224,7 @@ class JoinTableImpl:public Table
     DbRetVal unlock(){ return ErrBadCall; }
     DbRetVal setUndoLogging(bool flag) { return ErrBadCall; }
     void printSQLIndexString(){ };
-    List getFieldNameList(){ List list; return list;}
+    List getFieldNameList();
     char* getName() { return NULL; }
 
     bool evaluate();
@@ -235,6 +237,7 @@ class JoinTableImpl:public Table
 
     long numTuples();
     void printInfo();
+    void *getBindFldAddr(const char *name);
 
 };
 

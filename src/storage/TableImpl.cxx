@@ -24,19 +24,47 @@
 #include<Index.h>
 #include<Config.h>
 
+void Table::getFieldNameAlone(char *fname, char *name) {
+    bool dotFound= false;
+    char *fullname = fname;
+    while(*fullname != '\0')
+    {
+        if (*fullname == '.') { dotFound = true;  break; }
+        fullname++;
+    }
+    if (dotFound) strcpy(name, ++fullname); else strcpy(name, fname);
+
+}
+void Table::getTableNameAlone(char *fname, char *name) {
+    strcpy(name, fname);
+    char *start = name;
+    bool dotFound = false;
+    while(*name != '\0')
+    {
+        if (*name == '.') { *name='\0';  dotFound = true; break; }
+        name++;
+    }
+    if (!dotFound) strcpy(start, "");
+    return;
+}
+
 DbRetVal TableImpl::bindFld(const char *name, void *val)
 {
     //set it in the field list
-    DbRetVal rv = fldList_.updateBindVal(name, val);
+    char fieldName[IDENTIFIER_LENGTH];
+    getFieldNameAlone((char*)name, fieldName);
+    DbRetVal rv = fldList_.updateBindVal(fieldName, val);
     if (OK != rv) {
-        printError(ErrNotExists, "Field %s does not exist", name);
+        printError(ErrNotExists, "Field %s does not exist", fieldName);
         return  rv;
     }
     return OK;
 }
 
 bool TableImpl::isFldNull(const char *name){
-    int colpos = fldList_.getFieldPosition(name);
+    char fieldName[IDENTIFIER_LENGTH];
+    getFieldNameAlone((char*)name, fieldName);
+    int colpos = fldList_.getFieldPosition(fieldName);
     if (-1 == colpos)
     {
         printError(ErrNotExists, "Field %s does not exist", name);
@@ -775,11 +803,13 @@ List TableImpl::getFieldNameList()
 {
     List fldNameList;
     FieldIterator fIter = fldList_.getIterator();
+    char fieldName[IDENTIFIER_LENGTH];
     while (fIter.hasElement())
     {
         FieldDef def = fIter.nextElement();
         Identifier *elem = new Identifier();
-        strcpy(elem->name, def.fldName_);
+        Table::getFieldNameAlone(def.fldName_, fieldName);
+        sprintf(elem->name, "%s.%s", getName(), fieldName); 
         fldNameList.append(elem);
     } 
     return fldNameList;

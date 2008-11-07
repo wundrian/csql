@@ -129,6 +129,7 @@ void *FieldList::getBindField(const char *fldName)
 }
 DbRetVal FieldList::getFieldInfo(const char *fldName, FieldInfo *&info)
 {
+    
     FieldNode *iter = head;
     while(iter != NULL)
     {
@@ -143,7 +144,6 @@ DbRetVal FieldList::getFieldInfo(const char *fldName, FieldInfo *&info)
             info->isNull = iter->fldDef.isNull_;
             info->isPrimary = iter->fldDef.isPrimary_;
             return OK;
-
         }
         iter = iter ->next;
     }

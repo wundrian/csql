@@ -247,45 +247,47 @@ DbRetVal SelStatement::setBindField(int colNo, void *value)
     bindFieldValues[colNo -1] = (char*) value; 
     return OK;
 }
-
-DbRetVal SelStatement::resolve()
+DbRetVal SelStatement::openTables()
 {
     if (dbMgr == NULL) return ErrNoConnection;
+    JoinTableImpl *jHdl = NULL;
+    Table *tHdl = NULL, *prevHdl = NULL;
+    bool joinInvolved = false;
     //check whether the table exists
-    table = dbMgr->openTable(parsedData->getTableName());
-    if (table == NULL) 
+    ListIterator titer = parsedData->getTableNameList().getIterator();
+    while (titer.hasElement())
     {
-        printError(ErrNotExists, "Unable to open the table:Table not exists");
-        return ErrNotExists;
+        TableName *t  = (TableName*)titer.nextElement();
+        tHdl = dbMgr->openTable(t->tblName);
+        if ( NULL == tHdl ) 
+        {
+            printError(ErrNotExists, 
+                       "Unable to open the table:Table not exists");
+            return ErrNotExists;
+        }
+        if (NULL != prevHdl) 
+        { 
+            joinInvolved = true;
+            jHdl = new JoinTableImpl();
+            jHdl->setTable(prevHdl, tHdl);
+            prevHdl = jHdl;
+            continue;
+        }
+        prevHdl = tHdl;
     }
-    List fNameList = table->getFieldNameList();
-    ListIterator fNameIter = fNameList.getIterator();
-    Identifier *elem = NULL;
-    if (fNameIter.hasElement()) 
-        elem = (Identifier*) fNameIter.nextElement();
-    if (elem == NULL) 
-    {
-        printError(ErrNotExists, "No fields present in the table %s", parsedData->getTableName());
-        return ErrNotExists;
-    }
-
+    if (joinInvolved) table = jHdl; else table = tHdl;
+    return OK;
+}
+DbRetVal SelStatement::resolve()
+{
+    DbRetVal rv = openTables();
+    if (rv != OK) return rv;
     //get the fieldname list and validate field names
     ListIterator iter = parsedData->getFieldNameList().getIterator();
     FieldName *name = NULL;
     FieldInfo *fInfo = new FieldInfo();
-    DbRetVal rv = OK;
-    bool aggFlag = false;
-    AggTableImpl *aggTable = NULL;
-    //TODO::Projection should have only aggregates and field names in 
-    // group by list only
-    int groupFieldListSize =  parsedData->getGroupFieldNameList().size();
-    if (groupFieldListSize !=0) {
-       aggTable = new AggTableImpl();
-       aggTable->setTable(table);
-       aggFlag = true;
-    }
     List bindFldList;
-    bool isGroupFldInProjection = false;
+    AggTableImpl *aggTable = NULL;
     while (iter.hasElement())
     {
         name = (FieldName*)iter.nextElement();
@@ -297,12 +299,9 @@ DbRetVal SelStatement::resolve()
             printError(ErrSysFatal, "Should never happen. Field Name list has NULL");
             return ErrSysFatal;
         }
-	bool isBindFld=false;
+        bool isBindFld=false;
         if ('*' == name->fldName[0] && name->aType != AGG_COUNT) 
         {
-            iter.reset();
-            while (iter.hasElement())
-                delete (FieldName *) iter.nextElement();
             rv = resolveStar();
             if (rv != OK)
             { 
@@ -314,15 +313,15 @@ DbRetVal SelStatement::resolve()
             //as soon as it encounters *, it breaks the loop negleting other field names
             //as they all are deleted during resolveStar method.
             break;
-        } else {
-            if ('*' == name->fldName[0]) strcpy(name->fldName, elem->name);
+        }else {
+            replaceStarWithFirstFldName(name);
             rv = table->getFieldInfo(name->fldName, fInfo);
             if (ErrNotFound == rv)
             {
                 dbMgr->closeTable(table);
                 table = NULL;
                 delete fInfo;
-                printError(ErrSyntaxError, "Field %s does not exist in table", 
+                printError(ErrSyntaxError, "Field %s does not exist in table",
                                         name->fldName);
                 return ErrSyntaxError;
             }
@@ -332,7 +331,7 @@ DbRetVal SelStatement::resolve()
             newVal->paramNo = 0;
             newVal->type = fInfo->type;
             newVal->length = fInfo->length;
-	   
+
             FieldName *bFldName=NULL;
             ListIterator it = bindFldList.getIterator();
             while (it.hasElement())
@@ -343,53 +342,29 @@ DbRetVal SelStatement::resolve()
                     newVal->value=table->getBindFldAddr(name->fldName);
                     newVal->isAllocVal=false;
                     isBindFld=true;
-                    break;			
+                    break;
                 }
             }
-	    
-        // for binary datatype input buffer size should be 2 times the length 
-	    if(!isBindFld){
-	        if(newVal->type == typeBinary) 
-                    newVal->value = AllDataType::alloc(fInfo->type, 2 * fInfo->length);
-                else newVal->value = AllDataType::alloc(fInfo->type, fInfo->length);
-                newVal->isAllocVal=true;;
-                if (name->aType == AGG_UNKNOWN) {
-                    if (groupFieldListSize == 0) {
-                        table->bindFld(name->fldName, newVal->value);
-                    }else {
-                    //delete newVal;
-                        FieldName *groupFldName = NULL;
-                        ListIterator giter = parsedData->getGroupFieldNameList().
-                                                         getIterator();
-                        while (giter.hasElement())
-                        {
-                            groupFldName = (FieldName*)giter.nextElement();
-                            if (strcmp(groupFldName->fldName, name->fldName) ==0) {
-                                isGroupFldInProjection = true;
-                                aggTable->setGroup(name->fldName, newVal->value);
-                            }
-                        }
-                        if (!isGroupFldInProjection) 
-                        {
-                            printError(ErrSyntax, "Projection should contain only group fields\n");
-                            delete fInfo;
-                            dbMgr->closeTable(table);
-                            table = NULL;
-                            return ErrSyntax;
-                        }
-                   }
-                } else {
-                   if (!aggFlag) {
-                      aggTable = new AggTableImpl();
-                      aggTable->setTable(table);
-                      aggFlag = true;
-                   }
-                   aggTable->bindFld(name->fldName, name->aType, newVal->value);
-                }
-	    }
+            if (!isBindFld) {
+                if(newVal->type == typeBinary)
+                    newVal->value = AllDataType::alloc(fInfo->type, 
+                                                       2 * fInfo->length);
+                else newVal->value = AllDataType::alloc(fInfo->type, 
+                                                        fInfo->length);
+                newVal->isAllocVal=true;
+            }
+            if (name->aType ==AGG_UNKNOWN && 
+                            parsedData->getGroupFieldNameList().size()== 0)
+                table->bindFld(name->fldName, newVal->value);
+            else {
+                if (!aggTable)
+                    aggTable = new AggTableImpl();
+                aggTable->setTable(table);
+                aggTable->bindFld(name->fldName, name->aType, newVal->value);
+            }
             parsedData->insertFieldValue(newVal);
-        }
-        if(!isBindFld) bindFldList.append(name);
+        } 
+        if (!isBindFld) bindFldList.append(name);
     }
     rv = setBindFieldAndValues();
     if (rv != OK) 
@@ -410,48 +385,64 @@ DbRetVal SelStatement::resolve()
         table->setCondition(NULL);
         dbMgr->closeTable(table);
         table = NULL;
+        return rv;
     }
-    if(aggFlag && !isGroupFldInProjection) {
-        ListIterator giter = parsedData->getGroupFieldNameList().getIterator();
-        while (giter.hasElement())
-        {
-            name = (FieldName*)giter.nextElement();
-            rv = table->getFieldInfo(name->fldName, fInfo);
-            if (ErrNotFound == rv)
-            {
-                dbMgr->closeTable(table);
-                table = NULL;
-                delete fInfo;
-                delete aggTable;
-                printError(ErrSyntaxError, "Field %s does not exist in table", 
-                                        name->fldName);
-                return ErrSyntaxError;
-            }
-            FieldValue *newVal = new FieldValue();
-            strcpy(newVal->fldName,name->fldName);
-            newVal->parsedString = NULL;
-            newVal->paramNo = 0;
-            newVal->type = fInfo->type;
-            newVal->length = fInfo->length;
-        // for binary datatype input buffer size should be 2 times the length 
-			if (newVal->type == typeBinary)
-                newVal->value = AllDataType::alloc(fInfo->type, 2 * fInfo->length);
-            else newVal->value = AllDataType::alloc(fInfo->type, fInfo->length);
-	    newVal->isAllocVal=true;
-            parsedData->insertFieldValue(newVal);
-            aggTable->setGroup(name->fldName, newVal->value);
-        }
-    }
-    if (aggFlag) {
-        table = aggTable;
-    }
+    resolveGroupFld(aggTable);
     delete fInfo;
     return rv;
+}
+DbRetVal SelStatement::replaceStarWithFirstFldName(FieldName *name)
+{
+    List fNameList = table->getFieldNameList();
+    ListIterator fNameIter = fNameList.getIterator();
+    Identifier *elem = NULL;
+    if (fNameIter.hasElement())
+        elem = (Identifier*) fNameIter.nextElement();
+    if ('*' == name->fldName[0]) strcpy(name->fldName, elem->name);
+    return OK;
+}
+DbRetVal SelStatement::resolveGroupFld(AggTableImpl *aggTable)
+{
+    if (!aggTable) return OK;
+    ListIterator giter = parsedData->getGroupFieldNameList().getIterator();
+    FieldName *name = NULL;
+    DbRetVal rv = OK;
+    FieldInfo *fInfo;
+    while (giter.hasElement())
+    {
+        name = (FieldName*)giter.nextElement();
+        rv = table->getFieldInfo(name->fldName, fInfo);
+        if (ErrNotFound == rv)
+        {
+            dbMgr->closeTable(table);
+            table = NULL;
+            delete fInfo;
+            delete aggTable;
+            printError(ErrSyntaxError, "Field %s does not exist in table",
+                                        name->fldName);
+            return ErrSyntaxError;
+        }
+        FieldValue *newVal = new FieldValue();
+        strcpy(newVal->fldName,name->fldName);
+        newVal->parsedString = NULL;
+        newVal->paramNo = 0;
+        newVal->type = fInfo->type;
+        newVal->length = fInfo->length;
+        if (newVal->type == typeBinary)
+            newVal->value = AllDataType::alloc(fInfo->type, 2 * fInfo->length);
+        else newVal->value = AllDataType::alloc(fInfo->type, fInfo->length);
+        newVal->isAllocVal=true;
+        parsedData->insertFieldValue(newVal);
+        aggTable->setGroup(name->fldName, newVal->value);
+    }
+    table = aggTable;
+    return OK; 
 }
 DbRetVal SelStatement::resolveStar()
 {
     DbRetVal rv = OK;
     parsedData->clearFieldNameList();
+
     List fNameList = table->getFieldNameList();
     ListIterator fNameIter = fNameList.getIterator();
     FieldValue *newVal = NULL;
@@ -475,7 +466,7 @@ DbRetVal SelStatement::resolveStar()
         newVal->type = fInfo->type;
         newVal->length = fInfo->length;
         // for binary datatype input buffer size should be 2 times the length 
-		if(newVal->type == typeBinary) 
+        if(newVal->type == typeBinary) 
             newVal->value = AllDataType::alloc(fInfo->type, 2 * fInfo->length);
         else newVal->value = AllDataType::alloc(fInfo->type, fInfo->length);
 	newVal->isAllocVal=true;
@@ -556,13 +547,13 @@ DbRetVal SelStatement::resolveForCondition()
         }
         if (value->parsedString[0] == '?')
         {
-		    if(!value->opLike) // checks if 'LIKE' operator is used
+		if(!value->opLike) // checks if 'LIKE' operator is used
                 value->paramNo = paramPos++;
         }
         if (!value->paramNo) {
 		    // Here for binary dataType it is not strcpy'd bcos internally memcmp is done for predicates like f2 = 'abcd' where f2 is binary
             AllDataType::strToValue(value->value, value->parsedString, fInfo->type, fInfo->length);
-		}	
+	}	
     }
     delete fInfo;
     totalParams = paramPos -1;

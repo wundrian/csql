@@ -22,6 +22,8 @@
 #include<Table.h>
 #include<TableImpl.h>
 #include<fnmatch.h>
+#include<AggTableImpl.h>
+#include<Util.h>
 void PredicateImpl::print()
 {
     printf("FieldName1 %s, FieldName2 %s", fldName1, fldName2);
@@ -101,6 +103,14 @@ void PredicateImpl::setTuple(void *tpl)
     if (NULL != rhs)
          rhs->setTuple(tpl);
     tuple = tpl;
+}
+void PredicateImpl::setProjectionList(List *lst)
+{
+    if (NULL != lhs)
+        lhs->setProjectionList(lst);
+    if (NULL != rhs)
+         rhs->setProjectionList(lst);
+    projList = lst;
 }
 bool PredicateImpl::isSingleTerm()
 {
@@ -183,17 +193,83 @@ DbRetVal PredicateImpl::evaluate(bool &result)
     //Means it is relational expression
     //first operand is always field identifier
     //get the value in the tuple
+    char fieldName1[IDENTIFIER_LENGTH];
+    char fieldName2[IDENTIFIER_LENGTH];
+    memset(fieldName1, 0, IDENTIFIER_LENGTH);
+    memset(fieldName2, 0, IDENTIFIER_LENGTH);
+    Table::getFieldNameAlone(fldName1, fieldName1);
+    Table::getFieldNameAlone(fldName2, fieldName2);
+    if (projList)
+    {
+        DataType type=typeUnknown;
+        int length=0;
+        //for join node evaluation
+        ListIterator fIter = projList->getIterator();        
+        JoinProjFieldInfo  *def;
+        char *val1, *val2;
+        while (fIter.hasElement())
+        {
+            def = (JoinProjFieldInfo*) fIter.nextElement();
+            if (NULL != def->appBuf) {
+                if (0 == strcmp(fldName1, def->tabFieldName))
+                {
+                    val1 = (char*)def->bindBuf;
+                    type = def->type;
+                    length = def->length;
+                    break;
+                }
+            }else{
+                printError(ErrNotExists, "Field not binded %s.%s\n", 
+                                      def->tableName, def->fieldName);
+                return ErrNotExists;
+            }
+        }
+        if (operand == NULL && operandPtr == NULL)
+        {
+            if (fieldName2) {
+                fIter.reset();
+                while (fIter.hasElement())
+                {
+                    def = (JoinProjFieldInfo*) fIter.nextElement();
+                    if (NULL != def->appBuf) {
+                        if (0 == strcmp(fldName2, def->tabFieldName))
+                        {
+                            val2 = (char*)def->bindBuf;
+                            break;
+                        }
+                    }else{
+                        printError(ErrNotExists, "Field not binded %s.%s\n",
+                                            def->tableName, def->fieldName);
+                        return ErrNotExists;
+                    }
+                }
+            }
+        } 
+        else if(operand != NULL && operandPtr == NULL)
+        { 
+            val2 = (char*) operand;
+        }
+        else if(operand == NULL && operandPtr != NULL)
+        { 
+            val2 = *(char**)operandPtr;
+        }
+        if (compOp == OpLike) result = ! fnmatch(val2, val1, 0);
+        else result = AllDataType::compareVal(val1, val2, compOp, type,
+                              length);
+        return OK;
+    }
+    //the below code works only for single table 
     int offset1, offset2;
-    offset1 = table->getFieldOffset(fldName1);
+    offset1 = table->getFieldOffset(fieldName1);
     //TODO::do not call getFieldXXX many times, instead get it using getFieldInfo
-    char *val1, *val2 ;
+    char *val1, *val2;
     //Assumes that fldName2 data type is also same for expr f1 <f2
-    DataType srcType = table->getFieldType(fldName1);
+    DataType srcType = table->getFieldType(fieldName1);
     val1 = ((char*) tuple) + offset1;
     if (operand == NULL && operandPtr == NULL)
     {
-        if (fldName2) {
-            offset2 = table->getFieldOffset(fldName2);
+        if (fieldName2) {
+            offset2 = table->getFieldOffset(fieldName2);
             val2 = ((char*)tuple) + offset2; 
         }
     } 
@@ -206,10 +282,10 @@ DbRetVal PredicateImpl::evaluate(bool &result)
         val2 = *(char**)operandPtr;
     }
     int ret = 0;
-    printDebug(DM_Predicate, " fldname :%s ", fldName1);
-	if (compOp == OpLike) result = ! fnmatch(val2, val1, 0);
+    printDebug(DM_Predicate, " fldname :%s ", fieldName1);
+    if (compOp == OpLike) result = ! fnmatch(val2, val1, 0);
     else result = AllDataType::compareVal(val1, val2, compOp, srcType,
-                              table->getFieldLength(fldName1));
+                              table->getFieldLength(fieldName1));
     return OK;
 }
 
@@ -244,11 +320,13 @@ bool PredicateImpl::pointLookupInvolved(const char *fname)
     }
     //Means it is relational expression
     //first operand is always field identifier
+    char fieldName1[IDENTIFIER_LENGTH];
+    Table::getFieldNameAlone(fldName1, fieldName1);
     if (OpEquals == compOp)
     {
         //for expressions f1 == f2 use full scan, so return false
         if(NULL == operand && NULL == operandPtr) return false;
-        if(0 == strcmp(fldName1, fname)) 
+        if(0 == strcmp(fieldName1, fname)) 
         {
             return true;
         }
@@ -284,12 +362,14 @@ bool PredicateImpl::rangeQueryInvolved(const char *fname)
     }
     //Means it is relational expression
     //first operand is always field identifier
+    char fieldName1[IDENTIFIER_LENGTH];
+    Table::getFieldNameAlone(fldName1, fieldName1);
     if (OpLessThan == compOp || OpLessThanEquals == compOp ||
         OpGreaterThan == compOp || OpGreaterThanEquals == compOp)
     {
          //for expressions f1 == f2 use full scan, so return false
         if(NULL == operand && NULL == operandPtr) return false;
-        if(0 == strcmp(fldName1, fname))
+        if(0 == strcmp(fieldName1, fname))
         {
             return true;
         }
@@ -315,11 +395,13 @@ void* PredicateImpl::valPtrForIndexField(const char *fname)
         if ( lhsRet !=  NULL) return lhsRet;
         if ( rhsRet !=  NULL) return rhsRet;
     }
+    char fieldName1[IDENTIFIER_LENGTH];
+    Table::getFieldNameAlone(fldName1, fieldName1);
     //Means it is relational expression
     //first operand is always field identifier
     //if (OpEquals == compOp)
     {
-        if(0 == strcmp(fldName1, fname)) 
+        if(0 == strcmp(fieldName1, fname)) 
         {
             if (operand) return operand; else return *(void**)operandPtr;
         }
@@ -342,7 +424,9 @@ ComparisionOp PredicateImpl::opForIndexField(const char *fname)
         if ( lhsRet !=  NULL) return lhsRet;
         if ( rhsRet !=  NULL) return rhsRet;
     }
-    if(0 == strcmp(fldName1, fname))
+    char fieldName1[IDENTIFIER_LENGTH];
+    Table::getFieldNameAlone(fldName1, fieldName1);
+    if(0 == strcmp(fieldName1, fname))
     {
         return compOp;
     }

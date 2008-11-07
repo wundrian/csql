@@ -75,6 +75,12 @@ void ParsedData::insertField(char *fName, AggType type)
     newVal->aType = type;
     fieldNameList.append(newVal);
 }
+void ParsedData::insertTableName(char *tName)
+{
+    TableName *newVal = new TableName();
+    strcpy(newVal->tblName , tName);
+    tableNameList.append(newVal);
+}
 void ParsedData::insertGroupField(char *fName)
 {
     FieldName *newVal = new FieldName();
@@ -157,6 +163,14 @@ void ParsedData::reset()
     }
     updFldValList.reset();
     groupFieldNameList.reset();
+    iter = tableNameList.getIterator();
+    TableName *tname;  
+    while (iter.hasElement())
+    {
+        tname = (TableName*)iter.nextElement();
+        delete tname;
+    }
+    tableNameList.reset(); 
     
     creFldList.removeAll();
     isUnique = false; 

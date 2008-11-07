@@ -37,7 +37,7 @@ enum StatementType
 };
 
 struct FieldValue
-{   
+{
     char fldName[IDENTIFIER_LENGTH];
     char *parsedString;
     void *value;
@@ -69,6 +69,14 @@ struct FieldName
         aType = AGG_UNKNOWN;
     }
 };
+struct TableName
+{
+    char tblName[IDENTIFIER_LENGTH];
+    TableName()
+    {
+        strcpy(tblName,"");
+    }
+};
 
 struct UpdateFieldValue
 {
@@ -91,6 +99,7 @@ class ParsedData
   
     int paramCounter;
 
+    List tableNameList;
     //holds pointer to field names. used in insert to store field name list
     //and for projection list of select
     //also used to store primary or unique key fields in create statement
@@ -150,6 +159,7 @@ class ParsedData
     void insertField(char *fName, AggType aggType= AGG_UNKNOWN);
     void insertGroupField(char *fName);
     void clearFieldNameList();
+    void insertTableName(char *value);
 
 
     Predicate* insertPredicate(char *fldName, ComparisionOp op, void** value);
@@ -171,6 +181,7 @@ class ParsedData
     List getFieldValueList() { return fieldValueList; }
     List getInValueList() { return inValueList; }
     List getUpdateFieldValueList() { return updFldValList; }
+    List getTableNameList() { return tableNameList; }
 
     void setFldName(char *name);
     void setFldType(DataType type);

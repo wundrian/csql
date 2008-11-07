@@ -108,20 +108,23 @@ int main(int argc, char **argv)
             if (isCached(elem->name)) continue;
             printf("CREATE TABLE %s (", elem->name);
             Table *table = dbMgr->openTable(elem->name);
-	        FieldInfo *info = new FieldInfo();
+	    FieldInfo *info = new FieldInfo();
             List fNameList = table->getFieldNameList();
             ListIterator fNameIter = fNameList.getIterator();
             count++;
             bool firstField=true;
+            char fieldName[IDENTIFIER_LENGTH];
             while (fNameIter.hasElement()) {
                  elem = (Identifier*) fNameIter.nextElement();
-                 table->getFieldInfo((const char*)elem->name, info);
+                 Table::getFieldNameAlone(elem->name, fieldName);
+                 rv = table->getFieldInfo(elem->name, info);
+                 if (rv !=OK) return rv;
                  if (firstField) {
-                     printf("%s %s ", elem->name, AllDataType::getSQLString(info->type));
+                     printf("%s %s ", fieldName, AllDataType::getSQLString(info->type));
                      firstField = false;
                  }
                  else
-                     printf(", %s %s ", elem->name, AllDataType::getSQLString(info->type));
+                     printf(", %s %s ", fieldName, AllDataType::getSQLString(info->type));
                  if (info->type == typeString) printf("(%d)",info->length -1);
                  if (info->type == typeBinary) printf("(%d)",info->length);
                  if (info->isNull) printf(" NOT NULL ");
@@ -182,15 +185,17 @@ int main(int argc, char **argv)
         ListIterator fNameIter = fNameList.getIterator();
         bool firstField=true;
         Identifier *elem = NULL;
+        char fieldName[IDENTIFIER_LENGTH];
         while (fNameIter.hasElement()) {
             elem = (Identifier*) fNameIter.nextElement();
+            Table::getFieldNameAlone(elem->name, fieldName);
             table->getFieldInfo((const char*)elem->name, info);
             if (firstField) {
-                printf("%s %s ", elem->name, AllDataType::getSQLString(info->type));
+                printf("%s %s ", fieldName, AllDataType::getSQLString(info->type));
                 firstField = false;
             }
             else
-                printf(", %s %s ", elem->name, AllDataType::getSQLString(info->type));
+                printf(", %s %s ", fieldName, AllDataType::getSQLString(info->type));
             if (info->type == typeString) printf("(%d)",info->length -1);
             if (info->type == typeBinary) printf("(%d)",info->length);
             if (info->isNull) printf(" NOT NULL ");

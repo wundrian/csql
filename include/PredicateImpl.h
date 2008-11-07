@@ -20,6 +20,7 @@
 #include<ErrorType.h>
 class TableImpl;
 class Table;
+class List;
 class PredicateImpl:public Predicate
 {
     //Members set during initialization of the term
@@ -34,6 +35,7 @@ class PredicateImpl:public Predicate
 
     //Members set during execution
     void *tuple; //pointer to the tuple
+    List *projList;
 
     //This will be set before calling evaluate
     TableImpl *table;
@@ -44,6 +46,7 @@ class PredicateImpl:public Predicate
         strcpy(fldName1, ""); strcpy(fldName2, ""); 
         operand = NULL; operandPtr = NULL; lhs = rhs = NULL; 
         tuple = NULL; table = NULL; 
+        projList = NULL;
     }
     ~PredicateImpl(){}
 
@@ -64,6 +67,8 @@ class PredicateImpl:public Predicate
 
     void setTable(Table *tbl);
     void setTuple(void *tpl);
+    void setProjectionList(List *list); //used by JoinTableImpl
+
     bool isSingleTerm();
     bool isNotOrInvolved();
     //check predicate, whether it has field name and == operator

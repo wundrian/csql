@@ -17,14 +17,21 @@
 #include<Table.h>
 #include<TableImpl.h>
 #include<AggTableImpl.h>
+#include<PredicateImpl.h>
 
 JoinTableImpl::JoinTableImpl()
 {
     isNestedLoop= true;
+    pred = NULL;
+    curTuple = NULL;
+    leftTableHdl = NULL;
+    rightTableHdl = NULL;
 }
 JoinTableImpl::~JoinTableImpl()
 {
 }
+/* moved to Table class
+ * shall be removed
 void JoinTableImpl::getFieldNameAlone(char *fname, char *name) {
     bool dotFound= false;
     char *fullname = fname;
@@ -45,6 +52,7 @@ void JoinTableImpl::getTableNameAlone(char *fname, char *name) {
     }
     return;
 }
+*/
 DbRetVal JoinTableImpl::bindFld(const char *fldname, void *val)
 {
     FieldInfo *info = new FieldInfo();
@@ -52,8 +60,6 @@ DbRetVal JoinTableImpl::bindFld(const char *fldname, void *val)
     char fieldName[IDENTIFIER_LENGTH];
     getTableNameAlone((char*)fldname, tableName);
     getFieldNameAlone((char*)fldname, fieldName);
-    printf("%s %s \n", tableName, fieldName);
-
     ListIterator iter = projList.getIterator();
     JoinProjFieldInfo  *elem;
     while (iter.hasElement())
@@ -70,26 +76,14 @@ DbRetVal JoinTableImpl::bindFld(const char *fldname, void *val)
     JoinProjFieldInfo *def = new JoinProjFieldInfo();
     strcpy(def->tableName, tableName);
     strcpy(def->fieldName, fieldName);
+    strcpy(def->tabFieldName, fldname);
     def->appBuf = val;
-    def->bindBuf = AllDataType::alloc(def->type, def->length);
-
-    if (strcmp(tableName, leftTableHdl->getName()) == 0)
-    {
-        leftTableHdl->getFieldInfo(fieldName, info);
-        def->bindBuf = AllDataType::alloc(info->type, info->length);
-        leftTableHdl->bindFld(fieldName, def->bindBuf);
-        
-    }else if (strcmp(tableName, rightTableHdl->getName()) == 0)
-    {
-        rightTableHdl->getFieldInfo(fieldName, info);
-        def->bindBuf = AllDataType::alloc(info->type, info->length);
-        rightTableHdl->bindFld(fieldName, def->bindBuf);
-    }else
-    {
-        printError(ErrBadCall, "TableName is invalid\n");
-        delete info;
-        return ErrBadCall;
-    }
+    getFieldInfo(fldname, info);
+    def->bindBuf = AllDataType::alloc(info->type, info->length);
+    if (availableLeft)
+        leftTableHdl->bindFld(fldname, def->bindBuf);
+    else 
+        rightTableHdl->bindFld(fldname, def->bindBuf);
     def->type = info->type;
     def->length= info->length;
     projList.append(def);
@@ -177,9 +171,11 @@ DbRetVal JoinTableImpl::setJoinCondition(const char *fldname1,
 
 DbRetVal JoinTableImpl::execute()
 {
+    PredicateImpl* predImpl = (PredicateImpl*) pred;
     isNestedLoop = true;
     leftTableHdl->execute();
     rightTableHdl->execute();
+    if (pred) predImpl->setProjectionList(&projList);
     leftTableHdl->fetch();
     //TODO
     //if join condition is not set then do nl
@@ -190,6 +186,8 @@ DbRetVal JoinTableImpl::execute()
 
 void* JoinTableImpl::fetch()
 {
+    PredicateImpl* predImpl = (PredicateImpl*) pred;
+    DbRetVal rv = OK;
     if (isNestedLoop)
     {
         void *rec = rightTableHdl->fetch();
@@ -203,12 +201,18 @@ void* JoinTableImpl::fetch()
             if (rec == NULL) return NULL;
             bool result = evaluate();
             if (! result) return fetch();
+            if (pred) rv = predImpl->evaluate(result);
+            if ( rv !=OK) return NULL; 
+            if (!result) return fetch();
             copyValuesToBindBuffer(NULL);
             return rec;
         }
         else {
             bool result = evaluate();
             if (! result) return fetch();
+            if (pred) rv = predImpl->evaluate(result);
+            if ( rv !=OK) return NULL; 
+            if (!result) return fetch();
             copyValuesToBindBuffer(NULL);
             return rec;
         }
@@ -219,9 +223,11 @@ void* JoinTableImpl::fetch()
 bool JoinTableImpl::evaluate()
 {
     if (!jCondition.bindBuf1 || !jCondition.bindBuf2) return true;
-    return AllDataType::compareVal(jCondition.bindBuf1, jCondition.bindBuf2, 
+    bool res = AllDataType::compareVal(jCondition.bindBuf1, 
+                                   jCondition.bindBuf2, 
                                    jCondition.op,  
                                    jCondition.type1, jCondition.length1);
+    return res;
 }
 void* JoinTableImpl::fetch(DbRetVal &rv)
 {
@@ -254,6 +260,23 @@ DbRetVal JoinTableImpl::copyValuesToBindBuffer(void *elem)
     }
     return OK;
 }
+DbRetVal JoinTableImpl::getFieldInfo(const char* fldname, FieldInfo *&info)
+{
+    DbRetVal retCode = OK;
+    retCode = leftTableHdl->getFieldInfo(fldname, info);
+    if (retCode ==OK)
+    {
+        availableLeft= true;
+        return OK;
+    }
+    retCode = rightTableHdl->getFieldInfo(fldname, info);
+    if (retCode ==OK)
+    {
+        availableLeft= false;
+        return OK;
+    }
+    return ErrNotExists;
+}
 
 long JoinTableImpl::numTuples()
 {
@@ -264,5 +287,32 @@ void JoinTableImpl::closeScan()
 }
 DbRetVal JoinTableImpl::close()
 {
+    leftTableHdl->close();
+    rightTableHdl->close();
     return OK;
+}
+void* JoinTableImpl::getBindFldAddr(const char *name)
+{
+    return NULL;
+}
+List JoinTableImpl::getFieldNameList()
+{
+    List fldNameList;
+
+    List leftList = leftTableHdl->getFieldNameList();
+    ListIterator lIter = leftList.getIterator();
+    while (lIter.hasElement())
+    {
+        Identifier *elem = (Identifier*) lIter.nextElement();
+        fldNameList.append(elem);
+    }
+
+    List rightList = rightTableHdl->getFieldNameList();
+    ListIterator rIter = rightList.getIterator();
+    while (rIter.hasElement())
+    {
+        Identifier *elem = (Identifier*) rIter.nextElement();
+        fldNameList.append(elem);
+    }
+    return fldNameList;
 }

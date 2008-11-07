@@ -105,11 +105,13 @@ int main(int argc, char **argv)
             List fNameList = table->getFieldNameList();
             ListIterator fNameIter = fNameList.getIterator();
             count++;
+            char fieldName[IDENTIFIER_LENGTH];
             while (fNameIter.hasElement()) {
                  elem = (Identifier*) fNameIter.nextElement();
+                 Table::getFieldNameAlone(elem->name, fieldName);
                  table->getFieldInfo((const char*)elem->name, info);
                  printf("      <FieldInfo>\n");
-                 printf("        <FieldName> %s </FieldName>\n", elem->name);
+                 printf("        <FieldName> %s </FieldName>\n", fieldName);
                  printf("        <Type> %d </Type>\n", info->type);
                  printf("        <Length> %d </Length>\n", info->length);
                  printf("        <Primary> %d </Primary>\n", info->isPrimary);

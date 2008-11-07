@@ -138,8 +138,6 @@ class Table
 
     virtual int truncate()=0;
 
-
-
     //scan
 
     /**fetches the next tuple in the table which satisfies the condition specified.
@@ -198,5 +196,10 @@ class Table
     virtual void printSQLIndexString()=0;
 
     virtual ~Table() { }
+
+
+    //non virtual functions
+    static void getFieldNameAlone(char *fname, char *name);
+    static void getTableNameAlone(char *fname, char *name);
 };
 #endif
