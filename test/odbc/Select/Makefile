@@ -19,7 +19,7 @@ endif
 
 INCL= -I$(CSQL_INSTALL_ROOT)/include
 
-LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlodbc 
+LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlodbc -lcacheload
 
 TARGETS =  test001 test002 test003 test004 test005 test006 test007 test008 
 

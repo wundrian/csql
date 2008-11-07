@@ -21,7 +21,7 @@ endif
 endif
 
 INCL= -I$(CSQL_INSTALL_ROOT)/include
-LIBS= -L$(CSQL_INSTALL_ROOT)/lib -rdynamic -lcsql
+LIBS= -L$(CSQL_INSTALL_ROOT)/lib -rdynamic -lcsql -lcacheload
 
 TARGETS = \
         SQLGWTest \
