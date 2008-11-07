@@ -36,7 +36,7 @@ then
     exit 2;
 fi
 
-echo "1:t1 NULL" > /tmp/csql/csqltable.conf
+echo "1:t1 NULL NULL NULL" > /tmp/csql/csqltable.conf
 isql $DSN < ${REL_PATH}/mysqlupdate.sql >/dev/null 2>&1
 if [ $? -ne 0 ]
 then

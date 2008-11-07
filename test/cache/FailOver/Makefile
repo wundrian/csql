@@ -18,7 +18,7 @@ endif
 endif
 
 INCL=  -I$(CSQL_INSTALL_ROOT)/install/include -I../../../include
-LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw
+LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw -lcacheload
  
 TARGETS = \
 	insertconncsqldown 	selectconncsqldown 	updateconncsqldown	deleteconncsqldown	\

@@ -22,7 +22,7 @@ rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 for (( a=1; a<2; a++ ))
 do
-    echo "1:t$a"
+    echo "1:t$a NULL NULL NULL"
 done >> /tmp/csql/csqltable.conf
 
 $CSQL_INSTALL_ROOT/bin/csqlserver -c >/dev/null 2>&1 &

@@ -19,7 +19,7 @@ isql $DSN < $REL_PATH/mysqlinputtest1.sql > /dev/null 2>&1
 # edit /tmp/csql/csqltable.conf
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
-echo "1:t1 NULL" >/tmp/csql/csqltable.conf
+echo "1:t1 NULL NULL NULL" >/tmp/csql/csqltable.conf
 $CSQL_INSTALL_ROOT/bin/csqlserver -c > /dev/null 2>&1 &
 pid=$!
 sleep 5
