@@ -128,12 +128,12 @@ public static int aggregate(Connection con, int val)throws Exception
 	}
 	else if(val==2)
 	{
-		String buf = "SELECT MIN(unique3) FROM big1 GROUP BY onepercent;";
+		String buf = "SELECT MIN(unique2) FROM big1 GROUP BY onepercent;";
 		stmtStr = buf;
 	}
 	else
 	{
-		String buf = "SELECT SUM(unique3) FROM big1 GROUP BY onepercent;";
+		String buf = "SELECT SUM(unique2) FROM big1 GROUP BY onepercent;";
 		stmtStr = buf;
 	}
 	    
@@ -422,12 +422,16 @@ public static void main(String[] args)
 	  System.out.println("Q.No.\tQuery Type\tNoIdx\tIdx1\tIdx2\tWall_Clk");
 	  System.out.println("-----\t----------\t-----\t----\t----\t--------");
 
-          
+          try { 
 	  cStmt.execute("DROP INDEX idx3");
 	  cStmt.close();
 	  
 	  cStmt.execute("DROP INDEX idx4");// for q1 and q2
           cStmt.close();
+          } catch(Exception e)
+          {
+              System.out.println("Indexes are already dropped\n");
+          }
 	  
 	  int q1 = onePerSel(con, true);
 	  System.out.println("1\t1% Sel\t\tY\t-\t-\t"+q1);
@@ -471,6 +475,7 @@ public static void main(String[] args)
 	  System.out.println("7\t1 Tup Sel\t-\t-\tY\t"+q7);
 
 	   
+          //commented query 8 as it is duplicate of query 3
 	  int q8 = onePerSel(con,true);
 	  System.out.println("8\t1% Sel\t\t-\t-\tY\t"+q1);
 

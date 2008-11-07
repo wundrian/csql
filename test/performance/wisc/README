@@ -1,0 +1,18 @@
+Wisconsin Benchmark Suite
+-------------------------
+set the following in csql.conf file
+MAX_SYS_DB_SIZE=10485760
+MAX_DB_SIZE=104857600
+
+Run make to build the suite as follows
+$make
+
+To populate the database run
+$./odbcBench -b
+
+
+To run odbc test
+$./odbcBench
+
+To run jdbc test
+$java JDBCBench
