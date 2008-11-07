@@ -1,6 +1,6 @@
 table t5 is created with records in target db
-Recovering table t5 NULL
-Recovering table t6 NULL
+Recovering table t5 NULL NULL
+Recovering table t6 NULL NULL
 <Chunk information>
   <System Chunk >
         <Chunk Id> 0 </Chunk Id> 

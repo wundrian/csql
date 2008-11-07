@@ -20,8 +20,8 @@ touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 $CSQL_INSTALL_ROOT/bin/csqlserver  >/dev/null 2>&1 &
 pid=$!
 sleep 5
-echo "1:t5 NULL" >> /tmp/csql/csqltable.conf
-echo "1:t6 NULL" >> /tmp/csql/csqltable.conf
+echo "1:t5 NULL NULL NULL" >> /tmp/csql/csqltable.conf
+echo "1:t6 NULL NULL NULL" >> /tmp/csql/csqltable.conf
 
 $CSQL_INSTALL_ROOT/bin/cachetable -R
 if [ $? -ne 0 ]

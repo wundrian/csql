@@ -1,7 +1,7 @@
 #!/bin/sh
 # Test Case
 
-# Create table t3 with f1 int and f2 char,composite primary key (f1,f2) in target database
+# Create table t4 with f1 int and f2 char,composite primary key (f1,f2) in target database
 # Cache it with cachetable tool.
 # Insert record to chech weather composite primary key or not.
 
@@ -21,7 +21,7 @@ sleep 5
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 
-echo "1:t4 NULL" >> /tmp/csql/csqltable.conf
+echo "1:t4 NULL NULL NULL" >> /tmp/csql/csqltable.conf
 
 $CSQL_INSTALL_ROOT/bin/cachetable -R
 if [ $? -ne 0 ]

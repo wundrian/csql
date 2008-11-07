@@ -22,8 +22,8 @@ rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 
 # write to the csqltable.conf file
-echo "1:t1 NULL" > /tmp/csql/csqltable.conf
-echo "2:t2 t2f1>5" >> /tmp/csql/csqltable.conf
+echo "1:t1 NULL NULL NULL" > /tmp/csql/csqltable.conf
+echo "2:t2 NULL t2f1>5 NULL" >> /tmp/csql/csqltable.conf
 
 $CSQL_INSTALL_ROOT/bin/cachetable -R 
 if [ $? -ne 0 ]
@@ -53,7 +53,7 @@ $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/selectstar.sql
 
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
-isql $DSN < ${REL_PATH}/dropall.sql >/dev/null 2>&
+isql $DSN < ${REL_PATH}/dropall.sql >/dev/null 2>&1
 $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/dropall.sql > /dev/null 2>&1
 exit 0;
 

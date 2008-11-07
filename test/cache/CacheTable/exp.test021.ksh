@@ -1,5 +1,5 @@
 table t4 is created with records in target db
-Recovering table t4 NULL
+Recovering table t4 NULL NULL
 <Chunk information>
   <System Chunk >
         <Chunk Id> 0 </Chunk Id> 

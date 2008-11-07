@@ -20,7 +20,6 @@ if [ $? -ne 0 ]
 then
    exit 1;
 fi
-
 rm -f /tmp/csql/csqltable.conf /tmp/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 

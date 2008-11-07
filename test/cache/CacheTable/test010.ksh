@@ -29,8 +29,8 @@ rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 
 # write to the file
-echo "1:t1 NULL" > /tmp/csql/csqltable.conf
-echo "2:t2 t2f1<5" >> /tmp/csql/csqltable.conf
+echo "1:t1 NULL NULL NULL" > /tmp/csql/csqltable.conf
+echo "2:t2 NULL t2f1<5 NULL" >> /tmp/csql/csqltable.conf
 
 $CSQL_INSTALL_ROOT/bin/cachetable -R 
 if [ $? -ne 0 ]

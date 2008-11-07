@@ -30,8 +30,8 @@ echo Table t1 and t2 created in target DB.
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 
-echo "1:t1 NULL NULL"  >/tmp/csql/csqltable.conf
-echo "2:t2 t2f1<15 t2f1,t2f3,t2f5" >>/tmp/csql/csqltable.conf
+echo "1:t1 NULL NULL NULL"  >/tmp/csql/csqltable.conf
+echo "2:t2 NULL t2f1<15 t2f1,t2f3,t2f5" >>/tmp/csql/csqltable.conf
 
 # caching with -R option
 $CSQL_INSTALL_ROOT/bin/cachetable -R

@@ -1,6 +1,6 @@
 Table t1 and t2 created in target DB.
-Recovering table t1 NULL
-Recovering table t2 t2f1<5
+Recovering table t1 NULL NULL
+Recovering table t2 t2f1<5 NULL
 ---------------------------------------------------------
 	t1f1	t2f2	
 ---------------------------------------------------------
