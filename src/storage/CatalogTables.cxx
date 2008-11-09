@@ -408,7 +408,10 @@ DbRetVal CatalogTableINDEXFIELD::insert(FieldNameList &fldList, void *indexPtr,
     bool isFldInd=false;
     while ((data = iter.nextElement())!= NULL)
     {
-        if ((((CINDEX*)data)->tblPtr_==tblPtr) && (((CINDEX*)indexPtr)->numFlds_ == ((CINDEX*)data)->numFlds_) && (data != indexPtr) )
+        if ((((CINDEX*)data)->tblPtr_==tblPtr) 
+              && (((CINDEX*)indexPtr)->numFlds_ == ((CINDEX*)data)->numFlds_) 
+              && (((CINDEX*)indexPtr)->indexType_==((CINDEX*)data)->indexType_) 
+              && (data != indexPtr) )
         {
 	    fldList.resetIter();
 	    while (NULL != (fName = fldList.nextFieldName()))
