@@ -21,6 +21,7 @@
 #define PARSER_H
 #include <CSql.h>
 #include <AggTableImpl.h>
+#include <JoinTableImpl.h>
 #include <os.h>
 #include <Util.h>
 enum StatementType

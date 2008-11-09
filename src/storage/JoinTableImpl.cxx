@@ -16,7 +16,7 @@
 #include<Debug.h>
 #include<Table.h>
 #include<TableImpl.h>
-#include<AggTableImpl.h>
+#include<JoinTableImpl.h>
 #include<PredicateImpl.h>
 
 JoinTableImpl::JoinTableImpl()

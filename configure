@@ -20032,7 +20032,7 @@ done
 
 
 
-ac_config_files="$ac_config_files Makefile src/Makefile include/Makefile src/storage/Makefile src/sql/Makefile src/adapter/Makefile src/gateway/Makefile src/cache/Makefile src/network/Makefile src/sqllog/Makefile src/tools/Makefile src/jdbc/Makefile src/odbc/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile include/Makefile src/storage/Makefile src/sql/Makefile src/adapter/Makefile src/gateway/Makefile src/cache/Makefile src/network/Makefile src/sqllog/Makefile src/tools/Makefile src/jdbc/Makefile src/odbc/Makefile src/oci/Makefile src/sqlnetwork/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -20633,6 +20633,8 @@ do
     "src/tools/Makefile") CONFIG_FILES="$CONFIG_FILES src/tools/Makefile" ;;
     "src/jdbc/Makefile") CONFIG_FILES="$CONFIG_FILES src/jdbc/Makefile" ;;
     "src/odbc/Makefile") CONFIG_FILES="$CONFIG_FILES src/odbc/Makefile" ;;
+    "src/oci/Makefile") CONFIG_FILES="$CONFIG_FILES src/oci/Makefile" ;;
+    "src/sqlnetwork/Makefile") CONFIG_FILES="$CONFIG_FILES src/sqlnetwork/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}

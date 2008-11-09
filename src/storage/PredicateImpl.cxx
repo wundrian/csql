@@ -22,7 +22,7 @@
 #include<Table.h>
 #include<TableImpl.h>
 #include<fnmatch.h>
-#include<AggTableImpl.h>
+#include<JoinTableImpl.h>
 #include<Util.h>
 void PredicateImpl::print()
 {

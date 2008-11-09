@@ -13,8 +13,8 @@
  *   GNU General Public License for more details.                          *
  *                                                                         *
   ***************************************************************************/
-#ifndef AGGTABLE_IMPL_H
-#define AGGTABLE_IMPL_H
+#ifndef JOINTABLE_IMPL_H
+#define JOINTABLE_IMPL_H
 #include<os.h>
 #include<DataType.h>
 #include<Transaction.h>
@@ -25,68 +25,92 @@
 #include<Debug.h>
 #include<DatabaseManagerImpl.h>
 #include<Predicate.h>
-enum AggType
+enum JoinType
 {
-    AGG_MIN = 1,
-    AGG_MAX,
-    AGG_SUM,
-    AGG_AVG,
-    AGG_COUNT,
-    AGG_UNKNOWN
+    INNER_JOIN = 1,
+    RIGHT_JOIN,
+    LEFT_JOIN,
+    FULL_JOIN,
+    UNKNOWN_JOIN
 };
-class AggFldDef
+class JoinProjFieldInfo
 {
     public:
-    char fldName[IDENTIFIER_LENGTH];
+    char tabFieldName[IDENTIFIER_LENGTH*2];
+    char tableName[IDENTIFIER_LENGTH];
+    char fieldName[IDENTIFIER_LENGTH];
     DataType type;
     int length;
-    void *bindBuf;
     void *appBuf;
-    AggType atype;
-    bool alreadyBinded;
-    AggFldDef()
+    void *bindBuf;
+    JoinProjFieldInfo()
     {
-        strcpy(fldName, "");
-        type=typeUnknown;
-        length=0;
-        bindBuf=NULL;
-        appBuf=NULL;
-        atype=AGG_UNKNOWN;
-        alreadyBinded=false;
+        strcpy(tableName,""); strcpy(fieldName, "");
+        type= typeUnknown; length =0; appBuf= NULL; bindBuf=NULL;
     }
 };
-
-class AggTableImpl:public Table
+class JoinCondition
+{
+    public:
+    char tableName1[IDENTIFIER_LENGTH];
+    char tableName2[IDENTIFIER_LENGTH];
+    char fieldName1[IDENTIFIER_LENGTH];
+    char fieldName2[IDENTIFIER_LENGTH];
+    DataType type1;
+    DataType type2;
+    int length1;
+    int length2;
+    void *bindBuf1;
+    void *bindBuf2;
+    bool alreadyBinded1;
+    bool alreadyBinded2;
+    ComparisionOp op;
+    JoinCondition()
+    {
+        strcpy(tableName1,""); strcpy(fieldName1, "");
+        strcpy(tableName2,""); strcpy(fieldName2, "");
+        type1= typeUnknown; length1 =0; bindBuf1=NULL;
+        type2= typeUnknown; length2 =0; bindBuf2=NULL;
+        alreadyBinded1=false; alreadyBinded2=false;
+    }
+    
+};
+class JoinTableImpl:public Table
 {
     private:
-    char tblName_[IDENTIFIER_LENGTH];
     void *curTuple; //holds the current tuple ptr. moved during fetch() calls
-    List fldList;
-    AggFldDef groupFld;
-    Table *tableHdl;
-    List aggNodes; //change this list to some other data structure
-    ListIterator aggNodeIter;
+    List projList;
+    Table *leftTableHdl;
+    Table *rightTableHdl;
+    bool availableLeft;
 
-    int aggNodeSize;
+    JoinType jType;
+    ListIterator rsIter;
+    bool isNestedLoop;
+    bool rightExhausted;
     DbRetVal copyValuesToBindBuffer(void *tuple);
+    JoinCondition jCondition;
+    Predicate *pred;
+
     public:
-    AggTableImpl();
-    virtual ~AggTableImpl();
-    DbRetVal getFieldInfo(const char *fieldName,  FieldInfo *&info)
-        { return ErrBadCall; }
-    bool isGroupSet()
-        {
-        if (groupFld.type == typeUnknown) return false; else return true;
-        }
-    void* insertOrGet();
-    void setTable(Table *impl){ tableHdl = impl;}
-    Table* getTableHdl(){ return tableHdl; }
+    JoinTableImpl();
+    virtual ~JoinTableImpl();
+
+    DbRetVal getFieldInfo(const char *fieldName,  FieldInfo *&info);
+
+    void setTable(Table *left, Table *right)
+    { leftTableHdl = left; rightTableHdl = right; }
+
     void closeScan();
-    void *getBindFldAddr(const char *name);
+    void setJoinType(JoinType type) { jType = type; }
+    //binding
     DbRetVal bindFld(const char *name, void *val);
-    DbRetVal bindFld(const char *name, AggType aggType, void *val);
-    DbRetVal setGroup(const char *name, void *val);
-    void setCondition(Condition *p){}
+    DbRetVal setJoinCondition(const char *fldname1, ComparisionOp op,  
+                              const char *fldname2);
+
+     void setCondition(Condition *p)
+     { if (p) pred = p->getPredicate(); else pred = NULL;}
+
     void markFldNull(const char *name){}
     void markFldNull(int colpos){}
     bool isFldNull(const char *name){return false;}
@@ -104,16 +128,22 @@ class AggTableImpl:public Table
     DbRetVal unlock(){ return ErrBadCall; }
     DbRetVal setUndoLogging(bool flag) { return ErrBadCall; }
     void printSQLIndexString(){ };
-    char* getName() { return tableHdl->getName(); }
-    List getFieldNameList(){ List list; return list;}
+    List getFieldNameList();
+    char* getName() { return NULL; }
+
+    bool evaluate();
     DbRetVal execute();
     void* fetch();
     void* fetch(DbRetVal &rv);
     void* fetchNoBind();
     void* fetchNoBind(DbRetVal &rv);
     DbRetVal close();
+
     long numTuples();
     void printInfo();
+    void *getBindFldAddr(const char *name);
+
 };
+
 
 #endif
