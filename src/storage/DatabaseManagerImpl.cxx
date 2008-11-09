@@ -954,6 +954,8 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
     logFinest(logger, "Creating HashIndex %s on %s with bucket size %d", indName, tblName, buckets);
     return OK;
 }
+
+
 DbRetVal DatabaseManagerImpl::createTreeIndex(const char *indName, const char *tblName,
                       FieldNameList &fldList, int nodeSize, bool isUnique, bool isPrimary)
 {
@@ -1021,7 +1023,10 @@ DbRetVal DatabaseManagerImpl::createTreeIndex(const char *indName, const char *t
         printError(ErrSysInternal, "Unable to create chunk");
         return ErrSysInternal;
     }
+
+
     void *tupleptr = NULL;
+
     CatalogTableINDEX cIndex(systemDatabase_);
     rv = cIndex.insert(indName, tptr, fldList.size(), isUnique,
                         chunkInfo, nodeSize, NULL, tupleptr);

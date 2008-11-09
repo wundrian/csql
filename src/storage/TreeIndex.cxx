@@ -57,7 +57,9 @@ DbRetVal TreeIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         *rec = (char*) tuple;
         iptr->hashNodeChunk_ = tnode;
     }else {
-        start->insert(tbl->db_, indInfo, indexPtr, tuple);
+        rc = start->insert(tbl->db_, indInfo, indexPtr, tuple);
+        if (rc != OK)
+            printError(rc, "Error in tree node insertion\n");
     }
 
     printDebug(DM_TreeIndex, "\nExit TreeNode::Insert - 1");
@@ -130,6 +132,7 @@ DbRetVal TreeNode::insert(Database *db, IndexInfo *indInfo, void *indexPtr, void
     printDebug(DM_TreeIndex, "\nInside TreeNode::Insert - 2");
     int count =0;
     int direction = 0;  //0:current,1:right,2:rightLeft,-1:left,-2:leftRight
+    DbRetVal rv = OK;
     while(iter != NULL)
     {
         record = ((char*)iter->max_)+ info->fldOffset;
@@ -182,12 +185,12 @@ DbRetVal TreeNode::insert(Database *db, IndexInfo *indInfo, void *indexPtr, void
         {
             printDebug(DM_TreeIndex, "\n2Insert- d=2 if ");
             iter = iter->prev_;
-            insert(1, db, indInfo, iptr, tuple, iter);
+            rv  = insert(1, db, indInfo, iptr, tuple, iter);
         }
         else
         {
             printDebug(DM_TreeIndex, "\n2Insert- d=2 else ");
-            insert(-1, db, indInfo, iptr, tuple, iter);
+            rv  = insert(-1, db, indInfo, iptr, tuple, iter);
         }
     }
     else if(direction == 1)
@@ -198,12 +201,12 @@ DbRetVal TreeNode::insert(Database *db, IndexInfo *indInfo, void *indexPtr, void
         {
             printDebug(DM_TreeIndex, "\n2Insert- d=1 if ");
             iter = iter->next_;
-            insert(-1, db, indInfo, iptr, tuple, iter);
+            rv  = insert(-1, db, indInfo, iptr, tuple, iter);
         }
         else
         {
             printDebug(DM_TreeIndex, "\n2Insert- d=1 else ");
-            insert(1, db, indInfo, iptr, tuple, iter);
+            rv = insert(1, db, indInfo, iptr, tuple, iter);
         }
     }
     else if(direction == -2)
@@ -212,12 +215,12 @@ DbRetVal TreeNode::insert(Database *db, IndexInfo *indInfo, void *indexPtr, void
        {
             printDebug(DM_TreeIndex, "\n2Insert- d=-2 if ");
             iter = iter->next_;
-            insert(-1, db, indInfo, iptr, tuple, iter);
+            rv = insert(-1, db, indInfo, iptr, tuple, iter);
        }
        else
        {
            printDebug(DM_TreeIndex, "\n2Insert- d=-2 else ");
-           insert(1, db, indInfo, iptr, tuple, iter);
+           rv = insert(1, db, indInfo, iptr, tuple, iter);
        }
     }
     else if(direction == -1)
@@ -228,21 +231,21 @@ DbRetVal TreeNode::insert(Database *db, IndexInfo *indInfo, void *indexPtr, void
         {
             printDebug(DM_TreeIndex, "\n2Insert- d=-1 if ");
             iter = iter->prev_;
-            insert(1, db, indInfo, iptr, tuple, iter);
+            rv = insert(1, db, indInfo, iptr, tuple, iter);
         }
        else
        {
            printDebug(DM_TreeIndex, "\n2Insert- d=-1 else ");
-           insert(-1, db, indInfo, iptr, tuple, iter);
+           rv = insert(-1, db, indInfo, iptr, tuple, iter);
        }
     }
     else
     {
         printDebug(DM_TreeIndex, "\n2Insert- d=0 ");
-        insert(0, db, indInfo, iptr, tuple, iter);
+        rv = insert(0, db, indInfo, iptr, tuple, iter);
     }
     printDebug(DM_TreeIndex, "\n %d While  ..Exit TreeNode::Insert - 2",count);
-    return OK;
+    return rv;
 }
 DbRetVal TreeNode::insert(int position, Database * db, IndexInfo * indInfo,
                           CINDEX * iptr, void * tuple, TreeNode * iter)
@@ -270,6 +273,7 @@ DbRetVal TreeNode::insert(int position, Database * db, IndexInfo * indInfo,
             if (tnode == NULL)
             {
                 printDebug(DM_TreeIndex, "\nExit TreeNode::Insert Position tnode=NULL");
+                iter->mutex_.releaseLock(db->procSlot);
                 return rc;
             }
             tnode->mutex_.init();
@@ -306,6 +310,7 @@ DbRetVal TreeNode::insert(int position, Database * db, IndexInfo * indInfo,
             if (tnode == NULL)
             {
                 printDebug(DM_TreeIndex, "\nExit TreeNode::Insert Position tnode=NULL");
+                iter->mutex_.releaseLock(db->procSlot);
                 return rc;
             }
             tnode->mutex_.init();
@@ -356,6 +361,11 @@ DbRetVal TreeNode::insert(int position, Database * db, IndexInfo * indInfo,
             if(res)
             {
                 loc = middle;
+                if (info->isUnique) {
+                    iter->mutex_.releaseLock(db->procSlot);
+                    printError(ErrUnique, "Unique constraint violation\n");
+                    return ErrUnique;
+                }
                 break;
             }
             res = AllDataType::compareVal(keyVal, record, OpLessThan, info->type, info->compLength);
@@ -377,6 +387,7 @@ DbRetVal TreeNode::insert(int position, Database * db, IndexInfo * indInfo,
             if (tnode == NULL)
             {
                 printDebug(DM_TreeIndex, "\nExit TreeNode::Insert Position tnode=NULL");
+                iter->mutex_.releaseLock(db->procSlot);
                 return rc;
             }
             tnode->mutex_.init();
@@ -434,7 +445,7 @@ DbRetVal TreeIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     TreeNode *start = (TreeNode*) iptr->hashNodeChunk_;
     TreeNode *iter = locateNode(start, tuple, indInfo);
     if (NULL == iter) return OK; //element not found
-    removeElement(iter, tuple, info);
+    removeElement(tbl->getDB(), iter, tuple, info);
     return OK;
 }
 TreeNode* TreeIndex::locateNode(TreeNode *iter, void *tuple, IndexInfo *indInfo)
@@ -469,11 +480,12 @@ TreeNode* TreeIndex::locateNode(TreeNode *iter, void *tuple, IndexInfo *indInfo)
     }
     return NULL;
 }
-DbRetVal TreeIndex::removeElement(TreeNode *iter, void *tuple, HashIndexInfo *info)
+DbRetVal TreeIndex::removeElement(Database *db, TreeNode *iter, void *tuple, HashIndexInfo *info)
 {
     void *searchKey =(void*)((char*)tuple + info->fldOffset);
     int loc=0, middle=0, start=0, end=iter->noElements_-1;
     char **rec = (char**)((char*)iter + sizeof(TreeNode));
+    iter->mutex_.getLock(db->procSlot);
     for(middle = (start + end) / 2; start <= end ; middle = (start +end )/2)
     {
         loc = middle;
@@ -505,6 +517,7 @@ DbRetVal TreeIndex::removeElement(TreeNode *iter, void *tuple, HashIndexInfo *in
     {
        iter->min_ = tuple;
     }
+    iter->mutex_.releaseLock(db->procSlot);
     //TODO::if noElement is zero then deallocate the tree node
     iter->noElements_--;
     return OK;
