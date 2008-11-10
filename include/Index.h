@@ -127,7 +127,7 @@ class TreeIndex : public Index
 {
 
     TreeNode* locateNode(TreeNode *iter, void *tuple, IndexInfo *indInfo);
-    DbRetVal removeElement(TreeNode *iter, void *tuple, HashIndexInfo *info);
+    DbRetVal removeElement(Database *db, TreeNode *iter, void *tuple, HashIndexInfo *info);
     public:
     DbRetVal insert(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool undoFlag);
     DbRetVal remove(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool undoFlag);

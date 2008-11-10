@@ -138,6 +138,7 @@ class TableImpl:public Table
     ~TableImpl();
 
     void setDB(Database *db) { db_ = db; }
+    Database* getDB() { return db_;}
     void setSystemDB(Database *db) { sysDB_ = db; }
     void setLockManager(LockManager *lmgr) { lMgr_ = lmgr; }
     void setTrans(Transaction **t) { trans = t; }
