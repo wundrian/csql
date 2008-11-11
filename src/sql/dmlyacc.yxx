@@ -15,21 +15,25 @@ void yyerror(const char* Msg);
 {
    char *stringval;
    void *predicate;
+   void *Expression;
 }
 
 %left OR 
 %left AND
+%left '+' '-'
+%left '*' '/' '%'
+%nonassoc UMINUS
 %token <stringval> STRING FIELD NUMBER_STRING BINARY_STRING DOUBLE OPERATOR PARAMETER
 %token <stringval> SELECT FROM WHERE BETWEEN IN AND OR NOT
-%token <stringval> STAR
 %token <stringval> INSERT INTO VALUES
 %token <stringval> DELETE UPDATE SET NULL_VALUE
 %token <stringval> CREATE TABLE PRIMARY KEY DEFAULT INDEX ON HASH TREE UNIQUE DROP
 %token <stringval> INT_TYPE LONG_TYPE SHORT_TYPE DOUBLE_TYPE TIMESTAMP_TYPE DATE_TYPE CHAR_TYPE TIME_TYPE BIGINT_TYPE FLOAT_TYPE TINYINT_TYPE BINARY_TYPE
 %token <stringval> MIN MAX AVG SUM COUNT GROUP BY
 %token ';' ',' '(' ')'
-%type <stringval> ident field value not_opt
+%type <stringval> ident field value not_opt doub_value num_value
 %type <predicate> conditions condition 
+%type <Expression> stmt_exp atom
 %%
 command:  select_statement { YYACCEPT; }
         | insert_statement { YYACCEPT; }
@@ -123,13 +127,83 @@ assign_list: assign_list assign_list_L
 
 assign_list_L: ',' assign_stmt
         ;
-assign_stmt: ident OPERATOR value 
+assign_stmt: ident  OPERATOR stmt_exp
+        {
+           parsedData->insertUpdateExpression( (char*) $1, (Expression* ) $3);
+           free( $1 ); free($2);
+        }
+        | ident OPERATOR value 
         { 
             parsedData->insertUpdateValue( (char*) $1, (char*) $3);
             free( $1 ); free($2);free( $3 ); 
         }
+        | ident OPERATOR NULL_VALUE 
+        {
+            parsedData->insertUpdateValue( (char*) $1, (char*) $3);
+            free( $1 ); free($2);free( $3 );
+        }
+        ; 
+stmt_exp: stmt_exp '/' stmt_exp
+        {
+            Expression* exp;
+            exp=parsedData->insertExpression((Expression *)$1, division, (Expression *)$3);
+            $$=exp;
+        } 
+        | stmt_exp '%' stmt_exp
+        {
+            Expression* exp;
+            exp=parsedData->insertExpression((Expression *)$1, modulus, (Expression *)$3);
+            $$=exp;
+        }
+        | stmt_exp '*' stmt_exp
+        {
+            Expression* exp;
+            exp=parsedData->insertExpression((Expression *)$1, multiplication, (Expression *)$3);
+            $$=exp;
+        }
+        | stmt_exp '+' stmt_exp
+        {
+            Expression* exp;
+            exp=parsedData->insertExpression((Expression *)$1, addition, (Expression *)$3);
+            $$=exp;
+        }
+        | stmt_exp '-' stmt_exp
+        {
+            Expression* exp;
+            exp=parsedData->insertExpression((Expression *)$1, subtraction, (Expression *)$3);
+            $$=exp;
+        }
+        | '(' stmt_exp ')'
+        {
+            $$=$2;
+        }
+        | '-' stmt_exp %prec UMINUS
+        {
+            $$ = $2;
+        }
+        | '+' stmt_exp %prec UMINUS
+        {
+            $$ = $2;
+        }
+        | atom
         ;
- 
+atom    :  ident
+        {
+            Expression* exp;
+            exp=parsedData->insertExpression((char *)$1);
+            free($1);
+            $$=exp;
+        }
+        | value
+        {
+            Expression* exp;
+            bool flag = false;
+            exp=parsedData->insertExpression((char *)$1, flag);
+            free($1);
+            $$=exp;
+        }
+        ;
+     
 where_clause_opt:  WHERE conditions
         |
         ;
@@ -297,25 +371,48 @@ field:   ident
             parsedData->insertField((char*)$3, AGG_COUNT);
             free( $1 );
         }
-        | COUNT  '(' STAR ')'
+        | COUNT  '(' '*' ')'
         { 
             parsedData->insertField("*", AGG_COUNT);
             free( $1 );
         }
-        | STAR
+        | '*'
         { 
-            parsedData->insertField((char*)$1);
-            free( $1 );
+            parsedData->insertField("*");
         }
         ;
 ident:    FIELD { $$ = $1; }
         ;
 value:    STRING { $$ = $1; }
-        | NUMBER_STRING { $$ = $1; }
+        | num_value
         | BINARY_STRING { $$ = $1; }
-        | DOUBLE { $$ = $1; }
+        | doub_value
         | PARAMETER { $$ = $1; }
         | NULL_VALUE { $$ = (char*) 0; }
+        ;
+num_value: NUMBER_STRING { $$ =  $1; }
+        | '-' NUMBER_STRING %prec UMINUS
+        {
+             char *n;
+             n=(char*)malloc(30);
+             strcpy(n,"-");
+             strcat(n,(char*)$2);
+             $$=n;
+             free($2);
+        }
+        | '+' NUMBER_STRING %prec UMINUS{ $$ =  $2; }
+        ;
+doub_value : DOUBLE { $$ = $1; }
+        | '-' DOUBLE %prec UMINUS
+        {
+             char *d;
+             d=(char*)malloc(30);
+             strcpy(d,"-");
+             strcat(d,(char*)$2);
+             $$=d;
+             free($2);
+        }
+        | '+' DOUBLE %prec UMINUS{ $$ = $2; }
         ;
 
 ddl_statement: CREATE TABLE ident '(' create_defn_list_con ')' semicolon_opt

@@ -35,7 +35,7 @@ letter          [a-zA-Z_.]
 digit           [0-9]
 hex             [0-9A-Fa-f]
 letter_or_digit [a-zA-Z_0-9.]
-sign            [\+\-]
+/*sign            [\+\-]*/
 string_char     [\]\[\\\+\"=\)\(\{\}\*&\^\%\$#@!:;,\|\~\`\.\<\>\?\/a-zA-Z_0-9 \t\n\-]
 white_space     [ \t\n]
 blank           [ \t]
@@ -147,12 +147,12 @@ operator        "<"|">"|">="|"<="|"="|"\!="|"<>"|"LIKE"|"like"
                 return(token);
             }
 
-{sign}?{digit}+      { ECHO;
+{digit}+      { ECHO;
                 yylval.stringval = strdup((const char*)yytext);
                 return (NUMBER_STRING);
             }
 
-{sign}?(({digit}*\.{digit}+)|({digit}+(\.{digit}*)?))([eE]{sign}?{digit}+)?   {   ECHO;
+(({digit}*\.{digit}+)|({digit}+(\.{digit}*)?))([eE][-+]?{digit}+)?   {   ECHO;
                 yylval.stringval = strdup((const char*)yytext);
                 return (DOUBLE);
             }
@@ -160,10 +160,6 @@ operator        "<"|">"|">="|"<="|"="|"\!="|"<>"|"LIKE"|"like"
 {hex}+      {   ECHO;
                 yylval.stringval = strdup((const char*)yytext);
                 return (BINARY_STRING);
-            }
-\*          {
-                yylval.stringval = strdup((const char*)yytext);
-                return(STAR);
             }
 \?          {
                 yylval.stringval = strdup((const char*)yytext);

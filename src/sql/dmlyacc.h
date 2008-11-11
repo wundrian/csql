@@ -1,19 +1,19 @@
 #define OR 257
 #define AND 258
-#define STRING 259
-#define FIELD 260
-#define NUMBER_STRING 261
-#define BINARY_STRING 262
-#define DOUBLE 263
-#define OPERATOR 264
-#define PARAMETER 265
-#define SELECT 266
-#define FROM 267
-#define WHERE 268
-#define BETWEEN 269
-#define IN 270
-#define NOT 271
-#define STAR 272
+#define UMINUS 259
+#define STRING 260
+#define FIELD 261
+#define NUMBER_STRING 262
+#define BINARY_STRING 263
+#define DOUBLE 264
+#define OPERATOR 265
+#define PARAMETER 266
+#define SELECT 267
+#define FROM 268
+#define WHERE 269
+#define BETWEEN 270
+#define IN 271
+#define NOT 272
 #define INSERT 273
 #define INTO 274
 #define VALUES 275
@@ -55,5 +55,6 @@ typedef union
 {
    char *stringval;
    void *predicate;
+   void *Expression;
 } YYSTYPE;
 extern YYSTYPE yylval;

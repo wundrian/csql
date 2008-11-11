@@ -109,11 +109,24 @@ DbRetVal UpdStatement::execute(int &rowsAffected)
     if (rv != OK) return rv;
     rowsAffected = 0;
     void *tuple;
+    ListIterator iter = parsedData->getUpdateFieldValueList().getIterator();
     while(true)
     {
         tuple = (char*)table->fetchNoBind(rv);
         if (rv != OK) break;
         if (tuple == NULL) {break;}
+        iter.reset();
+        while (iter.hasElement())
+        {
+            uValue = (UpdateFieldValue*) iter.nextElement();
+            if(uValue->expre!=NULL)
+            {
+                uValue->expre->setTuple(tuple);
+                uValue->expre->setTable(table);
+                AllDataType::copyVal(uValue->value,(uValue->expre)->evaluate(uValue->type),uValue->type, uValue->length);
+                uValue->expre->memFree();
+            }
+        }
         rv = table->updateTuple();
         if (rv != OK) break;
         rowsAffected++;
@@ -443,6 +456,11 @@ DbRetVal UpdStatement::resolveForAssignment()
 		    value->value = AllDataType::alloc(fInfo->type, 2 * fInfo->length);
         else value->value = AllDataType::alloc(fInfo->type, fInfo->length);
         table->bindFld(value->fldName, value->value);
+        if( NULL != value->expre )
+        {
+            (value->expre)->convertStrToVal(value->type);
+            continue;
+        }
         if (value->parsedString == NULL) 
         {    
             if (fInfo->isNull) { delete fInfo; return ErrNullViolation; }

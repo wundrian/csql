@@ -579,7 +579,146 @@ void AllDataType::addVal(void* dest, void *src, DataType type)
      }
      return;
 }
-
+void AllDataType::subVal(void* dest, void *src, DataType type)
+{
+    switch(type)
+    {
+        case typeInt:
+            *(int*)dest = *(int*)dest - *(int*)src;
+            break;
+        case typeLong:
+            *(long*)dest = *(long*)dest - *(long*)src;
+            break;
+        case typeLongLong:
+            *(long long*)dest = *(long long*)dest - *(long long*)src;
+            break;
+        case typeShort:
+            *(short*)dest = *(short*)dest - *(short*)src;
+            break;
+        case typeByteInt:
+            *(char*)dest = *(char*)dest - *(char*)src;
+            break;
+        case typeDouble:
+            *(double*)dest = *(double*)dest - *(double*)src;
+            break;
+        case typeFloat:
+            *(float*)dest = *(float*)dest - *(float*)src;
+            break;
+        case typeDecimal:
+        case typeDate:
+        case typeTime:
+        case typeTimeStamp:
+        case typeBinary:
+        default:
+             break;
+     }
+     return;
+}
+void AllDataType::mulVal(void* dest, void *src, DataType type)
+{
+    switch(type)
+    {
+        case typeInt:
+            *(int*)dest = *(int*)dest * (*(int*)src);
+            break;
+        case typeLong:
+            *(long*)dest = *(long*)dest * (*(long*)src);
+            break;
+        case typeLongLong:
+            *(long long*)dest = *(long long*)dest * (*(long long*)src);
+            break;
+        case typeShort:
+            *(short*)dest = *(short*)dest * (*(short*)src);
+            break;
+        case typeByteInt:
+            *(char*)dest = *(char*)dest * (*(char*)src);
+            break;
+        case typeDouble:
+            *(double*)dest = *(double*)dest * (*(double*)src);
+            break;
+        case typeFloat:
+            *(float*)dest = *(float*)dest * (*(float*)src);
+            break;
+        case typeDecimal:
+        case typeDate:
+        case typeTime:
+        case typeTimeStamp:
+        case typeBinary:
+        default:
+             break;
+    }
+    return;
+}   
+void AllDataType::mudVal(void* dest, void *src, DataType type)
+{
+    switch(type)
+    {
+        case typeInt:
+            *(int*)dest = *(int*)dest % (*(int*)src);
+            break;
+        case typeLong:
+            *(long*)dest = *(long*)dest % (*(long*)src);
+            break;
+        case typeLongLong:
+            *(long long*)dest = *(long long*)dest % (*(long long*)src);
+            break;
+        case typeShort:
+            *(short*)dest = *(short*)dest % (*(short*)src);
+            break;
+        case typeByteInt:
+            *(char*)dest = *(char*)dest % (*(char*)src);
+            break;
+        case typeDouble:
+            *(double*)dest = *(long long*)dest % (*(long long*)src);
+            break;
+        case typeFloat:
+            *(float*)dest = *(int*)dest % (*(int*)src);
+            break;
+        case typeDecimal:
+        case typeDate:
+        case typeTime:
+        case typeTimeStamp:
+        case typeBinary:
+        default:
+             break;
+    }
+    return;
+}
+void AllDataType::divVal(void* dest, void *src, DataType type)
+{
+    switch(type)
+    {
+        case typeInt:
+            *(int*)dest = *(int*)dest / (*(int*)src);
+            break;
+        case typeLong:
+            *(long*)dest = *(long*)dest / (*(long*)src);
+            break;
+        case typeLongLong:
+            *(long long*)dest = *(long long*)dest / (*(long long*)src);
+            break;
+        case typeShort:
+            *(short*)dest = *(short*)dest / (*(short*)src);
+            break;
+        case typeByteInt:
+            *(char*)dest = *(char*)dest / (*(char*)src);
+            break;
+        case typeDouble:
+            *(double*)dest = *(double *)dest / (*(double*)src);
+            break;
+        case typeFloat:
+            *(float*)dest = *(float*)dest / (*(float*)src);
+            break;
+        case typeDecimal:
+        case typeDate:
+        case typeTime:
+        case typeTimeStamp:
+        case typeBinary:
+        default:
+             break;
+    }
+    return;
+}
 void AllDataType::divVal(void* dest, int src, DataType type)
 {
     switch(type)

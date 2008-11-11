@@ -97,6 +97,7 @@ void ParsedData::insertUpdateValue(char *fName, char *val)
     else 
         newVal->parsedString = strdup(val);
     newVal->value = NULL;
+    newVal->expre = NULL;
     newVal->paramNo = 0;
     updFldValList.append(newVal);
 }
@@ -157,7 +158,10 @@ void ParsedData::reset()
     while (iter.hasElement())
     {
         updFldVal = (UpdateFieldValue*)iter.nextElement();
-        free(updFldVal->parsedString);
+        if(updFldVal->parsedString!=NULL)
+           free(updFldVal->parsedString);
+        if(updFldVal->expre!=NULL)
+           updFldVal->expre->freeVal();
         free(updFldVal->value);
         delete updFldVal;
     }
@@ -220,4 +224,33 @@ void ParsedData::insertFldDef()
 {
     DbRetVal rv = creFldList.append(fldDef);
     fldDef.init();
+}
+
+Expression* ParsedData::insertExpression(char *fldName)
+{
+    Expression *exp =new Expression();
+    exp->setExpr(fldName);
+    return exp;
+}
+Expression* ParsedData::insertExpression(char *value,bool flag)
+{
+    Expression *exp =new Expression();
+    exp->setExpr(strdup(value),flag);
+    return exp;
+}
+Expression* ParsedData::insertExpression(Expression* exp1, ArithOperator op ,Expression* exp2)
+{
+    Expression *exp =new Expression();
+    exp->setExpr(exp1, op, exp2);
+    return exp;
+}
+void ParsedData::insertUpdateExpression(char *fName, Expression *exp)
+{
+    UpdateFieldValue *newVal = new UpdateFieldValue();
+    strcpy(newVal->fldName, fName);
+    newVal->parsedString = NULL;
+    newVal->value = NULL;
+    newVal->expre=exp;
+    newVal->paramNo = 0;
+    updFldValList.append(newVal);
 }

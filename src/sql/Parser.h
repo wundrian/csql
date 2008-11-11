@@ -84,6 +84,7 @@ struct UpdateFieldValue
     char fldName[IDENTIFIER_LENGTH];
     char *parsedString;
     void *value;
+    Expression *expre;
     DataType type;
     int length;
     int paramNo;
@@ -197,6 +198,10 @@ class ParsedData
     IndexType getIndexType(){ return indexType; }
     bool getUnique() { return isUnique; }
     bool getPrimary() { return isPrimary; }
+    Expression* insertExpression(char *fldName);
+    Expression* insertExpression(char *value, bool flag);
+    Expression* insertExpression(Expression* exp1, ArithOperator op ,Expression* exp1);
+    void insertUpdateExpression(char *fName, Expression *exp);
 
     void insertFldDef(); //check if fldDef needs to be a part of ParsedData 
     
