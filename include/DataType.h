@@ -64,7 +64,7 @@ enum ComparisionOp {
     OpLessThanEquals,
     OpGreaterThan,
     OpGreaterThanEquals,
-    OpLike, // for Like operator
+	OpLike, // for Like operator
     OpInvalidComparisionOp
 };
 
@@ -94,6 +94,11 @@ class AllDataType
     static void copyVal(void* dest, void *src, DataType type, int length = 0);
     static void addVal(void* dest, void *src, DataType type);
     static void divVal(void* dest, int src, DataType type);
+    static void subVal(void* dest, void *src, DataType type);
+    static void mulVal(void* dest, void *src, DataType type);
+    static void mudVal(void* dest, void *src, DataType type);
+    static void divVal(void* dest, void *src, DataType type);
+
 
     static bool compareVal(void *src1, void *src2, ComparisionOp op,
                            DataType type, long length = 0);

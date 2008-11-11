@@ -24,5 +24,6 @@
 #include<ErrorType.h>
 #include<Config.h>
 #include<Info.h>
+#include<Expression.h>
 #endif
 
