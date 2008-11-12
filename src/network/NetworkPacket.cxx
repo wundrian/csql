@@ -220,5 +220,113 @@ void PacketCommit::getExecPacketList(List stmtList, List &list)
         pkt->unmarshall();
         list.append(pkt);
     }
-
 }
+
+DbRetVal SqlPacketConnect::marshall()
+{
+   char *ptr = buffer; // moves over buffer
+   strncpy(ptr, userName, IDENTIFIER_LENGTH);
+   ptr = buffer+IDENTIFIER_LENGTH;
+   *ptr++ = '\0';
+   strncpy(ptr, passWord, IDENTIFIER_LENGTH);
+   ptr = ptr + IDENTIFIER_LENGTH;
+   *ptr = '\0';
+   return OK;
+}
+
+DbRetVal SqlPacketConnect::unmarshall()
+{
+   strncpy(userName, buffer, IDENTIFIER_LENGTH);
+   *(buffer+IDENTIFIER_LENGTH) = '\0';
+   strncpy(passWord, buffer + IDENTIFIER_LENGTH + 1, IDENTIFIER_LENGTH);
+   *(buffer + 2 *IDENTIFIER_LENGTH + 2) = '\0';
+   return OK;
+}
+
+DbRetVal SqlPacketPrepare::marshall()
+{
+    printDebug(DM_Network, "PacketPrepare::marshall called\n");
+    bufferSize  = sizeof(int) * 4 + strlen(stmtString) + 1;
+    printDebug(DM_Network, "NOOFPARAMS %d buffer size %d\n", noParams, bufferSize);
+    printDebug(DM_Network, "stmt %s size %d\n", stmtString, strlen(stmtString));
+    printDebug(DM_Network, "noParams is %d\n", noParams);
+    if (noParams >0)
+        bufferSize = bufferSize + 2 * sizeof(int) * noParams;
+    buffer = (char*) malloc(bufferSize);
+    *(int*)buffer = stmtID;
+    char *bufIter = buffer + sizeof(int);
+    *(int*)bufIter = syncMode;
+    bufIter = bufIter + sizeof(int);
+    *(int*)bufIter = strlen(stmtString);
+    bufIter = bufIter + sizeof(int);
+    *(int*)bufIter = noParams;
+    bufIter = bufIter + sizeof(int);
+    if (noParams >0) {
+       memcpy(bufIter, type, sizeof(int) * noParams);
+       bufIter = bufIter + sizeof(int)* noParams;
+       memcpy(bufIter, length, sizeof(int) * noParams);
+       bufIter = bufIter + sizeof(int)* noParams;
+    }
+    strcpy(bufIter, stmtString);
+    printDebug(DM_Network, "PacketPrepare::marshall ended\n");
+    return OK;
+}
+
+DbRetVal SqlPacketPrepare::unmarshall()
+{
+    printDebug(DM_Network, "PacketPrepare::unmarshall called\n");
+    stmtID = *(int*)buffer;
+    printDebug(DM_Network, "start of the buffer is %x\n", buffer);
+    char *bufIter = buffer + sizeof (int);
+    syncMode = *(int*)bufIter;
+    bufIter = bufIter + sizeof(int);
+    stmtLength = *(int*)bufIter;
+    bufIter = bufIter + sizeof(int);
+    noParams = *(int*)bufIter;
+    bufIter = bufIter + sizeof(int);
+    if (noParams >0) {
+        type = (int*) bufIter;
+        bufIter = bufIter + sizeof(int) * noParams;
+        length = (int*) bufIter;
+        bufIter = bufIter + sizeof(int) * noParams;
+    }
+    stmtString = bufIter;
+    printDebug(DM_Network, "stmtString ptr is %x\n", stmtString);
+    stmtString[stmtLength+1] = '\0';
+    printDebug(DM_Network, "PacketPrepare::unmarshall ended\n");
+    return OK;
+}
+
+DbRetVal SqlPacketCommit::marshall()
+{
+    buffer = (char*) malloc(bufferSize);
+    *(int*)buffer = txnID;
+    char* bufIter = (char*) buffer + sizeof(int);
+    *(int*)bufIter = noOfStmts;
+    bufIter = (char*) bufIter + sizeof(int);
+    memcpy(bufIter, stmtBufSize, noOfStmts*sizeof(int));
+    bufIter = (char*) bufIter + noOfStmts* sizeof(int);
+    for (int i=0; i < noOfStmts; i++)
+    {
+        memcpy(bufIter, stmtBuffer[i], stmtBufSize[i]);
+        bufIter = bufIter + stmtBufSize[i];
+    }
+    return OK;
+}
+DbRetVal SqlPacketCommit::unmarshall()
+{
+    txnID = *(int*)buffer;
+    char *bufIter = buffer + sizeof(int);
+    noOfStmts = *(int*)bufIter;
+    bufIter = bufIter + sizeof(int);
+    stmtBufSize = new int[noOfStmts];
+    memcpy(stmtBufSize, bufIter, noOfStmts*sizeof(int));
+    bufIter = bufIter + noOfStmts * sizeof(int);
+    stmtBuffer = new char*[noOfStmts];
+    for (int i = 0 ; i  <noOfStmts; i++)
+    {
+       stmtBuffer[i] = bufIter;
+       bufIter = bufIter + stmtBufSize[i];
+    }
+}
+

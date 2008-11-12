@@ -75,6 +75,10 @@ int Config::storeKeyVal(char *key, char *value)
 
     else if (strcasestr(key, "REPLICATION") != NULL)
            { cVal.isReplication = os::atobool(value); }
+    else if (strcasestr(key, "CSQL_SQL_SERVER") != NULL)
+           { cVal.isCsqlSqlServer = os::atobool(value); }
+    else if (strcasestr(key, "PORT") != NULL)
+           { cVal.port = atoi(value); }
     else if (strcasestr(key, "NETWORK_CONFIG_FILE") != NULL)
            { strcpy(cVal.replConfigFile , value);  }
     else if (strcasestr(key, "MAX_LOG_STORE_SIZE") != NULL)
@@ -290,6 +294,11 @@ int Config::validateValues()
         printError(ErrBadArg,  "CACHE_RECEIVER_WAIT_SECS should be >1");
         return 1;
     }
+    if (cVal.port <= 1024)
+    {
+        printError(ErrBadArg, "Invalid Port Number");
+        return 1;
+    }
     return 0;
 }
 
@@ -361,6 +370,8 @@ void Config::print()
     printf(" getTableConfigFile %s\n", getTableConfigFile());
     printf(" isTwoWayCache %d\n", useTwoWayCache());
     printf(" getCacheWaitSecs %d\n", getCacheWaitSecs());
+    printf(" useCsqlSqlServer %d\n", useCsqlSqlServer());
+    printf(" getPort %d\n", getPort());
     //printf(" useReplication %d\n", useReplication());
     //printf(" getReplConfigFile %s\n", getReplConfigFile());
     //printf(" getMaxLogStoreSize %ld\n", getMaxLogStoreSize());

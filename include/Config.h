@@ -44,6 +44,8 @@ class ConfigValues
     int  cacheWaitSecs;
 
     bool isReplication;
+    bool isCsqlSqlServer;
+    int port;
     char replConfigFile[MAX_FILE_PATH_LEN];
     int networkID;
     int cacheNetworkID;
@@ -74,7 +76,9 @@ class ConfigValues
         cacheNetworkID =-1;
         strcpy(dsn, "myodbc3");
         strcpy(tableConfigFile, "/tmp/csql/csqltable.conf");
-        isReplication = false;
+        isReplication = false;        
+        isCsqlSqlServer = false;
+        port = 5678;
         strcpy(replConfigFile, "/tmp/csql/csqlnw.conf");
         logStoreSize = 10485760;
         networkID=-1;
@@ -115,6 +119,8 @@ class Config
     inline char* getDSN() { return cVal.dsn; }
     inline char* getTableConfigFile() { return cVal.tableConfigFile; }
     inline bool useReplication() { return cVal.isReplication; }
+    inline bool useCsqlSqlServer() { return cVal.isCsqlSqlServer; }
+    inline int getPort() { return cVal.port; }
     inline char* getReplConfigFile() { return cVal.replConfigFile; }
     inline long getMaxLogStoreSize() { return cVal.logStoreSize; }
     inline int getNetworkID() { return cVal.networkID; }

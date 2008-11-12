@@ -152,6 +152,7 @@ class os
     static pid_t fork();
     static size_t send(int fd, const void *buf, size_t len, int flags);
     static size_t recv(int fd, void *buf, size_t len, int flags);
+    static int gethostname(char *hostname, size_t len);
 };
 
 #endif

@@ -23,8 +23,20 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
 {
     DbRetVal rv = OK;
     SqlNwConnection *conn = (SqlNwConnection*)con;
-    //TODO
-    return OK;
+    SqlPacketPrepare *pkt = new SqlPacketPrepare();
+    pkt->stmtString = stmtstr;
+    pkt->syncMode = OSYNC;
+    pkt->stmtLength = strlen(stmtstr) + 1;
+    pkt->marshall(); 
+    rv = conn->send(SQL_NW_PKT_PREPARE, pkt->getMarshalledBuffer(), pkt->getBufferSize());
+    if (rv != OK) {
+        printError(rv, "Data could not be sent");
+        return rv;
+    }
+    rv = conn->receive();
+    if(rv != OK) return rv;
+    printf("received ack\n");
+    return rv;
 }
 
 bool SqlNwStatement::isSelect()

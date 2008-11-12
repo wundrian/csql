@@ -18,21 +18,44 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 #include <SqlNwConnection.h>
+#include <Network.h>
+#include<os.h>
 #include <CSql.h>
 
 DbRetVal SqlNwConnection::connect (char *user, char * pass)
 {
     DbRetVal rv = OK;
-    //TODO
+    nwClient = new TCPClient();
+    int bufsize = 2 * IDENTIFIER_LENGTH + 2;
+    char hostName[IDENTIFIER_LENGTH];
+    memset(hostName, 0, IDENTIFIER_LENGTH);
+    os::gethostname(hostName, IDENTIFIER_LENGTH);
+    nwClient->setHost(hostName, 5678, 123);
+    rv = nwClient->connect();
+    if (rv != OK) {
+        printError(rv, "Connection failed");
+        return rv;
+    }
+    SqlPacketConnect *pkt = new SqlPacketConnect();
+    pkt->setConnParam(user, pass);
+    pkt->setBufferSize(bufsize);
+    char * buffer = (char *) malloc(bufsize);
+    pkt->setBuffer(buffer);
+    pkt->marshall();
+    rv = send(SQL_NW_PKT_CONNECT, buffer, bufsize);
+    if (rv != OK) {
+        printError(rv, "Data could not be sent");
+        return rv;
+    }
     return rv;
-    
 }
 DbRetVal SqlNwConnection::disconnect()
 {
     DbRetVal rv = OK;
-    //TODO
-    return rv;
+    rv = nwClient->send(SQL_NW_PKT_DISCONNECT, NULL, 0);
+    return nwClient->receive();
 }
+
 DbRetVal SqlNwConnection::beginTrans(IsolationLevel isoLevel, TransSyncMode mode)
 {
     if (prevIsoLevel == isoLevel) return OK;
@@ -52,3 +75,4 @@ DbRetVal SqlNwConnection::rollback()
     //TODO
     return rv;
 }
+

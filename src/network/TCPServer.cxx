@@ -63,6 +63,7 @@ DbRetVal TCPServer::handleClient()
    int ret = os::fork();
    if (ret) {
        //parent
+       os::signal(SIGCHLD, SIG_IGN);
        close(clientfd);
        return OK;
    }else if (ret == 0) {
@@ -94,21 +95,26 @@ DbRetVal TCPServer::handleClient()
                    return ErrOS;
                }
                printf("HEADER says packet type is %d\n", header.packetType);
-               if (header.packetType == NW_PKT_DISCONNECT) exit(0);
-               char *buffer = (char*) malloc(header.packetLength);
-               numbytes = os::recv(clientfd,buffer,header.packetLength,0);
-               if (numbytes == -1)
+               char *buffer = NULL;
+               if (header.packetType != SQL_NW_PKT_DISCONNECT) 
                {
-                   printError(ErrOS, "Error reading from socket\n");
-                   return ErrOS;
+                   buffer = (char*) malloc(header.packetLength);
+                   numbytes = os::recv(clientfd,buffer,header.packetLength,0);
+                   if (numbytes == -1)
+                   {
+                       printError(ErrOS, "Error reading from socket\n");
+                       return ErrOS;
+                   }
                }
-               
                int response = handler.process(header, buffer);
                numbytes = os::send(clientfd, &response, 4, 0);
                if (numbytes != 4)
                {
                    printError(ErrOS, "Error writing to socket\n");
                    return ErrOS;
+               }
+               if (header.packetType == SQL_NW_PKT_DISCONNECT) { 
+                   exit(0); 
                }
            } else printf("Nothing in fd %d\n", ret);
        }

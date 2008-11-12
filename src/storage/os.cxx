@@ -254,3 +254,7 @@ size_t os::recv(int fd, void *buf, size_t len, int flags)
 {
     return ::recv(fd, buf, len, flags);
 }
+int os::gethostname(char *hostname, size_t len)
+{
+    return ::gethostname(hostname, len);
+}

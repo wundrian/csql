@@ -37,7 +37,11 @@ enum NetworkPacketType
     NW_PKT_COMMIT =3,
     NW_PKT_FREE =4,
     NW_PKT_CONNECT =5,
-    NW_PKT_DISCONNECT =6
+    NW_PKT_DISCONNECT =6,
+    SQL_NW_PKT_CONNECT=101,
+    SQL_NW_PKT_PREPARE=102,
+    SQL_NW_PKT_COMMIT=103,
+    SQL_NW_PKT_DISCONNECT=104,
 };
 class NetworkClient {
     protected:
@@ -138,6 +142,12 @@ class PacketHeader
     int srcNetworkID;
     int version;
 };
+class SqlPacketHeader
+{
+    public:
+    int packetType;
+    int packetLength;
+};
 class BasePacket{
     protected:
     //TOTOD:: bool encrypt;
@@ -216,6 +226,61 @@ class PacketCommit : public BasePacket
     DbRetVal marshall();
     DbRetVal unmarshall();
 };
+
+class SqlPacketConnect : public BasePacket
+{
+    public:
+    SqlPacketConnect()
+    {
+         strcpy(userName, "");
+         strcpy(passWord, "");
+         buffer = NULL;
+         bufferSize = 0;
+         pktType = SQL_NW_PKT_CONNECT;
+    }
+    ~SqlPacketConnect() { free(buffer); bufferSize = 0; buffer = NULL; }
+    char userName[IDENTIFIER_LENGTH];
+    char passWord[IDENTIFIER_LENGTH];
+    void setConnParam(char *user, char *pass)
+    { strcpy(userName, user); strcpy(passWord, pass); }
+    DbRetVal marshall();
+    DbRetVal unmarshall();
+};
+
+class SqlPacketPrepare : public BasePacket
+{
+    public:
+    SqlPacketPrepare()
+    { buffer=NULL; bufferSize =0; noParams = 0;
+      type = NULL; length = NULL; pktType = SQL_NW_PKT_PREPARE;}
+    ~SqlPacketPrepare() { free(buffer); bufferSize = 0; buffer = NULL; }
+    int stmtID;
+    int syncMode;
+    int stmtLength;
+    int noParams;
+    int *type;
+    int *length;
+    char *stmtString;
+    DbRetVal marshall();
+    DbRetVal unmarshall();
+};
+
+class SqlPacketCommit : public BasePacket
+{
+    public:
+    SqlPacketCommit() { txnID =0; noOfStmts = 0; stmtBufSize = NULL; stmtBuffer = NULL;
+                     buffer = NULL; bufferSize = 0; pktType = SQL_NW_PKT_COMMIT; }
+    ~SqlPacketCommit() { free(buffer); bufferSize = 0; buffer = NULL; }
+    int txnID;
+    int noOfStmts;
+    int *stmtBufSize;
+    char **stmtBuffer;
+    void setExecPackets(int tid, List list);
+    void getExecPacketList(List stmtList, List &list);
+    DbRetVal marshall();
+    DbRetVal unmarshall();
+};
+
 class NetworkStmt
 {
     public:

@@ -20,6 +20,7 @@
 #ifndef SQLNWCONNECTION_H
 #define SQLNWCONNECTION_H
 #include<CSql.h>
+#include<Network.h>
 #include<AbsSqlConnection.h>
 #include<SqlFactory.h>
 
@@ -30,13 +31,14 @@
 class SqlNwConnection : public AbsSqlConnection
 {
     Connection dummyConn;
+    NetworkClient *nwClient;
     public:
     IsolationLevel prevIsoLevel;
-    SqlNwConnection(){innerConn = NULL; }
+    SqlNwConnection(){nwClient = NULL; innerConn = NULL; }
 
     //Note::forced to implement this as it is pure virtual in base class
     Connection& getConnObject(){  return dummyConn; }
-
+    NetworkClient* getNetworkClient() { return nwClient; }
     DbRetVal connect (char *user, char * pass);
 
     DbRetVal disconnect();
@@ -45,8 +47,11 @@ class SqlNwConnection : public AbsSqlConnection
 
     DbRetVal rollback();
 
-    DbRetVal beginTrans (IsolationLevel isoLevel, TransSyncMode mode);
+    DbRetVal beginTrans (IsolationLevel isoLevel, TransSyncMode mode = OSYNC);
 
+    DbRetVal send(NetworkPacketType type, char *buffer, size_t len)
+    { return  nwClient->send(type, buffer, len); }
+    DbRetVal receive() { return nwClient->receive(); }
     friend class SqlFactory;
 };
 

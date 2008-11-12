@@ -19,6 +19,7 @@
 #include <SqlStatement.h>
 #include <SqlFactory.h>
 #include <CSql.h>
+#include <SessionImpl.h>
 #include <Network.h>
 #include <SqlLogStatement.h> //for BindSqlField
 #include <SqlNetworkHandler.h>
@@ -32,8 +33,8 @@ static void sigTermHandler(int sig)
 
 void printUsage()
 {
-   printf("Usage: csqlreplserver \n");
-   printf("Description: Start the csql replication server.\n");
+   printf("Usage: csqlsqlserver \n");
+   printf("Description: Start the csql nework server.\n");
    return;
 }
 int main(int argc, char **argv)
@@ -53,23 +54,25 @@ int main(int argc, char **argv)
         printUsage();
         return 0;
     }
-
+    SessionImpl session;
+    DbRetVal rv = session.readConfigFile();
+    if (rv != OK)
+    {
+        printf("Unable to read the configuration file \n");
+        return 1;
+    }
     os::signal(SIGINT, sigTermHandler);
     os::signal(SIGTERM, sigTermHandler);
 
     bool end = false;
     SqlNetworkHandler::type = CSql;
     SqlNetworkHandler::conn = SqlFactory::createConnection(CSql);
-    DbRetVal rv = SqlNetworkHandler::conn->connect("root", "manager");
-    if (rv != OK) return 1;
-    if (!Conf::config.useReplication())
+    if (!Conf::config.useCsqlSqlServer())
     {
-        printf("Replication is set to OFF in csql.conf file\n");
-        SqlNetworkHandler::conn->disconnect();
+        printf("Sql Network Server is set to OFF in csql.conf file\n");
         return 1;
     } 
-     
-    
+/* 
     FILE *fp = NULL;
     int nwid =0;
     char hostname[IDENTIFIER_LENGTH];
@@ -94,9 +97,15 @@ int main(int argc, char **argv)
         SqlNetworkHandler::conn->disconnect();
         return 1;
     }
+*/
+    int port = 0;
+    if ((port = Conf::config.getPort()) <= 1024)
+    {
+        printf("Invalid port Number\n");
+        return 1;
+    }
     NetworkServer *nwServer;
-
-    nwServer = new UDPServer();
+    nwServer = new TCPServer();
 
     nwServer->setServerPort(port);
     rv = nwServer->start();
@@ -125,7 +134,6 @@ int main(int argc, char **argv)
     }
     printf("Replication Server Exiting\n");
     nwServer->stop();
-    SqlNetworkHandler::conn->disconnect();
     delete SqlNetworkHandler::conn;
     return 0;
 }

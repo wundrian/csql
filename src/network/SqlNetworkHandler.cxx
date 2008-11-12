@@ -24,7 +24,6 @@
 #include <AbsSqlStatement.h>
 #include <SqlStatement.h>
 #include <SqlOdbcStatement.h>
-
 #include <SqlLogStatement.h>
 
 List SqlNetworkHandler::stmtList;
@@ -36,12 +35,84 @@ int SqlNetworkHandler::process(PacketHeader &header, char *buffer)
     switch(header.packetType)
     {
         case NW_PKT_PREPARE:
-            return processPrepare(header, buffer);
+            //return processPrepare(header, buffer);
             break;
         case NW_PKT_COMMIT:
-            return processCommit(header, buffer);
+            //return processCommit(header, buffer);
             break;
+        case SQL_NW_PKT_CONNECT:
+            return processSqlConnect(header, buffer);
+            break;
+        case SQL_NW_PKT_PREPARE:
+            return processSqlPrepare(header, buffer);
+            break;
+        case SQL_NW_PKT_COMMIT:
+            return processSqlCommit(header, buffer);
+            break;
+        case SQL_NW_PKT_DISCONNECT:
+            conn->disconnect();
+            return 1;
     }
+    return 0;
+}
+ 
+int SqlNetworkHandler::processSqlConnect(PacketHeader &header, char *buffer)
+{
+    printDebug(DM_Network, "Processing CONNECT");
+    SqlPacketConnect *pkt = new SqlPacketConnect();
+    pkt->setBuffer(buffer);
+    pkt->setBufferSize(header.packetLength);
+    pkt->unmarshall();
+    DbRetVal rv=conn->connect(pkt->userName, pkt->passWord);
+    if (rv == OK) return 1;
+    else return 0;
+}
+
+int SqlNetworkHandler::processSqlPrepare(PacketHeader &header, char *buffer)
+{
+    SqlPacketPrepare *pkt = new SqlPacketPrepare();
+    pkt->setBuffer(buffer);
+    pkt->setBufferSize(header.packetLength);
+    pkt->unmarshall();
+    printDebug(DM_Network, "PREPARE %d %s\n", pkt->stmtID, pkt->stmtString);
+    //for (int i =0 ; i < pkt->noParams; i++)
+        //printf("PREPARE type %d length %d \n", pkt->type[i], pkt->length[i]);
+    int response =1;
+    //TODO::add it to the SqlStatement list
+    AbsSqlStatement *sqlstmt = SqlFactory::createStatement(type);
+    sqlstmt->setConnection(conn);
+    NetworkStmt *nwStmt = new NetworkStmt();
+    nwStmt->stmtID = 1; 
+    printDebug(DM_Network, "Statement string %s\n", pkt->stmtString);
+    nwStmt->stmt = sqlstmt;
+    DbRetVal rv = sqlstmt->prepare(pkt->stmtString);
+    if (rv != OK)
+    {
+        printError(ErrSysInit, "statement prepare failed\n");
+        response = 0;
+        return response;
+    }
+    BindSqlField *bindField = NULL;
+    //populate paramList
+    /*
+    for (int i = 0; i < pkt->noParams; i++)
+    {
+             bindField = new BindSqlField();
+             bindField->type = (DataType) pkt->type[i];
+             bindField->length = pkt->length[i];
+             bindField->value = AllDataType::alloc(bindField->type,
+                                                   bindField->length);
+             nwStmt->paramList.append(bindField);
+    }
+    */
+    stmtList.append(nwStmt);
+    return response;
+}
+
+int SqlNetworkHandler::processSqlCommit(PacketHeader &header, char *buffer)
+{
+    int response =0;
+    return response;
 }
 
 int SqlNetworkHandler::processCommit(PacketHeader &header, char *buffer)
