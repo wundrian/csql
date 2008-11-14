@@ -293,7 +293,7 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
                         iskeyfieldExist=isFieldExist(name);
                         if(!iskeyfieldExist) { break; }
             }
-        }
+        }else if(!isPriIndex){iskeyfieldExist = false;}
         if(((strcmp(fieldName,"")!=0) && (strcmp(fieldName,"NULL")!=0)) && !(isFieldExist(fieldName)))
         {
             if(Conf::config.useTwoWayCache() && (strcmp(fieldlistVal,"")!=0) && (strcmp(fieldlistVal,"NULL")!=0))
@@ -310,7 +310,7 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
                  printError(ErrSysInit, "Bidirectonal caching fail for no primary key in %s \n", tableName);
                  return ErrSysInit;
              }
-        } else if(!iskeyfieldExist){ isPriIndex=false;}
+        } 
         while (icol <= totalFields) {
             retValue = SQLDescribeCol(hstmt, icol, colName, colNameMax,
                                         &nameLength, &colType, &colLength,
