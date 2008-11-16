@@ -12,8 +12,6 @@ int main()
     else
         sprintf(conf,  "%s/csql.conf", root);
     os::setenv("CSQL_CONFIG_FILE", conf);
-    char *val = os::getenv("CSQL_CONFIG_FILE");
-    printf("CSQL_CONFIG_FILE= %s\n", val);
     rv = conn.open("root", "manager");
     if (rv != OK) return 1;
     Conf::config.print();
