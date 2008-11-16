@@ -39,33 +39,17 @@ int main()
             rv = table->insertTuple();
             if (rv != OK) break;
         }
-        if (rv != OK) break;
         conn.commit();
     }
     printf("Tuples inserted %d\n", icount);
-    table->setCondition(NULL);
-    rv = table->execute();
-    if (rv != OK)
-    {
-       dbMgr->closeTable(table);
-       dbMgr->dropTable("t1");
-       conn.close();
-    }
-    void *fld2ptr, *fld3ptr, *tuple;
-    icount = 0; 
-    while(true)
-    {
-        tuple = (char*)table->fetch() ;
-        if (tuple == NULL) {break;}
-        fld2ptr = (char*)tuple + os::align(sizeof(int));
-        fld3ptr = (char*)tuple + (2 * os::align(sizeof(int)));
-        icount++;
-        if (icount == 10000) printf("Binded Tuple value is %d %d %s \n", id1, id2, name);
-
-    }
-    table->close();
     dbMgr->closeTable(table);
     dbMgr->dropTable("t1");
     conn.close();
-    return 0;
+    if (rv == ErrNoMemory)
+    {
+       //insert is expected to fail
+       printf("insert failed with return values %d\n", rv);
+       return 0;
+    } 
+    return 1;
 }
