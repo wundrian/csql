@@ -38,31 +38,31 @@ ifeq ($(PlatForm), supported)
 all: $(TARGETS)
 endif 
 
-.c.o:.c
+.c.o:.c 
 	$(CPlus) $(CPlusFlags) $(INCL) -c -o $@ $<
 
-test001: conntest1.o 
-	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw $(SYSLIBS)
+test001:conntest1.o 
+	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) $(SYSLIBS)
 test002:conntest2.o
-	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS)  -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw $(SYSLIBS)
+	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) $(SYSLIBS)
 test003:conntest3.o
-	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw  $(SYSLIBS)
+	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) $(SYSLIBS)
 test004:conntest4.o
-	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS)  -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw $(SYSLIBS)
+	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) $(SYSLIBS)
 test005:conntest5.o
-	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw  $(SYSLIBS)
+	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) $(SYSLIBS)
 test006:conntest6.o
-	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw  $(SYSLIBS)
+	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) $(SYSLIBS)
 test007:conntest7.o
-	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw  $(SYSLIBS)
+	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) $(SYSLIBS)
 test008:conntest8.o
-	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw  $(SYSLIBS)
+	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) $(SYSLIBS)
 test009:conntest9.o
-	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw  $(SYSLIBS)
+	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) $(SYSLIBS)
 test010:conntest10.o
-	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw  $(SYSLIBS)
+	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) $(SYSLIBS)
 test011:conntest11.o
-	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw  $(SYSLIBS)
+	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) $(SYSLIBS)
 
 clean:
 	rm -f *.o ${TARGETS}
