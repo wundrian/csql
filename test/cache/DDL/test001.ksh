@@ -13,7 +13,11 @@ then
     REL_PATH=${PWD}/cache/DDL
 fi
 export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
+cp $CSQL_CONFIG_FILE /tmp
 echo DSN=$DSN >> $CSQL_CONFIG_FILE
+isql $DSN < $REL_PATH/dropall.sql >/dev/null
+rm /tmp/csql/csql.db /tmp/csql/csqltable.conf
+touch /tmp/csql/csqltable.conf
 $CSQL_INSTALL_ROOT/bin/csqlserver >/dev/null 2>&1 &
 pid=$!
 sleep 5
@@ -21,6 +25,7 @@ $CSQL_INSTALL_ROOT/bin/csql -g -s $REL_PATH/csqlinputtest1.sql
 $CSQL_INSTALL_ROOT/bin/csql -g -s $REL_PATH/selectstar.sql
 isql $DSN < $REL_PATH/selectstar.sql
 $CSQL_INSTALL_ROOT/bin/csql -g -s $REL_PATH/dropall.sql >/dev/null 2>&1
-kill -9 $pid 
-ipcrm -M 1199 -M 2277
-exit 0;
+kill -s SIGTERM $pid  2>/dev/null
+ipcrm -M 1199 -M 2277 2>/dev/null
+cp /tmp/csql.conf $CSQL_CONFIG_FILE
+exit 0

@@ -13,6 +13,7 @@ then
     REL_PATH=${PWD}/cache/DDL
 fi
 export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
+cp $CSQL_CONFIG_FILE /tmp
 echo DSN=$DSN >> $CSQL_CONFIG_FILE
 isql $DSN < $REL_PATH/mysqlinputtest1.sql > /dev/null 2>&1
 
@@ -29,4 +30,5 @@ rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 kill -9 $pid 
 ipcrm -M 1199 -M 2277
+cp /tmp/csql.conf $CSQL_CONFIG_FILE
 exit 0;
