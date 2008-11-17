@@ -46,3 +46,11 @@ CSQL - Version 2.1 - Beta
 4.Aggregates and Group By support
 5.LIKE operator support
 6.Cache support for Postgres (Bi-directional)
+
+CSQL - Version 2.2 - Beta
+-----------------------
+1.Join (Inner) support
+2.Tree Index
+3.Arithmetic Expression in update statement
+4.Multiple cache nodes 
+5.Partial Caching(field and row level)
