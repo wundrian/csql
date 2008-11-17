@@ -19,6 +19,7 @@
  ***************************************************************************/
 #include <CSql.h>
 #include <Network.h>
+#include <Parser.h>
 
 TCPClient::~TCPClient()
 {
@@ -49,7 +50,7 @@ DbRetVal TCPClient::send(NetworkPacketType type, char *buf, int len)
     free(totalBuffer);
     return rv;
 }
-DbRetVal TCPClient::receive()
+DbRetVal TCPClient::receive(int &response)
 {
     DbRetVal rv = OK;
     printf("NW:TCP receive\n");
@@ -64,8 +65,6 @@ DbRetVal TCPClient::receive()
         printError(ErrPeerTimeOut,"Response timeout for peer site\n");
         return ErrPeerTimeOut;
     }
-
-    int response =0;
     socklen_t len = sizeof(struct sockaddr);
     int numbytes = os::recv(sockfd, &response, 4, 0);
     if (numbytes !=4)
@@ -74,7 +73,7 @@ DbRetVal TCPClient::receive()
        return ErrOS;
     }
     //printf("NW:UDP receive\n");
-    if (response != 1) rv = ErrPeerResponse;
+    if (*(char *) &response != 1) rv = ErrPeerResponse;
     return rv;
 }
 DbRetVal TCPClient::connect()

@@ -34,12 +34,15 @@ class SqlNetworkHandler
     static List stmtList;
     static AbsSqlConnection *conn;
     static SqlApiImplType type;
-    int process(PacketHeader &header,  char *buffer);
-    int processSqlConnect(PacketHeader &header,  char *buffer);
-    int processSqlPrepare(PacketHeader &header,  char *buffer);
-    int processSqlCommit(PacketHeader &header,  char *buffer);
-    int processPrepare(PacketHeader &header,  char *buffer);
-    int processCommit(PacketHeader &header,  char *buffer);
+    static int stmtID;
+    int process(PacketHeader &header, char *buffer);
+    int processSqlConnect(PacketHeader &header, char *buffer);
+    int processSqlPrepare(PacketHeader &header, char *buffer);
+    int processSqlExecute(PacketHeader &header, char *buffer);
+    int processSqlCommit(PacketHeader &header, char *buffer);
+    int processSqlRollback(PacketHeader &header, char *buffer);
+    int processPrepare(PacketHeader &header, char *buffer);
+    int processCommit(PacketHeader &header, char *buffer);
     int processFree(PacketHeader &header, char *buffer);
     
     

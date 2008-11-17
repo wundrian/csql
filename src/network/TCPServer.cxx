@@ -96,7 +96,9 @@ DbRetVal TCPServer::handleClient()
                }
                printf("HEADER says packet type is %d\n", header.packetType);
                char *buffer = NULL;
-               if (header.packetType != SQL_NW_PKT_DISCONNECT) 
+               if (header.packetType != SQL_NW_PKT_DISCONNECT && 
+                   header.packetType != SQL_NW_PKT_COMMIT     &&
+                   header.packetType != SQL_NW_PKT_ROLLBACK) 
                {
                    buffer = (char*) malloc(header.packetLength);
                    numbytes = os::recv(clientfd,buffer,header.packetLength,0);

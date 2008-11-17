@@ -25,13 +25,16 @@
 #include <SqlStatement.h>
 #include <SqlOdbcStatement.h>
 #include <SqlLogStatement.h>
+#include <Parser.h>
 
 List SqlNetworkHandler::stmtList;
 AbsSqlConnection* SqlNetworkHandler::conn;
 SqlApiImplType SqlNetworkHandler::type;
+int SqlNetworkHandler::stmtID;
 
 int SqlNetworkHandler::process(PacketHeader &header, char *buffer)
 {
+    int response = 0;
     switch(header.packetType)
     {
         case NW_PKT_PREPARE:
@@ -46,26 +49,38 @@ int SqlNetworkHandler::process(PacketHeader &header, char *buffer)
         case SQL_NW_PKT_PREPARE:
             return processSqlPrepare(header, buffer);
             break;
+        case SQL_NW_PKT_EXECUTE:
+            return processSqlExecute(header, buffer);
+            break;
         case SQL_NW_PKT_COMMIT:
             return processSqlCommit(header, buffer);
             break;
+        case SQL_NW_PKT_ROLLBACK:
+            return processSqlRollback(header, buffer);
+            break;
         case SQL_NW_PKT_DISCONNECT:
             conn->disconnect();
-            return 1;
+            *(char *) &response = 1;
+            return response;
     }
     return 0;
 }
  
 int SqlNetworkHandler::processSqlConnect(PacketHeader &header, char *buffer)
 {
+    int response = 0;
     printDebug(DM_Network, "Processing CONNECT");
     SqlPacketConnect *pkt = new SqlPacketConnect();
     pkt->setBuffer(buffer);
     pkt->setBufferSize(header.packetLength);
     pkt->unmarshall();
     DbRetVal rv=conn->connect(pkt->userName, pkt->passWord);
-    if (rv == OK) return 1;
-    else return 0;
+    if (rv == OK) { 
+        *(char *) &response = 1; 
+        rv = conn->beginTrans(); 
+        return response; 
+    }
+    return 0;
 }
 
 int SqlNetworkHandler::processSqlPrepare(PacketHeader &header, char *buffer)
@@ -75,15 +90,14 @@ int SqlNetworkHandler::processSqlPrepare(PacketHeader &header, char *buffer)
     pkt->setBufferSize(header.packetLength);
     pkt->unmarshall();
     printDebug(DM_Network, "PREPARE %d %s\n", pkt->stmtID, pkt->stmtString);
-    //for (int i =0 ; i < pkt->noParams; i++)
-        //printf("PREPARE type %d length %d \n", pkt->type[i], pkt->length[i]);
-    int response =1;
-    //TODO::add it to the SqlStatement list
+    int response = 0;
+    printf("Statement string |%s|\n", pkt->stmtString);
     AbsSqlStatement *sqlstmt = SqlFactory::createStatement(type);
     sqlstmt->setConnection(conn);
     NetworkStmt *nwStmt = new NetworkStmt();
-    nwStmt->stmtID = 1; 
+    nwStmt->stmtID = ++stmtID; 
     printDebug(DM_Network, "Statement string %s\n", pkt->stmtString);
+    printf("stmt:: %s\n", pkt->stmtString);
     nwStmt->stmt = sqlstmt;
     DbRetVal rv = sqlstmt->prepare(pkt->stmtString);
     if (rv != OK)
@@ -94,7 +108,6 @@ int SqlNetworkHandler::processSqlPrepare(PacketHeader &header, char *buffer)
     }
     BindSqlField *bindField = NULL;
     //populate paramList
-    /*
     for (int i = 0; i < pkt->noParams; i++)
     {
              bindField = new BindSqlField();
@@ -104,14 +117,60 @@ int SqlNetworkHandler::processSqlPrepare(PacketHeader &header, char *buffer)
                                                    bindField->length);
              nwStmt->paramList.append(bindField);
     }
-    */
     stmtList.append(nwStmt);
+    char *ptr = (char *) &response;
+    *ptr++ = 1; *(short *)ptr = nwStmt->stmtID; 
+    return response;
+}
+
+int SqlNetworkHandler::processSqlExecute(PacketHeader &header, char *buffer)
+{
+    SqlPacketExecute *pkt = new SqlPacketExecute();
+    pkt->setBuffer(buffer);
+    pkt->setBufferSize(header.packetLength);
+    pkt->unmarshall();
+    printDebug(DM_Network, "PREPARE %d\n", pkt->stmtID);
+    int response = 0;
+    ListIterator stmtIter = stmtList.getIterator();
+    NetworkStmt *stmt;
+    while (stmtIter.hasElement())
+    {
+       stmt = (NetworkStmt*) stmtIter.nextElement();
+       //TODO::Also check teh srcNetworkID
+       if (stmt->stmtID == pkt->stmtID ) break;
+    }
+    AbsSqlStatement *sqlstmt = stmt->stmt;
+    int rows = 0;
+    DbRetVal rv = sqlstmt->execute(rows);
+    if (rv != OK) { printf ("execute failed by server\n"); return 0; }
+    char *ptr = (char *) &response;
+    *ptr = 1; 
     return response;
 }
 
 int SqlNetworkHandler::processSqlCommit(PacketHeader &header, char *buffer)
 {
     int response =0;
+    DbRetVal rv = conn->commit();
+    if (rv != OK) {
+        printError(rv, "Commit failure\n");
+        return response;
+    }
+    rv = conn->beginTrans();
+    *(char *) &response = 1;
+    return response;
+}
+
+int SqlNetworkHandler::processSqlRollback(PacketHeader &header, char *buffer)
+{
+    int response =0;
+    DbRetVal rv = conn->rollback();
+    if (rv != OK) {
+        printError(rv, "Commit failure\n");
+        return response;
+    }
+    rv = conn->beginTrans();
+    *(char *) &response = 1;
     return response;
 }
 

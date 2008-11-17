@@ -22,6 +22,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <AbsSqlStatement.h>
+#include <Parser.h>
 
 /*enum DataSyncMode {
     NOSYNC=0,
@@ -40,8 +41,10 @@ enum NetworkPacketType
     NW_PKT_DISCONNECT =6,
     SQL_NW_PKT_CONNECT=101,
     SQL_NW_PKT_PREPARE=102,
-    SQL_NW_PKT_COMMIT=103,
-    SQL_NW_PKT_DISCONNECT=104,
+    SQL_NW_PKT_EXECUTE=103,
+    SQL_NW_PKT_COMMIT=104,
+    SQL_NW_PKT_ROLLBACK=105,
+    SQL_NW_PKT_DISCONNECT=106,
 };
 class NetworkClient {
     protected:
@@ -56,7 +59,7 @@ class NetworkClient {
 
     public:
     virtual DbRetVal send( NetworkPacketType type, char *buf, int len)=0;
-    virtual DbRetVal receive()=0;
+    virtual DbRetVal receive(int &response)=0;
     virtual DbRetVal connect()=0;
     virtual DbRetVal disconnect()=0;
     virtual ~NetworkClient(){}
@@ -82,7 +85,7 @@ class UDPClient : public NetworkClient{
     struct sockaddr_in fromAddr;
     UDPClient(){ isConnectedFlag =false; cacheClient = false;}
     DbRetVal send(NetworkPacketType type, char *buf, int len);
-    DbRetVal receive();
+    DbRetVal receive(int &response);
     DbRetVal connect();
     DbRetVal disconnect();
     ~UDPClient();
@@ -93,7 +96,7 @@ class TCPClient : public NetworkClient{
     struct sockaddr_in srvAddr;
     TCPClient(){ isConnectedFlag =false; cacheClient = false;}
     DbRetVal send(NetworkPacketType type, char *buf, int len);
-    DbRetVal receive();
+    DbRetVal receive(int &response);
     DbRetVal connect();
     DbRetVal disconnect();
     ~TCPClient();
@@ -232,19 +235,19 @@ class SqlPacketConnect : public BasePacket
     public:
     SqlPacketConnect()
     {
-         strcpy(userName, "");
-         strcpy(passWord, "");
-         buffer = NULL;
-         bufferSize = 0;
-         pktType = SQL_NW_PKT_CONNECT;
-    }
-    ~SqlPacketConnect() { free(buffer); bufferSize = 0; buffer = NULL; }
-    char userName[IDENTIFIER_LENGTH];
-    char passWord[IDENTIFIER_LENGTH];
-    void setConnParam(char *user, char *pass)
-    { strcpy(userName, user); strcpy(passWord, pass); }
-    DbRetVal marshall();
-    DbRetVal unmarshall();
+        strcpy(userName, "");
+        strcpy(passWord, "");
+        buffer = NULL;
+        bufferSize = 0;
+        pktType = SQL_NW_PKT_CONNECT;
+   }
+   ~SqlPacketConnect() { free(buffer); bufferSize = 0; buffer = NULL; }
+   char userName[IDENTIFIER_LENGTH];
+   char passWord[IDENTIFIER_LENGTH];
+   void setConnParam(char *user, char *pass)
+   { strcpy(userName, user); strcpy(passWord, pass); }
+   DbRetVal marshall();
+   DbRetVal unmarshall();
 };
 
 class SqlPacketPrepare : public BasePacket
@@ -265,18 +268,23 @@ class SqlPacketPrepare : public BasePacket
     DbRetVal unmarshall();
 };
 
-class SqlPacketCommit : public BasePacket
+class SqlPacketExecute : public BasePacket
 {
     public:
-    SqlPacketCommit() { txnID =0; noOfStmts = 0; stmtBufSize = NULL; stmtBuffer = NULL;
-                     buffer = NULL; bufferSize = 0; pktType = SQL_NW_PKT_COMMIT; }
-    ~SqlPacketCommit() { free(buffer); bufferSize = 0; buffer = NULL; }
-    int txnID;
-    int noOfStmts;
-    int *stmtBufSize;
-    char **stmtBuffer;
-    void setExecPackets(int tid, List list);
-    void getExecPacketList(List stmtList, List &list);
+    SqlPacketExecute() { buffer=NULL; bufferSize =0; pktType = SQL_NW_PKT_EXECUTE;}
+    ~SqlPacketExecute() { free(buffer); bufferSize = 0; buffer = NULL; paramValues = NULL; noParams = 0; }
+    //TODO::need to free paramvalues based on marshall or unmarshall
+
+    int stmtID;
+    int noParams;
+    char **paramValues;
+
+    List paramList;
+    List stmtList;
+
+    void setStatementList(List stmtlist);
+    void setParams(List list);
+
     DbRetVal marshall();
     DbRetVal unmarshall();
 };
@@ -286,10 +294,11 @@ class NetworkStmt
     public:
     int srcNetworkID;
     int stmtID;
+    StatementType type;
     AbsSqlStatement *stmt;
     List paramList;
-
 };
+
 class NetworkServer
 {
    protected:

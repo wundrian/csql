@@ -18,6 +18,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 #include <SqlNwStatement.h>
+#include <Network.h>
 
 DbRetVal SqlNwStatement::prepare(char *stmtstr)
 {
@@ -33,9 +34,12 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
         printError(rv, "Data could not be sent");
         return rv;
     }
-    rv = conn->receive();
+    int response = 0;
+    rv = conn->receive(response);
+    char *ptr = (char *) &response;
     if(rv != OK) return rv;
-    printf("received ack\n");
+    stmtID = *(short *) (ptr + 1);
+    printf("Stmt ID is: %d\n", stmtID);
     return rv;
 }
 
@@ -48,8 +52,24 @@ bool SqlNwStatement::isSelect()
 DbRetVal SqlNwStatement::execute(int &rowsAffected)
 {
     DbRetVal rv = OK;
-    if (!isPrepared) return ErrNotPrepared;
-    //TODO
+    //if (!isPrepared) return ErrNotPrepared;
+    SqlNwConnection *conn = (SqlNwConnection*)con;
+    SqlPacketExecute *pkt = new SqlPacketExecute();
+    pkt->stmtID = getStmtID();
+    pkt->setParams(paramList);
+    pkt->marshall();
+    rv = conn->send(SQL_NW_PKT_EXECUTE, pkt->getMarshalledBuffer(), pkt->getBufferSize());
+    if (rv != OK) {
+        printError(rv, "Data could not be sent");
+        return rv;
+    }
+    int response = 0;
+    rv = conn->receive(response);
+    if (rv != OK) return rv; 
+    if (*(char *)&response != 1) {
+        printf("there is some error\n");        
+        return ErrPeerResponse;
+    }
     return rv;
 }
 

@@ -67,6 +67,7 @@ int main(int argc, char **argv)
     bool end = false;
     SqlNetworkHandler::type = CSql;
     SqlNetworkHandler::conn = SqlFactory::createConnection(CSql);
+    SqlNetworkHandler::stmtID = 0;
     if (!Conf::config.useCsqlSqlServer())
     {
         printf("Sql Network Server is set to OFF in csql.conf file\n");

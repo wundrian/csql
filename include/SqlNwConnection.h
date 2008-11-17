@@ -51,7 +51,7 @@ class SqlNwConnection : public AbsSqlConnection
 
     DbRetVal send(NetworkPacketType type, char *buffer, size_t len)
     { return  nwClient->send(type, buffer, len); }
-    DbRetVal receive() { return nwClient->receive(); }
+    DbRetVal receive(int &response) { return nwClient->receive(response); }
     friend class SqlFactory;
 };
 

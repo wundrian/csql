@@ -21,6 +21,7 @@
 #include <Network.h>
 #include <DataType.h>
 #include <SqlLogStatement.h>
+#include <SqlNwStatement.h>
 
 DbRetVal PacketPrepare::marshall()
 {
@@ -99,6 +100,21 @@ void PacketExecute::setParams(List list)
     }
     return; 
 }
+
+void SqlPacketExecute::setParams(List list)
+{
+    paramList = list;
+    noParams = list.size();
+    paramValues = new char*[noParams];
+    BindSqlField* bindField = NULL;
+    for (int i = 0 ; i < noParams; i++)
+    {
+        bindField = (BindSqlField*) paramList.get(i+1);
+        paramValues[i] = (char*) bindField->value;
+    }
+    return;
+}
+
 void PacketExecute::setStatementList(List stmtlist)
 {
     stmtList = stmtlist;
@@ -297,36 +313,53 @@ DbRetVal SqlPacketPrepare::unmarshall()
     return OK;
 }
 
-DbRetVal SqlPacketCommit::marshall()
+DbRetVal SqlPacketExecute::marshall()
 {
-    buffer = (char*) malloc(bufferSize);
-    *(int*)buffer = txnID;
-    char* bufIter = (char*) buffer + sizeof(int);
-    *(int*)bufIter = noOfStmts;
-    bufIter = (char*) bufIter + sizeof(int);
-    memcpy(bufIter, stmtBufSize, noOfStmts*sizeof(int));
-    bufIter = (char*) bufIter + noOfStmts* sizeof(int);
-    for (int i=0; i < noOfStmts; i++)
+    bufferSize  = sizeof(int)+ sizeof(int);
+    BindSqlField* bindField = NULL;
+    for (int i = 0 ; i < noParams; i++)
     {
-        memcpy(bufIter, stmtBuffer[i], stmtBufSize[i]);
-        bufIter = bufIter + stmtBufSize[i];
+        bindField = (BindSqlField*) paramList.get(i+1);
+        bufferSize = bufferSize + AllDataType::size(bindField->type, bindField->length);
+    }
+    buffer = (char*) malloc(bufferSize);
+    *(int*)buffer = stmtID;
+    char* bufIter = (char*) buffer + sizeof(int);
+    *(int*)bufIter = noParams;
+    bufIter = (char*) bufIter + sizeof(int);
+    for (int i = 0 ; i < noParams; i++)
+    {
+        bindField = (BindSqlField*) paramList.get(i+1);
+        AllDataType::copyVal(bufIter, bindField->value, bindField->type,bindField->length);
+        bufIter = bufIter + AllDataType::size(bindField->type, bindField->length);
     }
     return OK;
 }
-DbRetVal SqlPacketCommit::unmarshall()
+
+DbRetVal SqlPacketExecute::unmarshall()
 {
-    txnID = *(int*)buffer;
+    stmtID = *(int*)buffer;
     char *bufIter = buffer + sizeof(int);
-    noOfStmts = *(int*)bufIter;
-    bufIter = bufIter + sizeof(int);
-    stmtBufSize = new int[noOfStmts];
-    memcpy(stmtBufSize, bufIter, noOfStmts*sizeof(int));
-    bufIter = bufIter + noOfStmts * sizeof(int);
-    stmtBuffer = new char*[noOfStmts];
-    for (int i = 0 ; i  <noOfStmts; i++)
+    noParams = *(int*)bufIter;
+    bufIter = bufIter +sizeof(int);
+    ListIterator stmtIter = stmtList.getIterator();
+    NetworkStmt *stmt;
+    while (stmtIter.hasElement())
     {
-       stmtBuffer[i] = bufIter;
-       bufIter = bufIter + stmtBufSize[i];
+       stmt = (NetworkStmt*) stmtIter.nextElement();
+       //TODO::Also check teh srcNetworkID
+       if (stmt->stmtID == stmtID ) break;
     }
+    if (noParams == 0) return OK;
+    paramValues = new char*[noParams];
+    ListIterator paramIter = stmt->paramList.getIterator();
+    BindSqlField *bindField = NULL;
+    for (int i=0; i <noParams; i++)
+    {
+        paramValues[i] = bufIter;
+        bindField = (BindSqlField*) stmt->paramList.get(i+1);
+        bufIter = bufIter + AllDataType::size(bindField->type, bindField->length);
+    }
+    return OK;
 }
 

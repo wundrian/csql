@@ -234,7 +234,7 @@ class SqlStatement: public AbsSqlStatement
     * @return bool true if it is prepared, false otherwise
     */
     bool isPrepared();
-
+    
     private:
     SqlConnection *sqlCon;
     Statement *stmt;

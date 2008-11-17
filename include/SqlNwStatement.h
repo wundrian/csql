@@ -27,7 +27,6 @@ class SqlNwStatement: public AbsSqlStatement
 {
     public:
     SqlNwStatement(){innerStmt = NULL; con = NULL;}
-
     void setConnection(AbsSqlConnection *conn)
     {
         if (innerStmt) innerStmt->setConnection(conn->getInnerConnection());
@@ -71,9 +70,12 @@ class SqlNwStatement: public AbsSqlStatement
     void setBinaryParam(int paramPos, void *value);
     bool isSelect();
     void getPrimaryKeyFieldName(char *tablename, char *pkfieldname);
+    int getStmtID() { return stmtID; }
+    void setStmtID(int id) { stmtID = id; } 
 
     private:
     bool isPrepared;
+    int stmtID;
     List paramList;
     List bindList;
     friend class SqlFactory;

@@ -231,7 +231,8 @@ DbRetVal SqlLogConnection::sendAndReceive(NetworkPacketType type, char *packet, 
         nwClient->setConnectFlag(false);
         if (nwClient->isCacheClient()) return ErrOS; else return OK;
     }
-    rv = nwClient->receive();
+    int response;
+    rv = nwClient->receive(response);
     if (rv != OK)
     {
         printf("Unable to receive ack pkt from peer with nwid %d\n", nwClient->getNetworkID());

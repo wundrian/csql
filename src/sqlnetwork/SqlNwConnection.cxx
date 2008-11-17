@@ -47,32 +47,36 @@ DbRetVal SqlNwConnection::connect (char *user, char * pass)
         printError(rv, "Data could not be sent");
         return rv;
     }
+    int response = 0;
+    rv = nwClient->receive(response);
     return rv;
 }
 DbRetVal SqlNwConnection::disconnect()
 {
     DbRetVal rv = OK;
     rv = nwClient->send(SQL_NW_PKT_DISCONNECT, NULL, 0);
-    return nwClient->receive();
+    int response = 0;
+    return nwClient->receive(response);
 }
 
 DbRetVal SqlNwConnection::beginTrans(IsolationLevel isoLevel, TransSyncMode mode)
 {
-    if (prevIsoLevel == isoLevel) return OK;
-    DbRetVal rv = OK;
-    //TODO
-    return rv;
+    return OK;
 }
+
 DbRetVal SqlNwConnection::commit()
 {
     DbRetVal rv = OK;
-    //TODO
-    return rv;
+    rv = nwClient->send(SQL_NW_PKT_COMMIT, NULL, 0);
+    int response = 0;
+    return nwClient->receive(response);
 }
+
 DbRetVal SqlNwConnection::rollback()
 {
     DbRetVal rv = OK;
-    //TODO
-    return rv;
+    rv = nwClient->send(SQL_NW_PKT_ROLLBACK, NULL, 0);
+    int response = 0;
+    return nwClient->receive(response);
 }
 
