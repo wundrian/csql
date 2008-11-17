@@ -10,11 +10,13 @@ then
     REL_PATH=${PWD}/cache/Recovery
 fi
 export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
+cp $CSQL_CONFIG_FILE /tmp
 echo DSN=$DSN >> $CSQL_CONFIG_FILE
 isql $DSN < $REL_PATH/createt1.sql > /dev/null 2>&1
 
 if [ $? -ne 0 ]
 then
+    mv /tmp/csql.conf $CSQL_CONFIG_FILE
     exit 1;
 fi
 
@@ -37,13 +39,16 @@ $CSQL_INSTALL_ROOT/bin/csqldump
 
 if [ $? -ne 0 ]
 then
+    mv /tmp/csql.conf $CSQL_CONFIG_FILE
     exit 5;
 fi
 
 kill $pid > /dev/null 2>&1
 
 isql $DSN < $REL_PATH/drop.sql > /dev/null 2>&1
-
+ipcrm -M 1199
+ipcrm -M 2277
+mv /tmp/csql.conf $CSQL_CONFIG_FILE
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 exit 0;
