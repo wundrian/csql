@@ -76,6 +76,7 @@ DbRetVal TupleIterator::open()
            FieldDef def = iter.nextElement();
            keyPtr = (void*)predImpl->valPtrForIndexField(def.fldName_);
            op = predImpl->opForIndexField(def.fldName_);
+           //TODO::remove this predicate term as it is pushed to tree iter
         }
         CINDEX *iptr = (CINDEX*) hIdxInfo->indexPtr;
         tIter = new TreeIter((TreeNode*)iptr->hashNodeChunk_);
