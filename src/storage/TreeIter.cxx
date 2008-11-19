@@ -81,9 +81,11 @@ void* TreeIter::next()
             if (NULL == iter) return NULL;
             nodeOffset=0;
         }
+        //TODO::take node mutex here
         char **rec = (char**)((char*)iter + sizeof(TreeNode));
         rec = (char**)((char *)rec + ((nodeOffset) * sizeof(void **)));
         nodeOffset++;
+        //TODO::release node mutex here
         return *rec;
     }
     return NULL;
@@ -125,6 +127,7 @@ void* TreeIter::locateElement()
     //do binary search and locate the element 
     int loc=0, middle=0, start=0, end=iter->noElements_-1;
     char **rec = (char**)((char*)iter + sizeof(TreeNode));
+    //TODO::take node mutex
     for(middle = (start + end) / 2; start <= end ; middle = (start +end )/2)
     {
         loc = middle;
@@ -151,5 +154,6 @@ void* TreeIter::locateElement()
     nodeOffset=loc;
     char **tuple = (char**)((char*)rec + (loc * sizeof(void *)));
     nodeOffset++;
+    //TODO::release node mutex here
     return *tuple;
 }

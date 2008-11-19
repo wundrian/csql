@@ -51,7 +51,7 @@ DbRetVal TreeIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         tnode->noElements_ =1;
         tnode->next_ = NULL;
         tnode->prev_ = NULL;
-            tnode->balance_ = 0;
+        tnode->balance_ = 0;
         char **rec = (char**)((char*) tnode + sizeof(TreeNode));
         printDebug(DM_TreeIndex, "\nStoring first record at %x\n", rec);
         *rec = (char*) tuple;
