@@ -50,7 +50,7 @@ cd ${install_dir}/include
 cd ${install_dir}/bin
 rm csqlreplserver  repltable
 
-cp ${root_dir}/README.INSTALL ${install_dir}/README
+cp ${root_dir}/README ${install_dir}/README
 cp ${root_dir}/Doxyfile ${install_dir}
 cp ${root_dir}/COPYING ${install_dir}
 cp ${root_dir}/AUTHORS ${install_dir}
