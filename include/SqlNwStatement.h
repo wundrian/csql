@@ -72,7 +72,6 @@ class SqlNwStatement: public AbsSqlStatement
     void getPrimaryKeyFieldName(char *tablename, char *pkfieldname);
     int getStmtID() { return stmtID; }
     void setStmtID(int id) { stmtID = id; } 
-
     private:
     bool isPrepared;
     int stmtID;

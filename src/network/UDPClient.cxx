@@ -63,7 +63,7 @@ DbRetVal UDPClient::send(NetworkPacketType type, char *buf, int len)
     return rv;
     
 }
-DbRetVal UDPClient::receive(int &response)
+DbRetVal UDPClient::receive()
 {
     //TODO:: resoibse timeout during socket read
     DbRetVal rv = OK;
@@ -79,7 +79,7 @@ DbRetVal UDPClient::receive(int &response)
         return ErrPeerTimeOut;
     }
 
-    response =0;
+    int response =0;
     socklen_t len = sizeof(struct sockaddr);
     int numbytes = recvfrom(sockfd, &response, 4, 0,
                    (struct sockaddr *)&fromAddr, &len);

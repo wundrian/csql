@@ -26,7 +26,6 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
     SqlNwConnection *conn = (SqlNwConnection*)con;
     SqlPacketPrepare *pkt = new SqlPacketPrepare();
     pkt->stmtString = stmtstr;
-    pkt->syncMode = OSYNC;
     pkt->stmtLength = strlen(stmtstr) + 1;
     pkt->marshall(); 
     rv = conn->send(SQL_NW_PKT_PREPARE, pkt->getMarshalledBuffer(), pkt->getBufferSize());
@@ -35,11 +34,51 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
         return rv;
     }
     int response = 0;
-    rv = conn->receive(response);
-    char *ptr = (char *) &response;
+    rv = conn->receive();
+    if (rv != OK) { 
+        printError(rv, "Prepare failed");
+        return rv;
+    }
+    ResponsePacket *rpkt = (ResponsePacket *) ((TCPClient *)conn->nwClient)->respPkt;
+    char *ptr = (char *) &rpkt->retVal;
     if(rv != OK) return rv;
-    stmtID = *(short *) (ptr + 1);
-    printf("Stmt ID is: %d\n", stmtID);
+    StatementType tp = (StatementType) *(ptr + 1);
+    int params = *(ptr + 2);
+    int proj = *(ptr + 3);
+    stmtID = rpkt->stmtID;
+    char *buffer = NULL;
+    if (params) {
+        PacketHeader header;
+        int fd = ((TCPClient *)(conn->nwClient))->sockfd;
+        int numbytes = os::recv(fd, &header, sizeof(PacketHeader), 0);
+        if (numbytes == -1) {
+            printError(ErrOS, "Error reading from socket\n");
+            return ErrOS;
+        }
+        printf("HEADER says packet type is %d\n", header.packetType);
+        if (header.packetLength) {
+            buffer = (char*) malloc(header.packetLength);
+            numbytes = os::recv(fd,buffer,header.packetLength,0);
+            if (numbytes == -1) {
+                printError(ErrOS, "Error reading from socket\n");
+                return ErrOS;
+            }
+            SqlPacketParamMetadata *mdpkt = new SqlPacketParamMetadata();
+            mdpkt->setBuffer(buffer);
+            mdpkt->unmarshall();
+            BindSqlField *bindField=NULL;
+            for (int i=0; i < mdpkt->noParams; i++) {
+                bindField = new BindSqlField();
+                bindField->type = (DataType) mdpkt->type[i];
+                bindField->length = mdpkt->length[i];
+                bindField->value = AllDataType::alloc(bindField->type, bindField->length);
+                paramList.append(bindField);
+            }
+        }
+    }
+    if (proj) {
+    }
+    isPrepared = true;
     return rv;
 }
 
@@ -56,6 +95,7 @@ DbRetVal SqlNwStatement::execute(int &rowsAffected)
     SqlNwConnection *conn = (SqlNwConnection*)con;
     SqlPacketExecute *pkt = new SqlPacketExecute();
     pkt->stmtID = getStmtID();
+    pkt->noParams=paramList.size();
     pkt->setParams(paramList);
     pkt->marshall();
     rv = conn->send(SQL_NW_PKT_EXECUTE, pkt->getMarshalledBuffer(), pkt->getBufferSize());
@@ -63,10 +103,11 @@ DbRetVal SqlNwStatement::execute(int &rowsAffected)
         printError(rv, "Data could not be sent");
         return rv;
     }
-    int response = 0;
-    rv = conn->receive(response);
+    rv = conn->receive();
     if (rv != OK) return rv; 
-    if (*(char *)&response != 1) {
+    ResponsePacket *rpkt = (ResponsePacket *) ((TCPClient *)conn->nwClient)->respPkt;
+    char *ptr = (char *) &rpkt->retVal;
+    if (*ptr != 1) {
         printf("there is some error\n");        
         return ErrPeerResponse;
     }
@@ -150,75 +191,114 @@ DbRetVal SqlNwStatement::free()
     //TODO
     return OK;
 }
+
 void SqlNwStatement::setShortParam(int paramPos, short value)
 {
     if (!isPrepared) return ;
-    //TODO
+    if (paramPos <= 0) return;
+    BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
+    *(short *) bindField->value = value;
     return;
 }
+
 void SqlNwStatement::setIntParam(int paramPos, int value)
 {
     if (!isPrepared) return ;
-    //TODO
+    if (paramPos <= 0) return;
+    BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
+    *(int *) bindField->value = value;
     return;
-
 }
+
 void SqlNwStatement::setLongParam(int paramPos, long value)
 {
     if (!isPrepared) return ;
-    //TODO
+    if (paramPos <= 0) return;
+    BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
+    *(long *) bindField->value = value;
     return;
 
 }
+
 void SqlNwStatement::setLongLongParam(int paramPos, long long value)
 {
     if (!isPrepared) return ;
-    //TODO
+    if (paramPos <= 0) return;
+    BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
+    *(long long *) bindField->value = value;
     return;
 }
+
 void SqlNwStatement::setByteIntParam(int paramPos, ByteInt value)
 {
     if (!isPrepared) return ;
-    //TODO
+    if (paramPos <= 0) return;
+    BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
+    *(ByteInt *) bindField->value = value;
+    return;
 }
+
 void SqlNwStatement::setFloatParam(int paramPos, float value)
 {
     if (!isPrepared) return ;
-    //TODO
+    if (paramPos <= 0) return;
+    BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
+    *(float *) bindField->value = value;
+    return;
 }
+
 void SqlNwStatement::setDoubleParam(int paramPos, double value)
 {
     if (!isPrepared) return ;
-    //TODO
-
+    if (paramPos <= 0) return;
+    BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
+    *(double *) bindField->value = value;
+    return;
 }
+
 void SqlNwStatement::setStringParam(int paramPos, char *value)
 {
     if (!isPrepared) return ;
-    //TODO
+    if (paramPos <= 0) return;
+    BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
+    strcpy((char *) bindField->value, value);
     return;
 }
+
 void SqlNwStatement::setDateParam(int paramPos, Date value)
 {
     if (!isPrepared) return ;
-    //TODO
-
+    if (paramPos <= 0) return;
+    BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
+    *(Date *)bindField->value = value;
+    return;
 }
+
 void SqlNwStatement::setTimeParam(int paramPos, Time value)
 {
     if (!isPrepared) return ;
-    //TODO
-
+    if (paramPos <= 0) return;
+    BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
+    * (Time *) bindField->value = value;
+    return;
 }
+
 void SqlNwStatement::setTimeStampParam(int paramPos, TimeStamp value)
 {
     if (!isPrepared) return ;
-    //TODO
+    if (paramPos <= 0) return;
+    BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
+    *(TimeStamp *) bindField->value = value;
+    return;
 }
+
 void SqlNwStatement::setBinaryParam(int paramPos, void *value)
 {
     if (!isPrepared) return;
-    //TODO
+    if (paramPos <= 0) return;
+    BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
+    memcpy(bindField->value, value, 2 * bindField->length);
+    return;
 }
 
 void SqlNwStatement::getPrimaryKeyFieldName(char *tablename, char *pkfieldname)

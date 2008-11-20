@@ -31,8 +31,8 @@
 class SqlNwConnection : public AbsSqlConnection
 {
     Connection dummyConn;
-    NetworkClient *nwClient;
     public:
+    NetworkClient *nwClient;
     IsolationLevel prevIsoLevel;
     SqlNwConnection(){nwClient = NULL; innerConn = NULL; }
 
@@ -51,7 +51,7 @@ class SqlNwConnection : public AbsSqlConnection
 
     DbRetVal send(NetworkPacketType type, char *buffer, size_t len)
     { return  nwClient->send(type, buffer, len); }
-    DbRetVal receive(int &response) { return nwClient->receive(response); }
+    DbRetVal receive() { return nwClient->receive(); }
     friend class SqlFactory;
 };
 

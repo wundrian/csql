@@ -102,7 +102,8 @@ DbRetVal UDPServer::handleClient()
        return ErrOS;
    }
    SqlNetworkHandler handler;
-   int response = handler.process(header, buffer); 
+   // following line is changed may  not work
+   void * response = (void *) handler.process(header, buffer); 
    numbytes = sendto(sockfd, &response, 4, 0,
               (struct sockaddr*) &clientAddress, addressLen);
    if (numbytes != 4)

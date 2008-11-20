@@ -32,17 +32,16 @@ AbsSqlConnection* SqlNetworkHandler::conn;
 SqlApiImplType SqlNetworkHandler::type;
 int SqlNetworkHandler::stmtID;
 
-int SqlNetworkHandler::process(PacketHeader &header, char *buffer)
+void *SqlNetworkHandler::process(PacketHeader &header, char *buffer)
 {
-    int response = 0;
     switch(header.packetType)
     {
-        case NW_PKT_PREPARE:
+      //  case NW_PKT_PREPARE:
             //return processPrepare(header, buffer);
-            break;
-        case NW_PKT_COMMIT:
+         //   break;
+        //case NW_PKT_COMMIT:
             //return processCommit(header, buffer);
-            break;
+          //  break;
         case SQL_NW_PKT_CONNECT:
             return processSqlConnect(header, buffer);
             break;
@@ -60,77 +59,104 @@ int SqlNetworkHandler::process(PacketHeader &header, char *buffer)
             break;
         case SQL_NW_PKT_DISCONNECT:
             conn->disconnect();
-            *(char *) &response = 1;
-            return response;
+            ResponsePacket *rpkt = new ResponsePacket();
+            char * ptr = (char *) &rpkt->retVal;
+            *ptr = 1;
+            strcpy(rpkt->errorString, "Success");
+            return rpkt;
     }
-    return 0;
 }
  
-int SqlNetworkHandler::processSqlConnect(PacketHeader &header, char *buffer)
+void * SqlNetworkHandler::processSqlConnect(PacketHeader &header, char *buffer)
 {
-    int response = 0;
+    ResponsePacket *rpkt = new ResponsePacket();
     printDebug(DM_Network, "Processing CONNECT");
     SqlPacketConnect *pkt = new SqlPacketConnect();
     pkt->setBuffer(buffer);
     pkt->setBufferSize(header.packetLength);
     pkt->unmarshall();
     DbRetVal rv=conn->connect(pkt->userName, pkt->passWord);
+    char *ptr = (char *) &rpkt->retVal;
     if (rv == OK) { 
-        *(char *) &response = 1; 
+        *(char *) ptr = 1; 
         rv = conn->beginTrans(); 
-        return response; 
+        return rpkt; 
     }
-    return 0;
+    *ptr = 0; 
+    strcpy(rpkt->errorString, "Error:Connect failure");
+    return rpkt;
 }
 
-int SqlNetworkHandler::processSqlPrepare(PacketHeader &header, char *buffer)
+void* SqlNetworkHandler::processSqlPrepare(PacketHeader &header, char *buffer)
 {
+    ResponsePacket *rpkt = new ResponsePacket();
+    char *retval = (char *) &rpkt->retVal;
     SqlPacketPrepare *pkt = new SqlPacketPrepare();
     pkt->setBuffer(buffer);
     pkt->setBufferSize(header.packetLength);
     pkt->unmarshall();
-    printDebug(DM_Network, "PREPARE %d %s\n", pkt->stmtID, pkt->stmtString);
-    int response = 0;
-    printf("Statement string |%s|\n", pkt->stmtString);
+    printDebug(DM_Network, "PREPARE %s\n", pkt->stmtString);
     AbsSqlStatement *sqlstmt = SqlFactory::createStatement(type);
     sqlstmt->setConnection(conn);
+    SqlStatement *st = (SqlStatement *)sqlstmt;
     NetworkStmt *nwStmt = new NetworkStmt();
     nwStmt->stmtID = ++stmtID; 
     printDebug(DM_Network, "Statement string %s\n", pkt->stmtString);
-    printf("stmt:: %s\n", pkt->stmtString);
     nwStmt->stmt = sqlstmt;
     DbRetVal rv = sqlstmt->prepare(pkt->stmtString);
     if (rv != OK)
     {
         printError(ErrSysInit, "statement prepare failed\n");
-        response = 0;
-        return response;
+        *retval = 0;
+        strcpy(rpkt->errorString, "Error:Statement prepare failed");
+        return rpkt;
     }
+    int param = st->noOfParamFields();
+    int proj = st->noOfProjFields();
     BindSqlField *bindField = NULL;
+    BindSqlProjectField *projField = NULL;
     //populate paramList
-    for (int i = 0; i < pkt->noParams; i++)
-    {
-             bindField = new BindSqlField();
-             bindField->type = (DataType) pkt->type[i];
-             bindField->length = pkt->length[i];
-             bindField->value = AllDataType::alloc(bindField->type,
-                                                   bindField->length);
-             nwStmt->paramList.append(bindField);
+    FieldInfo * fInfo = new FieldInfo();
+    for (int i = 0; i < param; i++) {
+        bindField = new BindSqlField();
+        st->getParamFldInfo(i + 1, fInfo);
+        bindField->type = fInfo->type;
+        bindField->length = fInfo->length;
+        bindField->value = AllDataType::alloc(bindField->type, bindField->length);
+         nwStmt->paramList.append(bindField);
+    }
+    delete fInfo; 
+    fInfo = new FieldInfo();
+    for (int i = 0; i < proj; i++) {
+        projField = new BindSqlProjectField();
+        st->getProjFldInfo(i + 1, fInfo);
+        strcpy(projField->fName, fInfo->fldName);
+        projField->type = fInfo->type;
+        projField->length = fInfo->length;
+        projField->value = AllDataType::alloc(projField->type, projField->length);
+        nwStmt->projList.append(projField);
     }
     stmtList.append(nwStmt);
-    char *ptr = (char *) &response;
-    *ptr++ = 1; *(short *)ptr = nwStmt->stmtID; 
-    return response;
+    *retval = 1; 
+    *(retval+1) = (StatementType) st->getStmtType();
+    if (param) *(retval+2) = 1;
+    if (proj) *(retval+3) = 1;
+    rpkt->stmtID = nwStmt->stmtID; 
+    strcpy(rpkt->errorString, "Success");
+    return rpkt;
 }
 
-int SqlNetworkHandler::processSqlExecute(PacketHeader &header, char *buffer)
+void * SqlNetworkHandler::processSqlExecute(PacketHeader &header, char *buffer)
 {
+    ResponsePacket *rpkt = new ResponsePacket();
+    char *retval = (char *) &rpkt->retVal;
     SqlPacketExecute *pkt = new SqlPacketExecute();
     pkt->setBuffer(buffer);
     pkt->setBufferSize(header.packetLength);
+    pkt->setStatementList(stmtList);
     pkt->unmarshall();
     printDebug(DM_Network, "PREPARE %d\n", pkt->stmtID);
-    int response = 0;
+    rpkt->stmtID = pkt->stmtID;
     ListIterator stmtIter = stmtList.getIterator();
     NetworkStmt *stmt;
     while (stmtIter.hasElement())
@@ -141,40 +167,55 @@ int SqlNetworkHandler::processSqlExecute(PacketHeader &header, char *buffer)
     }
     AbsSqlStatement *sqlstmt = stmt->stmt;
     int rows = 0;
+    for (int i=0; i < pkt->noParams; i++) {
+        BindSqlField *bindField = (BindSqlField *) stmt->paramList.get(i+1);
+        setParamValues(sqlstmt, i+1, bindField->type, bindField->length, (char *)bindField->value);
+    }
     DbRetVal rv = sqlstmt->execute(rows);
-    if (rv != OK) { printf ("execute failed by server\n"); return 0; }
-    char *ptr = (char *) &response;
-    *ptr = 1; 
-    return response;
+    if (rv != OK) { 
+        *retval = 0;
+        strcpy(rpkt->errorString, "Execute failed");
+        return rpkt; 
+    }
+    *retval = 1; 
+    strcpy(rpkt->errorString, "Success");
+    return rpkt;
 }
 
-int SqlNetworkHandler::processSqlCommit(PacketHeader &header, char *buffer)
+void * SqlNetworkHandler::processSqlCommit(PacketHeader &header, char *buffer)
 {
-    int response =0;
+    ResponsePacket *rpkt = new ResponsePacket();
+    char *retval = (char *) &rpkt->retVal;
     DbRetVal rv = conn->commit();
     if (rv != OK) {
-        printError(rv, "Commit failure\n");
-        return response;
+        *retval = 0;
+        strcpy(rpkt->errorString, "Commit failure\n");
+        return rpkt;
     }
     rv = conn->beginTrans();
-    *(char *) &response = 1;
-    return response;
+    *retval = 1;
+    strcpy(rpkt->errorString, "Success");
+    return rpkt;
 }
 
-int SqlNetworkHandler::processSqlRollback(PacketHeader &header, char *buffer)
+void *SqlNetworkHandler::processSqlRollback(PacketHeader &header, char *buffer)
 {
-    int response =0;
+    ResponsePacket *rpkt = new ResponsePacket();
+    char *retval = (char *) &rpkt->retVal;
+
     DbRetVal rv = conn->rollback();
     if (rv != OK) {
-        printError(rv, "Commit failure\n");
-        return response;
+        *retval = 0;
+        strcpy(rpkt->errorString, "Rollback failure\n");
+        return rpkt;
     }
     rv = conn->beginTrans();
-    *(char *) &response = 1;
-    return response;
+    *retval = 1;
+    strcpy(rpkt->errorString, "Success");
+    return rpkt;
 }
-
-int SqlNetworkHandler::processCommit(PacketHeader &header, char *buffer)
+/*
+void *SqlNetworkHandler::processCommit(PacketHeader &header, char *buffer)
 {
     printDebug(DM_Network, "Processing COMMIT");
     PacketCommit *pkt = new PacketCommit();
@@ -193,7 +234,7 @@ int SqlNetworkHandler::processCommit(PacketHeader &header, char *buffer)
     return response;
 
 }
-int SqlNetworkHandler::processFree(PacketHeader &header, char *buffer)
+void * SqlNetworkHandler::processFree(PacketHeader &header, char *buffer)
 {
     PacketFree *pkt = new PacketFree();
     pkt->setBuffer(buffer);
@@ -203,7 +244,7 @@ int SqlNetworkHandler::processFree(PacketHeader &header, char *buffer)
     int response =1;
     //This wont work for two statement executed in same transaction using same SqlStatement object using free.
     //so do not delete now and put a flag 'readyfordelete' in NetworkStmt object and delete it during execute
-    /*
+//    
     ListIterator iter = stmtList.getIterator();
     NetworkStmt *stmt, *removeStmt = NULL;
     while (iter.hasElement())
@@ -218,10 +259,10 @@ int SqlNetworkHandler::processFree(PacketHeader &header, char *buffer)
     }
     if (removeStmt) stmtList.remove(removeStmt);
     else printf("Statement id %d not found in list \n",  pkt->stmtID);
-    */
+    
     return response;
 }
-int SqlNetworkHandler::processPrepare(PacketHeader &header, char *buffer) 
+void * SqlNetworkHandler::processPrepare(PacketHeader &header, char *buffer) 
 {
     PacketPrepare *pkt = new PacketPrepare();
     pkt->setBuffer(buffer);
@@ -307,7 +348,7 @@ DbRetVal SqlNetworkHandler::applyExecPackets(List sList, List pList)
     SqlNetworkHandler::conn->commit();
     return OK;
 }
-
+*/
 void SqlNetworkHandler::setParamValues(AbsSqlStatement *stmt, int parampos, DataType type,
                     int length, char *value)
 {

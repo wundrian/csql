@@ -234,7 +234,8 @@ class SqlStatement: public AbsSqlStatement
     * @return bool true if it is prepared, false otherwise
     */
     bool isPrepared();
-    
+    StatementType getStmtType() { return pData.getStmtType(); }
+ 
     private:
     SqlConnection *sqlCon;
     Statement *stmt;

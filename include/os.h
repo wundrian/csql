@@ -83,6 +83,7 @@ enum MapMode
 
 #define MAX_FILE_LEN 1024
 #define IDENTIFIER_LENGTH 128
+#define ERROR_STRING_LENGTH 128
 #define DEFAULT_VALUE_BUF_LENGTH 32
 #define SYSTEMDB "SYSTEMDB"
 #define DBAUSER "root"

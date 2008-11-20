@@ -48,7 +48,7 @@ DbRetVal SqlNwConnection::connect (char *user, char * pass)
         return rv;
     }
     int response = 0;
-    rv = nwClient->receive(response);
+    rv = nwClient->receive();
     return rv;
 }
 DbRetVal SqlNwConnection::disconnect()
@@ -56,7 +56,7 @@ DbRetVal SqlNwConnection::disconnect()
     DbRetVal rv = OK;
     rv = nwClient->send(SQL_NW_PKT_DISCONNECT, NULL, 0);
     int response = 0;
-    return nwClient->receive(response);
+    return nwClient->receive();
 }
 
 DbRetVal SqlNwConnection::beginTrans(IsolationLevel isoLevel, TransSyncMode mode)
@@ -69,7 +69,7 @@ DbRetVal SqlNwConnection::commit()
     DbRetVal rv = OK;
     rv = nwClient->send(SQL_NW_PKT_COMMIT, NULL, 0);
     int response = 0;
-    return nwClient->receive(response);
+    return nwClient->receive();
 }
 
 DbRetVal SqlNwConnection::rollback()
@@ -77,6 +77,6 @@ DbRetVal SqlNwConnection::rollback()
     DbRetVal rv = OK;
     rv = nwClient->send(SQL_NW_PKT_ROLLBACK, NULL, 0);
     int response = 0;
-    return nwClient->receive(response);
+    return nwClient->receive();
 }
 

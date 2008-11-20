@@ -22,6 +22,7 @@
 #include <DataType.h>
 #include <SqlLogStatement.h>
 #include <SqlNwStatement.h>
+#include <SqlNetworkHandler.h>
 
 DbRetVal PacketPrepare::marshall()
 {
@@ -120,6 +121,13 @@ void PacketExecute::setStatementList(List stmtlist)
     stmtList = stmtlist;
     return; 
 }
+
+void SqlPacketExecute::setStatementList(List stmtlist)
+{
+    stmtList = stmtlist;
+    return; 
+}
+
 DbRetVal PacketExecute::marshall()
 {
     bufferSize  = sizeof(int)+ sizeof(int);
@@ -262,27 +270,12 @@ DbRetVal SqlPacketConnect::unmarshall()
 DbRetVal SqlPacketPrepare::marshall()
 {
     printDebug(DM_Network, "PacketPrepare::marshall called\n");
-    bufferSize  = sizeof(int) * 4 + strlen(stmtString) + 1;
-    printDebug(DM_Network, "NOOFPARAMS %d buffer size %d\n", noParams, bufferSize);
+    bufferSize  = sizeof(int) + strlen(stmtString) + 1;
+    printDebug(DM_Network, "Buffer size %d\n", bufferSize);
     printDebug(DM_Network, "stmt %s size %d\n", stmtString, strlen(stmtString));
-    printDebug(DM_Network, "noParams is %d\n", noParams);
-    if (noParams >0)
-        bufferSize = bufferSize + 2 * sizeof(int) * noParams;
     buffer = (char*) malloc(bufferSize);
-    *(int*)buffer = stmtID;
+    *(int*)buffer = strlen(stmtString);
     char *bufIter = buffer + sizeof(int);
-    *(int*)bufIter = syncMode;
-    bufIter = bufIter + sizeof(int);
-    *(int*)bufIter = strlen(stmtString);
-    bufIter = bufIter + sizeof(int);
-    *(int*)bufIter = noParams;
-    bufIter = bufIter + sizeof(int);
-    if (noParams >0) {
-       memcpy(bufIter, type, sizeof(int) * noParams);
-       bufIter = bufIter + sizeof(int)* noParams;
-       memcpy(bufIter, length, sizeof(int) * noParams);
-       bufIter = bufIter + sizeof(int)* noParams;
-    }
     strcpy(bufIter, stmtString);
     printDebug(DM_Network, "PacketPrepare::marshall ended\n");
     return OK;
@@ -291,21 +284,9 @@ DbRetVal SqlPacketPrepare::marshall()
 DbRetVal SqlPacketPrepare::unmarshall()
 {
     printDebug(DM_Network, "PacketPrepare::unmarshall called\n");
-    stmtID = *(int*)buffer;
     printDebug(DM_Network, "start of the buffer is %x\n", buffer);
-    char *bufIter = buffer + sizeof (int);
-    syncMode = *(int*)bufIter;
-    bufIter = bufIter + sizeof(int);
-    stmtLength = *(int*)bufIter;
-    bufIter = bufIter + sizeof(int);
-    noParams = *(int*)bufIter;
-    bufIter = bufIter + sizeof(int);
-    if (noParams >0) {
-        type = (int*) bufIter;
-        bufIter = bufIter + sizeof(int) * noParams;
-        length = (int*) bufIter;
-        bufIter = bufIter + sizeof(int) * noParams;
-    }
+    stmtLength = *(int*)buffer;
+    char *bufIter = buffer + sizeof(int);
     stmtString = bufIter;
     printDebug(DM_Network, "stmtString ptr is %x\n", stmtString);
     stmtString[stmtLength+1] = '\0';
@@ -358,8 +339,60 @@ DbRetVal SqlPacketExecute::unmarshall()
     {
         paramValues[i] = bufIter;
         bindField = (BindSqlField*) stmt->paramList.get(i+1);
+        bindField->value = paramValues[i];
         bufIter = bufIter + AllDataType::size(bindField->type, bindField->length);
     }
     return OK;
 }
 
+DbRetVal SqlPacketParamMetadata::marshall()
+{
+    printDebug(DM_Network, "SqlPacketParamMetadata::marshall called\n");
+    bufferSize  = sizeof(int) * 2;
+    printDebug(DM_Network, "NOOFPARAMS %d buffer size %d\n", noParams, bufferSize);
+    printDebug(DM_Network, "noParams is %d\n", noParams);
+    if (noParams >0) 
+        bufferSize = bufferSize + 2 * sizeof(int) * noParams;
+    buffer = (char*) malloc(bufferSize);
+    *(int*)buffer = stmtID;
+    char *bufIter = buffer + sizeof(int);
+    *(int*)bufIter = noParams;
+    bufIter = bufIter + sizeof(int);
+    ListIterator stmtIter = SqlNetworkHandler::stmtList.getIterator();
+    NetworkStmt *stmt;
+    while (stmtIter.hasElement())
+    {
+       stmt = (NetworkStmt*) stmtIter.nextElement();
+       if (stmt->stmtID == stmtID ) break;
+    }
+    for (int i=0; i <noParams; i++) {
+        BindSqlField *bindField = (BindSqlField*) stmt->paramList.get(i+1);
+        *(int *) bufIter = bindField->type;
+        bufIter = bufIter + sizeof(int);
+    }
+    for (int i=0; i <noParams; i++) {
+        BindSqlField *bindField = (BindSqlField*) stmt->paramList.get(i+1);
+        *(int *) bufIter = bindField->length; 
+        bufIter = bufIter + sizeof(int);
+    }
+    printDebug(DM_Network, "PacketPrepare::marshall ended\n");
+    return OK;
+}
+
+DbRetVal SqlPacketParamMetadata::unmarshall()
+{
+    printDebug(DM_Network, "SqlPacketParamMetadata::unmarshall called\n");
+    stmtID = *(int*)buffer;
+    printDebug(DM_Network, "start of the buffer is %x\n", buffer);
+    char *bufIter = buffer + sizeof (int);
+    noParams = *(int*)bufIter;
+    bufIter = bufIter + sizeof(int);
+    if(noParams > 0) {
+        type = (int*) bufIter;
+        bufIter = bufIter + sizeof(int) * noParams;
+        length = (int*) bufIter;
+        bufIter = bufIter + sizeof(int) * noParams;
+    }
+    printDebug(DM_Network, "PacketPrepare::unmarshall ended\n");
+    return OK;
+}

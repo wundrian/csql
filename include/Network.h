@@ -41,11 +41,27 @@ enum NetworkPacketType
     NW_PKT_DISCONNECT =6,
     SQL_NW_PKT_CONNECT=101,
     SQL_NW_PKT_PREPARE=102,
-    SQL_NW_PKT_EXECUTE=103,
-    SQL_NW_PKT_COMMIT=104,
-    SQL_NW_PKT_ROLLBACK=105,
-    SQL_NW_PKT_DISCONNECT=106,
+    SQL_NW_PKT_PARAM_METADATA=103,
+    SQL_NW_PKT_PROJ_METADATA=104,
+    SQL_NW_PKT_EXECUTE=105,
+    SQL_NW_PKT_COMMIT=106,
+    SQL_NW_PKT_ROLLBACK=107,
+    SQL_NW_PKT_DISCONNECT=108,
 };
+
+class ResponsePacket
+{
+    public:
+    ResponsePacket()
+    { stmtID = 0; retVal = 0; }
+    ~ResponsePacket() { }
+    int retVal; // will inclue statment type also in the second byte
+    int stmtID;
+    char errorString[ERROR_STRING_LENGTH];
+    DbRetVal marshall();
+    DbRetVal unmarshall();
+};
+
 class NetworkClient {
     protected:
     char hostName[IDENTIFIER_LENGTH];
@@ -59,7 +75,7 @@ class NetworkClient {
 
     public:
     virtual DbRetVal send( NetworkPacketType type, char *buf, int len)=0;
-    virtual DbRetVal receive(int &response)=0;
+    virtual DbRetVal receive()=0;
     virtual DbRetVal connect()=0;
     virtual DbRetVal disconnect()=0;
     virtual ~NetworkClient(){}
@@ -85,7 +101,7 @@ class UDPClient : public NetworkClient{
     struct sockaddr_in fromAddr;
     UDPClient(){ isConnectedFlag =false; cacheClient = false;}
     DbRetVal send(NetworkPacketType type, char *buf, int len);
-    DbRetVal receive(int &response);
+    DbRetVal receive();
     DbRetVal connect();
     DbRetVal disconnect();
     ~UDPClient();
@@ -94,9 +110,10 @@ class TCPClient : public NetworkClient{
     public:
     int sockfd;
     struct sockaddr_in srvAddr;
-    TCPClient(){ isConnectedFlag =false; cacheClient = false;}
+    ResponsePacket *respPkt;
+    TCPClient(){ isConnectedFlag =false; cacheClient = false; respPkt = new ResponsePacket(); }
     DbRetVal send(NetworkPacketType type, char *buf, int len);
-    DbRetVal receive(int &response);
+    DbRetVal receive();
     DbRetVal connect();
     DbRetVal disconnect();
     ~TCPClient();
@@ -254,15 +271,9 @@ class SqlPacketPrepare : public BasePacket
 {
     public:
     SqlPacketPrepare()
-    { buffer=NULL; bufferSize =0; noParams = 0;
-      type = NULL; length = NULL; pktType = SQL_NW_PKT_PREPARE;}
+    { buffer=NULL; bufferSize =0; pktType = SQL_NW_PKT_PREPARE;}
     ~SqlPacketPrepare() { free(buffer); bufferSize = 0; buffer = NULL; }
-    int stmtID;
-    int syncMode;
     int stmtLength;
-    int noParams;
-    int *type;
-    int *length;
     char *stmtString;
     DbRetVal marshall();
     DbRetVal unmarshall();
@@ -289,6 +300,36 @@ class SqlPacketExecute : public BasePacket
     DbRetVal unmarshall();
 };
 
+class SqlPacketParamMetadata : public BasePacket
+{
+    public:
+    SqlPacketParamMetadata()
+    { buffer=NULL; bufferSize =0; noParams = 0;
+      type = NULL; length = NULL; pktType = SQL_NW_PKT_PARAM_METADATA;}
+    ~SqlPacketParamMetadata() { free(buffer); bufferSize = 0; buffer = NULL; }
+    int stmtID;
+    int noParams;
+    int *type;
+    int *length;
+    DbRetVal marshall();
+    DbRetVal unmarshall();
+};
+
+class SqlPacketProjMetadata : public BasePacket
+{
+    public:
+    SqlPacketProjMetadata()
+    { buffer=NULL; bufferSize =0; noProjs = 0;
+      type = NULL; length = NULL; pktType = SQL_NW_PKT_PROJ_METADATA;}
+    ~SqlPacketProjMetadata() { free(buffer); bufferSize = 0; buffer = NULL; }
+    int stmtID;
+    int noProjs;
+    int *type;
+    int *length;
+    DbRetVal marshall();
+    DbRetVal unmarshall();
+};
+
 class NetworkStmt
 {
     public:
@@ -297,6 +338,7 @@ class NetworkStmt
     StatementType type;
     AbsSqlStatement *stmt;
     List paramList;
+    List projList;
 };
 
 class NetworkServer
@@ -310,6 +352,7 @@ class NetworkServer
    virtual DbRetVal start()=0;
    virtual DbRetVal stop()=0;
    virtual DbRetVal handleClient()=0;
+   virtual DbRetVal send(NetworkPacketType type, char *buf, int len)=0;
  
 };
 class UDPServer : public NetworkServer
@@ -320,7 +363,9 @@ class UDPServer : public NetworkServer
    DbRetVal start();
    DbRetVal stop();
    DbRetVal handleClient();
+   DbRetVal send(NetworkPacketType type, char *buf, int len) { }//dont know what to write
 };
+
 class TCPServer : public NetworkServer
 {
    public:
@@ -330,6 +375,7 @@ class TCPServer : public NetworkServer
    DbRetVal start();
    DbRetVal stop();
    DbRetVal handleClient();
+   DbRetVal send(NetworkPacketType type, char *buf, int len);
 };
 
 #endif

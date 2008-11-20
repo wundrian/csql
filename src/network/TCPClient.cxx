@@ -50,7 +50,7 @@ DbRetVal TCPClient::send(NetworkPacketType type, char *buf, int len)
     free(totalBuffer);
     return rv;
 }
-DbRetVal TCPClient::receive(int &response)
+DbRetVal TCPClient::receive()
 {
     DbRetVal rv = OK;
     printf("NW:TCP receive\n");
@@ -66,14 +66,15 @@ DbRetVal TCPClient::receive(int &response)
         return ErrPeerTimeOut;
     }
     socklen_t len = sizeof(struct sockaddr);
-    int numbytes = os::recv(sockfd, &response, 4, 0);
-    if (numbytes !=4)
+    int numbytes = os::recv(sockfd, respPkt, sizeof(ResponsePacket), 0);
+    if (numbytes == -1)
     {
        printf("Unable to receive response from peer\n");
        return ErrOS;
     }
     //printf("NW:UDP receive\n");
-    if (*(char *) &response != 1) rv = ErrPeerResponse;
+    char *response = (char *) &respPkt->retVal;
+    if (*response != 1) rv = ErrPeerResponse;
     return rv;
 }
 DbRetVal TCPClient::connect()
@@ -114,18 +115,18 @@ DbRetVal TCPClient::connect()
         printError(ErrPeerTimeOut,"Response timeout for peer site\n");
         return ErrPeerTimeOut;
     }
-    int response =0;
     socklen_t len = sizeof(struct sockaddr);
-    numbytes = os::recv(sockfd, &response, 4, 0);
-    if (numbytes !=4)
+    numbytes = os::recv(sockfd, respPkt, sizeof(ResponsePacket), 0);
+    if (numbytes == -1)
     {
        printf("Unable to receive response from peer\n");
        return ErrOS;
     }
-    printf("Response from peer site is %d\n", response);
-    if (response != 1) return ErrPeerResponse;
+    char *response = (char *) &respPkt->retVal;
+    if (*response != 1) return ErrPeerResponse;
     isConnectedFlag = true;
     return OK;
+
 }
 
 DbRetVal TCPClient::disconnect()
