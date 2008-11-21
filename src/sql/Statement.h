@@ -257,7 +257,7 @@ class CreateTblStatement : public DdlStatement
     public:
     DbRetVal execute(int &rowsAffected);
     DbRetVal resolve();
-
+    DbRetVal checkForDot(char *name);
     CreateTblStatement();
     ~CreateTblStatement();
    
@@ -271,7 +271,6 @@ class CreateIdxStatement : public DdlStatement
     public:
     DbRetVal execute(int &rowsAffected);
     DbRetVal resolve(){return OK; }
-
     CreateIdxStatement();
     ~CreateIdxStatement();
 

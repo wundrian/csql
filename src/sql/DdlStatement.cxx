@@ -52,11 +52,26 @@ DbRetVal CreateTblStatement::execute(int &rowsAffected)
     }
     return rv;
 }
+DbRetVal CreateTblStatement::checkForDot(char *name)
+{
+    int i=0;
+    while ( name[i] != '\0')
+    {
+        if (name[i++] == '.') { return ErrSyntaxError; }
+    }
+    return OK;
 
+}
 DbRetVal CreateTblStatement::resolve()
 {
     DbRetVal rv = OK;
     strcpy(tblName, parsedData->getTableName());
+    rv = checkForDot(tblName);
+    if ( rv!=OK ) 
+    { 
+          printf("Check SQL Syntax: .\n");
+          return  rv;
+    }
     FieldIterator iter = parsedData->getCreFldList().getIterator();
     FieldDef fDef; 
 
@@ -72,8 +87,13 @@ DbRetVal CreateTblStatement::resolve()
             name = (FieldName*)nIter.nextElement();
             if (strcmp(name->fldName, fDef.fldName_) == 0) fDef.isNull_ = true;
         }
-
-
+        rv = checkForDot(fDef.fldName_);
+        if ( rv!=OK )
+        {
+            printf("Check SQL Syntax: .\n");
+            return  rv;
+        }
+       
        //TODO : need a new addField function which can take FieldDef as parameter.
        if (!fDef.isDefault_)  {
            i = tblDef.addField(fDef.fldName_, fDef.type_, fDef.length_, 
