@@ -86,14 +86,16 @@ DbRetVal SqlOdbcStatement::prepare(char *stmtstr)
             default:
                 bindProjField->targetvalue = AllDataType::alloc(bindProjField->type, bindProjField->length);
         }
+
         retValue = SQLBindCol(hstmt, icol, 
                               AllDataType::convertToSQLType(bindProjField->type),
-                              bindProjField->targetvalue, fieldsize, NULL);
+                              bindProjField->targetvalue, fieldsize, &len[icol]);
         if (retValue) return ErrBadCall; 
         bindList.append(bindProjField);
         icol++;
        
     }
+    totalFld = totalFields;
     totalFields =0;
     BindSqlField *bindField;
     retValue = SQLNumParams (hstmt, &totalFields);
@@ -227,6 +229,19 @@ DbRetVal SqlOdbcStatement::bindField(int pos, void* value)
     bindField->value = value;
     return OK;
 }
+
+void SqlOdbcStatement::setNullInfo(Table *table)
+{
+    int fldpos=0;
+    table->resetNullinfo();
+    while(fldpos < totalFld)
+    {
+        if(len[++fldpos] == SQL_NULL_DATA)
+        {
+            table->markFldNull(fldpos);
+        }
+    }
+}
 void* SqlOdbcStatement::fetch()
 {
     if (!isPrepared) return NULL;
@@ -235,9 +250,16 @@ void* SqlOdbcStatement::fetch()
     ListIterator iter = bindList.getIterator();
     BindSqlProjectField *bindField = NULL;
     void *ptrToFirstField = NULL;
+    int icol=0;
     while (iter.hasElement())
     {
         bindField = (BindSqlProjectField*)iter.nextElement();
+        if (ptrToFirstField == NULL) ptrToFirstField=bindField->value;
+        if(len[++icol] == SQL_NULL_DATA) 
+        { 
+            AllDataType::memoryset(bindField->value,bindField->type);
+            continue; 
+        }
         switch(bindField->type)
         {
             case typeDate: {
@@ -266,7 +288,6 @@ void* SqlOdbcStatement::fetch()
                 break;
             }
         } 
-        if (ptrToFirstField == NULL) ptrToFirstField=bindField->value;
     }
     return ptrToFirstField;
 }
@@ -279,9 +300,17 @@ void* SqlOdbcStatement::fetchAndPrint(bool SQL)
     ListIterator iter = bindList.getIterator();
     BindSqlProjectField *bindField = NULL;
     void *ptrToFirstField = NULL;
+    int icol=1;
     while (iter.hasElement())
     {
+
         bindField = (BindSqlProjectField*)iter.nextElement();
+        if (ptrToFirstField == NULL) ptrToFirstField=bindField->targetvalue;
+        if(len[icol++] == SQL_NULL_DATA) 
+        { 
+            printf("NULL"); 
+            continue;
+        }
         switch(bindField->type)
         {
             case typeDate: {
@@ -313,10 +342,8 @@ void* SqlOdbcStatement::fetchAndPrint(bool SQL)
                 break;
             }
         }
-        if (ptrToFirstField == NULL) ptrToFirstField=bindField->targetvalue;
         printf("\t");
     }
-
     return ptrToFirstField;
 }
 

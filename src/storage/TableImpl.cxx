@@ -88,6 +88,16 @@ bool TableImpl::isFldNull(int colpos)
     }
     return false;
 }
+void TableImpl::resetNullinfo()
+{   
+    if (isIntUsedForNULL) {
+        iNullInfo =0;
+    }
+    else {
+        int i=0;
+        while(i < numFlds_) { cNullInfo[0] = 0;}
+    }
+}
 void TableImpl::markFldNull(char const* name)
 {
     int colpos = fldList_.getFieldPosition(name);

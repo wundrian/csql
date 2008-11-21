@@ -1274,6 +1274,59 @@ void* AllDataType::alloc(DataType type, int length)
     }
     return dest;
 }
+
+void  AllDataType::memoryset(void *value,DataType type)
+{
+    switch(type)
+    {
+        case typeInt:
+            value=os::memset(value, 0, sizeof(int));
+            break;
+        case typeLong:
+            value = os::memset(value, 0, sizeof(long));
+            break;
+        case typeLongLong:
+            value =os::memset(value, 0, sizeof(long long));
+            break;
+        case typeShort:
+            value = os::memset(value, 0, sizeof(short));
+            break;
+        case typeByteInt:
+            value = os::memset(value, 0, sizeof(char));
+            break;
+        case typeDouble:
+            value = os::memset(value, 0, sizeof(double));
+            break;
+        case typeFloat:
+            value = os::memset(value, 0, sizeof(float));
+            break;
+        case typeDecimal:
+            break;
+        case typeString:
+             *(char*)value = '\0';
+            //if (length == 0 ) return NULL;
+            //dest = malloc(length);
+            break;
+        case typeBinary:
+                 /*   if (length == 0 || length > 256 ) return NULL;
+                        
+                        memset(dest, 0, length);*/
+                        break;
+        case typeDate:
+            value = os::memset(value, 0, sizeof(Date));
+            break;
+        case typeTime:
+            value = os::memset(value, 0, sizeof(Time));
+            break;
+        case typeTimeStamp:
+            value = os::memset(value, 0, sizeof(TimeStamp));
+            break;
+        defalut:
+            break;
+    }
+}
+
+
 DbRetVal AllDataType::strToValue(void* dest, char *src, DataType type, int length)
 {
     switch(type)
@@ -1761,7 +1814,6 @@ void AllDataType::convertToBinary(void *dest, void *src, DataType srcType, int l
         }
     }
 }
-
 int AllDataType::printVal(void* src, DataType srcType, int length )
 { 
     int count = 0;

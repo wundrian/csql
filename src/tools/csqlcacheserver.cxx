@@ -272,6 +272,7 @@ int insert(Table *table, int pkid)
     if (retValue && rows != 1) {printError(ErrSysInit, "Unable to execute statement at target db\n"); return ErrSysInit; }
     conn.startTransaction();
     if (stmt->fetch() != NULL) {
+        ostmt->setNullInfo(table);
         table->insertTuple();
         //Note:insert may fail if the record is inserted from this cache
     }

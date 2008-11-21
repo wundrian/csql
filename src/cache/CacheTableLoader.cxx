@@ -439,6 +439,7 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
 
     BindBuffer *bBuf;
     List valBufList;
+    SQLINTEGER len[IDENTIFIER_LENGTH];
     while (fNameIter.hasElement()) {
         elem = (Identifier*) fNameIter.nextElement();
         table->getFieldInfo((const char*)elem->name, info);
@@ -478,13 +479,15 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
                 valBufList.append(bBuf);
                 break;
         }
-        retValue = SQLBindCol (hstmt, fcount++, AllDataType::convertToSQLType(info->type),
-                               valBuf, fieldsize, NULL);
+        retValue = SQLBindCol (hstmt, fcount, AllDataType::convertToSQLType(info->type),
+                               valBuf, fieldsize, &len[fcount]);
+        fcount++;
         if (retValue) {printError(ErrSysInit, "Unable to bind columns in ODBC\n"); return ErrSysInit; }
     }
     delete info;
     retValue = SQLExecute (hstmt);
     if (retValue) {printError(ErrSysInit, "Unable to execute ODBC statement\n"); return ErrSysInit; }
+    int fldpos=0;
     while(true)
     {
         retValue = SQLFetch (hstmt);
@@ -514,6 +517,15 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
                 }
             }
         }
+        fldpos=0;
+        table->resetNullinfo();
+        while(fldpos < fcount-1)
+        {
+            if(len[++fldpos] == SQL_NULL_DATA){ 
+                table->markFldNull(fldpos);
+            }
+        }
+        
         table->insertTuple();
     }
     //TODO::leak:: valBufList and its targetdb buffer
