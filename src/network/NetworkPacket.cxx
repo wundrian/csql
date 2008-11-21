@@ -116,6 +116,20 @@ void SqlPacketExecute::setParams(List list)
     return;
 }
 
+void SqlPacketResultSet::setProjList(List list)
+{
+    projList = list;
+    noProjs = list.size();
+    projValues = new char*[noProjs];
+    BindSqlProjectField* prjFld = NULL;
+    for (int i = 0 ; i < noProjs; i++)
+    {
+        prjFld = (BindSqlProjectField*) projList.get(i+1);
+        projValues[i] = (char*) prjFld->value;
+    }
+    return;
+}
+
 void PacketExecute::setStatementList(List stmtlist)
 {
     stmtList = stmtlist;
@@ -375,7 +389,7 @@ DbRetVal SqlPacketParamMetadata::marshall()
         *(int *) bufIter = bindField->length; 
         bufIter = bufIter + sizeof(int);
     }
-    printDebug(DM_Network, "PacketPrepare::marshall ended\n");
+    printDebug(DM_Network, "SqlPacketParamMetadata::marshall ended\n");
     return OK;
 }
 
@@ -393,6 +407,113 @@ DbRetVal SqlPacketParamMetadata::unmarshall()
         length = (int*) bufIter;
         bufIter = bufIter + sizeof(int) * noParams;
     }
-    printDebug(DM_Network, "PacketPrepare::unmarshall ended\n");
+    printDebug(DM_Network, "SqlPacketParamMetadata::unmarshall ended\n");
+    return OK;
+}
+
+DbRetVal SqlPacketProjMetadata::marshall()
+{
+    printDebug(DM_Network, "SqlPacketParamMetadata::marshall called\n");
+    bufferSize  = sizeof(int) * 2;
+    printDebug(DM_Network, "NOOFPROJS %d buffer size %d\n", noProjs, bufferSize);
+    printDebug(DM_Network, "noParams is %d\n", noProjs);
+    if (noProjs >0)
+        bufferSize = bufferSize + 2 * sizeof(int) * noProjs;
+    buffer = (char*) malloc(bufferSize);
+    *(int*)buffer = stmtID;
+    char *bufIter = buffer + sizeof(int);
+    *(int*)bufIter = noProjs;
+    bufIter = bufIter + sizeof(int);
+    ListIterator stmtIter = SqlNetworkHandler::stmtList.getIterator();
+    NetworkStmt *stmt;
+    while (stmtIter.hasElement())
+    {
+       stmt = (NetworkStmt*) stmtIter.nextElement();
+       if (stmt->stmtID == stmtID ) break;
+    }
+    for (int i=0; i <noProjs; i++) {
+        BindSqlProjectField *prjFld = (BindSqlProjectField*) stmt->projList.get(i+1);
+        *(int *) bufIter = prjFld->type;
+        bufIter = bufIter + sizeof(int);
+    }
+    for (int i=0; i <noProjs; i++) {
+        BindSqlProjectField *prjFld = (BindSqlProjectField*) stmt->projList.get(i+1);
+        *(int *) bufIter = prjFld->length;
+        bufIter = bufIter + sizeof(int);
+    }
+    printDebug(DM_Network, "SqlPacketProjMetadata::marshall ended\n");
+    return OK;
+}
+
+DbRetVal SqlPacketProjMetadata::unmarshall()
+{
+    printDebug(DM_Network, "SqlPacketProjMetadata::unmarshall called\n");
+    stmtID = *(int*)buffer;
+    printDebug(DM_Network, "start of the buffer is %x\n", buffer);
+    char *bufIter = buffer + sizeof (int);
+    noProjs = *(int*)bufIter;
+    bufIter = bufIter + sizeof(int);
+    if(noProjs > 0) {
+        type = (int*) bufIter;
+        bufIter = bufIter + sizeof(int) * noProjs;
+        length = (int*) bufIter;
+        bufIter = bufIter + sizeof(int) * noProjs;
+    }
+    printDebug(DM_Network, "SqlPacketProjMetadata::unmarshall ended\n");
+    return OK;
+}
+
+DbRetVal SqlPacketFetch::marshall()
+{
+    bufferSize  = sizeof(int);
+    buffer = (char*) malloc(bufferSize);
+    *(int*)buffer = stmtID;
+    return OK;
+}
+
+DbRetVal SqlPacketFetch::unmarshall()
+{
+    stmtID = *(int *)buffer;
+}
+
+DbRetVal SqlPacketResultSet::marshall()
+{
+    bufferSize  = sizeof(int)+ sizeof(int);
+    BindSqlProjectField* prjFld = NULL;
+    for (int i = 0 ; i < noProjs; i++)
+    {
+        prjFld = (BindSqlProjectField*) projList.get(i+1);
+        bufferSize = bufferSize + AllDataType::size(prjFld->type, prjFld->length);
+    }
+    buffer = (char*) malloc(bufferSize);
+    *(int*)buffer = stmtID;
+    char* bufIter = (char*) buffer + sizeof(int);
+    *(int*)bufIter = noProjs;
+    bufIter = (char*) bufIter + sizeof(int);
+    for (int i = 0 ; i < noProjs; i++)
+    {
+        prjFld = (BindSqlProjectField*) projList.get(i+1);
+        AllDataType::copyVal(bufIter, prjFld->value, prjFld->type, prjFld->length);
+        bufIter = bufIter + AllDataType::size(prjFld->type, prjFld->length);
+    }
+    return OK;
+}
+
+DbRetVal SqlPacketResultSet::unmarshall()
+{
+    stmtID = *(int*)buffer;
+    char *bufIter = buffer + sizeof(int);
+    noProjs = *(int*)bufIter;
+    bufIter = bufIter + sizeof(int);
+    if (noProjs == 0) return OK;
+    projValues = new char*[noProjs];
+    BindSqlProjectField *prjFld = NULL;
+    for (int i=0; i <noProjs; i++)
+    {
+        projValues[i] = bufIter;
+        prjFld = (BindSqlProjectField*) projList.get(i+1);
+        AllDataType::copyVal(prjFld->value, projValues[i], prjFld->type, prjFld->length);
+        bufIter = bufIter + AllDataType::size(prjFld->type, prjFld->length);
+    }
     return OK;
 }

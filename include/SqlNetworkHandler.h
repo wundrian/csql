@@ -39,6 +39,7 @@ class SqlNetworkHandler
     void * processSqlConnect(PacketHeader &header, char *buffer);
     void * processSqlPrepare(PacketHeader &header, char *buffer);
     void * processSqlExecute(PacketHeader &header, char *buffer);
+    void * processSqlFetch(PacketHeader &header, char *buffer);
     void * processSqlCommit(PacketHeader &header, char *buffer);
     void * processSqlRollback(PacketHeader &header, char *buffer);
     void * processPrepare(PacketHeader &header, char *buffer);

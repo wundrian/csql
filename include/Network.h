@@ -44,9 +44,11 @@ enum NetworkPacketType
     SQL_NW_PKT_PARAM_METADATA=103,
     SQL_NW_PKT_PROJ_METADATA=104,
     SQL_NW_PKT_EXECUTE=105,
-    SQL_NW_PKT_COMMIT=106,
-    SQL_NW_PKT_ROLLBACK=107,
-    SQL_NW_PKT_DISCONNECT=108,
+    SQL_NW_PKT_FETCH=106,
+    SQL_NW_PKT_RESULT_SET=107,
+    SQL_NW_PKT_COMMIT=108,
+    SQL_NW_PKT_ROLLBACK=109,
+    SQL_NW_PKT_DISCONNECT=110,
 };
 
 class ResponsePacket
@@ -318,14 +320,39 @@ class SqlPacketParamMetadata : public BasePacket
 class SqlPacketProjMetadata : public BasePacket
 {
     public:
-    SqlPacketProjMetadata()
-    { buffer=NULL; bufferSize =0; noProjs = 0;
-      type = NULL; length = NULL; pktType = SQL_NW_PKT_PROJ_METADATA;}
+    SqlPacketProjMetadata() { buffer=NULL; bufferSize =0; noProjs = 0;
+      type = NULL; length = NULL; pktType = SQL_NW_PKT_PROJ_METADATA; }
     ~SqlPacketProjMetadata() { free(buffer); bufferSize = 0; buffer = NULL; }
     int stmtID;
     int noProjs;
     int *type;
     int *length;
+    DbRetVal marshall();
+    DbRetVal unmarshall();
+};
+
+class SqlPacketFetch : public BasePacket
+{
+    public:
+    SqlPacketFetch() { buffer=NULL; bufferSize = 0;
+                       pktType = SQL_NW_PKT_FETCH; }
+    ~SqlPacketFetch() { free(buffer); bufferSize = 0; buffer = NULL; }
+    int stmtID;
+    DbRetVal marshall();
+    DbRetVal unmarshall();
+};
+
+class SqlPacketResultSet : public BasePacket
+{
+    public:
+    SqlPacketResultSet() { buffer=NULL; bufferSize = 0; noProjs = 0;
+                       projValues=NULL; pktType = SQL_NW_PKT_RESULT_SET; }
+    ~SqlPacketResultSet() { free(buffer); bufferSize = 0; buffer = NULL; }
+    int stmtID;
+    int noProjs;
+    char **projValues;
+    List projList;
+    void setProjList(List list);
     DbRetVal marshall();
     DbRetVal unmarshall();
 };

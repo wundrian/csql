@@ -72,9 +72,6 @@ DbRetVal TCPClient::receive()
        printf("Unable to receive response from peer\n");
        return ErrOS;
     }
-    //printf("NW:UDP receive\n");
-    char *response = (char *) &respPkt->retVal;
-    if (*response != 1) rv = ErrPeerResponse;
     return rv;
 }
 DbRetVal TCPClient::connect()

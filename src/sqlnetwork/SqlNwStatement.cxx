@@ -56,27 +56,50 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
             return ErrOS;
         }
         printf("HEADER says packet type is %d\n", header.packetType);
-        if (header.packetLength) {
-            buffer = (char*) malloc(header.packetLength);
-            numbytes = os::recv(fd,buffer,header.packetLength,0);
-            if (numbytes == -1) {
-                printError(ErrOS, "Error reading from socket\n");
-                return ErrOS;
-            }
-            SqlPacketParamMetadata *mdpkt = new SqlPacketParamMetadata();
-            mdpkt->setBuffer(buffer);
-            mdpkt->unmarshall();
-            BindSqlField *bindField=NULL;
-            for (int i=0; i < mdpkt->noParams; i++) {
-                bindField = new BindSqlField();
-                bindField->type = (DataType) mdpkt->type[i];
-                bindField->length = mdpkt->length[i];
-                bindField->value = AllDataType::alloc(bindField->type, bindField->length);
-                paramList.append(bindField);
-            }
+        buffer = (char*) malloc(header.packetLength);
+        numbytes = os::recv(fd,buffer,header.packetLength,0);
+        if (numbytes == -1) {
+            printError(ErrOS, "Error reading from socket\n");
+            return ErrOS;
+        }
+        SqlPacketParamMetadata *mdpkt = new SqlPacketParamMetadata();
+        mdpkt->setBuffer(buffer);
+        mdpkt->unmarshall();
+        BindSqlField *bindField=NULL;
+        for (int i=0; i < mdpkt->noParams; i++) {
+            bindField = new BindSqlField();
+            bindField->type = (DataType) mdpkt->type[i];
+            bindField->length = mdpkt->length[i];
+            bindField->value = AllDataType::alloc(bindField->type, bindField->length);
+            paramList.append(bindField);
         }
     }
     if (proj) {
+        PacketHeader header;
+        int fd = ((TCPClient *)(conn->nwClient))->sockfd;
+        int numbytes = os::recv(fd, &header, sizeof(PacketHeader), 0);
+        if (numbytes == -1) {
+            printError(ErrOS, "Error reading from socket\n");
+            return ErrOS;
+        }
+        printf("HEADER says packet type is %d\n", header.packetType);
+        buffer = (char*) malloc(header.packetLength);
+        numbytes = os::recv(fd,buffer,header.packetLength,0);
+        if (numbytes == -1) {
+            printError(ErrOS, "Error reading from socket\n");
+            return ErrOS;
+        }
+        SqlPacketProjMetadata *prjmdpkt = new SqlPacketProjMetadata();
+        prjmdpkt->setBuffer(buffer);
+        prjmdpkt->unmarshall();
+        BindSqlProjectField *prjFld=NULL;
+        for (int i=0; i < prjmdpkt->noProjs; i++) {
+            prjFld = new BindSqlProjectField();
+            prjFld->type = (DataType) prjmdpkt->type[i];
+            prjFld->length = prjmdpkt->length[i];
+            prjFld->value = AllDataType::alloc(prjFld->type, prjFld->length);
+            bindList.append(prjFld);
+        }
     }
     isPrepared = true;
     return rv;
@@ -91,7 +114,7 @@ bool SqlNwStatement::isSelect()
 DbRetVal SqlNwStatement::execute(int &rowsAffected)
 {
     DbRetVal rv = OK;
-    //if (!isPrepared) return ErrNotPrepared;
+    if (!isPrepared) return ErrNotPrepared;
     SqlNwConnection *conn = (SqlNwConnection*)con;
     SqlPacketExecute *pkt = new SqlPacketExecute();
     pkt->stmtID = getStmtID();
@@ -124,14 +147,51 @@ DbRetVal SqlNwStatement::bindParam(int pos, void* value)
 DbRetVal SqlNwStatement::bindField(int pos, void* value)
 {
     if (!isPrepared) return OK;
-    //TODO
+    BindSqlProjectField *prjFld = (BindSqlProjectField *) bindList.get(pos);
+    prjFld->value = value;
     return OK;
 }
 void* SqlNwStatement::fetch()
 {
     if (!isPrepared) return NULL;
     void *ptrToFirstField = NULL;
-    //TODO
+    SqlNwConnection *conn = (SqlNwConnection*)con;
+    SqlPacketFetch *pkt = new SqlPacketFetch();
+    pkt->stmtID = getStmtID();
+    pkt->marshall();
+    DbRetVal rv = conn->send(SQL_NW_PKT_FETCH, pkt->getMarshalledBuffer(), pkt->getBufferSize());
+    if (rv != OK) {
+        printError(rv, "Data could not be sent");
+        return NULL;
+    }
+    rv = conn->receive();
+    if (rv != OK) {
+        printError(rv, "Unable to receive from Network");
+        return NULL;
+    }
+    ResponsePacket *rpkt = (ResponsePacket *) ((TCPClient *)conn->nwClient)->respPkt;
+    char *ptr = (char *) &rpkt->retVal;
+    if (*ptr == 0) return NULL;
+    PacketHeader header;
+    int fd = ((TCPClient *)(conn->nwClient))->sockfd;
+    int numbytes = os::recv(fd, &header, sizeof(PacketHeader), 0);
+    if (numbytes == -1) {
+        printError(ErrOS, "Error reading from socket\n");
+        return NULL;
+    }
+    printf("HEADER says packet type is %d\n", header.packetType);
+    char *buffer = (char*) malloc(header.packetLength);
+    numbytes = os::recv(fd,buffer,header.packetLength,0);
+    if (numbytes == -1) {
+        printError(ErrOS, "Error reading from socket\n");
+        return NULL;
+    }
+    SqlPacketResultSet *rspkt = new SqlPacketResultSet();
+    rspkt->setBuffer(buffer);
+    rspkt->setProjList(bindList);
+    rspkt->noProjs = bindList.size();
+    rspkt->unmarshall();
+    ptrToFirstField = bindList.get(1);
     return ptrToFirstField;
 }
 

@@ -51,6 +51,9 @@ void *SqlNetworkHandler::process(PacketHeader &header, char *buffer)
         case SQL_NW_PKT_EXECUTE:
             return processSqlExecute(header, buffer);
             break;
+        case SQL_NW_PKT_FETCH:
+            return processSqlFetch(header, buffer);
+            break;
         case SQL_NW_PKT_COMMIT:
             return processSqlCommit(header, buffer);
             break;
@@ -179,6 +182,40 @@ void * SqlNetworkHandler::processSqlExecute(PacketHeader &header, char *buffer)
     }
     *retval = 1; 
     strcpy(rpkt->errorString, "Success");
+    return rpkt;
+}
+void * SqlNetworkHandler::processSqlFetch(PacketHeader &header, char *buffer)
+{
+    ResponsePacket *rpkt = new ResponsePacket();
+    char *retval = (char *) &rpkt->retVal;
+    SqlPacketFetch *pkt = new SqlPacketFetch();
+    pkt->setBuffer(buffer);
+    pkt->unmarshall();
+    rpkt->stmtID = pkt->stmtID;
+    ListIterator stmtIter = stmtList.getIterator();
+    NetworkStmt *stmt;
+    while (stmtIter.hasElement())
+    {
+       stmt = (NetworkStmt*) stmtIter.nextElement();
+       //TODO::Also check teh srcNetworkID
+       if (stmt->stmtID == pkt->stmtID ) break;
+    }
+    AbsSqlStatement *sqlstmt = stmt->stmt;
+    SqlStatement *st = (SqlStatement *)sqlstmt;
+    int noProj = st->noOfProjFields();
+    for (int i=0; i < noProj; i++) {
+        BindSqlProjectField *prjFld = (BindSqlProjectField *) stmt->projList.get(i+1);
+        sqlstmt->bindField(i+1, prjFld->value);
+    }
+    void *data=NULL;
+    if ((data = sqlstmt->fetch()) != NULL) {
+        *retval = 1; 
+        strcpy(rpkt->errorString, "Success");
+    }
+    else { 
+        *retval = 0; 
+        strcpy(rpkt->errorString, "fetch completed"); 
+    }
     return rpkt;
 }
 

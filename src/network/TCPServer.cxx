@@ -116,51 +116,70 @@ DbRetVal TCPServer::handleClient()
                    return ErrOS;
                }
                char *ptr = (char *)&rpkt->retVal;
+               if (*ptr == 0) continue; 
+               NetworkStmt *stmt=NULL;
                int params =  *(ptr + 2);
                int proj = *(ptr + 3);  
                if ((header.packetType == SQL_NW_PKT_PREPARE && params != 0) ||
                    (header.packetType == SQL_NW_PKT_PREPARE && proj != 0)) {
-                   NetworkStmt *stmt=NULL;
                    if (params) {     
-                       SqlPacketParamMetadata *pkt = new SqlPacketParamMetadata();
-                       pkt->stmtID = rpkt->stmtID; 
+                       SqlPacketParamMetadata *prmpkt = new SqlPacketParamMetadata();
+                       prmpkt->stmtID = rpkt->stmtID; 
                        ListIterator stmtIter = SqlNetworkHandler::stmtList.getIterator();
                        while (stmtIter.hasElement()) {
                            stmt = (NetworkStmt*) stmtIter.nextElement();
-                           if (stmt->stmtID == pkt->stmtID) break;
+                           if (stmt->stmtID == prmpkt->stmtID) break;
                        }
-                       pkt->noParams = params;
-                       rv = pkt->marshall();
+                       prmpkt->noParams = params;
+                       rv = prmpkt->marshall();
                        if (rv != OK) {
                            printf("marshall failed\n");
                        }
-                       rv = send(SQL_NW_PKT_PARAM_METADATA, pkt->getMarshalledBuffer(), pkt->getBufferSize()); 
+                       rv = send(SQL_NW_PKT_PARAM_METADATA, prmpkt->getMarshalledBuffer(), prmpkt->getBufferSize()); 
                        if (rv != OK) {
                            printf("Error in sending the metadata to the client\n");
                            exit(1);
                        }
                    }
                    if (proj) {
-                   /*    //fill projection list and send it to client   
-                       SqlPacketProjMetadata *pkt = new SqlPacketProjMetadata();
-                       pkt->stmtID = *(short *) (ptr + 2);
+                       //fill projection list and send it to client   
+                       SqlPacketProjMetadata *prjpkt = new SqlPacketProjMetadata();
+                       prjpkt->stmtID = rpkt->stmtID;
                        ListIterator stmtIter = SqlNetworkHandler::stmtList.getIterator();
                        while (stmtIter.hasElement()) {
                            stmt = (NetworkStmt*) stmtIter.nextElement();
-                           if (stmt->stmtID == pkt->stmtID) break;
+                           if (stmt->stmtID == prjpkt->stmtID) break;
                        }
-                       pkt->noProjs = proj;
-                       rv = pkt->marshall();
+                       prjpkt->noProjs = stmt->projList.size();
+                       rv = prjpkt->marshall();
                        if (rv != OK) {
                            printf("marshall failed\n");
                        }
-                       rv = send(SQL_NW_PKT_PROJ_METADATA, pkt->getMarshalledBuffer(), pkt->getBufferSize());
+                       rv = send(SQL_NW_PKT_PROJ_METADATA, prjpkt->getMarshalledBuffer(), prjpkt->getBufferSize());
                        if (rv != OK) {
                            printf("Error in sending the metadata to the client\n");
                            exit(1);
-                       }*/
+                       }
                    }
                }   
+               if (header.packetType == SQL_NW_PKT_FETCH) {
+                   SqlPacketResultSet *rspkt = new SqlPacketResultSet();
+                   rspkt->stmtID = rpkt->stmtID;
+                   ListIterator stmtIter = SqlNetworkHandler::stmtList.getIterator();
+                   while (stmtIter.hasElement()) {
+                       stmt = (NetworkStmt*) stmtIter.nextElement();
+                       if (stmt->stmtID == rspkt->stmtID) break;
+                   }
+                   rspkt->noProjs = stmt->projList.size();
+                   rspkt->setProjList(stmt->projList);
+                   rspkt->marshall();
+                   if (rv != OK) { printf("marshall failed\n"); }
+                   rv = send(SQL_NW_PKT_RESULT_SET, rspkt->getMarshalledBuffer(), rspkt->getBufferSize());
+                   if (rv != OK) {
+                       printf("Error in sending the metadata to the client\n");
+                       exit(1);
+                   }
+               }    
                if (header.packetType == SQL_NW_PKT_DISCONNECT) { 
                    exit(0); 
                }
@@ -176,7 +195,6 @@ DbRetVal TCPServer::handleClient()
 DbRetVal TCPServer::send(NetworkPacketType type, char *buf, int len)
 {
     DbRetVal rv = OK;
-    printf("server sending back metadata packet to client\n");
     void* totalBuffer = malloc(sizeof(PacketHeader)+ len);
     PacketHeader *hdr=  new PacketHeader();
     hdr->packetType = type;
