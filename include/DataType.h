@@ -131,7 +131,7 @@ class AllDataType
     static void convertToTimeStamp(void* dest, void* src, DataType srcType);
 	static void convertToBinary(void* dest, void* src, DataType srcType, int length);
 
-
+    static void memoryset(void *value,DataType type);
     static ComparisionOp getComparisionOperator(char *str);
 
     static void* alloc(DataType type, int length =0);

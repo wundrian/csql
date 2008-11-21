@@ -93,6 +93,7 @@ class AggTableImpl:public Table
     bool isFldNull(int colpos){return false;}
     void clearFldNull(const char *name){}
     void clearFldNull(int colpos){}
+    void resetNullinfo(){}
     DbRetVal insertTuple() { return ErrBadCall; }
     DbRetVal updateTuple() { return ErrBadCall; }
     DbRetVal deleteTuple() { return ErrBadCall; }

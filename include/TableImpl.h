@@ -110,7 +110,7 @@ class TableImpl:public Table
     char *cNullInfo;
     int iNotNullInfo;
     char *cNotNullInfo;
-
+ 
     private:
 
     //copy Values from binded buffer to tuple pointed by arg
@@ -177,10 +177,9 @@ class TableImpl:public Table
     bool isFldNull(const char *name);
     bool isFldNull(int colpos);
 
-
     void clearFldNull(const char *name);
     void clearFldNull(int colpos);
-
+    void resetNullinfo();
 
     DbRetVal insertTuple();
     DbRetVal updateTuple();

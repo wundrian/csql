@@ -194,7 +194,7 @@ class Table
     virtual List getFieldNameList()=0;
     virtual char* getName()=0;
     virtual void printSQLIndexString()=0;
-
+    virtual void resetNullinfo()=0;
     virtual ~Table() { }
 
 

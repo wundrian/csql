@@ -26,7 +26,7 @@
 class SqlOdbcStatement: public AbsSqlStatement
 {
     public:
-    SqlOdbcStatement(){innerStmt = NULL; con = NULL;}
+    SqlOdbcStatement(){innerStmt = NULL; con = NULL; len[0]=0;}
 
     void setConnection(AbsSqlConnection *conn)
     {
@@ -71,12 +71,14 @@ class SqlOdbcStatement: public AbsSqlStatement
     void setBinaryParam(int paramPos, void *value);
 	bool isSelect();
     void getPrimaryKeyFieldName(char *tablename, char *pkfieldname);
-
+    void setNullInfo(Table *table);
     private:
     bool isPrepared;
     List paramList;
     List bindList;
     SQLHSTMT hstmt;
+    SQLINTEGER len[IDENTIFIER_LENGTH];
+    int totalFld;
     friend class SqlFactory;
 };
 
