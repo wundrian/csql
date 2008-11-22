@@ -61,7 +61,8 @@ void *SqlNetworkHandler::process(PacketHeader &header, char *buffer)
             return processSqlRollback(header, buffer);
             break;
         case SQL_NW_PKT_DISCONNECT:
-            conn->disconnect();
+            conn->rollback();
+            DbRetVal rv = conn->disconnect();
             ResponsePacket *rpkt = new ResponsePacket();
             char * ptr = (char *) &rpkt->retVal;
             *ptr = 1;
@@ -78,16 +79,19 @@ void * SqlNetworkHandler::processSqlConnect(PacketHeader &header, char *buffer)
     pkt->setBuffer(buffer);
     pkt->setBufferSize(header.packetLength);
     pkt->unmarshall();
-    DbRetVal rv=conn->connect(pkt->userName, pkt->passWord);
     char *ptr = (char *) &rpkt->retVal;
+    DbRetVal rv=conn->connect(pkt->userName, pkt->passWord);
+    if (rv != OK) {
+        *ptr = 0; 
+        strcpy(rpkt->errorString, "Error:Connect failure");
+        return rpkt;
+        printf("connection failure\n");
+    }
     if (rv == OK) { 
-        *(char *) ptr = 1; 
+        *ptr = 1; 
         rv = conn->beginTrans(); 
         return rpkt; 
     }
-    *ptr = 0; 
-    strcpy(rpkt->errorString, "Error:Connect failure");
-    return rpkt;
 }
 
 void* SqlNetworkHandler::processSqlPrepare(PacketHeader &header, char *buffer)
@@ -141,7 +145,6 @@ void* SqlNetworkHandler::processSqlPrepare(PacketHeader &header, char *buffer)
     }
     stmtList.append(nwStmt);
     *retval = 1; 
-    *(retval+1) = (StatementType) st->getStmtType();
     if (param) *(retval+2) = 1;
     if (proj) *(retval+3) = 1;
     rpkt->stmtID = nwStmt->stmtID; 
@@ -208,15 +211,23 @@ void * SqlNetworkHandler::processSqlFetch(PacketHeader &header, char *buffer)
         sqlstmt->bindField(i+1, prjFld->value);
     }
     void *data=NULL;
-    if ((data = sqlstmt->fetch()) != NULL) {
+    DbRetVal rv = OK;
+    if ((data = sqlstmt->fetch(rv)) != NULL) {
         *retval = 1; 
         strcpy(rpkt->errorString, "Success");
+        return rpkt;
+    }
+    if (data == NULL && rv == OK) {
+        *retval = 1; 
+        *(retval + 1) = 1;
+        strcpy(rpkt->errorString, "Success");
+        return rpkt;
     }
     else { 
         *retval = 0; 
         strcpy(rpkt->errorString, "fetch completed"); 
+        return rpkt;
     }
-    return rpkt;
 }
 
 void * SqlNetworkHandler::processSqlCommit(PacketHeader &header, char *buffer)

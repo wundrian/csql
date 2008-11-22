@@ -25,6 +25,10 @@
 DbRetVal SqlNwConnection::connect (char *user, char * pass)
 {
     DbRetVal rv = OK;
+    if (isConnOpen) {
+        printError(ErrAlready, "Connection is already open");
+        return ErrAlready;
+    }
     nwClient = new TCPClient();
     int bufsize = 2 * IDENTIFIER_LENGTH + 2;
     char hostName[IDENTIFIER_LENGTH];
@@ -49,23 +53,45 @@ DbRetVal SqlNwConnection::connect (char *user, char * pass)
     }
     int response = 0;
     rv = nwClient->receive();
+    ResponsePacket *rpkt = (ResponsePacket *) ((TCPClient *)nwClient)->respPkt;
+    char *ptr = (char *) &rpkt->retVal;
+    if (*ptr != 1) {
+        printError(ErrPeerResponse, "%s", rpkt->errorString);
+        nwClient->disconnect();
+        delete nwClient; 
+        return ErrPeerResponse;
+    }
+    isConnOpen = true;
     return rv;
 }
 DbRetVal SqlNwConnection::disconnect()
 {
     DbRetVal rv = OK;
-    rv = nwClient->send(SQL_NW_PKT_DISCONNECT, NULL, 0);
-    int response = 0;
-    return nwClient->receive();
+    if (! isConnOpen) {
+        printError(ErrNoConnection, "No connection present");
+        return ErrNoConnection;
+    }
+    rv = nwClient->disconnect();
+    isConnOpen=false;
+    delete nwClient; 
+    return rv;
 }
 
 DbRetVal SqlNwConnection::beginTrans(IsolationLevel isoLevel, TransSyncMode mode)
 {
+   if (! isConnOpen) {
+        printError(ErrNoConnection, "No connection present");
+        return ErrNoConnection;
+    }
     return OK;
 }
 
 DbRetVal SqlNwConnection::commit()
 {
+    if (! isConnOpen) {
+        printError(ErrNoConnection, "No connection present");
+        return ErrNoConnection;
+    }
     DbRetVal rv = OK;
     rv = nwClient->send(SQL_NW_PKT_COMMIT, NULL, 0);
     int response = 0;
@@ -74,6 +100,10 @@ DbRetVal SqlNwConnection::commit()
 
 DbRetVal SqlNwConnection::rollback()
 {
+    if (! isConnOpen) {
+        printError(ErrNoConnection, "No connection present");
+        return ErrNoConnection;
+    }
     DbRetVal rv = OK;
     rv = nwClient->send(SQL_NW_PKT_ROLLBACK, NULL, 0);
     int response = 0;

@@ -47,6 +47,10 @@ class SqlGwStatement: public AbsSqlStatement
     DbRetVal bindField(int pos, void* val);
 
     void* fetch();
+    void* fetch(DbRetVal &rv) {
+        //TODO;
+        return NULL;
+    }
     void* fetchAndPrint(bool SQL);
     void* next();
     DbRetVal close();

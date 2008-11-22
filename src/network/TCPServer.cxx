@@ -40,9 +40,11 @@ DbRetVal TCPServer::start()
     memset(&(my_addr.sin_zero), '\0', 8);
     if (bind(sockfd, (struct sockaddr *)&my_addr,
                      sizeof(struct sockaddr)) == -1) {
+        printError(ErrOS, "bind failed");
         return ErrOS;
     }
     if (listen(sockfd, 10) == -1) {
+        printError(ErrOS, "listen failed");
         return ErrOS;
     }
     return rv;
@@ -116,7 +118,7 @@ DbRetVal TCPServer::handleClient()
                    return ErrOS;
                }
                char *ptr = (char *)&rpkt->retVal;
-               if (*ptr == 0) continue; 
+               if (*(ptr + 1)  == 1) continue; // for end of fetch
                NetworkStmt *stmt=NULL;
                int params =  *(ptr + 2);
                int proj = *(ptr + 3);  
@@ -181,6 +183,7 @@ DbRetVal TCPServer::handleClient()
                    }
                }    
                if (header.packetType == SQL_NW_PKT_DISCONNECT) { 
+                   printf("server is going down\n");
                    exit(0); 
                }
            } else printf("Nothing in fd %d\n", ret);

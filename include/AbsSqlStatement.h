@@ -83,7 +83,7 @@ class AbsSqlStatement
     * @returns void* NULL if there is no tuple.
     */
     virtual void* fetch() = 0;
-    
+    virtual void* fetch(DbRetVal &rv) = 0; 
 
     /**fetches the next tuple from the result of the execution of sql select query 
     * and prints it to stdout.

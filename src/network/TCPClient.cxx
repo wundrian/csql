@@ -24,6 +24,7 @@
 TCPClient::~TCPClient()
 {
    if (isConnectedFlag) disconnect();
+   delete respPkt;
 }
 DbRetVal TCPClient::send(NetworkPacketType type, char *buf, int len)
 {
@@ -72,6 +73,8 @@ DbRetVal TCPClient::receive()
        printf("Unable to receive response from peer\n");
        return ErrOS;
     }
+    char *response = (char *) &respPkt->retVal;
+    if (*response != 1) rv = ErrPeerResponse;
     return rv;
 }
 DbRetVal TCPClient::connect()
@@ -112,37 +115,37 @@ DbRetVal TCPClient::connect()
         printError(ErrPeerTimeOut,"Response timeout for peer site\n");
         return ErrPeerTimeOut;
     }
+    int response=0;
     socklen_t len = sizeof(struct sockaddr);
-    numbytes = os::recv(sockfd, respPkt, sizeof(ResponsePacket), 0);
-    if (numbytes == -1)
+    numbytes = os::recv(sockfd, &response, 4, 0);
+    if (numbytes !=4)
     {
        printf("Unable to receive response from peer\n");
        return ErrOS;
     }
-    char *response = (char *) &respPkt->retVal;
-    if (*response != 1) return ErrPeerResponse;
+    printf("Response from peer site is %d\n", response);
+    if (response != 1) return ErrPeerResponse;
     isConnectedFlag = true;
     return OK;
-
 }
 
 DbRetVal TCPClient::disconnect()
 {
     if (isConnectedFlag) {
         printf("NW:TCP disconnect %s %d\n", hostName, port);
-            PacketHeader *hdr=  new PacketHeader();
-            hdr->packetType = NW_PKT_DISCONNECT;
-            hdr->packetLength = 0;
-            hdr->srcNetworkID =
-            hdr->version = 1;
-            int numbytes=0;
-            if ((numbytes=os::send(sockfd, hdr, sizeof(PacketHeader), 0))
-                == -1) {
-                printError(ErrOS, "Unable to send the packet\n");
-            } else
-                printf("Sent bytes %d\n", numbytes);
-            close(sockfd);
-
+        PacketHeader *hdr=  new PacketHeader();
+        hdr->packetType = SQL_NW_PKT_DISCONNECT;
+        hdr->packetLength = 0;
+        hdr->srcNetworkID =
+        hdr->version = 1;
+        int numbytes=0;
+        if ((numbytes=os::send(sockfd, hdr, sizeof(PacketHeader), 0)) == -1) {
+            printError(ErrOS, "Unable to send the packet\n");
+            return ErrOS;   
+    } else
+        printf("Sent bytes %d\n", numbytes);
+        DbRetVal rv = receive();
+        close(sockfd);
     }
     isConnectedFlag = false;
     return OK;

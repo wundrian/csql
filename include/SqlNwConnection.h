@@ -31,10 +31,11 @@
 class SqlNwConnection : public AbsSqlConnection
 {
     Connection dummyConn;
+    bool isConnOpen;
     public:
     NetworkClient *nwClient;
     IsolationLevel prevIsoLevel;
-    SqlNwConnection(){nwClient = NULL; innerConn = NULL; }
+    SqlNwConnection(){nwClient = NULL; innerConn = NULL; isConnOpen = false; }
 
     //Note::forced to implement this as it is pure virtual in base class
     Connection& getConnObject(){  return dummyConn; }
@@ -52,6 +53,9 @@ class SqlNwConnection : public AbsSqlConnection
     DbRetVal send(NetworkPacketType type, char *buffer, size_t len)
     { return  nwClient->send(type, buffer, len); }
     DbRetVal receive() { return nwClient->receive(); }
+    bool isConOpen() { return isConnOpen; }
+    void * getResponsePacket() { return nwClient->getResponsePacket(); }
+    ~SqlNwConnection() { if (isConnOpen) disconnect(); }
     friend class SqlFactory;
 };
 

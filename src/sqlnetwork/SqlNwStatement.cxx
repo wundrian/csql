@@ -24,6 +24,10 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
 {
     DbRetVal rv = OK;
     SqlNwConnection *conn = (SqlNwConnection*)con;
+    if (! conn->isConOpen()) {
+        printError(ErrNoConnection, "No connection present");
+        return ErrNoConnection;
+    }
     SqlPacketPrepare *pkt = new SqlPacketPrepare();
     pkt->stmtString = stmtstr;
     pkt->stmtLength = strlen(stmtstr) + 1;
@@ -114,8 +118,12 @@ bool SqlNwStatement::isSelect()
 DbRetVal SqlNwStatement::execute(int &rowsAffected)
 {
     DbRetVal rv = OK;
-    if (!isPrepared) return ErrNotPrepared;
     SqlNwConnection *conn = (SqlNwConnection*)con;
+    if (! conn->isConOpen()) {
+        printError(ErrNoConnection, "No connection present");
+        return ErrNoConnection;
+    }
+    if (!isPrepared) return ErrNotPrepared;
     SqlPacketExecute *pkt = new SqlPacketExecute();
     pkt->stmtID = getStmtID();
     pkt->noParams=paramList.size();
@@ -153,13 +161,18 @@ DbRetVal SqlNwStatement::bindField(int pos, void* value)
 }
 void* SqlNwStatement::fetch()
 {
+    DbRetVal rv = OK;
+    SqlNwConnection *conn = (SqlNwConnection*)con;
+    if (! conn->isConOpen()) {
+        printError(ErrNoConnection, "No connection present");
+        return NULL;
+    }
     if (!isPrepared) return NULL;
     void *ptrToFirstField = NULL;
-    SqlNwConnection *conn = (SqlNwConnection*)con;
     SqlPacketFetch *pkt = new SqlPacketFetch();
     pkt->stmtID = getStmtID();
     pkt->marshall();
-    DbRetVal rv = conn->send(SQL_NW_PKT_FETCH, pkt->getMarshalledBuffer(), pkt->getBufferSize());
+    rv = conn->send(SQL_NW_PKT_FETCH, pkt->getMarshalledBuffer(), pkt->getBufferSize());
     if (rv != OK) {
         printError(rv, "Data could not be sent");
         return NULL;
@@ -171,7 +184,10 @@ void* SqlNwStatement::fetch()
     }
     ResponsePacket *rpkt = (ResponsePacket *) ((TCPClient *)conn->nwClient)->respPkt;
     char *ptr = (char *) &rpkt->retVal;
-    if (*ptr == 0) return NULL;
+    if (*(ptr+1) == 1) {
+        rv = OK;
+        return NULL;
+    }
     PacketHeader header;
     int fd = ((TCPClient *)(conn->nwClient))->sockfd;
     int numbytes = os::recv(fd, &header, sizeof(PacketHeader), 0);
@@ -194,6 +210,59 @@ void* SqlNwStatement::fetch()
     ptrToFirstField = bindList.get(1);
     return ptrToFirstField;
 }
+
+void* SqlNwStatement::fetch(DbRetVal &ret)
+{
+    SqlNwConnection *conn = (SqlNwConnection*)con;
+    if (! conn->isConOpen()) {
+        printError(ErrNoConnection, "No connection present");
+        ret = ErrNoConnection;
+        return NULL;
+    }
+    if (!isPrepared) return NULL;
+    void *ptrToFirstField = NULL;
+    SqlPacketFetch *pkt = new SqlPacketFetch();
+    pkt->stmtID = getStmtID();
+    pkt->marshall();
+    DbRetVal rv = conn->send(SQL_NW_PKT_FETCH, pkt->getMarshalledBuffer(), pkt->getBufferSize());
+    if (rv != OK) {
+        printError(rv, "Data could not be sent");
+        return NULL;
+    }
+    rv = conn->receive();
+    if (rv != OK) {
+        printError(rv, "Unable to receive from Network");
+        return NULL;
+    }
+    ResponsePacket *rpkt = (ResponsePacket *) ((TCPClient *)conn->nwClient)->respPkt;
+    char *ptr = (char *) &rpkt->retVal;
+    if (*(ptr+1) == 1) {
+        ret = OK;
+        return NULL;
+    }
+    PacketHeader header;
+    int fd = ((TCPClient *)(conn->nwClient))->sockfd;
+    int numbytes = os::recv(fd, &header, sizeof(PacketHeader), 0);
+    if (numbytes == -1) {
+        printError(ErrOS, "Error reading from socket\n");
+        return NULL;
+    }
+    printf("HEADER says packet type is %d\n", header.packetType);
+    char *buffer = (char*) malloc(header.packetLength);
+    numbytes = os::recv(fd,buffer,header.packetLength,0);
+    if (numbytes == -1) {
+        printError(ErrOS, "Error reading from socket\n");
+        return NULL;
+    }
+    SqlPacketResultSet *rspkt = new SqlPacketResultSet();
+    rspkt->setBuffer(buffer);
+    rspkt->setProjList(bindList);
+    rspkt->noProjs = bindList.size();
+    rspkt->unmarshall();
+    ptrToFirstField = bindList.get(1);
+    return ptrToFirstField;
+}
+
 
 void* SqlNwStatement::fetchAndPrint(bool SQL)
 {

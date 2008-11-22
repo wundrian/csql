@@ -57,7 +57,7 @@ class ResponsePacket
     ResponsePacket()
     { stmtID = 0; retVal = 0; }
     ~ResponsePacket() { }
-    int retVal; // will inclue statment type also in the second byte
+    int retVal; // will include for fetch end flag, params flag, proj flag
     int stmtID;
     char errorString[ERROR_STRING_LENGTH];
     DbRetVal marshall();
@@ -80,6 +80,7 @@ class NetworkClient {
     virtual DbRetVal receive()=0;
     virtual DbRetVal connect()=0;
     virtual DbRetVal disconnect()=0;
+    virtual void * getResponsePacket()=0;
     virtual ~NetworkClient(){}
     void setHost(char *host, int portno, int nwid)
     {
@@ -106,6 +107,7 @@ class UDPClient : public NetworkClient{
     DbRetVal receive();
     DbRetVal connect();
     DbRetVal disconnect();
+    void * getResponsePacket() { return NULL; }
     ~UDPClient();
 };
 class TCPClient : public NetworkClient{
@@ -118,6 +120,7 @@ class TCPClient : public NetworkClient{
     DbRetVal receive();
     DbRetVal connect();
     DbRetVal disconnect();
+    void * getResponsePacket() { return respPkt; }
     ~TCPClient();
 };
 enum NetworkMode
