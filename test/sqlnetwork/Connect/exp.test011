@@ -1,0 +1,68 @@
+NW:TCP connecting
+Response from peer site is 1
+NW:TCP Send
+Sent bytes 16
+Sent bytes 258
+NW:TCP receive
+Connection opened
+NW:TCP Send
+Sent bytes 16
+Sent bytes 36
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 8
+NW:TCP receive
+Table T1 CREATED
+NW:TCP Send
+Sent bytes 16
+Sent bytes 32
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 8
+NW:TCP receive
+1 Record inserted
+NW:TCP Send
+Sent bytes 16
+Sent bytes 26
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 8
+NW:TCP receive
+1 Record updated
+NW:TCP Send
+Sent bytes 16
+Sent bytes 0
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 24
+NW:TCP receive
+HEADER says packet type is 104
+NW:TCP Send
+Sent bytes 16
+Sent bytes 8
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 4
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 0
+NW:TCP receive
+Total record fetched =0 ,Because transaction rollbacked
+NW:TCP Send
+Sent bytes 16
+Sent bytes 19
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 8
+NW:TCP receive
+Table droped
+NW:TCP disconnect kishor 5678
+Sent bytes 16
+NW:TCP receive
