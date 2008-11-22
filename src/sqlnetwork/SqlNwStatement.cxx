@@ -28,6 +28,7 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
         printError(ErrNoConnection, "No connection present");
         return ErrNoConnection;
     }
+    //if (isPrepared) free();
     SqlPacketPrepare *pkt = new SqlPacketPrepare();
     pkt->stmtString = stmtstr;
     pkt->stmtLength = strlen(stmtstr) + 1;
@@ -236,10 +237,9 @@ void* SqlNwStatement::fetch(DbRetVal &ret)
     }
     ResponsePacket *rpkt = (ResponsePacket *) ((TCPClient *)conn->nwClient)->respPkt;
     char *ptr = (char *) &rpkt->retVal;
-    if (*(ptr+1) == 1) {
-        ret = OK;
-        return NULL;
-    }
+    if (*ptr == 0) { ret = ErrPeerResponse; return NULL; }
+    if (*(ptr+1) == 1) { ret = OK; return NULL; }
+    
     PacketHeader header;
     int fd = ((TCPClient *)(conn->nwClient))->sockfd;
     int numbytes = os::recv(fd, &header, sizeof(PacketHeader), 0);
@@ -317,13 +317,47 @@ DbRetVal SqlNwStatement::getParamFldInfo (int parampos, FieldInfo *&fInfo)
 
 DbRetVal SqlNwStatement::free()
 {
-    //TODO
-    return OK;
+    DbRetVal rv = OK;
+    SqlNwConnection *conn = (SqlNwConnection*)con;
+    if (! conn->isConOpen()) {
+        printError(ErrNoConnection, "No connection present");
+        return ErrNoConnection;
+    }
+    if (!isPrepared) return OK;
+    SqlPacketFree *pkt = new SqlPacketFree();
+    pkt->stmtID = getStmtID();
+    pkt->marshall();
+    rv = conn->send(SQL_NW_PKT_FREE, pkt->getMarshalledBuffer(), pkt->getBufferSize());
+    if (rv != OK) {
+        printError(rv, "Data could not be sent");
+        return rv;
+    }
+    rv = conn->receive();
+    if (rv != OK) return rv;
+    ResponsePacket *rpkt = (ResponsePacket *) ((TCPClient *)conn->nwClient)->respPkt;
+    char *ptr = (char *) &rpkt->retVal;
+    if (*ptr != 1) {
+        printf("there is some error\n");
+        return ErrPeerResponse;
+    }
+    ListIterator itprm = paramList.getIterator();
+    BindSqlField *fld = NULL;
+    while((fld = (BindSqlField *) itprm.nextElement()) != NULL) {
+        delete fld;
+    }
+    paramList.reset();
+    ListIterator itprj = bindList.getIterator();
+    BindSqlProjectField *pfld = NULL;
+    while((pfld = (BindSqlProjectField *) itprj.nextElement()) != NULL) {
+        delete pfld;
+    }
+    bindList.reset();
+    return rv;
 }
 
 void SqlNwStatement::setShortParam(int paramPos, short value)
 {
-    if (!isPrepared) return ;
+    if (!isPrepared) return;
     if (paramPos <= 0) return;
     BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
     *(short *) bindField->value = value;

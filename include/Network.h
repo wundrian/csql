@@ -48,7 +48,8 @@ enum NetworkPacketType
     SQL_NW_PKT_RESULT_SET=107,
     SQL_NW_PKT_COMMIT=108,
     SQL_NW_PKT_ROLLBACK=109,
-    SQL_NW_PKT_DISCONNECT=110,
+    SQL_NW_PKT_FREE=110,
+    SQL_NW_PKT_DISCONNECT=111,
 };
 
 class ResponsePacket
@@ -340,6 +341,17 @@ class SqlPacketFetch : public BasePacket
     SqlPacketFetch() { buffer=NULL; bufferSize = 0;
                        pktType = SQL_NW_PKT_FETCH; }
     ~SqlPacketFetch() { free(buffer); bufferSize = 0; buffer = NULL; }
+    int stmtID;
+    DbRetVal marshall();
+    DbRetVal unmarshall();
+};
+
+class SqlPacketFree : public BasePacket
+{
+    public:
+    SqlPacketFree() { buffer=NULL; bufferSize = 0;
+                       pktType = SQL_NW_PKT_FREE; }
+    ~SqlPacketFree() { free(buffer); bufferSize = 0; buffer = NULL; }
     int stmtID;
     DbRetVal marshall();
     DbRetVal unmarshall();

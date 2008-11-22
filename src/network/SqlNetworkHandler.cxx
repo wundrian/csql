@@ -34,6 +34,9 @@ int SqlNetworkHandler::stmtID;
 
 void *SqlNetworkHandler::process(PacketHeader &header, char *buffer)
 {
+    DbRetVal rv = OK;
+    char *ptr = NULL;
+    ResponsePacket *rpkt = NULL;
     switch(header.packetType)
     {
       //  case NW_PKT_PREPARE:
@@ -62,12 +65,15 @@ void *SqlNetworkHandler::process(PacketHeader &header, char *buffer)
             break;
         case SQL_NW_PKT_DISCONNECT:
             conn->rollback();
-            DbRetVal rv = conn->disconnect();
-            ResponsePacket *rpkt = new ResponsePacket();
-            char * ptr = (char *) &rpkt->retVal;
+            rv = conn->disconnect();
+            rpkt = new ResponsePacket();
+            ptr = (char *) &rpkt->retVal;
             *ptr = 1;
             strcpy(rpkt->errorString, "Success");
             return rpkt;
+        case SQL_NW_PKT_FREE:
+            return processSqlFree(header, buffer);
+            break;
     }
 }
  
@@ -130,7 +136,7 @@ void* SqlNetworkHandler::processSqlPrepare(PacketHeader &header, char *buffer)
         bindField->type = fInfo->type;
         bindField->length = fInfo->length;
         bindField->value = AllDataType::alloc(bindField->type, bindField->length);
-         nwStmt->paramList.append(bindField);
+        nwStmt->paramList.append(bindField);
     }
     delete fInfo; 
     fInfo = new FieldInfo();
@@ -168,7 +174,7 @@ void * SqlNetworkHandler::processSqlExecute(PacketHeader &header, char *buffer)
     while (stmtIter.hasElement())
     {
        stmt = (NetworkStmt*) stmtIter.nextElement();
-       //TODO::Also check teh srcNetworkID
+       //TODO::Also check the srcNetworkID
        if (stmt->stmtID == pkt->stmtID ) break;
     }
     AbsSqlStatement *sqlstmt = stmt->stmt;
@@ -187,6 +193,7 @@ void * SqlNetworkHandler::processSqlExecute(PacketHeader &header, char *buffer)
     strcpy(rpkt->errorString, "Success");
     return rpkt;
 }
+
 void * SqlNetworkHandler::processSqlFetch(PacketHeader &header, char *buffer)
 {
     ResponsePacket *rpkt = new ResponsePacket();
@@ -212,7 +219,7 @@ void * SqlNetworkHandler::processSqlFetch(PacketHeader &header, char *buffer)
     }
     void *data=NULL;
     DbRetVal rv = OK;
-    if ((data = sqlstmt->fetch(rv)) != NULL) {
+    if ((data = sqlstmt->fetch(rv)) != NULL && rv == OK) {
         *retval = 1; 
         strcpy(rpkt->errorString, "Success");
         return rpkt;
@@ -220,7 +227,7 @@ void * SqlNetworkHandler::processSqlFetch(PacketHeader &header, char *buffer)
     if (data == NULL && rv == OK) {
         *retval = 1; 
         *(retval + 1) = 1;
-        strcpy(rpkt->errorString, "Success");
+        strcpy(rpkt->errorString, "Success fetch completed");
         return rpkt;
     }
     else { 
@@ -229,6 +236,42 @@ void * SqlNetworkHandler::processSqlFetch(PacketHeader &header, char *buffer)
         return rpkt;
     }
 }
+
+void * SqlNetworkHandler::processSqlFree(PacketHeader &header, char *buffer)
+{
+    ResponsePacket *rpkt = new ResponsePacket();
+    char *retval = (char *) &rpkt->retVal;
+    SqlPacketFetch *pkt = new SqlPacketFetch();
+    pkt->setBuffer(buffer);
+    pkt->unmarshall();
+    rpkt->stmtID = pkt->stmtID;
+    ListIterator stmtIter = stmtList.getIterator();
+    NetworkStmt *stmt;
+    while (stmtIter.hasElement())
+    {
+       stmt = (NetworkStmt*) stmtIter.nextElement();
+       //TODO::Also check teh srcNetworkID
+       if (stmt->stmtID == pkt->stmtID ) break;
+    }
+    AbsSqlStatement *sqlstmt = stmt->stmt;
+    sqlstmt->free();
+    ListIterator itprm = stmt->paramList.getIterator();
+    BindSqlField *fld = NULL;
+    while((fld = (BindSqlField *) itprm.nextElement()) != NULL) delete fld;  
+    stmt->paramList.reset();
+    ListIterator itprj = stmt->projList.getIterator();
+    BindSqlProjectField *pfld = NULL;
+    while((pfld = (BindSqlProjectField *) itprj.nextElement()) != NULL) {
+        if(pfld->value) { free(pfld->value); }
+        delete pfld;        
+    }
+    stmt->projList.reset();
+    stmtList.remove(stmt);
+    *retval = 1;
+    strcpy(rpkt->errorString, "Success");
+    return rpkt;
+}
+
 
 void * SqlNetworkHandler::processSqlCommit(PacketHeader &header, char *buffer)
 {

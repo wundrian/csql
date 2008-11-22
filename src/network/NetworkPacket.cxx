@@ -288,7 +288,7 @@ DbRetVal SqlPacketPrepare::marshall()
     printDebug(DM_Network, "Buffer size %d\n", bufferSize);
     printDebug(DM_Network, "stmt %s size %d\n", stmtString, strlen(stmtString));
     buffer = (char*) malloc(bufferSize);
-    *(int*)buffer = strlen(stmtString);
+    *(int*)buffer = strlen(stmtString) + 1;
     char *bufIter = buffer + sizeof(int);
     strcpy(bufIter, stmtString);
     printDebug(DM_Network, "PacketPrepare::marshall ended\n");
@@ -303,7 +303,7 @@ DbRetVal SqlPacketPrepare::unmarshall()
     char *bufIter = buffer + sizeof(int);
     stmtString = bufIter;
     printDebug(DM_Network, "stmtString ptr is %x\n", stmtString);
-    stmtString[stmtLength+1] = '\0';
+    stmtString[stmtLength] = '\0';
     printDebug(DM_Network, "PacketPrepare::unmarshall ended\n");
     return OK;
 }
@@ -476,6 +476,19 @@ DbRetVal SqlPacketFetch::unmarshall()
     stmtID = *(int *)buffer;
 }
 
+DbRetVal SqlPacketFree::marshall()
+{
+    bufferSize  = sizeof(int);
+    buffer = (char*) malloc(bufferSize);
+    *(int*)buffer = stmtID;
+    return OK;
+}
+
+DbRetVal SqlPacketFree::unmarshall()
+{
+    stmtID = *(int *)buffer;
+}
+
 DbRetVal SqlPacketResultSet::marshall()
 {
     bufferSize  = sizeof(int)+ sizeof(int);
@@ -495,6 +508,7 @@ DbRetVal SqlPacketResultSet::marshall()
         prjFld = (BindSqlProjectField*) projList.get(i+1);
         AllDataType::copyVal(bufIter, prjFld->value, prjFld->type, prjFld->length);
         bufIter = bufIter + AllDataType::size(prjFld->type, prjFld->length);
+        
     }
     return OK;
 }
@@ -514,6 +528,7 @@ DbRetVal SqlPacketResultSet::unmarshall()
         prjFld = (BindSqlProjectField*) projList.get(i+1);
         AllDataType::copyVal(prjFld->value, projValues[i], prjFld->type, prjFld->length);
         bufIter = bufIter + AllDataType::size(prjFld->type, prjFld->length);
+        
     }
     return OK;
 }

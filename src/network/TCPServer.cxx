@@ -132,7 +132,7 @@ DbRetVal TCPServer::handleClient()
                            stmt = (NetworkStmt*) stmtIter.nextElement();
                            if (stmt->stmtID == prmpkt->stmtID) break;
                        }
-                       prmpkt->noParams = params;
+                       prmpkt->noParams = stmt->paramList.size();
                        rv = prmpkt->marshall();
                        if (rv != OK) {
                            printf("marshall failed\n");
