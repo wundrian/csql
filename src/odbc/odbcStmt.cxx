@@ -829,7 +829,7 @@ SQLRETURN CSqlOdbcStmt::SQLFetch()
             if( sourceType != typeUnknown && destType != typeUnknown )
             {
                 sourceData = fsqlStmt_->getFieldValuePtr( colNum );
-                if(sourceData == NULL)
+                if(fsqlStmt_->isFldNull(appColDesc->col_) || sourceData == NULL )
                 {
                     if (appColDesc->indPtr_ != NULL)
                         *((SQLINTEGER *)(appColDesc->indPtr_))=SQL_NULL_DATA;
@@ -851,9 +851,10 @@ SQLRETURN CSqlOdbcStmt::SQLFetch()
                     else
                     {
                         //convert(sourceType,sourceData,destType, csqlColDesc->dataPtr_,sourceLength,destLength);
-                        if(appColDesc->indPtr_ != NULL)
+                        if(appColDesc->indPtr_ != NULL){
                             *((SQLINTEGER *)(appColDesc->indPtr_))=
 			    copyToOdbc(appColDesc->dataPtr_,destLength, sourceData, sourceLength, sourceType);
+                            }
                         else
                             copyToOdbc(appColDesc->dataPtr_,destLength, sourceData, sourceLength, sourceType);
                     } 

@@ -173,6 +173,12 @@ void* SqlStatement::next()
     return( (void*) selStmt->next() );
 }
 
+bool SqlStatement::isFldNull(int pos)
+{
+    if (pData.getStmtType() != SelectStatement) return 0;
+    SelStatement *selStmt = (SelStatement*) stmt;
+    return (selStmt->isFldNull(pos));
+}
 DbRetVal SqlStatement::close()
 {
     if (pData.getStmtType() != SelectStatement) return OK;

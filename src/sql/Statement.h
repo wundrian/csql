@@ -48,7 +48,7 @@ class Statement
     virtual DbRetVal setTimeParam(int paramNo, Time value)=0;
     virtual DbRetVal setTimeStampParam(int paramNo, TimeStamp value)=0;
     virtual DbRetVal setBinaryParam(int paramNo, void *value)=0;
-
+    //virtual  bool isFldNull(int pos)=0;
     virtual DbRetVal resolve()=0;
     virtual ~Statement(){}
 };
@@ -83,7 +83,7 @@ class DmlStatement : public Statement
     virtual DbRetVal setTimeParam(int paramNo, Time value)=0;
     virtual DbRetVal setTimeStampParam(int paramNo, TimeStamp value)=0;
     virtual DbRetVal setBinaryParam(int paramNo, void *value)=0;
-
+    virtual bool isFldNull(int pos)=0;
     virtual DbRetVal resolve()=0;
     virtual void* getParamValuePtr( int pos )=0;
     virtual ~DmlStatement(){}
@@ -109,6 +109,7 @@ class InsStatement : public DmlStatement
     DbRetVal setTimeParam(int paramNo, Time value);
     DbRetVal setTimeStampParam(int paramNo, TimeStamp value);
 	DbRetVal setBinaryParam(int paramNo, void *value);
+    bool isFldNull(int pos){}
     void* getParamValuePtr( int );
     DbRetVal resolve();
     InsStatement();
@@ -143,6 +144,10 @@ class SelStatement : public DmlStatement
     DbRetVal setTimeParam(int paramNo, Time value);
     DbRetVal setTimeStampParam(int paramNo, TimeStamp value);
     DbRetVal setBinaryParam(int paramNo, void *value);
+    
+    DbRetVal replaceStarWithFirstFldName(FieldName *name);
+    DbRetVal resolveGroupFld(AggTableImpl *impl);
+    bool isFldNull(int pos){return table->isFldNull(pos);}
 
     DbRetVal close();
     DbRetVal resolve();
@@ -150,8 +155,6 @@ class SelStatement : public DmlStatement
     ~SelStatement();
 
     DbRetVal openTables();
-    DbRetVal replaceStarWithFirstFldName(FieldName *name);
-    DbRetVal resolveGroupFld(AggTableImpl *impl);
 
     DbRetVal setBindField(int pos, void* value);
 
@@ -191,7 +194,7 @@ class UpdStatement : public DmlStatement
     DbRetVal setBinaryParam(int paramNo, void *value);
     void* getParamValuePtr(int);
     DbRetVal getParamFldInfo(int paramPos, FieldInfo *&info);
-
+    bool isFldNull(int pos){}
 
     DbRetVal resolve();
     UpdStatement();
@@ -219,7 +222,7 @@ class DelStatement : public DmlStatement
     DbRetVal setTimeParam(int paramNo, Time value);
     DbRetVal setTimeStampParam(int paramNo, TimeStamp value);
     DbRetVal setBinaryParam(int paramNo, void *value);
-
+    bool isFldNull(int pos){}
     DbRetVal getParamFldInfo(int paramPos, FieldInfo *&info);
     void* getParamValuePtr(int);
     DbRetVal resolve();
@@ -271,6 +274,7 @@ class CreateIdxStatement : public DdlStatement
     public:
     DbRetVal execute(int &rowsAffected);
     DbRetVal resolve(){return OK; }
+
     CreateIdxStatement();
     ~CreateIdxStatement();
 
