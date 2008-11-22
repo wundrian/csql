@@ -72,6 +72,7 @@ class SqlNwStatement: public AbsSqlStatement
     bool isSelect();
     void getPrimaryKeyFieldName(char *tablename, char *pkfieldname);
     int getStmtID() { return stmtID; }
+    bool isFldNull(int pos){}
     void setStmtID(int id) { stmtID = id; } 
     private:
     bool isPrepared;

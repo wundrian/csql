@@ -79,7 +79,7 @@ class SqlGwStatement: public AbsSqlStatement
     void setTimeStampParam(int paramPos, TimeStamp value);
     void setBinaryParam(int paramPos, void *value);
 	bool isSelect();
-
+    bool isFldNull(int pos){}
     private:
     bool shouldAdapterHandle();
     bool shouldCSqlHandle();

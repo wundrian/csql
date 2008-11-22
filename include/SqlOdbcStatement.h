@@ -77,6 +77,7 @@ class SqlOdbcStatement: public AbsSqlStatement
 	bool isSelect();
     void getPrimaryKeyFieldName(char *tablename, char *pkfieldname);
     void setNullInfo(Table *table);
+    bool isFldNull(int pos){}
     private:
     bool isPrepared;
     List paramList;

@@ -228,7 +228,7 @@ class AbsSqlStatement
     * @return bool true if it is select stmt, false otherwise
     */
     virtual bool isSelect() = 0;
-    
+    virtual bool isFldNull(int pos)=0; 
     virtual ~AbsSqlStatement(){}
 };
 

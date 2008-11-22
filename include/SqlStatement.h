@@ -235,7 +235,7 @@ class SqlStatement: public AbsSqlStatement
     */
     bool isPrepared();
     StatementType getStmtType() { return pData.getStmtType(); }
- 
+    bool isFldNull(int pos); 
     private:
     SqlConnection *sqlCon;
     Statement *stmt;
