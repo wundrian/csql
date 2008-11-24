@@ -28,7 +28,7 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
         printError(ErrNoConnection, "No connection present");
         return ErrNoConnection;
     }
-    //if (isPrepared) free();
+    //if (isPrepared) free(); 
     SqlPacketPrepare *pkt = new SqlPacketPrepare();
     pkt->stmtString = stmtstr;
     pkt->stmtLength = strlen(stmtstr) + 1;
@@ -128,6 +128,7 @@ DbRetVal SqlNwStatement::execute(int &rowsAffected)
     SqlPacketExecute *pkt = new SqlPacketExecute();
     pkt->stmtID = getStmtID();
     pkt->noParams=paramList.size();
+    printf("noParams = %d\n", pkt->noParams);
     pkt->setParams(paramList);
     pkt->marshall();
     rv = conn->send(SQL_NW_PKT_EXECUTE, pkt->getMarshalledBuffer(), pkt->getBufferSize());

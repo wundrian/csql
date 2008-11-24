@@ -139,16 +139,16 @@ void* SqlNetworkHandler::processSqlPrepare(PacketHeader &header, char *buffer)
         nwStmt->paramList.append(bindField);
     }
     delete fInfo; 
-    fInfo = new FieldInfo();
+    FieldInfo *fldInfo = new FieldInfo();
     for (int i = 0; i < proj; i++) {
         projField = new BindSqlProjectField();
-        st->getProjFldInfo(i + 1, fInfo);
-        strcpy(projField->fName, fInfo->fldName);
-        projField->type = fInfo->type;
-        projField->length = fInfo->length;
+        st->getProjFldInfo(i + 1, fldInfo);
+        projField->type = fldInfo->type;
+        projField->length = fldInfo->length;
         projField->value = AllDataType::alloc(projField->type, projField->length);
         nwStmt->projList.append(projField);
     }
+    delete fldInfo; 
     stmtList.append(nwStmt);
     *retval = 1; 
     if (param) *(retval+2) = 1;
@@ -183,6 +183,14 @@ void * SqlNetworkHandler::processSqlExecute(PacketHeader &header, char *buffer)
         BindSqlField *bindField = (BindSqlField *) stmt->paramList.get(i+1);
         setParamValues(sqlstmt, i+1, bindField->type, bindField->length, (char *)bindField->value);
     }
+    //SqlStatement *st = (SqlStatement *)sqlstmt;
+    if(sqlstmt->isSelect()) { 
+        int noProj = stmt->projList.size();
+        for (int i=0; i < noProj; i++) {
+            BindSqlProjectField *prjFld = (BindSqlProjectField *) stmt->projList.get(i+1);
+            sqlstmt->bindField(i+1, prjFld->value);
+        }
+    }
     DbRetVal rv = sqlstmt->execute(rows);
     if (rv != OK) { 
         *retval = 0;
@@ -211,12 +219,6 @@ void * SqlNetworkHandler::processSqlFetch(PacketHeader &header, char *buffer)
        if (stmt->stmtID == pkt->stmtID ) break;
     }
     AbsSqlStatement *sqlstmt = stmt->stmt;
-    SqlStatement *st = (SqlStatement *)sqlstmt;
-    int noProj = st->noOfProjFields();
-    for (int i=0; i < noProj; i++) {
-        BindSqlProjectField *prjFld = (BindSqlProjectField *) stmt->projList.get(i+1);
-        sqlstmt->bindField(i+1, prjFld->value);
-    }
     void *data=NULL;
     DbRetVal rv = OK;
     if ((data = sqlstmt->fetch(rv)) != NULL && rv == OK) {
@@ -225,6 +227,7 @@ void * SqlNetworkHandler::processSqlFetch(PacketHeader &header, char *buffer)
         return rpkt;
     }
     if (data == NULL && rv == OK) {
+        sqlstmt->close();
         *retval = 1; 
         *(retval + 1) = 1;
         strcpy(rpkt->errorString, "Success fetch completed");
@@ -241,7 +244,7 @@ void * SqlNetworkHandler::processSqlFree(PacketHeader &header, char *buffer)
 {
     ResponsePacket *rpkt = new ResponsePacket();
     char *retval = (char *) &rpkt->retVal;
-    SqlPacketFetch *pkt = new SqlPacketFetch();
+    SqlPacketFree *pkt = new SqlPacketFree();
     pkt->setBuffer(buffer);
     pkt->unmarshall();
     rpkt->stmtID = pkt->stmtID;
@@ -257,14 +260,11 @@ void * SqlNetworkHandler::processSqlFree(PacketHeader &header, char *buffer)
     sqlstmt->free();
     ListIterator itprm = stmt->paramList.getIterator();
     BindSqlField *fld = NULL;
-    while((fld = (BindSqlField *) itprm.nextElement()) != NULL) delete fld;  
+    while((fld = (BindSqlField *) itprm.nextElement()) != NULL) delete fld;
     stmt->paramList.reset();
     ListIterator itprj = stmt->projList.getIterator();
     BindSqlProjectField *pfld = NULL;
-    while((pfld = (BindSqlProjectField *) itprj.nextElement()) != NULL) {
-        if(pfld->value) { free(pfld->value); }
-        delete pfld;        
-    }
+    while((pfld = (BindSqlProjectField *) itprj.nextElement()) != NULL) delete pfld;       
     stmt->projList.reset();
     stmtList.remove(stmt);
     *retval = 1;
