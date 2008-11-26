@@ -331,7 +331,7 @@ bool getInput(bool fromFile)
         printf("\t");
         for (int i = 0 ; i < stmt->noOfProjFields() ; i++)
         {
-            stmt->getProjFldInfo(i, info);
+            stmt->getProjFldInfo(i+1, info);
             printf("%s\t", info->fldName);
         }
         printf("\n---------------------------------------------------------\n");
