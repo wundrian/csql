@@ -132,7 +132,7 @@ int main()
       
          printf("\n***********************************************\n");
          
-         rv = stmt->getProjFldInfo(i,field);
+         rv = stmt->getProjFldInfo(i+1,field);
         if(rv!=OK)return 1;
          printf("Field Name :%s\n", field->fldName);
          printf("Data type of the field :%d\n",field->type);
