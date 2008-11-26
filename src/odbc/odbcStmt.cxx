@@ -820,7 +820,7 @@ SQLRETURN CSqlOdbcStmt::SQLFetch()
             csqlColDesc = *irdIter;
             
             colNum = appColDesc->col_ - 1;
-            fsqlStmt_->getProjFldInfo(colNum, info);
+            fsqlStmt_->getProjFldInfo(colNum+1, info);
             sourceType = info->type;
             destType = getCSqlType(appColDesc->cType_);
             sourceLength = info->length;
@@ -1149,7 +1149,7 @@ SQLRETURN  CSqlOdbcStmt::SQLDescribeCol(
         return( SQL_ERROR );
     }
     FieldInfo *info = new FieldInfo();
-    fsqlStmt_->getProjFldInfo(columnNumber, info);
+    fsqlStmt_->getProjFldInfo(columnNumber+1, info);
         strncpy( (char*)columnName, (char*)info->fldName, bufferLength );
     if(nameLength != NULL)
         *nameLength=(short)strlen((const char*)info->fldName); // HARDCODED - TO DO, need support for n/w layer & sql layer
@@ -1241,7 +1241,7 @@ SQLRETURN  CSqlOdbcStmt::SQLColAttribute(
         return( SQL_ERROR );
 
     FieldInfo *info = new FieldInfo();
-    fsqlStmt_->getProjFldInfo(columnNumber, info);
+    fsqlStmt_->getProjFldInfo(columnNumber+1, info);
 
     // If SELECT
     if(columnNumber > fsqlStmt_->noOfProjFields())
