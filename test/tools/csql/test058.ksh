@@ -2,8 +2,7 @@
 #Test case
 #create table t1(f1 int not null,f2 int,f3 int);
 #a) create hash unique index on the first field.
-#b) drop the index
-#c) create hash primary index on the same field.
+#b) create tree unique index on the same field.
 #It should be passed
 #
 QUITFILE=${PWD}/tools/csql/quit.sql
