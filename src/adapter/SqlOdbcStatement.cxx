@@ -384,7 +384,7 @@ DbRetVal SqlOdbcStatement::getProjFldInfo (int projpos, FieldInfo *&fInfo)
     while (biter.hasElement())
     {
         elem = (BindSqlProjectField*) biter.nextElement();
-        if (count == projpos) 
+        if (count == projpos-1) 
         {
             strcpy(fInfo->fldName, elem->fName);
             fInfo->length = elem->length;
