@@ -26,13 +26,13 @@
 class SqlNwStatement: public AbsSqlStatement
 {
     public:
-    SqlNwStatement(){innerStmt = NULL; con = NULL;}
+    SqlNwStatement(){innerStmt = NULL; con = NULL; isPrepared=false;}
     void setConnection(AbsSqlConnection *conn)
     {
         if (innerStmt) innerStmt->setConnection(conn->getInnerConnection());
         con = conn;
     }
-
+    ~SqlNwStatement() { if (isPrepared) free(); }
     DbRetVal prepare(char *stmt);
 
     DbRetVal execute(int &rowsAffect);

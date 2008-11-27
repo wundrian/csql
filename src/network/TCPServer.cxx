@@ -100,7 +100,7 @@ DbRetVal TCPServer::handleClient()
                char *buffer = NULL;
                if (header.packetType != SQL_NW_PKT_DISCONNECT && 
                    header.packetType != SQL_NW_PKT_COMMIT     &&
-                   header.packetType != SQL_NW_PKT_ROLLBACK) 
+                   header.packetType != SQL_NW_PKT_ROLLBACK)
                {
                    buffer = (char*) malloc(header.packetLength);
                    numbytes = os::recv(clientfd,buffer,header.packetLength,0);
@@ -118,6 +118,7 @@ DbRetVal TCPServer::handleClient()
                    return ErrOS;
                }
                char *ptr = (char *)&rpkt->retVal;
+               if (*ptr==0) continue;
                if (*(ptr + 1)  == 1) continue; // for end of fetch
                NetworkStmt *stmt=NULL;
                int params =  *(ptr + 2);
@@ -183,7 +184,6 @@ DbRetVal TCPServer::handleClient()
                    }
                }    
                if (header.packetType == SQL_NW_PKT_DISCONNECT) { 
-                   printf("server is going down\n");
                    exit(0); 
                }
            } else printf("Nothing in fd %d\n", ret);

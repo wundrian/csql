@@ -106,6 +106,7 @@ void SqlPacketExecute::setParams(List list)
 {
     paramList = list;
     noParams = list.size();
+    if (!noParams) return;
     paramValues = new char*[noParams];
     BindSqlField* bindField = NULL;
     for (int i = 0 ; i < noParams; i++)
@@ -264,10 +265,10 @@ DbRetVal SqlPacketConnect::marshall()
 {
    char *ptr = buffer; // moves over buffer
    strncpy(ptr, userName, IDENTIFIER_LENGTH);
-   ptr = buffer+IDENTIFIER_LENGTH;
+   ptr = buffer+IDENTIFIER_LENGTH-1;
    *ptr++ = '\0';
    strncpy(ptr, passWord, IDENTIFIER_LENGTH);
-   ptr = ptr + IDENTIFIER_LENGTH;
+   ptr = ptr + IDENTIFIER_LENGTH-1;
    *ptr = '\0';
    return OK;
 }
@@ -275,9 +276,7 @@ DbRetVal SqlPacketConnect::marshall()
 DbRetVal SqlPacketConnect::unmarshall()
 {
    strncpy(userName, buffer, IDENTIFIER_LENGTH);
-   *(buffer+IDENTIFIER_LENGTH) = '\0';
-   strncpy(passWord, buffer + IDENTIFIER_LENGTH + 1, IDENTIFIER_LENGTH);
-   *(buffer + 2 *IDENTIFIER_LENGTH + 2) = '\0';
+   strncpy(passWord, buffer + IDENTIFIER_LENGTH, IDENTIFIER_LENGTH);
    return OK;
 }
 

@@ -49,6 +49,7 @@ DbRetVal TCPClient::send(NetworkPacketType type, char *buf, int len)
     }
     printf("Sent bytes %d\n", numbytes);
     free(totalBuffer);
+    delete hdr;
     return rv;
 }
 DbRetVal TCPClient::receive()
@@ -74,7 +75,7 @@ DbRetVal TCPClient::receive()
        return ErrOS;
     }
     char *response = (char *) &respPkt->retVal;
-    if (*response != 1) rv = ErrPeerResponse;
+//    if (*response != 1) rv = ErrPeerResponse;
     return rv;
 }
 DbRetVal TCPClient::connect()
@@ -124,7 +125,7 @@ DbRetVal TCPClient::connect()
        return ErrOS;
     }
     printf("Response from peer site is %d\n", response);
-    if (response != 1) return ErrPeerResponse;
+//    if (response != 1) return ErrPeerResponse;
     isConnectedFlag = true;
     return OK;
 }
@@ -142,10 +143,12 @@ DbRetVal TCPClient::disconnect()
         if ((numbytes=os::send(sockfd, hdr, sizeof(PacketHeader), 0)) == -1) {
             printError(ErrOS, "Unable to send the packet\n");
             return ErrOS;   
-    } else
-        printf("Sent bytes %d\n", numbytes);
-        DbRetVal rv = receive();
-        close(sockfd);
+        } else {
+            printf("Sent bytes %d\n", numbytes);
+            DbRetVal rv = receive();
+            close(sockfd);
+            delete hdr;
+        }
     }
     isConnectedFlag = false;
     return OK;

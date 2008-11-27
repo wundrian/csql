@@ -29,7 +29,6 @@ int main()
 
    rv = stmt->execute(rows);
    if(rv!=OK) { delete stmt; delete con; return 3; }
-   stmt->free();
    printf("Table T1 CREATED\n");
    
    // insert into statement  
@@ -41,7 +40,6 @@ int main()
    if(rv!=OK) { delete stmt; delete con; return 5; }
    
    rv = stmt->execute(rows); if(rv!=OK) return 6;
-   stmt->free();
    printf("One record inserted\n");
    
    // update statement 
@@ -78,7 +76,6 @@ int main()
     rv = con->commit();
     if(rv!=OK)return 12;
     printf("Total reccord fetchec=%d\n",count);
-    stmt->free();
 
     strcpy(statement,"DROP TABLE T1;");
     rv = stmt->prepare(statement);
@@ -88,7 +85,6 @@ int main()
     if(rv!=OK) { delete stmt; delete con; return 14; }
 
     printf("TABLE T1 DROPPED SUCCESSFULLY\n");
-    stmt->free();
     delete stmt;
     delete con;
     printf("Connection closed successfully\n");

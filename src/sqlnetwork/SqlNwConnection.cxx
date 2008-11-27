@@ -30,7 +30,7 @@ DbRetVal SqlNwConnection::connect (char *user, char * pass)
         return ErrAlready;
     }
     nwClient = new TCPClient();
-    int bufsize = 2 * IDENTIFIER_LENGTH + 2;
+    int bufsize = 2 * IDENTIFIER_LENGTH;
     char hostName[IDENTIFIER_LENGTH];
     memset(hostName, 0, IDENTIFIER_LENGTH);
     os::gethostname(hostName, IDENTIFIER_LENGTH);
@@ -59,9 +59,11 @@ DbRetVal SqlNwConnection::connect (char *user, char * pass)
         printError(ErrPeerResponse, "%s", rpkt->errorString);
         nwClient->disconnect();
         delete nwClient; 
+        delete pkt;
         return ErrPeerResponse;
     }
     isConnOpen = true;
+    delete pkt;
     return rv;
 }
 DbRetVal SqlNwConnection::disconnect()

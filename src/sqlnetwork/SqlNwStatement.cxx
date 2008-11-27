@@ -28,7 +28,7 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
         printError(ErrNoConnection, "No connection present");
         return ErrNoConnection;
     }
-    //if (isPrepared) free(); 
+//    if (isPrepared) free(); 
     SqlPacketPrepare *pkt = new SqlPacketPrepare();
     pkt->stmtString = stmtstr;
     pkt->stmtLength = strlen(stmtstr) + 1;
@@ -41,13 +41,12 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
     int response = 0;
     rv = conn->receive();
     if (rv != OK) { 
-        printError(rv, "Prepare failed");
+        printError(rv, "Unable to Receive from peer");
         return rv;
     }
     ResponsePacket *rpkt = (ResponsePacket *) ((TCPClient *)conn->nwClient)->respPkt;
     char *ptr = (char *) &rpkt->retVal;
-    if(rv != OK) return rv;
-    StatementType tp = (StatementType) *(ptr + 1);
+    if (*ptr == 0) { delete pkt; return ErrPeerResponse; }
     int params = *(ptr + 2);
     int proj = *(ptr + 3);
     stmtID = rpkt->stmtID;
@@ -75,9 +74,12 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
             bindField = new BindSqlField();
             bindField->type = (DataType) mdpkt->type[i];
             bindField->length = mdpkt->length[i];
-            bindField->value = AllDataType::alloc(bindField->type, bindField->length);
+            if (mdpkt->type[i] == typeBinary)
+                bindField->value = AllDataType::alloc(bindField->type, 2 * bindField->length);
+            else bindField->value = AllDataType::alloc(bindField->type, bindField->length);
             paramList.append(bindField);
         }
+        delete mdpkt;
     }
     if (proj) {
         PacketHeader header;
@@ -102,11 +104,13 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
             prjFld = new BindSqlProjectField();
             prjFld->type = (DataType) prjmdpkt->type[i];
             prjFld->length = prjmdpkt->length[i];
-            prjFld->value = AllDataType::alloc(prjFld->type, prjFld->length);
+            //prjFld->value = AllDataType::alloc(prjFld->type, prjFld->length);
             bindList.append(prjFld);
         }
+        delete prjmdpkt;
     }
     isPrepared = true;
+    delete pkt;
     return rv;
 }
 
@@ -128,7 +132,6 @@ DbRetVal SqlNwStatement::execute(int &rowsAffected)
     SqlPacketExecute *pkt = new SqlPacketExecute();
     pkt->stmtID = getStmtID();
     pkt->noParams=paramList.size();
-    printf("noParams = %d\n", pkt->noParams);
     pkt->setParams(paramList);
     pkt->marshall();
     rv = conn->send(SQL_NW_PKT_EXECUTE, pkt->getMarshalledBuffer(), pkt->getBufferSize());
@@ -140,10 +143,8 @@ DbRetVal SqlNwStatement::execute(int &rowsAffected)
     if (rv != OK) return rv; 
     ResponsePacket *rpkt = (ResponsePacket *) ((TCPClient *)conn->nwClient)->respPkt;
     char *ptr = (char *) &rpkt->retVal;
-    if (*ptr != 1) {
-        printf("there is some error\n");        
-        return ErrPeerResponse;
-    }
+    if (*ptr != 1) return ErrPeerResponse;
+    delete pkt;
     return rv;
 }
 
@@ -186,10 +187,8 @@ void* SqlNwStatement::fetch()
     }
     ResponsePacket *rpkt = (ResponsePacket *) ((TCPClient *)conn->nwClient)->respPkt;
     char *ptr = (char *) &rpkt->retVal;
-    if (*(ptr+1) == 1) {
-        rv = OK;
-        return NULL;
-    }
+    if (*ptr == 0) { delete pkt; return NULL; }
+    if (*(ptr+1) == 1) { delete pkt; rv = OK; return NULL; }
     PacketHeader header;
     int fd = ((TCPClient *)(conn->nwClient))->sockfd;
     int numbytes = os::recv(fd, &header, sizeof(PacketHeader), 0);
@@ -210,6 +209,9 @@ void* SqlNwStatement::fetch()
     rspkt->noProjs = bindList.size();
     rspkt->unmarshall();
     ptrToFirstField = bindList.get(1);
+    delete [] rspkt->projValues;
+    delete rspkt;
+    delete pkt;
     return ptrToFirstField;
 }
 
@@ -238,8 +240,8 @@ void* SqlNwStatement::fetch(DbRetVal &ret)
     }
     ResponsePacket *rpkt = (ResponsePacket *) ((TCPClient *)conn->nwClient)->respPkt;
     char *ptr = (char *) &rpkt->retVal;
-    if (*ptr == 0) { ret = ErrPeerResponse; return NULL; }
-    if (*(ptr+1) == 1) { ret = OK; return NULL; }
+    if (*ptr == 0) { delete pkt; ret = ErrPeerResponse; return NULL; }
+    if (*(ptr+1) == 1) { delete pkt; ret = OK; return NULL; }
     
     PacketHeader header;
     int fd = ((TCPClient *)(conn->nwClient))->sockfd;
@@ -261,6 +263,9 @@ void* SqlNwStatement::fetch(DbRetVal &ret)
     rspkt->noProjs = bindList.size();
     rspkt->unmarshall();
     ptrToFirstField = bindList.get(1);
+    delete [] rspkt->projValues;
+    delete rspkt;
+    delete pkt;
     return ptrToFirstField;
 }
 
@@ -353,6 +358,8 @@ DbRetVal SqlNwStatement::free()
         delete pfld;
     }
     bindList.reset();
+    isPrepared = false;
+    delete pkt;
     return rv;
 }
 

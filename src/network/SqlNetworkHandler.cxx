@@ -266,7 +266,9 @@ void * SqlNetworkHandler::processSqlFree(PacketHeader &header, char *buffer)
     BindSqlProjectField *pfld = NULL;
     while((pfld = (BindSqlProjectField *) itprj.nextElement()) != NULL) delete pfld;       
     stmt->projList.reset();
+    delete stmt->stmt;
     stmtList.remove(stmt);
+    delete stmt;
     *retval = 1;
     strcpy(rpkt->errorString, "Success");
     return rpkt;

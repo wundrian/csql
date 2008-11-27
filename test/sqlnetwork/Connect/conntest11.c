@@ -29,7 +29,6 @@ int main()
    rv = stmt->execute(rows);
    if(rv!=OK) { delete stmt; delete con; return 2; }
 
-   stmt->free();
    printf("Table T1 CREATED\n");
 
    strcpy(statement,"INSERT INTO T1 VALUES(1,1);");
@@ -42,7 +41,6 @@ int main()
    rv = stmt->execute(rows);
    if(rv!=OK) { delete stmt; delete con; return 5; }      
    printf("1 Record inserted\n");
-   stmt->free();
 
    strcpy(statement,"UPDATE T1 SET F2=100;");
    
@@ -57,8 +55,6 @@ int main()
     rv  = con->rollback();
     if(rv!=OK)return 8;
     
-    stmt->free();
-
     strcpy(statement,"SELECT F2 FROM T1 ;");
     rv = stmt->prepare(statement);
     if(rv!=OK) { delete stmt; delete con; return 9; }
@@ -75,7 +71,6 @@ int main()
     if(rv!=OK)return 10;
 
     printf("Total record fetched =%d ,Because transaction rollbacked\n",count); 
-   stmt->free();
 
     strcpy(statement,"DROP TABLE T1;");
     rv = stmt->prepare(statement);
@@ -83,7 +78,6 @@ int main()
     rv = stmt->execute(rows);
     if(rv!=OK) { delete stmt; delete con; return 12; }
     printf("Table droped\n");
-    stmt->free();
     delete stmt;
     delete con;
     return 0;

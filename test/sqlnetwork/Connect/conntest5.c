@@ -28,7 +28,6 @@ int main()
 
    rv = stmt->execute(rows);
    if(rv!=OK) { delete stmt; delete con; return 3; }
-   stmt->free();
    printf("Table T1 CREATED\n");
    
    // insert into statement  
@@ -42,7 +41,6 @@ int main()
    rv = stmt->execute(rows); if(rv!=OK) return 6;
    rv = con->commit();
    if(rv!=OK) return 7;
-   stmt->free();
    printf("One record inserted\n");
    
    strcpy(statement,"SELECT F2 FROM T1 ;");
@@ -56,13 +54,13 @@ int main()
     stmt->execute(rows);
     int count=0;
     stmt->close();
-	stmt->free();
     rv = con->disconnect(); //close the connection 
      
     void *rettype;
     if(rv!=OK)return 8;
     rettype = (char*)stmt->fetch(rv);
     if(rettype==NULL && rv == ErrNoConnection) {
+        printf("iam herewa\n");
         con->connect("root", "manager");
         stmt->setConnection(con);
         strcpy(statement,"DROP TABLE T1;");
@@ -70,7 +68,6 @@ int main()
         if (rv != OK) { return 9; }
         rv = stmt->execute(rows);
         if(rv==OK){printf("Table Dropped successfully\n");}
-        stmt->free();
 		printf("Test script passed\n");
         delete stmt;
         delete con;
@@ -80,12 +77,8 @@ int main()
     rv = stmt->prepare(statement);
     rv = stmt->execute(rows);
     if(rv==OK){printf("Table Dropped successfully\n");}
-    stmt->free();
     printf("Test script Failed\n");
     delete stmt;
     delete con;
     return 7;
 }  
-        
-
-      
