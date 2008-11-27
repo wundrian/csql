@@ -484,6 +484,9 @@ void SqlNetworkHandler::setParamValues(AbsSqlStatement *stmt, int parampos, Data
                 stmt->setStringParam(parampos, (char*)value);
                 break;
             }
+        case typeBinary:
+            stmt->setBinaryParam(parampos, (char *) value);
+            break; 
     }
     return;
 }
