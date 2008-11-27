@@ -518,12 +518,9 @@ DbRetVal SqlPacketResultSet::unmarshall()
     char *bufIter = buffer + sizeof(int);
     noProjs = *(int*)bufIter;
     bufIter = bufIter + sizeof(int);
-    if (noProjs == 0) return OK;
-    projValues = new char*[noProjs];
     BindSqlProjectField *prjFld = NULL;
     for (int i=0; i <noProjs; i++)
     {
-        projValues[i] = bufIter;
         prjFld = (BindSqlProjectField*) projList.get(i+1);
         AllDataType::copyVal(prjFld->value, bufIter, prjFld->type, prjFld->length);
         bufIter = bufIter + AllDataType::size(prjFld->type, prjFld->length);

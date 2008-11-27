@@ -28,7 +28,7 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
         printError(ErrNoConnection, "No connection present");
         return ErrNoConnection;
     }
-//    if (isPrepared) free(); 
+    if (isPrepared) free(); 
     SqlPacketPrepare *pkt = new SqlPacketPrepare();
     pkt->stmtString = stmtstr;
     pkt->stmtLength = strlen(stmtstr) + 1;
@@ -144,6 +144,7 @@ DbRetVal SqlNwStatement::execute(int &rowsAffected)
     ResponsePacket *rpkt = (ResponsePacket *) ((TCPClient *)conn->nwClient)->respPkt;
     char *ptr = (char *) &rpkt->retVal;
     if (*ptr != 1) return ErrPeerResponse;
+    if(pkt->noParams) delete [] pkt->paramValues;
     delete pkt;
     return rv;
 }
@@ -208,8 +209,8 @@ void* SqlNwStatement::fetch()
     rspkt->setProjList(bindList);
     rspkt->noProjs = bindList.size();
     rspkt->unmarshall();
-    ptrToFirstField = bindList.get(1);
     delete [] rspkt->projValues;
+    ptrToFirstField = bindList.get(1);
     delete rspkt;
     delete pkt;
     return ptrToFirstField;
@@ -262,8 +263,8 @@ void* SqlNwStatement::fetch(DbRetVal &ret)
     rspkt->setProjList(bindList);
     rspkt->noProjs = bindList.size();
     rspkt->unmarshall();
-    ptrToFirstField = bindList.get(1);
     delete [] rspkt->projValues;
+    ptrToFirstField = bindList.get(1);
     delete rspkt;
     delete pkt;
     return ptrToFirstField;
@@ -349,7 +350,7 @@ DbRetVal SqlNwStatement::free()
     ListIterator itprm = paramList.getIterator();
     BindSqlField *fld = NULL;
     while((fld = (BindSqlField *) itprm.nextElement()) != NULL) {
-        delete fld;
+        if (fld->value) ::free(fld->value); delete fld;
     }
     paramList.reset();
     ListIterator itprj = bindList.getIterator();
