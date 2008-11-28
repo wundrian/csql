@@ -1,7 +1,7 @@
 #!/bin/sh
 #Test case
 #autocommit true and disconnect
-#set the autocommit mode to true and then call insert and disconnect from csql. then reconnect and check whether the records is inserted.
+#set the autocommit mode to true and then call insert and disconnect from csql.  then reconnect and check whether the records is inserted.
 #
 QUITFILE=${PWD}/tools/csql/quit.sql
 REL_PATH=.
