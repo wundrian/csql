@@ -1,0 +1,177 @@
+NW:TCP connecting
+Response from peer site is 1
+NW:TCP Send
+Sent bytes 16
+Sent bytes 256
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 145
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 8
+NW:TCP receive
+'T1' Table created
+NW:TCP Send
+Sent bytes 16
+Sent bytes 4
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 74
+NW:TCP receive
+HEADER says packet type is 103
+NW:TCP Send
+Sent bytes 16
+Sent bytes 50
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 0
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 50
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 0
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 50
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 0
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 50
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 0
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 50
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 0
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 50
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 0
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 50
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 0
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 50
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 0
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 50
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 0
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 50
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 0
+NW:TCP receive
+10 Rows Inserted
+NW:TCP Send
+Sent bytes 16
+Sent bytes 4
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 50
+NW:TCP receive
+HEADER says packet type is 104
+NW:TCP Send
+Sent bytes 16
+Sent bytes 8
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 4
+NW:TCP receive
+HEADER says packet type is 107
+F1=100 | F2=1 | F3=LAKSHYA | F4=5.500000 | F5=10.500000 | DATE=2008-1-21 | TIME=12:29:30 | TIMESTAMP=2008-1-21 12:29:30 | F9=20 | F10=12000  
+NW:TCP Send
+Sent bytes 16
+Sent bytes 4
+NW:TCP receive
+HEADER says packet type is 107
+F1=100 | F2=1 | F3=LAKSHYA | F4=5.500000 | F5=10.500000 | DATE=2008-1-21 | TIME=12:29:30 | TIMESTAMP=2008-1-21 12:29:30 | F9=20 | F10=12000  
+NW:TCP Send
+Sent bytes 16
+Sent bytes 4
+NW:TCP receive
+HEADER says packet type is 107
+F1=100 | F2=1 | F3=LAKSHYA | F4=5.500000 | F5=10.500000 | DATE=2008-1-21 | TIME=12:29:30 | TIMESTAMP=2008-1-21 12:29:30 | F9=20 | F10=12000  
+NW:TCP Send
+Sent bytes 16
+Sent bytes 4
+NW:TCP receive
+HEADER says packet type is 107
+F1=100 | F2=1 | F3=LAKSHYA | F4=5.500000 | F5=10.500000 | DATE=2008-1-21 | TIME=12:29:30 | TIMESTAMP=2008-1-21 12:29:30 | F9=20 | F10=12000  
+NW:TCP Send
+Sent bytes 16
+Sent bytes 4
+NW:TCP receive
+HEADER says packet type is 107
+F1=100 | F2=1 | F3=LAKSHYA | F4=5.500000 | F5=10.500000 | DATE=2008-1-21 | TIME=12:29:30 | TIMESTAMP=2008-1-21 12:29:30 | F9=20 | F10=12000  
+NW:TCP Send
+Sent bytes 16
+Sent bytes 4
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 0
+NW:TCP receive
+Total row fetched=5
+NW:TCP Send
+Sent bytes 16
+Sent bytes 4
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 19
+NW:TCP receive
+NW:TCP Send
+Sent bytes 16
+Sent bytes 8
+NW:TCP receive
+Table dropped
+NW:TCP Send
+Sent bytes 16
+Sent bytes 4
+NW:TCP receive
+NW:TCP disconnect kishor 5678
+Sent bytes 16
+NW:TCP receive
