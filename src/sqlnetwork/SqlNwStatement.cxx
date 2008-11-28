@@ -141,11 +141,11 @@ DbRetVal SqlNwStatement::execute(int &rowsAffected)
     }
     rv = conn->receive();
     if (rv != OK) return rv; 
+    if(pkt->noParams) delete [] pkt->paramValues;
+    delete pkt;
     ResponsePacket *rpkt = (ResponsePacket *) ((TCPClient *)conn->nwClient)->respPkt;
     char *ptr = (char *) &rpkt->retVal;
     if (*ptr != 1) return ErrPeerResponse;
-    if(pkt->noParams) delete [] pkt->paramValues;
-    delete pkt;
     return rv;
 }
 
