@@ -1,7 +1,6 @@
 #!/bin/sh
 #Test case
-#Default autocommit mode
-#Insert 4 records . Update records providing some condition,Disconnect csql and then reconnect csql. Check changes made by update should be reflected on the records.
+#Miscelaneous testing of insert in autocommit off mode
 #
 QUITFILE=${PWD}/tools/csql/quit.sql
 REL_PATH=.

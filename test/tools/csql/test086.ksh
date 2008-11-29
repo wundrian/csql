@@ -1,6 +1,6 @@
 #!/bin/sh
 #Test case
-#Miscelaneous testing in insert and delete in autocommit off mode
+#miscelaneous testing on insert , delete and update in autocommit off mode
 #
 QUITFILE=${PWD}/tools/csql/quit.sql
 REL_PATH=.
@@ -14,7 +14,7 @@ if [ $? -ne 0 ]
 then
    exit 1;
 fi
-$CSQL_INSTALL_ROOT/bin/csql -u root -p manager -s ${REL_PATH}/autocommit4.sql
+$CSQL_INSTALL_ROOT/bin/csql -u root -p manager -s ${REL_PATH}/autocommit5.sql
 if [ $? -ne 0 ]
 then
    exit 1;
