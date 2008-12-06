@@ -338,8 +338,8 @@ main(int argc, char *argv[])
     // query 22 - sum agg., 100 groups 
 
     rc = db->selectionQuery (22, timer[22],
-        "select avg(unique2) from big1",
-        "select avg(unique2) from big2",
+        "select sum(unique2) from big1 group by onepercent",
+        "select sum(unique2) from big2 group by onepercent",
         numBigTblTups, 100, 0, verify, 2, 0);
 
     if (rc)
