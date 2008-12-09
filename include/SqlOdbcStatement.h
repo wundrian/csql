@@ -26,7 +26,7 @@
 class SqlOdbcStatement: public AbsSqlStatement
 {
     public:
-    SqlOdbcStatement(){innerStmt = NULL; con = NULL; len[0]=0;}
+    SqlOdbcStatement(){innerStmt = NULL; con = NULL; len[0]=0;isSelStmt=NULL; }
 
     void setConnection(AbsSqlConnection *conn)
     {
@@ -78,7 +78,9 @@ class SqlOdbcStatement: public AbsSqlStatement
     void getPrimaryKeyFieldName(char *tablename, char *pkfieldname);
     void setNullInfo(Table *table);
     bool isFldNull(int pos){}
+    bool chechStmtType(char *stmtstr);
     private:
+    bool isSelStmt;
     bool isPrepared;
     List paramList;
     List bindList;
