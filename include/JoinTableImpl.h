@@ -100,7 +100,7 @@ class JoinTableImpl:public Table
 
     void setTable(Table *left, Table *right)
     { leftTableHdl = left; rightTableHdl = right; }
-
+    int getFldPos(char *name){}
     void closeScan();
     void setJoinType(JoinType type) { jType = type; }
     //binding

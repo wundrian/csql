@@ -195,8 +195,9 @@ class Table
     virtual char* getName()=0;
     virtual void printSQLIndexString()=0;
     virtual void resetNullinfo()=0;
+    virtual int getFldPos(char *name)=0;
     virtual ~Table() { }
-
+ 
 
     //non virtual functions
     static void getFieldNameAlone(char *fname, char *name);

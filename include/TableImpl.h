@@ -171,7 +171,7 @@ class TableImpl:public Table
     //binding
     DbRetVal bindFld(const char *name, void *val);
     void *getBindFldAddr(const char *name);
-
+    int getFldPos(char *name);
     void markFldNull(const char *name);
     void markFldNull(int colpos);
     bool isFldNull(const char *name);
@@ -180,7 +180,6 @@ class TableImpl:public Table
     void clearFldNull(const char *name);
     void clearFldNull(int colpos);
     void resetNullinfo();
-
     DbRetVal insertTuple();
     DbRetVal updateTuple();
 
@@ -205,7 +204,7 @@ class TableImpl:public Table
 
     DbRetVal lock(bool shared);
     DbRetVal unlock();
-
+   
     DbRetVal setUndoLogging(bool flag) { undoFlag = flag; }
 
     void printSQLIndexString();
