@@ -36,6 +36,7 @@ DbRetVal SqlOdbcStatement::prepare(char *stmtstr)
     SQLCHAR* sstr= (SQLCHAR*)stmtstr;
     retValue = SQLPrepare (hstmt, sstr, SQL_NTS);
     if (retValue) return ErrBadCall;
+    isSelStmt=chechStmtType(stmtstr);
     isPrepared = true;
     short totalFields=0;
     retValue = SQLNumResultCols (hstmt, &totalFields);
@@ -157,7 +158,7 @@ DbRetVal SqlOdbcStatement::prepare(char *stmtstr)
 bool SqlOdbcStatement::isSelect()
 {
     //TODO
-    return false;
+    return isSelStmt;
 }
 
 DbRetVal SqlOdbcStatement::execute(int &rowsAffected)
@@ -260,6 +261,11 @@ void* SqlOdbcStatement::fetch()
             AllDataType::memoryset(bindField->value,bindField->type);
             continue; 
         }
+        if( isSelStmt && NULL == bindField->value )
+        {
+            if (ptrToFirstField == NULL) ptrToFirstField=bindField->targetvalue;
+            continue;
+        }
         switch(bindField->type)
         {
             case typeDate: {
@@ -358,10 +364,35 @@ DbRetVal SqlOdbcStatement::close()
     SQLCloseCursor(hstmt);
     return OK;
 }
-
+bool SqlOdbcStatement::chechStmtType(char *buf)
+{
+    char c;
+    while(1)
+    {
+        c=*buf;
+        if(c !=' ') break;
+        buf++;
+    }
+    if (strncasecmp (buf, "SELECT", 6) == 0)  { return true;}
+    return false;
+}
 void* SqlOdbcStatement::getFieldValuePtr( int pos )
 {
+
+   ListIterator biter = bindList.getIterator();
+   BindSqlProjectField *elem = NULL;
+    int count =0;
+    while (biter.hasElement())
+    {
+        elem = (BindSqlProjectField*) biter.nextElement();
+        if (count == pos)
+        {
+            return elem->targetvalue;
+        }
+        count++;
+    }
     return NULL;
+
 }
 
 int SqlOdbcStatement::noOfProjFields()
