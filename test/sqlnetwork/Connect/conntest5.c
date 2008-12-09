@@ -54,13 +54,13 @@ int main()
     stmt->execute(rows);
     int count=0;
     stmt->close();
+    stmt->free();
     rv = con->disconnect(); //close the connection 
      
     void *rettype;
     if(rv!=OK)return 8;
     rettype = (char*)stmt->fetch(rv);
     if(rettype==NULL && rv == ErrNoConnection) {
-        printf("iam herewa\n");
         con->connect("root", "manager");
         stmt->setConnection(con);
         strcpy(statement,"DROP TABLE T1;");
