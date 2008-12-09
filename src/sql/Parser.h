@@ -45,6 +45,7 @@ struct FieldValue
     int paramNo; // 0 ->not a param. It stores the param position
     DataType type;
     int length;
+    bool isNullable;
     bool isAllocVal;
 };
 
@@ -57,6 +58,7 @@ struct ConditionValue
     DataType type;
     int length;
     bool opLike;
+    bool isNullable;
     char fName[IDENTIFIER_LENGTH];
 };
 
@@ -87,6 +89,7 @@ struct UpdateFieldValue
     Expression *expre;
     DataType type;
     int length;
+    bool isNullable;
     int paramNo;
 };
 

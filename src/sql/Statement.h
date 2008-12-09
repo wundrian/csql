@@ -48,8 +48,9 @@ class Statement
     virtual DbRetVal setTimeParam(int paramNo, Time value)=0;
     virtual DbRetVal setTimeStampParam(int paramNo, TimeStamp value)=0;
     virtual DbRetVal setBinaryParam(int paramNo, void *value)=0;
-    //virtual  bool isFldNull(int pos)=0;
     virtual DbRetVal resolve()=0;
+    virtual bool isFldNull(int pos)=0;
+    virtual int getFldPos(char *name)=0;
     virtual ~Statement(){}
 };
 
@@ -86,6 +87,7 @@ class DmlStatement : public Statement
     virtual bool isFldNull(int pos)=0;
     virtual DbRetVal resolve()=0;
     virtual void* getParamValuePtr( int pos )=0;
+    virtual int getFldPos(char *name)=0;
     virtual ~DmlStatement(){}
 };
 
@@ -109,8 +111,9 @@ class InsStatement : public DmlStatement
     DbRetVal setTimeParam(int paramNo, Time value);
     DbRetVal setTimeStampParam(int paramNo, TimeStamp value);
 	DbRetVal setBinaryParam(int paramNo, void *value);
-    bool isFldNull(int pos){}
+    bool isFldNull(int pos){return table->isFldNull(pos);}
     void* getParamValuePtr( int );
+    int getFldPos(char *name);
     DbRetVal resolve();
     InsStatement();
     ~InsStatement();
@@ -148,7 +151,7 @@ class SelStatement : public DmlStatement
     DbRetVal replaceStarWithFirstFldName(FieldName *name);
     DbRetVal resolveGroupFld(AggTableImpl *impl);
     bool isFldNull(int pos){return table->isFldNull(pos);}
-
+    int getFldPos(char *name);
     DbRetVal close();
     DbRetVal resolve();
     SelStatement();
@@ -194,8 +197,8 @@ class UpdStatement : public DmlStatement
     DbRetVal setBinaryParam(int paramNo, void *value);
     void* getParamValuePtr(int);
     DbRetVal getParamFldInfo(int paramPos, FieldInfo *&info);
-    bool isFldNull(int pos){}
-
+    bool isFldNull(int pos){return table->isFldNull(pos);}
+    int getFldPos(char *name);
     DbRetVal resolve();
     UpdStatement();
     ~UpdStatement();
@@ -222,13 +225,13 @@ class DelStatement : public DmlStatement
     DbRetVal setTimeParam(int paramNo, Time value);
     DbRetVal setTimeStampParam(int paramNo, TimeStamp value);
     DbRetVal setBinaryParam(int paramNo, void *value);
-    bool isFldNull(int pos){}
+    bool isFldNull(int pos){return table->isFldNull(pos);}
     DbRetVal getParamFldInfo(int paramPos, FieldInfo *&info);
     void* getParamValuePtr(int);
     DbRetVal resolve();
     DelStatement();
     ~DelStatement();
-
+    int getFldPos(char *name);
     DbRetVal resolveForCondition(); //TODO::put this is Statement class, duplicated from SelStatement.
 
 };
@@ -253,6 +256,8 @@ class DdlStatement : public Statement
     DbRetVal setTimeParam(int paramNo, Time value) { }
     DbRetVal setTimeStampParam(int paramNo, TimeStamp value) { }
     DbRetVal setBinaryParam(int paramNo, void *value) { }
+    bool isFldNull(int pos){ }
+    int getFldPos(char *name){}
 };
 
 class CreateTblStatement : public DdlStatement

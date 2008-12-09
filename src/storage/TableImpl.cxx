@@ -74,6 +74,10 @@ bool TableImpl::isFldNull(const char *name){
     return isFldNull(colpos);
 }
 
+int TableImpl::getFldPos(char *name)
+{
+    return fldList_.getFieldPosition(name);
+}
 bool TableImpl::isFldNull(int colpos)
 {
     if (!curTuple_) return false;

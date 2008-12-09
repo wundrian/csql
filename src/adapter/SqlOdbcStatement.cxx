@@ -604,3 +604,12 @@ void SqlOdbcStatement::getPrimaryKeyFieldName(char *tablename, char *pkfieldname
     SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
     return;
 }
+
+bool SqlOdbcStatement::isFldNull(int pos)
+{
+    if( len[pos] == SQL_NULL_DATA )
+        return true;
+    else
+        return false;
+}
+

@@ -239,7 +239,11 @@ public final class JdbcSqlConnection extends JSqlError implements Connection, JS
     }
     public CallableStatement prepareCall(String query ) throws SQLException
     {
-        throw getException(CSQL_NOT_SUPPORTED);
+        if(isClosed) throw getException(CSQL_INVALID_STATE);
+        JdbcSqlCallableStatement stmt = new JdbcSqlCallableStatement(this);
+        stmt.prepareProc(query);
+        stmtList.add(stmt);
+        return(stmt);
     }
     public CallableStatement prepareCall(String query, int resultSetType,
                              int resultSetConcurrency) throws SQLException

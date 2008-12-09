@@ -66,12 +66,16 @@ DbRetVal UpdStatement::getParamFldInfo(int paramPos, FieldInfo *&info)
     UpdateFieldValue *uValue;
     if (paramPos <= totalAssignParams) {
         uValue = (UpdateFieldValue*) params[paramPos-1];
+        table->getFieldNameAlone(uValue->fldName,info->fldName);
         info->type = uValue->type;
         info->length = uValue->length;
+        info->isNull = uValue->isNullable;
     } else {
         cValue = (ConditionValue*) params[paramPos-1];
+        table->getFieldNameAlone(cValue->fName,info->fldName);
         info->type = cValue->type;
         info->length = cValue->length;
+        info->isNull = cValue->isNullable;
     }
     return OK;
 
@@ -451,6 +455,7 @@ DbRetVal UpdStatement::resolveForAssignment()
         }
         value->type = fInfo->type;
         value->length = fInfo->length;
+        value->isNullable = fInfo->isNull;
         // for binary datatype input buffer size should be 2 times the length 
         if (value->type == typeBinary)
 		    value->value = AllDataType::alloc(fInfo->type, 2 * fInfo->length);
@@ -503,6 +508,7 @@ DbRetVal UpdStatement::resolveForAssignment()
         }
         cValue->type = fInfo->type;
         cValue->length = fInfo->length;
+        cValue->isNullable = fInfo->isNull;
         // for binary datatype input buffer size should be 2 times the length 
         if (cValue->type == typeBinary) 
         {
@@ -570,3 +576,8 @@ DbRetVal UpdStatement::resolveForAssignment()
     }
     return OK;
 }
+int  UpdStatement::getFldPos(char *name)
+{
+    return table->getFldPos(name);
+}
+

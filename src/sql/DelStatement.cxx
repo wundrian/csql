@@ -45,8 +45,10 @@ DbRetVal DelStatement::getParamFldInfo(int paramPos, FieldInfo *&info)
     ConditionValue *value = (ConditionValue*) params[paramPos-1];
     if (value == NULL) { printError(ErrBadArg, "Should never happen\n");
                          return ErrBadArg; }
+    table->getFieldNameAlone(value->fName,info->fldName);
     info->type = value->type;
     info->length = value->length;
+    info->isNull = value->isNullable;
     return OK;
 }
 DbRetVal DelStatement::execute(int &rowsAffected)
@@ -298,6 +300,7 @@ DbRetVal DelStatement::resolveForCondition()
         }
         value->type = fInfo->type;
         value->length = fInfo->length;
+        value->isNullable = fInfo->isNull;
         // for binary datatype input buffer size should be 2 times the length 
         value->value = AllDataType::alloc(fInfo->type, fInfo->length);
         if (value->parsedString == NULL)
@@ -339,3 +342,9 @@ DbRetVal DelStatement::resolveForCondition()
     }
     return OK;
 }
+
+int  DelStatement::getFldPos(char *name)
+{
+    return table->getFldPos(name);
+}
+

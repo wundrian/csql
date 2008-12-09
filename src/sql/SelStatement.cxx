@@ -58,8 +58,10 @@ DbRetVal SelStatement::getParamFldInfo(int paramNo, FieldInfo *&info)
         printError(ErrSysFatal, "condition value is null. Should never happen");
         return ErrSysFatal;
     }
+    table->getFieldNameAlone(cValue->fName,info->fldName);
     info->type = cValue->type;
     info->length = cValue->length;
+    info->isNull = cValue->isNullable;
     return OK;
 }
 DbRetVal SelStatement::execute(int &rowsAffected)
@@ -331,7 +333,7 @@ DbRetVal SelStatement::resolve()
             newVal->paramNo = 0;
             newVal->type = fInfo->type;
             newVal->length = fInfo->length;
-
+            newVal->isNullable = fInfo->isNull;
             FieldName *bFldName=NULL;
             ListIterator it = bindFldList.getIterator();
             while (it.hasElement())
@@ -427,6 +429,7 @@ DbRetVal SelStatement::resolveGroupFld(AggTableImpl *aggTable)
         newVal->parsedString = NULL;
         newVal->paramNo = 0;
         newVal->type = fInfo->type;
+        newVal->isNullable = fInfo->isNull;
         newVal->length = fInfo->length;
         if (newVal->type == typeBinary)
             newVal->value = AllDataType::alloc(fInfo->type, 2 * fInfo->length);
@@ -537,6 +540,7 @@ DbRetVal SelStatement::resolveForCondition()
         }
         value->type = fInfo->type;
         value->length = fInfo->length;
+        value->isNullable = fInfo->isNull;
         value->value = AllDataType::alloc(fInfo->type, fInfo->length);
         //table->bindFld(name->fldName, value->value);
         if (value->parsedString == NULL)
@@ -763,3 +767,9 @@ DbRetVal SelStatement::getProjFldInfo (int projpos, FieldInfo *&fInfo)
 
     rv = table->getFieldInfo(name->fldName, fInfo);
 }
+int SelStatement::getFldPos(char *name)
+{
+    return table->getFldPos(name);
+}
+
+

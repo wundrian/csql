@@ -578,6 +578,311 @@ JNIEXPORT jshort JNICALL Java_csql_jdbc_JSqlStatement_getShort
 JNIEXPORT void JNICALL Java_csql_jdbc_JSqlStatement_setNull
   (JNIEnv *, jobject, jint);
 
+
+
+
+/*
+ * Class:     csql_jdbc_JSqlStatement
+ * Method:    isNull
+ * Signature: (I)Z
+ */
+JNIEXPORT jboolean JNICALL Java_csql_jdbc_JSqlStatement_isNull
+  (JNIEnv *env, jobject obj, jint pos)
+{
+    jclass cls;
+    jfieldID fid;
+
+    cls = env->GetObjectClass(obj);
+    fid = env->GetFieldID( cls, "sqlStmtPtr", "J");
+    if (fid == 0)
+    {
+        jclass Exception = env->FindClass("java/lang/Exception");
+        env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
+        return(-1);
+    }
+    AbsSqlStatement *s = (AbsSqlStatement*) env->GetLongField( obj, fid );
+    return s->isFldNull(pos);
+}
+
+
+/*
+ * Class:     csql_jdbc_JSqlStatement
+ * Method:    findColumn
+ * Signature: (Ljava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_csql_jdbc_JSqlStatement_findColumn
+  (JNIEnv *env, jobject obj, jstring value)
+{
+    jclass cls;
+    jfieldID fid;
+
+    cls = env->GetObjectClass(obj);
+    fid = env->GetFieldID( cls, "sqlStmtPtr", "J");
+    if (fid == 0)
+    {
+        jclass Exception = env->FindClass("java/lang/Exception");
+        env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
+        return(-1);
+    }
+
+    jboolean isCopy = JNI_TRUE;
+    char *valueStr = (char*) env->GetStringUTFChars( value, &isCopy );
+ 
+    AbsSqlStatement *s = (AbsSqlStatement*) env->GetLongField( obj, fid );
+    return s->getFldPos(valueStr); 
+}
+
+/*
+ * Class:     csql_jdbc_JSqlStatement
+ * Method:    getParamFldName
+ * Signature: (I)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_csql_jdbc_JSqlStatement_getParamFldName
+  (JNIEnv *env, jobject obj, jint pos)
+{
+    jclass cls;
+    jfieldID fid;
+
+    cls = env->GetObjectClass(obj);
+    fid = env->GetFieldID( cls, "sqlStmtPtr", "J");
+    if (fid == 0)
+    {
+        jclass Exception = env->FindClass("java/lang/Exception");
+        env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
+        return((jstring) 0);
+    }
+    AbsSqlStatement *s = (AbsSqlStatement*) env->GetLongField( obj, fid );
+    FieldInfo *field = new FieldInfo();
+    DbRetVal rv = s->getParamFldInfo(pos,field);
+    if(rv!=OK)return NULL;
+    return( env->NewStringUTF( (char*) field->fldName ) );
+}
+
+/*
+ * Class:     csql_jdbc_JSqlStatement
+ * Method:    getTotalparam
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_csql_jdbc_JSqlStatement_getTotalparam
+  (JNIEnv *env, jobject obj)
+{
+    jclass cls;
+    jfieldID fid;
+
+    cls = env->GetObjectClass(obj);
+    fid = env->GetFieldID( cls, "sqlStmtPtr", "J");
+    if (fid == 0)
+    {
+        jclass Exception = env->FindClass("java/lang/Exception");
+        env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
+        return(-1);
+    }
+    AbsSqlStatement *s = (AbsSqlStatement*) env->GetLongField( obj, fid );
+      
+    return (s->noOfParamFields());    
+}
+
+/*
+ * Class:     csql_jdbc_JSqlStatement
+ * Method:    getType
+ * Signature: (I)I
+ */
+JNIEXPORT jint JNICALL Java_csql_jdbc_JSqlStatement_getType
+  (JNIEnv *env, jobject obj, jint pos)
+{
+    jclass cls;
+    jfieldID fid;
+
+    cls = env->GetObjectClass(obj);
+    fid = env->GetFieldID( cls, "sqlStmtPtr", "J");
+    if (fid == 0)
+    {
+        jclass Exception = env->FindClass("java/lang/Exception");
+        env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
+        return(-1);
+    }
+    AbsSqlStatement *s = (AbsSqlStatement*) env->GetLongField( obj, fid );
+
+    FieldInfo *field = new FieldInfo();
+    DbRetVal rv = s->getParamFldInfo(pos,field);
+    if(rv!=OK)return 100;
+    return(field->type  );
+
+}
+
+/*
+ * Class:     csql_jdbc_JSqlStatement
+ * Method:    isNullable
+ * Signature: (I)Z
+ */
+JNIEXPORT jboolean JNICALL Java_csql_jdbc_JSqlStatement_isNullable
+  (JNIEnv *env, jobject obj, jint pos)
+{
+    jclass cls;
+    jfieldID fid;
+
+    cls = env->GetObjectClass(obj);
+    fid = env->GetFieldID( cls, "sqlStmtPtr", "J");
+    if (fid == 0)
+    {
+        jclass Exception = env->FindClass("java/lang/Exception");
+        env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
+        return(-1);
+    }
+    AbsSqlStatement *s = (AbsSqlStatement*) env->GetLongField( obj, fid );
+
+    FieldInfo *field = new FieldInfo();
+    DbRetVal rv = s->getParamFldInfo(pos,field);
+    if(rv!=OK)return (-1);
+    if(field->isNull){
+        delete field;
+        return true;
+    }else{
+        delete field;
+        return false;
+    }        
+}
+
+
+/*
+ * Class:     csql_jdbc_JSqlStatement
+ * Method:    getTotalProjFld
+ * Signature: ()I
+ */
+
+JNIEXPORT jint JNICALL Java_csql_jdbc_JSqlStatement_getTotalProjFld
+  (JNIEnv *env, jobject obj)
+{
+    jclass cls;
+    jfieldID fid;
+
+    cls = env->GetObjectClass(obj);
+    fid = env->GetFieldID( cls, "sqlStmtPtr", "J");
+    if (fid == 0)
+    {
+        jclass Exception = env->FindClass("java/lang/Exception");
+        env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
+        return(-1);
+    }
+    AbsSqlStatement *s = (AbsSqlStatement*) env->GetLongField( obj, fid );
+    
+    return (s->noOfProjFields());
+
+}
+
+/*
+ * Class:     csql_jdbc_JSqlStatement
+ * Method:    getProjFldType
+ * Signature: (I)I
+ */
+JNIEXPORT jint JNICALL Java_csql_jdbc_JSqlStatement_getProjFldType
+  (JNIEnv *env, jobject obj, jint pos)
+{
+    jclass cls;
+    jfieldID fid;
+
+    cls = env->GetObjectClass(obj);
+    fid = env->GetFieldID( cls, "sqlStmtPtr", "J");
+    if (fid == 0)
+    {
+        jclass Exception = env->FindClass("java/lang/Exception");
+        env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
+        return(-1);
+    }
+    AbsSqlStatement *s = (AbsSqlStatement*) env->GetLongField( obj, fid );
+    
+    FieldInfo *field = new FieldInfo();
+    s->getProjFldInfo(pos,field);
+    int type = field->type;
+    delete field;
+
+    return type;
+}
+
+
+/*
+ * Class:     csql_jdbc_JSqlStatement
+ * Method:    isFldNullable
+ * Signature: (I)Z
+ */
+JNIEXPORT jboolean JNICALL Java_csql_jdbc_JSqlStatement_isFldNullable
+  (JNIEnv *env, jobject obj, jint pos)
+{
+    jclass cls;
+    jfieldID fid;
+
+    cls = env->GetObjectClass(obj);
+    fid = env->GetFieldID( cls, "sqlStmtPtr", "J");
+    if (fid == 0)
+    {
+        jclass Exception = env->FindClass("java/lang/Exception");
+        env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
+        return(-1);
+    }
+    AbsSqlStatement *s = (AbsSqlStatement*) env->GetLongField( obj, fid );
+    FieldInfo *field = new FieldInfo();
+    s->getProjFldInfo(pos,field);
+    bool nul = field->isNull;
+    delete field;
+
+    return nul;
+}
+
+
+/*
+ * Class:     csql_jdbc_JSqlStatement
+ * Method:    getProjFldName
+ * Signature: (I)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_csql_jdbc_JSqlStatement_getProjFldName
+  (JNIEnv *env, jobject obj, jint pos)
+{
+    jclass cls;
+    jfieldID fid;
+
+    cls = env->GetObjectClass(obj);
+    fid = env->GetFieldID( cls, "sqlStmtPtr", "J");
+    if (fid == 0)
+    {
+        jclass Exception = env->FindClass("java/lang/Exception");
+        env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
+        return( (jstring) 0 );
+    }
+    AbsSqlStatement *s = (AbsSqlStatement*) env->GetLongField( obj, fid );
+    FieldInfo *field = new FieldInfo();
+    s->getProjFldInfo(pos,field);
+    //delete field;
+    return ( env->NewStringUTF( (char*) field->fldName ));
+}
+
+
+/*
+ * Class:     csql_jdbc_JSqlStatement
+ * Method:    getTableName
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_csql_jdbc_JSqlStatement_getTableName
+  (JNIEnv *env, jobject obj)
+{
+    jclass cls;
+    jfieldID fid;
+
+    cls = env->GetObjectClass(obj);
+    fid = env->GetFieldID( cls, "sqlStmtPtr", "J");
+    if (fid == 0)
+    {
+        jclass Exception = env->FindClass("java/lang/Exception");
+        env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
+        return( (jstring) 0 );
+    }
+    AbsSqlStatement *s = (AbsSqlStatement*) env->GetLongField( obj, fid );
+
+
+   return NULL;
+}
+
+
+
 /*
  * Class:     JSqlStatement
  * Method:    getInt

@@ -20,10 +20,10 @@ import java.sql.SQLXML;
 import java.sql.RowId;
 
 import java.sql.NClob;
-public final class JdbcSqlPreparedStatement extends JdbcSqlStatement
+public class JdbcSqlPreparedStatement extends JdbcSqlStatement
                    implements PreparedStatement
 {
-
+    public JdbcSqlParameterMetaData pmtd;
     JdbcSqlPreparedStatement(Connection con)
     {
         super(con);
@@ -60,8 +60,9 @@ public final class JdbcSqlPreparedStatement extends JdbcSqlStatement
 
     public ParameterMetaData getParameterMetaData() throws SQLException
     {
-        //TODO
-        return null;
+        pmtd = new JdbcSqlParameterMetaData();
+        pmtd.setStmt(this);
+        return pmtd;
     }
     public void setByte(int param, byte value) throws SQLException
     {

@@ -43,7 +43,8 @@ public class JSqlStatement
     public native void setBoolean( int pos, boolean value ); //TODO
 
     public native void setNull( int pos );
-
+    public native boolean isNull(int pos);
+     
     // To retrieve Field values
     public native short getShort( int pos );
     public native int getInt( int pos );
@@ -63,5 +64,19 @@ public class JSqlStatement
     public native String getFieldName( int pos );
 
     // ResultSetMetaData
-
+    public native int getTotalProjFld();
+    public native int getProjFldType(int pos);
+    public native boolean isFldNullable(int pos);
+    public native String getProjFldName(int pos);
+    public native String getTableName();
+    //ParameterMetaData
+    public native String getParamFldName(int param);
+    public native int getTotalparam();
+    public native int getType(int param);
+    public native boolean isNullable(int pos);
+    
+    //Callable statement.
+    public native int executePro();
+    public native int preparePro(String statemnt);
+    public native long nextSet();
 };

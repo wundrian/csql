@@ -34,8 +34,8 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
 
     public boolean closedFlag;
     long curRow;
-
-
+    int pos=0;
+    
     JdbcSqlResultSet()
     {
         rsmd = new JdbcSqlResultSetMetaData();
@@ -157,6 +157,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
 
         short out = stmt.jniStmt.getShort( colNum - 1 );
 	if( false ) throw new SQLException();
+        pos = colNum;
         return out;
     }
     public short getShort (String colName ) throws SQLException
@@ -172,6 +173,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
 
         int out = stmt.jniStmt.getInt( colNum - 1 );
         if( false ) throw new SQLException();
+        pos = colNum;
         return out;
     }
     public int getInt (String colName) throws SQLException
@@ -187,6 +189,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
 
         long out = stmt.jniStmt.getLong( colNum-1 );
         if( false ) throw new SQLException();
+        pos = colNum;
         return out;
     }
     public long getLong (String colName) throws SQLException
@@ -202,6 +205,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
 
         byte out = stmt.jniStmt.getByte( colNum-1 );
         if( false ) throw new SQLException();
+        pos = colNum;
         return out;
     }
     public byte getByte (String colName) throws SQLException
@@ -217,6 +221,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
 
         float out = stmt.jniStmt.getFloat( colNum-1 );
         if( false ) throw new SQLException();
+        pos = colNum;
         return out;
     }
     public float getFloat (String colName) throws SQLException
@@ -232,6 +237,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
 
         double out = stmt.jniStmt.getDouble( colNum-1 );
         if( false ) throw new SQLException();
+        pos = colNum;
         return out;
     }
     public double getDouble (String colName) throws SQLException
@@ -276,7 +282,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
 
         // Get value
         String out = stmt.jniStmt.getString( colNum-1 );
-
+        pos = colNum;
         return out;
     }
     public String getString (String colName) throws SQLException
@@ -288,7 +294,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
         if( closedFlag || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
 
         String out = stmt.jniStmt.getString( colNum-1 );
-
+        pos = colNum;
         return( new StringBufferInputStream( out ) );
     }
     public java.io.InputStream getAsciiStream (String colName) throws SQLException
@@ -303,7 +309,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
         InputStream iS = getAsciiStream( colNum );
         if( iS == null )
             return( null );
-
+        pos = colNum;
         return( new InputStreamReader( iS ) );
     }
     public java.io.Reader getCharacterStream(String colName)
@@ -318,7 +324,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
         if( closedFlag || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
 
         boolean out = stmt.jniStmt.getBoolean( colNum-1 );
-
+        pos = colNum;
         return out;
     }
     public boolean getBoolean (String colName) throws SQLException
@@ -346,7 +352,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
         if( closedFlag || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
 
         java.sql.Date out = stmt.jniStmt.getDate( colNum-1 );
-
+        pos = colNum;
         return out;
     }
     public java.sql.Date getDate(int colNum, java.util.Calendar cal)
@@ -371,7 +377,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
 
         // Get value
         java.sql.Time out = stmt.jniStmt.getTime( colNum-1 );
-
+        pos = colNum;
         return out;
     }
     public java.sql.Time getTime(int colNum, java.util.Calendar cal)
@@ -396,7 +402,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
         if( closedFlag || curRow < 0 ) throw getException( CSQL_INVALID_STATE );
 
         java.sql.Timestamp out = stmt.jniStmt.getTimestamp( colNum-1 );
-
+        pos = colNum;
         return out;
     }
     public java.sql.Timestamp getTimestamp(int colNum,
@@ -462,7 +468,7 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
         // Return null if value read is null //TODO
         //if( wasNull() )
         //    return( null );
-
+        pos = colNum;
         return( obj );
     }
     public Object getObject (String colName) throws SQLException
@@ -491,8 +497,8 @@ public class JdbcSqlResultSet extends JSqlError implements ResultSet, JSqlErrorT
     public boolean wasNull () throws SQLException // TODO
     {
         if( closedFlag ) throw getException( CSQL_INVALID_STATE );
-        throw getException( CSQL_NOT_SUPPORTED );
-        //return( stmt.jniStmt.wasNull() );
+        //throw getException( CSQL_NOT_SUPPORTED );
+        return( stmt.jniStmt.isNull(pos) );
     }
     public String getCursorName () throws SQLException
     {

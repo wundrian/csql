@@ -312,3 +312,8 @@ void SqlStatement::setBinaryParam(int paramPos, void *value)
 {
     stmt->setBinaryParam(paramPos, value);
 }
+int SqlStatement::getFldPos(char *name)
+{
+    return stmt->getFldPos(name);
+}
+

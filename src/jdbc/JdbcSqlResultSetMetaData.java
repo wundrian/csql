@@ -1,10 +1,9 @@
 
 package csql.jdbc;
-import java.sql.Connection;
-import java.sql.Statement;
+
 import java.sql.SQLException;
 import java.sql.ResultSetMetaData;
-import java.sql.SQLWarning;
+
 
 public final class JdbcSqlResultSetMetaData
 extends JSqlError implements ResultSetMetaData, JSqlErrorType
@@ -32,20 +31,19 @@ extends JSqlError implements ResultSetMetaData, JSqlErrorType
     public int getColumnCount () throws SQLException
     {
         if( isClosed ) throw getException( CSQL_INVALID_STATE );
-        return( stmt.jniStmt.getNoOfFields() );
+        return( stmt.jniStmt.getTotalProjFld() );
     }
     public int getColumnIndex (String name) throws SQLException 
     {
         if( isClosed ) throw getException( CSQL_INVALID_STATE );
-        throw getException( CSQL_NOT_SUPPORTED );
-        //return( stmt.jniStmt.findColumn( name ) );
+        return( stmt.jniStmt.findColumn( name ) );//TO DO
     }
 
     public String getColumnName (int colNum) throws SQLException
     {
         if( isClosed ) throw getException( CSQL_INVALID_STATE );
 
-        String name= stmt.jniStmt.getFieldName( colNum-1 );
+        String name= stmt.jniStmt.getProjFldName(colNum);
         return( name );
     }
     public String getColumnLabel (int colNum) throws SQLException
@@ -69,33 +67,44 @@ extends JSqlError implements ResultSetMetaData, JSqlErrorType
         return( true );
     }
 
-    // TODO
+    
     public String getColumnClassName(int colNum) throws SQLException
     {
         if( isClosed ) throw getException( CSQL_INVALID_STATE );
-        throw getException( CSQL_NOT_SUPPORTED );
+        return Util.getClassName(this.stmt.jniStmt.getProjFldType(colNum));
     }
-    public int getColumnType (int colNum) throws SQLException //TODO
+    
+    public int getColumnType (int colNum) throws SQLException 
     {
         if( isClosed ) throw getException( CSQL_INVALID_STATE );
-        throw getException( CSQL_NOT_SUPPORTED );
+        return Util.getType(this.stmt.jniStmt.getProjFldType(colNum));
     }
-    public String getColumnTypeName (int colNum) throws SQLException //TODO
+    public String getColumnTypeName (int colNum) throws SQLException 
     {
         if( isClosed ) throw getException( CSQL_INVALID_STATE );
-        throw getException( CSQL_NOT_SUPPORTED );
+        return Util.getTypeName(this.stmt.jniStmt.getProjFldType(colNum));
     }
-    public boolean isCaseSensitive (int colNum) throws SQLException //TODO
+    public boolean isCaseSensitive (int colNum) throws SQLException 
     {
         if( isClosed ) throw getException( CSQL_INVALID_STATE );
         return( false );
     }
-    public boolean isSigned (int colNum) throws SQLException //TODO
+    
+    public int isNullable (int colNum) throws SQLException 
     {
         if( isClosed ) throw getException( CSQL_INVALID_STATE );
-        throw getException( CSQL_NOT_SUPPORTED );
+        if (this.stmt.jniStmt.isFldNullable(colNum))
+            return JdbcSqlResultSetMetaData.columnNoNulls ;
+        else
+            return JdbcSqlResultSetMetaData.columnNullable ;
     }
-    public int isNullable (int colNum) throws SQLException //TODO
+    
+    public String getTableName (int colNum) throws SQLException
+    {
+        if( isClosed ) throw getException( CSQL_INVALID_STATE );
+        return( null );
+    }
+    public boolean isSigned (int colNum) throws SQLException
     {
         if( isClosed ) throw getException( CSQL_INVALID_STATE );
         throw getException( CSQL_NOT_SUPPORTED );
@@ -114,10 +123,7 @@ extends JSqlError implements ResultSetMetaData, JSqlErrorType
     {
         return( null );
     }
-    public String getTableName (int colNum) throws SQLException
-    {
-        return( null );
-    }
+    
 
     // UN-SUPPORTED API's
     public int getColumnDisplaySize (int colNum) throws SQLException

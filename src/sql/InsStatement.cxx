@@ -49,8 +49,10 @@ DbRetVal InsStatement::getParamFldInfo(int paramPos, FieldInfo *&info)
         printError(ErrSysFatal, "param ptr is null: should never happen\n");
         return ErrBadArg;
     }
+    table->getFieldNameAlone(value->fldName,info->fldName);
     info->type = value->type;
     info->length = value->length;
+    info->isNull = value->isNullable;
     return OK;
 }
 
@@ -298,8 +300,10 @@ DbRetVal InsStatement::resolve()
                                         name->fldName);
             return ErrSyntaxError;
         }
+        strcpy(value->fldName,name->fldName);
         value->type = fInfo->type;
         value->length = fInfo->length;
+        value->isNullable = fInfo->isNull;
 		// for binary datatype input buffer size should be 2 times the length 
         if (fInfo->type == typeBinary) 
             value->value = AllDataType::alloc(fInfo->type, 2 * fInfo->length);
@@ -356,5 +360,9 @@ DbRetVal InsStatement::resolve()
         fieldNameList.reset();
     }
     return OK;
+}
+int InsStatement::getFldPos(char *name)
+{
+    return table->getFldPos(name);
 }
 
