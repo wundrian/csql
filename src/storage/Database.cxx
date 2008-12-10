@@ -181,6 +181,7 @@ Page* Database::getFreePage()
     PageInfo* pageInfo = ((PageInfo*)page);
     char* endAddr = ((char*)getMetaDataPtr())  + getMaxSize();
     int pageSize = PAGE_SIZE;
+    bool isEndAddchk=false;
     while( 1 == pageInfo->isUsed_)
     {
         //If any pages are merged to store data larger than PAGE_SIZE
@@ -192,6 +193,13 @@ Page* Database::getFreePage()
         else {
             pageInfo = (PageInfo*)pageInfo->nextPageAfterMerge_;
             printDebug(DM_Alloc,"Merged Page:Moving to page:%x",pageInfo);
+        }
+        
+        if((((char*) pageInfo) + pageSize) >= endAddr )
+        {
+            if(!isEndAddchk){ isEndAddchk=true; pageInfo=(PageInfo *)getFirstPage(); }
+            else
+               break;
         }
         if ((char*)pageInfo >= endAddr)
         {
