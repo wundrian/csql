@@ -23,7 +23,7 @@ int main()
   stmt->setInnerStatement(NULL);
   stmt->setConnection(con);
   char statement[200];
-  strcpy(statement,"CREATE TABLE T1(F1 INT,F2 SMALLINT,F3 CHAR(30),F4 FLOAT,F5 FLOAT,F6 DATE,F7 TIME,F8 TIMESTAMP,F9 INT,F10 BIGINT, F11 BINARY(4));");
+  strcpy(statement,"CREATE TABLE T1(F1 SMALLINT,F2 INT, F3 BIGINT, F4 FLOAT, F5 DOUBLE, F6 DATE,F7 TIME,F8 TIMESTAMP,F9 CHAR(30), F10 BINARY(4));");
   
    int rows = 0;
    rv = stmt->prepare(statement);
@@ -34,25 +34,21 @@ int main()
 
    // insert into table
 
-   strcpy(statement,"INSERT INTO T1 VALUES(?,?,?,?,?,?,?,?,?,?,?);");
-   int f1var = 100;
-   short f2var = 10;
-   char f3var[30]="jitendra";
+   strcpy(statement,"INSERT INTO T1 VALUES(?,?,?,?,?,?,?,?,?,?);");
+   short f1var = 100;
+   int f2var = 10;
+   long long f3var = 12000;
    float f4var = 5.5;
-   float f5var = 10.50;
+   double f5var = 123.45;
    Date f6var;
    f6var.set(2007,01,21);
-   
    Time f7var;
    f7var.set(12,29,30);     
-   
    TimeStamp f8var;
    f8var.setDate(2007,01,21);
    f8var.setTime(12,29,30);
-
-   int f9var = 20;
-   long long f10var = 12000;
-   char f11var[8]="abcd";
+   char f9var[31]="jitendra";
+   char f10var[8]="abcdef";
    rv = stmt->prepare(statement);
    if(rv!=OK) { delete stmt; delete con; return 4; }
 //******************************************************************************    
@@ -95,18 +91,26 @@ int main()
 	    rv  = con->beginTrans();
 	    if(rv!=OK) break;
 	    f1var=i;
-        f2var= 10+i;
-        stmt->setIntParam(1,f1var);
-        stmt->setShortParam(2,f2var);
-        stmt->setStringParam(3,f3var);
+        f2var= 1234+i;
+        f3var= 12345678+i;
+        f4var = 0.5 + i;
+        f5var = 12345.5 + i;
+        f6var.set(2000 + i, i + 1, i + 1);
+        f7var.set(i+1, i+1, i+1);
+        f8var.setDate(2000 + i, i + 1, i + 1);
+        f8var.setTime(i+1, i+1, i+1); 
+        sprintf(f9var, "string%d", i);
+        sprintf(f10var, "abcdef%d", i);
+        stmt->setShortParam(1,f1var);
+        stmt->setIntParam(2,f2var);
+        stmt->setLongLongParam(3, f3var);
         stmt->setFloatParam(4,f4var);
-        stmt->setFloatParam(5,f5var);
+        stmt->setDoubleParam(5,f5var);
         stmt->setDateParam(6,f6var);
         stmt->setTimeParam(7,f7var);
         stmt->setTimeStampParam(8,f8var);
-        stmt->setIntParam(9,f9var);
-        stmt->setLongLongParam(10,f10var);
-        stmt->setBinaryParam(11,f11var);
+        stmt->setStringParam(9,f9var);
+        stmt->setBinaryParam(10,f10var);
         rv = stmt->execute(rows);
         if(rv!=OK)break;
     	rv = con->commit();
@@ -126,24 +130,23 @@ int main()
 
     stmt->bindField(1,&f1var);
     stmt->bindField(2,&f2var);
-    stmt->bindField(3,f3var);
+    stmt->bindField(3,&f3var);
     stmt->bindField(4,&f4var);
     stmt->bindField(5,&f5var);
     stmt->bindField(6,&f6var);
     stmt->bindField(7,&f7var);
     stmt->bindField(8,&f8var);
-    stmt->bindField(9,&f9var);
-    stmt->bindField(10,&f10var);
-    stmt->bindField(11,f11var);
+    stmt->bindField(9,f9var);
+    stmt->bindField(10,f10var);
     count=0;
     rv = con->beginTrans();
     if(rv!=OK)return 6;
     stmt->execute(rows);
     while(stmt->fetch(rv) !=NULL)
     {
-        printf("F1=%d | F2=%hi | F3=%s | F4=%f | F5=%f | DATE=%d-%d-%d | TIME=%d:%d:%d | TIMESTAMP=%d-%d-%d %d:%d:%d | F9=%d | F10=%lld ",f1var,f2var,f3var,f4var,f5var,f6var.year(),f6var.month(),f6var.dayOfMonth(),f7var.hours(),f7var.minutes(),f7var.seconds(),f8var.year(),f8var.month(),f8var.dayOfMonth(),f8var.hours(),f8var.minutes(),f8var.seconds(),f9var,f10var); 
-        printf("| F11=");
-        AllDataType::printVal(f11var, typeBinary, 4);
+        printf("F1=%hd | F2=%d | F3=%lld | F4=%f | F5=%lf | F6:DATE=%0d-%0d-%0d | F7:TIME=%2d:%2d:%2d | F8:TIMESTAMP=%4d-%2d-%2d %2d:%2d:%2d | F9=%s ",f1var,f2var,f3var,f4var,f5var,f6var.year(),f6var.month(),f6var.dayOfMonth(),f7var.hours(),f7var.minutes(),f7var.seconds(),f8var.year(),f8var.month(),f8var.dayOfMonth(),f8var.hours(),f8var.minutes(),f8var.seconds(),f9var); 
+        printf("| F10=");
+        AllDataType::printVal(f10var, typeBinary, 4);
         printf("\n");
         count++;
     }
