@@ -314,7 +314,10 @@ DbRetVal SqlPacketExecute::marshall()
     for (int i = 0 ; i < noParams; i++)
     {
         bindField = (BindSqlField*) paramList.get(i+1);
-        bufferSize = bufferSize + AllDataType::size(bindField->type, bindField->length);
+        if (bindField->type == typeBinary)
+            bufferSize = bufferSize + 2 * AllDataType::size(bindField->type, bindField->length);
+        else 
+            bufferSize = bufferSize + AllDataType::size(bindField->type, bindField->length);
     }
     buffer = (char*) malloc(bufferSize);
     *(int*)buffer = stmtID;
@@ -324,8 +327,13 @@ DbRetVal SqlPacketExecute::marshall()
     for (int i = 0 ; i < noParams; i++)
     {
         bindField = (BindSqlField*) paramList.get(i+1);
-        AllDataType::copyVal(bufIter, bindField->value, bindField->type,bindField->length);
-        bufIter = bufIter + AllDataType::size(bindField->type, bindField->length);
+        if (bindField->type == typeBinary) {
+            AllDataType::copyVal(bufIter, bindField->value, bindField->type, 2 * bindField->length);
+            bufIter = bufIter + 2 * AllDataType::size(bindField->type, bindField->length);
+        } else {
+            AllDataType::copyVal(bufIter, bindField->value, bindField->type, bindField->length);
+            bufIter = bufIter + AllDataType::size(bindField->type, bindField->length);
+        } 
     }
     return OK;
 }
@@ -353,7 +361,10 @@ DbRetVal SqlPacketExecute::unmarshall()
         paramValues[i] = bufIter;
         bindField = (BindSqlField*) stmt->paramList.get(i+1);
         bindField->value = paramValues[i];
-        bufIter = bufIter + AllDataType::size(bindField->type, bindField->length);
+        if (bindField->type == typeBinary)
+            bufIter = bufIter + 2 * AllDataType::size(bindField->type, bindField->length);
+        else
+            bufIter = bufIter + AllDataType::size(bindField->type, bindField->length);
     }
     return OK;
 }
