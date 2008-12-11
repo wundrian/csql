@@ -111,7 +111,6 @@ void* SqlNetworkHandler::processSqlPrepare(PacketHeader &header, char *buffer)
     printDebug(DM_Network, "PREPARE %s\n", pkt->stmtString);
     AbsSqlStatement *sqlstmt = SqlFactory::createStatement(type);
     sqlstmt->setConnection(conn);
-    SqlStatement *st = (SqlStatement *)sqlstmt;
     NetworkStmt *nwStmt = new NetworkStmt();
     nwStmt->stmtID = ++stmtID; 
     printDebug(DM_Network, "Statement string %s\n", pkt->stmtString);
@@ -124,15 +123,15 @@ void* SqlNetworkHandler::processSqlPrepare(PacketHeader &header, char *buffer)
         strcpy(rpkt->errorString, "Error:Statement prepare failed");
         return rpkt;
     }
-    int param = st->noOfParamFields();
-    int proj = st->noOfProjFields();
+    int param = sqlstmt->noOfParamFields();
+    int proj = sqlstmt->noOfProjFields();
     BindSqlField *bindField = NULL;
     BindSqlProjectField *projField = NULL;
     //populate paramList
     FieldInfo * fInfo = new FieldInfo();
     for (int i = 0; i < param; i++) {
         bindField = new BindSqlField();
-        st->getParamFldInfo(i + 1, fInfo);
+        sqlstmt->getParamFldInfo(i + 1, fInfo);
         bindField->type = fInfo->type;
         bindField->length = fInfo->length;
         bindField->value = AllDataType::alloc(bindField->type, bindField->length);
@@ -142,7 +141,7 @@ void* SqlNetworkHandler::processSqlPrepare(PacketHeader &header, char *buffer)
     FieldInfo *fldInfo = new FieldInfo();
     for (int i = 0; i < proj; i++) {
         projField = new BindSqlProjectField();
-        st->getProjFldInfo(i + 1, fldInfo);
+        sqlstmt->getProjFldInfo(i + 1, fldInfo);
         projField->type = fldInfo->type;
         projField->length = fldInfo->length;
         projField->value = AllDataType::alloc(projField->type, projField->length);
