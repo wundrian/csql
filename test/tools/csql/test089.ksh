@@ -1,7 +1,8 @@
 #!/bin/sh
 #Test case
-#Create table with table name adding special character and field name with special character.
-#It should fail for name other than alphanumeric and underscore .
+#create table t1(f1 int not null,f2 int,f3 int);
+#insert 5 records into t1. Test the following case
+#a) update t1 set f1=f1+NULL;
 #
 QUITFILE=${PWD}/tools/csql/quit.sql
 REL_PATH=.
