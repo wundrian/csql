@@ -7,7 +7,7 @@ public class ConnTest04
        try
        {
            Class.forName("csql.jdbc.JdbcSqlDriver");
-           Connection con = DriverManager.getConnection("jdbc:csql", "wrongusertest", "manager");
+           Connection con = DriverManager.getConnection("jdbc:gateway", "wrongusertest", "manager");
            if (con != null) System.exit (1);
         }catch(Exception e) {
             System.out.println("Exception in Test: "+e.getMessage());
