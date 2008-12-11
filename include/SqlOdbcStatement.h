@@ -79,6 +79,7 @@ class SqlOdbcStatement: public AbsSqlStatement
     void setNullInfo(Table *table);
     bool isFldNull(int pos);
     bool chechStmtType(char *stmtstr);
+    void setNull(int pos);
     int getFldPos(char *name){} 
     private:
     bool isSelStmt;

@@ -74,6 +74,7 @@ DbRetVal InsStatement::execute(int &rowsAffected)
     }
     rv = table->insertTuple();
     if (rv ==OK) rowsAffected = 1;
+    table-> resetNullinfo();
     return rv;
 }
 
@@ -109,6 +110,20 @@ DbRetVal InsStatement::setIntParam(int paramNo, int value)
     }
 
     *(int*)cValue->value = value; 
+    return OK;
+}
+DbRetVal InsStatement::setNull(int paramNo)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    FieldValue *cValue = (FieldValue*) params [paramNo-1];
+    if (NULL == cValue)
+    {
+        printError(ErrSysFatal, "FieldValue is null. Should never happen");
+        return ErrSysFatal;
+    }
+    char name[IDENTIFIER_LENGTH];
+    table->getFieldNameAlone(cValue->fldName,name);
+    table->markFldNull(name);
     return OK;
 }
 DbRetVal InsStatement::setLongParam(int paramNo, long value)

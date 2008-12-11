@@ -576,8 +576,23 @@ JNIEXPORT jshort JNICALL Java_csql_jdbc_JSqlStatement_getShort
  * Signature: (I)V
  */
 JNIEXPORT void JNICALL Java_csql_jdbc_JSqlStatement_setNull
-  (JNIEnv *, jobject, jint);
+  (JNIEnv *env, jobject obj, jint pos)
+{
+    jclass cls;
+    jfieldID fid;
 
+    cls = env->GetObjectClass(obj);
+    fid = env->GetFieldID( cls, "sqlStmtPtr", "J");
+    if (fid == 0)
+    {
+        jclass Exception = env->FindClass("java/lang/Exception");
+        env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
+        return;
+    }
+    AbsSqlStatement *s = (AbsSqlStatement*) env->GetLongField( obj, fid );
+    s->setNull(pos);
+    return;
+}
 
 
 

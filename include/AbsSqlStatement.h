@@ -230,6 +230,7 @@ class AbsSqlStatement
 
     virtual bool isSelect() = 0;
     virtual bool isFldNull(int pos)=0;
+    virtual void setNull(int pos)=0;
     virtual int getFldPos(char *name)=0;
     virtual ~AbsSqlStatement(){}
 };

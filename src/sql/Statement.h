@@ -51,6 +51,7 @@ class Statement
     virtual DbRetVal resolve()=0;
     virtual bool isFldNull(int pos)=0;
     virtual int getFldPos(char *name)=0;
+    virtual DbRetVal setNull(int pos)=0;
     virtual ~Statement(){}
 };
 
@@ -85,6 +86,7 @@ class DmlStatement : public Statement
     virtual DbRetVal setTimeStampParam(int paramNo, TimeStamp value)=0;
     virtual DbRetVal setBinaryParam(int paramNo, void *value)=0;
     virtual bool isFldNull(int pos)=0;
+    virtual DbRetVal setNull(int pos)=0;
     virtual DbRetVal resolve()=0;
     virtual void* getParamValuePtr( int pos )=0;
     virtual int getFldPos(char *name)=0;
@@ -114,6 +116,7 @@ class InsStatement : public DmlStatement
     bool isFldNull(int pos){return table->isFldNull(pos);}
     void* getParamValuePtr( int );
     int getFldPos(char *name);
+    DbRetVal setNull(int pos);
     DbRetVal resolve();
     InsStatement();
     ~InsStatement();
@@ -152,6 +155,7 @@ class SelStatement : public DmlStatement
     DbRetVal resolveGroupFld(AggTableImpl *impl);
     bool isFldNull(int pos){return table->isFldNull(pos);}
     int getFldPos(char *name);
+    DbRetVal setNull(int pos){}
     DbRetVal close();
     DbRetVal resolve();
     SelStatement();
@@ -199,6 +203,7 @@ class UpdStatement : public DmlStatement
     DbRetVal getParamFldInfo(int paramPos, FieldInfo *&info);
     bool isFldNull(int pos){return table->isFldNull(pos);}
     int getFldPos(char *name);
+    DbRetVal setNull(int pos){}
     DbRetVal resolve();
     UpdStatement();
     ~UpdStatement();
@@ -228,6 +233,7 @@ class DelStatement : public DmlStatement
     bool isFldNull(int pos){return table->isFldNull(pos);}
     DbRetVal getParamFldInfo(int paramPos, FieldInfo *&info);
     void* getParamValuePtr(int);
+    DbRetVal setNull(int pos){}
     DbRetVal resolve();
     DelStatement();
     ~DelStatement();
@@ -258,6 +264,7 @@ class DdlStatement : public Statement
     DbRetVal setBinaryParam(int paramNo, void *value) { }
     bool isFldNull(int pos){ }
     int getFldPos(char *name){}
+    DbRetVal setNull(int pos){}
 };
 
 class CreateTblStatement : public DdlStatement

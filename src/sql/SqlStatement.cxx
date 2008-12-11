@@ -264,6 +264,10 @@ DbRetVal SqlStatement::free()
     return OK;
 }
 
+void SqlStatement::setNull(int pos)
+{
+    stmt->setNull(pos);
+}
 void SqlStatement::setShortParam(int paramPos, short value)
 {
     stmt->setShortParam(paramPos, value);
