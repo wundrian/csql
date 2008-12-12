@@ -274,8 +274,8 @@ void SqlGwStatement::setBinaryParam(int paramPos, void *value)
 }
 bool SqlGwStatement::isFldNull(int pos)
 {
-    if (adapter && shouldAdapterHandle()) adapter->isFldNull(pos);
-    if (innerStmt && shouldCSqlHandle()) innerStmt->isFldNull(pos);
+    if (adapter && shouldAdapterHandle()) return adapter->isFldNull(pos);
+    if (innerStmt && shouldCSqlHandle()) return innerStmt->isFldNull(pos);
 
 }
 void SqlGwStatement::setNull(int pos)
