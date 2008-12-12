@@ -352,3 +352,12 @@ void SqlLogStatement::setBinaryParam(int paramPos, void *value)
 	if (bindField->type != typeBinary) return;
 	memcpy(bindField->value, value, 2 * bindField->length);
 }
+bool SqlLogStatement::isFldNull(int pos)
+{
+    return innerStmt->isFldNull(pos);
+}
+void SqlLogStatement::setNull(int pos)
+{
+   if(innerStmt) innerStmt->setNull(pos);
+}
+
