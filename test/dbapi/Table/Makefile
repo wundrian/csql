@@ -34,8 +34,11 @@ TARGETS = \
         test020 \
         test021 \
 	test022 \
-	test023
-
+	test023 \
+	test024 \
+	test025 \
+	test026 \
+	test027
        
 
 ifeq ($(PlatForm), supported)
@@ -66,6 +69,14 @@ test021: bindtest2.c
 test022:bindtest3.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test023 :spaceusedtest.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test024 :insertnulltest5.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test025 :insertnulltest6.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test026 :insertnulltest7.c
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test027 :insertnulltest8.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 
 clean:

@@ -9,8 +9,8 @@ int main()
    
     TableDef tabDef;
     tabDef.addField("f1", typeInt, 0, NULL, true);//NOT NULL
-    tabDef.addField("f2", typeInt, 0, NULL, false); 
-    tabDef.addField("f3", typeString, 20);
+    tabDef.addField("f2", typeInt, 0, NULL, false);
+    tabDef.addField("f3", typeString, 20);//Bydefault 'NOT NULL' is false
     rv = dbMgr->createTable("t1", tabDef);
     if (rv != OK) { printf("Table creation failed\n"); conn.close(); return 3; }
     printf("Table created\n");
@@ -24,17 +24,19 @@ int main()
         return -1; 
     }
     int id1 = 0, id2 = 5;
-    char name[20] = "unchangedvalue";
+    char name[20] = "PRAVEEN";
     table->bindFld("f1", &id1);
     table->bindFld("f2", &id2);
-    //table->bindFld("f3", name);
+    table->bindFld("f3", name);
     int icount =0;
     for (int i = 0 ; i < 5 ; i++)
     {
         conn.startTransaction();
         id1= i;
+        if (i%2 == 0) table->markFldNull("f3");
         rv = table->insertTuple();
         if (rv != OK) break;
+        if (i%2 == 0) table->clearFldNull("f3");
         icount++;
         conn.commit();
 
@@ -58,6 +60,7 @@ int main()
         if (table->isFldNull(2)) printf("Column 2 is null\n");
         if (table->isFldNull(3)) printf("Column 3 is null\n");
         printf("Binded Tuple value is %d %d %s \n", id1, id2, name);
+
     }
     table->close();
     dbMgr->closeTable(table);

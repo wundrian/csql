@@ -8,9 +8,8 @@ int main()
     if (dbMgr == NULL) { printf("Auth failed\n"); return 2;}
    
     TableDef tabDef;
-    tabDef.addField("f1", typeInt, 0, NULL, true);//NOT NULL
-    tabDef.addField("f2", typeInt, 0, NULL, false); 
-    tabDef.addField("f3", typeString, 20);
+    tabDef.addField("f1", typeInt, 0, NULL, true);
+    tabDef.addField("f2", typeInt);
     rv = dbMgr->createTable("t1", tabDef);
     if (rv != OK) { printf("Table creation failed\n"); conn.close(); return 3; }
     printf("Table created\n");
@@ -24,20 +23,19 @@ int main()
         return -1; 
     }
     int id1 = 0, id2 = 5;
-    char name[20] = "unchangedvalue";
     table->bindFld("f1", &id1);
     table->bindFld("f2", &id2);
-    //table->bindFld("f3", name);
     int icount =0;
-    for (int i = 0 ; i < 5 ; i++)
+    for (int i = 0 ; i < 10 ; i++)
     {
         conn.startTransaction();
-        id1= i;
+        id1= i;id2=id2+i;
+        if (i%2 == 0){ table->markFldNull(1);table->markFldNull(2);}
         rv = table->insertTuple();
         if (rv != OK) break;
+        if (i%2 == 0) {table->clearFldNull(1);table->clearFldNull(2);}
         icount++;
         conn.commit();
-
     }
     printf("Tuples inserted in 1/txn is %d\n", icount);
     table->setCondition(NULL);
@@ -48,7 +46,6 @@ int main()
        dbMgr->dropTable("t1");
        conn.close();
     }
-    table->bindFld("f2", &id2);
     void *tuple = NULL; 
     while(true)
     {
@@ -56,8 +53,7 @@ int main()
         if (tuple == NULL) {break;}
         if (table->isFldNull(1)) printf("Column 1 is null\n");
         if (table->isFldNull(2)) printf("Column 2 is null\n");
-        if (table->isFldNull(3)) printf("Column 3 is null\n");
-        printf("Binded Tuple value is %d %d %s \n", id1, id2, name);
+        printf("Binded Tuple value is %d %d \n", id1, id2);
     }
     table->close();
     dbMgr->closeTable(table);

@@ -1,0 +1,17 @@
+Table created
+Tuples inserted in 1/txn is 10
+Column 2 is null
+Binded Tuple value is 0 5 
+Binded Tuple value is 1 6 
+Column 2 is null
+Binded Tuple value is 2 8 
+Binded Tuple value is 3 11 
+Column 2 is null
+Binded Tuple value is 4 15 
+Binded Tuple value is 5 20 
+Column 2 is null
+Binded Tuple value is 6 26 
+Binded Tuple value is 7 33 
+Column 2 is null
+Binded Tuple value is 8 41 
+Binded Tuple value is 9 50 
