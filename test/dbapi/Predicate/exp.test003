@@ -4,6 +4,6 @@ Predicate: f1 ==4 AND f2 >3
 tuple value is 4 4 4 4 4
 Predicate: f1 ==4 AND f2 ==4 
 tuple value is 4 4 4 4 4
-Predicate: f1 <4 AND f2 >2 
+Predicate: f1 <4 AND f1 >2 
 tuple value is 3 3 3 3 3
 Predicate: f1 <4 AND f2 >3 

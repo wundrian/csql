@@ -68,7 +68,7 @@ int main()
     cond3.setTerm(p4.getPredicate(), OpOr, p5.getPredicate());
     cond3a.setTerm(cond3.getPredicate(), OpNot);
     table->setCondition(&cond3a);
-    printf("Predicate: NOT( f1 <4 OR f2 >2) \n");
+    printf("Predicate: NOT( f1 <4 OR f1 >2) \n");
     conn.startTransaction();
     execAndPrint(table);
     conn.commit();

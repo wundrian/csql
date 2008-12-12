@@ -67,7 +67,7 @@ int main()
     Condition cond3;
     cond3.setTerm(p4.getPredicate(), OpAnd, p5.getPredicate());
     table->setCondition(&cond3);
-    printf("Predicate: f1 <4 AND f2 >2 \n");
+    printf("Predicate: f1 <4 AND f1 >2 \n");
     conn.startTransaction();
     execAndPrint(table);
     conn.commit();

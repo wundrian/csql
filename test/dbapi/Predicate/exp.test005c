@@ -11,7 +11,7 @@ tuple value is 8 8 8 8 8
 tuple value is 9 9 9 9 9
 Predicate: f1 ==4 OR f2 ==4 
 tuple value is 4 4 4 4 4
-Predicate: f1 <4 OR f2 >2 
+Predicate: f1 <4 OR f1 >2 
 tuple value is 0 0 0 0 0
 tuple value is 1 1 1 1 1
 tuple value is 2 2 2 2 2

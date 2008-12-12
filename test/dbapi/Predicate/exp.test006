@@ -15,7 +15,7 @@ tuple value is 6 6 6 6 6
 tuple value is 7 7 7 7 7
 tuple value is 8 8 8 8 8
 tuple value is 9 9 9 9 9
-Predicate: NOT( f1 <4 OR f2 >2) 
+Predicate: NOT( f1 <4 OR f1 >2) 
 Predicate: NOT( f1 <4 OR f2 >3) 
 Predicate: ( f1 <4 OR (NOT(f2 >3)) 
 tuple value is 0 0 0 0 0
