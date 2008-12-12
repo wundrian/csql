@@ -75,8 +75,8 @@ class SqlLogStatement: public AbsSqlStatement
     void setTimeStampParam(int paramPos, TimeStamp value);
     void setBinaryParam(int paramPos, void *value);
 	bool isSelect();
-    bool isFldNull(int pos){}
-    void setNull(int pos){}
+    bool isFldNull(int pos);
+    void setNull(int pos);
     int getFldPos(char *name){}
     bool isCached;
     TableSyncMode mode;
