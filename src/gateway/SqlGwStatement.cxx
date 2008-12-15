@@ -122,11 +122,20 @@ DbRetVal SqlGwStatement::bindField(int pos, void* value)
     if (innerStmt && shouldCSqlHandle()) rv = innerStmt->bindField(pos,value);
     return rv;
 }
+
 void* SqlGwStatement::fetch()
 {
     //TODO::this will never be handled by both. check the flag for this
     if (adapter && shouldAdapterHandle()) return adapter->fetch();
     if (innerStmt && shouldCSqlHandle()) return innerStmt->fetch();
+    return NULL;
+}
+
+void* SqlGwStatement::fetch(DbRetVal &rv)
+{
+    //TODO::this will never be handled by both. check the flag for this
+    if (adapter && shouldAdapterHandle()) return adapter->fetch(rv);
+    if (innerStmt && shouldCSqlHandle()) return innerStmt->fetch(rv);
     return NULL;
 }
 

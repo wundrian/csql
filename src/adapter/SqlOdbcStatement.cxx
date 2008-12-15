@@ -87,11 +87,10 @@ DbRetVal SqlOdbcStatement::prepare(char *stmtstr)
             default:
                 bindProjField->targetvalue = AllDataType::alloc(bindProjField->type, bindProjField->length);
         }
-
         retValue = SQLBindCol(hstmt, icol, 
                               AllDataType::convertToSQLType(bindProjField->type),
                               bindProjField->targetvalue, fieldsize, &len[icol]);
-        if (retValue) return ErrBadCall; 
+        if (retValue) return ErrBadCall;
         bindList.append(bindProjField);
         icol++;
        
@@ -243,11 +242,67 @@ void SqlOdbcStatement::setNullInfo(Table *table)
         }
     }
 }
+
 void* SqlOdbcStatement::fetch()
 {
     if (!isPrepared) return NULL;
     int retValue = SQLFetch (hstmt);
     if (retValue) return NULL;
+    ListIterator iter = bindList.getIterator();
+    BindSqlProjectField *bindField = NULL;
+    void *ptrToFirstField = NULL;
+    int icol=0;
+    while (iter.hasElement())
+    {
+        bindField = (BindSqlProjectField*)iter.nextElement();
+        if (ptrToFirstField == NULL) ptrToFirstField=bindField->value;
+        if(len[++icol] == SQL_NULL_DATA) 
+        { 
+            AllDataType::memoryset(bindField->value,bindField->type);
+            continue; 
+        }
+        if( isSelStmt && NULL == bindField->value )
+        {
+            if (ptrToFirstField == NULL) ptrToFirstField=bindField->targetvalue;
+            continue;
+        }
+        switch(bindField->type)
+        {
+            case typeDate: {
+                Date *dtCSQL = (Date*) bindField->value;
+                DATE_STRUCT *dtTarget = (DATE_STRUCT*) bindField->targetvalue;
+                dtCSQL->set(dtTarget->year,dtTarget->month,dtTarget->day);
+                break;
+            }
+            case typeTime: {
+                Time *dtCSQL = (Time*) bindField->value;
+                TIME_STRUCT *dtTarget = (TIME_STRUCT*) bindField->targetvalue;
+                dtCSQL->set(dtTarget->hour,dtTarget->minute,dtTarget->second);
+                break;
+            }
+            case typeTimeStamp: {
+                TimeStamp *dtCSQL = (TimeStamp*) bindField->value;
+                TIMESTAMP_STRUCT *dtTarget = (TIMESTAMP_STRUCT*) bindField->targetvalue;
+                dtCSQL->setDate(dtTarget->year,dtTarget->month,dtTarget->day);
+                dtCSQL->setTime(dtTarget->hour,dtTarget->minute,
+                                dtTarget->second, dtTarget->fraction);
+                break;
+            }
+            default: {
+                AllDataType::copyVal(bindField->value, bindField->targetvalue,
+                                     bindField->type, bindField->length);
+                break;
+            }
+        } 
+    }
+    return ptrToFirstField;
+}
+
+void* SqlOdbcStatement::fetch(DbRetVal &rv)
+{
+    if (!isPrepared) return NULL;
+    int retValue = SQLFetch (hstmt);
+    if (retValue) { rv = OK; return NULL; }
     ListIterator iter = bindList.getIterator();
     BindSqlProjectField *bindField = NULL;
     void *ptrToFirstField = NULL;
@@ -492,7 +547,6 @@ void SqlOdbcStatement::setIntParam(int paramPos, int value)
      //Note: MySQL Bug
      //Bug #1382     SQLDescribeParam returns the same type information, varchar
     AllDataType::convertToString(bindField->value, &value, typeInt);
-
     return;
 
 }
