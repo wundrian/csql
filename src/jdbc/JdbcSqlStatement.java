@@ -126,6 +126,7 @@ public class JdbcSqlStatement extends JSqlError implements Statement, JSqlErrorT
     {
         if(!jniStmt.isSelect())
             return (null);
+         if(closedFlag) throw getException( CSQL_INVALID_STATE ); 
          //praba:;changed this
          rs.setStmt(this);
          return rs; 
