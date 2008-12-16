@@ -31,10 +31,10 @@ DbRetVal SqlNwConnection::connect (char *user, char * pass)
     }
     nwClient = new TCPClient();
     int bufsize = 2 * IDENTIFIER_LENGTH;
-    char hostName[IDENTIFIER_LENGTH];
-    memset(hostName, 0, IDENTIFIER_LENGTH);
-    os::gethostname(hostName, IDENTIFIER_LENGTH);
-    nwClient->setHost(hostName, 5678, 123);
+    // char hostName[IDENTIFIER_LENGTH];
+    // memset(hostName, 0, IDENTIFIER_LENGTH);
+    //os::gethostname(hostName, IDENTIFIER_LENGTH);
+    nwClient->setHost(hostname, port, 123);
     rv = nwClient->connect();
     if (rv != OK) {
         printError(rv, "Connection failed");
