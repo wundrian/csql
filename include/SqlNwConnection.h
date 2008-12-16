@@ -32,6 +32,8 @@ class SqlNwConnection : public AbsSqlConnection
 {
     Connection dummyConn;
     bool isConnOpen;
+    char hostname[128];
+    int port;
     public:
     NetworkClient *nwClient;
     IsolationLevel prevIsoLevel;
@@ -45,6 +47,11 @@ class SqlNwConnection : public AbsSqlConnection
     DbRetVal disconnect();
 
     DbRetVal commit();
+    void setHost(char *host, int portNo)
+    {
+        port=portNo;
+        strcpy(hostname,host);
+    }
 
     DbRetVal rollback();
 
