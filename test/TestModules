@@ -21,6 +21,8 @@ jdbc/Statement
 sqlapi/Connect
 sqlapi/Parameter
 sqlapi/Select
+sql/Join
+sql/Aggregate
 odbc/Connect
 odbc/NonSelectDML
 odbc/Parameters
