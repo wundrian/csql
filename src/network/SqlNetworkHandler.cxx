@@ -103,6 +103,7 @@ void * SqlNetworkHandler::processSqlConnect(PacketHeader &header, char *buffer)
 void* SqlNetworkHandler::processSqlPrepare(PacketHeader &header, char *buffer)
 {
     ResponsePacket *rpkt = new ResponsePacket();
+    rpkt->isSelect = false;
     char *retval = (char *) &rpkt->retVal;
     SqlPacketPrepare *pkt = new SqlPacketPrepare();
     pkt->setBuffer(buffer);
@@ -150,9 +151,10 @@ void* SqlNetworkHandler::processSqlPrepare(PacketHeader &header, char *buffer)
     delete fldInfo; 
     stmtList.append(nwStmt);
     *retval = 1; 
+    if(sqlstmt->isSelect()) rpkt->isSelect = true;
     if (param) *(retval+2) = 1;
     if (proj) *(retval+3) = 1;
-    rpkt->stmtID = nwStmt->stmtID; 
+    rpkt->stmtID = nwStmt->stmtID;
     strcpy(rpkt->errorString, "Success");
     return rpkt;
 }
@@ -196,7 +198,8 @@ void * SqlNetworkHandler::processSqlExecute(PacketHeader &header, char *buffer)
         strcpy(rpkt->errorString, "Execute failed");
         return rpkt; 
     }
-    *retval = 1; 
+    *retval = 1;
+    rpkt->rows = rows;
     strcpy(rpkt->errorString, "Success");
     return rpkt;
 }
