@@ -56,10 +56,12 @@ class ResponsePacket
 {
     public:
     ResponsePacket()
-    { stmtID = 0; retVal = 0; }
+    { stmtID = 0; retVal = 0; isSelect = false; rows=0; }
     ~ResponsePacket() { }
     int retVal; // will include for fetch end flag, params flag, proj flag
     int stmtID;
+    int rows;
+    bool isSelect;
     char errorString[ERROR_STRING_LENGTH];
     DbRetVal marshall();
     DbRetVal unmarshall();

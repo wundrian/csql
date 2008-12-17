@@ -26,7 +26,7 @@
 class SqlNwStatement: public AbsSqlStatement
 {
     public:
-    SqlNwStatement(){innerStmt = NULL; con = NULL; isPrepared=false;}
+    SqlNwStatement(){innerStmt = NULL; con = NULL; isPrepared=false; isSel = true; }
     void setConnection(AbsSqlConnection *conn)
     {
         if (innerStmt) innerStmt->setConnection(conn->getInnerConnection());
@@ -69,7 +69,7 @@ class SqlNwStatement: public AbsSqlStatement
     void setTimeParam(int paramPos, Time value);
     void setTimeStampParam(int paramPos, TimeStamp value);
     void setBinaryParam(int paramPos, void *value);
-    bool isSelect();
+    bool isSelect(){return isSel;}
     void getPrimaryKeyFieldName(char *tablename, char *pkfieldname);
     int getStmtID() { return stmtID; }
     bool isFldNull(int pos){}
@@ -78,6 +78,7 @@ class SqlNwStatement: public AbsSqlStatement
     int getFldPos(char *name){} 
     private:
     bool isPrepared;
+    bool isSel;
     int stmtID;
     List paramList;
     List bindList;
