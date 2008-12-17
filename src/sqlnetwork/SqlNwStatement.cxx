@@ -23,6 +23,7 @@
 DbRetVal SqlNwStatement::prepare(char *stmtstr)
 {
     DbRetVal rv = OK;
+    isSel = false;
     SqlNwConnection *conn = (SqlNwConnection*)con;
     if (! conn->isConOpen()) {
         printError(ErrNoConnection, "No connection present");
@@ -47,6 +48,7 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
     ResponsePacket *rpkt = (ResponsePacket *) ((TCPClient *)conn->nwClient)->respPkt;
     char *ptr = (char *) &rpkt->retVal;
     if (*ptr == 0) { delete pkt; return ErrPeerResponse; }
+    if (rpkt->isSelect) isSel = true; else isSel = false;
     int params = *(ptr + 2);
     int proj = *(ptr + 3);
     stmtID = rpkt->stmtID;
@@ -104,7 +106,7 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
             prjFld = new BindSqlProjectField();
             prjFld->type = (DataType) prjmdpkt->type[i];
             prjFld->length = prjmdpkt->length[i];
-            //prjFld->value = AllDataType::alloc(prjFld->type, prjFld->length);
+            prjFld->value = AllDataType::alloc(prjFld->type, prjFld->length);
             bindList.append(prjFld);
         }
         delete prjmdpkt;
@@ -112,12 +114,6 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
     isPrepared = true;
     delete pkt;
     return rv;
-}
-
-bool SqlNwStatement::isSelect()
-{
-    //TODO
-    return false;
 }
 
 DbRetVal SqlNwStatement::execute(int &rowsAffected)
@@ -145,6 +141,7 @@ DbRetVal SqlNwStatement::execute(int &rowsAffected)
     delete pkt;
     ResponsePacket *rpkt = (ResponsePacket *) ((TCPClient *)conn->nwClient)->respPkt;
     char *ptr = (char *) &rpkt->retVal;
+    rowsAffected = rpkt->rows;
     if (*ptr != 1) return ErrPeerResponse;
     return rv;
 }
@@ -202,6 +199,7 @@ void* SqlNwStatement::fetch()
     numbytes = os::recv(fd,buffer,header.packetLength,0);
     if (numbytes == -1) {
         printError(ErrOS, "Error reading from socket\n");
+        
         return NULL;
     }
     SqlPacketResultSet *rspkt = new SqlPacketResultSet();
@@ -293,7 +291,8 @@ DbRetVal SqlNwStatement::close()
 
 void* SqlNwStatement::getFieldValuePtr( int pos )
 {
-    return NULL;
+    BindSqlProjectField *fld=(BindSqlProjectField *) bindList.get(pos+1);
+    return fld->value;   
 }
 
 int SqlNwStatement::noOfProjFields()
