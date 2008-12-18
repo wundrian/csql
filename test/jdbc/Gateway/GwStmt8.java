@@ -1,4 +1,4 @@
-//Set Null insert statement without parameterise on cache tables T1
+//Set Null insert statement without parameterise on cache tables T1 test it by wasNull()
 import java.sql.*;
 /**
  *
