@@ -207,6 +207,8 @@ DbRetVal SqlOdbcStatement::execute(int &rowsAffected)
     }
     int retValue = SQLExecute (hstmt);
     if (retValue) return ErrBadCall;
+    retValue=SQLRowCount(hstmt,(SQLINTEGER*)&rowsAffected);
+    if(isSelStmt) rowsAffected = 0;
     return rv;
 }
 
