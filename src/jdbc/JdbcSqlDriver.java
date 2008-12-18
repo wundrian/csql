@@ -21,6 +21,8 @@ public final class JdbcSqlDriver extends JSqlError implements Driver, JSqlErrorT
         }
     }
     public int mode;
+    public String hostname="localhost";
+    public int portno=5678;
     public boolean acceptsURL(String url)
     {
         //pattern jdbc:csql:
@@ -38,6 +40,7 @@ public final class JdbcSqlDriver extends JSqlError implements Driver, JSqlErrorT
                             tokenNo++;
                             continue;
                         }
+                        tokenNo=6;
                         break;
                 case 2:
                         if( t.equalsIgnoreCase("csql") )
@@ -51,15 +54,34 @@ public final class JdbcSqlDriver extends JSqlError implements Driver, JSqlErrorT
                             mode = 2;
                             continue;
                         }
+                        tokenNo=6;
                         break;
-                default:
+                case 3 :
+			hostname=removeChar(t,'/');
+                        mode=3;
                         tokenNo++;
-                        break;
+                        continue;
+                case 4 :
+                        portno=Integer.parseInt(t);
+                        tokenNo++;
+                        continue;
+                default:
+                       tokenNo++;
+                       break;
             }
         }
-        if(tokenNo != 3) return false; 
+        if(tokenNo > 5 ) return false; 
         return true;
     }
+
+public static String removeChar(String s, char c) 
+{
+    String r = "";
+    for (int i = 0; i < s.length(); i ++) {
+           if (s.charAt(i) != c) r += s.charAt(i);
+    }
+    return r;
+}
     public Connection connect(String connectString, Properties info) throws SQLException
     {
         String uName, pword;
@@ -77,7 +99,7 @@ public final class JdbcSqlDriver extends JSqlError implements Driver, JSqlErrorT
 
         uName = info.getProperty("user");
         pword = info.getProperty("password");
-        JdbcSqlConnection con = new JdbcSqlConnection(mode, uName, pword);
+        JdbcSqlConnection con = new JdbcSqlConnection(mode,hostname,portno,uName, pword);
         return((Connection) con);
     }
     public DriverPropertyInfo[] getPropertyInfo (String connectString,

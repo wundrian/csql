@@ -1,4 +1,5 @@
 #include<AbsSqlStatement.h>
+#include<SqlNwStatement.h>
 #include<SqlFactory.h>
 //sqlStmtPtr
 
@@ -24,8 +25,12 @@ JNIEXPORT void JNICALL Java_csql_jdbc_JSqlStatement_alloc
     AbsSqlStatement *stmt;
     if (mode ==1 )
         stmt = SqlFactory::createStatement(CSql);
-    else
+    else if(mode == 2)
         stmt = SqlFactory::createStatement(CSqlGateway);
+    else {
+        stmt = new SqlNwStatement();
+        stmt->setInnerStatement(NULL);
+    }
 
     cls = env->GetObjectClass( obj );
     fid = env->GetFieldID( cls, "sqlStmtPtr", "J");

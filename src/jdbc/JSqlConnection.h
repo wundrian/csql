@@ -13,7 +13,7 @@ extern "C" {
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_csql_jdbc_JSqlConnection_alloc
-  (JNIEnv *, jobject, jint);
+  (JNIEnv *, jobject, jint, jstring, jint);
 
 /*
  * Class:     JSqlConnection

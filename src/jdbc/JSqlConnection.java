@@ -2,7 +2,7 @@ package csql.jdbc;
 public class JSqlConnection
 {
     public long sqlConPtr;
-
+    
     public long getPtr()
     {
         return sqlConPtr;
@@ -13,7 +13,7 @@ public class JSqlConnection
     }
 
     // Wrappers 
-    public native void alloc(int mode);
+    public native void alloc(int mode,String hName,int port);
     public native void free();
 
     public native int connect(String user, String pass);
