@@ -1,5 +1,5 @@
 //Donot Start CSQL Server
-//connect through the csql:gateway URL create Statement and call execute to create a table. it should fail
+//connect through the jdbc:gateway URL create Statement and call execute to create a table. it should fail
 import java.sql.*;
 /**
  *
