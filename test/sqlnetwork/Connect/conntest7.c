@@ -9,7 +9,9 @@ int main()
    DbRetVal rv = OK;
    AbsSqlConnection *con = new SqlNwConnection();
    con->setInnerConnection(NULL);
-   rv = con->connect("root","manager");
+   SqlNwConnection *conn = (SqlNwConnection *) con;
+   conn->setHost("localhost", 5678);
+  rv = con->connect("root","manager");
    if(rv!=OK)
    {
      printf("Test script failed with error%d\n",rv);
