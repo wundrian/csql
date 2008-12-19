@@ -15,6 +15,8 @@ int main()
   DbRetVal rv = OK;
   AbsSqlConnection *con = new SqlNwConnection();
   con->setInnerConnection(NULL);
+  SqlNwConnection *conn = (SqlNwConnection *)con;
+  conn->setHost("localhost", 5678);
   rv  = con->connect("root","manager");
   if(rv!=OK)return 1;
 
