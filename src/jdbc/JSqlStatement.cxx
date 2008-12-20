@@ -318,7 +318,7 @@ JNIEXPORT void JNICALL Java_csql_jdbc_JSqlStatement_setLong
         return;
     }
     AbsSqlStatement *stmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
-    stmt->setLongParam(position, (long) value);
+    stmt->setLongLongParam(position, (long long) value);
     return;
 }
 
