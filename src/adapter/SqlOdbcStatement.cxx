@@ -670,5 +670,5 @@ bool SqlOdbcStatement::isFldNull(int pos)
 }
 void SqlOdbcStatement::setNull(int pos)
 {
-    len[pos] == SQL_NULL_DATA ;
+    len[pos] = SQL_NULL_DATA ;
 }
