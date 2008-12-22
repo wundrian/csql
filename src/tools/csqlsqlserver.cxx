@@ -25,6 +25,7 @@
 #include <SqlNetworkHandler.h>
 
 int srvStop =0;
+bool gateway = false;
 static void sigTermHandler(int sig)
 {
     printf("Received signal %d\nStopping the server\n", sig);
@@ -34,17 +35,18 @@ static void sigTermHandler(int sig)
 void printUsage()
 {
    printf("Usage: csqlsqlserver \n");
-   printf("Description: Start the csql nework server.\n");
+   printf("Description: Start the csql network server.\n");
    return;
 }
 int main(int argc, char **argv)
 {
     int c = 0, opt = 0;
-    while ((c = getopt(argc, argv, "?")) != EOF) 
+    while ((c = getopt(argc, argv, "g?")) != EOF) 
     {
         switch (c)
         {
             case '?' : { opt = 10; break; } //print help 
+            case 'g' : { gateway = true; break; } 
             default: opt=10; 
 
         }
@@ -65,8 +67,13 @@ int main(int argc, char **argv)
     os::signal(SIGTERM, sigTermHandler);
 
     bool end = false;
-    SqlNetworkHandler::type = CSql;
-    SqlNetworkHandler::conn = SqlFactory::createConnection(CSql);
+    if (gateway) {
+        SqlNetworkHandler::type = CSqlGateway;
+        SqlNetworkHandler::conn = SqlFactory::createConnection(CSqlGateway);
+    } else {
+        SqlNetworkHandler::type = CSql;
+        SqlNetworkHandler::conn = SqlFactory::createConnection(CSql);
+    }
     SqlNetworkHandler::stmtID = 0;
     if (!Conf::config.useCsqlSqlServer())
     {
@@ -114,7 +121,7 @@ int main(int argc, char **argv)
         printf("Unable to start the server\n");
         return 1;
     }
-    printf("Replication server started\n");
+    printf("Csql network server started\n");
     fd_set fdset;
     int ret = 0;
     struct timeval timeout, tval;
