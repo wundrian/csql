@@ -62,7 +62,12 @@ public final class JdbcSqlDriver extends JSqlError implements Driver, JSqlErrorT
                         tokenNo++;
                         continue;
                 case 4 :
-                        portno=Integer.parseInt(t);
+			if(t.indexOf('/')!= -1)
+                        {
+                            String p=t.substring(0,t.indexOf('/'));
+                            portno=Integer.parseInt(p);
+                            
+                        }else { portno=Integer.parseInt(t);}
                         tokenNo++;
                         continue;
                 default:
