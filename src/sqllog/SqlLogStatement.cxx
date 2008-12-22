@@ -141,6 +141,12 @@ void* SqlLogStatement::fetch()
     return NULL;
 }
 
+void* SqlLogStatement::fetch(DbRetVal &rv)
+{
+    if (innerStmt) return innerStmt->fetch(rv);
+    return NULL;
+}
+
 void* SqlLogStatement::fetchAndPrint(bool SQL)
 {
     if (innerStmt) return innerStmt->fetchAndPrint(SQL);
