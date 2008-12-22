@@ -307,12 +307,17 @@ DbRetVal SqlPacketPrepare::unmarshall()
     return OK;
 }
 
+// the following marshall and unmarshall function is modified to accommodate 
+// the fix for MySQL Bug:1382 
+// SQLDescribeParam returns the same type information
+// by sending type and length in exec packets.
 DbRetVal SqlPacketExecute::marshall()
 {
     bufferSize  = sizeof(int)+ sizeof(int);
     BindSqlField* bindField = NULL;
     for (int i = 0 ; i < noParams; i++)
     {
+        bufferSize = bufferSize + 2 * sizeof(int);
         bindField = (BindSqlField*) paramList.get(i+1);
         if (bindField->type == typeBinary)
             bufferSize = bufferSize + 2 * AllDataType::size(bindField->type, bindField->length);
@@ -328,9 +333,17 @@ DbRetVal SqlPacketExecute::marshall()
     {
         bindField = (BindSqlField*) paramList.get(i+1);
         if (bindField->type == typeBinary) {
+            *(int *)bufIter = typeBinary;
+            bufIter = (char*) bufIter + sizeof(int);
+            *(int *)bufIter = AllDataType::size(bindField->type, bindField->length);
+            bufIter = (char*) bufIter + sizeof(int); 
             AllDataType::copyVal(bufIter, bindField->value, bindField->type, 2 * bindField->length);
             bufIter = bufIter + 2 * AllDataType::size(bindField->type, bindField->length);
         } else {
+            *(int *)bufIter = bindField->type;
+            bufIter = (char*) bufIter + sizeof(int);
+            *(int *)bufIter = AllDataType::size(bindField->type, bindField->length);
+            bufIter = (char*) bufIter + sizeof(int); 
             AllDataType::copyVal(bufIter, bindField->value, bindField->type, bindField->length);
             bufIter = bufIter + AllDataType::size(bindField->type, bindField->length);
         } 
@@ -358,8 +371,12 @@ DbRetVal SqlPacketExecute::unmarshall()
     BindSqlField *bindField = NULL;
     for (int i=0; i <noParams; i++)
     {
-        paramValues[i] = bufIter;
         bindField = (BindSqlField*) stmt->paramList.get(i+1);
+        bindField->type = (DataType) *(int *)bufIter;
+        bufIter = (char*) bufIter + sizeof(int);
+        bindField->length = *(int *)bufIter;
+        bufIter = (char*) bufIter + sizeof(int);
+        paramValues[i] = bufIter;
         bindField->value = paramValues[i];
         if (bindField->type == typeBinary)
             bufIter = bufIter + 2 * AllDataType::size(bindField->type, bindField->length);

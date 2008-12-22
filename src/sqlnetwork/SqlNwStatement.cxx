@@ -363,11 +363,17 @@ DbRetVal SqlNwStatement::free()
     return rv;
 }
 
+// In all the following setXXXParam functions type and length fields are 
+// reinitialized to accommodate fix for MySQL bug #1382 
+// SQLDescribeParam returns the same type information
+
 void SqlNwStatement::setShortParam(int paramPos, short value)
 {
     if (!isPrepared) return;
     if (paramPos <= 0) return;
     BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
+    bindField->type = typeShort;
+    bindField->length = AllDataType::size(typeShort);
     *(short *) bindField->value = value;
     return;
 }
@@ -377,6 +383,8 @@ void SqlNwStatement::setIntParam(int paramPos, int value)
     if (!isPrepared) return ;
     if (paramPos <= 0) return;
     BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
+    bindField->type = typeInt;
+    bindField->length = AllDataType::size(typeInt);
     *(int *) bindField->value = value;
     return;
 }
@@ -386,6 +394,8 @@ void SqlNwStatement::setLongParam(int paramPos, long value)
     if (!isPrepared) return ;
     if (paramPos <= 0) return;
     BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
+    bindField->type = typeLong;
+    bindField->length = AllDataType::size(typeLong);
     *(long *) bindField->value = value;
     return;
 
@@ -396,6 +406,8 @@ void SqlNwStatement::setLongLongParam(int paramPos, long long value)
     if (!isPrepared) return ;
     if (paramPos <= 0) return;
     BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
+    bindField->type = typeLongLong;
+    bindField->length = AllDataType::size(typeLongLong);
     *(long long *) bindField->value = value;
     return;
 }
@@ -405,6 +417,8 @@ void SqlNwStatement::setByteIntParam(int paramPos, ByteInt value)
     if (!isPrepared) return ;
     if (paramPos <= 0) return;
     BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
+    bindField->type = typeByteInt;
+    bindField->length = AllDataType::size(typeByteInt);
     *(ByteInt *) bindField->value = value;
     return;
 }
@@ -414,6 +428,8 @@ void SqlNwStatement::setFloatParam(int paramPos, float value)
     if (!isPrepared) return ;
     if (paramPos <= 0) return;
     BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
+    bindField->type = typeFloat;
+    bindField->length = AllDataType::size(typeFloat);
     *(float *) bindField->value = value;
     return;
 }
@@ -423,6 +439,8 @@ void SqlNwStatement::setDoubleParam(int paramPos, double value)
     if (!isPrepared) return ;
     if (paramPos <= 0) return;
     BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
+    bindField->type = typeDouble;
+    bindField->length = AllDataType::size(typeDouble);
     *(double *) bindField->value = value;
     return;
 }
@@ -432,6 +450,7 @@ void SqlNwStatement::setStringParam(int paramPos, char *value)
     if (!isPrepared) return ;
     if (paramPos <= 0) return;
     BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
+    bindField->type = typeString;
     strcpy((char *) bindField->value, value);
     return;
 }
@@ -441,6 +460,8 @@ void SqlNwStatement::setDateParam(int paramPos, Date value)
     if (!isPrepared) return ;
     if (paramPos <= 0) return;
     BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
+    bindField->type = typeDate;
+    bindField->length = AllDataType::size(typeDate);
     *(Date *)bindField->value = value;
     return;
 }
@@ -450,6 +471,8 @@ void SqlNwStatement::setTimeParam(int paramPos, Time value)
     if (!isPrepared) return ;
     if (paramPos <= 0) return;
     BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
+    bindField->type = typeTime;
+    bindField->length = AllDataType::size(typeTime);
     * (Time *) bindField->value = value;
     return;
 }
@@ -459,6 +482,8 @@ void SqlNwStatement::setTimeStampParam(int paramPos, TimeStamp value)
     if (!isPrepared) return ;
     if (paramPos <= 0) return;
     BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
+    bindField->type = typeTimeStamp;
+    bindField->length = AllDataType::size(typeTimeStamp);
     *(TimeStamp *) bindField->value = value;
     return;
 }
@@ -468,6 +493,7 @@ void SqlNwStatement::setBinaryParam(int paramPos, void *value)
     if (!isPrepared) return;
     if (paramPos <= 0) return;
     BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
+    bindField->type = typeBinary;
     memcpy(bindField->value, value, 2 * bindField->length);
     return;
 }
