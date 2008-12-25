@@ -2,7 +2,7 @@
 # Test Case
 
 # Bi-directional cache  test
-#    Create table t1 with field f1 int ,f2 char,f3 smallint , f4 bigint . Make bidirectional flag and cache flag true. Cache the table with -p fieldname,filedname it should fail
+#    Create table t1 with field f1 int ,f2 char,f3 smallint , f4 bigint . Make bidirectional flag and cache flag true. Cache the table with -p f5 it should fail
 
 # Author:=bijaya
 
