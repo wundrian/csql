@@ -3,6 +3,7 @@
 #9.	Create table t1 with 5 records in csql database.
 #	select query with count,sum,avg,min,max.
 
+
 #	Author : Jitendra Lenka
 
 QUITFILE=${PWD}/sql/Aggregate/quit.sql
