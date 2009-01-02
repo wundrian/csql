@@ -273,7 +273,7 @@ Transaction* ProcessManager::getThreadTransaction(int pslot)
     ThreadInfo* pInfo = systemDatabase->getThreadInfo(pslot);
     int i=0;
 
-    for (int i = 0 ;i < MAX_THREADS_PER_PROCESS; i++)
+    for (i = 0; i < MAX_THREADS_PER_PROCESS; i++)
     {
         if (pInfo->thrTrans_[i].pid_ == pid && pInfo->thrTrans_[i].thrid_ == thrid) break;
     }
