@@ -133,7 +133,7 @@ class TableImpl:public Table
         idxInfo = NULL; indexPtr_ = NULL; scanType_ = unknownScan; 
         pred_ = NULL; useIndex_ = -1; numFlds_ = 0;
         iNullInfo = 0; cNullInfo = NULL; isIntUsedForNULL = true; 
-        iNotNullInfo = 0; cNotNullInfo = NULL;
+        iNotNullInfo = 0; cNotNullInfo = NULL; curTuple_ = NULL;
         isPlanCreated = false; undoFlag = true;}
     ~TableImpl();
 

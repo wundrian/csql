@@ -1258,7 +1258,7 @@ void* AllDataType::alloc(DataType type, int length)
             dest = malloc(length);
             break;
         case typeBinary:
-		    if (length == 0 || length > 256 ) return NULL;
+		    if (length == 0 || length > 512) return NULL;
 			dest = malloc(length);
 			memset(dest, 0, length);
 			break;

@@ -41,37 +41,37 @@ Case 1: With -D chunk option with empty database
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > DatabaseTableId </ChunkName> 
                 <TotalDataNodes> 0 </TotalDataNodes> 
-                <SizeOfDataNodes> 148 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 84 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 11 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > UserTableId </ChunkName> 
                 <TotalDataNodes> 1 </TotalDataNodes> 
-                <SizeOfDataNodes> 260 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 132 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 12 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > TableTableId </ChunkName> 
                 <TotalDataNodes> 0 </TotalDataNodes> 
-                <SizeOfDataNodes> 152 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 88 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 13 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > FieldTableId </ChunkName> 
                 <TotalDataNodes> 0 </TotalDataNodes> 
-                <SizeOfDataNodes> 196 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 132 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 14 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > AccessTableId </ChunkName> 
                 <TotalDataNodes> 0 </TotalDataNodes> 
-                <SizeOfDataNodes> 260 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 132 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 15 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > IndexTableId </ChunkName> 
                 <TotalDataNodes> 0 </TotalDataNodes> 
-                <SizeOfDataNodes> 168 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 104 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 16 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
@@ -138,37 +138,37 @@ Case 2: With -D chunk  option after table creation:
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > DatabaseTableId </ChunkName> 
                 <TotalDataNodes> 0 </TotalDataNodes> 
-                <SizeOfDataNodes> 148 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 84 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 11 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > UserTableId </ChunkName> 
                 <TotalDataNodes> 1 </TotalDataNodes> 
-                <SizeOfDataNodes> 260 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 132 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 12 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > TableTableId </ChunkName> 
                 <TotalDataNodes> 1 </TotalDataNodes> 
-                <SizeOfDataNodes> 152 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 88 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 13 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > FieldTableId </ChunkName> 
                 <TotalDataNodes> 2 </TotalDataNodes> 
-                <SizeOfDataNodes> 196 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 132 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 14 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > AccessTableId </ChunkName> 
                 <TotalDataNodes> 0 </TotalDataNodes> 
-                <SizeOfDataNodes> 260 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 132 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 15 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > IndexTableId </ChunkName> 
                 <TotalDataNodes> 0 </TotalDataNodes> 
-                <SizeOfDataNodes> 168 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 104 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 16 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
@@ -232,37 +232,37 @@ Case 3: With -D chunk  option after drop t1 :
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > DatabaseTableId </ChunkName> 
                 <TotalDataNodes> 0 </TotalDataNodes> 
-                <SizeOfDataNodes> 148 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 84 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 11 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > UserTableId </ChunkName> 
                 <TotalDataNodes> 1 </TotalDataNodes> 
-                <SizeOfDataNodes> 260 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 132 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 12 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > TableTableId </ChunkName> 
                 <TotalDataNodes> 0 </TotalDataNodes> 
-                <SizeOfDataNodes> 152 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 88 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 13 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > FieldTableId </ChunkName> 
                 <TotalDataNodes> 0 </TotalDataNodes> 
-                <SizeOfDataNodes> 196 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 132 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 14 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > AccessTableId </ChunkName> 
                 <TotalDataNodes> 0 </TotalDataNodes> 
-                <SizeOfDataNodes> 260 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 132 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 15 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > IndexTableId </ChunkName> 
                 <TotalDataNodes> 0 </TotalDataNodes> 
-                <SizeOfDataNodes> 168 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 104 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 16 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
