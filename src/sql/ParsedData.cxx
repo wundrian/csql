@@ -197,10 +197,15 @@ void ParsedData::setFldType(DataType type)
     fldDef.type_ = type;
 }
 
-void ParsedData::setFldLength(size_t length)
+DbRetVal ParsedData::setFldLength(size_t length)
 {
-    if(fldDef.type_ == typeBinary && length != 1) fldDef.length_ = length - 1;
-    else fldDef.length_ = length;
+    if(fldDef.type_ == typeBinary && (length-1) && (length-1) <= 256) {
+        fldDef.length_ = length - 1; return OK;
+    }
+    else if (fldDef.type_ == typeBinary && (length-1) > 256) {
+        return ErrBadRange;
+    }
+    else { fldDef.length_ = length; return OK; }
 }
 
 void ParsedData::setFldNotNull(bool notNull)
