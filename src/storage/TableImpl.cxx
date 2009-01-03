@@ -500,6 +500,8 @@ DbRetVal TableImpl::deleteTuple()
             return ret;
         }
     }
+    lMgr_->releaseLock(curTuple_);
+    (*trans)->removeFromHasList(db_, curTuple_);
     ((Chunk*)chunkPtr_)->free(db_, curTuple_);
     if (undoFlag)
         ret = (*trans)->appendUndoLog(sysDB_, DeleteOperation, curTuple_, length_);
