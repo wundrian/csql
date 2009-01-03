@@ -199,7 +199,7 @@ void ParsedData::setFldType(DataType type)
 
 void ParsedData::setFldLength(size_t length)
 {
-    if(fldDef.type_ == typeBinary) fldDef.length_ = length - 1;
+    if(fldDef.type_ == typeBinary && length != 1) fldDef.length_ = length - 1;
     else fldDef.length_ = length;
 }
 
