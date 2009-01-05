@@ -429,6 +429,7 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
        if( !isKeyFld && ((strcmp(fieldName,"")!=0) && (strcmp(fieldName,"NULL")!=0)))
        {
             printError(ErrSysInit, "Unable to cache Table for %s with key field %s\n", tableName,fieldName);
+            dbMgr->dropTable(tableName);
             SQLDisconnect(hdbc);
             return ErrSysInit;
        }
