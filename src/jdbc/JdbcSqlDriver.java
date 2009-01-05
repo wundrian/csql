@@ -57,7 +57,12 @@ public final class JdbcSqlDriver extends JSqlError implements Driver, JSqlErrorT
                         tokenNo=6;
                         break;
                 case 3 :
-			hostname=removeChar(t,'/');
+                        if(t.charAt(0)!='/' && t.charAt(1)!='/')
+                        {
+                           tokenNo=6;
+                           break;
+                        }
+			hostname = t.substring(2);
                         mode=3;
                         tokenNo++;
                         continue;
