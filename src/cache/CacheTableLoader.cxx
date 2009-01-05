@@ -311,6 +311,7 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
                  return ErrSysInit;
              }
         } 
+        bool isKeyFld=false;
         while (icol <= totalFields) {
             retValue = SQLDescribeCol(hstmt, icol, colName, colNameMax,
                                         &nameLength, &colType, &colLength,
@@ -319,6 +320,10 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
 
             printDebug(DM_Gateway, "Describe Column %s %d %d \n", colName, colType, colLength);
             icol++;
+            if(strcmp((char*)colName,fieldName)== 0)
+            {
+                if(!nullable) {isKeyFld=true;}
+            }
             bool isPriFld=false;
             if (nullable) {
                 inf->list.resetIter();
@@ -335,6 +340,12 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
             }
             else
                 tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType), colLength +1, NULL, true);
+        }
+        if(((strcmp(fieldName,"")!=0) && (strcmp(fieldName,"NULL")!=0))&& !isKeyFld)
+        {
+            printError(ErrSysInit, "Unable to cache Table for %s with key field %s\n", tableName,fieldName);
+            SQLDisconnect(hdbc);
+            return ErrSysInit;
         }
         rv = dbMgr->createTable(tableName, tabDef);
         if (rv != OK)
@@ -361,6 +372,7 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
              }
         }
         retValue = SQLCloseCursor(hstmtmeta);
+        isKeyFld= false;
         retValue = SQLStatistics(hstmtmeta, NULL, 0, NULL, SQL_NTS,
                     (SQLCHAR*) tableName, SQL_NTS, SQL_INDEX_ALL, SQL_QUICK);
         retValue = SQLBindCol(hstmtmeta, 4, SQL_C_SHORT,
@@ -377,6 +389,7 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
                 printDebug(DM_Gateway, "Column: %-18s Index Name: %-18s unique:%hd type:%hd\n",
                   columnname, indexname, unique, type);
             }
+            if(0 == strcmp(columnname,fieldName)){isKeyFld=true;}
             bool isPrimary=false;
             inf->list.resetIter();
             while ((name=inf->list.nextFieldName())!=NULL)
@@ -413,6 +426,12 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
        }// while meta data fetch for index creation
        SQLCloseCursor (hstmtmeta);
        SQLFreeHandle (SQL_HANDLE_STMT, hstmtmeta);
+       if( !isKeyFld && ((strcmp(fieldName,"")!=0) && (strcmp(fieldName,"NULL")!=0)))
+       {
+            printError(ErrSysInit, "Unable to cache Table for %s with key field %s\n", tableName,fieldName);
+            SQLDisconnect(hdbc);
+            return ErrSysInit;
+       }
     }
     Table *table = dbMgr->openTable(tableName);
     if (table == NULL) {
