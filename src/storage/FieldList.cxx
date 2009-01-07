@@ -138,11 +138,12 @@ DbRetVal FieldList::getFieldInfo(const char *fldName, FieldInfo *&info)
             strcpy(info->fldName , iter->fldDef.fldName_);
             info->length = iter->fldDef.length_;
             info->type   = iter->fldDef.type_;
-            info->offset = getFieldOffset(fldName);
+            info->offset = iter->fldDef.offset_;
             info->isDefault = iter->fldDef.isDefault_;
             strcpy(info->defaultValueBuf, iter->fldDef.defaultValueBuf_);
             info->isNull = iter->fldDef.isNull_;
             info->isPrimary = iter->fldDef.isPrimary_;
+            info->isUnique = iter->fldDef.isUnique_;
             return OK;
         }
         iter = iter ->next;
@@ -210,8 +211,8 @@ int FieldList::getTupleSize()
     {
         offset = offset + os::align(iter->fldDef.length_);
         iter = iter ->next;
-        }
-        return offset;
+    }
+    return offset;
 }
 
 

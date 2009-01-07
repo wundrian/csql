@@ -82,6 +82,7 @@ int TableDef::addField(const char *name,  DataType type, size_t length,
             fldDef.length_ = AllDataType::size(type);
             break;
     }
+    fldDef.offset_ = fldList.getTupleSize();
     int ret = fldList.append(fldDef);
     if (0 == ret)  fldCount++;
     return ret;

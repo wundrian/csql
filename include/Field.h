@@ -38,6 +38,7 @@ class FieldDef
     void init() {
         type_ = typeUnknown;
         length_ = 0;
+        offset_ = 0;
         bindVal_ = NULL;
         isDefault_ = false;
         isNull_ = false;
@@ -48,6 +49,7 @@ class FieldDef
     char fldName_[IDENTIFIER_LENGTH];
     DataType type_;
     size_t length_;
+    size_t offset_;
     //currently default value is supported for string and binary
     //less than length 32 bytes
     char defaultValueBuf_[DEFAULT_VALUE_BUF_LENGTH];

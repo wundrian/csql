@@ -37,13 +37,14 @@ unsigned int hashString(char *strVal)
         hval += (unsigned int) *str++;
         g = hval & ((unsigned int) 0xf << (32 - 4));
         if (g != 0)
-	{
-	    hval ^= g >> (32 - 8);
-	    hval ^= g;
-	}
+	    {
+	        hval ^= g >> (32 - 8);
+	        hval ^= g;
+	    }
     }
     return hval;
 }
+
 unsigned int hashBinary(char *strVal, int length)
 {
     unsigned int hval, g;
@@ -56,10 +57,10 @@ unsigned int hashBinary(char *strVal, int length)
         hval += (unsigned int) *str++;
         g = hval & ((unsigned int) 0xf << (32 - 4));
         if (g != 0)
-	{
-	    hval ^= g >> (32 - 8);
-	    hval ^= g;
-	}
+	    {
+	        hval ^= g >> (32 - 8);
+	        hval ^= g;
+	    }
         iter++;
     }
     return hval;
@@ -165,13 +166,26 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     int noOfBuckets = info->noOfBuckets;
     int offset = info->fldOffset;
     DataType type = info->type;
+    char *keyBuffer = (char*) malloc(info->compLength);
+    void *keyStartBuffer = keyBuffer, *keyPtr;
+    FieldIterator iter = info->idxFldList.getIterator();
+    while(iter.hasElement())
+    {
+        FieldDef def = iter.nextElement();
+        keyPtr = (char *)tuple + def.offset_;
+        AllDataType::copyVal(keyBuffer, keyPtr, def.type_, def.length_);
+        keyBuffer = keyBuffer + AllDataType::size(def.type_, def.length_);
+    }
+
     printDebug(DM_HashIndex, "Inserting hash index node for  %s", iptr->indName_);
     ChunkIterator citer = CatalogTableINDEX::getIterator(indexPtr);
     Bucket* buckets = (Bucket*)citer.nextElement();
-    void *keyPtr =(void*)((char*)tuple + offset);
-
-    int bucketNo = computeHashBucket(type,
-                        keyPtr, noOfBuckets, info->compLength);
+    keyPtr =(void*)((char*)tuple + offset);
+    int bucketNo = 0;
+    if (type == typeComposite)
+        bucketNo = computeHashBucket(type, keyStartBuffer, noOfBuckets, info->compLength);
+    else 
+        bucketNo = computeHashBucket(type, keyPtr, noOfBuckets, info->compLength);
     printDebug(DM_HashIndex, "HashIndex insert bucketno %d", bucketNo);
     Bucket *bucket =  &(buckets[bucketNo]);
 
@@ -189,11 +203,22 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         HashIndexNode *node;
         void *bucketTuple;
         printDebug(DM_HashIndex, "HashIndex insert Checking for unique");
+        bool res = false;
+        
         while((node = iter.next()) != NULL)
         {
             bucketTuple = node->ptrToTuple_;
-            if (AllDataType::compareVal((void*)((char*)bucketTuple +offset), 
-                   (void*)((char*)tuple +offset), OpEquals,type, info->compLength)) 
+            if (type == typeComposite) {
+                FieldIterator fldIter = info->idxFldList.getIterator();
+                int i = 0;
+                while (fldIter.hasElement()) {
+                    FieldDef def = fldIter.nextElement();
+                    res = AllDataType::compareVal((char *)bucketTuple + def.offset_, (char *)tuple + def.offset_, OpEquals, def.type_, def.length_);
+                    if (!res) break;  
+                }
+            }  
+            else res = AllDataType::compareVal((void*)((char*)bucketTuple +offset), (void*)((char*)tuple +offset), OpEquals,type, info->compLength); 
+            if (res) 
             {
                 printError(ErrUnique, "Unique key violation");
                 bucket->mutex_.releaseLock(tbl->db_->procSlot);
@@ -257,9 +282,23 @@ DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
 
     ChunkIterator citer = CatalogTableINDEX::getIterator(indexPtr);
     Bucket* buckets = (Bucket*)citer.nextElement();
-    void *keyPtr =(void*)((char*)tuple + offset);
 
-    int bucket = HashIndex::computeHashBucket(type, keyPtr, noOfBuckets, info->compLength);
+    char *keyBuffer = (char*) malloc(info->compLength);
+    void *keyStartBuffer = keyBuffer, *keyPtr;
+    FieldIterator iter = info->idxFldList.getIterator();
+    while(iter.hasElement())
+    {
+        FieldDef def = iter.nextElement();
+        keyPtr = (char *)tuple + def.offset_;
+        AllDataType::copyVal(keyBuffer, keyPtr, def.type_, def.length_);
+        keyBuffer = keyBuffer + AllDataType::size(def.type_, def.length_);
+    }
+
+    keyPtr =(void*)((char*)tuple + offset);
+    int bucket = 0;
+    if (type == typeComposite)
+        bucket = HashIndex::computeHashBucket(type, keyStartBuffer, noOfBuckets, info->compLength);
+    else bucket = HashIndex::computeHashBucket(type, keyPtr, noOfBuckets, info->compLength);
 
     Bucket *bucket1 = &buckets[bucket];
 
@@ -311,52 +350,65 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     //if it is not updated return from here
     void *keyPtr =(void*)((char*)tuple + offset);
     char *kPtr= (char*)keyPtr;
+    
+    //creating old key value buffer for composite primary keys
+    char *oldKeyBuffer = (char*) malloc(info->compLength);
+    void *oldKeyStartBuffer = oldKeyBuffer;
+    FieldIterator iter = info->idxFldList.getIterator();
+    while(iter.hasElement()) {
+        FieldDef def = iter.nextElement();
+        keyPtr = (char *)tuple + def.offset_;
+        AllDataType::copyVal(oldKeyBuffer, keyPtr, def.type_, def.length_);
+        oldKeyBuffer = oldKeyBuffer + AllDataType::size(def.type_, def.length_);
+    }
+
+    keyPtr = (void *) kPtr;
     //Iterate through the bind list and check
     FieldIterator idxFldIter = info->idxFldList.getIterator();
     char *keyBindBuffer ;
-    if(type==typeBinary)
-       keyBindBuffer = (char*) malloc(2 * info->compLength);
-    else
-       keyBindBuffer = (char*) malloc(info->compLength);
+    if(type==typeBinary) keyBindBuffer = (char*) malloc(2 * info->compLength);
+    else keyBindBuffer = (char*) malloc(info->compLength);
     void *keyStartBuffer = (void*) keyBindBuffer;
     bool keyUpdated = false;
-    while (idxFldIter.hasElement())
-    {
-      FieldDef idef = idxFldIter.nextElement();
-      FieldIterator fldIter = tbl->fldList_.getIterator();
-      while (fldIter.hasElement())
-      {
-        FieldDef def = fldIter.nextElement();
-        if (0 == strcmp(def.fldName_, idef.fldName_))
-        {
-            if (NULL != def.bindVal_) { 
-                if(type==typeBinary){
-                    AllDataType::copyVal(keyBindBuffer, def.bindVal_,
-                                               def.type_, 2*def.length_);
-                    keyStartBuffer=calloc(1,info->compLength);
-                    AllDataType::convertToBinary(keyStartBuffer, keyBindBuffer, typeString, info->compLength);
-                    free(keyBindBuffer);
-                }else
-                {
-                    AllDataType::copyVal(keyBindBuffer, def.bindVal_, 
-                                               def.type_, def.length_);
-                    keyBindBuffer = keyBindBuffer + AllDataType::size(def.type_, 
-                                                                def.length_);
-                }
+
+    while (idxFldIter.hasElement()) {
+        FieldDef idef = idxFldIter.nextElement();
+        FieldIterator fldIter = tbl->fldList_.getIterator();
+        while (fldIter.hasElement()) {
+            FieldDef def = fldIter.nextElement();
+            if (0 == strcmp(def.fldName_, idef.fldName_)) {
+                if (NULL != def.bindVal_) {
+                    if(type==typeBinary) {
+                        AllDataType::copyVal(keyBindBuffer, def.bindVal_,
+                                                   def.type_, 2*def.length_);
+                        keyStartBuffer=calloc(1,info->compLength);
+                        AllDataType::convertToBinary(keyStartBuffer, keyBindBuffer, typeString, info->compLength);
+                        free(keyBindBuffer);
+                    } else {
+                        AllDataType::copyVal(keyBindBuffer, def.bindVal_,
+                                                   def.type_, def.length_);
+                        keyBindBuffer = keyBindBuffer + AllDataType::size(def.type_, def.length_);
+                    }
+                } else {
+                     AllDataType::copyVal(keyBindBuffer, (char *) tuple + def.offset_, def.type_, def.length_);
+                     keyBindBuffer = keyBindBuffer + AllDataType::size(def.type_, def.length_);
+                } 
                 keyUpdated = true;
                 break;
             }
         }
-      }
     }
-    if (!keyUpdated) 
-    { 
+    if (!keyUpdated) { 
         //printf("PRABA::key not updated\n");
         free(keyStartBuffer); 
         return OK; 
     }
     //printf("PRABA::it is wrong coming here\n");
-    bool result = AllDataType::compareVal(kPtr, keyStartBuffer,
+    bool result = false;
+    if (type == typeComposite) 
+        result = AllDataType::compareVal(oldKeyStartBuffer, keyStartBuffer,
+                                OpEquals, info->type, info->compLength);
+    else result = AllDataType::compareVal(keyPtr, keyStartBuffer,
                                 OpEquals, info->type, info->compLength);
     if (result) return OK; 
     printDebug(DM_HashIndex, "Updating hash index node: Key value is updated");
@@ -366,8 +418,10 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     Bucket* buckets = (Bucket*)citer.nextElement();
 
     //remove the node whose key is updated
-    int bucketNo = computeHashBucket(type,
-                        keyPtr, noOfBuckets, info->compLength);
+    int bucketNo = 0;
+    if (type == typeComposite) 
+        bucketNo = computeHashBucket(type, oldKeyStartBuffer, noOfBuckets, info->compLength);
+    else bucketNo = computeHashBucket(type, keyPtr, noOfBuckets, info->compLength);
     printDebug(DM_HashIndex, "Updating hash index node: Bucket for old value is %d", bucketNo);
     Bucket *bucket = &buckets[bucketNo];
 

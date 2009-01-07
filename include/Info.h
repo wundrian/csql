@@ -71,7 +71,6 @@ class TableDef
     private:
     FieldList fldList;
     int fldCount;
-
     public:
     TableDef() { fldCount = 0; }
     ~TableDef();
@@ -118,11 +117,12 @@ class FieldInfo
     char fldName[IDENTIFIER_LENGTH];
     DataType type;
     size_t length;
-    int offset;
+    size_t offset;
     char defaultValueBuf[DEFAULT_VALUE_BUF_LENGTH];
     bool isNull;
     bool isPrimary;
     bool isDefault;
+    bool isUnique;
 };
 
 

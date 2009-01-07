@@ -34,6 +34,7 @@ DbRetVal TupleIterator::open()
         bool isPtr = false;
         FieldIterator iter = hIdxInfo->idxFldList.getIterator();
         char *keyBuffer;
+        int offset = hIdxInfo->fldOffset;
         keyBuffer = (char*) malloc(hIdxInfo->compLength);
         void *keyStartBuffer = (void*) keyBuffer, *keyPtr;
         while(iter.hasElement())
@@ -43,8 +44,11 @@ DbRetVal TupleIterator::open()
            AllDataType::copyVal(keyBuffer, keyPtr, def.type_, def.length_); 
            keyBuffer = keyBuffer + AllDataType::size(def.type_, def.length_);
         }
-
-        int bucketNo = HashIndex::computeHashBucket(hIdxInfo->type,
+        int bucketNo = 0;
+        if (hIdxInfo->type == typeComposite) 
+            bucketNo = HashIndex::computeHashBucket(hIdxInfo->type,
+                      (char *)keyStartBuffer, hIdxInfo->noOfBuckets, hIdxInfo->compLength);
+        else bucketNo = HashIndex::computeHashBucket(hIdxInfo->type,
                       keyStartBuffer, hIdxInfo->noOfBuckets, hIdxInfo->compLength);
         free(keyStartBuffer);
         Bucket *bucket =  &(hIdxInfo->buckets[bucketNo]);
@@ -84,8 +88,6 @@ DbRetVal TupleIterator::open()
         tIter->setFldOffset(hIdxInfo->fldOffset);
         tIter->setTypeLength(hIdxInfo->type, hIdxInfo->compLength);
     }
-
-    
     return OK;
 }
 

@@ -127,7 +127,7 @@ DbRetVal CatalogTableFIELD::insert(FieldIterator &iter, int tblID, void *tptr)
         fldInfo->tblPtr_ = tptr;
         fldInfo->type_ = fDef.type_;
         fldInfo->length_ = fDef.length_;
-        fldInfo->offset_ = 0; //TODO
+        fldInfo->offset_ = fDef.offset_; 
         os::memcpy(fldInfo->defaultValueBuf_, fDef.defaultValueBuf_,
                                         DEFAULT_VALUE_BUF_LENGTH);
         fldInfo->isNull_ = fDef.isNull_;
@@ -175,6 +175,7 @@ void CatalogTableFIELD::getFieldInfo(void* tptr, FieldList &list)
             fldDef.fldName_[IDENTIFIER_LENGTH] = '\0';
             fldDef.type_ = fTuple->type_;
             fldDef.length_ = fTuple->length_;
+            fldDef.offset_ = fTuple->offset_;
             fldDef.isDefault_ = fTuple->isDefault_;
             os::memcpy(fldDef.defaultValueBuf_, fTuple->defaultValueBuf_,
                                          DEFAULT_VALUE_BUF_LENGTH);
@@ -536,6 +537,7 @@ DbRetVal CatalogTableINDEXFIELD::getFieldInfo(void *index, FieldList &list)
             fldDef.fldName_[IDENTIFIER_LENGTH] = '\0';
             fldDef.type_ = fTuple->type_;
             fldDef.length_ = fTuple->length_;
+            fldDef.offset_ = fTuple->offset_;
             fldDef.isDefault_ = fTuple->isDefault_;
             os::memcpy(fldDef.defaultValueBuf_, fTuple->defaultValueBuf_,
                                          DEFAULT_VALUE_BUF_LENGTH);
