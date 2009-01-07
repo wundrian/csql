@@ -2,7 +2,7 @@
 # TEST CASE
 # 1. create table t1 (f1 int not null, f2 int);
 # 2. create index idx on t1 (f1) tree
-# 3. insert duplicate records and it should pass
+#checking Select statement with condition on  0 or less than 0 on index field 
 #
 QUITFILE=${PWD}/tools/csql/quit.sql
 REL_PATH=.
