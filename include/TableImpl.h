@@ -33,6 +33,11 @@ enum ScanType
     unknownScan
 };
 
+static char ScanTypeNames[][10] =
+{
+    "TableScan", "HashScan", "TreeScan", "Invalid"
+};
+
 class Predicate;
 
 class TupleIterator
@@ -195,12 +200,14 @@ class TableImpl:public Table
     void* fetchNoBind(DbRetVal &rv);
 
     DbRetVal close();
+    DbRetVal closeScan();
 
 
     long spaceUsed();
     long numTuples();
     int pagesUsed();
     void printInfo();
+    void printPlan(int space);
 
     DbRetVal lock(bool shared);
     DbRetVal unlock();
@@ -208,6 +215,9 @@ class TableImpl:public Table
     DbRetVal setUndoLogging(bool flag) { undoFlag = flag; }
 
     void printSQLIndexString();
+    bool isTableInvolved(char *tblName);
+    bool pushPredicate(Predicate *pred);
+    void setPredicate(Predicate *pred);
     char* getName() { return tblName_; }
     void setTableInfo(char *name, int tblid, size_t  length,
                        int numFld, int numIdx, void *chunk);

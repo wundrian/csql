@@ -163,6 +163,7 @@ class Table
     */
 
     virtual DbRetVal close()=0;
+    virtual DbRetVal closeScan()=0;
 
     /**Retrieves the total space used for this table in bytes
     * @returns DbRetVal
@@ -194,6 +195,13 @@ class Table
     virtual List getFieldNameList()=0;
     virtual char* getName()=0;
     virtual void printSQLIndexString()=0;
+
+    //optimizer
+    virtual bool isTableInvolved(char *tblName)=0;
+    virtual bool pushPredicate(Predicate *pred)=0;
+    virtual void setPredicate(Predicate *pred)=0;
+    virtual void printPlan(int space)=0;
+
     virtual void resetNullinfo()=0;
     virtual int getFldPos(char *name)=0;
     virtual ~Table() { }

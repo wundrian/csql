@@ -32,7 +32,9 @@ SelStatement::~SelStatement()
 {
     if (table) {
         table->setCondition(NULL);
-        if (dbMgr) dbMgr->closeTable(table);
+        //if (dbMgr) dbMgr->closeTable(table);
+        table->close();
+        delete table;
     }
     if (totalParams) {
         free(params);
@@ -81,6 +83,7 @@ DbRetVal SelStatement::execute(int &rowsAffected)
         AllDataType::copyVal(value->value, paramValues[i], value->type, value->length);
     }
     rv = table->execute();
+    //table->printPlan(0);
     return rv;
 }
 
@@ -255,7 +258,7 @@ DbRetVal SelStatement::openTables()
     JoinTableImpl *jHdl = NULL;
     Table *tHdl = NULL, *prevHdl = NULL;
     bool joinInvolved = false;
-    //check whether the table exists
+    //check whether all the table exists
     ListIterator titer = parsedData->getTableNameList().getIterator();
     while (titer.hasElement())
     {
@@ -316,7 +319,7 @@ DbRetVal SelStatement::resolve()
             //as they all are deleted during resolveStar method.
             break;
         }else {
-            replaceStarWithFirstFldName(name);
+            if ('*' == name->fldName[0]) {return ErrSyntaxError;}
             rv = table->getFieldInfo(name->fldName, fInfo);
             if (ErrNotFound == rv)
             {
@@ -393,23 +396,13 @@ DbRetVal SelStatement::resolve()
     delete fInfo;
     return rv;
 }
-DbRetVal SelStatement::replaceStarWithFirstFldName(FieldName *name)
-{
-    List fNameList = table->getFieldNameList();
-    ListIterator fNameIter = fNameList.getIterator();
-    Identifier *elem = NULL;
-    if (fNameIter.hasElement())
-        elem = (Identifier*) fNameIter.nextElement();
-    if ('*' == name->fldName[0]) strcpy(name->fldName, elem->name);
-    return OK;
-}
 DbRetVal SelStatement::resolveGroupFld(AggTableImpl *aggTable)
 {
     if (!aggTable) return OK;
     ListIterator giter = parsedData->getGroupFieldNameList().getIterator();
     FieldName *name = NULL;
     DbRetVal rv = OK;
-    FieldInfo *fInfo;
+    FieldInfo *fInfo = new FieldInfo();
     while (giter.hasElement())
     {
         name = (FieldName*)giter.nextElement();
@@ -612,7 +605,7 @@ void* SelStatement::fetch(DbRetVal &rv)
         value = bindFields[i];
         if (bindFieldValues[i] == NULL) 
         {
-            printError(ErrBadCall, "Fields are not binded properly. Should never happen");
+            printError(ErrBadCall, "Fields are not binded properly. Should never happen %d", i);
             return NULL;
         }
 		AllDataType::copyVal(bindFieldValues[i], value->value, value->type, value->length);

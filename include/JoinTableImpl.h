@@ -101,7 +101,7 @@ class JoinTableImpl:public Table
     void setTable(Table *left, Table *right)
     { leftTableHdl = left; rightTableHdl = right; }
     int getFldPos(char *name){}
-    void closeScan();
+    DbRetVal closeScan();
     void setJoinType(JoinType type) { jType = type; }
     //binding
     DbRetVal bindFld(const char *name, void *val);
@@ -143,6 +143,13 @@ class JoinTableImpl:public Table
     long numTuples();
     void printInfo();
     void *getBindFldAddr(const char *name);
+
+    bool isTableInvolved(char *tblName);
+    bool pushPredicate(Predicate *pred);
+    void setPredicate(Predicate *pred);
+    void printPlan(int space);
+    DbRetVal optimize();
+
 
 };
 

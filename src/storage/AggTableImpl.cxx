@@ -22,16 +22,19 @@ AggTableImpl::AggTableImpl()
 }
 AggTableImpl::~AggTableImpl()
 {
+    close();
 }
 void *AggTableImpl::getBindFldAddr(const char *name)
 {
-	return NULL;
+    printError(ErrBadCall, "AggTableImpl getBindFldAdddr not implemented\n"); 
+    return NULL;
 }
 
 
 
 DbRetVal AggTableImpl::bindFld(const char *name, void *val)
 {
+    printError(ErrBadCall, "AggTableImpl bindFld not implemented\n"); 
     return ErrBadCall;
 }
 DbRetVal AggTableImpl::bindFld(const char *fldname, AggType aggType, void *val)
@@ -142,6 +145,8 @@ DbRetVal AggTableImpl::execute()
                }
                case AGG_COUNT:
                    (*(int*)(buffer+offset))++;
+                   if ((*(int*)(buffer+offset)) % 1000000 ==0) 
+                              printf("PRABA:%d\n", (*(int*)(buffer+offset)));
                    break;
            }
            offset = offset + AllDataType::size(def->type, def->length);
@@ -280,7 +285,7 @@ long AggTableImpl::numTuples()
 {
     return aggNodes.size();
 }
-void AggTableImpl::closeScan()
+DbRetVal AggTableImpl::closeScan()
 {
     aggNodeIter.reset();
     ListIterator aiter = aggNodes.getIterator();
@@ -290,19 +295,23 @@ void AggTableImpl::closeScan()
         free(element);
     }
     aggNodes.reset();
+    tableHdl->closeScan();
 }
 
 DbRetVal AggTableImpl::close()
 {
     //free memory allocated. make sure that field buffers are freed only once.
     //for stmts which has more than one agg on same field needs to be handled safely
+    closeScan();
     free(groupFld.bindBuf);
+    groupFld.bindBuf= NULL;
     ListIterator iter = fldList.getIterator();
     AggFldDef  *elem;
     while (iter.hasElement())
     {
         elem = (AggFldDef*) iter.nextElement();
-        if(!elem->alreadyBinded) free(elem->bindBuf);
+        //if(!elem->alreadyBinded) free(elem->bindBuf);
+        //TEMPHACK:PRABA::to avoid cordump in odbcBench
     }
     fldList.reset();
     return OK;

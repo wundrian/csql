@@ -67,6 +67,12 @@ enum ComparisionOp {
 	OpLike, // for Like operator
     OpInvalidComparisionOp
 };
+static char CompOpNames[][20] =
+{
+    "Equals", "NotEquals", "LessThan", "LessThanEquals", "GreaterThan", 
+    "GreaterThanEquals", "Like", "Invalid"
+};
+
 
 /**
 * @class LogicalOp
@@ -81,6 +87,10 @@ enum LogicalOp {
     OpInvalidLogicalOp
 };
 
+static char LogOpNames[][10] =
+{
+    "AND", "OR", "NOT", "Invalid"
+};
 
 class AllDataType
 {

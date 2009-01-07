@@ -112,7 +112,7 @@ class Predicate
 
     virtual void setTerm(Predicate *p1, LogicalOp op, Predicate *p2 = NULL)=0;
 
-    virtual void print()=0;
+    virtual void print(int space)=0;
     virtual ~Predicate(){}
 };
 

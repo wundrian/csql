@@ -162,6 +162,7 @@ class SelStatement : public DmlStatement
     ~SelStatement();
 
     DbRetVal openTables();
+//    DbRetVal resolveGroupFld(AggTableImpl *impl);
 
     DbRetVal setBindField(int pos, void* value);
 

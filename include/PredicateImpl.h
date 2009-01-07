@@ -32,6 +32,7 @@ class PredicateImpl:public Predicate
     LogicalOp logicalOp;
     PredicateImpl *lhs;
     PredicateImpl *rhs;
+    PredicateImpl *parent;
 
     //Members set during execution
     void *tuple; //pointer to the tuple
@@ -47,6 +48,7 @@ class PredicateImpl:public Predicate
         operand = NULL; operandPtr = NULL; lhs = rhs = NULL; 
         tuple = NULL; table = NULL; 
         projList = NULL;
+        parent = NULL;
     }
     ~PredicateImpl(){}
 
@@ -76,9 +78,15 @@ class PredicateImpl:public Predicate
     // TODO:: expression like !(f1 !=100) wont be optimized for now
     bool pointLookupInvolved(const char *fName);
     bool rangeQueryInvolved(const char *fName);
-
-    void print();
-
+    PredicateImpl *getTablePredicate();
+    PredicateImpl *getJoinPredicate();
+    void removeIfNotNecessary();
+    bool isDummyPredicate();
+    PredicateImpl* getIfOneSidedPredicate();
+    void setParent(PredicateImpl *pImpl);
+    char* getFldName1(){ return fldName1; }
+    char* getFldName2(){ return fldName2; }
+    void print(int space);
 };
 
 #endif

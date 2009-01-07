@@ -81,7 +81,7 @@ class AggTableImpl:public Table
     void* insertOrGet();
     void setTable(Table *impl){ tableHdl = impl;}
     Table* getTableHdl(){ return tableHdl; }
-    void closeScan();
+    DbRetVal closeScan();
     void *getBindFldAddr(const char *name);
     DbRetVal bindFld(const char *name, void *val);
     DbRetVal bindFld(const char *name, AggType aggType, void *val);
@@ -116,6 +116,13 @@ class AggTableImpl:public Table
     DbRetVal close();
     long numTuples();
     void printInfo();
+    bool pushPredicate(Predicate *pred)
+        { printf("Wrong call\n"); return false; }
+    void setPredicate(Predicate *pred) 
+        { printf("Wrong call\n"); }
+    bool isTableInvolved(char *tableName)
+        { printf("Wrong call\n"); return false; }
+    void printPlan(int space){printf("AGG-PLAN-TODO\n");}
 };
 
 #endif

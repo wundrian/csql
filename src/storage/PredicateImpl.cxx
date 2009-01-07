@@ -24,11 +24,31 @@
 #include<fnmatch.h>
 #include<JoinTableImpl.h>
 #include<Util.h>
-void PredicateImpl::print()
+void PredicateImpl::print(int space)
 {
-    printf("FieldName1 %s, FieldName2 %s", fldName1, fldName2);
-    printf("CompOp %d, operand %x operandPtr%x", compOp, operand);
-    printf("lhs %x, rhs %x", lhs, rhs);
+    char spaceBuf[IDENTIFIER_LENGTH];
+    memset(spaceBuf, 32, IDENTIFIER_LENGTH);
+    spaceBuf[space] = '\0';
+
+    printf("%s <PREDICATE>\n", spaceBuf);
+    printf("%s <FieldName1> %s </FieldName1>\n", spaceBuf, fldName1);
+    printf("%s <FieldName2> %s </FieldName2>\n", spaceBuf, fldName2);
+    printf("%s <CompOp> %s </CompOp>\n", spaceBuf, CompOpNames[compOp]);
+    printf("%s <LogOp> %s </LogOp>\n", spaceBuf, LogOpNames[logicalOp]);
+    printf("%s <Operand> %x </Operand>\n", spaceBuf, operand);
+    printf("%s <OperandPtr> %x </OperandPtr>\n", spaceBuf, operandPtr);
+    if (lhs) {
+       printf("%s <PRED-LEFT>\n", spaceBuf);
+       lhs->print(space+2);
+       printf("%s </PRED-LEFT>\n", spaceBuf);
+    }
+    if (rhs) 
+    {
+       printf("%s <PRED-RIGHT>\n", spaceBuf);
+       rhs->print(space+2);
+       printf("%s </PRED-RIGHT>\n", spaceBuf);
+    }
+    printf("%s </PREDICATE>\n", spaceBuf);
     
 }
 
@@ -41,6 +61,7 @@ void PredicateImpl::setTerm(const char* fName1, ComparisionOp op,
     operand = NULL;
     operandPtr = NULL;
     lhs = rhs = NULL;
+    parent = NULL;
     logicalOp = OpInvalidLogicalOp;
 }
 
@@ -48,18 +69,21 @@ void PredicateImpl::setTerm(const char* fName1, ComparisionOp op,
 void PredicateImpl::setTerm(const char* fName1, ComparisionOp op, void *opnd)
 {
     strcpy(fldName1, fName1);
-    if (op == OpLike) {
-	    char *c = (char *) opnd;
-		while (*c != '\0') {
-		    if (*c == '_') *c = '?';
-			else if(*c == '%') *c = '*';
-			c++;
-		}
+    if (op == OpLike) 
+    {
+        char *c = (char *) opnd;
+	while (*c != '\0') 
+        {
+	    if (*c == '_') *c = '?';
+	    else if(*c == '%') *c = '*';
+	    c++;
 	}
+    }
     compOp = op;
     operand = opnd;
     operandPtr = NULL;
     lhs = rhs = NULL;
+    parent = NULL;
     logicalOp = OpInvalidLogicalOp;
 }
 
@@ -70,21 +94,31 @@ void PredicateImpl::setTerm(const char* fName1, ComparisionOp op, void **opnd)
     operand = NULL;
     operandPtr = opnd;
     lhs = rhs = NULL;
+    parent = NULL;
     logicalOp = OpInvalidLogicalOp;
 }
 
-
+void PredicateImpl::setParent(PredicateImpl *pImpl)
+{
+   if (parent != NULL) printf("Parent already set\n");
+   parent = pImpl;
+   return;
+}
 void PredicateImpl::setTerm(Predicate *p1, LogicalOp op, Predicate *p2 )
 {
     if (p2 == NULL && op != OpNot || op == OpNot && p2 != NULL) 
     { 
         //TODO::printError
+        printError(ErrBadArg, "Wrong argument passed\n");
         return; 
     }
     lhs = (PredicateImpl*)p1;
     rhs = (PredicateImpl*)p2;
     logicalOp = op;
     compOp = OpInvalidComparisionOp;
+    if (lhs != NULL) lhs->setParent(this);
+    if (rhs != NULL) rhs->setParent(this);
+    return;
 }
 
 void PredicateImpl::setTable(Table *tbl)
@@ -110,7 +144,8 @@ void PredicateImpl::setProjectionList(List *lst)
         lhs->setProjectionList(lst);
     if (NULL != rhs)
          rhs->setProjectionList(lst);
-    projList = lst;
+    if (operand == NULL && operandPtr == NULL)
+        projList = lst;
 }
 bool PredicateImpl::isSingleTerm()
 {
@@ -152,25 +187,21 @@ bool PredicateImpl::isNotOrInvolved()
 DbRetVal PredicateImpl::evaluate(bool &result)
 {
     bool rhsResult = false, lhsResult=false;
-    printDebug(DM_Predicate, "Evaluate start logical:%d compOp:%d", logicalOp, compOp);
     DbRetVal retCode =OK;
     result = false;
     if (NULL != lhs)
     {
         retCode = lhs->evaluate(lhsResult);
-        printDebug(DM_Predicate, "LHS result %d retcode: %d", lhsResult, retCode);
         if (retCode != OK) return ErrInvalidExpr;
-    }
+    }else lhsResult = true;
     if (NULL != rhs)
     {
         retCode = rhs->evaluate(rhsResult);
-        printDebug(DM_Predicate, "RHS result %d retcode:%d", rhsResult, retCode);
         if (retCode != OK) return ErrInvalidExpr;
-    }
+    } else rhsResult = true;
     if (NULL != lhs)
     {
         //Means it involves only Logical operator
-        printDebug(DM_Predicate,"Evalute operator %d lhsResult %d : rhsResult %d", logicalOp, lhsResult, rhsResult );
             switch(logicalOp)
             {
                 case OpAnd:
@@ -189,7 +220,6 @@ DbRetVal PredicateImpl::evaluate(bool &result)
             printDebug(DM_Predicate, "result is %d", result);
             return OK;
     }
-    printDebug(DM_Predicate, "Evaluating comparision predicate op:%d", compOp);
     //Means it is relational expression
     //first operand is always field identifier
     //get the value in the tuple
@@ -282,7 +312,6 @@ DbRetVal PredicateImpl::evaluate(bool &result)
         val2 = *(char**)operandPtr;
     }
     int ret = 0;
-    printDebug(DM_Predicate, " fldname :%s ", fieldName1);
     if (compOp == OpLike) result = ! fnmatch(val2, val1, 0);
     else result = AllDataType::compareVal(val1, val2, compOp, srcType,
                               table->getFieldLength(fieldName1));
@@ -380,19 +409,15 @@ bool PredicateImpl::rangeQueryInvolved(const char *fname)
 
 void* PredicateImpl::valPtrForIndexField(const char *fname)
 {
-    void *lhsRet, *rhsRet;
+    void *lhsRet=NULL, *rhsRet=NULL;
     if (NULL != lhs)
     {
         lhsRet = lhs->valPtrForIndexField(fname);
+        if ( lhsRet !=  NULL) return lhsRet;
     }
     if (NULL != rhs)
     {
         rhsRet = rhs->valPtrForIndexField(fname);
-    }
-    if (NULL != lhs)
-    {
-        //Means it involves only Logical operator
-        if ( lhsRet !=  NULL) return lhsRet;
         if ( rhsRet !=  NULL) return rhsRet;
     }
     char fieldName1[IDENTIFIER_LENGTH];
@@ -410,19 +435,17 @@ void* PredicateImpl::valPtrForIndexField(const char *fname)
 }
 ComparisionOp PredicateImpl::opForIndexField(const char *fname)
 {
-    ComparisionOp lhsRet, rhsRet;
+    ComparisionOp lhsRet= OpInvalidComparisionOp, rhsRet= OpInvalidComparisionOp;
     if (NULL != lhs)
     {
         lhsRet = lhs->opForIndexField(fname);
+        if ( lhsRet !=  OpInvalidComparisionOp) return lhsRet;
+        
     }
     if (NULL != rhs)
     {
         rhsRet = rhs->opForIndexField(fname);
-    }
-    if (NULL != lhs)
-    {
-        if ( lhsRet !=  NULL) return lhsRet;
-        if ( rhsRet !=  NULL) return rhsRet;
+        if ( rhsRet !=  OpInvalidComparisionOp) return rhsRet;
     }
     char fieldName1[IDENTIFIER_LENGTH];
     Table::getFieldNameAlone(fldName1, fieldName1);
@@ -432,4 +455,139 @@ ComparisionOp PredicateImpl::opForIndexField(const char *fname)
     }
     return OpInvalidComparisionOp;
 }
-
+PredicateImpl* PredicateImpl::getTablePredicate()
+{
+    PredicateImpl *lhsRet = NULL, *rhsRet = NULL;
+    if (NULL != lhs)
+    {
+        lhsRet = lhs->getTablePredicate();
+        if ( lhsRet !=  NULL) return lhsRet;
+    }
+    if (NULL != rhs)
+    {
+        rhsRet = rhs->getTablePredicate();
+        if ( rhsRet !=  NULL) return rhsRet;
+    }
+    if (operand || operandPtr )
+    {
+        printf("PRABA::getTablePredicate returning %s %d\n", fldName1, compOp);
+        if (parent)
+        {
+           if (this == parent->lhs) {
+               parent->lhs = NULL;
+           }
+           else { 
+              parent->rhs = NULL;
+           }
+           parent = NULL;
+        }
+        return this;    
+    } 
+    return NULL;
+}
+PredicateImpl* PredicateImpl::getJoinPredicate()
+{
+    PredicateImpl *lhsRet = NULL, *rhsRet = NULL;
+    if (NULL != lhs)
+    {
+        lhsRet = lhs->getJoinPredicate();
+        if ( lhsRet !=  NULL) return lhsRet;
+    }
+    if (NULL != rhs)
+    {
+        rhsRet = rhs->getJoinPredicate();
+        if ( rhsRet !=  NULL) return rhsRet;
+    }
+    if (0 != strcmp(fldName2, ""))
+    {
+        printf("PRABA::getJoinPredicate returning %s %s\n", fldName1, fldName2);
+        if (parent)
+        {
+           if (this == parent->lhs) 
+               parent->lhs = NULL;
+           else 
+               parent->rhs = NULL;
+           parent = NULL;
+        }
+        return this;    
+    } 
+    return NULL;
+}
+void PredicateImpl::removeIfNotNecessary()
+{
+    if (NULL != lhs)
+    {
+        lhs->removeIfNotNecessary();
+    }
+    if (NULL != rhs)
+    {
+        rhs->removeIfNotNecessary();
+    }
+    if (logicalOp != OpAnd) return;   
+    if (NULL ==  lhs && NULL == rhs)
+    {
+        if (NULL == parent)
+        {
+            return;
+        }
+        if (this == parent->rhs) parent->rhs = NULL;
+        else if (this == parent->lhs) parent->lhs = NULL;
+        delete this;
+        //WARNINGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG
+        //current object is deleted. do not any code here
+        return;
+    }
+    else if (NULL ==  lhs )
+    {
+        //left side of the node is empty means we can remove this AND node 
+        //and place it as left or right of my parent where i am currently placed
+        if (NULL == parent)
+        {
+            return;
+        }
+        if (this == parent->rhs) parent->rhs=this->rhs;
+        else if (this == parent->lhs) parent->lhs = this->rhs;
+        delete this;
+        //WARNINGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG
+        //current object is deleted. do not any code here
+        return;
+    }
+    else if (NULL ==  rhs )
+    {
+        //right side of the node is empty means we can remove this AND node 
+        //and place it as left or right of my parent where i am currently placed
+        if (NULL == parent)
+        {
+            return;
+        }
+        if (this == parent->rhs) parent->rhs=this->lhs;
+        else if (this == parent->lhs) parent->lhs = this->lhs;
+        delete this;
+        //WARNINGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG
+        //current object is deleted. do not any code here
+        return;
+    }
+    return;
+}
+bool PredicateImpl::isDummyPredicate()
+{
+    if (NULL == lhs && NULL == rhs && NULL == parent
+                    && NULL == operand && NULL == operandPtr &&
+                    (0 == strcmp(fldName1, "")) && (0==strcmp(fldName2, "")))
+        return true; 
+    else
+        return false;
+}
+PredicateImpl* PredicateImpl::getIfOneSidedPredicate()
+{
+    if (logicalOp != OpAnd) return NULL;
+    if (NULL ==  lhs && NULL !=rhs)
+    {
+        return rhs;
+    }
+    if (NULL !=  lhs && NULL ==rhs)
+    {
+        return lhs;
+    }
+    return NULL;
+}

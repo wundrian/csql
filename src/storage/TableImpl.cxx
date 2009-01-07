@@ -840,6 +840,17 @@ DbRetVal TableImpl::close()
     iter = NULL;
     return OK;
 }
+DbRetVal TableImpl::closeScan()
+{
+    //do not throw scan not open error
+    //this function will be called by table handle
+    if (iter) {
+        iter->close();
+        delete iter;
+        iter = NULL;
+    }
+    return OK;
+}
 DbRetVal TableImpl::lock(bool shared)
 {
 
@@ -895,5 +906,51 @@ TableImpl::~TableImpl()
 void *TableImpl::getBindFldAddr(const char *name)
 {
 	return fldList_.getBindField(name);
+}
+bool TableImpl::isTableInvolved(char  *tblName)
+{
+    printf("Table isTableInvolved called for %s with %s\n", tblName, getName());
+    if (0 == strcmp(getName(), tblName)) return true; else return false;
+}
+bool TableImpl::pushPredicate(Predicate *pred)
+{
+    bool ret = false;
+    PredicateImpl *pImpl = (PredicateImpl*) pred;
+    char tableName[IDENTIFIER_LENGTH];
+    Table::getTableNameAlone(pImpl->getFldName1(), tableName);
+    printf("predicate tbl name %s\n", tableName);
+
+    //if predicate is of form t1.f1=t2.f1 then do not push here
+    if (0 != strcmp(pImpl->getFldName2(),"")) return ret;
+
+    if (0 == strcmp(getName(), tableName))
+    {
+        setPredicate(pred);
+        printf("PRABA::pushed predicate in tablehdl  %s\n", getName());
+        ret = true;
+    }
+    return ret;
+}
+void TableImpl::setPredicate(Predicate *pred)
+{
+    if (NULL == pred_) { pred_ = pred; return; }
+    Predicate *curPred = pred_;
+    PredicateImpl *newPred = new PredicateImpl();
+    newPred->setTerm(curPred, OpAnd, pred);
+    newPred->setTable(this);
+    pred_ = newPred;
+    return;
+}
+void TableImpl::printPlan(int space)
+{
+    char spaceBuf[IDENTIFIER_LENGTH];
+    memset(spaceBuf, 32, IDENTIFIER_LENGTH);
+    spaceBuf[space] = '\0';
+    printf("%s <TABLE-NODE>\n", spaceBuf);
+    printf("%s <NAME> %s </NAME>\n", spaceBuf, getName());
+    printf("%s <ScanType> %s </ScanType>\n", spaceBuf, ScanTypeNames[scanType_]);
+    PredicateImpl *pred = (PredicateImpl*)pred_;
+    if (pred) pred->print(space+2);
+    printf("%s </TABLE-NODE>\n", spaceBuf);
 }
 
