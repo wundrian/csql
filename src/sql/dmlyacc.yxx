@@ -435,7 +435,7 @@ ddl_statement: CREATE TABLE ident '(' create_defn_list_con ')' semicolon_opt
             parsedData->setTableName($3); 
             free($3);
         }
-        | DROP INDEX ident
+        | DROP INDEX ident ON ident
         {
             parsedData->setStmtType(DropIndexStatement);
             parsedData->setIndexName($3); 

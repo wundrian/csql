@@ -249,7 +249,6 @@ char getQueryFromStdIn(char *buf)
         *buf++ = c; charCnt++;
         if(c=='\n') //printf("%1d>",ln++);
             ln++;
-
 	if( charCnt == SQL_STMT_LEN ) {
             printf("SQL Statement length is greater than %d. "
 	    "Ignoring the statement.\n", SQL_STMT_LEN );

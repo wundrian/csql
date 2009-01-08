@@ -175,7 +175,7 @@ DbRetVal JoinTableImpl::optimize()
     PredicateImpl* predImpl = (PredicateImpl*) pred;
     if (NULL != predImpl && !predImpl->isNotOrInvolved())
     {
-        printf("not or or not involved\n");
+        //printf("not or or not involved\n");
         PredicateImpl *tblPred = NULL;
         bool isPushed = false;
         while (true)
@@ -188,14 +188,14 @@ DbRetVal JoinTableImpl::optimize()
                 isPushed = pushPredicate(tblPred);
                 if (!isPushed)
                 {
-                    printf("optimizer could not push table predicate\n");
+                    //printf("optimizer could not push table predicate\n");
                 }
                 break;
             }
             isPushed = pushPredicate(tblPred);
             if (!isPushed)
             {
-                printf("optimizer could not push table predicate\n");
+                //printf("optimizer could not push table predicate\n");
             }
         }
         while (true)
@@ -209,7 +209,7 @@ DbRetVal JoinTableImpl::optimize()
             isPushed = pushPredicate(tblPred);
             if (!isPushed)
             {
-                printf("optimizer could not push join predicate\n");
+                //printf("optimizer could not push join predicate\n");
             }
         }
     }
@@ -428,7 +428,7 @@ List JoinTableImpl::getFieldNameList()
 }
 bool JoinTableImpl::isTableInvolved(char *tableName)
 {
-    printf("isTableInvolved called in join for %s\n", tableName);
+    //printf("isTableInvolved called in join for %s\n", tableName);
     bool isInvolved = leftTableHdl->isTableInvolved(tableName);
     if (isInvolved) return true;
     isInvolved = rightTableHdl->isTableInvolved(tableName);
@@ -436,7 +436,7 @@ bool JoinTableImpl::isTableInvolved(char *tableName)
 }
 bool JoinTableImpl::pushPredicate(Predicate *pr)
 {
-    printf("PRABA::pushPredicate caled\n");
+    //printf("PRABA::pushPredicate called\n");
     PredicateImpl *pImpl = (PredicateImpl*) pr;
     bool pushed = leftTableHdl->pushPredicate(pr);
     if (!pushed)
@@ -445,7 +445,7 @@ bool JoinTableImpl::pushPredicate(Predicate *pr)
     }
     if (!pushed)
     {
-        printf("PRABA::unable to push the predicate\n");
+        //printf("PRABA::unable to push the predicate\n");
         //TODO::check if needs to be placed here
         char *lTbl = leftTableHdl->getName();
         char *rTbl = rightTableHdl->getName();
@@ -463,7 +463,7 @@ bool JoinTableImpl::pushPredicate(Predicate *pr)
             {
                 if (0 == strcmp(rTbl, lTabName) || 0 == strcmp(rTbl, rTabName))
                 {
-                    printf("PRABA::pushed join predicate here\n");
+                    //printf("PRABA::pushed join predicate here\n");
                     setPredicate(pr);
                     pushed = true;
                 }
@@ -471,7 +471,7 @@ bool JoinTableImpl::pushPredicate(Predicate *pr)
         }else{
             if(isTableInvolved(lTabName) && isTableInvolved(rTabName))
             {
-                printf("PRABA::pushed join predicate here\n");
+                //printf("PRABA::pushed join predicate here\n");
                 setPredicate(pr);
                 pushed = true;
             }

@@ -33,7 +33,8 @@ DatabaseManagerImpl::~DatabaseManagerImpl()
     //Note:Databases are closed by the session interface
     Table *tbl = NULL;
     ListIterator iter = tableHandleList.getIterator();
-    while ((tbl = (Table *)iter.nextElement()) != NULL) delete tbl;
+    //PRABA::commented below...gives core dump
+    //while ((tbl = (Table *)iter.nextElement()) != NULL) delete tbl;
     tableHandleList.reset();
     delete tMgr_;
     delete lMgr_;

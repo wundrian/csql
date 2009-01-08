@@ -832,8 +832,10 @@ DbRetVal TableImpl::close()
 {
     if (NULL == iter)
     {
-         printError(ErrNotOpen,"Scan not open");
-         return ErrNotOpen;
+         //printError(ErrNotOpen,"Scan not open");
+         //return ErrNotOpen;
+         //PRABA::when called multiple times it gives error
+         return OK;
     }
     iter->close();
     delete iter;
@@ -909,7 +911,7 @@ void *TableImpl::getBindFldAddr(const char *name)
 }
 bool TableImpl::isTableInvolved(char  *tblName)
 {
-    printf("Table isTableInvolved called for %s with %s\n", tblName, getName());
+    //printf("Table isTableInvolved called for %s with %s\n", tblName, getName());
     if (0 == strcmp(getName(), tblName)) return true; else return false;
 }
 bool TableImpl::pushPredicate(Predicate *pred)
@@ -918,7 +920,7 @@ bool TableImpl::pushPredicate(Predicate *pred)
     PredicateImpl *pImpl = (PredicateImpl*) pred;
     char tableName[IDENTIFIER_LENGTH];
     Table::getTableNameAlone(pImpl->getFldName1(), tableName);
-    printf("predicate tbl name %s\n", tableName);
+    //printf("predicate tbl name %s\n", tableName);
 
     //if predicate is of form t1.f1=t2.f1 then do not push here
     if (0 != strcmp(pImpl->getFldName2(),"")) return ret;
@@ -926,7 +928,7 @@ bool TableImpl::pushPredicate(Predicate *pred)
     if (0 == strcmp(getName(), tableName))
     {
         setPredicate(pred);
-        printf("PRABA::pushed predicate in tablehdl  %s\n", getName());
+        //printf("PRABA::pushed predicate in tablehdl  %s\n", getName());
         ret = true;
     }
     return ret;

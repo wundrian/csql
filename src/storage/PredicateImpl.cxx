@@ -100,7 +100,7 @@ void PredicateImpl::setTerm(const char* fName1, ComparisionOp op, void **opnd)
 
 void PredicateImpl::setParent(PredicateImpl *pImpl)
 {
-   if (parent != NULL) printf("Parent already set\n");
+   //if (parent != NULL) printf("Parent already set\n");
    parent = pImpl;
    return;
 }
@@ -290,6 +290,7 @@ DbRetVal PredicateImpl::evaluate(bool &result)
     }
     //the below code works only for single table 
     int offset1, offset2;
+
     offset1 = table->getFieldOffset(fieldName1);
     //TODO::do not call getFieldXXX many times, instead get it using getFieldInfo
     char *val1, *val2;
@@ -470,7 +471,7 @@ PredicateImpl* PredicateImpl::getTablePredicate()
     }
     if (operand || operandPtr )
     {
-        printf("PRABA::getTablePredicate returning %s %d\n", fldName1, compOp);
+        //printf("PRABA::getTablePredicate returning %s %d\n", fldName1, compOp);
         if (parent)
         {
            if (this == parent->lhs) {
@@ -500,7 +501,7 @@ PredicateImpl* PredicateImpl::getJoinPredicate()
     }
     if (0 != strcmp(fldName2, ""))
     {
-        printf("PRABA::getJoinPredicate returning %s %s\n", fldName1, fldName2);
+        //printf("PRABA::getJoinPredicate returning %s %s\n", fldName1, fldName2);
         if (parent)
         {
            if (this == parent->lhs) 
