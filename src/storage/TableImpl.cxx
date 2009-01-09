@@ -161,6 +161,7 @@ DbRetVal TableImpl::execute()
     {
         PredicateImpl *pred = (PredicateImpl*) pred_;
         pred->setTable(this);
+        pred->setProjectionList(NULL);
     }
     DbRetVal ret = OK;
     bool betcheck=false;

@@ -144,9 +144,7 @@ void PredicateImpl::setProjectionList(List *lst)
         lhs->setProjectionList(lst);
     if (NULL != rhs)
          rhs->setProjectionList(lst);
-    //PRABA::commented. may need to remove the code in evaluate at the end
-    //if (operand == NULL && operandPtr == NULL)
-        projList = lst;
+    projList = lst;
 }
 bool PredicateImpl::isSingleTerm()
 {
@@ -570,7 +568,8 @@ void PredicateImpl::removeIfNotNecessary()
         }
         if (this == parent->rhs) parent->rhs = NULL;
         else if (this == parent->lhs) parent->lhs = NULL;
-        delete this;
+        //TODO::PRABA::fix the leak below. if uncommented dumps core
+        //delete this;
         //WARNINGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG
         //current object is deleted. do not any code here
         return;
@@ -585,7 +584,8 @@ void PredicateImpl::removeIfNotNecessary()
         }
         if (this == parent->rhs) parent->rhs=this->rhs;
         else if (this == parent->lhs) parent->lhs = this->rhs;
-        delete this;
+        //TODO::PRABA::fix the leak below. if uncommented dumps core
+        //delete this;
         //WARNINGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG
         //current object is deleted. do not any code here
         return;
@@ -600,7 +600,8 @@ void PredicateImpl::removeIfNotNecessary()
         }
         if (this == parent->rhs) parent->rhs=this->lhs;
         else if (this == parent->lhs) parent->lhs = this->lhs;
-        delete this;
+        //TODO::PRABA::fix the leak below. if uncommented dumps core
+        //delete this;
         //WARNINGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG
         //current object is deleted. do not any code here
         return;

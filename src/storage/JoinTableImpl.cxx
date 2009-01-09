@@ -222,13 +222,15 @@ DbRetVal JoinTableImpl::optimize()
         PredicateImpl *p = predImpl->getIfOneSidedPredicate();
         if (NULL != p)
         {
-            delete pred;
+            //TODO::fix this leak below..it dumps core if uncommented
+            //delete pred;
             pred = p;
             predImpl = p;
         }
         if (predImpl->isDummyPredicate()) 
         {
-            delete pred;
+            //TODO::fix this leak below..it dumps core if uncommented
+            //delete pred;
             pred = NULL;
         }
     }
@@ -387,8 +389,6 @@ DbRetVal JoinTableImpl::closeScan()
 DbRetVal JoinTableImpl::close()
 {
     closeScan();
-    delete pred;
-    pred = NULL;
     ListIterator iter = projList.getIterator();
     JoinProjFieldInfo  *elem;
     while (iter.hasElement())
