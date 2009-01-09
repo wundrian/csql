@@ -23,13 +23,13 @@ Condition::Condition()
 }
 void Condition::reset()
 {
-    //if (pred) {delete pred;}
-    //pred =  NULL;
+    if (pred) {delete pred;}
+    pred =  NULL;
 }
 Condition::~Condition()
 {
-    //if (pred) delete pred;
-    //pred = NULL;
+    if (pred) delete pred;
+    pred = NULL;
 }
 void Condition::setTerm(const char* fName1, ComparisionOp op,
                         const char *fName2)

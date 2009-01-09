@@ -321,7 +321,7 @@ DbRetVal SelStatement::resolve()
         }else {
             if ('*' == name->fldName[0]) {return ErrSyntaxError;}
             rv = table->getFieldInfo(name->fldName, fInfo);
-            if (ErrNotFound == rv)
+            if (ErrNotFound == rv || ErrNotExists == rv)
             {
                 dbMgr->closeTable(table);
                 table = NULL;
@@ -407,7 +407,7 @@ DbRetVal SelStatement::resolveGroupFld(AggTableImpl *aggTable)
     {
         name = (FieldName*)giter.nextElement();
         rv = table->getFieldInfo(name->fldName, fInfo);
-        if (ErrNotFound == rv)
+        if (ErrNotFound == rv || ErrNotExists == rv)
         {
             dbMgr->closeTable(table);
             table = NULL;
@@ -448,7 +448,7 @@ DbRetVal SelStatement::resolveStar()
     {
         char *fName = ((Identifier*)(fNameIter.nextElement()))->name;
         rv = table->getFieldInfo(fName, fInfo);
-        if (ErrNotFound == rv)
+        if (ErrNotFound == rv || ErrNotExists == rv)
         {
             delete fInfo;
             fNameList.reset();
@@ -524,7 +524,7 @@ DbRetVal SelStatement::resolveForCondition()
             return ErrSysFatal;
         }
         rv = table->getFieldInfo(value->fName, fInfo);
-        if (ErrNotFound == rv)
+        if (ErrNotFound == rv || ErrNotExists == rv)
         {
             delete fInfo;
             printError(ErrSyntaxError, "Field %s does not exist in table", 

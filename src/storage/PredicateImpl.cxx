@@ -144,7 +144,8 @@ void PredicateImpl::setProjectionList(List *lst)
         lhs->setProjectionList(lst);
     if (NULL != rhs)
          rhs->setProjectionList(lst);
-    if (operand == NULL && operandPtr == NULL)
+    //PRABA::commented. may need to remove the code in evaluate at the end
+    //if (operand == NULL && operandPtr == NULL)
         projList = lst;
 }
 bool PredicateImpl::isSingleTerm()
