@@ -228,6 +228,12 @@ DbRetVal PredicateImpl::evaluate(bool &result)
     memset(fieldName2, 0, IDENTIFIER_LENGTH);
     Table::getFieldNameAlone(fldName1, fieldName1);
     Table::getFieldNameAlone(fldName2, fieldName2);
+    table->setCurTuple(tuple);
+    if(table->isFldNull(fieldName1))
+    {
+        result=false;
+        return OK;
+    }
     if (projList)
     {
         DataType type=typeUnknown;
@@ -336,7 +342,7 @@ bool PredicateImpl::pointLookupInvolved(const char *fname)
             {
                 case OpAnd:
                      //return lhsResult;
-                     if (lhsResult || rhsResult) return true;  else return false;
+                     if (lhsResult && rhsResult) return true;  else return false;
                      break;
                 case OpOr:
                      return false;
