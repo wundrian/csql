@@ -78,6 +78,7 @@ class PredicateImpl:public Predicate
     // TODO:: expression like !(f1 !=100) wont be optimized for now
     bool pointLookupInvolved(const char *fName);
     bool rangeQueryInvolved(const char *fName);
+    bool isBetweenInvolved(const char *fname);
     PredicateImpl *getTablePredicate();
     PredicateImpl *getJoinPredicate();
     void removeIfNotNecessary();

@@ -161,6 +161,7 @@ class TreeIter
     void setTypeLength(DataType t, int l) { type =t ; length =l; }
     void* prev();
     void* next();
+    void nextNode();
 };
 
 enum IndexIntType

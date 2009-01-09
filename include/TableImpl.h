@@ -50,19 +50,20 @@ class TupleIterator
     IndexInfo *info;
     void *chunkPtr_;
     int procSlot;
-
+    bool isBetween;
     TupleIterator(){}
     public:
     
-    TupleIterator(Predicate *p, ScanType t, IndexInfo *i, void *cptr, int pslot)
-    { bIter = NULL; pred_ = p ; scanType_ = t; info = i; chunkPtr_ = cptr; procSlot =pslot;}
+    TupleIterator(Predicate *p, ScanType t, IndexInfo *i, void *cptr, int pslot,bool between)
+    { bIter = NULL; pred_ = p ; scanType_ = t; info = i; chunkPtr_ = cptr; procSlot =pslot; isBetween=between;}
     
     ~TupleIterator() 
 	{ 
         if (bIter) delete bIter; 
         bIter = NULL; 
     }
-    
+    bool isBetInvolved(){ return isBetween;}
+    void setBetInvolved(bool between){ isBetween=between;}
     DbRetVal open();
     void* next();
     void* prev();//used only for tree iter during deleteTuple
@@ -127,7 +128,7 @@ class TableImpl:public Table
     DbRetVal updateIndexNode(Transaction *trans, void *indexPtr, IndexInfo *info, void *tuple);
     DbRetVal deleteIndexNode(Transaction *trans, void *indexPtr, IndexInfo *info, void *tuple);
 
-    DbRetVal createPlan();
+    DbRetVal createPlan(bool &bet);
     Chunk* getSystemTableChunk(CatalogTableID id)
     {
         return sysDB_->getSystemDatabaseChunk(id);

@@ -32,6 +32,12 @@ void* TreeIter::prev()
    rec = (char**)((char *)rec + ((nodeOffset) * sizeof(void **)));
    return *rec;
 }
+void TreeIter::nextNode()
+{
+    if (recordsOver) return ;
+    if (NULL== iter) return ;
+    iter=iter->next_;
+}
 void* TreeIter::next()
 {
     int direction=0;
@@ -116,6 +122,11 @@ void* TreeIter::locateNode()
             else
             {
                //need to move left
+               if(NULL==iter->prev_) 
+               { 
+                   void *rec = locateElement();
+                   return rec;
+               }
                iter = iter->prev_;
             }
         }

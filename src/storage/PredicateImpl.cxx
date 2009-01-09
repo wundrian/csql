@@ -364,6 +364,42 @@ bool PredicateImpl::pointLookupInvolved(const char *fname)
     }
     return false;
 }
+
+bool PredicateImpl::isBetweenInvolved(const char *fname)
+{
+    bool rhsResult, lhsResult;
+    if (NULL != lhs)
+    {
+        lhsResult = lhs->isBetweenInvolved(fname);
+    }
+    if (NULL != rhs)
+    {
+        rhsResult = rhs->isBetweenInvolved(fname);
+    }
+    if (NULL != lhs)
+    {
+            switch(logicalOp)
+            {
+                case OpAnd:
+                     if (lhsResult && rhsResult) return true;  else return false;
+                     break;
+                default:
+                     return false;
+                     break;
+            }
+     }
+     char fieldName1[IDENTIFIER_LENGTH];
+     Table::getFieldNameAlone(fldName1, fieldName1);
+     if ( OpLessThanEquals == compOp || OpGreaterThanEquals == compOp)
+     {
+        if(0 == strcmp(fieldName1, fname))
+        {
+           return true;
+        }
+    }
+    return false;
+}
+
 bool PredicateImpl::rangeQueryInvolved(const char *fname)
 {
     bool rhsResult, lhsResult;

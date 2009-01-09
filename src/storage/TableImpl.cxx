@@ -163,17 +163,17 @@ DbRetVal TableImpl::execute()
         pred->setTable(this);
     }
     DbRetVal ret = OK;
-
-    ret = createPlan();
+    bool betcheck=false;
+    ret = createPlan(betcheck);
     if (OK != ret)
     {
         printError(ErrSysInternal,"Unable to create the plan");
         return ErrSysInternal;
     }
     if (useIndex_ >= 0) 
-        iter = new TupleIterator(pred_, scanType_, idxInfo[useIndex_], chunkPtr_, sysDB_->procSlot);
+        iter = new TupleIterator(pred_, scanType_, idxInfo[useIndex_], chunkPtr_, sysDB_->procSlot,betcheck);
     else if (scanType_ == fullTableScan)
-        iter = new TupleIterator(pred_, scanType_, NULL, chunkPtr_, sysDB_->procSlot);
+        iter = new TupleIterator(pred_, scanType_, NULL, chunkPtr_, sysDB_->procSlot,betcheck);
     else
     {
         printError(ErrSysFatal,"Unable to create tuple iterator");//should never happen
@@ -189,7 +189,7 @@ DbRetVal TableImpl::execute()
 }
 
 
-DbRetVal TableImpl::createPlan()
+DbRetVal TableImpl::createPlan(bool &bet)
 {
     if (isPlanCreated) {
         //will do early return here. plan is generated only when setPredicate is called.
@@ -226,6 +226,17 @@ DbRetVal TableImpl::createPlan()
                   else scanType_ = treeIndexScan;
                   isPlanCreated = true;
                   useIndex_ = i;
+                }
+                else if (pred->isBetweenInvolved(def.fldName_))
+                {
+                    if (treeIndex == info->indType)
+                    {
+                     scanType_ = treeIndexScan;
+                     isPlanCreated = true;
+                     useIndex_ = i;
+                     bet=true;
+                     break; //no composite index for tree index
+                    }
                 }
                 else if (pred->rangeQueryInvolved(def.fldName_))
                 {

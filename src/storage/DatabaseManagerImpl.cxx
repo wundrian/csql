@@ -1053,9 +1053,35 @@ DbRetVal DatabaseManagerImpl::createTreeIndex(const char *indName, const char *t
         return ErrSysInternal;
     }
     delete[] fptr;
+    systemDatabase_->releaseDatabaseMutex();
     //TODO::if tuples already present in this table, then create tree index '
     //nodes
-    systemDatabase_->releaseDatabaseMutex();
+    TableImpl *tbl = (TableImpl *) openTable(tblName);
+    if (! tbl->numTuples()) {
+        printDebug(DM_Database, "Creating Tree Index Name:%s tblname:%s node size:%x",indName, tblName, nodeSize);
+        logFinest(logger, "Creating TreeIndex %s on %s with node size %d",indName, tblName, nodeSize);
+        return OK;
+    }
+    HashIndexInfo *indxInfo = NULL;
+    int i = 0;
+    for (i = 0; i < tbl->numIndexes_; i++) {
+        if(((HashIndexInfo *)tbl->idxInfo[i])->indexPtr == tupleptr) {
+            indxInfo = (HashIndexInfo *) tbl->idxInfo[i];
+            break;
+        }
+    }
+    void *recPtr = NULL;
+    ChunkIterator chIter = ((Chunk *)chunk)->getIterator();
+    while ((recPtr = chIter.nextElement()) != NULL) {
+        rv = tbl->insertIndexNode(*tbl->trans, tupleptr, indxInfo, recPtr);
+        if (rv == ErrUnique) {
+            closeTable(tbl);
+            dropIndex(indName);
+            closeTable(tbl);
+            return rv;
+        }
+    }
+    closeTable(tbl);
     printDebug(DM_Database, "Creating Tree Index Name:%s tblname:%s node size:%x",
                                    indName, tblName, nodeSize);
     logFinest(logger, "Creating TreeIndex %s on %s with node size %d",

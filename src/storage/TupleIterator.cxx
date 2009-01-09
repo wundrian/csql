@@ -181,6 +181,7 @@ void* TupleIterator::next()
            predImpl->setTuple(tuple);
            rv = predImpl->evaluate(result);
            if (rv != OK) return NULL;
+           if(!result && isBetInvolved()) tIter->nextNode();
         }
     }
     return tuple;
