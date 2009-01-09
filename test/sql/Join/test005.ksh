@@ -2,9 +2,8 @@
 # Test Case 
 # 5.
 #	Create t1,t2,t3 table with 5 each records in csql database.
-# 	select t1.f1, t2.f1, t3.f1 from t1,t2,t3 where t1.f2= t2.f2 and t1.f3 = t3.f2
-#	select t1.f1, t2.f1, t3.f1 from t1,t2,t3 where t1.f2= t2.f2 or t1.f3 = t3.f2
-#	select t1.f1, t2.f1, t3.f1 from t1,t2,t3 where t1.f2= t2.f2 or t1.f1 >100
+# 	select * from t1,t2,t3 where t1.f2= t2.f2 and t1.f3 = t3.f2
+#	select * from t1,t2,t3 where t1.f2= t2.f2 or t1.f3 = t3.f2
 
 # AUTHOR : Jitendra Lenka
 
@@ -15,7 +14,7 @@ if [ -s "$QUITFILE" ]
 REL_PATH=`pwd`/sql/Join
 fi
 
-echo "select t1.f1, t2.f1, t3.f1 from t1,t2,t3 where t1.f2= t2.f2 and t1.f3 = t3.f2:"  
+echo "select * from t1,t2,t3 where t1.f2= t2.f2 and t1.f3 = t3.f2:"  
 $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/createt1t2t3.sql > /dev/null 2>&1
 if [ $? -ne 0 ]
 then
@@ -29,7 +28,7 @@ then
   exit 2;
 fi
   
-echo "select t1.f1, t2.f1, t3.f1 from t1,t2,t3 where t1.f2= t2.f2 or t1.f3 = t3.f2:"
+echo "select * from t1,t2,t3 where t1.f2= t2.f2 or t1.f3 = t3.f2:"
 
 $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/join10.sql 
 if [ $? -ne 0 ]
@@ -38,8 +37,6 @@ if [ $? -ne 0 ]
   exit 3;
  fi
 
-
-  
-  $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/dropt1t2t3.sql > /dev/null 2>&1
-  exit 0;
+$CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/dropt1t2t3.sql > /dev/null 2>&1
+exit 0;
 

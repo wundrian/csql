@@ -2,7 +2,7 @@
 # Test Case 
 # 4.	Create t1 and t2 table with 5 records each in csql database.
 # 	select t1.f1, t2.f1, t1.f2, t2.f2 from t1,t2
-#	select t1.f1, t2.f1, t1.f2, t2.f2 from t1,t2 where t1.f1 = t2.f1 and t1.f1 >100
+#	select * from t1,t2 where t1.f1 = t2.f1 and t1.f1 >100
 
 # AUTHOR : Jitendra Lenka
 
@@ -27,7 +27,7 @@ then
   exit 2;
 fi
   
-echo " select t1.f1, t2.f1, t1.f2, t2.f2 from t1,t2 where t1.f1 = t2.f1 and t1.f1 >100
+echo " select * from t1,t2 where t1.f1 = t2.f1 and t1.f1 >100
 :"
 
 $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/join8.sql 

@@ -1,7 +1,6 @@
 #!/bin/sh
 # Test Case 
 # 6.	Create t1,t2 table with 5 each records in csql database.
-# 	select * from t1, notexist;
 #	select * from t1,t2 where t1.f1 = t2.notexist
 
 # AUTHOR : Jitendra Lenka
