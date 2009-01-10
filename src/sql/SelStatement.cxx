@@ -305,7 +305,7 @@ DbRetVal SelStatement::resolve()
             return ErrSysFatal;
         }
         bool isBindFld=false;
-        if ('*' == name->fldName[0] && name->aType != AGG_COUNT) 
+        if ('*' == name->fldName[0] && name->aType == AGG_UNKNOWN) 
         {
             rv = resolveStar();
             if (rv != OK)
@@ -315,11 +315,17 @@ DbRetVal SelStatement::resolve()
                 delete fInfo; 
                 return rv; 
             }
+            if (parsedData->getGroupFieldNameList().size()!= 0)
+            {
+                if (!aggTable)
+                    aggTable = new AggTableImpl();
+                aggTable->setTable(table);
+            }
             //as soon as it encounters *, it breaks the loop negleting other field names
             //as they all are deleted during resolveStar method.
             break;
         }else {
-            if ('*' == name->fldName[0]) {return ErrSyntaxError;}
+            if ('*' == name->fldName[0] && name->aType != AGG_COUNT) {return ErrSyntaxError;}
             rv = table->getFieldInfo(name->fldName, fInfo);
             if (ErrNotFound == rv || ErrNotExists == rv)
             {
@@ -392,7 +398,19 @@ DbRetVal SelStatement::resolve()
         table = NULL;
         return rv;
     }
-    resolveGroupFld(aggTable);
+    rv = resolveGroupFld(aggTable);
+    if (rv != OK) 
+    {
+        delete fInfo;
+        //TODO::free memory allocated for params
+        if (table) 
+        {
+            table->setCondition(NULL);
+            dbMgr->closeTable(table);
+        }
+        table = NULL;
+        return rv;
+    }
     delete fInfo;
     return rv;
 }
@@ -403,7 +421,7 @@ DbRetVal SelStatement::resolveGroupFld(AggTableImpl *aggTable)
     FieldName *name = NULL;
     DbRetVal rv = OK;
     FieldInfo *fInfo = new FieldInfo();
-    while (giter.hasElement())
+    if (giter.hasElement())
     {
         name = (FieldName*)giter.nextElement();
         rv = table->getFieldInfo(name->fldName, fInfo);
@@ -431,6 +449,7 @@ DbRetVal SelStatement::resolveGroupFld(AggTableImpl *aggTable)
         parsedData->insertFieldValue(newVal);
         aggTable->setGroup(name->fldName, newVal->value);
     }
+    if (giter.hasElement()) { table= aggTable; return ErrSyntaxError; }
     table = aggTable;
     return OK; 
 }

@@ -50,6 +50,7 @@ void Table::getTableNameAlone(char *fname, char *name) {
 
 DbRetVal TableImpl::bindFld(const char *name, void *val)
 {
+    if (name[0] == '*' ) return OK;
     //set it in the field list
     char fieldName[IDENTIFIER_LENGTH];
     getFieldNameAlone((char*)name, fieldName);

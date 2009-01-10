@@ -97,6 +97,11 @@ DbRetVal AggTableImpl::execute()
     while (iter.hasElement())
     {
          def = (AggFldDef*) iter.nextElement();
+         if (def->atype == AGG_UNKNOWN && 
+             0 == strcmp(def->fldName, groupFld.fldName))
+         {
+             continue;
+         }
          aggNodeSize = aggNodeSize + AllDataType::size(def->type, def->length);
          if (def->atype == AGG_AVG) aggNodeSize = aggNodeSize + sizeof(int);//for count
     }
@@ -148,6 +153,12 @@ DbRetVal AggTableImpl::execute()
                    if ((*(int*)(buffer+offset)) % 1000000 ==0) 
                               printf("PRABA:%d\n", (*(int*)(buffer+offset)));
                    break;
+               case AGG_UNKNOWN: 
+               {
+                   AllDataType::copyVal(buffer+offset, groupFld.bindBuf,
+                                            groupFld.type, groupFld.length);
+                   break;
+               }
            }
            offset = offset + AllDataType::size(def->type, def->length);
         }

@@ -131,6 +131,21 @@ DbRetVal FieldList::getFieldInfo(const char *fldName, FieldInfo *&info)
 {
     
     FieldNode *iter = head;
+    if ('*' == fldName[0])
+    {
+        //the above is for count(*) 
+        strcpy(info->fldName , iter->fldDef.fldName_);
+        info->length = iter->fldDef.length_;
+        info->type   = iter->fldDef.type_;
+        info->offset = iter->fldDef.offset_;
+        info->isDefault = iter->fldDef.isDefault_;
+        strcpy(info->defaultValueBuf, iter->fldDef.defaultValueBuf_);
+        info->isNull = iter->fldDef.isNull_;
+        info->isPrimary = iter->fldDef.isPrimary_;
+        info->isUnique = iter->fldDef.isUnique_;
+        return OK;
+        
+    }
     while(iter != NULL)
     {
         if (0 == strcmp(iter->fldDef.fldName_, fldName))
