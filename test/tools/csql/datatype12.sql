@@ -42,14 +42,6 @@ echo update t1 set f2 = '435f3' where f1 != 13 and  f2='323a34' ;
 update t1 set f2 ='435f3'  where f1 != 13 and  f2='323a34';
 select * from t1;
 
-echo update t1 set f2 = '23f3abc' ;
-update t1 set f2 = '23f3abc';
-select * from t1;
-
-echo update t1 set f2 = '23abc' where f2 = '245af';
-update t1 set f2 = '23abc' where f2 = '245af';
-select * from t1;
-
 echo delete from t1 where f2 = '12fe';
 delete from t1 where f2 = '12fe';
 select * from t1;
