@@ -19,7 +19,7 @@ if [ $? -ne 0 ]
 fi
 
 
-echo "select count(*),min(f1),sum(t1.f1) from t1 :"
+echo "select count(*),min(f1),sum(f1) from t1 :"
 $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/agg1.sql 
 if [ $? -ne 0 ]
   then

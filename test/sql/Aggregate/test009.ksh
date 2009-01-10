@@ -1,7 +1,8 @@
 #!/bin/sh
 #Test Case
 #9.	Create table t1 with 5 records in csql database.
-#	select query with count,sum,avg,min,max.
+#	select query with expression in aggregate
+# as we do not support expressions in aggregate, it should give syntax error
 
 
 #	Author : Jitendra Lenka

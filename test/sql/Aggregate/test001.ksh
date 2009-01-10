@@ -18,53 +18,12 @@ if [ $? -ne 0 ]
    exit 1;
 fi
 
-echo "select count(f1) from nonExistTab :"
-$CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/aggcount1.sql 
+$CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/aggregate1.sql 
 if [ $? -ne 0 ]
   then
      $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/dropt1.sql > /dev/null 2>&1
      exit 2;
 fi 
-
-echo "select count(f1) from t1 :"
-$CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/aggcount2.sql 
-if [ $? -ne 0 ]
-  then
-    $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/dropt1.sql > /dev/null 2>&1
-    exit 3;
-fi  
-
-echo "select sum(f1) from t1 :"
-$CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/aggsum1.sql
-if [ $? -ne 0 ]
-  then
-    $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/dropt1.sql > /dev/null 2>&1
-    exit 4;
-fi  
-
-echo "select avg(f1) from t1 :"
-$CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/aggavg1.sql
-if [ $? -ne 0 ]
-  then
-    $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/dropt1.sql > /dev/null 2>&1
-    exit 5;
-fi        
-
-echo "select min(f1) from t1 :"
-$CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/aggmin1.sql
-if [ $? -ne 0 ]
-  then
-    $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/dropt1.sql > /dev/null 2>&1
-    exit 6;
- fi   
-
-echo "select max(f1) from t1 :"
-$CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/aggmax1.sql
-if [ $? -ne 0 ]
-   then
-     $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/dropt1.sql > /dev/null 2>&1
-     exit 6;
-  fi    
 
 $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/dropt1.sql > /dev/null 2>&1
 exit 0;

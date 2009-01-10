@@ -18,53 +18,12 @@ if [ $? -ne 0 ]
    exit 1;
 fi
 
-echo "select min(t1.f2) from t1 group by t1.f1 :"
-$CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/groupby3.sql 
+$CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/aggregate6.sql 
 if [ $? -ne 0 ]
   then
      $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/dropt1t2.sql > /dev/null 2>&1
      exit 2;
 fi 
-
-echo "select f1, avg(t1.f2) from t1 group by t1.f1 :"
-$CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/groupby4.sql 
-if [ $? -ne 0 ]
-  then
-    $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/dropt1t2.sql > /dev/null 2>&1
-    exit 3;
-fi  
-
-echo "select f1, sum(f2) from t1 group by f3 :"
-$CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/groupby5.sql
-if [ $? -ne 0 ]
-  then
-    $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/dropt1t2.sql > /dev/null 2>&1
-    exit 4;
-fi  
-
-echo "select f1, sum(f2) from t1 group by notexist :"
-$CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/groupby6.sql
-if [ $? -ne 0 ]
-  then
-    $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/dropt1t2.sql > /dev/null 2>&1
-    exit 5;
-fi        
-
-echo "select f1, sum(f2) from t1 group by notexist.f2:"
-$CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/groupby7.sql
-if [ $? -ne 0 ]
-  then
-    $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/dropt1t2.sql > /dev/null 2>&1
-    exit 6;
- fi   
-
-echo "select f1, sum(f2) from t1 group by t2.f2 :"
-$CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/groupby8.sql
-if [ $? -ne 0 ]
-   then
-     $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/dropt1t2.sql > /dev/null 2>&1
-     exit 6;
-  fi    
 
 $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/dropt1t2.sql > /dev/null 2>&1
 exit 0;
