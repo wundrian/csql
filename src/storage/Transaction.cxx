@@ -117,8 +117,7 @@ DbRetVal Transaction::appendUndoLog(Database *sysdb, OperationType type,
 
 
 
-DbRetVal Transaction::appendLogicalUndoLog(Database *sysdb, OperationType type, void *data,
-                       size_t size, void* indexPtr)
+DbRetVal Transaction::appendLogicalUndoLog(Database *sysdb, OperationType type, void *data, size_t size, void* indexPtr)
 {
     DbRetVal rv = OK;
     UndoLogInfo *logInfo = createUndoLog(sysdb, type, data, size, &rv);
@@ -126,8 +125,19 @@ DbRetVal Transaction::appendLogicalUndoLog(Database *sysdb, OperationType type, 
     char **indPtr = (char**)((char*)logInfo + sizeof(UndoLogInfo));
     *indPtr = (char*)  indexPtr;
     addAtBegin(logInfo);
-    printDebug(DM_Transaction, "creating logical undo log and append %x optype:%d",
-                                               logInfo, type);
+    printDebug(DM_Transaction, "creating logical undo log and append %x optype:%d", logInfo, type);
+    return rv;
+}
+
+DbRetVal Transaction::appendLogicalHashUndoLog(Database *sysdb, OperationType type, void *data, size_t size)
+{
+    DbRetVal rv = OK;
+    HashUndoLogInfo *hInfo = (HashUndoLogInfo *) data;
+    UndoLogInfo *logInfo = createUndoLog(sysdb, type, hInfo->tuple_, size, &rv);
+    if (logInfo == NULL) return rv;
+    memcpy((char*)logInfo + sizeof(UndoLogInfo), data, sizeof(HashUndoLogInfo));
+    addAtBegin(logInfo);
+    printDebug(DM_Transaction, "creating logical undo log and append %x optype:%d", logInfo, type);
     return rv;
 }
 
@@ -259,14 +269,17 @@ DbRetVal Transaction::applyUndoLogs(Database *sysdb)
                 break;
 
                 case InsertHashIndexOperation:
-                //TODO
+                HashIndex::deleteLogicalUndoLog(sysdb, (char *)logInfo 
+                                                    + sizeof(UndoLogInfo));
                 break;
-                case UpdateHashIndexOperation:
-               //TODO
-               break;
+                //case UpdateHashIndexOperation:
+                //HashIndex::updateLogicalUndoLog((char *)logInfo 
+                //                                    + sizeof(UndoLogInfo));
+                //break;
                 case DeleteHashIndexOperation:
-               //TODO
-               break;
+                HashIndex::insertLogicalUndoLog(sysdb, (char *)logInfo 
+                                                    + sizeof(UndoLogInfo));
+                break;
             }
         chunk->free(sysdb, logInfo);
     }

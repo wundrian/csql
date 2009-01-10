@@ -12,7 +12,7 @@ Before abort
   <TuplePtr> 17e820a4 </TuplePtr>
 </UndoLogInfo>
 <UndoLogInfo>
-  <Size> 4 </Size>
+  <Size> 20 </Size>
   <OperationType> 3 </OperationType>
   <TuplePtr> 17e820a4 </TuplePtr>
 </UndoLogInfo>
@@ -22,7 +22,7 @@ Before abort
   <TuplePtr> 17e82094 </TuplePtr>
 </UndoLogInfo>
 <UndoLogInfo>
-  <Size> 4 </Size>
+  <Size> 20 </Size>
   <OperationType> 3 </OperationType>
   <TuplePtr> 17e82094 </TuplePtr>
 </UndoLogInfo>
@@ -32,7 +32,7 @@ Before abort
   <TuplePtr> 17e82084 </TuplePtr>
 </UndoLogInfo>
 <UndoLogInfo>
-  <Size> 4 </Size>
+  <Size> 20 </Size>
   <OperationType> 3 </OperationType>
   <TuplePtr> 17e82084 </TuplePtr>
 </UndoLogInfo>
@@ -42,7 +42,7 @@ Before abort
   <TuplePtr> 17e82074 </TuplePtr>
 </UndoLogInfo>
 <UndoLogInfo>
-  <Size> 4 </Size>
+  <Size> 20 </Size>
   <OperationType> 3 </OperationType>
   <TuplePtr> 17e82074 </TuplePtr>
 </UndoLogInfo>
@@ -52,7 +52,7 @@ Before abort
   <TuplePtr> 17e82064 </TuplePtr>
 </UndoLogInfo>
 <UndoLogInfo>
-  <Size> 4 </Size>
+  <Size> 20 </Size>
   <OperationType> 3 </OperationType>
   <TuplePtr> 17e82064 </TuplePtr>
 </UndoLogInfo>
@@ -62,7 +62,7 @@ Before abort
   <TuplePtr> 17e82054 </TuplePtr>
 </UndoLogInfo>
 <UndoLogInfo>
-  <Size> 4 </Size>
+  <Size> 20 </Size>
   <OperationType> 3 </OperationType>
   <TuplePtr> 17e82054 </TuplePtr>
 </UndoLogInfo>
@@ -72,7 +72,7 @@ Before abort
   <TuplePtr> 17e82044 </TuplePtr>
 </UndoLogInfo>
 <UndoLogInfo>
-  <Size> 4 </Size>
+  <Size> 20 </Size>
   <OperationType> 3 </OperationType>
   <TuplePtr> 17e82044 </TuplePtr>
 </UndoLogInfo>
@@ -82,7 +82,7 @@ Before abort
   <TuplePtr> 17e82034 </TuplePtr>
 </UndoLogInfo>
 <UndoLogInfo>
-  <Size> 4 </Size>
+  <Size> 20 </Size>
   <OperationType> 3 </OperationType>
   <TuplePtr> 17e82034 </TuplePtr>
 </UndoLogInfo>
@@ -92,7 +92,7 @@ Before abort
   <TuplePtr> 17e82024 </TuplePtr>
 </UndoLogInfo>
 <UndoLogInfo>
-  <Size> 4 </Size>
+  <Size> 20 </Size>
   <OperationType> 3 </OperationType>
   <TuplePtr> 17e82024 </TuplePtr>
 </UndoLogInfo>
@@ -102,7 +102,7 @@ Before abort
   <TuplePtr> 17e82014 </TuplePtr>
 </UndoLogInfo>
 <UndoLogInfo>
-  <Size> 4 </Size>
+  <Size> 20 </Size>
   <OperationType> 3 </OperationType>
   <TuplePtr> 17e82014 </TuplePtr>
 </UndoLogInfo>

@@ -120,7 +120,8 @@ class HashIndex : public Index
     DbRetVal remove(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool undoFlag);
     DbRetVal update(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool undoFlag);
     static unsigned int computeHashBucket(DataType type, void *key, int noOfBuckets, int length=0);
-
+    static DbRetVal insertLogicalUndoLog(Database *sysdb, void *info);
+    static DbRetVal deleteLogicalUndoLog(Database *sysdb, void *info);
 };
 
 class TreeIndex : public Index

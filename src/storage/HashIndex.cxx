@@ -188,7 +188,12 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         bucketNo = computeHashBucket(type, keyPtr, noOfBuckets, info->compLength);
     printDebug(DM_HashIndex, "HashIndex insert bucketno %d", bucketNo);
     Bucket *bucket =  &(buckets[bucketNo]);
-
+    HashUndoLogInfo *hInfo = new HashUndoLogInfo();
+    hInfo->tblPtr_ = tbl;
+    hInfo->bucket_ = bucket;
+    hInfo->tuple_ = tuple;
+    hInfo->indexPtr_ = indexPtr;
+    hInfo->keyPtr_ = keyPtr;
     int ret = bucket->mutex_.getLock(tbl->db_->procSlot);
     if (ret != 0)
     {
@@ -196,7 +201,7 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         return ErrLockTimeOut;
     }
     HashIndexNode *head = (HashIndexNode*) bucket->bucketList_;
-    if (info->isUnique)
+    if (head && info->isUnique)
     {
         BucketList list(head); 
         BucketIter iter = list.getIterator();
@@ -226,7 +231,7 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
             }
         }
     }
-
+    
     printDebug(DM_HashIndex, "HashIndex insert into bucket list");
     if (!head)
     {
@@ -255,17 +260,16 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         
     }
     if (undoFlag) {
-
-         rc = tr->appendLogicalUndoLog(tbl->sysDB_, InsertHashIndexOperation,
-                                 tuple, sizeof(void*), indexPtr);
+         rc = tr->appendLogicalHashUndoLog(tbl->sysDB_, InsertHashIndexOperation, hInfo, sizeof(HashUndoLogInfo));
         if (rc !=OK)
         {
             BucketList list(head);
             rc = list.remove((Chunk*)iptr->hashNodeChunk_, tbl->db_, keyPtr);
             if (rc !=OK) printError(ErrSysFatal, "double failure on undo log insert followed by hash bucket list remove\n");
+            bucket->bucketList_ = list.getBucketListHead();
         }
     }
-
+    delete hInfo; hInfo = NULL;
     bucket->mutex_.releaseLock(tbl->db_->procSlot);
     return rc;
 }
@@ -301,7 +305,13 @@ DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     else bucket = HashIndex::computeHashBucket(type, keyPtr, noOfBuckets, info->compLength);
 
     Bucket *bucket1 = &buckets[bucket];
-
+    HashUndoLogInfo *hInfo = new HashUndoLogInfo();
+    hInfo->tblPtr_ = tbl;
+    hInfo->bucket_ = bucket1;
+    hInfo->tuple_ = tuple;
+    hInfo->indexPtr_ = indexPtr;
+    hInfo->keyPtr_ = keyPtr;
+    
     int ret = bucket1->mutex_.getLock(tbl->db_->procSlot);
     if (ret != 0)
     {
@@ -325,11 +335,12 @@ DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
        rc = OK;
     }
     if (undoFlag) {
-        rc =tr->appendLogicalUndoLog(tbl->sysDB_, DeleteHashIndexOperation,
-                                tuple, sizeof(void*), indexPtr);
+        rc =tr->appendLogicalHashUndoLog(tbl->sysDB_, DeleteHashIndexOperation, hInfo, sizeof(HashUndoLogInfo));
         if (rc !=OK)
         {
-        //TODO::add it back to the bucketlist
+            rc = list.insert((Chunk*)iptr->hashNodeChunk_, tbl->db_, keyPtr, tuple);
+            if (rc !=OK) printError(ErrSysFatal, "double failure on undo log remove followed by hash bucket list insert\n");
+            bucket1->bucketList_ = list.getBucketListHead();
         }
     }
     bucket1->mutex_.releaseLock(tbl->db_->procSlot);
@@ -424,7 +435,14 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     else bucketNo = computeHashBucket(type, keyPtr, noOfBuckets, info->compLength);
     printDebug(DM_HashIndex, "Updating hash index node: Bucket for old value is %d", bucketNo);
     Bucket *bucket = &buckets[bucketNo];
-
+   
+    HashUndoLogInfo *hInfo1 = new HashUndoLogInfo();
+    hInfo1->tblPtr_ = tbl;
+    hInfo1->bucket_ = bucket;
+    hInfo1->tuple_ = tuple; 
+    hInfo1->indexPtr_ = indexPtr;
+    hInfo1->keyPtr_ = keyPtr;
+    
     //it may run into deadlock, when two threads updates tuples which falls in
     //same buckets.So take both the mutex one after another, which will reduce the
     //deadlock window.
@@ -440,6 +458,12 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     printDebug(DM_HashIndex, "Updating hash index node: Bucket for new value is %d", newBucketNo);
 
     Bucket *bucket1 = &buckets[newBucketNo];
+    HashUndoLogInfo *hInfo2 = new HashUndoLogInfo();
+    hInfo2->tblPtr_ = tbl;
+    hInfo2->bucket_ = bucket;
+    hInfo2->tuple_ = tuple;
+    hInfo2->indexPtr_ = indexPtr;
+    hInfo2->keyPtr_ = keyPtr; 
     bucket1->mutex_.getLock(tbl->db_->procSlot);
     if (ret != 0)
     {
@@ -464,11 +488,13 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     }
     DbRetVal rc = OK;
     if (undoFlag) {
-         rc = tr->appendLogicalUndoLog(tbl->sysDB_, DeleteHashIndexOperation,
-                                tuple, sizeof(void*), indexPtr);
+         rc = tr->appendLogicalHashUndoLog(tbl->sysDB_, DeleteHashIndexOperation, hInfo1, sizeof(HashUndoLogInfo));
         if (rc !=OK) 
         { 
-            //TODO::add it back to the bucket list
+            BucketList list((HashIndexNode*) bucket->bucketList_);
+            rc = list.insert((Chunk*)iptr->hashNodeChunk_, tbl->db_, keyPtr, tuple);
+            if (rc !=OK) printError(ErrSysFatal, "double failure on undo log remove followed by hash bucket list insert\n");
+            bucket->bucketList_ = list.getBucketListHead();
             bucket1->mutex_.releaseLock(tbl->db_->procSlot);
             bucket->mutex_.releaseLock(tbl->db_->procSlot);
             return rc; 
@@ -501,19 +527,57 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         BucketList list2(head2);
         printDebug(DM_HashIndex, "Updating hash index node: Adding node to list with head %x", head2);
         list2.insert((Chunk*)iptr->hashNodeChunk_, tbl->db_, keyPtr, tuple);
+        bucket1->bucketList_ = list2.getBucketListHead();
     }
     if (undoFlag) {
 
-        rc = tr->appendLogicalUndoLog(tbl->sysDB_, InsertHashIndexOperation,
-                                tuple, sizeof(void*), indexPtr);
+        rc = tr->appendLogicalHashUndoLog(tbl->sysDB_, InsertHashIndexOperation, hInfo2, sizeof(HashUndoLogInfo));
         if (rc !=OK)
         {
-            //TODO::revert back the changes:delete and add the node + remove the logical undo log 
-            //of the  DeleteHashIndexOperation
+            //reverting back the changes:delete new node and add the old 
+            //node + remove logical undo log of the  DeleteHashIndexOperation
+            BucketList list1((HashIndexNode*) bucket->bucketList_);
+            BucketList list2((HashIndexNode*) bucket1->bucketList_);
+            list1.insert((Chunk*)iptr->hashNodeChunk_, tbl->db_, keyPtr, tuple);
+            list2.remove((Chunk*)iptr->hashNodeChunk_, tbl->db_, keyPtr);
+            bucket->bucketList_ = list1.getBucketListHead();
+            bucket1->bucketList_ = list2.getBucketListHead();
+            UndoLogInfo *logInfo = tr->popUndoLog();
+            Chunk *chunk = tbl->sysDB_->getSystemDatabaseChunk(UndoLogTableID);
+            chunk->free(tbl->sysDB_, logInfo); 
         } 
     }
     bucket1->mutex_.releaseLock(tbl->db_->procSlot);
     bucket->mutex_.releaseLock(tbl->db_->procSlot);
 
     return rc;
+}
+
+//Following three methods are used to undo Logical Hash Indexes
+DbRetVal HashIndex::insertLogicalUndoLog(Database *sysdb, void *data)
+{
+    HashUndoLogInfo *info = (HashUndoLogInfo *) data;
+    TableImpl * tbl = (TableImpl *)info->tblPtr_;
+    Chunk *hChunk = (Chunk *) ((CINDEX *)info->indexPtr_)->hashNodeChunk_;
+    HashIndexNode *head = (HashIndexNode *)((Bucket *)info->bucket_)->bucketList_; 
+    BucketList list(head);
+    if (head) {
+        list.insert(hChunk, tbl->db_, info->keyPtr_, info->tuple_);
+        ((Bucket *)info->bucket_)->bucketList_ = list.getBucketListHead();
+    }
+    return OK;
+}
+
+DbRetVal HashIndex::deleteLogicalUndoLog(Database *sysdb, void *data)
+{
+    HashUndoLogInfo *info = (HashUndoLogInfo *) data;
+    TableImpl * tbl = (TableImpl *)info->tblPtr_;
+    Chunk *hChunk = (Chunk *) ((CINDEX *)info->indexPtr_)->hashNodeChunk_;
+    HashIndexNode *head = (HashIndexNode *)((Bucket *)info->bucket_)->bucketList_;
+    BucketList list(head);
+    if (head) {
+        list.remove(hChunk, tbl->db_, info->keyPtr_);
+        ((Bucket *)info->bucket_)->bucketList_ = list.getBucketListHead();
+    }
+    return OK;
 }

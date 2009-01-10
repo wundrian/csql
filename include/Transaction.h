@@ -58,6 +58,18 @@ class UndoLogInfo
     }
 };
 
+class HashUndoLogInfo
+{
+    public:
+    void *tblPtr_;
+    void *tuple_;
+    void *keyPtr_;
+    void *indexPtr_;
+    void *bucket_;
+    HashUndoLogInfo()
+    { tblPtr_ = tuple_ = keyPtr_ = indexPtr_ = bucket_ = NULL; }
+};
+
 class Transaction
 {
     public:
@@ -80,8 +92,8 @@ class Transaction
     bool findInHasList(Database *sysdb, LockHashNode *node);
 
     DbRetVal appendUndoLog(Database *sysdb, OperationType type, void *data, size_t size);
-    DbRetVal appendLogicalUndoLog(Database *sysdb, OperationType type, void *data,
-                       size_t size, void* indexPtr);
+    DbRetVal appendLogicalUndoLog(Database *sysdb, OperationType type, void *data, size_t size, void *indexPtr);
+    DbRetVal appendLogicalHashUndoLog(Database *sysdb, OperationType type, void *data, size_t size);
     UndoLogInfo* createUndoLog(Database *sysdb, OperationType type, void *data,
                        size_t size, DbRetVal *rv);
     void addAtBegin(UndoLogInfo* logInfo);
