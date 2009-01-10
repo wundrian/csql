@@ -1418,11 +1418,13 @@ DbRetVal AllDataType::strToValue(void* dest, char *src, DataType type, int lengt
             memset ((void *) dest, 0, length);
             unsigned char c = 0;
             const char *str = (const char *)src;
-            unsigned char *val = (unsigned char *)dest;
-            int i = 0;
-            while (i < length * 2) {
-                c = *str++; i++;
-               if (c == '\0') { *val = *val | c; break; }
+            int i=0;
+            i = strlen(src)-1;        
+            bool evenlegth=false;
+            if(i%2){ evenlegth=true;}   
+            unsigned char *val = (unsigned char *)dest+(length-1);
+            while (i >= 0) {
+                c = str[i]; 
                if (!isxdigit((int)c)) {
                    printError(ErrBadArg, "Invalid hexadecimal value");
                    return ErrBadArg;
@@ -1430,8 +1432,15 @@ DbRetVal AllDataType::strToValue(void* dest, char *src, DataType type, int lengt
                if (c <= '9') c -= '0';
                else if (c >= 'a') c = c - 'a' + 10;
                else c = c - 'A' + 10;
-               if (i % 2) { *val = c; *val <<= 4; }
-               else { *val = *val | c;  val++; }
+               if(evenlegth)
+               {
+                   if ((i+1) % 2) { *val = *val | (c<<4); val--;}
+                   else { *val = c; }
+               }else{
+                   if (i % 2) { *val = *val | (c<<4);   val--;}
+                   else { *val = c; }
+               }
+               i--;
             }
             break;
         }
@@ -1797,19 +1806,29 @@ void AllDataType::convertToBinary(void *dest, void *src, DataType srcType, int l
     {
         case typeString:
         {
+            memset ((void *) dest, 0, length);
             unsigned char c = 0;
             const char *str = (const char *)src;
-            unsigned char *val = (unsigned char *)dest;
-            int i = 0;
-            while (i < length * 2) {
-                c = *str++; i++;
-               if (c == '\0') { *val = *val | c; break; }
+            int i=0;
+            i = strlen((char*)src)-1;
+            bool evenlegth=false;
+            if(i%2){ evenlegth=true;}
+            unsigned char *val = (unsigned char *)dest+(length-1);
+            while (i >= 0) {
+                c = str[i];
                if (c <= '9') c -= '0';
                else if (c >= 'a') c = c - 'a' + 10;
                else c = c - 'A' + 10;
-               if (i % 2) { *val = c; *val <<= 4; }
-               else { *val = *val | c;  val++; }
-           }
+               if(evenlegth)
+               {
+                   if ((i+1) % 2) { *val = *val | (c<<4); val--;}
+                   else { *val = c; }
+               }else{
+                   if (i % 2) { *val = *val | (c<<4);   val--;}
+                   else { *val = c; }
+               }
+               i--;
+            }
            break;
         }
     }
@@ -1887,13 +1906,20 @@ int AllDataType::printVal(void* src, DataType srcType, int length )
             unsigned char *c = (unsigned char *) src;
             unsigned char p = 0;
             int i = 0;
+            bool isDigitFound=false;
             while (i < length) {
                 p = *c >> 4;
-                if (p < 10) printf ("%c", '0' + p);
-                else printf("%c", 'A' + p - 10);
+                if(('0'+p)!='0'|| isDigitFound){
+                    if (p < 10) printf ("%c", '0' + p);
+                    else printf("%c", 'A' + p - 10);
+                    isDigitFound=true;
+                }
                 p = *c & 0xF;
-                if (p < 10) printf ("%c", '0' + p);
-                else printf("%c", 'A' + p - 10);
+                if(('0'+p)!='0' || isDigitFound){
+                    if (p < 10) printf ("%c", '0' + p);
+                    else printf("%c", 'A' + p - 10);
+                    isDigitFound=true;
+                }
                 i++; c++;
             }
             count = length * 2;
