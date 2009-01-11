@@ -240,7 +240,7 @@ main(int argc, char *argv[])
     rc = db->selectionQuery(1, timer[1],
                        "select * from big1 where unique2 between %d and %d",
                        "select * from big2 where unique2 between %d and %d",
-                       numBigTblTups, numBigTblTups/100, 0, verify, 5, 2);
+                       numBigTblTups, numBigTblTups/100, 0, verify, 2, 2);
     if (rc)
         printf ("Query 1 failed\n");
 

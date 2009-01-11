@@ -460,6 +460,7 @@ fetchSelect(int queryNum, class wiscTimer *wT, SQLHENV henv, SQLHDBC hdbc, SQLHS
     }
 
     //printf ("rc = %d\n", rc);
+    //printf("PRABA::Total tuples fetched %d\n", cnt);
 
     rc = SQLTransact(henv, hdbc, SQL_COMMIT);
     if (rc)
@@ -533,7 +534,7 @@ odbcDB::selectionQuery (int queryNum, class wiscTimer *wT, char *form1, char *fo
     totalNumQueries = repeatCnt * 2;
     times = longerRun * RPTS;
 
-    //printf ("Query %d - total %d times %d\n", queryNum, totalNumQueries, times);
+    printf ("Query %d - total %d times %d\n", queryNum, totalNumQueries, times);
 
     for (i = 0; i < totalNumQueries; i++) {
         rc = SQLAllocStmt(hdbc, &hstmtA[i]);
@@ -1012,9 +1013,14 @@ int
 odbcDB::createIndex (char *idx, char *tblName, char *fld)
 {
     char buf[128];
-
-    sprintf (buf, "create index %s on %s (%s)",
+    if (strcmp(fld, "unique2") == 0) {
+        sprintf (buf, "create index %s on %s (%s)",
              idx, tblName, fld);
+    }else {
+        sprintf (buf, "create index %s on %s (%s) tree",
+             idx, tblName, fld);
+
+    }
 
     return immedExecute (buf);
 }

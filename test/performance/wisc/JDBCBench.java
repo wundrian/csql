@@ -103,7 +103,7 @@ public class JDBCBench
 	     
 	     if (recordCount!= 100) 
              {
-                 System.out.println("No. of records returned is wrond for Q1 "+recordCount);
+                 System.out.println("No. of records returned is wrong for Q1 "+recordCount);
                  return 0;
              }
              curr = end-start;
@@ -183,17 +183,17 @@ public static int dmlstatement(Connection con, int val)throws Exception
 	String stmtStr="";
 	if(val==1)
 	{
-		String buf = "insert into big1 values(10010,10000,0,2,0,10,50,688,1950,4950,9950,1,100,'MXXXXXXXXXXXXXXXXXXXXXXXXXGXXXXXXXXXXXXXXXXXXXXXXXXC','GXXXXXXXXXXXXXXXXXXXXXXXXXCXXXXXXXXXXXXXXXXXXXXXXXXA','OXXXXXXXXXXXXXXXXXXXXXXXXXOXXXXXXXXXXXXXXXXXXXXXXXXO');";
+		String buf = "insert into big1 values(10010,10010,0,2,0,10,50,688,1950,4950,9950,1,100,'MXXXXXXXXXXXXXXXXXXXXXXXXXGXXXXXXXXXXXXXXXXXXXXXXXXC','GXXXXXXXXXXXXXXXXXXXXXXXXXCXXXXXXXXXXXXXXXXXXXXXXXXA','OXXXXXXXXXXXXXXXXXXXXXXXXXOXXXXXXXXXXXXXXXXXXXXXXXXO');";
 		stmtStr = buf;
 	}
 	else if(val==2)
 	{
-		String buf = "UPDATE big1 SET unique1=10001 WHERE unique1=10010;";
+		String buf = "UPDATE big1 SET unique2=10001 WHERE unique2=10010;";
 		stmtStr = buf;
 	}
 	else
 	{
-		String buf = "DELETE FROM big1 WHERE unique1=10001;";
+		String buf = "DELETE FROM big1 WHERE unique2=10001;";
 		stmtStr = buf;
 	}
 	    
@@ -233,23 +233,23 @@ public static int dmlstatement(Connection con, int val)throws Exception
 }
 
 // Joining
-/*public static int joining(Connection con,int val)throws Exception
+public static int joining(Connection con,int val)throws Exception
 {
 	PreparedStatement stmt = null;
 	String stmtStr;
 	if(val==9)
 	{
-		String buf = "SELECT * FROM big1,big2 WHERE(big1.unique2=big2.unique2) AND (big2.unique2<1000);";
+		String buf = "SELECT big1.unique2, big2.unique2 FROM big2,big1 WHERE big1.unique2=big2.unique2 AND big2.unique2<1000;";
 		stmtStr = buf;
 	}
 	else if(val==10)
 	{
-		String buf = "SELECT * FROM big1,bprime WHERE (big1.unique2=bprime.unique2);";
+		String buf = "SELECT * FROM big1,bprime WHERE big1.unique2=bprime.unique2;";
 		stmtStr = buf;
 	}
 	else if(val==11)
 	{
-		String buf = "SELECT * FROM small,big1 WHERE (small.unique2=big1.unique2) AND(big1.unique2=big2.unique2) AND (big1.unique2<1000);";
+		String buf = "SELECT * FROM small,big1 WHERE small.unique2=big1.unique2 AND big1.unique2=big2.unique2 AND big1.unique2<1000;";
 		stmtStr=buf;
 	}
 	else if(val==15)
@@ -259,7 +259,7 @@ public static int dmlstatement(Connection con, int val)throws Exception
 	}
 	else if(val==16)
 	{
-		String buf = "SELECT * FROM big1,bprime WHERE (big1.unique1=bprime.unique1);";
+		String buf = "SELECT * FROM big1,bprime WHERE big1.unique1=bprime.unique1;";
 		stmtStr=buf;
 	}
 	else
@@ -268,34 +268,36 @@ public static int dmlstatement(Connection con, int val)throws Exception
 		stmtStr=buf;
 	}
 	
-		stmt  = con.prepareStatement(stmtStr);
-		int count=0,recordCount=0,ret=0;
-		long start=0,end=0,curr=0;
-		long tot=0;
-		ResultSet rs;
-		for(int i=0;i<=100;i++)
+        stmt  = con.prepareStatement(stmtStr);
+	int count=0,recordCount=0,ret=0;
+	long start=0,end=0,curr=0;
+	long tot=0;
+	ResultSet rs;
+	for(int i=0;i<=100;i++)
+	{
+		start = System.nanoTime();
+		rs = stmt.executeQuery();
+		while(rs.next())
 		{
-			start = System.nanoTime();
-			rs = stmt.executeQuery();
-			while(rs.next())
-			{
-				recordCount++;
-			}
-			rs.close();
-			con.commit();
-			end=System.nanoTime();
-			if(recordCount!=1000)
-			{
-				System.out.println("No. of records returned is around for Q2"+recordCount);
-				return 0;
-			}
-			curr = end - start;
-			tot = tot + curr;
-			count++;
+                System.out.println("PRABA: "+ recordCount);
+			recordCount++;
 		}
-		stmt.close();
-		return (int)tot/100/1000;
-}*/
+                System.out.println("PRABA: "+ recordCount);
+		rs.close();
+		con.commit();
+		end=System.nanoTime();
+		if(recordCount!=1000)
+		{
+		System.out.println("No. of records wrong "+recordCount);
+		return 0;
+		}
+		curr = end - start;
+		tot = tot + curr;
+		count++;
+	}
+	stmt.close();
+	return (int)tot/100/1000;
+}
 
 // projection
 /*public static  int projection(Connection con, boolean flag)throws Exception
@@ -390,7 +392,7 @@ public static  int tenPerSel(Connection con, boolean flag)throws Exception
 			
 			if(recordCount != 1000)
 			{
-			   System.out.println("No. of records returned is around for Q2" + recordCount);
+			   System.out.println("No. of records returned is wrong for Q2 " + recordCount);
 			
 			  return 0;
 		        }
@@ -417,16 +419,16 @@ public static void main(String[] args)
 	  
 	  System.out.println("\n\n");
 	  System.out.println("**********************************************************\n");
-	  System.out.println("NOTE :  Idx1-------Non cluster Unique Index(uniquue1).\n\tIdx2-------Cluster Unique Index(unique2).\n\tWall_Clk---");
+	  System.out.println("NOTE :  Idx1-------Tree(unique1).\n\tIdx2-------Hash(unique2).\n\t Time in microsecs---");
 	  System.out.println("\n");
 	  System.out.println("Q.No.\tQuery Type\tNoIdx\tIdx1\tIdx2\tWall_Clk");
 	  System.out.println("-----\t----------\t-----\t----\t----\t--------");
 
           try { 
-	  cStmt.execute("DROP INDEX idx3");
-	  cStmt.close();
+	  //cStmt.execute("DROP INDEX idx3");
+	  //cStmt.close();
 	  
-	  cStmt.execute("DROP INDEX idx4");// for q1 and q2
+	  cStmt.execute("DROP INDEX idx4 on big1");// for q1 and q2
           cStmt.close();
           } catch(Exception e)
           {
@@ -441,8 +443,10 @@ public static void main(String[] args)
 
 
 	  //create index
-	  cStmt.execute("CREATE INDEX idx4 ON big1(unique2)UNIQUE");
+	  try{
+	  cStmt.execute("CREATE INDEX idx4 ON big1(unique2) UNIQUE");
 	  cStmt.close();
+          }catch(Exception e ){}
 
 	  int q3 = onePerSel(con,true);
 	  System.out.println("3\t1% Sel\t\t-\t-\tY\t"+q3);
@@ -452,12 +456,12 @@ public static void main(String[] args)
 	  System.out.println("4\t10% Sel\t\t-\t-\tY\t"+q4);
 
 
+          try{
 	  // drop index idx4
-	  cStmt.execute("DROP INDEX idx4");
+	  cStmt.execute("DROP INDEX idx4 on big1");
 	  cStmt.close();
+          }catch(Exception e){}
 
-	  cStmt.execute("CREATE INDEX idx3 ON big1(unique1)UNIQUE");
-	  cStmt.close();
 	  int q5 = onePerSel(con,false);
 	  System.out.println("5\t1% Sel\t\t-\tY\t-\t"+q5);
 
@@ -465,48 +469,47 @@ public static void main(String[] args)
 	  int q6 = tenPerSel(con,false);
 	  System.out.println("6\t10% Sel\t\t-\tY\t-\t"+q6);
 
-	  cStmt.execute("DROP INDEX idx3");
-	  cStmt.close();
-
+          try{
 	  cStmt.execute("CREATE INDEX idx4 ON big1(unique2)UNIQUE");
 	  cStmt.close();
+          }catch(Exception e ){}
 	  
 	  int q7 = singleTuple(con,true);
 	  System.out.println("7\t1 Tup Sel\t-\t-\tY\t"+q7);
 
 	   
           //commented query 8 as it is duplicate of query 3
-	  int q8 = onePerSel(con,true);
-	  System.out.println("8\t1% Sel\t\t-\t-\tY\t"+q1);
+	  //int q8 = onePerSel(con,true);
+	  //System.out.println("8\t1% Sel\t\t-\t-\tY\t"+q1);
 
 	  // joining
-	/*  cStmt.execute("DROP INDEX idx4");
-	  cStmt.close();
-
-	  cStmt.execute("DROP INDEX idx1");
-	  cStmt.close();
-
+	  try{
 	  cStmt.execute("DROP INDEX idx2");
 	  cStmt.close();
-
-	  cStmt.execute("DROP INDEX idx5");
+	  cStmt.execute("DROP INDEX idx4");
 	  cStmt.close();
-
 	  cStmt.execute("DROP INDEX idx6");
 	  cStmt.close();
+          }catch(Exception e)
+          {
+              System.out.println("Drop indexes failed");
+          }
+          System.out.println("All indexes dropped\n");
 
 	  
 	  int Q9=1,Q10=2,Q11=3,Q15=4,Q16=5,Q17=6;
 
-	  int q9 = joining(con,	Q9);
-	  System.out.println("9\tJoin AselB\tY\t-\t-\t"+q9);
+	  //int q9 = joining(con,	Q9);
+	  //System.out.println("9\tJoin AselB\tY\t-\t-\t"+q9);
 
-	  int q10 = joining(con,Q10);
-	  System.out.println("10\tJoin ABPrime\tY\t-\t-\t"+q10);
+          
+	  //int q10 = joining(con,Q10);
+	  //System.out.println("10\tJoin ABPrime\tY\t-\t-\t"+q10);
 
-	  int q11 = joining(con,Q11);
-	  System.out.println("11\tJoin CselAselB\tY\t-\t-\t"+q11);
+	  //int q11 = joining(con,Q11);
+	  //System.out.println("11\tJoin CselAselB\tY\t-\t-\t"+q11);
 	  
+/*
 	  // create non-cluster index
 	  cStmt.execute("CREATE INDEX idx1 ON small(unique1)UNIQUE");
 	  cStmt.close();
@@ -547,8 +550,8 @@ public static void main(String[] args)
 	  //cStmt.execute("DROP INDEX idx3");
 	  //cStmt.close();
 
-	  cStmt.execute("DROP INDEX idx4");
-	  cStmt.close();
+	  //cStmt.execute("DROP INDEX idx4 ");
+	  //cStmt.close();
 	  
 	  
 	  int min=1, ming=2,sum=3;// function parameter
@@ -565,9 +568,10 @@ public static void main(String[] args)
 
           //cStmt.execute("CREATE INDEX idx3 ON big1(unique1)UNIQUE");
 	  //cStmt.close();
-	  
-	  cStmt.execute("CREATE INDEX idx4 ON big1(unique2)UNIQUE"); // create index agaig 
+	  try{ 
+	  cStmt.execute("CREATE INDEX idx4 ON big1(unique2)"); 
 	  cStmt.close();
+          }catch(Exception e ){}
 
 	  int q23 = aggregate(con,min);
 	  System.out.println("23\tMinAgg No Grps\t-\t-\tY\t"+q23);
@@ -585,12 +589,11 @@ public static void main(String[] args)
 	  //cStmt.execute("DROP INDEX idx3");
 	  //cStmt.close();
 	  
-	  cStmt.execute("DROP INDEX idx4");
-	  cStmt.close();
-	  
+	  //cStmt.execute("DROP INDEX idx4");
+	  //cStmt.close();
 	  
 	  int in=1,upd=2,del=3;// function parameter
-
+/*
 	  int q26 = dmlstatement(con,in);
 	  System.out.println("26\tInsert 1 Tup\tY\t-\t-\t"+q26);
 
@@ -602,14 +605,12 @@ public static void main(String[] args)
 	  int q28 = dmlstatement(con,del);
 	  System.out.println("28\tdelete 1 Tup\tY\t-\t-\t"+q28);
 
-
-	  // create index again for dml statement
-	  cStmt.execute("CREATE INDEX idx3 ON big1(unique1)UNIQUE;");
-	  cStmt.close();
-	  
+*/
+          try{
 	  cStmt.execute("CREATE INDEX idx4 ON big1(unique2)UNIQUE;");
 	  cStmt.close();
-
+          }catch(Exception e ){}
+/*
 	  
 	  int q29 = dmlstatement(con,in);
 	  System.out.println("29\tinsert 1 Tup\t-\tY\tY\t"+q29);
@@ -621,7 +622,7 @@ public static void main(String[] args)
 	   
 	  int q31 = dmlstatement(con,del);
 	  System.out.println("31\tdelete 1 Tup\t-\tY\tY\t"+q31);
-
+*/
           System.out.println("\n");
 
 	  System.out.println("**********************************************************\n");

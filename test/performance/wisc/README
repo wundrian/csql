@@ -8,7 +8,12 @@ Run make to build the suite as follows
 $make
 
 To populate the database run
-$./odbcBench -b
+a)CSQL
+$csql <csql.sql
+b)MySQL
+$isql myodbc3 <mysql.sql
+c)Postgres 
+$isql psql <psql.sql
 
 
 To run odbc test
