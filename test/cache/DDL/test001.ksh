@@ -12,9 +12,11 @@ if [ -s "$input" -a -s "$CSQL_CONF" ]
 then
     REL_PATH=${PWD}/cache/DDL
 fi
-export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
-cp $CSQL_CONFIG_FILE /tmp
+rm  /tmp/csql.conf
+cp $REL_PATH/csql.conf /tmp
+export CSQL_CONFIG_FILE=/tmp/csql.conf
 echo DSN=$DSN >> $CSQL_CONFIG_FILE
+echo CACHE_TABLE=true >> $CSQL_CONFIG_FILE
 isql $DSN < $REL_PATH/dropall.sql >/dev/null
 rm /tmp/csql/csql.db /tmp/csql/csqltable.conf
 touch /tmp/csql/csqltable.conf

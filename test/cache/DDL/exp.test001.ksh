@@ -15,5 +15,5 @@ Statement Executed: Rows Affected = 1
 | quit                                  |
 |                                       |
 +---------------------------------------+
-SQL> select * from t1;
+[?1034hSQL> select * from t1;
 SQL> 
