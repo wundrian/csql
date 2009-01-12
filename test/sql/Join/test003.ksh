@@ -12,14 +12,13 @@ then
  REL_PATH=`pwd`/sql/Join
 fi
 
-echo "select * from t1,t2,t3,t4,t5:"
 $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/createt1t2t3t4t5.sql > /dev/null 2>&1
 if [ $? -ne 0 ]
 then
     exit 1;
 fi
 
-$CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/join6.sql  
+$CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/join3.sql  
 if [ $? -ne 0 ]
 then
   $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/dropt1t2t3t4t5.sql > /dev/null 2>&1
