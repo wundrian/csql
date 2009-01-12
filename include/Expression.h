@@ -53,7 +53,7 @@ class Expression
     void setExpr(char const *name);
     void setExpr(Expression *exp1, ArithOperator op, Expression *exp2 );
     void setExpr(void *cVal,bool flag );
-    void *evaluate(DataType type );
+    void *evaluate(DataType type,bool &result);
     void solve(void *opand1, void *opand2, DataType type, ArithOperator arOp);
     void convertStrToVal(DataType type);
     void freeVal();
