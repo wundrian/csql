@@ -30,6 +30,7 @@ DbRetVal SqlGwConnection::connect (char *user, char * pass)
     DbRetVal rv = OK;
     if (innerConn) rv = innerConn->connect(user,pass);
     if (rv == OK) isCSqlConnected = true;
+    if (rv == ErrNoPrivilege ) return rv;
     if (adapter) rv = adapter->connect(user,pass);
     if (rv == OK) isAdapterConnected = true;
     if (!isAdapterConnected && !isCSqlConnected) return ErrNoConnection;
