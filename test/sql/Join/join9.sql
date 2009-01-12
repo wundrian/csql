@@ -1,1 +1,17 @@
-select * from t1,t2,t3 where t1.f2= t2.f2 and t1.f3 = t3.f2;
+echo select t11.f5, t13.f8 from t11,t13 where t11.f5=t13.f8;
+select t11.f5, t13.f8 from t11,t13 where t11.f5=t13.f8;
+
+echo select f1,f5,f8 from t11,t13 where t11.f5=t13.f8;
+select f1,f5,f8 from t11,t13 where t11.f5=t13.f8;
+
+echo select * from t11,t13 where t13.f8 > t11.f5;
+select * from t11,t13 where t13.f8 > t11.f5;
+
+echo select f1,f5,f8 from t11,t13 where t13.f8 < t11.f5;
+select f1,f5,f8 from t11,t13 where t13.f8 < t11.f5;
+
+echo select * from t11,t13 where f5 > f8;
+select * from t11,t13 where f5 > f8;
+
+
+

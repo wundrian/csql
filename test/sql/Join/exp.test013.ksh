@@ -1,19 +1,87 @@
-select * from t11,t12,t13 where t12.f1=t13.f8 and t13.f7=t11.f1;
+Statement Executed
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+echo select * from emp;
 ---------------------------------------------------------
-	f1	f2	f3	f4	f5	f1	f2	f3	f7	f8	
+	eno	dno	
 ---------------------------------------------------------
-	2	Y	sales	6000	20	20	HR	CTC	2	20	
+	1	10	
+	2	20	
+	4	40	
 	
- select * from t11,t12,t13 where t12.f1=t13.f8 or t13.f7=t11.f1;
+echo select * from dept;
 ---------------------------------------------------------
-	f1	f2	f3	f4	f5	f1	f2	f3	f7	f8	
+	deptno	dname	
 ---------------------------------------------------------
-	1	X	IT	5000	10	10	IT	BBSR	1	50	
-	1	X	IT	5000	10	20	HR	CTC	2	20	
-	1	X	IT	5000	10	20	HR	CTC	1	50	
-	1	X	IT	5000	10	30	R&D	DELHI	1	50	
-	2	Y	sales	6000	20	10	IT	BBSR	2	20	
-	2	Y	sales	6000	20	20	HR	CTC	2	20	
-	2	Y	sales	6000	20	30	R&D	DELHI	2	20	
-	3	Z	IT	7000	10	20	HR	CTC	2	20	
+	20	Sales	
+	30	IT	
+	40	Mkt	
+	50	HR	
 	
+echo select * from emp,dept;
+---------------------------------------------------------
+	eno	dno	deptno	dname	
+---------------------------------------------------------
+	1	10	20	Sales	
+	1	10	30	IT	
+	1	10	40	Mkt	
+	1	10	50	HR	
+	2	20	20	Sales	
+	2	20	30	IT	
+	2	20	40	Mkt	
+	2	20	50	HR	
+	4	40	20	Sales	
+	4	40	30	IT	
+	4	40	40	Mkt	
+	4	40	50	HR	
+	
+echo select * from emp,dept where emp.dno in(20,30);
+---------------------------------------------------------
+	eno	dno	deptno	dname	
+---------------------------------------------------------
+	2	20	20	Sales	
+	2	20	30	IT	
+	2	20	40	Mkt	
+	2	20	50	HR	
+	
+echo select * from emp,dept where dept.deptno in(20,30);
+---------------------------------------------------------
+	eno	dno	deptno	dname	
+---------------------------------------------------------
+	1	10	20	Sales	
+	1	10	30	IT	
+	2	20	20	Sales	
+	2	20	30	IT	
+	4	40	20	Sales	
+	4	40	30	IT	
+	
+echo select * from emp,dept where emp.dno in(20,30)  and dept.deptno in(20,30);
+---------------------------------------------------------
+	eno	dno	deptno	dname	
+---------------------------------------------------------
+	2	20	20	Sales	
+	2	20	30	IT	
+	
+echo select * from emp,dept where emp.dno in(20,30) or dept.deptno in(20,30);
+---------------------------------------------------------
+	eno	dno	deptno	dname	
+---------------------------------------------------------
+	1	10	20	Sales	
+	1	10	30	IT	
+	2	20	20	Sales	
+	2	20	30	IT	
+	2	20	40	Mkt	
+	2	20	50	HR	
+	4	40	20	Sales	
+	4	40	30	IT	
+	
+echo drop table emp;
+Statement Executed
+echo drop table dept;
+Statement Executed

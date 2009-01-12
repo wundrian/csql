@@ -1,1 +1,6 @@
-  select t1.f1, t2.f1, t3.f1 from t1,t2,t3 where t1.f2= t2.f2 or t1.f1 >100;
+echo select f1,f7 from t12,t11;
+select f1,f7 from t12,t11;
+
+echo select t11.f1,t12.f7 from t13,t11;
+select t11.f1,t12.f7 from t13,t11;
+

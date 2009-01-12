@@ -1,12 +1,14 @@
 #!/bin/sh
-# Test Case 
-# 10.	Create emp table with 5 fields, and insert 3 records in it. 
-
-#	(a)select * from t11,t12,t13 where t12.f1=t13.f8 and t13.f7=t11.f1;
-#	(b)select * from t11,t12,t13 where t12.f1=t13.f8 or t13.f7=t11.f1;
-
-# AUTHOR : Jitendra Lenka
-
+#Testing IN operator in Join
+#create table emp(eno int,dno int);
+#create table dept(deptno int,dname char(10));
+#insert some records into both the tables.
+#Test the following Select statements using join and in operator and check the retrieved data are proper or not
+#select * from emp,dept where emp.dno in(20,30);
+#select * from emp,dept where dept.deptno in(20,30);
+#select * from emp,dept where emp.dno in(20,30)  and dept.deptno in(20,30);
+#select * from emp,dept where emp.dno in(20,30) or dept.deptno in(20,30);(sql/Join/test016.ksh)
+#
 QUITFILE=${PWD}/sql/Join/quit.sql
 REL_PATH=.
 if [ -s "$QUITFILE" ]
@@ -14,32 +16,18 @@ then
  REL_PATH=`pwd`/sql/Join
 fi
 
-  
-$CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/tablet11t12t13.sql > /dev/null 2>&1
+$CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/join32.sql
 if [ $? -ne 0 ]
 then
   exit 1;
 fi
-
-
-echo "select * from t11,t12,t13 where t12.f1=t13.f8 and t13.f7=t11.f1;"
-
-$CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/join27.sql 
+$CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/join_in.sql
 if [ $? -ne 0 ]
-  then
-     $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/drot11t12t13.sql > /dev/null 2>&1
-     exit 2;
+then
+  exit 1;
 fi
-
-echo " select * from t11,t12,t13 where t12.f1=t13.f8 or t13.f7=t11.f1;"
-
-$CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/join28.sql
+$CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/drop_emp_dept.sql 
 if [ $? -ne 0 ]
-  then
-      $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/dropt11t12t13.sql > /dev/null 2>&1
-      exit 3;
-fi   
-
-$CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/dropt11t12t13.sql > /dev/null 2>&1
-exit 0;
-
+then
+  exit 1;
+fi

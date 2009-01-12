@@ -1,1 +1,6 @@
-select * from t1,t2,t3 where t1.f2= t2.f2 or t1.f3 = t3.f2;
+echo select * from t11,t12,t13 where t12.f1=t13.f8 and t13.f7=t11.f1;
+select * from t11,t12,t13 where t12.f1=t13.f8 and t13.f7=t11.f1;
+
+echo select * from t11,t12,t13 where t12.f1=t13.f8 or t13.f7=t11.f1;
+select * from t11,t12,t13 where t12.f1=t13.f8 or t13.f7=t11.f1;
+
