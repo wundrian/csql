@@ -101,7 +101,7 @@ echo select * from t1;
 	11	NULL	NULL	
 	
 echo update t1 set f1=f1+f2+f3;
-Statement prepare failed with error -22
+Statement Executed: Rows Affected = 5
 echo commit;
 echo select * from t1;
 ---------------------------------------------------------
