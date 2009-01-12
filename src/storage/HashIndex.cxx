@@ -561,10 +561,8 @@ DbRetVal HashIndex::insertLogicalUndoLog(Database *sysdb, void *data)
     Chunk *hChunk = (Chunk *) ((CINDEX *)info->indexPtr_)->hashNodeChunk_;
     HashIndexNode *head = (HashIndexNode *)((Bucket *)info->bucket_)->bucketList_; 
     BucketList list(head);
-    if (head) {
-        list.insert(hChunk, tbl->db_, info->keyPtr_, info->tuple_);
-        ((Bucket *)info->bucket_)->bucketList_ = list.getBucketListHead();
-    }
+    list.insert(hChunk, tbl->db_, info->keyPtr_, info->tuple_);
+    ((Bucket *)info->bucket_)->bucketList_ = list.getBucketListHead();
     return OK;
 }
 
@@ -575,9 +573,7 @@ DbRetVal HashIndex::deleteLogicalUndoLog(Database *sysdb, void *data)
     Chunk *hChunk = (Chunk *) ((CINDEX *)info->indexPtr_)->hashNodeChunk_;
     HashIndexNode *head = (HashIndexNode *)((Bucket *)info->bucket_)->bucketList_;
     BucketList list(head);
-    if (head) {
-        list.remove(hChunk, tbl->db_, info->keyPtr_);
-        ((Bucket *)info->bucket_)->bucketList_ = list.getBucketListHead();
-    }
+    list.remove(hChunk, tbl->db_, info->keyPtr_);
+    ((Bucket *)info->bucket_)->bucketList_ = list.getBucketListHead();
     return OK;
 }
