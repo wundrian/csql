@@ -68,20 +68,21 @@ void Expression::setExpr(Expression *exp1, ArithOperator op, Expression *exp2)
         arOp = op;
 }
 
-void *Expression::evaluate(DataType type)
+void *Expression::evaluate(DataType type,bool &result)
 {   
     calVal=AllDataType::alloc(type,IDENTIFIER_LENGTH);
     char *rhsResult = NULL , *lhsResult = NULL;
     if (NULL != lhs)
     {
-        lhsResult =(char *) lhs->evaluate(type);
+        lhsResult =(char *) lhs->evaluate(type,result);
         if (NULL == lhsResult) return lhsResult;
     }
     if (NULL != rhs)
     {
-        rhsResult  = (char *)rhs->evaluate(type);
+        rhsResult  = (char *)rhs->evaluate(type,result);
         if (NULL == rhsResult) return rhsResult;
     }
+    if(result){return tuple;}
     int offset;
     char *val=NULL;
     if(NULL==lhs && NULL == rhs)
@@ -94,6 +95,12 @@ void *Expression::evaluate(DataType type)
             {
                 offset=table->getFieldOffset(fldName);
                 val= ((char*) tuple) + offset;
+                if(table->isFldNull(fldName))
+                {
+                    result=true;
+                    return tuple;
+                }
+
             }
         }
         if(constVal!= NULL && strcmp(fldName,"\0")!=0)
