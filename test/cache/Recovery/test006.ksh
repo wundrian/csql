@@ -13,12 +13,14 @@ if [ -s "$input" -a -s "$CSQL_CONF" ]
 then
     REL_PATH=${PWD}/cache/Recovery
 fi
-export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
 echo "create table t1(f1 int , f2 int,f3 int,f4 char(10),primary key(f1,f2));">$REL_PATH/t1.sql
 echo "create index ix2 on t1(f3,f4);">>$REL_PATH/t1.sql
 
-cp $CSQL_CONFIG_FILE /tmp
+rm /tmp/csql.conf
+cp $CSQL_CONFIG_FILE/csql.conf /tmp
+export CSQL_CONFIG_FILE=/tmp/csql.conf
 echo DSN=$DSN >> $CSQL_CONFIG_FILE
+echo CACHE_TABLE=true >> $CSQL_CONFIG_FILE
 isql $DSN < $REL_PATH/t1.sql > /dev/null 2>&1
 if [ $? -ne 0 ]
 then
