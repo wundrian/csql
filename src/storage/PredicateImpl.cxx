@@ -228,12 +228,12 @@ DbRetVal PredicateImpl::evaluate(bool &result)
     memset(fieldName2, 0, IDENTIFIER_LENGTH);
     Table::getFieldNameAlone(fldName1, fieldName1);
     Table::getFieldNameAlone(fldName2, fieldName2);
-    table->setCurTuple(tuple);
+    /*table->setCurTuple(tuple);
     if(table->isFldNull(fieldName1))
     {
         result=false;
         return OK;
-    }
+    }*/
     if (projList)
     {
         DataType type=typeUnknown;
