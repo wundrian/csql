@@ -1,12 +1,9 @@
 #!/bin/sh
 # Test Case
+#create table t2(taking different integer fields) (test034a.ksh)
+#create index in various ways.
+#Do all operations like select,insert,update,delete on the indexed field.
 #
-# 34. Create table (f1 int, f2 int); 
-#     Insert 5 tuples (1, 1), (1, 2), (2, 1), (2 ,2), (5, 5). (test034.ksh)
-#     select * from t1 where f1 = 5; 
-#     create index indt1 on t1(f1); Index should be created.
-#     select * from t1 where f1 = 5;
-#     The record should be fetched.
 
 QUITFILE=${PWD}/tools/csql/quit.sql
 REL_PATH=.
