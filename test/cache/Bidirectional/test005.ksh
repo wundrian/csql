@@ -13,8 +13,13 @@ then
     REL_PATH=${PWD}/cache/Bidirectional
 fi
 
-#cp $CSQL_CONFIG_FILE /tmp/csql.conf
-#echo DSN=$DSN >>$CSQL_CONFIG_FILE
+rm /tmp/csql.conf
+cp $REL_PATH/csql.conf /tmp
+export CSQL_CONFIG_FILE=/tmp/csql.conf
+echo DSN=$DSN >>$CSQL_CONFIG_FILE
+echo CACHE_TABLE=true >>$CSQL_CONFIG_FILE
+echo ENABLE_BIDIRECTIONAL_CACHE=true >>$CSQL_CONFIG_FILE
+
 isql $DSN < $REL_PATH/mysqlcreatelogtable.sql >/dev/null 2>&1 &
 echo table csql_log_int is created with records in target db
 
@@ -25,8 +30,6 @@ isql $DSN < $REL_PATH/trigger.sql >/dev/null
 isql $DSN < $REL_PATH/trigger1.sql  >/dev/null
 
 
-export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
-echo DSN=$DSN >>$CSQL_CONFIG_FILE
 for (( a=1; a<3; a++ ))
 do
     echo "1:t$a NULL NULL NULL"
@@ -42,15 +45,19 @@ $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/select.sql
 if [ $? -ne 0 ]
 then
     echo "unable to locate cache 1"
-#    cp /tmp/csql.conf $CSQL_CONFIG_FILE
     exit 3
 fi
 mkdir /tmp/csql1 >/dev/null 2>&1 
 rm -f /tmp/csql1/csqltable.conf /tmp/csql1/csql.db
 touch /tmp/csql1/csqltable.conf /tmp/csql1/csql.db
 
-export CSQL_CONFIG_FILE=$REL_PATH/conf/csql.conf
+rm /tmp/csql1.conf
+cp $REL_PATH/conf/csql.conf /tmp
+export CSQL_CONFIG_FILE=/tmp/csql1.conf
 echo DSN=$DSN >>$CSQL_CONFIG_FILE
+echo CACHE_TABLE=true >>$CSQL_CONFIG_FILE
+echo ENABLE_BIDIRECTIONAL_CACHE=true >>$CSQL_CONFIG_FILE
+
 
 for (( a=1; a<3; a++ ))
 do
@@ -67,7 +74,6 @@ $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/select.sql
 if [ $? -ne 0 ]
 then
     echo "unable to locate cache 1"
- #   cp /tmp/csql.conf $CSQL_CONFIG_FILE
     exit 4
 fi
 
@@ -75,8 +81,7 @@ isql $DSN < ${REL_PATH}/insert.sql >/dev/null 2>&1
 sleep 15 
 $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/select.sql
 
-export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
-echo DSN=$DSN >>$CSQL_CONFIG_FILE
+export CSQL_CONFIG_FILE=/tmp/csql.conf
 echo "cache node 2"
 $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/select.sql
 
@@ -91,6 +96,4 @@ kill -2 $pid
 ipcrm -M 4000 -M 4500
 kill -2 $pid1
 ipcrm -M 5000 -M 5500
-  #  cp /tmp/csql.conf $CSQL_CONFIG_FILE
 exit 0;
-
