@@ -17,10 +17,14 @@ rm /tmp/csql.conf
 cp $REL_PATH/csql.conf /tmp
 export CSQL_CONFIG_FILE=/tmp/csql.conf
 echo DSN=$DSN >>$CSQL_CONFIG_FILE
-echo CACHE_TABLE=true >>$CSQL_CONFIG_FILE
-echo ENABLE_BIDIRECTIONAL_CACHE=true >>$CSQL_CONFIG_FILE
 
-isql $DSN < $REL_PATH/mysqlcreatelogtable.sql >/dev/null 2>&1 &
+isql $DSN < $REL_PATH/mysqlcreatelogtable.sql >/dev/null 2>&1
+if [ $? -ne 0 ]
+then
+    echo "DSN is not set for target db"
+    exit 1
+fi
+ 
 echo log table created in target db.
 
 isql $DSN < $REL_PATH/create1.sql >/dev/null 2>&1 
@@ -34,14 +38,14 @@ do
     echo "1:t$a NULL NULL NULL"
 done >> /tmp/csql/csqltable.conf
 
-$CSQL_INSTALL_ROOT/bin/csqlserver -c 2>/dev/null  & 
+$CSQL_INSTALL_ROOT/bin/csqlserver -c >/dev/null 2>&1 &
 pid=$!
 sleep 5
 echo "server  started"
 $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/select.sql >/dev/null 2>&1
 if [ $? -eq 0 ]
 then
-    exit 1 
+    exit 2 
 fi
 
 isql $DSN < ${REL_PATH}/insert.sql >/dev/null 2>&1

@@ -54,18 +54,29 @@ do
 echo "update t$a set f2=50 where f2 >19;"
 done >> $REL_PATH/update100table.sql
 echo "Update file created"
+rm  -f /tmp/csql1.conf
+cp $REL_PATH/csql1.conf /tmp
+export CSQL_CONFIG_FILE=/tmp/csql1.conf
+echo DSN=$DSN >>$CSQL_CONFIG_FILE
 
-#cp $CSQL_CONFIG_FILE /tmp/csql.conf
-#echo DSN=$DSN >>$CSQL_CONFIG_FILE
-isql $DSN < $REL_PATH/mysqlcreatelogtable.sql >/dev/null 2>&1 
+isql $DSN < $REL_PATH/mysqlcreatelogtable.sql >/dev/null 2>&1
+if [ $? -ne 0 ]
+then
+    echo "DSN is not set for target db"
+    rm -f $REL_PATH/create100table.sql
+    rm -f $REL_PATH/update100table.sql
+    rm -f $REL_PATH/selectfrom100.sql
+    rm -f $REL_PATH/drop100table.sql
+    rm -f $REL_PATH/dropupdatetrigger.sql
+    rm -f $REL_PATH/updatetrigger100.sql
+    exit 1
+fi
 echo Log table created in target DB
 isql $DSN < $REL_PATH/create100table.sql >/dev/null
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 isql $DSN <$REL_PATH/updatetrigger100.sql >/dev/null
 
-export CSQL_CONFIG_FILE=$REL_PATH/csql1.conf
-echo DSN=$DSN >>$CSQL_CONFIG_FILE
 
 for (( a=1; a<=100; a++ ))
 do
@@ -88,8 +99,7 @@ then
     rm -f $REL_PATH/drop100table.sql
     rm -f $REL_PATH/dropupdatetrigger.sql
     rm -f $REL_PATH/updatetrigger100.sql
-#    cp /tmp/csql.conf $CSQL_CONFIG_FILE
-    exit 1
+    exit 2 
 fi
 
 echo "Update some record in target database"
@@ -113,5 +123,4 @@ rm -f $REL_PATH/selectfrom100.sql
 rm -f $REL_PATH/drop100table.sql
 rm -f $REL_PATH/updatetrigger100.sql
 rm -f $REL_PATH/dropupdatetrigger.sql
-#    cp /tmp/csql.conf $CSQL_CONFIG_FILE
 exit 0;

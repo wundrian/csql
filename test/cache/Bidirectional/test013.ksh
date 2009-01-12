@@ -55,18 +55,28 @@ echo "drop trigger if exists triggerinsertt$a;"
 done >>$REL_PATH/dropinserttrigger.sql
 echo "drop trigger file generated"
 
+rm -f /tmp/csql1.conf
+cp $REL_PATH/csql1.conf /tmp
+export CSQL_CONFIG_FILE=/tmp/csql1.conf
+echo DSN=$DSN >>$CSQL_CONFIG_FILE
 
-#cp $CSQL_CONFIG_FILE /tmp/csql.conf
-#echo DSN=$DSN >>$CSQL_CONFIG_FILE
-isql $DSN < $REL_PATH/mysqlcreatelogtable.sql >/dev/null 2>&1 
+isql $DSN < $REL_PATH/mysqlcreatelogtable.sql >/dev/null 2>&1
+if [ $? -ne 0 ]
+then
+    echo "DSN is not set for target db"
+    rm -f $REL_PATH/create100table.sql
+    rm -f $REL_PATH/insertinto100.sql
+    rm -f $REL_PATH/selectfrom100.sql
+    rm -f $REL_PATH/drop100table.sql
+    rm -f $REL_PATH/inserttrigger100.sql
+    rm -f $REL_PATH/dropinserttrigger.sql
+    exit 1
+fi
 echo Log table created in target DB
 isql $DSN < $REL_PATH/create100table.sql >/dev/null
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 isql $DSN <$REL_PATH/inserttrigger100.sql >/dev/null
-
-export CSQL_CONFIG_FILE=$REL_PATH/csql1.conf
-echo DSN=$DSN >>$CSQL_CONFIG_FILE
 
 for (( a=1; a<=100; a++ ))
 do
@@ -89,8 +99,7 @@ then
     rm -f $REL_PATH/drop100table.sql
     rm -f $REL_PATH/inserttrigger100.sql
     rm -f $REL_PATH/dropinserttrigger.sql
-#    cp /tmp/csql.conf $CSQL_CONFIG_FILE
-    exit 1
+    exit 2
 fi
 
 echo "Insert some record in target database"
@@ -115,5 +124,4 @@ rm -f $REL_PATH/selectfrom100.sql
 rm -f $REL_PATH/drop100table.sql
 rm -f $REL_PATH/inserttrigger100.sql
 rm -f $REL_PATH/dropinserttrigger.sql
- #   cp /tmp/csql.conf $CSQL_CONFIG_FILE
 exit 0;
