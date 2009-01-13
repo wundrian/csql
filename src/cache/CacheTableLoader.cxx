@@ -312,6 +312,7 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
              }
         } 
         bool isKeyFld=false;
+        bool isNullfld=false;
         while (icol <= totalFields) {
             retValue = SQLDescribeCol(hstmt, icol, colName, colNameMax,
                                         &nameLength, &colType, &colLength,
@@ -322,7 +323,8 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
             icol++;
             if(strcmp((char*)colName,fieldName)== 0)
             {
-                if(!nullable) {isKeyFld=true;}
+                isKeyFld=true;
+                isNullfld=true;
             }
             bool isPriFld=false;
             if (nullable) {
@@ -336,7 +338,13 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
                                 break;
                         }
                 }
-                if(!isPriFld){tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType), colLength +1); }
+                if(!isPriFld && !isNullfld){
+                    tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType), colLength +1); 
+                }
+                else{
+                    tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType), colLength +1, NULL, true);
+                    isNullfld=false;
+                }
             }
             else
                 tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType), colLength +1, NULL, true);
