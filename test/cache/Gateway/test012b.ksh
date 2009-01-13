@@ -17,8 +17,12 @@ rm /tmp/csql.conf
 cp $REL_PATH/csql.conf /tmp/csql.conf
 export CSQL_CONFIG_FILE=/tmp/csql.conf
 echo DSN=$DSN >> $CSQL_CONFIG_FILE
-echo CACHE_TABLE=true >>$CSQL_CONFIG_FILE
 isql $DSN < $REL_PATH/mysqlinputtest1.sql > /dev/null 2>&1
+if [ $? -ne 0 ]
+then
+    echo "DSN is not set for target db"
+    exit 1
+fi
 isql $DSN < $REL_PATH/mysqlinputtest12.sql > /dev/null 2>&1
 
 # edit /tmp/csql/csqltable.conf

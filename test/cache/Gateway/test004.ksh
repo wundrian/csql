@@ -11,9 +11,10 @@ if [ -s "$input" -a -s "$CSQL_CONF" ]
 then
     REL_PATH=${PWD}/cache/Gateway
 fi
-export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
-echo DSN=$DSN >> $CSQL_CONFIG_FILE
-# edit /tmp/csql/csqltable.conf
+rm -f /tmp/csql.conf
+cp $REL_PATH/csql.conf /tmp
+export CSQL_CONFIG_FILE=/tmp/csql.conf
+echo DSN=$DSN >>$CSQL_CONFIG_FILE
 
 $CSQL_INSTALL_ROOT/bin/csqlserver >/dev/null 2>&1 &
 pid=$!

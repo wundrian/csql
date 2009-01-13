@@ -29,7 +29,11 @@ then
    rm -f ${REL_PATH}/t1create.sql
    exit 1;
 fi
-export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
+rm /tmp/csql.conf
+cp $REL_PATH/csql.conf /tmp/csql.conf
+export CSQL_CONFIG_FILE=/tmp/csql.conf
+echo DSN=$DSN >> $CSQL_CONFIG_FILE
+
 rm -f /tmp/csql/csqltable.conf /tmp/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 echo "drop table t1;">${REL_PATH}/dp.sql
@@ -54,7 +58,7 @@ then
    rm -f ${REL_PATH}/sel.sql
    rm -f ${REL_PATH}/t1create.sql
    isql $DSN < ${REL_PATH}/dp.sql >/dev/null 2>&1
-   exit 3;
+   exit 4;
 fi
 
 rm -f /tmp/csql/csqltable.conf /tmp/csql.db

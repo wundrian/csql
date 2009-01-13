@@ -16,8 +16,17 @@ if [ -s "$input" -a -s "$CSQL_CONF" ]
 then
     REL_PATH=${PWD}/cache/Gateway
 fi
-export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
-echo DSN=$DSN >> $CSQL_CONFIG_FILE
+rm -f /tmp/csql.conf
+cp $REL_PATH/csql.conf /tmp
+export CSQL_CONFIG_FILE=/tmp/csql.conf
+echo DSN=$DSN >>$CSQL_CONFIG_FILE
+
+if [ $? -ne 0 ]
+then
+    echo "DSN is not set for target db"
+    exit 1
+fi
+
 # edit /tmp/csql/csqltable.conf
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
@@ -26,6 +35,12 @@ $CSQL_INSTALL_ROOT/bin/csqlserver >/dev/null 2>&1 &
 pid=$!
 sleep 5
 $CSQL_INSTALL_ROOT/bin/csql -g -s $REL_PATH/csqlinputtest3.sql >/dev/null 2>&1 
+if [ $? -ne 0 ]
+then
+    echo "Unable Start Server"
+    exit 1
+fi
+
 $CSQL_INSTALL_ROOT/bin/csql -g -s $REL_PATH/selectstar.sql 
 isql $DSN < $REL_PATH/selectstar.sql 2>&1
 $CSQL_INSTALL_ROOT/bin/csql -g -s $REL_PATH/csqlinputtest3a.sql >/dev/null 2>&1 
