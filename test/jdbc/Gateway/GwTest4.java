@@ -14,10 +14,17 @@ public class GwTest4 {
            Connection con = DriverManager.getConnection("jdbc:gateway", "wrongusertest", "manager");
            if (con == null)
            {
-               System.out.println("Test Case Passed");
-               System.exit (0);
+               System.out.println("Test Case1 Passed");
            }
-           System.out.println("Test Case Failed");
+           System.out.println("Test Case1 Failed");
+           System.exit(1);
+           Connection con1 = DriverManager.getConnection("jdbc:gateway", "root", "wrongpasswdtestxieliang");
+           if (con == null)
+           {
+               System.out.println("Test Case2 Passed");
+               System.exit(0);
+           }
+           System.out.println("Test Case2 Failed");
            con.close();
            System.exit(1);
         }catch(Exception e) {
