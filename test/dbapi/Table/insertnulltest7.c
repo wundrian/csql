@@ -30,7 +30,14 @@ int main()
     {
         conn.startTransaction();
         id1= i;id2=id2+i;
-        if (i%2 == 0){ table->markFldNull(1);table->markFldNull(2);}
+        if (i%2 == 0){ 
+            if ((rv = table->markFldNull(1)) != OK ) {
+                conn.rollback(); continue; }
+            if ( (rv = table->markFldNull(2)) != OK) {
+                conn.rollback();
+                continue;
+            }
+        }
         rv = table->insertTuple();
         if (rv != OK) break;
         if (i%2 == 0) {table->clearFldNull(1);table->clearFldNull(2);}

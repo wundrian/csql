@@ -103,26 +103,41 @@ void TableImpl::resetNullinfo()
         while(i < numFlds_) { cNullInfo[0] = 0;}
     }
 }
-void TableImpl::markFldNull(char const* name)
+DbRetVal TableImpl::markFldNull(char const* name)
 {
+    DbRetVal rv = OK;
     int colpos = fldList_.getFieldPosition(name);
     if (-1 == colpos)
     {
         printError(ErrNotExists, "Field %s does not exist", name);
-        return;
+        return ErrNotExists;
     }
-    markFldNull(colpos);
+    rv =  markFldNull(colpos);
+    return rv;
 }
 
-void TableImpl::markFldNull(int fldpos)
+DbRetVal TableImpl::markFldNull(int fldpos)
 {
-    if (fldpos <1 || fldpos > numFlds_) return;
+    if (fldpos <1 || fldpos > numFlds_) return ErrBadArg;
+    bool isBitSet = false;
     if (isIntUsedForNULL) {
-        if (!BITSET(iNotNullInfo, fldpos)) SETBIT(iNullInfo, fldpos);
+        if (!BITSET(iNotNullInfo, fldpos)) {
+            SETBIT(iNullInfo, fldpos);
+            isBitSet = true;
+        }
+        else { 
+            printError(ErrNullViolation, "NOT NULL constraint violation");
+            return ErrNullViolation;
+        }
     }
-    else
+    else {
         if (!BITSET(iNotNullInfo, fldpos)) cNullInfo[fldpos-1] = 1;
-    return;
+        else {
+            printError(ErrNullViolation, "NOT NULL constraint violation");
+            return ErrNullViolation;
+        }
+    }
+    return OK;
 }
 
 void TableImpl::clearFldNull(const char *name)
@@ -417,7 +432,8 @@ DbRetVal TableImpl::insertTuple()
         return ErrLockTimeOut;
     }
 
-
+    curTuple_ = tptr;   
+ 
     ret = copyValuesFromBindBuffer(tptr);
     if (ret != OK)
     {
@@ -427,7 +443,6 @@ DbRetVal TableImpl::insertTuple()
         ((Chunk*)chunkPtr_)->free(db_, tptr);
         return ret;
     }
-
     int addSize = 0;
     if (numFlds_ < 31) 
     {
@@ -682,7 +697,7 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
                     strcpy((char*)colPtr, (char*)def.bindVal_);
                     *(((char*)colPtr) + (def.length_-1)) = '\0';
                 }
-                else if (!def.isNull_ && isInsert)  setNullBit(fldpos);
+                else if (!def.isNull_ && !def.bindVal_ && isInsert)  setNullBit(fldpos);
                 colPtr = colPtr + os::align(def.length_);
                 break;
             case typeBinary:
@@ -691,7 +706,7 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
 			        DbRetVal rv = AllDataType::strToValue(colPtr, (char *) def.bindVal_, def.type_, def.length_);
                     if (rv != OK) return ErrBadArg;
 				}
-                else if (!def.isNull_ && isInsert)  setNullBit(fldpos);
+                else if (!def.isNull_ && isInsert && !def.bindVal_)  setNullBit(fldpos);
                 colPtr = colPtr + os::align(def.length_);
                 break;
             default:

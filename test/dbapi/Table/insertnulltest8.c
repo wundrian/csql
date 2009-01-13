@@ -35,8 +35,8 @@ int main()
   	if(i%2==0) 
 	{
 	    if(i!=0)
-	    table->markFldNull(2);
-        }    
+        table->markFldNull(2);
+    }    
         else table->markFldNull(3);
         rv = table->insertTuple();
 	if(rv!=OK) break;
@@ -90,7 +90,11 @@ int main()
     {
         tuple = (char*)table->fetch();
 	if (tuple == NULL) { break; } 
-       	table->markFldNull("f1");
+       	rv = table->markFldNull("f1");
+        if (rv == ErrNullViolation) {
+            printf("NULL Violation\n");
+            continue;
+        }
         rv=table->updateTuple();
 	if(rv==OK) 
 	{

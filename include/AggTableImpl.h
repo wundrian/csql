@@ -87,8 +87,8 @@ class AggTableImpl:public Table
     DbRetVal bindFld(const char *name, AggType aggType, void *val);
     DbRetVal setGroup(const char *name, void *val);
     void setCondition(Condition *p){}
-    void markFldNull(const char *name){}
-    void markFldNull(int colpos){}
+    DbRetVal markFldNull(const char *name){}
+    DbRetVal markFldNull(int colpos){}
     bool isFldNull(const char *name){return false;}
     bool isFldNull(int colpos){return false;}
     void clearFldNull(const char *name){}

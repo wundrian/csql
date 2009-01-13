@@ -11,6 +11,10 @@ Column 2 is null
 Binded Tuple value is 4 5 10
 Column 3 is null
 Binded Tuple value is 5 5 10
+NULL Violation
+NULL Violation
+NULL Violation
+NULL Violation
 Scan after updation
 ********************
 f1 | f2	| f3

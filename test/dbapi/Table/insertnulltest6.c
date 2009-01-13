@@ -25,9 +25,16 @@ int main()
     int id1=0, id2 = 5;
     table->bindFld("f1", &id1);
     table->bindFld("f2", &id2);
-        conn.startTransaction();
-  	table->markFldNull(1);
-        rv = table->insertTuple();
+    conn.startTransaction();
+  	rv = table->markFldNull(1);
+    if (rv != OK) {
+        printf("test passed\n");
+        dbMgr->dropTable("t1");
+        printf("table dropped\n");
+        conn.close();
+        return 0;
+    }
+    rv = table->insertTuple();
 	if(rv==OK)
 	{
     	    printf("Error\n");
