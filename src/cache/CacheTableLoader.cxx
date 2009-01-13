@@ -338,12 +338,13 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
                                 break;
                         }
                 }
-                if(!isPriFld && !isNullfld){
-                    tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType), colLength +1); 
-                }
-                else{
-                    tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType), colLength +1, NULL, true);
-                    isNullfld=false;
+                if(!isPriFld) { 
+                   if(!isNullfld)
+                       tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType), colLength +1); 
+                   else{
+                       tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType), colLength +1, NULL, true);
+                       isNullfld=false;
+                   }
                 }
             }
             else
