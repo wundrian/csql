@@ -86,14 +86,17 @@ int main()
        conn.close();
        return 5;
     }
-
     while(true)
     {
         tuple = (char*)table->fetch();
-	
 	if (tuple == NULL) { break; } 
        	table->markFldNull("f1");
         rv=table->updateTuple();
+	if(rv==OK) 
+	{
+	    table->clearFldNull("f1");
+	    break;
+	}
         table->clearFldNull("f1");
     }
     conn.commit();
