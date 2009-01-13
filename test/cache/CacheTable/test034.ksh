@@ -39,7 +39,7 @@ pid=$!
 sleep 5
 echo "server  started"
 $CSQL_INSTALL_ROOT/bin/cachetable -t t1 -p f1
-if [ $? -ne 0 ]
+if [ $? -eq 0 ]
 then
     echo "Unable to cache"
     isql $DSN <${REL_PATH}/dt1.sql  >/dev/null 2>&1
