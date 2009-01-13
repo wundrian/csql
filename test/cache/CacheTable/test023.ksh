@@ -8,7 +8,7 @@
 #Run this only under csql/test or in this directory, otherwise it will fail.
 
 #Author : Jitendra Lenka
-input=${PWD}/cache/CacheTable
+input=${PWD}/cache/CacheTable/csql.conf
 REL_PATH=.
 if [ -s "$input" ]
 then
@@ -21,6 +21,11 @@ then
 	exit 1;
 fi
 
+rm -f /tmp/csql.conf
+cp $REL_PATH/csql.conf /tmp
+export CSQL_CONFIG_FILE=/tmp/csql.conf
+echo DSN=$DSN >>$CSQL_CONFIG_FILE
+
 echo Table t1 created with 5 records in target DB.
 
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
@@ -28,6 +33,9 @@ touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 
 # cache from target to csql with -f option.
 echo "cachetable -t t1 -f \"f1,f2,f3\" "
+$CSQL_INSTALL_ROOT/bin/csqlserver >/dev/null 2>&1 &
+pid=$!
+sleep 5
 
 $CSQL_INSTALL_ROOT/bin/cachetable -t t1 -f "f1,f2,f3" 
 if [ $? -ne 0 ]
@@ -46,8 +54,10 @@ rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
  
 $CSQL_INSTALL_ROOT/bin/csql -s ${REL_PATH}/drop.sql > /dev/null 2>&1
-isql myodbc3 < ${REL_PATH}/drop.sql >/dev/null 2>&1
+isql $DSN < ${REL_PATH}/drop.sql >/dev/null 2>&1
+kill -9 $pid
+ipcrm -M 4000 -M 4500
  
- exit 0;
+exit 0;
 
 

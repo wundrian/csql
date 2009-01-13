@@ -57,6 +57,5 @@ touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 rm -f $REL_PATH/t1.sql ${REL_PATH}/dt1.sql
 kill -2 $pid
 ipcrm -M 4000 -M 4500
-cp /tmp/csql1.conf $CSQL_CONFIG_FILE
 exit 0;
 
