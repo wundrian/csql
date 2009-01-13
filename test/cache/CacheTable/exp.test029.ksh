@@ -2,10 +2,10 @@ Table t1 and t2 created in target DB.
 cachetable -t t5 -D
 cachetable -t t6 -D
 select query on t1 and t2 table
-Statement Executed: Rows Affected = 0
-Statement Executed: Rows Affected = 0
-Statement Executed: Rows Affected = 0
-Statement Executed: Rows Affected = 0
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
 ---------------------------------------------------------
 	f1	f2	
 ---------------------------------------------------------

@@ -2,10 +2,10 @@ Table t5 and t6 created in target DB.
 cachetable -t t5 -D -c "f1>=10"
 cachetable -t t6 -D -c "f1>=10" 
 select query on t1 and t2 table
-Statement Executed: Rows Affected = 0
+Statement Executed: Rows Affected = 1
 Statement execute failed with error -14
-Statement Executed: Rows Affected = 0
-Statement Executed: Rows Affected = 0
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
 ---------------------------------------------------------
 	f1	f2	
 ---------------------------------------------------------

@@ -16,7 +16,7 @@ if [ -s "$input" ]
 then
    REL_PATH=${PWD}/cache/CacheTable
 fi
-isql myodbc3 < ${REL_PATH}/fmodecreate.sql >/dev/null 2>&1
+isql $DSN < ${REL_PATH}/fmodecreate.sql >/dev/null 2>&1
 if [ $? -ne 0 ]
 then
     exit 1;
@@ -31,7 +31,7 @@ echo "cachetable -t t2 -c \"t2f1>15\" -f \"t2f1,t2f3,t2f5\" "
 $CSQL_INSTALL_ROOT/bin/cachetable -t t1 -c "t1f1<5" >/dev/null 2>&1
  if [ $? -ne 0 ]
  then
-   isql myodbc3 < ${REL_PATH}/dropt1t2.sql >/dev/null 2>&1
+   isql $DSN < ${REL_PATH}/dropt1t2.sql >/dev/null 2>&1
    rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
    touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
    exit 2;
@@ -43,7 +43,7 @@ $CSQL_INSTALL_ROOT/bin/cachetable -t t1 -c "t1f1<5" >/dev/null 2>&1
      rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
      touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
      $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/drop.sql >/dev/null 2>&1
-     isql myodbc3 < ${REL_PATH}/drop.sql >/dev/null 2>&1
+     isql $DSN < ${REL_PATH}/drop.sql >/dev/null 2>&1
      exit 3;
  fi
 
@@ -54,7 +54,7 @@ rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
  
 $CSQL_INSTALL_ROOT/bin/csql -s ${REL_PATH}/dropt1t2.sql > /dev/null 2>&1
-isql myodbc3 <${REL_PATH}/dropt1t2.sql >/dev/null 2>&1
+isql $DSN <${REL_PATH}/dropt1t2.sql >/dev/null 2>&1
  exit 0;
 
 

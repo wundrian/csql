@@ -14,9 +14,11 @@ if [ -s "$input" ]
 then
     REL_PATH=${PWD}/cache/CacheTable
 fi
-export CSQL_CONFIG_FILE=$REL_PATH/csql1.conf
-cp $CSQL_CONFIG_FILE /tmp/csql1.conf
+rm -f /tmp/csql1.conf
+cp $REL_PATH/csql1.conf /tmp
+export CSQL_CONFIG_FILE=/tmp/csql1.conf
 echo DSN=$DSN >>$CSQL_CONFIG_FILE
+
 echo "create table t1(f1 int ,f2 char(12),f3 smallint , f4 bigint,primary key(f1));">$REL_PATH/t1.sql
 for((a=1;a<10;a++))
 do
@@ -27,7 +29,6 @@ if [ $? -ne 0 ]
 then
     echo "unable to creste in target db"
     rm -f $REL_PATH/t1.sql
-    cp /tmp/csql1.conf $CSQL_CONFIG_FILE
     exit 1
 fi
 
@@ -45,7 +46,6 @@ then
     echo "Unable to cache"
     isql $DSN <${REL_PATH}/dt1.sql  >/dev/null 2>&1
     rm -f $REL_PATH/t1.sql ${REL_PATH}/dt1.sql
-    cp /tmp/csql1.conf $CSQL_CONFIG_FILE
     kill -2 $pid
     ipcrm -M 4000 -M 4500
     exit 2 
@@ -56,6 +56,5 @@ touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 rm -f $REL_PATH/t1.sql ${REL_PATH}/dt1.sql
 kill -2 $pid
 ipcrm -M 4000 -M 4500
-cp /tmp/csql1.conf $CSQL_CONFIG_FILE
 exit 0;
 

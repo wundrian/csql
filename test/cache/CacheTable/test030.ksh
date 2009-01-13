@@ -13,7 +13,7 @@ then
 fi
 
 # create table t5,t6 in target DB.
-isql myodbc3 < ${REL_PATH}/createt5.sql >/dev/null 2>&1
+isql $DSN < ${REL_PATH}/createt5.sql >/dev/null 2>&1
 if [ $? -ne 0 ]
 then
    exit 1;
@@ -28,7 +28,7 @@ do
 echo "insert into t5 values($a,$a+1);"
 echo "insert into t6 values($a,$a+1);"
 done>>${REL_PATH}/inserttarget.sql
-isql myodbc3 < ${REL_PATH}/inserttarget.sql >/dev/null 2>&1
+isql $DSN < ${REL_PATH}/inserttarget.sql >/dev/null 2>&1
 
 echo "cachetable -t t5 -D -c \"f1>=10\""
 echo "cachetable -t t6 -D -c \"f1>=10\" "
@@ -36,7 +36,7 @@ echo "cachetable -t t6 -D -c \"f1>=10\" "
 $CSQL_INSTALL_ROOT/bin/cachetable -t t5 -D -c "f1>=10"
 if [ $? -ne 0 ] 
 then 
-    isql myodbc3 < ${REL_PATH}/drop5.sql >/dev/null 2>&1
+    isql $DSN < ${REL_PATH}/drop5.sql >/dev/null 2>&1
     rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
     touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
     exit 2;
@@ -48,7 +48,7 @@ then
     rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
     touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
     $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/drop5.sql >/dev/null 2>&1
-    isql myodbc3 < ${REL_PATH}/drop5.sql >/dev/null 2>&1
+    isql $DSN < ${REL_PATH}/drop5.sql >/dev/null 2>&1
     rm -f ${REL_PATH}/inserttarget.sql
     exit 3;
 fi
@@ -66,7 +66,7 @@ then
     rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
     touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
     $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/drop5.sql >/dev/null 2>&1
-    isql myodbc3 < ${REL_PATH}/drop5.sql >/dev/null 2>&1
+    isql $DSN < ${REL_PATH}/drop5.sql >/dev/null 2>&1
     rm -f  $REL_PATH/insertt5t6.sql
     rm -f ${REL_PATH}/inserttarget.sql
     exit 4;
@@ -82,20 +82,20 @@ then
     rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
     touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
     $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/drop5.sql >/dev/null 2>&1
-    isql myodbc3 < ${REL_PATH}/drop5.sql >/dev/null 2>&1
+    isql $DSN < ${REL_PATH}/drop5.sql >/dev/null 2>&1
     rm -f  $REL_PATH/insertt5t6.sql
     rm -f  $REL_PATH/selectt5t6.sql
     rm -f ${REL_PATH}/inserttarget.sql
     exit 4;
 fi
-isql myodbc3 < ${REL_PATH}/selectt5t6.sql
+isql $DSN < ${REL_PATH}/selectt5t6.sql
 $CSQL_INSTALL_ROOT/bin/cachetable -t t6 -u
 if [ $? -ne 0 ]
 then
     rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
     touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
     $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/drop5.sql >/dev/null 2>&1
-    isql myodbc3 < ${REL_PATH}/drop5.sql >/dev/null 2>&1
+    isql $DSN < ${REL_PATH}/drop5.sql >/dev/null 2>&1
     rm -f  $REL_PATH/insertt5t6.sql
     rm -f  $REL_PATH/selectt5t6.sql
     rm -f ${REL_PATH}/inserttarget.sql
@@ -107,7 +107,7 @@ then
     rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
     touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
     $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/drop5.sql >/dev/null 2>&1
-    isql myodbc3 < ${REL_PATH}/drop5.sql >/dev/null 2>&1
+    isql $DSN < ${REL_PATH}/drop5.sql >/dev/null 2>&1
     rm -f  $REL_PATH/insertt5t6.sql
     rm -f  $REL_PATH/selectt5t6.sql
     rm -f ${REL_PATH}/inserttarget.sql
@@ -118,18 +118,11 @@ fi
 #touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 
 $CSQL_INSTALL_ROOT/bin/csql -s ${REL_PATH}/drop5.sql > /dev/null 2>&1
-isql myodbc3 <${REL_PATH}/drop5.sql >/dev/null 2>&1
+isql $DSN <${REL_PATH}/drop5.sql >/dev/null 2>&1
 rm -f  $REL_PATH/insertt5t6.sql
 rm -f  $REL_PATH/selectt5t6.sql
 rm -f ${REL_PATH}/inserttarget.sql
 exit 0;
-
-
-
-
-
-
-
 
 
 

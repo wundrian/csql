@@ -14,12 +14,12 @@ then
 REL_PATH=${PWD}/cache/CacheTable
 fi
 
-isql myodbc3 < ${REL_PATH}/fmodeinsert.sql >/dev/null 2>&1
+isql $DSN < ${REL_PATH}/fmodeinsert.sql >/dev/null 2>&1
 
 $CSQL_INSTALL_ROOT/bin/csql -s ${REL_PATH}/fcsqlinput.sql > /dev/null 2>&1
 if [ $? -ne 0 ]
 then 
-	isql myodbc3 < ${REL_PATH}/drop.sql >/dev/null 2>&1
+	isql $DSN < ${REL_PATH}/drop.sql >/dev/null 2>&1
 	rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
 	touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
 	exit 1;
@@ -35,7 +35,7 @@ then
    rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
    touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
    $CSQL_INSTALL_ROOT/bin/csql -s ${REL_PATH}/drop.sql > /dev/null 2>&1
-   isql myodbc3 < ${REL_PATH}/drop.sql >/dev/null 2>&1
+   isql $DSN < ${REL_PATH}/drop.sql >/dev/null 2>&1
    exit 3;
 fi
 
@@ -46,7 +46,7 @@ then
    rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
    touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
    $CSQL_INSTALL_ROOT/bin/csql -s ${REL_PATH}/drop.sql > /dev/null 2>&1
-   isql myodbc3 < ${REL_PATH}/drop.sql >/dev/null 2>&1
+   isql $DSN < ${REL_PATH}/drop.sql >/dev/null 2>&1
    exit 4;
 fi
 
@@ -55,6 +55,6 @@ touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
  
  
 $CSQL_INSTALL_ROOT/bin/csql -s ${REL_PATH}/drop.sql > /dev/null 2>&1
-isql myodbc3 < ${REL_PATH}/drop.sql >/dev/null 2>&1
+isql $DSN < ${REL_PATH}/drop.sql >/dev/null 2>&1
 exit 0;
 

@@ -22,7 +22,7 @@ done>>${REL_PATH}/t1create.sql
 echo "t1create.sql file created"
 echo "select * from t1;">${REL_PATH}/sel.sql
 echo "select file created" 
-isql myodbc3 < ${REL_PATH}/t1create.sql >/dev/null 2>&1
+isql $DSN < ${REL_PATH}/t1create.sql >/dev/null 2>&1
 if [ $? -ne 0 ]
 then
    rm -f ${REL_PATH}/sel.sql
@@ -69,7 +69,7 @@ echo "cache table 't1' unloaded by -u option"
 echo "drop table t1;">${REL_PATH}/dp.sql
 rm -f /tmp/csql/csqltable.conf /tmp/csql.db
 touch /tmp/csql/csqltable.conf /tmp/csql/csql.db
-isql myodbc3 < ${REL_PATH}/dp.sql >/dev/null 2>&1
+isql $DSN < ${REL_PATH}/dp.sql >/dev/null 2>&1
 
 rm -f ${REL_PATH}/dp.sql
 rm -f ${REL_PATH}/sel.sql
