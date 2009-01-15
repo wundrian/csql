@@ -1,14 +1,19 @@
-select * from t11 where t1.f1=2;
+echo select * from t11,t12,t13 where t12.f1=t13.f8 and t13.f7=t11.f1;
 ---------------------------------------------------------
-	f1	f2	f3	f4	f5	
+	f1	f2	f3	f4	f5	f1	f2	f3	f7	f8	
 ---------------------------------------------------------
-	2	Y	sales	6000	20	
+	2	Y	sales	6000	20	20	HR	CTC	2	20	
 	
- select * from t11 where t1.f1=t1.f1;
+echo select * from t11,t12,t13 where t12.f1=t13.f8 or t13.f7=t11.f1;
 ---------------------------------------------------------
-	f1	f2	f3	f4	f5	
+	f1	f2	f3	f4	f5	f1	f2	f3	f7	f8	
 ---------------------------------------------------------
-	1	X	IT	5000	10	
-	2	Y	sales	6000	20	
-	3	Z	IT	7000	10	
+	1	X	IT	5000	10	10	IT	BBSR	1	50	
+	1	X	IT	5000	10	20	HR	CTC	2	20	
+	1	X	IT	5000	10	20	HR	CTC	1	50	
+	1	X	IT	5000	10	30	R&D	DELHI	1	50	
+	2	Y	sales	6000	20	10	IT	BBSR	2	20	
+	2	Y	sales	6000	20	20	HR	CTC	2	20	
+	2	Y	sales	6000	20	30	R&D	DELHI	2	20	
+	3	Z	IT	7000	10	20	HR	CTC	2	20	
 	
