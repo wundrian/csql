@@ -1,12 +1,13 @@
 #!/bin/sh
 # Test Case 
-# 10.	Create emp table with 5 fields, and insert 3 records in it. 
-
-#	(a)select f1,f7 from t12,t11;
-#	(b)select t11.f1,t12.f7 from t13,t11;
-
-# AUTHOR : Jitendra Lenka
-
+#create three tables as:
+#create table emp(eno int,mgrno int,sal float,deptno int);
+#create table dept(deptno int,dname char(10),lid int);
+#create table loc(lid int,state char(10));
+#Insert valid records into the 3 tables. Insert NULL values in some of the field.
+#select * from emp,dept,loc where emp.deptno!=dept.deptno AND dept.lid!=loc.lid;
+#select * from emp,dept,loc where NOT(emp.deptno!=dept.deptno AND dept.lid!=loc.lid);
+#
 QUITFILE=${PWD}/sql/Join/quit.sql
 REL_PATH=.
 if [ -s "$QUITFILE" ]

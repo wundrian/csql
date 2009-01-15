@@ -59,12 +59,12 @@ echo select * from emp,dept,loc;
 	2	4	4000.000000	20	20	HR	300	100	Orissa	
 	2	4	4000.000000	20	20	HR	300	200	Cal	
 	2	4	4000.000000	20	20	HR	300	300	Calif	
-	3	0	8000.000000	10	10	IT	100	100	Orissa	
-	3	0	8000.000000	10	10	IT	100	200	Cal	
-	3	0	8000.000000	10	10	IT	100	300	Calif	
-	3	0	8000.000000	10	20	HR	300	100	Orissa	
-	3	0	8000.000000	10	20	HR	300	200	Cal	
-	3	0	8000.000000	10	20	HR	300	300	Calif	
+	3	NULL	8000.000000	10	10	IT	100	100	Orissa	
+	3	NULL	8000.000000	10	10	IT	100	200	Cal	
+	3	NULL	8000.000000	10	10	IT	100	300	Calif	
+	3	NULL	8000.000000	10	20	HR	300	100	Orissa	
+	3	NULL	8000.000000	10	20	HR	300	200	Cal	
+	3	NULL	8000.000000	10	20	HR	300	300	Calif	
 	
 echo select * from emp,dept,loc where emp.deptno!=dept.deptno AND dept.lid!=loc.lid;
 ---------------------------------------------------------
@@ -74,8 +74,8 @@ echo select * from emp,dept,loc where emp.deptno!=dept.deptno AND dept.lid!=loc.
 	1	3	5000.000000	10	20	HR	300	200	Cal	
 	2	4	4000.000000	20	10	IT	100	200	Cal	
 	2	4	4000.000000	20	10	IT	100	300	Calif	
-	3	0	8000.000000	10	20	HR	300	100	Orissa	
-	3	0	8000.000000	10	20	HR	300	200	Cal	
+	3	NULL	8000.000000	10	20	HR	300	100	Orissa	
+	3	NULL	8000.000000	10	20	HR	300	200	Cal	
 	
 echo select * from emp,dept,loc where NOT(emp.deptno!=dept.deptno AND dept.lid!=loc.lid);
 ---------------------------------------------------------
@@ -89,10 +89,10 @@ echo select * from emp,dept,loc where NOT(emp.deptno!=dept.deptno AND dept.lid!=
 	2	4	4000.000000	20	20	HR	300	100	Orissa	
 	2	4	4000.000000	20	20	HR	300	200	Cal	
 	2	4	4000.000000	20	20	HR	300	300	Calif	
-	3	0	8000.000000	10	10	IT	100	100	Orissa	
-	3	0	8000.000000	10	10	IT	100	200	Cal	
-	3	0	8000.000000	10	10	IT	100	300	Calif	
-	3	0	8000.000000	10	20	HR	300	300	Calif	
+	3	NULL	8000.000000	10	10	IT	100	100	Orissa	
+	3	NULL	8000.000000	10	10	IT	100	200	Cal	
+	3	NULL	8000.000000	10	10	IT	100	300	Calif	
+	3	NULL	8000.000000	10	20	HR	300	300	Calif	
 	
 echo drop table emp;
 Statement Executed
