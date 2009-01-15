@@ -51,6 +51,7 @@ then
     echo "unable to locate cache 1"
     exit 2
 fi
+mkdir /tmp/log/csql1 >/dev/null 2>&1
 mkdir /tmp/csql1 >/dev/null 2>&1 
 rm -f /tmp/csql1/csqltable.conf /tmp/csql1/csql.db
 touch /tmp/csql1/csqltable.conf /tmp/csql1/csql.db
