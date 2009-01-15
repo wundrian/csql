@@ -35,4 +35,3 @@ echo select * from t1,t2 where t1.f1 = t2.f1 and t1.f1 >100;
 	102	17	111	102	17	111	
 	103	18	112	103	18	112	
 	
-	
