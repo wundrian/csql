@@ -37,7 +37,6 @@ class CSqlOdbcStmt
         SQLCHAR cursorName_[ SQL_MAX_CURSOR_NAME_LEN ];
         int rowsAffected_;
         bool isPrepared_;
-
         SQLUINTEGER fetchMode_; // SQL_FETCH_SINGLE_TUPLE or SQL_FETCH_MULTIPLE_TUPLES
 
         // Descriptor Lists

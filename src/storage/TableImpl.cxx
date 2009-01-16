@@ -178,19 +178,19 @@ DbRetVal TableImpl::execute()
         PredicateImpl *pred = (PredicateImpl*) pred_;
         pred->setTable(this);
         pred->setProjectionList(NULL);
+        pred->setOffsetAndType();
     }
     DbRetVal ret = OK;
-    bool betcheck=false;
-    ret = createPlan(betcheck);
+    ret = createPlan();
     if (OK != ret)
     {
         printError(ErrSysInternal,"Unable to create the plan");
         return ErrSysInternal;
     }
     if (useIndex_ >= 0) 
-        iter = new TupleIterator(pred_, scanType_, idxInfo[useIndex_], chunkPtr_, sysDB_->procSlot,betcheck);
+        iter = new TupleIterator(pred_, scanType_, idxInfo[useIndex_], chunkPtr_, sysDB_->procSlot,isBetween,isPointLook);
     else if (scanType_ == fullTableScan)
-        iter = new TupleIterator(pred_, scanType_, NULL, chunkPtr_, sysDB_->procSlot,betcheck);
+        iter = new TupleIterator(pred_, scanType_, NULL, chunkPtr_, sysDB_->procSlot,isBetween,isPointLook);
     else
     {
         printError(ErrSysFatal,"Unable to create tuple iterator");//should never happen
@@ -206,13 +206,15 @@ DbRetVal TableImpl::execute()
 }
 
 
-DbRetVal TableImpl::createPlan(bool &bet)
+DbRetVal TableImpl::createPlan()
 {
     if (isPlanCreated) {
         //will do early return here. plan is generated only when setPredicate is called.
         if (scanType_ == unknownScan) return ErrSysFatal; //this should never happen
         else return OK;
     }
+    isBetween=false;
+    isPointLook = false;
     useIndex_ = -1;
     //if there are no predicates then go for full scan
     //if there are no indexes then go for full scan
@@ -242,6 +244,7 @@ DbRetVal TableImpl::createPlan(bool &bet)
                   if(hashIndex == info->indType) scanType_ = hashIndexScan;
                   else scanType_ = treeIndexScan;
                   isPlanCreated = true;
+                  isPointLook = true;
                   useIndex_ = i;
                 }
                 else if (pred->isBetweenInvolved(def.fldName_))
@@ -251,7 +254,7 @@ DbRetVal TableImpl::createPlan(bool &bet)
                      scanType_ = treeIndexScan;
                      isPlanCreated = true;
                      useIndex_ = i;
-                     bet=true;
+                     isBetween=true;
                      break; //no composite index for tree index
                     }
                 }

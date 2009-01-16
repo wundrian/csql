@@ -33,7 +33,9 @@ class PredicateImpl:public Predicate
     PredicateImpl *lhs;
     PredicateImpl *rhs;
     PredicateImpl *parent;
-
+    int offset1,offset2;
+    DataType type;
+    int length;
     //Members set during execution
     void *tuple; //pointer to the tuple
     List *projList;
@@ -49,6 +51,9 @@ class PredicateImpl:public Predicate
         tuple = NULL; table = NULL; 
         projList = NULL;
         parent = NULL;
+        offset1 = -1;  offset2 =-1;
+        type = typeUnknown;
+        length = 0;
     }
     ~PredicateImpl(){}
 
@@ -70,7 +75,7 @@ class PredicateImpl:public Predicate
     void setTable(Table *tbl);
     void setTuple(void *tpl);
     void setProjectionList(List *list); //used by JoinTableImpl
-
+    void setOffsetAndType();
     bool isSingleTerm();
     bool isNotOrInvolved();
     //check predicate, whether it has field name and == operator

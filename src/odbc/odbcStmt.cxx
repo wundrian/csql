@@ -287,14 +287,17 @@ SQLRETURN CSqlOdbcStmt::SQLBindCol(
         ird_.insert(ird_.begin(),inputDesc);
     }
 
+    //Get Field Information from CSQL
+    FieldInfo *info = new FieldInfo();
+    fsqlStmt_->getProjFldInfo(columnNumber, info);
     // Initialize input Descriptor.
-    DataType sourceType = getCSqlType( targetType );
+    //DataType sourceType = getCSqlType( targetType );
     inputDesc->col_ = columnNumber;
-    inputDesc->cType_ = targetType;
-    getInputBuffer(&inputDesc->dataPtr_ ,sourceType,(SQLUINTEGER) bufferLength);
-    inputDesc->length_ = (SQLUINTEGER) bufferLength;
+    inputDesc->cType_ = info->type;
+    getInputBuffer(&inputDesc->dataPtr_ ,info->type,(SQLUINTEGER) bufferLength);
+    inputDesc->length_ = info->length;
     inputDesc->indPtr_ = (SQLPOINTER) ind;
-
+    delete info;
     return( SQL_SUCCESS );
 }
 
@@ -813,17 +816,17 @@ SQLRETURN CSqlOdbcStmt::SQLFetch()
         int colNum=-1,sourceLength=-1,destLength=-1;
         SQLINTEGER ind;
         void* sourceData = NULL;
-        FieldInfo *info = new FieldInfo();
+        //FieldInfo *info = new FieldInfo();
         while( (ardIter != ard_.end()) || (irdIter != ird_.end()) )
         {
             appColDesc = *ardIter;
             csqlColDesc = *irdIter;
             
             colNum = appColDesc->col_ - 1;
-            fsqlStmt_->getProjFldInfo(colNum+1, info);
-            sourceType = info->type;
+          //  fsqlStmt_->getProjFldInfo(colNum+1, info);
+            sourceType = (DataType)csqlColDesc->cType_;  
             destType = getCSqlType(appColDesc->cType_);
-            sourceLength = info->length;
+            sourceLength = (int)csqlColDesc->length_;
             destLength = (int)appColDesc->length_;
             
             if( sourceType != typeUnknown && destType != typeUnknown )

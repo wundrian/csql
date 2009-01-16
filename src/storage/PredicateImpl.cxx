@@ -222,12 +222,12 @@ DbRetVal PredicateImpl::evaluate(bool &result)
     //Means it is relational expression
     //first operand is always field identifier
     //get the value in the tuple
-    char fieldName1[IDENTIFIER_LENGTH];
+/*    char fieldName1[IDENTIFIER_LENGTH];
     char fieldName2[IDENTIFIER_LENGTH];
     memset(fieldName1, 0, IDENTIFIER_LENGTH);
     memset(fieldName2, 0, IDENTIFIER_LENGTH);
     Table::getFieldNameAlone(fldName1, fieldName1);
-    Table::getFieldNameAlone(fldName2, fieldName2);
+    Table::getFieldNameAlone(fldName2, fieldName2);*/
     /*table->setCurTuple(tuple);
     if(table->isFldNull(fieldName1))
     {
@@ -261,6 +261,9 @@ DbRetVal PredicateImpl::evaluate(bool &result)
         }
         if (operand == NULL && operandPtr == NULL)
         {
+            char fieldName2[IDENTIFIER_LENGTH];
+            memset(fieldName2, 0, IDENTIFIER_LENGTH);
+            Table::getFieldNameAlone(fldName2, fieldName2);
             if (fieldName2) {
                 fIter.reset();
                 while (fIter.hasElement())
@@ -294,20 +297,19 @@ DbRetVal PredicateImpl::evaluate(bool &result)
         return OK;
     }
     //the below code works only for single table 
-    int offset1, offset2;
+   // int offset1, offset2;
 
-    offset1 = table->getFieldOffset(fieldName1);
+    //offset1 = table->getFieldOffset(fieldName1);
     //TODO::do not call getFieldXXX many times, instead get it using getFieldInfo
     char *val1, *val2;
     //Assumes that fldName2 data type is also same for expr f1 <f2
-    DataType srcType = table->getFieldType(fieldName1);
+   // DataType srcType = table->getFieldType(fieldName1);
     val1 = ((char*) tuple) + offset1;
     if (operand == NULL && operandPtr == NULL)
     {
-        if (fieldName2) {
-            offset2 = table->getFieldOffset(fieldName2);
-            val2 = ((char*)tuple) + offset2; 
-        }
+     //       offset2 = table->getFieldOffset(fieldName2);
+         if(offset2 != -1)
+             val2 = ((char*)tuple) + offset2; 
     } 
     else if(operand != NULL && operandPtr == NULL)
     { 
@@ -319,9 +321,38 @@ DbRetVal PredicateImpl::evaluate(bool &result)
     }
     int ret = 0;
     if (compOp == OpLike) result = ! fnmatch(val2, val1, 0);
-    else result = AllDataType::compareVal(val1, val2, compOp, srcType,
-                              table->getFieldLength(fieldName1));
+    else result = AllDataType::compareVal(val1, val2, compOp, type,length);
     return OK;
+}
+void PredicateImpl::setOffsetAndType()
+{
+    if (NULL != lhs)
+    {
+        lhs->setOffsetAndType();
+    }
+    if (NULL != rhs)
+    {
+        rhs->setOffsetAndType();
+    }
+    char fieldName1[IDENTIFIER_LENGTH];
+    char fieldName2[IDENTIFIER_LENGTH];
+    memset(fieldName1, 0, IDENTIFIER_LENGTH);
+    memset(fieldName2, 0, IDENTIFIER_LENGTH);
+    Table::getFieldNameAlone(fldName1, fieldName1);
+    Table::getFieldNameAlone(fldName2, fieldName2);
+   
+    if(fieldName1){
+        offset1 = table->getFieldOffset(fieldName1);
+        type = table->getFieldType(fieldName1);
+        length = table->getFieldLength(fieldName1);
+    }
+    
+    if(fieldName2){
+        offset2 = table->getFieldOffset(fieldName2);
+        if(typeUnknown == type)
+            type = table->getFieldType(fieldName2);
+    }
+
 }
 
 bool PredicateImpl::pointLookupInvolved(const char *fname)
