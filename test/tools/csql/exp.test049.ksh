@@ -29,12 +29,12 @@ echo select * from t1;
 ---------------------------------------------------------
 	f1	f2	f3	
 ---------------------------------------------------------
-	37	70	12	
-	47	80	12	
-	57	90	12	
-	67	100	12	
-	77	110	12	
-	87	120	12	
+	37	43	12	
+	47	53	12	
+	57	63	12	
+	67	73	12	
+	77	83	12	
+	87	93	12	
 	
 echo update t1 set f1=f2/f3+7,f2=f3+23+f1,f3=f2 where f3=12;
 Statement Executed: Rows Affected = 6
@@ -42,12 +42,12 @@ echo select * from t1;
 ---------------------------------------------------------
 	f1	f2	f3	
 ---------------------------------------------------------
-	10	47	47	
-	11	48	48	
-	12	49	49	
-	13	50	50	
-	13	51	51	
-	14	52	52	
+	10	72	43	
+	11	82	53	
+	12	92	63	
+	13	102	73	
+	13	112	83	
+	14	122	93	
 	
 echo create table t2 (f1 tinyint, f2 bigint,f3 int);
 Statement Executed
@@ -79,9 +79,9 @@ echo select * from t2;
 ---------------------------------------------------------
 	60	1110	5110	
 	70	1115	1510	
-	NULL	NULL	1150	
-	NULL	NULL	1115	
-	NULL	NULL	1110	
+	NULL	2390	1150	
+	NULL	2725	1115	
+	NULL	6280	1110	
 	
 echo update t2 set f2=f2+123 ,f3=23+f2;
 Statement Executed: Rows Affected = 5
@@ -91,9 +91,9 @@ echo select * from t2;
 ---------------------------------------------------------
 	60	1233	1133	
 	70	1238	1138	
-	NULL	NULL	NULL	
-	NULL	NULL	NULL	
-	NULL	NULL	NULL	
+	NULL	2513	2413	
+	NULL	2848	2748	
+	NULL	6403	6303	
 	
 echo drop table t1;
 Statement Executed
