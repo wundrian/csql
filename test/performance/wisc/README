@@ -11,8 +11,10 @@ To populate the database run
 a)CSQL
 $csql <csql.sql
 b)MySQL
-$isql myodbc3 <mysql.sql
+copy csql.sql to mysql.sql and change CREATE INDEX syntax.
+$isql myodbc3 <sql.sql
 c)Postgres 
+copy csql.sql to psql.sql and change CREATE INDEX syntax.
 $isql psql <psql.sql
 
 
