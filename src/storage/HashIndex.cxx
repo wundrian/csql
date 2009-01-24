@@ -197,6 +197,8 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     int ret = bucket->mutex_.getLock(tbl->db_->procSlot);
     if (ret != 0)
     {
+        delete hInfo;
+        free(keyStartBuffer);
         printError(ErrLockTimeOut,"Unable to acquire bucket Mutex for bucket %d",bucketNo);
         return ErrLockTimeOut;
     }
@@ -225,6 +227,8 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
             else res = AllDataType::compareVal((void*)((char*)bucketTuple +offset), (void*)((char*)tuple +offset), OpEquals,type, info->compLength); 
             if (res) 
             {
+                delete hInfo;
+                free(keyStartBuffer);
                 printError(ErrUnique, "Unique key violation");
                 bucket->mutex_.releaseLock(tbl->db_->procSlot);
                 return ErrUnique;
@@ -241,6 +245,8 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         if (firstNode == NULL)
         {
             bucket->mutex_.releaseLock(tbl->db_->procSlot);
+            delete hInfo;
+            free(keyStartBuffer);
             return rv;
         }
         firstNode->ptrToKey_ = keyPtr;
@@ -255,6 +261,8 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         rc = list.insert((Chunk*)iptr->hashNodeChunk_, tbl->db_, keyPtr, tuple);
         if (rc !=OK) {
             bucket->mutex_.releaseLock(tbl->db_->procSlot);
+            delete hInfo;
+            free(keyStartBuffer);
             return rc;
         }
         
@@ -269,6 +277,7 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
             bucket->bucketList_ = list.getBucketListHead();
         }
     }
+    free(keyStartBuffer);
     delete hInfo; hInfo = NULL;
     bucket->mutex_.releaseLock(tbl->db_->procSlot);
     return rc;
@@ -315,6 +324,8 @@ DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     int ret = bucket1->mutex_.getLock(tbl->db_->procSlot);
     if (ret != 0)
     {
+        delete hInfo;
+        free(keyStartBuffer);
         printError(ErrLockTimeOut,"Unable to acquire bucket Mutex for bucket %d",bucket);
         return ErrLockTimeOut;
     }
@@ -322,6 +333,8 @@ DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
 
     if (!head) { printError(ErrNotExists, "Hash index does not exist:should never happen\n"); 
        bucket1->mutex_.releaseLock(tbl->db_->procSlot);
+       delete hInfo;
+       free(keyStartBuffer);
        return ErrNotExists; 
     }
     BucketList list(head);
@@ -344,7 +357,8 @@ DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         }
     }
     bucket1->mutex_.releaseLock(tbl->db_->procSlot);
-    
+    delete hInfo; 
+    free(keyStartBuffer);
     return rc;
 }
 
@@ -412,6 +426,7 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     if (!keyUpdated) { 
         //printf("PRABA::key not updated\n");
         free(keyStartBuffer); 
+        free(oldKeyStartBuffer);
         return OK; 
     }
     //printf("PRABA::it is wrong coming here\n");
@@ -421,7 +436,11 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
                                 OpEquals, info->type, info->compLength);
     else result = AllDataType::compareVal(keyPtr, keyStartBuffer,
                                 OpEquals, info->type, info->compLength);
-    if (result) return OK; 
+    if (result) {
+        free(keyStartBuffer); 
+        free(oldKeyStartBuffer);
+        return OK;
+    }
     printDebug(DM_HashIndex, "Updating hash index node: Key value is updated");
 
     ChunkIterator citer = CatalogTableINDEX::getIterator(indexPtr);
@@ -449,6 +468,9 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     int ret = bucket->mutex_.getLock(tbl->db_->procSlot);
     if (ret != 0)
     {
+        delete hInfo1;
+        free(keyStartBuffer); 
+        free(oldKeyStartBuffer);
         printError(ErrLockTimeOut,"Unable to acquire bucket Mutex for bucket %d",bucketNo);
         return ErrLockTimeOut;
     }
@@ -467,6 +489,10 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     bucket1->mutex_.getLock(tbl->db_->procSlot);
     if (ret != 0)
     {
+        delete hInfo1;
+        delete hInfo2;
+        free(keyStartBuffer); 
+        free(oldKeyStartBuffer);
         printError(ErrLockTimeOut,"Unable to acquire bucket Mutex for bucket %d",newBucketNo);
         return ErrLockTimeOut;
     }
@@ -484,6 +510,10 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         printError(ErrSysInternal,"Update: Bucket list is null");
         bucket1->mutex_.releaseLock(tbl->db_->procSlot);
         bucket->mutex_.releaseLock(tbl->db_->procSlot);
+        delete hInfo1;
+        delete hInfo2;
+        free(keyStartBuffer); 
+        free(oldKeyStartBuffer);
         return ErrSysInternal;
     }
     DbRetVal rc = OK;
@@ -497,6 +527,10 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
             bucket->bucketList_ = list.getBucketListHead();
             bucket1->mutex_.releaseLock(tbl->db_->procSlot);
             bucket->mutex_.releaseLock(tbl->db_->procSlot);
+            delete hInfo1;
+            delete hInfo2;
+            free(keyStartBuffer); 
+            free(oldKeyStartBuffer);
             return rc; 
         }
     }
@@ -514,6 +548,10 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
             printError(rv, "Error in allocating hash node");
             bucket1->mutex_.releaseLock(tbl->db_->procSlot);
             bucket->mutex_.releaseLock(tbl->db_->procSlot);
+            delete hInfo1;
+            delete hInfo2;
+            free(keyStartBuffer); 
+            free(oldKeyStartBuffer);
             return rv;
         }
         firstNode->ptrToKey_ = keyPtr;
@@ -549,7 +587,10 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     }
     bucket1->mutex_.releaseLock(tbl->db_->procSlot);
     bucket->mutex_.releaseLock(tbl->db_->procSlot);
-
+    delete hInfo1;
+    delete hInfo2;
+    free(keyStartBuffer); 
+    free(oldKeyStartBuffer);
     return rc;
 }
 

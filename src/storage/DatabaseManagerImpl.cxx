@@ -930,6 +930,7 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
     if (! tbl->numTuples()) { 
         printDebug(DM_Database, "Creating Hash Index Name:%s tblname:%s buckets:%x", indName, tblName, buckets);
         logFinest(logger, "Creating HashIndex %s on %s with bucket size %d", indName, tblName, buckets);
+        closeTable(tbl);
         return OK;
     }
     HashIndexInfo *indxInfo = NULL;

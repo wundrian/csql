@@ -13,6 +13,7 @@ public class JdbcSqlStatement extends JSqlError implements Statement, JSqlErrorT
     public JSqlStatement jniStmt;
     public JdbcSqlConnection conn;
     public JdbcSqlResultSet rs;
+    public boolean isSelect;
 
     JdbcSqlStatement( Connection con )
     {
@@ -23,6 +24,7 @@ public class JdbcSqlStatement extends JSqlError implements Statement, JSqlErrorT
         closedFlag = false;
         isPrepared = false;
         rowsAffect = 0;
+        isSelect = false;
         rs = new JdbcSqlResultSet();
     }
     protected void finalize ()
@@ -43,21 +45,22 @@ public class JdbcSqlStatement extends JSqlError implements Statement, JSqlErrorT
         int rv = 0;
         if(isPrepared) 
 	{
-            if(jniStmt.isSelect()) rs.close();
+            if(isSelect) rs.close();
             jniStmt.freeStmt();
             isPrepared = false;
+            isSelect = false;
         }
         rv = jniStmt.prepare(query);
         if( rv != 0 ) // 0 ->OK
         {
             throw getException(CSQL_PREPARE_ERR);
         }
+        isSelect = jniStmt.isSelect();
         isPrepared = true;
     }
     public boolean executeInt() throws SQLException
     {
         if (!isPrepared) throw getException(CSQL_NOT_PREPARED);
-        boolean isSelect = jniStmt.isSelect();
         rowsAffect = jniStmt.execute();
         if( rowsAffect < 0 )
             throw getException(CSQL_EXECUTE_ERR);
@@ -72,7 +75,7 @@ public class JdbcSqlStatement extends JSqlError implements Statement, JSqlErrorT
         if(closedFlag) return;
         if(isPrepared)
         {
-            if(jniStmt.isSelect() ) rs.close();
+            if(isSelect) rs.close();
             jniStmt.freeStmt();
             //jniStmt.free(); Praba. this makes the stmt unusable after close
         }
@@ -82,7 +85,7 @@ public class JdbcSqlStatement extends JSqlError implements Statement, JSqlErrorT
 
     public void closeScan() throws SQLException
     {
-        if( jniStmt.isSelect()) jniStmt.close();
+        if(isSelect) jniStmt.close();
     }
 
     public boolean execute (String query) throws SQLException
@@ -94,7 +97,7 @@ public class JdbcSqlStatement extends JSqlError implements Statement, JSqlErrorT
     public ResultSet executeQuery(String query) throws SQLException
     {
         prepareInt(query);
-        if( !jniStmt.isSelect() ) {
+        if( !isSelect ) {
 	    jniStmt.freeStmt();
             isPrepared = false;
             throw getException(CSQL_NOT_QUERY);
@@ -124,7 +127,7 @@ public class JdbcSqlStatement extends JSqlError implements Statement, JSqlErrorT
     }
     public ResultSet getResultSet() throws SQLException
     {
-        if(!jniStmt.isSelect())
+        if(isSelect)
             return (null);
          if(closedFlag) throw getException( CSQL_INVALID_STATE ); 
          //praba:;changed this
@@ -145,7 +148,7 @@ public class JdbcSqlStatement extends JSqlError implements Statement, JSqlErrorT
     }
     public int getUpdateCount() throws SQLException
     {
-        if(jniStmt.isSelect())
+        if(isSelect)
             return -1;
         return rowsAffect;
     }

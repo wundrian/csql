@@ -127,7 +127,7 @@ void ParsedData::reset()
     ListIterator fNameIter = fieldNameList.getIterator();
     fNameIter.reset();
     while (fNameIter.hasElement())
-        delete (Identifier *) fNameIter.nextElement();
+        delete ((FieldName *) fNameIter.nextElement());
     fieldNameList.reset();
     ListIterator iter = fieldValueList.getIterator();
     FieldValue *value;
@@ -167,6 +167,7 @@ void ParsedData::reset()
     }
     updFldValList.reset();
     groupFieldNameList.reset();
+
     iter = tableNameList.getIterator();
     TableName *tname;  
     while (iter.hasElement())
