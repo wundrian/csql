@@ -411,10 +411,27 @@ public static  int tenPerSel(Connection con, boolean flag)throws Exception
 public static void main(String[] args) 
 
    {
-       try
-       {
-          Class.forName("csql.jdbc.JdbcSqlDriver");
-          Connection con = DriverManager.getConnection("jdbc:csql", "root", "manager");
+     int flag=1;
+     if (args.length == 1)
+     { 
+         if (args[0].equals("csql")) flag=1;
+         else if (args[0].equals("mysql")) flag=2;
+         else {
+             System.out.println("Valid values: csql or mysql");
+             return;
+         }
+     }
+     try
+     {
+          Connection con = null;
+          if (flag == 1) {
+              Class.forName("csql.jdbc.JdbcSqlDriver");
+              con = DriverManager.getConnection("jdbc:csql", "root", "manager");
+          }else if (flag == 2) {
+              Class.forName("com.mysql.jdbc.Driver");
+              con = DriverManager.getConnection("jdbc:mysql://localhost/test", "root", "");
+          }
+          con.setAutoCommit(false);
           Statement cStmt = con.createStatement();
 	  
 	  System.out.println("\n\n");
@@ -424,29 +441,37 @@ public static void main(String[] args)
 	  System.out.println("Q.No.\tQuery Type\tNoIdx\tIdx1\tIdx2\tWall_Clk");
 	  System.out.println("-----\t----------\t-----\t----\t----\t--------");
 
-          try { 
-	  //cStmt.execute("DROP INDEX idx3");
-	  //cStmt.close();
-	  
-	  cStmt.execute("DROP INDEX idx4 on big1");// for q1 and q2
-          cStmt.close();
-          } catch(Exception e)
-          {
-              System.out.println("Indexes are already dropped\n");
-          }
-	  
 	  int q1 = onePerSel(con, true);
 	  System.out.println("1\t1% Sel\t\tY\t-\t-\t"+q1);
 
 	  int q2 = tenPerSel(con,true);
 	  System.out.println("2\t10% Sel\t\tY\t-\t-\t"+q2);
 
+	  int min=1, ming=2,sum=3;// function parameter
+	  
+	  int q20 = aggregate(con,min);
+	  System.out.println("20\tMinAgg No Grps\tY\t-\t-\t"+q20);
+
+	  int q21 = aggregate(con,ming);
+	  System.out.println("21\tMinAgg Grps\tY\t-\t-\t"+q21);
+
+
+	  int q22 = aggregate(con,sum);
+	  System.out.println("22\tSumAgg Grps\tY\t-\t-\t"+q22);
 
 	  //create index
 	  try{
-	  cStmt.execute("CREATE INDEX idx4 ON big1(unique2) UNIQUE");
-	  cStmt.close();
-          }catch(Exception e ){}
+            if (flag ==1) {
+	      cStmt.execute("CREATE INDEX idx4 ON big1(unique2) HASH");
+	      cStmt.close();
+	      cStmt.execute("CREATE INDEX idx3 ON big1(unique1) TREE");
+	      cStmt.close();
+            }else if (flag ==2) {
+	      cStmt.execute("CREATE INDEX x1 USING HASH ON big1(unique2)");
+	      cStmt.execute("CREATE INDEX x2 USING BTREE ON big1(unique1)");
+	      cStmt.close();
+            }
+          }catch(Exception e ){e.printStackTrace(); System.out.println("Error creating index");}
 
 	  int q3 = onePerSel(con,true);
 	  System.out.println("3\t1% Sel\t\t-\t-\tY\t"+q3);
@@ -456,12 +481,6 @@ public static void main(String[] args)
 	  System.out.println("4\t10% Sel\t\t-\t-\tY\t"+q4);
 
 
-          try{
-	  // drop index idx4
-	  cStmt.execute("DROP INDEX idx4 on big1");
-	  cStmt.close();
-          }catch(Exception e){}
-
 	  int q5 = onePerSel(con,false);
 	  System.out.println("5\t1% Sel\t\t-\tY\t-\t"+q5);
 
@@ -469,11 +488,6 @@ public static void main(String[] args)
 	  int q6 = tenPerSel(con,false);
 	  System.out.println("6\t10% Sel\t\t-\tY\t-\t"+q6);
 
-          try{
-	  cStmt.execute("CREATE INDEX idx4 ON big1(unique2)UNIQUE");
-	  cStmt.close();
-          }catch(Exception e ){}
-	  
 	  int q7 = singleTuple(con,true);
 	  System.out.println("7\t1 Tup Sel\t-\t-\tY\t"+q7);
 
@@ -481,20 +495,6 @@ public static void main(String[] args)
           //commented query 8 as it is duplicate of query 3
 	  //int q8 = onePerSel(con,true);
 	  //System.out.println("8\t1% Sel\t\t-\t-\tY\t"+q1);
-
-	  // joining
-	  try{
-	  cStmt.execute("DROP INDEX idx2");
-	  cStmt.close();
-	  cStmt.execute("DROP INDEX idx4");
-	  cStmt.close();
-	  cStmt.execute("DROP INDEX idx6");
-	  cStmt.close();
-          }catch(Exception e)
-          {
-              System.out.println("Drop indexes failed");
-          }
-          System.out.println("All indexes dropped\n");
 
 	  
 	  int Q9=1,Q10=2,Q11=3,Q15=4,Q16=5,Q17=6;
@@ -529,15 +529,6 @@ public static void main(String[] args)
 	  int q17 = joining(con,Q17);
 	  System.out.println("17\tJoin CselAselB\t-\tY\t-\t"+q17);
 
-	  // create index for projection
-	  cStmt.execute("CREATE INDEX idx2 ON small(unique2)UNIQUE");
-	  cStmt.close();
-
-	  cStmt.execute("CREATE INDEX idx4 ON big1(unique2)UNIQUE");
-	  cStmt.close();
-
-	  cStmt.execute("CREATE INDEX idx6 ON big2(unique2)UNIQUE");
-	  cStmt.close();
 
 	  int q18 = projection(con,true);
 	  System.out.println("18\t1%Proj Sel\t-\tY\tY\t"+q18);
@@ -546,32 +537,6 @@ public static void main(String[] args)
 	  System.out.println("19\t100%Proj Sel\t-\tY\tY\t"+q19);*/
 	  
 	  
-	  // aggregate function
-	  //cStmt.execute("DROP INDEX idx3");
-	  //cStmt.close();
-
-	  //cStmt.execute("DROP INDEX idx4 ");
-	  //cStmt.close();
-	  
-	  
-	  int min=1, ming=2,sum=3;// function parameter
-	  
-	  int q20 = aggregate(con,min);
-	  System.out.println("20\tMinAgg No Grps\tY\t-\t-\t"+q20);
-
-	  int q21 = aggregate(con,ming);
-	  System.out.println("21\tMinAgg Grps\tY\t-\t-\t"+q21);
-
-
-	  int q22 = aggregate(con,sum);
-	  System.out.println("22\tSumAgg Grps\tY\t-\t-\t"+q22);
-
-          //cStmt.execute("CREATE INDEX idx3 ON big1(unique1)UNIQUE");
-	  //cStmt.close();
-	  try{ 
-	  cStmt.execute("CREATE INDEX idx4 ON big1(unique2)"); 
-	  cStmt.close();
-          }catch(Exception e ){}
 
 	  int q23 = aggregate(con,min);
 	  System.out.println("23\tMinAgg No Grps\t-\t-\tY\t"+q23);
@@ -584,13 +549,6 @@ public static void main(String[] args)
 	  int q25 = aggregate(con,sum);
 	  System.out.println("25\tSumAgg Grps\t-\t-\tY\t"+q25);
 
-	  
-	  // drop index 
-	  //cStmt.execute("DROP INDEX idx3");
-	  //cStmt.close();
-	  
-	  //cStmt.execute("DROP INDEX idx4");
-	  //cStmt.close();
 	  
 	  int in=1,upd=2,del=3;// function parameter
 /*
@@ -605,13 +563,7 @@ public static void main(String[] args)
 	  int q28 = dmlstatement(con,del);
 	  System.out.println("28\tdelete 1 Tup\tY\t-\t-\t"+q28);
 
-*/
-          try{
-	  cStmt.execute("CREATE INDEX idx4 ON big1(unique2)UNIQUE;");
-	  cStmt.close();
-          }catch(Exception e ){}
-/*
-	  
+	  //with indexes 
 	  int q29 = dmlstatement(con,in);
 	  System.out.println("29\tinsert 1 Tup\t-\tY\tY\t"+q29);
 
@@ -623,12 +575,22 @@ public static void main(String[] args)
 	  int q31 = dmlstatement(con,del);
 	  System.out.println("31\tdelete 1 Tup\t-\tY\tY\t"+q31);
 */
+	  try{
+            if (flag ==1) {
+	      cStmt.execute("DROP INDEX idx4;");
+	      cStmt.close();
+	      cStmt.execute("DROP INDEX idx3;");
+	      cStmt.close();
+            } else if (flag ==2) {
+	      cStmt.execute("DROP INDEX x1 on big1");
+	      cStmt.close();
+	      cStmt.execute("DROP INDEX x2 on big1");
+	      cStmt.close();
+            }
+          }catch(Exception e ){System.out.println("Error dropping indexes");}
           System.out.println("\n");
 
 	  System.out.println("**********************************************************\n");
-
-
-
 
 	  con.close();
         }
@@ -639,4 +601,3 @@ public static void main(String[] args)
        
     }
 }
-

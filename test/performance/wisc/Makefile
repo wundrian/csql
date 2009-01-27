@@ -1,4 +1,4 @@
-CC=g++
+CC=g++ -O2
 INCL= -I$(CSQL_INSTALL_ROOT)/include
 LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlodbc -lcrypt -lcacheload
 ALL_CC_FLAG=$(INCL) $(LIBS)

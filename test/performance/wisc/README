@@ -5,21 +5,26 @@ MAX_SYS_DB_SIZE=10485760
 MAX_DB_SIZE=104857600
 
 Run make to build the suite as follows
+---------------------------
 $make
 
 To populate the database run
+----------------------------
 a)CSQL
 $csql <csql.sql
 b)MySQL
-copy csql.sql to mysql.sql and change CREATE INDEX syntax.
-$isql myodbc3 <sql.sql
+$isql myodbc3 <csql.sql
 c)Postgres 
-copy csql.sql to psql.sql and change CREATE INDEX syntax.
-$isql psql <psql.sql
+$isql psql <csql.sql
 
 
 To run odbc test
 $./odbcBench
 
-To run jdbc test
+To run csql jdbc test
+---------------------
 $java JDBCBench
+
+To run mysql jdbc test
+----------------------
+$java JDBCBench mysql

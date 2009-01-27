@@ -255,6 +255,7 @@ main(int argc, char *argv[])
 
     /* query 9 - one join with range-selected input, no index */
 
+/*
     sprintf(queryBuf1,
             "select * from big1, big2 where big1.unique2 = big2.unique2 and big2.unique2 < %d",
             numBigTblTups/10);
@@ -267,7 +268,7 @@ main(int argc, char *argv[])
     if (rc)
         printf ("Query 9 failed\n");
 
-    /* query 10 - single join, no index */
+    // query 10 - single join, no index 
 
     rc = db->selectionQuery(10, timer[10],
                        "select * from big1, bprime where big1.unique2 = bprime.unique2",
@@ -276,6 +277,7 @@ main(int argc, char *argv[])
     if (rc)
         printf ("Query 10 failed\n");
 
+*/
     // query 11 - two joins with filtered input, no index 
 /*
     sprintf(queryBuf1, "select * from small, big1, big2 "
@@ -326,7 +328,7 @@ main(int argc, char *argv[])
         printf ("Query 20 failed\n");
 
     // query 21 - min. agg., 100 groups 
-/*
+
     rc = db->selectionQuery (21, timer[21],
         "select min(unique2) from big1 group by onepercent",
         "select min(unique2) from big2 group by onepercent",
@@ -344,7 +346,7 @@ main(int argc, char *argv[])
 
     if (rc)
         printf ("Query 22 failed\n");
-*/
+
     if (modify) {
         // query 26 - insert one row, no index 
 
@@ -449,7 +451,7 @@ main(int argc, char *argv[])
         printf ("Query 8 failed\n");
 
     /* query 12 - one join with filtered input, with index */
-
+/*
     sprintf(queryBuf1,
         "select * from big1, big2 where big1.unique2 = big2.unique2 and big2.unique2 < %d",
         numBigTblTups/10);
@@ -463,7 +465,7 @@ main(int argc, char *argv[])
     if (rc)
         printf ("Query 12 failed\n");
 
-    /* query 13 - one join, index */
+    // query 13 - one join, index 
 
     rc = db->selectionQuery (13, timer[13],
                        "select * from big1, bprime where big1.unique2 = bprime.unique2",
@@ -473,7 +475,7 @@ main(int argc, char *argv[])
         printf ("Query 13 failed\n");
 
     // query 14 - two joins with filtered input, index 
-/*
+
     sprintf(queryBuf1,
             "select * from small, big1, big2 where  big1.unique2 = big2.unique2 and "
             "small.unique2 = big1.unique2 and big1.unique2 < %d",
@@ -488,7 +490,7 @@ main(int argc, char *argv[])
                        numBigTblTups/10, 0, verify, 2, 0);
     if (rc)
         printf ("Query 14 failed\n");
-*/
+
 
     // query 15 - one join with filtered input, no index 
 
@@ -505,7 +507,7 @@ main(int argc, char *argv[])
     if (rc)
         printf ("Query 15 failed\n");
 
-    /* query 16 - one join, index */
+    // query 16 - one join, index 
 
     rc = db->selectionQuery (16, timer[16],
                        "select * from big1, bprime where big1.unique1 = bprime.unique1",
@@ -515,7 +517,7 @@ main(int argc, char *argv[])
         printf ("Query 16 failed\n");
 
     // query 17 - two joins with filtered input, index 
-/*
+
     sprintf(queryBuf1,
             "select * from small, big1, big2 where big1.unique1 = big2.unique1 and "
             "small.unique1 = big1.unique1 and big1.unique1 < %d",
@@ -541,7 +543,7 @@ main(int argc, char *argv[])
 
     if (rc)
         printf ("Query 23 failed\n");
-/*
+
     // query 24 - min. agg., 100 groups 
     rc = db->selectionQuery (24, timer[24],
         "select min(unique2) from big1 group by onepercent",
@@ -558,7 +560,7 @@ main(int argc, char *argv[])
                        numBigTblTups, 100, 0, verify, 2, 0);
     if (rc)
         printf ("Query 25 failed\n");
-*/
+
     if (modify) {
         // query 29 - insert one row, index 
         rc = db->runInsert (29, timer[29], numBigTblTups,
