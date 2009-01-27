@@ -10,7 +10,7 @@ echo insert into t1 (f1, f3 ) values(30,123432);
 Statement Executed: Rows Affected = 1
 echo select * from t1;
 ---------------------------------------------------------
-	f1	f2	f3	
+	t1.f1	t1.f2	t1.f3	
 ---------------------------------------------------------
 	10	india	1234321	
 	20	INDIA	NULL	
@@ -21,7 +21,7 @@ echo update t1 set f1=10;
 Statement Executed: Rows Affected = 4
 echo select * from t1;
 ---------------------------------------------------------
-	f1	f2	f3	
+	t1.f1	t1.f2	t1.f3	
 ---------------------------------------------------------
 	10	india	1234321	
 	10	INDIA	NULL	
@@ -32,7 +32,7 @@ echo update t1 set f2='hello';
 Statement Executed: Rows Affected = 4
 echo select * from t1;
 ---------------------------------------------------------
-	f1	f2	f3	
+	t1.f1	t1.f2	t1.f3	
 ---------------------------------------------------------
 	10	hello	1234321	
 	10	hello	NULL	
@@ -43,7 +43,7 @@ echo update t1 set f3=10000;
 Statement Executed: Rows Affected = 4
 echo select * from t1;
 ---------------------------------------------------------
-	f1	f2	f3	
+	t1.f1	t1.f2	t1.f3	
 ---------------------------------------------------------
 	10	hello	10000	
 	10	hello	10000	
@@ -60,7 +60,7 @@ echo insert into t2 (f2) values (100.50);
 Statement Executed: Rows Affected = 1
 echo select * from t2;
 ---------------------------------------------------------
-	f1	f2	
+	t2.f1	t2.f2	
 ---------------------------------------------------------
 	112	235.500000	
 	-36	NULL	
@@ -72,7 +72,7 @@ echo update t2 set f1=125;
 Statement Executed: Rows Affected = 3
 echo select * from t2;
 ---------------------------------------------------------
-	f1	f2	
+	t2.f1	t2.f2	
 ---------------------------------------------------------
 	125	250.500000	
 	125	250.500000	

@@ -321,8 +321,8 @@ DbRetVal AggTableImpl::close()
     while (iter.hasElement())
     {
         elem = (AggFldDef*) iter.nextElement();
-        //if(!elem->alreadyBinded) free(elem->bindBuf);
-        //TEMPHACK:PRABA::to avoid cordump in odbcBench
+        if(!elem->alreadyBinded) free(elem->bindBuf);
+        delete elem;
     }
     fldList.reset();
     return OK;

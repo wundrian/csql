@@ -9,7 +9,7 @@ Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
 echo select * from emp;
 ---------------------------------------------------------
-	eno	dno	
+	emp.eno	emp.dno	
 ---------------------------------------------------------
 	1	10	
 	2	20	
@@ -17,7 +17,7 @@ echo select * from emp;
 	
 echo select * from dept;
 ---------------------------------------------------------
-	deptno	dname	
+	dept.deptno	dept.dname	
 ---------------------------------------------------------
 	20	Sales	
 	30	IT	
@@ -26,7 +26,7 @@ echo select * from dept;
 	
 echo select * from emp,dept;
 ---------------------------------------------------------
-	eno	dno	deptno	dname	
+	emp.eno	emp.dno	dept.deptno	dept.dname	
 ---------------------------------------------------------
 	1	10	20	Sales	
 	1	10	30	IT	
@@ -43,7 +43,7 @@ echo select * from emp,dept;
 	
 echo select * from emp,dept where emp.dno in(20,30);
 ---------------------------------------------------------
-	eno	dno	deptno	dname	
+	emp.eno	emp.dno	dept.deptno	dept.dname	
 ---------------------------------------------------------
 	2	20	20	Sales	
 	2	20	30	IT	
@@ -52,7 +52,7 @@ echo select * from emp,dept where emp.dno in(20,30);
 	
 echo select * from emp,dept where dept.deptno in(20,30);
 ---------------------------------------------------------
-	eno	dno	deptno	dname	
+	emp.eno	emp.dno	dept.deptno	dept.dname	
 ---------------------------------------------------------
 	1	10	20	Sales	
 	1	10	30	IT	
@@ -63,14 +63,14 @@ echo select * from emp,dept where dept.deptno in(20,30);
 	
 echo select * from emp,dept where emp.dno in(20,30)  and dept.deptno in(20,30);
 ---------------------------------------------------------
-	eno	dno	deptno	dname	
+	emp.eno	emp.dno	dept.deptno	dept.dname	
 ---------------------------------------------------------
 	2	20	20	Sales	
 	2	20	30	IT	
 	
 echo select * from emp,dept where emp.dno in(20,30) or dept.deptno in(20,30);
 ---------------------------------------------------------
-	eno	dno	deptno	dname	
+	emp.eno	emp.dno	dept.deptno	dept.dname	
 ---------------------------------------------------------
 	1	10	20	Sales	
 	1	10	30	IT	

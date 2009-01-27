@@ -2,7 +2,7 @@ t1create.sql file created
 select file created
 Select * from t1 in CSQL
 ---------------------------------------------------------
-	f1	f2	
+	t1.f1	t1.f2	
 ---------------------------------------------------------
 	1	INDIA1	
 	11	NULL	

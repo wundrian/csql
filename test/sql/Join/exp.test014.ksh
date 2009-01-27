@@ -9,7 +9,7 @@ Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
 echo select * from emp;
 ---------------------------------------------------------
-	eno	dno	
+	emp.eno	emp.dno	
 ---------------------------------------------------------
 	1	10	
 	2	20	
@@ -17,7 +17,7 @@ echo select * from emp;
 	
 echo select * from dept;
 ---------------------------------------------------------
-	deptno	dname	
+	dept.deptno	dept.dname	
 ---------------------------------------------------------
 	20	Sales	
 	30	IT	
@@ -26,7 +26,7 @@ echo select * from dept;
 	
 echo select * from emp,dept;
 ---------------------------------------------------------
-	eno	dno	deptno	dname	
+	emp.eno	emp.dno	dept.deptno	dept.dname	
 ---------------------------------------------------------
 	1	10	20	Sales	
 	1	10	30	IT	
@@ -43,7 +43,7 @@ echo select * from emp,dept;
 	
 echo select * from emp,dept where emp.dno between 10 and 30;
 ---------------------------------------------------------
-	eno	dno	deptno	dname	
+	emp.eno	emp.dno	dept.deptno	dept.dname	
 ---------------------------------------------------------
 	1	10	20	Sales	
 	1	10	30	IT	
@@ -56,7 +56,7 @@ echo select * from emp,dept where emp.dno between 10 and 30;
 	
 echo select * from emp,dept where dept.deptno between 20 and 40;
 ---------------------------------------------------------
-	eno	dno	deptno	dname	
+	emp.eno	emp.dno	dept.deptno	dept.dname	
 ---------------------------------------------------------
 	1	10	20	Sales	
 	1	10	30	IT	
@@ -70,7 +70,7 @@ echo select * from emp,dept where dept.deptno between 20 and 40;
 	
 echo select * from emp,dept where emp.dno between 15 and 30  and dept.deptno between 20 and 40;
 ---------------------------------------------------------
-	eno	dno	deptno	dname	
+	emp.eno	emp.dno	dept.deptno	dept.dname	
 ---------------------------------------------------------
 	2	20	20	Sales	
 	2	20	30	IT	

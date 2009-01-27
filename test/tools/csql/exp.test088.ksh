@@ -14,7 +14,7 @@ Statement Executed: Rows Affected = 1
 echo commit;
 echo select * from t1;
 ---------------------------------------------------------
-	f1	f2	f3	
+	t1.f1	t1.f2	t1.f3	
 ---------------------------------------------------------
 	1	2	3	
 	2	NULL	4	
@@ -27,7 +27,7 @@ Statement Executed: Rows Affected = 5
 echo commit;
 echo select * from t1;
 ---------------------------------------------------------
-	f1	f2	f3	
+	t1.f1	t1.f2	t1.f3	
 ---------------------------------------------------------
 	1	NULL	3	
 	2	NULL	4	
@@ -53,7 +53,7 @@ Statement Executed: Rows Affected = 1
 echo commit;
 echo select * from t1;
 ---------------------------------------------------------
-	f1	f2	f3	
+	t1.f1	t1.f2	t1.f3	
 ---------------------------------------------------------
 	1	2	3	
 	2	NULL	4	
@@ -66,7 +66,7 @@ Statement prepare failed with error -22
 echo commit;
 echo select * from t1;
 ---------------------------------------------------------
-	f1	f2	f3	
+	t1.f1	t1.f2	t1.f3	
 ---------------------------------------------------------
 	1	2	3	
 	2	NULL	4	
@@ -92,7 +92,7 @@ Statement Executed: Rows Affected = 1
 echo commit;
 echo select * from t1;
 ---------------------------------------------------------
-	f1	f2	f3	
+	t1.f1	t1.f2	t1.f3	
 ---------------------------------------------------------
 	1	2	3	
 	2	NULL	4	
@@ -105,7 +105,7 @@ Statement Executed: Rows Affected = 5
 echo commit;
 echo select * from t1;
 ---------------------------------------------------------
-	f1	f2	f3	
+	t1.f1	t1.f2	t1.f3	
 ---------------------------------------------------------
 	6	2	3	
 	2	NULL	4	
@@ -131,7 +131,7 @@ Statement Executed: Rows Affected = 1
 echo commit;
 echo select * from t1;
 ---------------------------------------------------------
-	f1	f2	f3	
+	t1.f1	t1.f2	t1.f3	
 ---------------------------------------------------------
 	1	2	3	
 	2	NULL	4	
@@ -144,7 +144,7 @@ Statement Executed: Rows Affected = 3
 echo commit;
 echo select * from t1;
 ---------------------------------------------------------
-	f1	f2	f3	
+	t1.f1	t1.f2	t1.f3	
 ---------------------------------------------------------
 	1	0	3	
 	2	0	4	
@@ -170,7 +170,7 @@ Statement Executed: Rows Affected = 1
 echo commit;
 echo select * from t1;
 ---------------------------------------------------------
-	f1	f2	f3	
+	t1.f1	t1.f2	t1.f3	
 ---------------------------------------------------------
 	1	2	3	
 	2	NULL	4	
@@ -183,7 +183,7 @@ Statement Executed: Rows Affected = 2
 echo commit;
 echo select * from t1;
 ---------------------------------------------------------
-	f1	f2	f3	
+	t1.f1	t1.f2	t1.f3	
 ---------------------------------------------------------
 	1	2	3	
 	3	4	NULL	

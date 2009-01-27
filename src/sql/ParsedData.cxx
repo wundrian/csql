@@ -166,6 +166,11 @@ void ParsedData::reset()
         delete updFldVal;
     }
     updFldValList.reset();
+    iter = groupFieldNameList.getIterator();
+    while(iter.hasElement())
+    {
+        delete iter.nextElement();
+    }
     groupFieldNameList.reset();
 
     iter = tableNameList.getIterator();

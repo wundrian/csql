@@ -6,7 +6,7 @@ Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
 ---------------------------------------------------------
-	f1	f2	
+	t1.f1	t1.f2	
 ---------------------------------------------------------
 	10	20	
 	11	21	
@@ -21,7 +21,7 @@ Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
 Statement execute failed with error -22
 ---------------------------------------------------------
-	f1	f2	
+	t2.f1	t2.f2	
 ---------------------------------------------------------
 	10	20	
 	11	21	
@@ -38,7 +38,7 @@ Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
 Statement prepare failed with error -19
 ---------------------------------------------------------
-	f1	f2	
+	t3.f1	t3.f2	
 ---------------------------------------------------------
 	10	NULL	
 	11	21	

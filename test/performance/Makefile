@@ -11,7 +11,7 @@ else
 ifeq ($(OSNAME), Linux)
 CPlus = g++
 CPlusFlags = -O2 -w 
-JAVAC = javac
+JAVAC = javac -g:none
 SYSLIBS= -rdynamic -lrt -lpthread -lcrypt
 else
 PlatForm=notsupported
@@ -69,7 +69,7 @@ Range: Range.c
 ODBCTest: ODBCTest.c
 	$(CPlus) $(CPlusFlags) -lcsqlodbc -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 JDBCTest: JDBCTest.java
-	$(JAVAC) JDBCTest.java
+	$(JAVAC)  JDBCTest.java
 
 clean:
 	rm -f $(TARGETS) *.class

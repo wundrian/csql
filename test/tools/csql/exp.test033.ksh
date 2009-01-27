@@ -4,7 +4,7 @@ Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
 echo select count(f1) from t1;
 ---------------------------------------------------------
-		
+	COUNT(f1)	
 ---------------------------------------------------------
 	2	
 	

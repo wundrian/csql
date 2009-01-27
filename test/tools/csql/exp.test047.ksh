@@ -54,7 +54,7 @@ Tree index remove called
 Statement Executed: Rows Affected = 1
 echo select * from t1 where f1>5 and f1<15;
 ---------------------------------------------------------
-	f1	f2	
+	t1.f1	t1.f2	
 ---------------------------------------------------------
 	6	6	
 	7	7	
@@ -80,7 +80,7 @@ Statement Executed: Rows Affected = 10
 echo commit;
 echo select * from t1 where f1>35 and f1<55;
 ---------------------------------------------------------
-	f1	f2	
+	t1.f1	t1.f2	
 ---------------------------------------------------------
 	36	36	
 	37	37	
@@ -100,7 +100,7 @@ Statement Executed: Rows Affected = 7
 echo commit;
 echo select * from t1 where f1>=-5 and f1<15;
 ---------------------------------------------------------
-	f1	f2	
+	t1.f1	t1.f2	
 ---------------------------------------------------------
 	8	8	
 	9	9	
@@ -114,7 +114,7 @@ Statement Executed: Rows Affected = 1
 echo commit;
 echo select * from t1 where f1 >5 and f1 <15;
 ---------------------------------------------------------
-	f1	f2	
+	t1.f1	t1.f2	
 ---------------------------------------------------------
 	8	8	
 	9	9	

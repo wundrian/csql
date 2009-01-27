@@ -10,7 +10,7 @@ Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
 echo select * from emp,dept;
 ---------------------------------------------------------
-	eno	ename	dno	deptno	dname	
+	emp.eno	emp.ename	emp.dno	dept.deptno	dept.dname	
 ---------------------------------------------------------
 	1	Nihar	10	20	Sales	
 	1	Nihar	10	40	Mkt	
@@ -30,7 +30,7 @@ echo select * from emp,dept;
 	
 echo select * from emp,dept where emp.ename LIKE 'K%';
 ---------------------------------------------------------
-	eno	ename	dno	deptno	dname	
+	emp.eno	emp.ename	emp.dno	dept.deptno	dept.dname	
 ---------------------------------------------------------
 	2	Kishore	20	20	Sales	
 	2	Kishore	20	40	Mkt	
@@ -41,7 +41,7 @@ echo select * from emp,dept where emp.ename LIKE 'K%';
 	
 echo select * from emp,dept where dept.dname LIKE 'S%';
 ---------------------------------------------------------
-	eno	ename	dno	deptno	dname	
+	emp.eno	emp.ename	emp.dno	dept.deptno	dept.dname	
 ---------------------------------------------------------
 	1	Nihar	10	20	Sales	
 	2	Kishore	20	20	Sales	
@@ -51,14 +51,14 @@ echo select * from emp,dept where dept.dname LIKE 'S%';
 	
 echo select * from emp,dept where emp.ename LIKE 'K%' and dept.dname LIKE 'S%';
 ---------------------------------------------------------
-	eno	ename	dno	deptno	dname	
+	emp.eno	emp.ename	emp.dno	dept.deptno	dept.dname	
 ---------------------------------------------------------
 	2	Kishore	20	20	Sales	
 	5	Kailash	50	20	Sales	
 	
 echo select * from emp,dept where emp.ename LIKE 'K%' or dept.dname LIKE 'S%';
 ---------------------------------------------------------
-	eno	ename	dno	deptno	dname	
+	emp.eno	emp.ename	emp.dno	dept.deptno	dept.dname	
 ---------------------------------------------------------
 	1	Nihar	10	20	Sales	
 	2	Kishore	20	20	Sales	

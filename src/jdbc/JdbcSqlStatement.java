@@ -127,10 +127,9 @@ public class JdbcSqlStatement extends JSqlError implements Statement, JSqlErrorT
     }
     public ResultSet getResultSet() throws SQLException
     {
-        if(isSelect)
+        if(!isSelect)
             return (null);
          if(closedFlag) throw getException( CSQL_INVALID_STATE ); 
-         //praba:;changed this
          rs.setStmt(this);
          return rs; 
     }

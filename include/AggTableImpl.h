@@ -73,7 +73,7 @@ class AggTableImpl:public Table
     AggTableImpl();
     virtual ~AggTableImpl();
     DbRetVal getFieldInfo(const char *fieldName,  FieldInfo *&info)
-        { return ErrBadCall; }
+        { return tableHdl->getFieldInfo(fieldName, info); }
     bool isGroupSet()
         {
         if (groupFld.type == typeUnknown) return false; else return true;

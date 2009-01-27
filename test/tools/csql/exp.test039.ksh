@@ -10,7 +10,7 @@ echo insert into t1 (f1, f3 ) values(30,123432);
 Statement Executed: Rows Affected = 1
 echo select * from t1;
 ---------------------------------------------------------
-	f1	f2	f3	
+	t1.f1	t1.f2	t1.f3	
 ---------------------------------------------------------
 	10	india	1234321	
 	20	INDIA	NULL	

@@ -53,9 +53,8 @@ public class JDBCTest
              rs = selStmt.executeQuery();
              if (rs.next())
              {
-                intVal = rs.getInt(1);
+                //intVal = rs.getInt(1);
                 strVal = rs.getString(2);
-                ;
              }
              rs.close();
              end = System.nanoTime();
@@ -117,7 +116,7 @@ public class JDBCTest
            System.out.print("Delete : " + count);
            System.out.println(" Min:" + min+ " Max: "+max+" Avg: "+ tot/100 );
 
-           //cStmt.execute("DROP TABLE T1;");
+           cStmt.execute("DROP TABLE T1;");
            System.out.println("Dropped table T1");
            cStmt.close();
 

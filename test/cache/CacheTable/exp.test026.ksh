@@ -2,7 +2,7 @@ Table t1 and t2 created in target DB.
 Recovering table t1 NULL NULL
 Recovering table t2 t2f1<15 t2f1,t2f3,t2f5
 ---------------------------------------------------------
-	t1f1	t1f2	t1f3	t1f4	t1f5	
+	t1.t1f1	t1.t1f2	t1.t1f3	t1.t1f4	t1.t1f5	
 ---------------------------------------------------------
 	1	fmode	11	test	111	
 	2	fmode	22	test	222	
@@ -16,7 +16,7 @@ Recovering table t2 t2f1<15 t2f1,t2f3,t2f5
 	10	fmode	100	test	1000	
 	
 ---------------------------------------------------------
-	t2f1	t2f3	t2f5	
+	t2.t2f1	t2.t2f3	t2.t2f5	
 ---------------------------------------------------------
 	11	111	1111	
 	12	112	1112	

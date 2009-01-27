@@ -368,15 +368,17 @@ DbRetVal SelStatement::resolve()
                             parsedData->getGroupFieldNameList().size()== 0)
                 table->bindFld(name->fldName, newVal->value);
             else {
-                if (!aggTable)
+                if (!aggTable) {
                     aggTable = new AggTableImpl();
-                aggTable->setTable(table);
+                    aggTable->setTable(table);
+                }
                 aggTable->bindFld(name->fldName, name->aType, newVal->value);
             }
             parsedData->insertFieldValue(newVal);
         } 
         if (!isBindFld) bindFldList.append(name);
     }
+    bindFldList.reset();
     rv = setBindFieldAndValues();
     if (rv != OK) 
     {
@@ -449,7 +451,13 @@ DbRetVal SelStatement::resolveGroupFld(AggTableImpl *aggTable)
         parsedData->insertFieldValue(newVal);
         aggTable->setGroup(name->fldName, newVal->value);
     }
-    if (giter.hasElement()) { table= aggTable; return ErrSyntaxError; }
+    delete fInfo;
+    if (giter.hasElement()) 
+    { 
+       table= aggTable; 
+       printError(ErrSyntaxError, "Only one field allowed in group\n");
+       return ErrSyntaxError; 
+    }
     table = aggTable;
     return OK; 
 }
@@ -608,7 +616,7 @@ void* SelStatement::fetch()
             printError(ErrBadCall, "Fields are not binded properly. Should never happen");
             return NULL;
         }
-		AllDataType::copyVal(bindFieldValues[i], value->value, value->type, value->length);
+	AllDataType::copyVal(bindFieldValues[i], value->value, value->type, value->length);
     }
     return tuple;
 }
@@ -761,6 +769,7 @@ DbRetVal SelStatement::getProjFldInfo (int projpos, FieldInfo *&fInfo)
 {
     //TODO::if not yet prepared return error
     //TODO::check the upper limit for projpos
+    //TODO::validate if projpos is less than size of the list
     ListIterator iter = parsedData->getFieldNameList().getIterator();
     FieldName *name = NULL;
     DbRetVal rv = OK;
@@ -778,6 +787,34 @@ DbRetVal SelStatement::getProjFldInfo (int projpos, FieldInfo *&fInfo)
     }
 
     rv = table->getFieldInfo(name->fldName, fInfo);
+    if (OK == rv)
+    {
+       //get back the qualified name(tablename.fldname)
+       char qualName[IDENTIFIER_LENGTH];
+       strcpy(qualName, name->fldName);
+       switch(name->aType)
+       {
+           case AGG_COUNT:
+               sprintf(fInfo->fldName, "COUNT(%s)", qualName);
+               break;
+           case AGG_MIN:
+               sprintf(fInfo->fldName, "MIN(%s)", qualName);
+               break;
+           case AGG_MAX:
+               sprintf(fInfo->fldName, "MAX(%s)", qualName);
+               break;
+           case AGG_SUM:
+               sprintf(fInfo->fldName, "SUM(%s)", qualName);
+               break;
+           case AGG_AVG:
+               sprintf(fInfo->fldName, "AVG(%s)", qualName);
+               break;
+           default:
+               strcpy(fInfo->fldName, qualName);
+               break;
+       }
+    }
+    return rv;
 }
 int SelStatement::getFldPos(char *name)
 {

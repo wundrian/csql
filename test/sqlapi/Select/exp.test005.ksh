@@ -17,7 +17,7 @@ Statement Executed: Rows Affected = 1
 echo rollback;
 echo select * from t1;
 ---------------------------------------------------------
-	f1	f2	
+	t1.f1	t1.f2	
 ---------------------------------------------------------
 	10	20	
 	20	30	
@@ -39,7 +39,7 @@ Statement Executed: Rows Affected = 1
 echo test for commit;
 Statement prepare failed with error -19
 ---------------------------------------------------------
-	f1	f2	
+	t1.f1	t1.f2	
 ---------------------------------------------------------
 	10	20	
 	20	30	
@@ -56,7 +56,7 @@ Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
 Statement prepare failed with error -19
 ---------------------------------------------------------
-	f1	f2	
+	t1.f1	t1.f2	
 ---------------------------------------------------------
 	10	20	
 	20	30	
@@ -80,7 +80,7 @@ Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
 ---------------------------------------------------------
-	f1	f2	
+	t1.f1	t1.f2	
 ---------------------------------------------------------
 	10	20	
 	20	30	

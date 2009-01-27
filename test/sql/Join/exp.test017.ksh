@@ -10,7 +10,7 @@ Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
 ---------------------------------------------------------
-	eno	ename	dno	
+	emp.eno	emp.ename	emp.dno	
 ---------------------------------------------------------
 	1	Nihar	10	
 	2	Papu	20	
@@ -19,7 +19,7 @@ Statement Executed: Rows Affected = 1
 	5	Pinu	50	
 	
 ---------------------------------------------------------
-	deptno	dname	lid	
+	dept.deptno	dept.dname	dept.lid	
 ---------------------------------------------------------
 	20	IT	101	
 	40	Sales	102	
@@ -27,7 +27,7 @@ Statement Executed: Rows Affected = 1
 	30	Store	104	
 	
 ---------------------------------------------------------
-	eno	ename	dno	deptno	dname	lid	
+	emp.eno	emp.ename	emp.dno	dept.deptno	dept.dname	dept.lid	
 ---------------------------------------------------------
 	1	Nihar	10	20	IT	101	
 	1	Nihar	10	40	Sales	102	
