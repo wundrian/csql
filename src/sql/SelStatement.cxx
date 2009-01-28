@@ -642,8 +642,15 @@ void* SelStatement::fetch(DbRetVal &rv)
 
 DbRetVal SelStatement::close()
 {
-    return table->close();
+    return table->closeScan();
 }
+
+DbRetVal SelStatement::freeScan()
+{
+    if (table) return table->close();
+    else return OK;
+}
+
 void* SelStatement::getParamValuePtr( int pos )
 {
     ConditionValue *p = (ConditionValue*) params [pos-1];

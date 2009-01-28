@@ -157,6 +157,7 @@ class SelStatement : public DmlStatement
     int getFldPos(char *name);
     DbRetVal setNull(int pos){}
     DbRetVal close();
+    DbRetVal freeScan();
     DbRetVal resolve();
     SelStatement();
     ~SelStatement();

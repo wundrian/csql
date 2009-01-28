@@ -64,10 +64,12 @@ class TreeNode
 class BucketIter
 {
     HashIndexNode *iter;
+    HashIndexNode *head;
     public:
     BucketIter(){}
-    BucketIter(HashIndexNode *head) { iter = head;}
+    BucketIter(HashIndexNode *head) { iter = head = head;}
     HashIndexNode* next();
+    void reset() { iter = head; }
     friend class BucketList;
 };
 class BucketList
@@ -138,6 +140,7 @@ class TreeIndex : public Index
 class TreeIter
 {
     TreeNode *iter;
+    TreeNode *head;
     int fldOffset;
     DataType type;
     int length;
@@ -153,7 +156,7 @@ class TreeIter
 
     public:
     TreeIter(){}
-    TreeIter(TreeNode *head) { iter = head; firstCall = true; recordsOver=false;}
+    TreeIter(TreeNode *head) { iter = head = head; firstCall = true; recordsOver=false;}
     void setSearchKey(void *key, ComparisionOp cop, bool ascending = true)
     {
         searchKey = key; op = cop; asc =ascending;
@@ -163,6 +166,7 @@ class TreeIter
     void* prev();
     void* next();
     void nextNode();
+    void reset() { iter = head; firstCall = true; recordsOver=false; }
 };
 
 enum IndexIntType

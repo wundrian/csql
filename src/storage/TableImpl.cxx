@@ -878,9 +878,9 @@ DbRetVal TableImpl::closeScan()
     //do not throw scan not open error
     //this function will be called by table handle
     if (iter) {
-        iter->close();
-        delete iter;
-        iter = NULL;
+        iter->reset();
+       // delete iter;
+       // iter = NULL;
     }
     return OK;
 }

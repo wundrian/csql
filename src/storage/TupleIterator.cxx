@@ -206,3 +206,11 @@ DbRetVal TupleIterator::close()
     scanType_ = unknownScan;
     return OK;
 }
+
+void TupleIterator::reset()
+{
+    DbRetVal rv = OK;
+    if (scanType_ == fullTableScan) *cIter = ((Chunk*)chunkPtr_)->getIterator();
+    else if (scanType_ == hashIndexScan) if(bIter) bIter->reset();
+    else if (scanType_ == treeIndexScan) if(tIter) tIter->reset(); 
+}    

@@ -69,6 +69,7 @@ class TupleIterator
     DbRetVal open();
     void* next();
     void* prev();//used only for tree iter during deleteTuple
+    void reset();
     DbRetVal close();
 
 };
