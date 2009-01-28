@@ -23,6 +23,7 @@
 #include<PredicateImpl.h>
 #include<Index.h>
 #include<Config.h>
+#include<AggTableImpl.h> //for AggType
 
 void Table::getFieldNameAlone(char *fname, char *name) {
     bool dotFound= false;
@@ -63,6 +64,7 @@ DbRetVal TableImpl::bindFld(const char *name, void *val)
 }
 
 bool TableImpl::isFldNull(const char *name){
+    if (name[0] == '*') return false;
     char fieldName[IDENTIFIER_LENGTH];
     getFieldNameAlone((char*)name, fieldName);
     int colpos = fldList_.getFieldPosition(fieldName);
@@ -417,7 +419,78 @@ void* TableImpl::fetchNoBind(DbRetVal &rv)
     }
     return curTuple_;
 }
-
+DbRetVal TableImpl::fetchAgg(const char * fldName, AggType aType, void *buf)
+{
+   FieldInfo *info = new FieldInfo();
+   DbRetVal rv = getFieldInfo(fldName, info);
+   if (OK != rv) return rv;
+   bool res= false;
+   
+   char *tuple = (char*) fetchNoBind(rv);
+   if ( NULL == tuple) 
+   { 
+      *(int*)buf = 0; //assuming int. could create porting problems(64 |endian) 
+      return OK; 
+   }
+   int count =1;
+   AllDataType::copyVal(buf, (void*) (tuple+info->offset), info->type, info->length);
+   while(1) {
+       tuple = (char*) fetchNoBind(rv);
+       if (NULL == tuple) break;
+       switch(aType) {
+           case AGG_MIN:
+           {
+               res = AllDataType::compareVal(buf, (void*) (tuple+info->offset), 
+                               OpGreaterThan,
+                               info->type, info->length);
+               if (res) AllDataType::copyVal(buf, (void*) (tuple+info->offset), 
+                                     info->type, info->length);
+               break;
+           }
+           case AGG_MAX:
+           {
+               res = AllDataType::compareVal(buf, (void*) (tuple+info->offset), 
+                               OpLessThan,
+                               info->type, info->length);
+               if (res) AllDataType::copyVal(buf, (void*) (tuple+info->offset), 
+                                     info->type, info->length);
+               break;
+           }
+           case AGG_SUM:
+           {
+               AllDataType::addVal(buf, (void*) (tuple+info->offset), 
+                               info->type);
+               break;
+           }
+           case AGG_AVG:
+           {
+               AllDataType::addVal(buf, (void*) (tuple+info->offset), 
+                               info->type);
+               count++;
+               break;
+           }
+           case AGG_COUNT:
+           {
+               count++;
+               break;
+           }
+       }
+   }
+   switch(aType) {
+       case AGG_AVG:
+       {
+           AllDataType::divVal(buf, &count,info->type); 
+           break;
+       }
+       case AGG_COUNT:
+       {
+           (*(int*)buf) = count;
+           break;
+       }
+   }
+   delete info;
+   return OK;
+}
 DbRetVal TableImpl::insertTuple()
 {
     DbRetVal ret =OK;

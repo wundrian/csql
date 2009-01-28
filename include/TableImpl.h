@@ -25,6 +25,7 @@
 #include<Debug.h>
 #include<DatabaseManagerImpl.h>
 #include<Predicate.h>
+#include<AggTableImpl.h>//for AggType
 enum ScanType
 {
     fullTableScan = 0,
@@ -203,6 +204,7 @@ class TableImpl:public Table
     void* fetch(DbRetVal &rv);
     void* fetchNoBind();
     void* fetchNoBind(DbRetVal &rv);
+    DbRetVal fetchAgg(const char *fldName, AggType aType, void *buf);
 
     DbRetVal close();
     DbRetVal closeScan();

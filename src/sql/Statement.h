@@ -134,6 +134,8 @@ class SelStatement : public DmlStatement
     char **bindFieldValues;
     int totalFields;
 
+    bool isPointReturned;
+    bool handleAggWithTbl;
 
     DbRetVal execute(int &rowsAffected);
     DbRetVal setParam(int paramNo, void *value);
@@ -159,6 +161,9 @@ class SelStatement : public DmlStatement
     DbRetVal close();
     DbRetVal freeScan();
     DbRetVal resolve();
+
+    void* handleSingleTableAggWithoutGroup();
+
     SelStatement();
     ~SelStatement();
 

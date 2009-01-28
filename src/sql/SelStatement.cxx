@@ -14,6 +14,7 @@
  *                                                                         *
   ***************************************************************************/
 #include "Statement.h"
+#include <TableImpl.h>
 
 SelStatement::SelStatement()
 {
@@ -26,14 +27,16 @@ SelStatement::SelStatement()
     bindFields = NULL;
     bindFieldValues = NULL;
     totalFields = 0;
+    isPointReturned = false;
+    handleAggWithTbl=false;
 }
 
 SelStatement::~SelStatement()
 {
     if (table) {
         table->setCondition(NULL);
-        //if (dbMgr) dbMgr->closeTable(table);
         table->close();
+        //if (dbMgr) dbMgr->closeTable(table);
         delete table;
     }
     if (totalParams) {
@@ -82,6 +85,7 @@ DbRetVal SelStatement::execute(int &rowsAffected)
         }
         AllDataType::copyVal(value->value, paramValues[i], value->type, value->length);
     }
+
     rv = table->execute();
     //table->printPlan(0);
     return rv;
@@ -292,6 +296,12 @@ DbRetVal SelStatement::resolve()
     FieldName *name = NULL;
     FieldInfo *fInfo = new FieldInfo();
     List bindFldList;
+    bool isSingleTableNoGrp = false;
+    if(parsedData->getTableNameList().size() == 1 &&
+       parsedData->getGroupFieldNameList().size() == 0)
+    {
+        isSingleTableNoGrp = true;
+    }
     AggTableImpl *aggTable = NULL;
     while (iter.hasElement())
     {
@@ -315,7 +325,8 @@ DbRetVal SelStatement::resolve()
                 delete fInfo; 
                 return rv; 
             }
-            if (parsedData->getGroupFieldNameList().size()!= 0)
+            if (parsedData->getGroupFieldNameList().size()!= 0 
+                            && !isSingleTableNoGrp)
             {
                 if (!aggTable)
                     aggTable = new AggTableImpl();
@@ -348,7 +359,8 @@ DbRetVal SelStatement::resolve()
             while (it.hasElement())
             {
                 bFldName = (FieldName*)it.nextElement();
-                if(0==strcmp(bFldName->fldName,name->fldName))
+                if(0==strcmp(bFldName->fldName,name->fldName) &&
+                             name->aType == AGG_UNKNOWN)
                 {
                     newVal->value=table->getBindFldAddr(name->fldName);
                     newVal->isAllocVal=false;
@@ -367,13 +379,16 @@ DbRetVal SelStatement::resolve()
             if (name->aType ==AGG_UNKNOWN && 
                             parsedData->getGroupFieldNameList().size()== 0)
                 table->bindFld(name->fldName, newVal->value);
-            else {
+            else if (!isSingleTableNoGrp) 
+            {
                 if (!aggTable) {
                     aggTable = new AggTableImpl();
                     aggTable->setTable(table);
                 }
                 aggTable->bindFld(name->fldName, name->aType, newVal->value);
             }
+            if (name->aType !=AGG_UNKNOWN && isSingleTableNoGrp) 
+                handleAggWithTbl= true;
             parsedData->insertFieldValue(newVal);
         } 
         if (!isBindFld) bindFldList.append(name);
@@ -418,7 +433,9 @@ DbRetVal SelStatement::resolve()
 }
 DbRetVal SelStatement::resolveGroupFld(AggTableImpl *aggTable)
 {
-    if (!aggTable) return OK;
+    if (!aggTable) {
+         return OK;
+    }
     ListIterator giter = parsedData->getGroupFieldNameList().getIterator();
     FieldName *name = NULL;
     DbRetVal rv = OK;
@@ -601,9 +618,36 @@ DbRetVal SelStatement::resolveForCondition()
     }
     return OK;
 }
-
+void* SelStatement::handleSingleTableAggWithoutGroup()
+{
+    if (isPointReturned) return NULL;
+    TableImpl *tblImpl = (TableImpl*)table;
+    ListIterator iter = parsedData->getFieldNameList().getIterator();
+    int i=0;
+    DbRetVal rv = OK;
+    FieldName *name;
+    FieldValue *fVal = NULL;
+    while (iter.hasElement())
+    {
+        name = (FieldName*) iter.nextElement();
+        fVal = bindFields[i];
+        
+        //rv = tblImpl->fetchAgg(name, (int) name->aType, fVal->value);
+        rv = tblImpl->fetchAgg(name->fldName, name->aType, fVal->value);
+        if (OK != rv) return NULL;
+        i++;
+        tblImpl->closeScan();
+        tblImpl->execute();
+    }
+    isPointReturned = true;
+    return fVal;
+}
 void* SelStatement::fetch()
 {
+    if(handleAggWithTbl)
+    {
+       return handleSingleTableAggWithoutGroup();
+    }
     void *tuple = table->fetch();
     if (NULL == tuple) return NULL;
     //copy values to binded buffer
@@ -623,6 +667,10 @@ void* SelStatement::fetch()
 
 void* SelStatement::fetch(DbRetVal &rv)
 {
+    if(handleAggWithTbl)
+    {
+       return handleSingleTableAggWithoutGroup();
+    }
     void *tuple = table->fetch(rv);
     if (NULL == tuple) return NULL;
     //copy values to binded buffer
@@ -642,6 +690,7 @@ void* SelStatement::fetch(DbRetVal &rv)
 
 DbRetVal SelStatement::close()
 {
+    isPointReturned = false;
     return table->closeScan();
 }
 
@@ -693,7 +742,13 @@ int SelStatement::getFieldLength( int pos )
 
 void* SelStatement::fetchAndPrint(bool SQL)
 {
-    void *tuple = table->fetch();
+    void *tuple = NULL;
+    if(handleAggWithTbl)
+    {
+       tuple = handleSingleTableAggWithoutGroup();
+    }else {
+        tuple = table->fetch(); 
+    }
     if (NULL == tuple) return NULL;
     FieldValue *value;
     bool nullValueSet;
@@ -757,6 +812,10 @@ void* SelStatement::fetchAndPrint(bool SQL)
 
 void* SelStatement::next()
 {
+    if(handleAggWithTbl)
+    {
+       return handleSingleTableAggWithoutGroup();
+    }
     return( table->fetch() );
 }
 
