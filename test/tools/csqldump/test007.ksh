@@ -9,10 +9,11 @@ if [ -s "$executable" -a -s "$CSQL_CONF" ]
 then
     REL_PATH=${PWD}/tools/csqldump
 fi
+rm /tmp/csql/csql.db
 export CSQL_CONFIG_FILE=$REL_PATH/csql.conf
 $CSQL_INSTALL_ROOT/bin/csqlserver >/dev/null 2>&1 &
 pid=$!
-sleep 5
+sleep 8
 $REL_PATH/insert >/dev/null 2>&1
 if [ $? -ne 0 ]
 then 

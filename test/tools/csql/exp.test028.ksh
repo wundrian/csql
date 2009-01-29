@@ -21,7 +21,7 @@ echo select * from t1;
 	13	D	
 	14	14	
 	50	E	
-	This is really a ver	E	
+	This is really a very b	E	
 	UPPERCASE	UPPER	
 	uppercase	LOWER	
 	upperletter	LOWER	

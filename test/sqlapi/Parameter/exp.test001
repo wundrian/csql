@@ -16,7 +16,7 @@ Default value :0
 2 FIELD INFORMATION ::
 Field Name :F2
 Data type of the field :3
-length of the field :2
+length of the field :4
 Offset :0
 Default value :
 Null field :0
@@ -27,7 +27,7 @@ Default value :0
 3 FIELD INFORMATION ::
 Field Name :F3
 Data type of the field :30
-length of the field :31
+length of the field :32
 Offset :0
 Default value :
 Null field :0

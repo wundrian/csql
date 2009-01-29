@@ -39,10 +39,10 @@ DbRetVal TupleIterator::open()
         void *keyStartBuffer = (void*) keyBuffer, *keyPtr;
         while(iter.hasElement())
         {
-           FieldDef def = iter.nextElement();
-           keyPtr = (void*)predImpl->valPtrForIndexField(def.fldName_);
-           AllDataType::copyVal(keyBuffer, keyPtr, def.type_, def.length_); 
-           keyBuffer = keyBuffer + AllDataType::size(def.type_, def.length_);
+           FieldDef *def = iter.nextElement();
+           keyPtr = (void*)predImpl->valPtrForIndexField(def->fldName_);
+           AllDataType::copyVal(keyBuffer, keyPtr, def->type_, def->length_); 
+           keyBuffer = keyBuffer + def->length_;
         }
         int bucketNo = 0;
         if (hIdxInfo->type == typeComposite) 
@@ -77,9 +77,9 @@ DbRetVal TupleIterator::open()
         void *keyPtr; ComparisionOp op;
         if(iter.hasElement())
         {
-           FieldDef def = iter.nextElement();
-           keyPtr = (void*)predImpl->valPtrForIndexField(def.fldName_);
-           op = predImpl->opForIndexField(def.fldName_);
+           FieldDef *def = iter.nextElement();
+           keyPtr = (void*)predImpl->valPtrForIndexField(def->fldName_);
+           op = predImpl->opForIndexField(def->fldName_);
            //TODO::remove this predicate term as it is pushed to tree iter
         }
         CINDEX *iptr = (CINDEX*) hIdxInfo->indexPtr;

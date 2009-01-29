@@ -55,6 +55,28 @@ class AggFldDef
         alreadyBinded=false;
     }
 };
+class HashMapNode
+{
+   public:
+   void *elem;
+   HashMapNode *next;
+   HashMapNode() { elem = NULL; next = NULL; }
+};
+class HashMap
+{
+    void **bucket;
+    int keySize;
+    int bucketSize;
+    public:
+    HashMap(){ keySize = 0; bucketSize = 1009;
+               bucket = (void**) malloc(bucketSize * sizeof(void*));
+               memset(bucket, 0, bucketSize * sizeof(void*));
+             }
+    void setKeySize(int size);
+    DbRetVal insert(void *elem);
+    void* find(void *elem);
+    void removeAll();
+};
 
 class AggTableImpl:public Table
 {
@@ -66,6 +88,7 @@ class AggTableImpl:public Table
     Table *tableHdl;
     List aggNodes; //change this list to some other data structure
     ListIterator aggNodeIter;
+    HashMap aggNodeMap; //for faster lookup
 
     int aggNodeSize;
     DbRetVal copyValuesToBindBuffer(void *tuple);

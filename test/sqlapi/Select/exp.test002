@@ -27,7 +27,7 @@ Default value :0
 ***********************************************
 Field Name :F2
 Data type of the field :3
-length of the field :2
+length of the field :4
 Offset :4
 Default value Buffer :
 Null field :0
@@ -47,7 +47,7 @@ Default value :0
 ***********************************************
 Field Name :F3
 Data type of the field :30
-length of the field :31
+length of the field :32
 Offset :8
 Default value Buffer :
 Null field :0

@@ -650,12 +650,12 @@ Table* DatabaseManagerImpl::openTable(const char *name)
     int fldpos=1;
     while (fIter.hasElement())
     {
-        FieldDef def = fIter.nextElement();
+        FieldDef *def = fIter.nextElement();
         if (table->isIntUsedForNULL) {
-            if (def.isNull_) SETBIT(table->iNotNullInfo, fldpos);
+            if (def->isNull_) SETBIT(table->iNotNullInfo, fldpos);
         }
         else {
-            if (def.isNull_) table->cNotNullInfo[fldpos-1] = 1;
+            if (def->isNull_) table->cNotNullInfo[fldpos-1] = 1;
         }
         fldpos++;
    } 
@@ -686,17 +686,17 @@ Table* DatabaseManagerImpl::openTable(const char *name)
         bool firstFld = true;
         while (fIter.hasElement())
         {
-            FieldDef def = fIter.nextElement();
+            FieldDef *def = fIter.nextElement();
             if (firstFld)
             {
-                hIdxInfo->fldOffset = table->fldList_.getFieldOffset(def.fldName_);
-                hIdxInfo->type = table->fldList_.getFieldType(def.fldName_);
-                hIdxInfo->compLength = table->fldList_.getFieldLength(def.fldName_);
+                hIdxInfo->fldOffset = table->fldList_.getFieldOffset(def->fldName_);
+                hIdxInfo->type = table->fldList_.getFieldType(def->fldName_);
+                hIdxInfo->compLength = table->fldList_.getFieldLength(def->fldName_);
                 firstFld = false;
             }else {
                 hIdxInfo->type = typeComposite;
                 hIdxInfo->compLength = hIdxInfo->compLength +
-                         table->fldList_.getFieldLength(def.fldName_);
+                         table->fldList_.getFieldLength(def->fldName_);
             }
         }
 

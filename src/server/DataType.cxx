@@ -326,6 +326,8 @@ int operator!=(const TimeStamp &d1, const TimeStamp &d2)
 
 long AllDataType::size(DataType type, int length )
 {
+    if (type == typeInt) return sizeof(int);
+    else if (type == typeString) return length;
     long size = 0;
     switch(type)
     {

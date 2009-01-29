@@ -50,7 +50,6 @@ Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
-Tree index remove called
 Statement Executed: Rows Affected = 1
 echo select * from t1 where f1>5 and f1<15;
 ---------------------------------------------------------
@@ -66,16 +65,6 @@ echo select * from t1 where f1>5 and f1<15;
 	14	14	
 	
 echo delete from t1 where f1>40;
-Tree index remove called
-Tree index remove called
-Tree index remove called
-Tree index remove called
-Tree index remove called
-Tree index remove called
-Tree index remove called
-Tree index remove called
-Tree index remove called
-Tree index remove called
 Statement Executed: Rows Affected = 10
 echo commit;
 echo select * from t1 where f1>35 and f1<55;
@@ -89,13 +78,6 @@ echo select * from t1 where f1>35 and f1<55;
 	40	40	
 	
 echo delete from t1 where f1<8;
-Tree index remove called
-Tree index remove called
-Tree index remove called
-Tree index remove called
-Tree index remove called
-Tree index remove called
-Tree index remove called
 Statement Executed: Rows Affected = 7
 echo commit;
 echo select * from t1 where f1>=-5 and f1<15;

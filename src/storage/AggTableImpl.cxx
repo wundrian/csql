@@ -91,18 +91,18 @@ DbRetVal AggTableImpl::execute()
     ListIterator iter = fldList.getIterator();
     AggFldDef  *def;
     if (isGroupSet())
-        aggNodeSize = AllDataType::size(groupFld.type, groupFld.length);
+        aggNodeSize = groupFld.length;
     else
         aggNodeSize = 0;
     while (iter.hasElement())
     {
          def = (AggFldDef*) iter.nextElement();
-         if (def->atype == AGG_UNKNOWN && 
+         if (def->atype != AGG_UNKNOWN && 
              0 == strcmp(def->fldName, groupFld.fldName))
          {
-             continue;
+             def->atype = AGG_UNKNOWN;
          }
-         aggNodeSize = aggNodeSize + AllDataType::size(def->type, def->length);
+         aggNodeSize = aggNodeSize + def->length;
          if (def->atype == AGG_AVG) aggNodeSize = aggNodeSize + sizeof(int);//for count
     }
     void *tuple = NULL;
@@ -114,7 +114,7 @@ DbRetVal AggTableImpl::execute()
         char *buffer = (char*)insertOrGet();
         iter.reset();
         if (isGroupSet())
-            offset = AllDataType::size(groupFld.type, groupFld.length);
+            offset = groupFld.length;
         else
             offset = 0;
         while (iter.hasElement())
@@ -144,7 +144,7 @@ DbRetVal AggTableImpl::execute()
                }
                case AGG_AVG: {
                    AllDataType::addVal(buffer+offset, def->bindBuf, def->type);
-                   (*(int*)(buffer+offset + AllDataType::size(def->type, def->length)))++;
+                   (*(int*)(buffer+offset + def->length))++;
                    offset = offset +sizeof(int); //->count
                    break;
                }
@@ -160,7 +160,7 @@ DbRetVal AggTableImpl::execute()
                    break;
                }
            }
-           offset = offset + AllDataType::size(def->type, def->length);
+           offset = offset + def->length;
         }
     }
     aggNodeIter  = aggNodes.getIterator();
@@ -169,7 +169,7 @@ DbRetVal AggTableImpl::execute()
     while (iter.hasElement()) {
         def = (AggFldDef*) iter.nextElement();
         if (isGroupSet())
-            offset = AllDataType::size(groupFld.type, groupFld.length);
+            offset = groupFld.length;
         else
             offset = 0;
         switch(def->atype)
@@ -178,13 +178,12 @@ DbRetVal AggTableImpl::execute()
                while (aggNodeIter.hasElement()) {
                    element = (char*)aggNodeIter.nextElement();
                    AllDataType::divVal(element+offset,
-                      *(int*)(element+offset+AllDataType::size(def->type, def->length)),
-                      def->type);
+                      *(int*)(element+offset+ def->length), def->type);
                }
                offset = offset +sizeof(int);
             }
         }
-        offset = offset + AllDataType::size(def->type, def->length);
+        offset = offset + def->length;
     }
     aggNodeIter.reset();
     tableHdl->close();
@@ -192,8 +191,19 @@ DbRetVal AggTableImpl::execute()
 }
 void* AggTableImpl::insertOrGet()
 {
-    ListIterator aiter = aggNodes.getIterator();
     char *element;
+    if (!isGroupSet()) {
+       ListIterator aiter = aggNodes.getIterator();
+       if (aiter.hasElement()) 
+          return aiter.nextElement();
+    } else {
+       //TODO::perf opt for no group
+       //TODO::if group not set, use another class variable
+       element = (char*) aggNodeMap.find(groupFld.bindBuf);
+       if (element) return element;
+    }
+
+    /*ListIterator aiter = aggNodes.getIterator();
     while (aiter.hasElement()) {
         element = (char*)aiter.nextElement();
 
@@ -203,7 +213,7 @@ void* AggTableImpl::insertOrGet()
         {
             return element;
         }
-    }
+    }*/
     element = (char*)malloc(aggNodeSize);
     ListIterator iter = fldList.getIterator();
     AggFldDef  *def;
@@ -211,7 +221,7 @@ void* AggTableImpl::insertOrGet()
     if (isGroupSet()) {
         AllDataType::copyVal(element, groupFld.bindBuf, groupFld.type,
                                                  groupFld.length);
-        offset = element + AllDataType::size(groupFld.type, groupFld.length);
+        offset = element + groupFld.length;
     }
     else
         offset = element;
@@ -225,15 +235,16 @@ void* AggTableImpl::insertOrGet()
              case AGG_SUM: { *(int*)(offset)=0; break; }
              case AGG_AVG: {
                  *(int*)(offset)=0;
-                 *(int*)(offset+AllDataType::size(def->type, def->length))=0; //count
+                 *(int*)(offset+ def->length)=0; //count
                  offset = offset+ sizeof(int);
                  break;
              }
              case AGG_COUNT: { *(int*)(offset)=0; break; }
          }
-         offset = offset + AllDataType::size(def->type, def->length);
+         offset = offset + def->length;
     }
     aggNodes.append(element);
+    aggNodeMap.insert(element);
     return element;
 }
 
@@ -279,14 +290,14 @@ DbRetVal AggTableImpl::copyValuesToBindBuffer(void *elem)
     ListIterator fIter = fldList.getIterator();
     AggFldDef  *def;
     AllDataType::copyVal(groupFld.appBuf, elem, groupFld.type, groupFld.length);
-    char *colPtr = (char*) elem + AllDataType::size(groupFld.type, groupFld.length);
+    char *colPtr = (char*) elem + groupFld.length;
     while (fIter.hasElement())
     {
         def = (AggFldDef*) fIter.nextElement();
         if (NULL != def->appBuf) {
             AllDataType::copyVal(def->appBuf, colPtr, def->type, def->length);
         }
-        colPtr = colPtr + os::align(AllDataType::size(def->type, def->length));
+        colPtr = colPtr + def->length;
         if(def->atype == AGG_AVG) colPtr = colPtr + sizeof(int);
     }
     return OK;
@@ -306,6 +317,7 @@ DbRetVal AggTableImpl::closeScan()
         free(element);
     }
     aggNodes.reset();
+    aggNodeMap.removeAll();
     tableHdl->closeScan();
 }
 
@@ -326,4 +338,52 @@ DbRetVal AggTableImpl::close()
     }
     fldList.reset();
     return OK;
+}
+
+//------------------------------------------------------
+DbRetVal HashMap::insert(void *element)
+{
+    HashMapNode *newNode = new HashMapNode();
+    newNode->elem = element;
+    newNode->next = NULL;
+    int hashVal = (*(int*) element) % bucketSize;
+    //printf("Hash val is %d\n", hashVal);
+    if (bucket[hashVal] == NULL)
+    {
+        bucket[hashVal] = newNode;
+        return OK;
+    }
+    HashMapNode *node = (HashMapNode*) bucket[hashVal];
+    while(node->next != NULL) ;
+    node->next = newNode;
+    return OK;
+}
+void* HashMap::find(void *element)
+{
+    int hashVal = (*(int*) element) % bucketSize;
+    //printf("Hash val is %d\n", hashVal);
+    if (bucket[hashVal] == NULL)
+    {
+        return NULL;
+    }
+    HashMapNode *node = (HashMapNode*) bucket[hashVal];
+    while(node != NULL) {
+        if ( (*(int*) node->elem) == (*(int*)element)) return node->elem;
+        node = node->next;
+    }
+    return NULL;
+}
+void HashMap::removeAll()
+{
+    for (int i=0; i <bucketSize; i++) {
+        HashMapNode *node =(HashMapNode*) (bucket[i]);
+        HashMapNode *prev = NULL;
+        while(node != NULL) {
+            prev = node;
+            node = node->next;
+            delete prev;
+        }
+        bucket[i]=NULL;
+    }
+    return;
 }

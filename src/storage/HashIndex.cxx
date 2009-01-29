@@ -171,10 +171,10 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     FieldIterator iter = info->idxFldList.getIterator();
     while(iter.hasElement())
     {
-        FieldDef def = iter.nextElement();
-        keyPtr = (char *)tuple + def.offset_;
-        AllDataType::copyVal(keyBuffer, keyPtr, def.type_, def.length_);
-        keyBuffer = keyBuffer + AllDataType::size(def.type_, def.length_);
+        FieldDef *def = iter.nextElement();
+        keyPtr = (char *)tuple + def->offset_;
+        AllDataType::copyVal(keyBuffer, keyPtr, def->type_, def->length_);
+        keyBuffer = keyBuffer + AllDataType::size(def->type_, def->length_);
     }
 
     printDebug(DM_HashIndex, "Inserting hash index node for  %s", iptr->indName_);
@@ -219,8 +219,8 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
                 FieldIterator fldIter = info->idxFldList.getIterator();
                 int i = 0;
                 while (fldIter.hasElement()) {
-                    FieldDef def = fldIter.nextElement();
-                    res = AllDataType::compareVal((char *)bucketTuple + def.offset_, (char *)tuple + def.offset_, OpEquals, def.type_, def.length_);
+                    FieldDef *def = fldIter.nextElement();
+                    res = AllDataType::compareVal((char *)bucketTuple + def->offset_, (char *)tuple + def->offset_, OpEquals, def->type_, def->length_);
                     if (!res) break;  
                 }
             }  
@@ -301,10 +301,10 @@ DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     FieldIterator iter = info->idxFldList.getIterator();
     while(iter.hasElement())
     {
-        FieldDef def = iter.nextElement();
-        keyPtr = (char *)tuple + def.offset_;
-        AllDataType::copyVal(keyBuffer, keyPtr, def.type_, def.length_);
-        keyBuffer = keyBuffer + AllDataType::size(def.type_, def.length_);
+        FieldDef *def = iter.nextElement();
+        keyPtr = (char *)tuple + def->offset_;
+        AllDataType::copyVal(keyBuffer, keyPtr, def->type_, def->length_);
+        keyBuffer = keyBuffer + AllDataType::size(def->type_, def->length_);
     }
 
     keyPtr =(void*)((char*)tuple + offset);
@@ -381,10 +381,10 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     void *oldKeyStartBuffer = oldKeyBuffer;
     FieldIterator iter = info->idxFldList.getIterator();
     while(iter.hasElement()) {
-        FieldDef def = iter.nextElement();
-        keyPtr = (char *)tuple + def.offset_;
-        AllDataType::copyVal(oldKeyBuffer, keyPtr, def.type_, def.length_);
-        oldKeyBuffer = oldKeyBuffer + AllDataType::size(def.type_, def.length_);
+        FieldDef *def = iter.nextElement();
+        keyPtr = (char *)tuple + def->offset_;
+        AllDataType::copyVal(oldKeyBuffer, keyPtr, def->type_, def->length_);
+        oldKeyBuffer = oldKeyBuffer + AllDataType::size(def->type_, def->length_);
     }
 
     keyPtr = (void *) kPtr;
@@ -397,26 +397,26 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     bool keyUpdated = false;
 
     while (idxFldIter.hasElement()) {
-        FieldDef idef = idxFldIter.nextElement();
+        FieldDef *idef = idxFldIter.nextElement();
         FieldIterator fldIter = tbl->fldList_.getIterator();
         while (fldIter.hasElement()) {
-            FieldDef def = fldIter.nextElement();
-            if (0 == strcmp(def.fldName_, idef.fldName_)) {
-                if (NULL != def.bindVal_) {
+            FieldDef *def = fldIter.nextElement();
+            if (0 == strcmp(def->fldName_, idef->fldName_)) {
+                if (NULL != def->bindVal_) {
                     if(type==typeBinary) {
-                        AllDataType::copyVal(keyBindBuffer, def.bindVal_,
-                                                   def.type_, 2*def.length_);
+                        AllDataType::copyVal(keyBindBuffer, def->bindVal_,
+                                                   def->type_, 2*def->length_);
                         keyStartBuffer=calloc(1,info->compLength);
                         AllDataType::convertToBinary(keyStartBuffer, keyBindBuffer, typeString, info->compLength);
                         free(keyBindBuffer);
                     } else {
-                        AllDataType::copyVal(keyBindBuffer, def.bindVal_,
-                                                   def.type_, def.length_);
-                        keyBindBuffer = keyBindBuffer + AllDataType::size(def.type_, def.length_);
+                        AllDataType::copyVal(keyBindBuffer, def->bindVal_,
+                                                   def->type_, def->length_);
+                        keyBindBuffer = keyBindBuffer + AllDataType::size(def->type_, def->length_);
                     }
                 } else {
-                     AllDataType::copyVal(keyBindBuffer, (char *) tuple + def.offset_, def.type_, def.length_);
-                     keyBindBuffer = keyBindBuffer + AllDataType::size(def.type_, def.length_);
+                     AllDataType::copyVal(keyBindBuffer, (char *) tuple + def->offset_, def->type_, def->length_);
+                     keyBindBuffer = keyBindBuffer + AllDataType::size(def->type_, def->length_);
                 } 
                 keyUpdated = true;
                 break;

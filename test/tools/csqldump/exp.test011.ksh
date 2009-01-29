@@ -1,4 +1,4 @@
-CREATE TABLE vikas (fld5 INT  NOT NULL , name1 CHAR (30));
+CREATE TABLE vikas (fld5 INT  NOT NULL , name1 CHAR (32));
 CREATE INDEX vikas_idx1_Primary on vikas (  fld5  )  HASH  UNIQUE;
 SET AUTOCOMMIT OFF;
 INSERT INTO vikas VALUES(1, 'Lakshya1');

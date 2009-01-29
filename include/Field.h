@@ -81,12 +81,12 @@ class FieldIterator
     {
         if (iter == NULL) return false; else return true;
     }
-    FieldDef nextElement()
+    FieldDef* nextElement()
     {
-        if (iter == NULL) { FieldDef dummyDef; return dummyDef;}
+        if (iter == NULL) { return NULL;}
         FieldNode *node = iter;
         iter = iter ->next;
-        return node->fldDef;
+        return &(node->fldDef);
     }
 };
 

@@ -40,8 +40,8 @@ int TableDef::addField(const char *name,  DataType type, size_t length,
     FieldIterator iter = getFieldIterator();
     while (iter.hasElement())
     {
-        FieldDef def = iter.nextElement();
-        if (! strcmp(def.fldName_, name)) {
+        FieldDef *def = iter.nextElement();
+        if (! strcmp(def->fldName_, name)) {
             printError(ErrAlready, "Field %s already Exists", name);
             return (int) ErrAlready;
         }
@@ -50,8 +50,8 @@ int TableDef::addField(const char *name,  DataType type, size_t length,
     strcpy(fldDef.fldName_, name);
     fldDef.fldName_[IDENTIFIER_LENGTH] = '\0';
     fldDef.type_ = type;
-    fldDef.length_ = length;
-	fldDef.bindVal_=NULL;
+    fldDef.length_ = os::align(length);
+    fldDef.bindVal_=NULL;
     if (defaultValue != NULL)
     {
         fldDef.isDefault_ = true;
@@ -76,10 +76,10 @@ int TableDef::addField(const char *name,  DataType type, size_t length,
     {
         case typeString :
         case typeBinary:
-            fldDef.length_ = length;
+            fldDef.length_ = os::align(length);
             break;
         default:
-            fldDef.length_ = AllDataType::size(type);
+            fldDef.length_ = os::align(AllDataType::size(type));
             break;
     }
     fldDef.offset_ = fldList.getTupleSize();
@@ -106,8 +106,8 @@ size_t TableDef::getTupleSize()
     FieldIterator iter = getFieldIterator();
     while (iter.hasElement())
     {
-        FieldDef def = iter.nextElement();
-        length = length + os::align(def.length_);
+        FieldDef *def = iter.nextElement();
+        length = length + os::align(def->length_);
     }
     return length;
 }

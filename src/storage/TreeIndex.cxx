@@ -439,7 +439,7 @@ DbRetVal TreeNode::insert(int position, Database * db, IndexInfo * indInfo,
 
 DbRetVal TreeIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *indInfo, void *tuple, bool undoFlag)
 {
-    printf("Tree index remove called\n");
+    //printf("Tree index remove called\n");
     HashIndexInfo *info = (HashIndexInfo*) indInfo;
     CINDEX *iptr = (CINDEX*)indexPtr;
     TreeNode *start = (TreeNode*) iptr->hashNodeChunk_;

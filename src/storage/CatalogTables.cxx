@@ -121,19 +121,19 @@ DbRetVal CatalogTableFIELD::insert(FieldIterator &iter, int tblID, void *tptr)
             return rv;
         }
         CFIELD *fldInfo = (CFIELD*)fptr;
-        FieldDef fDef = iter.nextElement();
-        strcpy(fldInfo->fldName_, fDef.fldName_);
+        FieldDef *fDef = iter.nextElement();
+        strcpy(fldInfo->fldName_, fDef->fldName_);
         fldInfo->tblID_ = tblID;
         fldInfo->tblPtr_ = tptr;
-        fldInfo->type_ = fDef.type_;
-        fldInfo->length_ = fDef.length_;
-        fldInfo->offset_ = fDef.offset_; 
-        os::memcpy(fldInfo->defaultValueBuf_, fDef.defaultValueBuf_,
+        fldInfo->type_ = fDef->type_;
+        fldInfo->length_ = fDef->length_;
+        fldInfo->offset_ = fDef->offset_; 
+        os::memcpy(fldInfo->defaultValueBuf_, fDef->defaultValueBuf_,
                                         DEFAULT_VALUE_BUF_LENGTH);
-        fldInfo->isNull_ = fDef.isNull_;
-        fldInfo->isPrimary_ = fDef.isPrimary_;
-        fldInfo->isUnique_ = fDef.isUnique_;
-        fldInfo->isDefault_ = fDef.isDefault_;
+        fldInfo->isNull_ = fDef->isNull_;
+        fldInfo->isPrimary_ = fDef->isPrimary_;
+        fldInfo->isUnique_ = fDef->isUnique_;
+        fldInfo->isDefault_ = fDef->isDefault_;
         fldInfo->width_ = 0; //TODO
         fldInfo->scale_ = 0; //TODO
         printDebug(DM_SystemDatabase,"One Row inserted into FIELD %x %s",fldInfo, fDef.fldName_);
@@ -174,7 +174,7 @@ void CatalogTableFIELD::getFieldInfo(void* tptr, FieldList &list)
             strcpy(fldDef.fldName_, fTuple->fldName_);
             fldDef.fldName_[IDENTIFIER_LENGTH] = '\0';
             fldDef.type_ = fTuple->type_;
-            fldDef.length_ = fTuple->length_;
+            fldDef.length_ = os::align(fTuple->length_);
             fldDef.offset_ = fTuple->offset_;
             fldDef.isDefault_ = fTuple->isDefault_;
             os::memcpy(fldDef.defaultValueBuf_, fTuple->defaultValueBuf_,

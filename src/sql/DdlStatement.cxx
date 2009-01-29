@@ -73,21 +73,20 @@ DbRetVal CreateTblStatement::resolve()
           return  rv;
     }
     FieldIterator iter = parsedData->getCreFldList().getIterator();
-    FieldDef fDef; 
 
     int i = 0;
     FieldName *name = NULL;
     ListIterator nIter = parsedData->getFieldNameList().getIterator();
     while (iter.hasElement())
     {
-        fDef = iter.nextElement();
+        FieldDef *fDef = iter.nextElement();
         nIter.reset();
         while (nIter.hasElement())
         {
             name = (FieldName*)nIter.nextElement();
-            if (strcmp(name->fldName, fDef.fldName_) == 0) fDef.isNull_ = true;
+            if (strcmp(name->fldName, fDef->fldName_) == 0) fDef->isNull_ = true;
         }
-        rv = checkForDot(fDef.fldName_);
+        rv = checkForDot(fDef->fldName_);
         if ( rv!=OK )
         {
             printf("Check SQL Syntax: .\n");
@@ -95,12 +94,12 @@ DbRetVal CreateTblStatement::resolve()
         }
        
        //TODO : need a new addField function which can take FieldDef as parameter.
-       if (!fDef.isDefault_)  {
-           i = tblDef.addField(fDef.fldName_, fDef.type_, fDef.length_, 
-                        NULL,fDef.isNull_);
+       if (!fDef->isDefault_)  {
+           i = tblDef.addField(fDef->fldName_, fDef->type_, fDef->length_, 
+                        NULL,fDef->isNull_);
        } else {
-           i = tblDef.addField(fDef.fldName_, fDef.type_, fDef.length_, 
-                        fDef.defaultValueBuf_,fDef.isNull_);
+           i = tblDef.addField(fDef->fldName_, fDef->type_, fDef->length_, 
+                        fDef->defaultValueBuf_,fDef->isNull_);
        }
        if( 0 != i )
        {

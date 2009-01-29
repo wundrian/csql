@@ -239,17 +239,17 @@ DbRetVal TableImpl::createPlan()
               FieldIterator iter = info->idxFldList.getIterator();
               while(iter.hasElement())
               {
-                FieldDef def = iter.nextElement();
-                if (pred->pointLookupInvolved(def.fldName_))
+                FieldDef *def = iter.nextElement();
+                if (pred->pointLookupInvolved(def->fldName_))
                 {
-                  printDebug(DM_Predicate, "point lookup involved for field %s",def.fldName_);
+                  printDebug(DM_Predicate, "point lookup involved for field %s",def->fldName_);
                   if(hashIndex == info->indType) scanType_ = hashIndexScan;
                   else scanType_ = treeIndexScan;
                   isPlanCreated = true;
                   isPointLook = true;
                   useIndex_ = i;
                 }
-                else if (pred->isBetweenInvolved(def.fldName_))
+                else if (pred->isBetweenInvolved(def->fldName_))
                 {
                     if (treeIndex == info->indType)
                     {
@@ -260,9 +260,9 @@ DbRetVal TableImpl::createPlan()
                      break; //no composite index for tree index
                     }
                 }
-                else if (pred->rangeQueryInvolved(def.fldName_))
+                else if (pred->rangeQueryInvolved(def->fldName_))
                 {
-                  printDebug(DM_Predicate, "range lookup involved for field %s",def.fldName_);
+                  printDebug(DM_Predicate, "range lookup involved for field %s",def->fldName_);
                   if (treeIndex == info->indType)
                   {
                      scanType_ = treeIndexScan;
@@ -313,17 +313,7 @@ void* TableImpl::fetchNoBind()
         return NULL;
     }
     DbRetVal lockRet = OK;
-    if ((*trans)->isoLevel_ == READ_REPEATABLE) {
-        lockRet = lMgr_->getSharedLock(curTuple_, trans);
-        if (OK != lockRet)
-        { 
-            printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
-            curTuple_ = prevTuple;
-            return NULL;
-        }
-
-    }
-    else if ((*trans)->isoLevel_ == READ_COMMITTED)
+    if ((*trans)->isoLevel_ == READ_COMMITTED)
     {
         //if iso level is read committed, operation duration lock is sufficent 
         //so release it here itself.
@@ -353,6 +343,16 @@ void* TableImpl::fetchNoBind()
             curTuple_ = prevTuple;
             return NULL;
         }
+    }
+    else if ((*trans)->isoLevel_ == READ_REPEATABLE) {
+        lockRet = lMgr_->getSharedLock(curTuple_, trans);
+        if (OK != lockRet)
+        { 
+            printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
+            curTuple_ = prevTuple;
+            return NULL;
+        }
+
     }
     return curTuple_;
 }
@@ -748,49 +748,50 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
     int fldpos=1;
     while (fIter.hasElement())
     {
-        FieldDef def = fIter.nextElement();
-        if (def.isNull_ && !def.isDefault_ && NULL == def.bindVal_ && isInsert) 
+        FieldDef *def = fIter.nextElement();
+        if (def->isNull_ && !def->isDefault_ && NULL == def->bindVal_ && isInsert) 
         {
-            printError(ErrNullViolation, "NOT NULL constraint violation for field %s\n", def.fldName_);
+            printError(ErrNullViolation, "NOT NULL constraint violation for field %s\n", def->fldName_);
             return ErrNullViolation;
         }
-        if (def.isDefault_ && NULL == def.bindVal_ && isInsert)
+        if (def->isDefault_ && NULL == def->bindVal_ && isInsert)
         {
-            void *dest = AllDataType::alloc(def.type_, def.length_);
-            AllDataType::convert(typeString, def.defaultValueBuf_, def.type_, dest, def.length_);
-            AllDataType::copyVal(colPtr, dest, def.type_, def.length_);
-            colPtr = colPtr + os::align(AllDataType::size(def.type_, def.length_));
+            void *dest = AllDataType::alloc(def->type_, def->length_);
+            AllDataType::convert(typeString, def->defaultValueBuf_, def->type_, dest, def->length_);
+            AllDataType::copyVal(colPtr, dest, def->type_, def->length_);
+            colPtr = colPtr + def->length_;
             fldpos++;
             free (dest); 
             continue;
         }
-        switch(def.type_)
+        switch(def->type_)
         {
             case typeString:
-                if (NULL != def.bindVal_)
+                if (NULL != def->bindVal_)
                 {
 		    if(!isInsert && isFldNull(fldpos)){clearNullBit(fldpos);}
-                    strcpy((char*)colPtr, (char*)def.bindVal_);
-                    *(((char*)colPtr) + (def.length_-1)) = '\0';
+                    strcpy((char*)colPtr, (char*)def->bindVal_);
+                    *(((char*)colPtr) + (def->length_-1)) = '\0';
                 }
-                else if (!def.isNull_ && !def.bindVal_ && isInsert)  setNullBit(fldpos);
-                colPtr = colPtr + os::align(def.length_);
+                else if (!def->isNull_ && !def->bindVal_ && isInsert)  setNullBit(fldpos);
+                colPtr = colPtr + def->length_;
                 break;
             case typeBinary:
-                if (NULL != def.bindVal_ ) {
-		    		if(!isInsert && isFldNull(fldpos)){clearNullBit(fldpos);}
-			        DbRetVal rv = AllDataType::strToValue(colPtr, (char *) def.bindVal_, def.type_, def.length_);
+                if (NULL != def->bindVal_ ) 
+                {
+		    if(!isInsert && isFldNull(fldpos)){clearNullBit(fldpos);}
+		    DbRetVal rv = AllDataType::strToValue(colPtr, (char *) def->bindVal_, def->type_, def->length_);
                     if (rv != OK) return ErrBadArg;
-				}
-                else if (!def.isNull_ && isInsert && !def.bindVal_)  setNullBit(fldpos);
-                colPtr = colPtr + os::align(def.length_);
+		}
+                else if (!def->isNull_ && isInsert && !def->bindVal_)  setNullBit(fldpos);
+                colPtr = colPtr + def->length_;
                 break;
             default:
-                if (NULL != def.bindVal_){
+                if (NULL != def->bindVal_){
 		    if(!isInsert && isFldNull(fldpos)){clearNullBit(fldpos);}
-                    AllDataType::copyVal(colPtr, def.bindVal_, def.type_);}
-                else { if (!def.isNull_ && isInsert)  setNullBit(fldpos); }
-                colPtr = colPtr + os::align(AllDataType::size(def.type_));
+                    AllDataType::copyVal(colPtr, def->bindVal_, def->type_);}
+                else { if (!def->isNull_ && isInsert)  setNullBit(fldpos); }
+                colPtr = colPtr + def->length_;
                 break;
         }
         fldpos++;
@@ -818,10 +819,10 @@ DbRetVal TableImpl::copyValuesToBindBuffer(void *tuplePtr)
     char *colPtr = (char*) tuplePtr;
     while (fIter.hasElement())
     {
-        FieldDef def = fIter.nextElement();
-        if (NULL != def.bindVal_)
-            AllDataType::copyVal(def.bindVal_, colPtr, def.type_, def.length_);
-        colPtr = colPtr + os::align(AllDataType::size(def.type_, def.length_));
+        FieldDef *def = fIter.nextElement();
+        if (NULL != def->bindVal_)
+            AllDataType::copyVal(def->bindVal_, colPtr, def->type_, def->length_);
+        colPtr = colPtr + def->length_;
     }
     return OK;
 }
@@ -861,9 +862,9 @@ void TableImpl::printSQLIndexString()
         bool firstFld = true;
         while(fIter.hasElement())
         {
-            FieldDef def = fIter.nextElement();
-            if (firstFld) { printf(" %s ", def.fldName_); firstFld = false; }
-            else printf(" ,%s ", def.fldName_);
+            FieldDef *def = fIter.nextElement();
+            if (firstFld) { printf(" %s ", def->fldName_); firstFld = false; }
+            else printf(" ,%s ", def->fldName_);
         }
         printf(" ) ");
         if (iptr->indexType_ == hashIndex) printf(" HASH ");
@@ -924,9 +925,9 @@ List TableImpl::getFieldNameList()
     char fieldName[IDENTIFIER_LENGTH];
     while (fIter.hasElement())
     {
-        FieldDef def = fIter.nextElement();
+        FieldDef *def = fIter.nextElement();
         Identifier *elem = new Identifier();
-        Table::getFieldNameAlone(def.fldName_, fieldName);
+        Table::getFieldNameAlone(def->fldName_, fieldName);
         sprintf(elem->name, "%s.%s", getName(), fieldName); 
         fldNameList.append(elem);
     } 
@@ -952,8 +953,9 @@ DbRetVal TableImpl::closeScan()
     //this function will be called by table handle
     if (iter) {
         iter->reset();
-       // delete iter;
-       // iter = NULL;
+        //PRABA::TEMP::otherwise fails.check with kishor
+        delete iter;
+        iter = NULL;
     }
     return OK;
 }

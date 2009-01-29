@@ -24,8 +24,7 @@ select min(f1) from t1 group by f2;
 echo select max(f1) from t1 group by f2;
 select max(f1) from t1 group by f2;
 echo select avg(f1) from t1 group by f2;
-echo below stmt dumps core
-echo --select avg(f1) from t1 group by f2;
+select avg(f1) from t1 group by f2;
 echo select sum(f1) from t1 group by f2;
 select sum(f1) from t1 group by f2;
 echo select min(f1), max(f3), sum(f1) from t1;
@@ -35,7 +34,6 @@ select min(f1), f2, max(f3) from t1;
 echo select min(f1), f2, max(f3) from t1 group by f2;
 select min(f1), f2, max(f3) from t1 group by f2;
 echo select min(f2) from t1 group by f2;
-echo below stmt gives wrong values
 select min(f2) from t1 group by f2;
 echo select count(*) from t1;
 select count(*) from t1;

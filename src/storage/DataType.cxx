@@ -326,6 +326,9 @@ int operator!=(const TimeStamp &d1, const TimeStamp &d2)
 
 long AllDataType::size(DataType type, int length )
 {
+    if (type == typeInt) return sizeof(int);
+    else if (type == typeString) return length;
+
     long size = 0;
     switch(type)
     {
@@ -756,17 +759,22 @@ void AllDataType::divVal(void* dest, int src, DataType type)
      return;
 }
 
-
-
-
 bool AllDataType::compareVal(void *val1, void *val2, ComparisionOp op,
                              DataType type, long length)
 {
     bool result = false;
-        switch(type)
-        {
+
+    //Performance optimization. putting likely case first
+    if (typeInt == type && OpEquals == op) 
+    {
+            if (*(int*)val1 == *(int*)val2) return true;
+            else return false;
+    }
+
+    switch(type)
+    {
        case typeInt:
-           result = AllDataType::compareIntVal(val1, val2, op );
+           result = AllDataType::compareIntVal(val1, val2, op);
            break;
        case typeLong:
            result = AllDataType::compareLongVal(val1, val2, op);
@@ -811,33 +819,32 @@ bool AllDataType::compareVal(void *val1, void *val2, ComparisionOp op,
 
 bool AllDataType::compareIntVal(void* src1, void *src2, ComparisionOp op)
 {
-    if (src1 == NULL) printf("src1 is null\n");
-    if (src2 == NULL) printf("src2 is null\n");
+    if (OpEquals == op) 
+    {
+            if (*(int*)src1 == *(int*)src2) return true;
+            else return false;
+    }
     bool result = false;
     switch(op)
     {
-        case OpEquals:
-            if (*(int*)src1 == *(int*)src2) result = true;
-            else result = false;
-            break;
-        case OpNotEquals:
-            if (*(int*)src1 != *(int*)src2) result = true;
-            else result = false;
-            break;
         case OpLessThan:
             if (*(int*)src1 < *(int*)src2) result = true;
-            else result = false;
-            break;
-        case OpLessThanEquals:
-            if (*(int*)src1 <= *(int*)src2) result = true;
             else result = false;
             break;
         case OpGreaterThan:
             if (*(int*)src1 > *(int*)src2) result = true;
             else result = false;
             break;
+        case OpLessThanEquals:
+            if (*(int*)src1 <= *(int*)src2) result = true;
+            else result = false;
+            break;
         case OpGreaterThanEquals:
             if (*(int*)src1 >= *(int*)src2) result = true;
+            else result = false;
+            break;
+        case OpNotEquals:
+            if (*(int*)src1 != *(int*)src2) result = true;
             else result = false;
             break;
    }
