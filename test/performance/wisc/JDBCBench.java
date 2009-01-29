@@ -10,61 +10,59 @@ public class JDBCBench
        return (int)(val);
    }
    
-	// runQuery 7
-       public static int singleTuple(Connection con, boolean flag)throws Exception
+   public static int singleTuple(Connection con, boolean flag)throws Exception
+   {
+	PreparedStatement stmt = null ;
+	String stmtStr;
+	if(flag)
 	{
-		PreparedStatement stmt = null ;
-		String stmtStr;
-		if(flag)
-		{
-			String buf = " SELECT * from big1 where unique2=?; ";
-			stmtStr =  buf;
-		}
-		else
-		{
-			String buf = "SELECT * from big1 where unique2=? ;";
-			stmtStr = buf;
-		}
-		
-		stmt = con.prepareStatement(stmtStr);
-		int count=0, recordCount=0;
-		int ret =0;
-		long start=0, end=0, curr=0;
-		long tot=0;
-		ResultSet  rs;
-		
-
-		for(int i=0; i<=100; i++) {
+		String buf = " SELECT * from big1 where unique2=?;";
+		stmtStr =  buf;
+	}
+	else
+	{
+		String buf = "SELECT * from big1 where unique1=?;";
+		stmtStr = buf;
+	}
 	
-			stmt.setInt(1,i);
-			start = System.nanoTime();
-			rs = stmt.executeQuery();
-			recordCount=0;
-			while(rs.next())
-			{
-				recordCount++;
-			}
+	stmt = con.prepareStatement(stmtStr);
+	int count=0, recordCount=0;
+	int ret =0;
+	long start=0, end=0, curr=0;
+	long tot=0;
+	ResultSet  rs;
 	
-			rs.close();
-			con.commit();
-			end = System.nanoTime();
-		        if(recordCount != 1)
-			{
-				System.out.println("records in Q7= "+ recordCount );
-			        return 0;
-			}
 
-			curr = end - start;
-			tot = tot + curr;
-			count++;
+	for(int i=0; i<=100; i++) {
+
+		stmt.setInt(1,i);
+		start = System.nanoTime();
+		rs = stmt.executeQuery();
+		recordCount=0;
+		while(rs.next())
+		{
+		   recordCount++;
+		}
+		rs.close();
+		con.commit();
+		end = System.nanoTime();
+	        if(recordCount != 1)
+		{
+		   System.out.println("No of records for Q1: "+ recordCount );
+		   return 0;
 		}
 
-		stmt.close();
-		return (int)tot/100/1000;
- }	
+		curr = end - start;
+		tot = tot + curr;
+		count++;
+	}
 
-	public static int onePerSel(Connection con, boolean flag) throws Exception
-        {
+	stmt.close();
+	return (int)tot/100/1000;
+   }	
+
+   public static int onePerSel(Connection con, boolean flag) throws Exception
+   {
           PreparedStatement stmt = null;
           int searchVal = getRandom(9999 - 100);
           int searchValEnd = searchVal+ 99;
@@ -103,7 +101,7 @@ public class JDBCBench
 	     
 	     if (recordCount!= 100) 
              {
-                 System.out.println("No. of records returned is wrong for Q1 "+recordCount);
+                 System.out.println("No. of records for Q2: "+recordCount);
                  return 0;
              }
              curr = end-start;
@@ -111,141 +109,172 @@ public class JDBCBench
              count++;
 
          }
-           
-           stmt.close();
-           return (int)tot/100/1000;
+         stmt.close();
+         return (int)tot/100/1000;
    }
    
 // aggregate
-public static int aggregate(Connection con, int val)throws Exception
+public static int aggregate(Connection con, int val, boolean flag)throws Exception
 {
 	PreparedStatement stmt = null;
 	String stmtStr="";
 	if(val==1)
 	{
+            if (flag) {
 		String buf = "SELECT MIN(unique2) from big1;";
 		stmtStr = buf;
+            }else {
+		String buf = "SELECT MIN(unique1) from big1;";
+		stmtStr = buf;
+            }
 	}
-	else if(val==2)
+        else if (val ==2)
+        {
+            if (flag) {
+		String buf = "SELECT SUM(unique2) from big1;";
+		stmtStr = buf;
+            }else {
+		String buf = "SELECT SUM(unique1) from big1;";
+		stmtStr = buf;
+            }
+        }
+	else if(val==3)
 	{
+            if (flag) {
 		String buf = "SELECT MIN(unique2) FROM big1 GROUP BY onepercent;";
 		stmtStr = buf;
+            }else{
+		String buf = "SELECT MIN(unique1) FROM big1 GROUP BY onepercent;";
+		stmtStr = buf;
+            }
 	}
 	else
 	{
+            if (flag) {
 		String buf = "SELECT SUM(unique2) FROM big1 GROUP BY onepercent;";
 		stmtStr = buf;
+            }else {
+		String buf = "SELECT SUM(unique1) FROM big1 GROUP BY onepercent;";
+		stmtStr = buf;
+            }
 	}
 	    
-		stmt = con.prepareStatement(stmtStr);
-		int count = 0, recordCount;
-		int ret = 0;
-		long start = 0,end = 0,curr = 0;
-		long tot = 0;
-		ResultSet rs;
+	stmt = con.prepareStatement(stmtStr);
+	int count = 0, recordCount;
+	int ret = 0;
+	long start = 0,end = 0,curr = 0;
+	long tot = 0;
+	ResultSet rs;
 		
-		//for(int i=0;i<100;i++){
-			start = System.nanoTime();
-			rs = stmt.executeQuery();
-			recordCount = 0;
-			while(rs.next())
-			{
-				recordCount++;
-			}
-			
-			rs.close();
-			con.commit();
-			end = System.nanoTime();
+	for(int i=0;i<10;i++){
+		start = System.nanoTime();
+		rs = stmt.executeQuery();
+		recordCount = 0;
+		while(rs.next())
+		{
+			recordCount++;
+		}
+		
+		rs.close();
+		con.commit();
+		end = System.nanoTime();
 
-			if((val==1) && recordCount !=1) 
-			{
-				System.out.println("No. of records returned is around for Q2" + recordCount);
-				return 0;
-			}
-			if((val==2 || val==3) && recordCount !=100)
-			{
-				System.out.println("No. of records returned is around for Q2" + recordCount);
-				return 0;
-			}	
-			curr = end - start;
-			tot = tot + curr;
-			count++;
-		//}
-		stmt.close();
-		return (int)tot/1000;
-}
+		if((val==1 || val ==2) && recordCount !=1) 
+		{
+			System.out.println("No. of records for Q4-7(" + val +" ): " + recordCount);
+			return 0;
+		}
+		if((val==4 || val==3) && recordCount !=100)
+		{
+			System.out.println("No. of records for Q4-7("+ val + "): " + recordCount);
+			return 0;
+		}	
+		curr = end - start;
+		tot = tot + curr;
+		count++;
+	}
+	stmt.close();
+	return (int)tot/10/1000;
+   }
 
 
-// DML statement
-public static int dmlstatement(Connection con, int val)throws Exception
-{
+  // DML statement
+  public static int dmlstatement(Connection con, int val, boolean flag)throws Exception
+  {
 	PreparedStatement stmt = null;
 	String stmtStr="";
 	if(val==1)
 	{
-		String buf = "insert into big1 values(10010,10010,0,2,0,10,50,688,1950,4950,9950,1,100,'MXXXXXXXXXXXXXXXXXXXXXXXXXGXXXXXXXXXXXXXXXXXXXXXXXXC','GXXXXXXXXXXXXXXXXXXXXXXXXXCXXXXXXXXXXXXXXXXXXXXXXXXA','OXXXXXXXXXXXXXXXXXXXXXXXXXOXXXXXXXXXXXXXXXXXXXXXXXXO');";
+		String buf = "insert into big1 values(?,?,0,2,0,10,50,688,1950,4950,9950,1,100,'MXXXXXXXXXXXXXXXXXXXXXXXXXGXXXXXXXXXXXXXXXXXXXXXXXXC','GXXXXXXXXXXXXXXXXXXXXXXXXXCXXXXXXXXXXXXXXXXXXXXXXXXA','OXXXXXXXXXXXXXXXXXXXXXXXXXOXXXXXXXXXXXXXXXXXXXXXXXXO');";
 		stmtStr = buf;
 	}
 	else if(val==2)
 	{
-		String buf = "UPDATE big1 SET unique2=10001 WHERE unique2=10010;";
+           if(flag) {
+		String buf = "UPDATE big1 SET two=1 WHERE unique2=?;";
 		stmtStr = buf;
+           }else {
+		String buf = "UPDATE big1 SET two=1 WHERE unique1=?;";
+		stmtStr = buf;
+           }
 	}
 	else
 	{
-		String buf = "DELETE FROM big1 WHERE unique2=10001;";
+           if (flag) {
+		String buf = "DELETE FROM big1 WHERE unique2=?;";
 		stmtStr = buf;
+           }else {
+		String buf = "DELETE FROM big1 WHERE unique1=?;";
+		stmtStr = buf;
+           }
 	}
 	    
-		stmt = con.prepareStatement(stmtStr);
-		int count = 0, recordCount=0;
-		int ret = 0;
-		long start = 0,end = 0,curr = 0;
-		long tot = 0;
-		
-		
-		
-		//for(int i=0;i<100;i++){
-			start = System.nanoTime();
-			ret = stmt.executeUpdate();
-			if(ret!=1) return 1;
-			recordCount++;
-								
-			con.commit();
-			end = System.nanoTime();
-
-			/*if((val==1) && recordCount !=1) 
-			{
-				System.out.println("No. of records returned is around for Q2" + recordCount);
-				return 0;
-			}
-			if((val==2 || val==3) && recordCount !=1)
-			{
-				System.out.println("No. of records returned is around for Q2" + recordCount);
-				return 0;
-			}	*/
-			curr = end - start;
-                        tot = tot + curr;
-			count++;
-	   //}	
-		stmt.close();
-		return (int)tot/1000;
-}
+	stmt = con.prepareStatement(stmtStr);
+	int count = 0, recordCount=0;
+	int ret = 0;
+	long start = 0,end = 0,curr = 0;
+	long tot = 0;
+	for(int i=0; i<100; i++){
+                stmt.setInt(1, 10000+i);
+                if (val ==1) stmt.setInt(2, 10000+i);
+		start = System.nanoTime();
+		ret = stmt.executeUpdate();
+		if(ret!=1) return 1;
+							
+		con.commit();
+		end = System.nanoTime();
+		curr = end - start;
+                tot = tot + curr;
+		count++;
+        }	
+	stmt.close();
+	return (int)tot/100/1000;
+  }
 
 // Joining
-public static int joining(Connection con,int val)throws Exception
+public static int joining(Connection con,int val, boolean flag)throws Exception
 {
 	PreparedStatement stmt = null;
 	String stmtStr;
-	if(val==9)
+	if(val==1)
 	{
-		String buf = "SELECT big1.unique2, big2.unique2 FROM big2,big1 WHERE big1.unique2=big2.unique2 AND big2.unique2<1000;";
+           if (flag) {
+		String buf = "SELECT big1.unique2, big2.unique2 FROM big2,big1 WHERE big1.unique2=big2.unique2 AND big2.unique2=1000;";
 		stmtStr = buf;
+           }else{
+		String buf = "SELECT big1.unique1, big2.unique1 FROM big2,big1 WHERE big1.unique1=big2.unique1 AND big2.unique1=1000;";
+		stmtStr = buf;
+           }
 	}
-	else if(val==10)
+	else if(val==2)
 	{
-		String buf = "SELECT * FROM big1,bprime WHERE big1.unique2=bprime.unique2;";
+           if (flag) {
+		String buf = "SELECT big1.unique2, big2.unique2 FROM big2,big1 WHERE big1.unique2=big2.unique2 AND big2.unique2>1000;";
 		stmtStr = buf;
+           }else{
+		String buf = "SELECT big1.unique1, big2.unique1 FROM big2,big1 WHERE big1.unique1=big2.unique1 AND big2.unique1>1000;";
+		stmtStr = buf;
+           }
 	}
 	else if(val==11)
 	{
@@ -273,22 +302,21 @@ public static int joining(Connection con,int val)throws Exception
 	long start=0,end=0,curr=0;
 	long tot=0;
 	ResultSet rs;
-	for(int i=0;i<=100;i++)
+	//for(int i=0;i<=100;i++)
 	{
 		start = System.nanoTime();
 		rs = stmt.executeQuery();
 		while(rs.next())
 		{
-                System.out.println("PRABA: "+ recordCount);
-			recordCount++;
+                    //System.out.println("Record: "+ rs.getInt(1)+ " "+ rs.getInt(2));
+		    recordCount++;
 		}
-                System.out.println("PRABA: "+ recordCount);
 		rs.close();
 		con.commit();
 		end=System.nanoTime();
-		if(recordCount!=1000)
+		if(recordCount!=1)
 		{
-		System.out.println("No. of records wrong "+recordCount);
+		System.out.println("No. of records Join: "+recordCount);
 		return 0;
 		}
 		curr = end - start;
@@ -296,7 +324,7 @@ public static int joining(Connection con,int val)throws Exception
 		count++;
 	}
 	stmt.close();
-	return (int)tot/100/1000;
+	return (int)tot/1000;
 }
 
 // projection
@@ -392,8 +420,7 @@ public static  int tenPerSel(Connection con, boolean flag)throws Exception
 			
 			if(recordCount != 1000)
 			{
-			   System.out.println("No. of records returned is wrong for Q2 " + recordCount);
-			
+			  System.out.println("No. of records for Q3: " + recordCount);
 			  return 0;
 		        }
 
@@ -432,33 +459,29 @@ public static void main(String[] args)
               con = DriverManager.getConnection("jdbc:mysql://localhost/test", "root", "");
           }
           con.setAutoCommit(false);
+          con.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
           Statement cStmt = con.createStatement();
 	  
-	  System.out.println("\n\n");
-	  System.out.println("**********************************************************\n");
-	  System.out.println("NOTE :  Idx1-------Tree(unique1).\n\tIdx2-------Hash(unique2).\n\t Time in microsecs---");
-	  System.out.println("\n");
-	  System.out.println("Q.No.\tQuery Type\tNoIdx\tIdx1\tIdx2\tWall_Clk");
-	  System.out.println("-----\t----------\t-----\t----\t----\t--------");
+          int timeTaken[][] = new int[15][3];
+	  int ins=1,upd=2,del=3;// function parameter
+	  int min=1, sum=2, ming=3, sumg=4;// function parameter
 
-	  int q1 = onePerSel(con, true);
-	  System.out.println("1\t1% Sel\t\tY\t-\t-\t"+q1);
+          
+	  timeTaken[0][0] = singleTuple(con,true);
+	  timeTaken[1][0] = onePerSel(con, true);
+	  timeTaken[2][0] = tenPerSel(con,true);
+	  timeTaken[3][0] = aggregate(con,min, true);
+	  timeTaken[4][0] = aggregate(con,sum, true);
+	  timeTaken[5][0] = aggregate(con,ming, true);
+	  timeTaken[6][0] = aggregate(con,sumg, true);
 
-	  int q2 = tenPerSel(con,true);
-	  System.out.println("2\t10% Sel\t\tY\t-\t-\t"+q2);
+	  timeTaken[7][0] = dmlstatement(con,ins, true);
+	  //timeTaken[8][0] = dmlstatement(con,upd, true);
+	  timeTaken[9][0] = dmlstatement(con,del, true);
 
-	  int min=1, ming=2,sum=3;// function parameter
-	  
-	  int q20 = aggregate(con,min);
-	  System.out.println("20\tMinAgg No Grps\tY\t-\t-\t"+q20);
-
-	  int q21 = aggregate(con,ming);
-	  System.out.println("21\tMinAgg Grps\tY\t-\t-\t"+q21);
-
-
-	  int q22 = aggregate(con,sum);
-	  System.out.println("22\tSumAgg Grps\tY\t-\t-\t"+q22);
-
+	  timeTaken[10][0] = joining(con,1, true);
+	  //timeTaken[11][0] = joining(con,2, true);
+          System.out.println("Finished no index queries");
 	  //create index
 	  try{
             if (flag ==1) {
@@ -466,131 +489,96 @@ public static void main(String[] args)
 	      cStmt.close();
 	      cStmt.execute("CREATE INDEX idx3 ON big1(unique1) TREE");
 	      cStmt.close();
+	      cStmt.execute("CREATE INDEX idx6 ON big2(unique2) HASH");
+	      cStmt.close();
+	      cStmt.execute("CREATE INDEX idx5 ON big2(unique1) TREE");
+	      cStmt.close();
             }else if (flag ==2) {
-	      cStmt.execute("CREATE INDEX x1 USING HASH ON big1(unique2)");
-	      cStmt.execute("CREATE INDEX x2 USING BTREE ON big1(unique1)");
+	      cStmt.execute("CREATE INDEX mysqlc1 USING HASH ON big1(unique2)");
+	      cStmt.execute("CREATE INDEX mysqlc2 USING BTREE ON big1(unique1)");
+	      cStmt.execute("CREATE INDEX mysqlc3 USING HASH ON big2(unique2)");
+	      cStmt.execute("CREATE INDEX mysqlc4 USING BTREE ON big2(unique1)");
 	      cStmt.close();
             }
           }catch(Exception e ){e.printStackTrace(); System.out.println("Error creating index");}
 
-	  int q3 = onePerSel(con,true);
-	  System.out.println("3\t1% Sel\t\t-\t-\tY\t"+q3);
+	  timeTaken[0][1] = singleTuple(con,true);
+	  timeTaken[1][1] = onePerSel(con, true);
+	  timeTaken[2][1] = tenPerSel(con,true);
+	  timeTaken[3][1] = aggregate(con,min, true);
+	  timeTaken[4][1] = aggregate(con,sum, true);
+	  timeTaken[5][1] = aggregate(con,ming, true);
+	  timeTaken[6][1] = aggregate(con,sumg, true);
+	  timeTaken[7][1] = dmlstatement(con,ins, true);
+	  //timeTaken[8][1] = dmlstatement(con,upd, true);
+	  timeTaken[9][1] = dmlstatement(con,del, true);
+	  timeTaken[10][1] = joining(con,1, true);
+	  //timeTaken[11][1] = joining(con,2, true);
+          System.out.println("Finished hash index queries");
 
-
-	  int q4 = tenPerSel(con,true);
-	  System.out.println("4\t10% Sel\t\t-\t-\tY\t"+q4);
-
-
-	  int q5 = onePerSel(con,false);
-	  System.out.println("5\t1% Sel\t\t-\tY\t-\t"+q5);
-
-
-	  int q6 = tenPerSel(con,false);
-	  System.out.println("6\t10% Sel\t\t-\tY\t-\t"+q6);
-
-	  int q7 = singleTuple(con,true);
-	  System.out.println("7\t1 Tup Sel\t-\t-\tY\t"+q7);
-
-	   
-          //commented query 8 as it is duplicate of query 3
-	  //int q8 = onePerSel(con,true);
-	  //System.out.println("8\t1% Sel\t\t-\t-\tY\t"+q1);
-
-	  
-	  int Q9=1,Q10=2,Q11=3,Q15=4,Q16=5,Q17=6;
-
-	  //int q9 = joining(con,	Q9);
-	  //System.out.println("9\tJoin AselB\tY\t-\t-\t"+q9);
-
-          
-	  //int q10 = joining(con,Q10);
-	  //System.out.println("10\tJoin ABPrime\tY\t-\t-\t"+q10);
-
-	  //int q11 = joining(con,Q11);
-	  //System.out.println("11\tJoin CselAselB\tY\t-\t-\t"+q11);
-	  
-/*
-	  // create non-cluster index
-	  cStmt.execute("CREATE INDEX idx1 ON small(unique1)UNIQUE");
-	  cStmt.close();
-
-	  cStmt.execute("CREATE INDEX idx3 ON big1(unique1)UNIQUE");
-	  cStmt.close();
-
-	  cStmt.execute("CREATE INDEX idx5 ON big2(unique1)UNIQUE");
-	  cStmt.close();
-
-	  int q15 = joining(con,Q15);
-	  System.out.println("15\tJoin AselB\t-\tY\t-\t"+q15);
-	  
-	  int q16 = joining(con,Q16);
-	  System.out.println("16\tJoinABprime\t-\tY\t-\t"+q16);
-
-	  int q17 = joining(con,Q17);
-	  System.out.println("17\tJoin CselAselB\t-\tY\t-\t"+q17);
-
-
-	  int q18 = projection(con,true);
-	  System.out.println("18\t1%Proj Sel\t-\tY\tY\t"+q18);
-
-	  int q19 = projection(con,false);
-	  System.out.println("19\t100%Proj Sel\t-\tY\tY\t"+q19);*/
-	  
-	  
-
-	  int q23 = aggregate(con,min);
-	  System.out.println("23\tMinAgg No Grps\t-\t-\tY\t"+q23);
-
-
-	  int q24 = aggregate(con,ming);
-	  System.out.println("24\tMinAgg Grps\t-\t-\tY\t"+q24);
-
-
-	  int q25 = aggregate(con,sum);
-	  System.out.println("25\tSumAgg Grps\t-\t-\tY\t"+q25);
-
-	  
-	  int in=1,upd=2,del=3;// function parameter
-/*
-	  int q26 = dmlstatement(con,in);
-	  System.out.println("26\tInsert 1 Tup\tY\t-\t-\t"+q26);
-
-
-	  int q27 = dmlstatement(con,upd);
-	  System.out.println("27\tupdate 1 Tup\tY\t-\t-\t"+q27);
-
-
-	  int q28 = dmlstatement(con,del);
-	  System.out.println("28\tdelete 1 Tup\tY\t-\t-\t"+q28);
-
-	  //with indexes 
-	  int q29 = dmlstatement(con,in);
-	  System.out.println("29\tinsert 1 Tup\t-\tY\tY\t"+q29);
-
-	  
-	  int q30 = dmlstatement(con,upd);
-	  System.out.println("30\tupdate 1 Tup\t-\tY\tY\t"+q30);
+	  timeTaken[0][2] = singleTuple(con,false);
+	  timeTaken[1][2] = onePerSel(con, false);
+	  timeTaken[2][2] = tenPerSel(con,false);
+	  timeTaken[3][2] = aggregate(con,min, false);
+	  timeTaken[4][2] = aggregate(con,sum, false);
+	  timeTaken[5][2] = aggregate(con,ming, false);
+	  timeTaken[6][2] = aggregate(con,sumg, false);
+	  timeTaken[7][2] = dmlstatement(con,ins, false);
+	  //timeTaken[8][2] = dmlstatement(con,upd, false);
+	  timeTaken[9][2] = dmlstatement(con,del, false);
+	  timeTaken[10][2] = joining(con,1, false);
+	  //timeTaken[11][2] = joining(con,2, false);
+          System.out.println("Finished tree index queries");
 
 	   
-	  int q31 = dmlstatement(con,del);
-	  System.out.println("31\tdelete 1 Tup\t-\tY\tY\t"+q31);
-*/
+	  int join1=1;
+	  //int q18 = projection(con,true);
+	  //System.out.println("18\t1%Proj Sel\t-\tY\tY\t"+q18);
+
+	  //int q19 = projection(con,false);
+	  //System.out.println("19\t100%Proj Sel\t-\tY\tY\t"+q19);*/
+	  
 	  try{
             if (flag ==1) {
 	      cStmt.execute("DROP INDEX idx4;");
 	      cStmt.close();
 	      cStmt.execute("DROP INDEX idx3;");
 	      cStmt.close();
-            } else if (flag ==2) {
-	      cStmt.execute("DROP INDEX x1 on big1");
+	      cStmt.execute("DROP INDEX idx6;");
 	      cStmt.close();
-	      cStmt.execute("DROP INDEX x2 on big1");
+	      cStmt.execute("DROP INDEX idx5;");
+	      cStmt.close();
+            } else if (flag ==2) {
+	      cStmt.execute("DROP INDEX mysqlc1 on big1");
+	      cStmt.close();
+	      cStmt.execute("DROP INDEX mysqlc2 on big1");
+	      cStmt.close();
+	      cStmt.execute("DROP INDEX mysqlc3 on big2");
+	      cStmt.close();
+	      cStmt.execute("DROP INDEX mysqlc4 on big2");
 	      cStmt.close();
             }
           }catch(Exception e ){System.out.println("Error dropping indexes");}
-          System.out.println("\n");
+          System.out.println("Wisconsin Benchmark Report:");
 
-	  System.out.println("**********************************************************\n");
+	  System.out.println("**********************************************************");
+	  System.out.println(" Statement\t NoIndex\t  Hash \t Tree");
+	  System.out.println("**********************************************************");
+          System.out.println(" 1 Tuple         \t "+timeTaken[0][0] +" \t \t"+ timeTaken[0][1]+ "   \t"+ timeTaken[0][2]); 
+          System.out.println(" 1% Sel          \t "+timeTaken[1][0] +" \t \t"+ timeTaken[1][1]+ "   \t"+ timeTaken[1][2]); 
+          System.out.println(" 10% Sel         \t "+timeTaken[2][0] +" \t \t"+ timeTaken[2][1]+ "   \t"+ timeTaken[2][2]); 
+
+          System.out.println(" Min All         \t "+timeTaken[3][0] +" \t \t"+ timeTaken[3][1]+ "   \t"+ timeTaken[3][2]); 
+          System.out.println(" Sum All         \t "+timeTaken[4][0] +" \t \t"+ timeTaken[4][1]+ "   \t"+ timeTaken[4][2]); 
+          System.out.println(" Min Grp(100)    \t "+timeTaken[5][0] +" \t \t"+ timeTaken[5][1]+ "\t"+ timeTaken[5][2]); 
+          System.out.println(" Sum Grp(100)    \t "+timeTaken[6][0] +" \t \t"+ timeTaken[6][1]+ "\t"+ timeTaken[6][2]); 
+
+          System.out.println(" Insert 1        \t "+timeTaken[7][0] +" \t \t"+ timeTaken[7][1]+ "   \t"+ timeTaken[7][2]); 
+          System.out.println(" Update 1       \t "+timeTaken[8][0] +" \t \t"+ timeTaken[8][1]+ "   \t"+ timeTaken[8][2]); 
+          System.out.println(" Delete 1        \t "+timeTaken[9][0] +" \t \t"+ timeTaken[9][1]+ "   \t"+ timeTaken[9][2]); 
+          System.out.println(" Join(10K*10K)1  \t "+timeTaken[10][0] +" \t \t"+ timeTaken[10][1]+ "\t"+ timeTaken[10][2]); 
+          System.out.println(" Join(10K*10K)1K \t "+timeTaken[11][0] +" \t \t"+ timeTaken[11][1]+ "\t"+ timeTaken[11][2]); 
+	  System.out.println("**********************************************************");
 
 	  con.close();
         }
