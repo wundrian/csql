@@ -459,7 +459,7 @@ public static void main(String[] args)
               con = DriverManager.getConnection("jdbc:mysql://localhost/test", "root", "");
           }
           con.setAutoCommit(false);
-          con.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
+          con.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
           Statement cStmt = con.createStatement();
 	  
           int timeTaken[][] = new int[15][3];
@@ -493,12 +493,14 @@ public static void main(String[] args)
 	      cStmt.close();
 	      cStmt.execute("CREATE INDEX idx5 ON big2(unique1) TREE");
 	      cStmt.close();
+              con.commit();
             }else if (flag ==2) {
 	      cStmt.execute("CREATE INDEX mysqlc1 USING HASH ON big1(unique2)");
 	      cStmt.execute("CREATE INDEX mysqlc2 USING BTREE ON big1(unique1)");
 	      cStmt.execute("CREATE INDEX mysqlc3 USING HASH ON big2(unique2)");
 	      cStmt.execute("CREATE INDEX mysqlc4 USING BTREE ON big2(unique1)");
 	      cStmt.close();
+              con.commit();
             }
           }catch(Exception e ){e.printStackTrace(); System.out.println("Error creating index");}
 
@@ -548,6 +550,7 @@ public static void main(String[] args)
 	      cStmt.close();
 	      cStmt.execute("DROP INDEX idx5;");
 	      cStmt.close();
+              con.commit();
             } else if (flag ==2) {
 	      cStmt.execute("DROP INDEX mysqlc1 on big1");
 	      cStmt.close();
@@ -557,12 +560,13 @@ public static void main(String[] args)
 	      cStmt.close();
 	      cStmt.execute("DROP INDEX mysqlc4 on big2");
 	      cStmt.close();
+              con.commit();
             }
           }catch(Exception e ){System.out.println("Error dropping indexes");}
           System.out.println("Wisconsin Benchmark Report:");
 
 	  System.out.println("**********************************************************");
-	  System.out.println(" Statement\t NoIndex\t  Hash \t Tree");
+	  System.out.println(" Statement       \t NoIndex\tHash \tTree");
 	  System.out.println("**********************************************************");
           System.out.println(" 1 Tuple         \t "+timeTaken[0][0] +" \t \t"+ timeTaken[0][1]+ "   \t"+ timeTaken[0][2]); 
           System.out.println(" 1% Sel          \t "+timeTaken[1][0] +" \t \t"+ timeTaken[1][1]+ "   \t"+ timeTaken[1][2]); 
