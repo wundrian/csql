@@ -26,6 +26,7 @@
 #include<DatabaseManagerImpl.h>
 #include<Predicate.h>
 #include<AggTableImpl.h>//for AggType
+#ifndef SCANTYPE
 enum ScanType
 {
     fullTableScan = 0,
@@ -33,6 +34,8 @@ enum ScanType
     treeIndexScan,
     unknownScan
 };
+#define SCANTYPE
+#endif
 
 static char ScanTypeNames[][10] =
 {
@@ -222,9 +225,13 @@ class TableImpl:public Table
     DbRetVal setUndoLogging(bool flag) { undoFlag = flag; }
 
     void printSQLIndexString();
+
+    DbRetVal optimize();
     bool isTableInvolved(char *tblName);
     bool pushPredicate(Predicate *pred);
     void setPredicate(Predicate *pred);
+    ScanType getScanType() { return scanType_; }
+
     char* getName() { return tblName_; }
     void setTableInfo(char *name, int tblid, size_t  length,
                        int numFld, int numIdx, void *chunk);

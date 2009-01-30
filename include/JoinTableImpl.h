@@ -149,8 +149,8 @@ class JoinTableImpl:public Table
     void setPredicate(Predicate *pred);
     void printPlan(int space);
     DbRetVal optimize();
-
-
+    void optimizeRestrict();
+    ScanType getScanType();
 };
 
 

@@ -234,8 +234,43 @@ DbRetVal JoinTableImpl::optimize()
             pred = NULL;
         }
     }
+    DbRetVal rv = leftTableHdl->optimize();
+    if (OK != rv) {
+        printError(ErrUnknown, "Left handle optimize failed");
+        return rv;
+    }
+    rv = rightTableHdl->optimize();
+    if (OK != rv) {
+        printError(ErrUnknown, "Left handle optimize failed");
+        return rv;
+    }
+    optimizeRestrict();
     return OK;
 }
+void JoinTableImpl::optimizeRestrict()
+{
+    ScanType lType = leftTableHdl->getScanType();
+    ScanType rType = rightTableHdl->getScanType();
+    bool interChange = false;
+    if (rType == hashIndexScan)  interChange = true;
+    if (rType == treeIndexScan && lType != hashIndexScan) interChange=true;
+     
+    if (interChange) {
+       Table *tmp = leftTableHdl;
+       leftTableHdl=rightTableHdl;
+       rightTableHdl = tmp;
+    }
+    return;
+}
+ScanType JoinTableImpl::getScanType()
+{
+    ScanType lType = leftTableHdl->getScanType();
+    ScanType rType = rightTableHdl->getScanType();
+    if (lType == hashIndexScan || rType == hashIndexScan) return hashIndexScan; 
+    if (lType == treeIndexScan || rType == treeIndexScan) return treeIndexScan; 
+    return fullTableScan;
+}
+
 void JoinTableImpl::printPlan(int space)
 {
     char spaceBuf[IDENTIFIER_LENGTH];

@@ -34,6 +34,7 @@ enum AggType
     AGG_COUNT,
     AGG_UNKNOWN
 };
+#include<TableImpl.h>
 class AggFldDef
 {
     public:
@@ -146,6 +147,9 @@ class AggTableImpl:public Table
     bool isTableInvolved(char *tableName)
         { printf("Wrong call\n"); return false; }
     void printPlan(int space){printf("AGG-PLAN-TODO\n");}
+    DbRetVal optimize()
+        { printf("Wrong call\n"); return OK; }
+    ScanType getScanType(){ return unknownScan;}
 };
 
 #endif

@@ -19,6 +19,16 @@
 #include<Util.h>
 class Predicate;
 class Condition;
+#ifndef SCANTYPE
+enum ScanType
+{
+    fullTableScan = 0,
+    hashIndexScan,
+    treeIndexScan,
+    unknownScan
+};
+#define SCANTYPE
+#endif
 /**
 * @class Table
 *
@@ -197,6 +207,8 @@ class Table
     virtual void printSQLIndexString()=0;
 
     //optimizer
+    virtual DbRetVal optimize()=0;
+    virtual ScanType getScanType()=0;
     virtual bool isTableInvolved(char *tblName)=0;
     virtual bool pushPredicate(Predicate *pred)=0;
     virtual void setPredicate(Predicate *pred)=0;
@@ -211,4 +223,5 @@ class Table
     static void getFieldNameAlone(char *fname, char *name);
     static void getTableNameAlone(char *fname, char *name);
 };
+
 #endif

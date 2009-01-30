@@ -498,6 +498,19 @@ DataType  AllDataType::convertFromSQLType(SQLSMALLINT type)
 }
 void AllDataType::copyVal(void* dest, void *src, DataType type, int length)
 {
+    //Performance optimization. putting likely case first
+    if (typeInt == type ) 
+    {
+        *(int*)dest = *(int*)src;
+        return;
+    }else if (typeString == type)
+    {
+        strncpy((char*)dest, (char*)src, length);
+        char *d =(char*)dest;
+        d[length-1] = '\0';
+        return;
+    }
+
     switch(type)
     {
         case typeInt:
@@ -545,9 +558,15 @@ void AllDataType::copyVal(void* dest, void *src, DataType type, int length)
         default:
             break;
         }
+    return;
 }
 void AllDataType::addVal(void* dest, void *src, DataType type)
 {
+    if (type == typeInt)
+    {
+        *(int*)dest = *(int*)dest + *(int*)src;
+        return;
+    }
     switch(type)
     {
         case typeInt:
@@ -576,7 +595,7 @@ void AllDataType::addVal(void* dest, void *src, DataType type)
         case typeDate:
         case typeTime:
         case typeTimeStamp:
-		case typeBinary:
+	case typeBinary:
         default:
              break;
      }
@@ -654,6 +673,11 @@ void AllDataType::mulVal(void* dest, void *src, DataType type)
 }   
 void AllDataType::mudVal(void* dest, void *src, DataType type)
 {
+    if (type == typeInt)
+    {
+        *(int*)dest = *(int*)dest % (*(int*)src);
+        return;
+    }
     switch(type)
     {
         case typeInt:
@@ -689,6 +713,11 @@ void AllDataType::mudVal(void* dest, void *src, DataType type)
 }
 void AllDataType::divVal(void* dest, void *src, DataType type)
 {
+    if (type == typeInt)
+    {
+        *(int*)dest = *(int*)dest / (*(int*)src);
+        return;
+    }
     switch(type)
     {
         case typeInt:
@@ -724,6 +753,11 @@ void AllDataType::divVal(void* dest, void *src, DataType type)
 }
 void AllDataType::divVal(void* dest, int src, DataType type)
 {
+    if(type == typeInt)
+    {
+        *(int*)dest = *(int*)dest / src;
+        return;
+    }
     switch(type)
     {
         case typeInt:
@@ -762,15 +796,13 @@ void AllDataType::divVal(void* dest, int src, DataType type)
 bool AllDataType::compareVal(void *val1, void *val2, ComparisionOp op,
                              DataType type, long length)
 {
-    bool result = false;
-
     //Performance optimization. putting likely case first
     if (typeInt == type && OpEquals == op) 
     {
             if (*(int*)val1 == *(int*)val2) return true;
             else return false;
     }
-
+    bool result = false;
     switch(type)
     {
        case typeInt:

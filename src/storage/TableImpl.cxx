@@ -165,14 +165,8 @@ void TableImpl::clearFldNull(int colpos)
     return;
 }
 
-
-DbRetVal TableImpl::execute()
+DbRetVal TableImpl::optimize()
 {
-    if (NULL != iter)
-    {
-         printError(ErrAlready,"Scan already open:Close and re execute");
-         return ErrAlready;
-    }
     //table ptr is set in predicate because it needs to access the
     //type and length to evaluate
     if( NULL != pred_)
@@ -182,8 +176,18 @@ DbRetVal TableImpl::execute()
         pred->setProjectionList(NULL);
         pred->setOffsetAndType();
     }
+    return createPlan();
+} 
+
+DbRetVal TableImpl::execute()
+{
+    if (NULL != iter)
+    {
+         printError(ErrAlready,"Scan already open:Close and re execute");
+         return ErrAlready;
+    }
     DbRetVal ret = OK;
-    ret = createPlan();
+    ret = optimize();
     if (OK != ret)
     {
         printError(ErrSysInternal,"Unable to create the plan");
