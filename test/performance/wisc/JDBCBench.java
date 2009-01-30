@@ -16,12 +16,12 @@ public class JDBCBench
 	String stmtStr;
 	if(flag)
 	{
-		String buf = " SELECT * from big1 where unique2=?;";
+		String buf = " SELECT unique1, unique2, stringu1, stringu2 from big1 where unique2=?;";
 		stmtStr =  buf;
 	}
 	else
 	{
-		String buf = "SELECT * from big1 where unique1=?;";
+		String buf = "SELECT unique1, unique2, stringu1, stringu2 from big1 where unique1=?;";
 		stmtStr = buf;
 	}
 	
@@ -255,46 +255,36 @@ public static int aggregate(Connection con, int val, boolean flag)throws Excepti
 public static int joining(Connection con,int val, boolean flag)throws Exception
 {
 	PreparedStatement stmt = null;
-	String stmtStr;
+	String stmtStr= null;
 	if(val==1)
 	{
            if (flag) {
-		String buf = "SELECT big1.unique2, big2.unique2 FROM big2,big1 WHERE big1.unique2=big2.unique2 AND big2.unique2=1000;";
+		String buf = "SELECT big1.unique1, big1.unique2, big2.unique2, big2.stringu1  FROM big2,big1 WHERE big1.unique2=big2.unique2 AND big2.unique2=1000;";
 		stmtStr = buf;
            }else{
-		String buf = "SELECT big1.unique1, big2.unique1 FROM big2,big1 WHERE big1.unique1=big2.unique1 AND big2.unique1=1000;";
+		String buf = "SELECT big1.unique1, big1.unique2, big2.unique1, big2.stringu1 FROM big2,big1 WHERE big1.unique1=big2.unique1 AND big2.unique1=1000;";
 		stmtStr = buf;
            }
 	}
 	else if(val==2)
 	{
            if (flag) {
-		String buf = "SELECT big1.unique2, big2.unique2 FROM big2,big1 WHERE big1.unique2=big2.unique2 AND big2.unique2>1000;";
+		String buf = "SELECT big1.unique1, big1.unique2, big2.unique2, big2.stringu1 FROM big2,big1 WHERE big1.unique2=big2.unique2 AND big2.unique2<100;";
 		stmtStr = buf;
            }else{
-		String buf = "SELECT big1.unique1, big2.unique1 FROM big2,big1 WHERE big1.unique1=big2.unique1 AND big2.unique1>1000;";
+		String buf = "SELECT big1.unique1, big1.unique2, big2.unique1, big2.stringu1 FROM big2,big1 WHERE big1.unique1=big2.unique1 AND big2.unique1<100;";
 		stmtStr = buf;
            }
 	}
-	else if(val==11)
+	else if(val==3)
 	{
-		String buf = "SELECT * FROM small,big1 WHERE small.unique2=big1.unique2 AND big1.unique2=big2.unique2 AND big1.unique2<1000;";
+           if (flag) {
+		String buf = "SELECT small.unique2, big1.unique2, big2.unique2, small.stringu1, big1.unique1, big2.unique1 FROM small,big1, big2 WHERE small.unique2=big1.unique2 AND big1.unique2=big2.unique2 AND big1.unique2 = 100;";
 		stmtStr=buf;
-	}
-	else if(val==15)
-	{
-		String buf = "SELECT * FROM big1,big2 WHERE (big1.unique1=big2.unique1) AND (big1.unique2<1000);";
+           }else{
+		String buf = "SELECT small.unique1, big1.unique1, big2.unique1, small.stringu1, big1.unique2, big2.unique2 FROM small,big1, big2 WHERE small.unique1=big1.unique1 AND big1.unique1=big2.unique1 AND big1.unique1 = 100;";
 		stmtStr=buf;
-	}
-	else if(val==16)
-	{
-		String buf = "SELECT * FROM big1,bprime WHERE big1.unique1=bprime.unique1;";
-		stmtStr=buf;
-	}
-	else
-	{
-		String buf = "SELECT * FROM small,big1 WHERE (small.unique1=big1.unique1) AND (big1.unique1=big2.unique1) AND (big1.unique1 < 1000);";
-		stmtStr=buf;
+           }
 	}
 	
         stmt  = con.prepareStatement(stmtStr);
@@ -308,16 +298,22 @@ public static int joining(Connection con,int val, boolean flag)throws Exception
 		rs = stmt.executeQuery();
 		while(rs.next())
 		{
-                    //System.out.println("Record: "+ rs.getInt(1)+ " "+ rs.getInt(2));
+                    //System.out.println("Record:"+ rs.getInt(1)+ " "+ rs.getInt(2)+" " +rs.getInt(3)+ " "+ rs.getString(4));
 		    recordCount++;
 		}
 		rs.close();
 		con.commit();
 		end=System.nanoTime();
-		if(recordCount!=1)
+		if(val ==1 &&  recordCount!=1)
 		{
-		System.out.println("No. of records Join: "+recordCount);
-		return 0;
+		   System.out.println("No. of records Join: "+recordCount);
+		   return 0;
+		}
+		if(val ==2 &&  recordCount!=100)
+		{
+		   System.out.println("Stmt: "+stmtStr);
+		   System.out.println("No. of records Join: "+recordCount);
+		   return 0;
 		}
 		curr = end - start;
 		tot = tot + curr;
@@ -466,7 +462,7 @@ public static void main(String[] args)
 	  int ins=1,upd=2,del=3;// function parameter
 	  int min=1, sum=2, ming=3, sumg=4;// function parameter
 
-          
+         
 	  timeTaken[0][0] = singleTuple(con,true);
 	  timeTaken[1][0] = onePerSel(con, true);
 	  timeTaken[2][0] = tenPerSel(con,true);
@@ -480,18 +476,25 @@ public static void main(String[] args)
 	  timeTaken[9][0] = dmlstatement(con,del, true);
 
 	  timeTaken[10][0] = joining(con,1, true);
-	  //timeTaken[11][0] = joining(con,2, true);
+
+	  timeTaken[11][0] = joining(con,2, true);
+	  timeTaken[12][0] = joining(con,3, true);
           System.out.println("Finished no index queries");
+
 	  //create index
 	  try{
             if (flag ==1) {
-	      cStmt.execute("CREATE INDEX idx4 ON big1(unique2) HASH");
+	      cStmt.execute("CREATE INDEX idx1 ON big1(unique2) HASH");
 	      cStmt.close();
-	      cStmt.execute("CREATE INDEX idx3 ON big1(unique1) TREE");
+	      cStmt.execute("CREATE INDEX idx2 ON big1(unique1) TREE");
 	      cStmt.close();
-	      cStmt.execute("CREATE INDEX idx6 ON big2(unique2) HASH");
+	      cStmt.execute("CREATE INDEX idx3 ON big2(unique2) HASH");
 	      cStmt.close();
-	      cStmt.execute("CREATE INDEX idx5 ON big2(unique1) TREE");
+	      cStmt.execute("CREATE INDEX idx4 ON big2(unique1) TREE");
+	      cStmt.close();
+	      cStmt.execute("CREATE INDEX idx5 ON small(unique2) HASH");
+	      cStmt.close();
+	      cStmt.execute("CREATE INDEX idx6 ON small(unique1) TREE");
 	      cStmt.close();
               con.commit();
             }else if (flag ==2) {
@@ -499,6 +502,8 @@ public static void main(String[] args)
 	      cStmt.execute("CREATE INDEX mysqlc2 USING BTREE ON big1(unique1)");
 	      cStmt.execute("CREATE INDEX mysqlc3 USING HASH ON big2(unique2)");
 	      cStmt.execute("CREATE INDEX mysqlc4 USING BTREE ON big2(unique1)");
+	      cStmt.execute("CREATE INDEX mysqlc5 USING HASH ON small(unique2)");
+	      cStmt.execute("CREATE INDEX mysqlc6 USING BTREE ON small(unique1)");
 	      cStmt.close();
               con.commit();
             }
@@ -515,7 +520,8 @@ public static void main(String[] args)
 	  //timeTaken[8][1] = dmlstatement(con,upd, true);
 	  timeTaken[9][1] = dmlstatement(con,del, true);
 	  timeTaken[10][1] = joining(con,1, true);
-	  //timeTaken[11][1] = joining(con,2, true);
+	  timeTaken[11][1] = joining(con,2, true);
+	  timeTaken[12][1] = joining(con,3, true);
           System.out.println("Finished hash index queries");
 
 	  timeTaken[0][2] = singleTuple(con,false);
@@ -529,26 +535,25 @@ public static void main(String[] args)
 	  //timeTaken[8][2] = dmlstatement(con,upd, false);
 	  timeTaken[9][2] = dmlstatement(con,del, false);
 	  timeTaken[10][2] = joining(con,1, false);
-	  //timeTaken[11][2] = joining(con,2, false);
+	  timeTaken[11][2] = joining(con,2, false);
+	  timeTaken[12][2] = joining(con,3, false);
           System.out.println("Finished tree index queries");
 
 	   
-	  int join1=1;
-	  //int q18 = projection(con,true);
-	  //System.out.println("18\t1%Proj Sel\t-\tY\tY\t"+q18);
-
-	  //int q19 = projection(con,false);
-	  //System.out.println("19\t100%Proj Sel\t-\tY\tY\t"+q19);*/
-	  
+	 
 	  try{
             if (flag ==1) {
-	      cStmt.execute("DROP INDEX idx4;");
+	      cStmt.execute("DROP INDEX idx1;");
+	      cStmt.close();
+	      cStmt.execute("DROP INDEX idx2;");
 	      cStmt.close();
 	      cStmt.execute("DROP INDEX idx3;");
 	      cStmt.close();
-	      cStmt.execute("DROP INDEX idx6;");
+	      cStmt.execute("DROP INDEX idx4;");
 	      cStmt.close();
 	      cStmt.execute("DROP INDEX idx5;");
+	      cStmt.close();
+	      cStmt.execute("DROP INDEX idx6;");
 	      cStmt.close();
               con.commit();
             } else if (flag ==2) {
@@ -560,9 +565,14 @@ public static void main(String[] args)
 	      cStmt.close();
 	      cStmt.execute("DROP INDEX mysqlc4 on big2");
 	      cStmt.close();
+	      cStmt.execute("DROP INDEX mysqlc5 on big2");
+	      cStmt.close();
+	      cStmt.execute("DROP INDEX mysqlc6 on big2");
+	      cStmt.close();
               con.commit();
             }
           }catch(Exception e ){System.out.println("Error dropping indexes");}
+
           System.out.println("Wisconsin Benchmark Report:");
 
 	  System.out.println("**********************************************************");
@@ -581,7 +591,8 @@ public static void main(String[] args)
           System.out.println(" Update 1       \t "+timeTaken[8][0] +" \t \t"+ timeTaken[8][1]+ "   \t"+ timeTaken[8][2]); 
           System.out.println(" Delete 1        \t "+timeTaken[9][0] +" \t \t"+ timeTaken[9][1]+ "   \t"+ timeTaken[9][2]); 
           System.out.println(" Join(10K*10K)1  \t "+timeTaken[10][0] +" \t \t"+ timeTaken[10][1]+ "\t"+ timeTaken[10][2]); 
-          System.out.println(" Join(10K*10K)1K \t "+timeTaken[11][0] +" \t \t"+ timeTaken[11][1]+ "\t"+ timeTaken[11][2]); 
+          System.out.println(" Join(10K*10K)100 \t "+timeTaken[11][0] +"  \t"+ timeTaken[11][1]+ "\t"+ timeTaken[11][2]); 
+          System.out.println(" Join(10K*10K*1K)1\t "+timeTaken[12][0] +"  \t"+ timeTaken[12][1]+ "\t"+ timeTaken[12][2]); 
 	  System.out.println("**********************************************************");
 
 	  con.close();
