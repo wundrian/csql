@@ -91,84 +91,6 @@ DbRetVal JoinTableImpl::bindFld(const char *fldname, void *val)
     delete info;
     return OK;
 }
-DbRetVal JoinTableImpl::setJoinCondition(const char *fldname1, 
-                                         ComparisionOp op,
-                                         const char *fldname2)
-{
-    getTableNameAlone((char*)fldname1, jCondition.tableName1);
-    getFieldNameAlone((char*)fldname1, jCondition.fieldName1);
-    getTableNameAlone((char*)fldname2, jCondition.tableName2);
-    getFieldNameAlone((char*)fldname2, jCondition.fieldName2);
-
-    //check if it is already binded
-    ListIterator iter = projList.getIterator();
-    JoinProjFieldInfo  *elem;
-    jCondition.alreadyBinded1 = false;
-    jCondition.alreadyBinded2 = false;
-    jCondition.op = op;
-    while (iter.hasElement())
-    {
-        elem = (JoinProjFieldInfo*) iter.nextElement();   
-        if (strcmp(elem->fieldName, jCondition.fieldName1)==0 &&
-            strcmp(elem->tableName, jCondition.tableName1) ==0) 
-        {
-            jCondition.alreadyBinded1 = true;
-            jCondition.bindBuf1 = elem->bindBuf;
-            jCondition.type1 = elem->type;
-            jCondition.length1 = elem->length;
-        }
-        if (strcmp(elem->fieldName, jCondition.fieldName2)==0 &&
-            strcmp(elem->tableName, jCondition.tableName2) ==0) 
-        {
-            jCondition.alreadyBinded2 = true;
-            jCondition.bindBuf2 = elem->bindBuf;
-            jCondition.type2 = elem->type;
-            jCondition.length2 = elem->length;
-        }
-    }
-    
-    FieldInfo *info = new FieldInfo();
-    if (!jCondition.alreadyBinded1) {
-      if (strcmp(jCondition.tableName1, leftTableHdl->getName()) == 0)
-      {
-        leftTableHdl->getFieldInfo(jCondition.fieldName1, info);
-        jCondition.bindBuf1 = AllDataType::alloc(info->type, info->length);
-        leftTableHdl->bindFld(jCondition.fieldName1, jCondition.bindBuf1);
-        
-      }else if (strcmp(jCondition.tableName1, rightTableHdl->getName()) == 0)
-      {
-        rightTableHdl->getFieldInfo(jCondition.fieldName1, info);
-        jCondition.bindBuf1 = AllDataType::alloc(info->type, info->length);
-        rightTableHdl->bindFld(jCondition.fieldName1, jCondition.bindBuf1);
-      }else
-      {
-        printError(ErrBadCall, "TableName is invalid\n");
-        delete info;
-        return ErrBadCall;
-      }
-    }
-    if (!jCondition.alreadyBinded2) {
-      if (strcmp(jCondition.tableName2, leftTableHdl->getName()) == 0)
-      {
-        leftTableHdl->getFieldInfo(jCondition.fieldName2, info);
-        jCondition.bindBuf2 = AllDataType::alloc(info->type, info->length);
-        leftTableHdl->bindFld(jCondition.fieldName2, jCondition.bindBuf2);
-        
-      }else if (strcmp(jCondition.tableName2, rightTableHdl->getName()) == 0)
-      {
-        rightTableHdl->getFieldInfo(jCondition.fieldName2, info);
-        jCondition.bindBuf2 = AllDataType::alloc(info->type, info->length);
-        rightTableHdl->bindFld(jCondition.fieldName2, jCondition.bindBuf2);
-      }else
-      {
-        printError(ErrBadCall, "TableName is invalid\n");
-        delete info;
-        return ErrBadCall;
-      }
-    }
-    delete info;
-    return OK;
-}
 
 DbRetVal JoinTableImpl::optimize()
 {
@@ -252,14 +174,17 @@ void JoinTableImpl::optimizeRestrict()
     ScanType lType = leftTableHdl->getScanType();
     ScanType rType = rightTableHdl->getScanType();
     bool interChange = false;
-    if (rType == hashIndexScan)  interChange = true;
-    if (rType == treeIndexScan && lType != hashIndexScan) interChange=true;
-     
+    if (lType == fullTableScan && rType != fullTableScan)  interChange = true;
+    else if (lType != hashIndexScan  && rType == treeIndexScan) interChange=true;
+    /* 
     if (interChange) {
        Table *tmp = leftTableHdl;
        leftTableHdl=rightTableHdl;
        rightTableHdl = tmp;
-    }
+    }*/
+
+    //get the predicate with right table handle name
+    //rightTableHdl->getIndexType();
     return;
 }
 ScanType JoinTableImpl::getScanType()
@@ -295,8 +220,8 @@ DbRetVal JoinTableImpl::execute()
     //push the table scan predicates
     optimize();
     leftTableHdl->execute();
-    rightTableHdl->execute();
     leftTableHdl->fetch();
+    rightTableHdl->execute();
     //TODO
     //if join condition is not set then do nl
     //if it is inner join, hen do nl
@@ -314,19 +239,16 @@ void* JoinTableImpl::fetch()
         if (rec==NULL)
         {
             rightTableHdl->closeScan();
+            rec = leftTableHdl->fetch();
+            if (rec == NULL) return NULL;
             rightTableHdl->execute();
             rec = rightTableHdl->fetch();
             if (rec == NULL) return NULL;
-            rec = leftTableHdl->fetch();
-            if (rec == NULL) return NULL;
-            bool result = false;
+            bool result = true;
             while (true) {
-                result = evaluate();
-                if (result) {
-                    if (pred) rv = predImpl->evaluate(result);
-                    if ( rv !=OK) return NULL; 
-                    if (result) break;
-                }
+                if (pred) rv = predImpl->evaluate(result);
+                if ( OK != rv) return NULL; 
+                if (result) break;
                 rec = rightTableHdl->fetch(); 
                 if (rec == NULL) return fetch();
             }
@@ -334,14 +256,11 @@ void* JoinTableImpl::fetch()
             return rec;
         }
         else {
-            bool result = false;
+            bool result = true;
             while (true) {
-                result = evaluate();
-                if (result) {
-                    if (pred) rv = predImpl->evaluate(result);
-                    if ( rv !=OK) return NULL; 
-                    if (result) break;
-                }
+                if (pred) rv = predImpl->evaluate(result);
+                if ( rv !=OK) return NULL; 
+                if (result) break;
                 rec = rightTableHdl->fetch(); 
                 if (rec == NULL) return fetch();
             }
@@ -351,15 +270,6 @@ void* JoinTableImpl::fetch()
         
     }
     return NULL;
-}
-bool JoinTableImpl::evaluate()
-{
-    if (!jCondition.bindBuf1 || !jCondition.bindBuf2) return true;
-    bool res = AllDataType::compareVal(jCondition.bindBuf1, 
-                                   jCondition.bindBuf2, 
-                                   jCondition.op,  
-                                   jCondition.type1, jCondition.length1);
-    return res;
 }
 void* JoinTableImpl::fetch(DbRetVal &rv)
 {
@@ -469,6 +379,21 @@ bool JoinTableImpl::isTableInvolved(char *tableName)
     isInvolved = rightTableHdl->isTableInvolved(tableName);
     return isInvolved;
 }
+void* JoinTableImpl::getBindedBuf(char* tName, char* fName)
+{
+    ListIterator iter = projList.getIterator();
+    JoinProjFieldInfo  *elem;
+    while (iter.hasElement())
+    {
+        elem = (JoinProjFieldInfo*) iter.nextElement();
+        if (strcmp(elem->fieldName, fName)==0 &&
+            strcmp(elem->tableName, tName) ==0)
+        {
+            return elem->bindBuf;
+        }
+    }
+    return NULL;
+}
 bool JoinTableImpl::pushPredicate(Predicate *pr)
 {
     //printf("PRABA::pushPredicate called\n");
@@ -487,18 +412,41 @@ bool JoinTableImpl::pushPredicate(Predicate *pr)
         char fullName[IDENTIFIER_LENGTH];
         char lTabName[IDENTIFIER_LENGTH];
         char rTabName[IDENTIFIER_LENGTH];
+        char lFldName[IDENTIFIER_LENGTH];
+        char rFldName[IDENTIFIER_LENGTH];
         strcpy(fullName, pImpl->getFldName1());
         Table::getTableNameAlone(fullName, lTabName);
+        Table::getFieldNameAlone(fullName, lFldName);
         strcpy(fullName, pImpl->getFldName2());
         Table::getTableNameAlone(fullName, rTabName);
+        Table::getFieldNameAlone(fullName, rFldName);
 
         if (NULL != lTbl && NULL != rTbl) 
         {
+            //both size TableImpl handles are there
             if (0 == strcmp(lTbl, lTabName) || 0 == strcmp(lTbl, rTabName)) 
             {
                 if (0 == strcmp(rTbl, lTabName) || 0 == strcmp(rTbl, rTabName))
                 {
-                    //printf("PRABA::pushed join predicate here\n");
+                    //printf("PRABA::pushed join predicate here1\n");
+                    //PRABA::START
+                    ComparisionOp op = pImpl->getCompOp();
+                    if (strcmp(rTbl, rTabName) ==0)
+                    {
+                        bool ind = rightTableHdl->hasIndex(rFldName);
+                        if (ind) {
+                            void *buf = getBindedBuf(lTabName, lFldName);
+                            rightTableHdl->addPredicate(rFldName, op, buf);
+                        }
+                    }else if (strcmp(rTbl, lTabName) ==0)
+                    {
+                        bool ind = rightTableHdl->hasIndex(lFldName);
+                        if (ind) {
+                            void *buf = getBindedBuf(rTabName, rFldName);
+                            rightTableHdl->addPredicate(lFldName, op, buf);
+                        }
+                    }
+                    //PRABA::END
                     setPredicate(pr);
                     pushed = true;
                 }
@@ -506,7 +454,25 @@ bool JoinTableImpl::pushPredicate(Predicate *pr)
         }else{
             if(isTableInvolved(lTabName) && isTableInvolved(rTabName))
             {
-                //printf("PRABA::pushed join predicate here\n");
+                //printf("PRABA::pushed join predicate here2\n");
+                    //PRABA::START
+                    ComparisionOp op = pImpl->getCompOp();
+                    if (strcmp(rTbl, rTabName) ==0)
+                    {
+                        bool ind = rightTableHdl->hasIndex(rFldName);
+                        if (ind) {
+                            void *buf = getBindedBuf(lTabName, lFldName);
+                            rightTableHdl->addPredicate(rFldName, op, buf);
+                        }
+                    }else if (strcmp(rTbl, lTabName) ==0)
+                    {
+                        bool ind = rightTableHdl->hasIndex(lFldName);
+                        if (ind) {
+                            void *buf = getBindedBuf(rTabName, rFldName);
+                            rightTableHdl->addPredicate(lFldName, op, buf);
+                        }
+                    }
+                    //PRABA::END
                 setPredicate(pr);
                 pushed = true;
             }

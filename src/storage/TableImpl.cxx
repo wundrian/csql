@@ -165,6 +165,36 @@ void TableImpl::clearFldNull(int colpos)
     return;
 }
 
+bool TableImpl::hasIndex(char* fName)
+{
+   if (NULL == indexPtr_) return false;
+   for (int i =0; i < numIndexes_; i++)
+   {
+      HashIndexInfo* info = (HashIndexInfo*) idxInfo[i];
+      FieldIterator iter = info->idxFldList.getIterator();
+      if(iter.hasElement())
+      {
+        FieldDef *def = iter.nextElement();
+        if(strcmp(def->fldName_, fName) == 0)
+            if(!iter.hasElement())//neglet if it is composite index
+                return true;
+      }
+   } 
+   return false;
+}
+void TableImpl::addPredicate(char *fName, ComparisionOp op, void *buf)
+{
+    //char fieldName[IDENTIFIER_LENGTH];
+    //Table::getFieldNameAlone(fName, fieldName);
+    PredicateImpl *pred = (PredicateImpl*) pred_;
+    PredicateImpl *newPred = new PredicateImpl();
+    newPred->setTerm(fName, op, buf);
+    if (NULL == pred) { pred_ = newPred; return; }
+    PredicateImpl *bothPred = new PredicateImpl();
+    bothPred->setTerm(pred, OpAnd, newPred);
+    pred_ = bothPred;
+}
+
 DbRetVal TableImpl::optimize()
 {
     //table ptr is set in predicate because it needs to access the

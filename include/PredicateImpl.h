@@ -92,6 +92,7 @@ class PredicateImpl:public Predicate
     void setParent(PredicateImpl *pImpl);
     char* getFldName1(){ return fldName1; }
     char* getFldName2(){ return fldName2; }
+    ComparisionOp getCompOp() {return compOp; }
     void print(int space);
 };
 

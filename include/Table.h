@@ -17,6 +17,7 @@
 #define TABLE_H
 #include<ErrorType.h>
 #include<Util.h>
+#include<DataType.h>
 class Predicate;
 class Condition;
 #ifndef SCANTYPE
@@ -209,10 +210,13 @@ class Table
     //optimizer
     virtual DbRetVal optimize()=0;
     virtual ScanType getScanType()=0;
+    virtual bool hasIndex(char *name)=0;
     virtual bool isTableInvolved(char *tblName)=0;
     virtual bool pushPredicate(Predicate *pred)=0;
     virtual void setPredicate(Predicate *pred)=0;
     virtual void printPlan(int space)=0;
+    virtual void addPredicate(char *fname, ComparisionOp op, void *buf)
+                 { return; }
 
     virtual void resetNullinfo()=0;
     virtual int getFldPos(char *name)=0;

@@ -150,6 +150,7 @@ class AggTableImpl:public Table
     DbRetVal optimize()
         { printf("Wrong call\n"); return OK; }
     ScanType getScanType(){ return unknownScan;}
+    bool hasIndex(char *fName){ return false;}
 };
 
 #endif

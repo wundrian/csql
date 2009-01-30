@@ -105,8 +105,8 @@ class JoinTableImpl:public Table
     void setJoinType(JoinType type) { jType = type; }
     //binding
     DbRetVal bindFld(const char *name, void *val);
-    DbRetVal setJoinCondition(const char *fldname1, ComparisionOp op,  
-                              const char *fldname2);
+    //DbRetVal setJoinCondition(const char *fldname1, ComparisionOp op,  
+    //                          const char *fldname2);
 
      void setCondition(Condition *p)
      { if (p) pred = p->getPredicate(); else pred = NULL;}
@@ -132,7 +132,7 @@ class JoinTableImpl:public Table
     List getFieldNameList();
     char* getName() { return NULL; }
 
-    bool evaluate();
+    //bool evaluate();
     DbRetVal execute();
     void* fetch();
     void* fetch(DbRetVal &rv);
@@ -151,6 +151,8 @@ class JoinTableImpl:public Table
     DbRetVal optimize();
     void optimizeRestrict();
     ScanType getScanType();
+    bool hasIndex(char *fname){ return false; }
+    void* getBindedBuf(char* tName, char*fName);
 };
 
 

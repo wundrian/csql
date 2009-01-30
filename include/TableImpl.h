@@ -231,6 +231,8 @@ class TableImpl:public Table
     bool pushPredicate(Predicate *pred);
     void setPredicate(Predicate *pred);
     ScanType getScanType() { return scanType_; }
+    bool hasIndex(char *fldName);
+    void addPredicate(char *fName, ComparisionOp op, void *buf);
 
     char* getName() { return tblName_; }
     void setTableInfo(char *name, int tblid, size_t  length,
