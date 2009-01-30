@@ -26,7 +26,7 @@ fi
 $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/join11.sql 
 if [ $? -ne 0 ]
   then
-     $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/drot11t12t13.sql > /dev/null 2>&1
+     $CSQL_INSTALL_ROOT/bin/csql -s $REL_PATH/dropt11t12t13.sql > /dev/null 2>&1
      exit 2;
 fi
 
