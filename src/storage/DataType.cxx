@@ -368,6 +368,7 @@ long AllDataType::size(DataType type, int length )
             break;
         case typeString:
         case typeBinary:
+        case typeComposite:
             size = length;
             break;
         default:
@@ -1267,10 +1268,10 @@ void* AllDataType::alloc(DataType type, int length)
             dest = malloc(length);
             break;
         case typeBinary:
-		    if (length == 0 || length > 512) return NULL;
-			dest = malloc(length);
-			memset(dest, 0, length);
-			break;
+	    if (length == 0 || length > 512) return NULL;
+	    dest = malloc(length);
+	     memset(dest, 0, length);
+   	     break;
         case typeDate:
             dest = malloc(sizeof(Date));
             break;
