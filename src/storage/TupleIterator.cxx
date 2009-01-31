@@ -22,7 +22,7 @@
 #include<PredicateImpl.h>
 DbRetVal TupleIterator::open()
 {
-
+    PredicateImpl *predImpl = (PredicateImpl*) pred_;
     if (fullTableScan == scanType_)
     {
         cIter = new ChunkIterator();
@@ -30,7 +30,6 @@ DbRetVal TupleIterator::open()
     }else if (hashIndexScan == scanType_)
     {
         HashIndexInfo *hIdxInfo = (HashIndexInfo*)info;
-        PredicateImpl *predImpl = (PredicateImpl*) pred_;
         bool isPtr = false;
         FieldIterator iter = hIdxInfo->idxFldList.getIterator();
         char *keyBuffer;
@@ -71,7 +70,6 @@ DbRetVal TupleIterator::open()
     }else if (treeIndexScan == scanType_)
     {
         HashIndexInfo *hIdxInfo = (HashIndexInfo*)info;
-        PredicateImpl *predImpl = (PredicateImpl*) pred_;
         bool isPtr = false;
         FieldIterator iter = hIdxInfo->idxFldList.getIterator();
         void *keyPtr; ComparisionOp op;
@@ -88,6 +86,7 @@ DbRetVal TupleIterator::open()
         tIter->setFldOffset(hIdxInfo->fldOffset);
         tIter->setTypeLength(hIdxInfo->type, hIdxInfo->compLength);
     }
+    if(predImpl) predImpl->setIfNoLeftRight();
     return OK;
 }
 

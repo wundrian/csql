@@ -34,11 +34,11 @@ ChunkIterator Chunk::getIterator()
 
 void* ChunkIterator::nextElement()
 {
-    if(NULL == iterPage_)
+    /*if(NULL == iterPage_)
     {
         printError(ErrNotExists,"No iter page exists.");
         return NULL;
-    }
+    }*/
     PageInfo* pageInfo = (PageInfo*)iterPage_;
     if (0 == noOfNodes_)
     {

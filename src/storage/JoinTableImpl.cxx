@@ -433,18 +433,18 @@ bool JoinTableImpl::pushPredicate(Predicate *pr)
                     ComparisionOp op = pImpl->getCompOp();
                     if (strcmp(rTbl, rTabName) ==0)
                     {
-                        bool ind = rightTableHdl->hasIndex(rFldName);
-                        if (ind) {
+                        //bool ind = rightTableHdl->hasIndex(rFldName);
+                        //if (ind) {
                             void *buf = getBindedBuf(lTabName, lFldName);
                             rightTableHdl->addPredicate(rFldName, op, buf);
-                        }
+                        //}
                     }else if (strcmp(rTbl, lTabName) ==0)
                     {
-                        bool ind = rightTableHdl->hasIndex(lFldName);
-                        if (ind) {
+                        //bool ind = rightTableHdl->hasIndex(lFldName);
+                        //if (ind) {
                             void *buf = getBindedBuf(rTabName, rFldName);
                             rightTableHdl->addPredicate(lFldName, op, buf);
-                        }
+                        //}
                     }
                     //PRABA::END
                     setPredicate(pr);
@@ -459,18 +459,18 @@ bool JoinTableImpl::pushPredicate(Predicate *pr)
                     ComparisionOp op = pImpl->getCompOp();
                     if (strcmp(rTbl, rTabName) ==0)
                     {
-                        bool ind = rightTableHdl->hasIndex(rFldName);
-                        if (ind) {
+                        //bool ind = rightTableHdl->hasIndex(rFldName);
+                        //if (ind) {
                             void *buf = getBindedBuf(lTabName, lFldName);
                             rightTableHdl->addPredicate(rFldName, op, buf);
-                        }
+                        //}
                     }else if (strcmp(rTbl, lTabName) ==0)
                     {
-                        bool ind = rightTableHdl->hasIndex(lFldName);
-                        if (ind) {
+                        //bool ind = rightTableHdl->hasIndex(lFldName);
+                        //if (ind) {
                             void *buf = getBindedBuf(rTabName, rFldName);
                             rightTableHdl->addPredicate(lFldName, op, buf);
-                        }
+                        //}
                     }
                     //PRABA::END
                 setPredicate(pr);

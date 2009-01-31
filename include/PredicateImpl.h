@@ -40,6 +40,12 @@ class PredicateImpl:public Predicate
     void *tuple; //pointer to the tuple
     List *projList;
     bool isPushedDown;
+    
+    //optimization:caching val1 and val2 for evaluation
+    char *val1;
+    char *val2;
+    bool isBindBufSet;
+    bool isNoLeftRight;
 
     //This will be set before calling evaluate
     TableImpl *table;
@@ -56,6 +62,10 @@ class PredicateImpl:public Predicate
         type = typeUnknown;
         length = 0;
         isPushedDown=false;
+        isBindBufSet = false;
+        val1= NULL;
+        val2=NULL;
+        isNoLeftRight=false;
     }
     ~PredicateImpl(){}
 
@@ -96,6 +106,7 @@ class PredicateImpl:public Predicate
     char* getFldName2(){ return fldName2; }
     ComparisionOp getCompOp() {return compOp; }
     void print(int space);
+    void setIfNoLeftRight();
 };
 
 #endif

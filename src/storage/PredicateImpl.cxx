@@ -128,9 +128,18 @@ void PredicateImpl::setTable(Table *tbl)
         rhs->setTable((TableImpl*)tbl);
    table = (TableImpl*)tbl;
 }
+void PredicateImpl::setIfNoLeftRight()
+{
+    if(NULL == lhs && NULL == rhs) isNoLeftRight=true;
+    return;
+}
 
 void PredicateImpl::setTuple(void *tpl)
 {
+    if (isNoLeftRight) {
+        tuple=tpl;
+        return;
+    }
     //if (isPushedDown) return;
     if (NULL != lhs)
         lhs->setTuple(tpl);
@@ -145,6 +154,7 @@ void PredicateImpl::setProjectionList(List *lst)
     if (NULL != rhs)
          rhs->setProjectionList(lst);
     projList = lst;
+    isBindBufSet = false;
 }
 bool PredicateImpl::isSingleTerm()
 {
@@ -186,21 +196,22 @@ bool PredicateImpl::isNotOrInvolved()
 DbRetVal PredicateImpl::evaluate(bool &result)
 {
     //if (isPushedDown) { result = true; return OK; }
-    bool rhsResult = false, lhsResult=false;
-    DbRetVal retCode =OK;
-    result = false;
-    if (NULL != lhs)
-    {
+    if (!isNoLeftRight) {
+      bool rhsResult = false, lhsResult=false;
+      DbRetVal retCode =OK;
+      result = false;
+      if (NULL != lhs)
+      {
         retCode = lhs->evaluate(lhsResult);
         if (retCode != OK) return ErrInvalidExpr;
-    }else lhsResult = true;
-    if (NULL != rhs)
-    {
+      }else lhsResult = true;
+      if (NULL != rhs)
+      {
         retCode = rhs->evaluate(rhsResult);
         if (retCode != OK) return ErrInvalidExpr;
-    } else rhsResult = true;
-    if (NULL != lhs)
-    {
+      } else rhsResult = true;
+      if (NULL != lhs)
+      {
         //Means it involves only Logical operator
         if (OpAnd == logicalOp) {
             if (lhsResult && rhsResult) result = true;
@@ -211,30 +222,18 @@ DbRetVal PredicateImpl::evaluate(bool &result)
         }
         printDebug(DM_Predicate, "result is %d", result);
         return OK;
+      }
     }
     //Means it is relational expression
     //first operand is always field identifier
     //get the value in the tuple
-/*    char fieldName1[IDENTIFIER_LENGTH];
-    char fieldName2[IDENTIFIER_LENGTH];
-    memset(fieldName1, 0, IDENTIFIER_LENGTH);
-    memset(fieldName2, 0, IDENTIFIER_LENGTH);
-    Table::getFieldNameAlone(fldName1, fieldName1);
-    Table::getFieldNameAlone(fldName2, fieldName2);*/
-    /*table->setCurTuple(tuple);
-    if(table->isFldNull(fieldName1))
-    {
-        result=false;
-        return OK;
-    }*/
-    if (projList)
-    {
-        DataType type=typeUnknown;
-        int length=0;
+    if (projList) {
+      if (!isBindBufSet)
+      {
         //for join node evaluation
         ListIterator fIter = projList->getIterator();        
         JoinProjFieldInfo  *def;
-        char *val1, *val2;
+        //char *val1, *val2;
         while (fIter.hasElement())
         {
             def = (JoinProjFieldInfo*) fIter.nextElement();
@@ -284,36 +283,36 @@ DbRetVal PredicateImpl::evaluate(bool &result)
         { 
             val2 = *(char**)operandPtr;
         }
-        //if (compOp == OpLike) result = ! fnmatch(val2, val1, 0);
-        //else 
-        result = AllDataType::compareVal(val1, val2, compOp, type,
+        isBindBufSet = true;
+      }
+      result = AllDataType::compareVal(val1, val2, compOp, type,
                               length);
-        return OK;
+      return OK;
+
     }
     //the below code works only for single table 
-   // int offset1, offset2;
-
-    //offset1 = table->getFieldOffset(fieldName1);
-    //TODO::do not call getFieldXXX many times, instead get it using getFieldInfo
-    char *val2, *val1= ((char*) tuple) + offset1;
-    //Assumes that fldName2 data type is also same for expr f1 <f2
-    //Note:Perf: Do not change the order below
-    if(operand == NULL && operandPtr != NULL)
-    { 
+    val1= ((char*) tuple) + offset1;
+    if(offset2 != -1 && operand == NULL && operandPtr == NULL)
+        val2 = ((char*)tuple) + offset2; 
+    if (!isBindBufSet) {
+       //Assumes that fldName2 data type is also same for expr f1 <f2
+       //Note:Perf: Do not change the order below
+       if(operand == NULL && operandPtr != NULL)
+       { 
         val2 = *(char**)operandPtr;
-        result = AllDataType::compareVal(val1, val2, compOp, type,length);
-    }
-    else if (operand == NULL && operandPtr == NULL)
-    {
+       }
+       else if (operand == NULL && operandPtr == NULL)
+       {
          if(offset2 != -1)
              val2 = ((char*)tuple) + offset2; 
-         result = AllDataType::compareVal(val1, val2, compOp, type,length);
-    } 
-    else if(operand != NULL && operandPtr == NULL)
-    { 
-        val2 = (char*) operand;
-        result = AllDataType::compareVal(val1, val2, compOp, type,length);
+       } 
+       else if(operand != NULL && operandPtr == NULL)
+       { 
+          val2 = (char*) operand;
+       }
+       isBindBufSet = true;
     }
+    result = AllDataType::compareVal(val1, val2, compOp, type,length);
     return OK;
 }
 void PredicateImpl::setOffsetAndType()
