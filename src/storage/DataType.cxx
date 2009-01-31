@@ -508,10 +508,10 @@ void AllDataType::copyVal(void* dest, void *src, DataType type, int length)
     {
         //null is always put at the last byte by insert
         //so using strcpy is safe
-        //strcpy((char*)dest, (char*)src);
-        strncpy((char*)dest, (char*)src, length);
-        char *d =(char*)dest;
-        d[length-1] = '\0';
+        strcpy((char*)dest, (char*)src);
+        //strncpy((char*)dest, (char*)src, length);
+        //char *d =(char*)dest;
+        //d[length-1] = '\0';
         return;
     }else if (typeShort == type) {
         *(short*)dest = *(short*)src;
