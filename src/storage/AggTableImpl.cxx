@@ -348,12 +348,12 @@ DbRetVal HashMap::insert(void *element)
     newNode->next = NULL;
     int hashVal = (*(int*) element) % bucketSize;
     //printf("Hash val is %d\n", hashVal);
-    if (bucket[hashVal] == NULL)
+    HashMapNode *node = (HashMapNode*) bucket[hashVal];
+    if (NULL == node)
     {
         bucket[hashVal] = newNode;
         return OK;
     }
-    HashMapNode *node = (HashMapNode*) bucket[hashVal];
     while(node->next != NULL) ;
     node->next = newNode;
     return OK;

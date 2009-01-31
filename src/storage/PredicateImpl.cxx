@@ -21,7 +21,6 @@
 #include<PredicateImpl.h>
 #include<Table.h>
 #include<TableImpl.h>
-#include<fnmatch.h>
 #include<JoinTableImpl.h>
 #include<Util.h>
 void PredicateImpl::print(int space)
@@ -132,6 +131,7 @@ void PredicateImpl::setTable(Table *tbl)
 
 void PredicateImpl::setTuple(void *tpl)
 {
+    //if (isPushedDown) return;
     if (NULL != lhs)
         lhs->setTuple(tpl);
     if (NULL != rhs)
@@ -185,6 +185,7 @@ bool PredicateImpl::isNotOrInvolved()
 
 DbRetVal PredicateImpl::evaluate(bool &result)
 {
+    //if (isPushedDown) { result = true; return OK; }
     bool rhsResult = false, lhsResult=false;
     DbRetVal retCode =OK;
     result = false;
@@ -201,23 +202,15 @@ DbRetVal PredicateImpl::evaluate(bool &result)
     if (NULL != lhs)
     {
         //Means it involves only Logical operator
-            switch(logicalOp)
-            {
-                case OpAnd:
-                    if (lhsResult && rhsResult) result = true;
-                    break;
-                case OpOr:
-                    if (lhsResult || rhsResult) result = true;
-                    break;
-                case OpNot:
-                    if (lhsResult)  result = false; else result = true;
-                    break;
-                default:
-                    return ErrInvalidExpr;
-
-            }
-            printDebug(DM_Predicate, "result is %d", result);
-            return OK;
+        if (OpAnd == logicalOp) {
+            if (lhsResult && rhsResult) result = true;
+        }else if (OpOr == logicalOp) {
+            if (lhsResult || rhsResult) result = true;
+        }else if (OpNot == logicalOp){
+            if (lhsResult)  result = false; else result = true;
+        }
+        printDebug(DM_Predicate, "result is %d", result);
+        return OK;
     }
     //Means it is relational expression
     //first operand is always field identifier
@@ -291,8 +284,9 @@ DbRetVal PredicateImpl::evaluate(bool &result)
         { 
             val2 = *(char**)operandPtr;
         }
-        if (compOp == OpLike) result = ! fnmatch(val2, val1, 0);
-        else result = AllDataType::compareVal(val1, val2, compOp, type,
+        //if (compOp == OpLike) result = ! fnmatch(val2, val1, 0);
+        //else 
+        result = AllDataType::compareVal(val1, val2, compOp, type,
                               length);
         return OK;
     }
@@ -301,27 +295,25 @@ DbRetVal PredicateImpl::evaluate(bool &result)
 
     //offset1 = table->getFieldOffset(fieldName1);
     //TODO::do not call getFieldXXX many times, instead get it using getFieldInfo
-    char *val1, *val2;
+    char *val2, *val1= ((char*) tuple) + offset1;
     //Assumes that fldName2 data type is also same for expr f1 <f2
-   // DataType srcType = table->getFieldType(fieldName1);
-    val1 = ((char*) tuple) + offset1;
-    if (operand == NULL && operandPtr == NULL)
+    //Note:Perf: Do not change the order below
+    if(operand == NULL && operandPtr != NULL)
+    { 
+        val2 = *(char**)operandPtr;
+        result = AllDataType::compareVal(val1, val2, compOp, type,length);
+    }
+    else if (operand == NULL && operandPtr == NULL)
     {
-     //       offset2 = table->getFieldOffset(fieldName2);
          if(offset2 != -1)
              val2 = ((char*)tuple) + offset2; 
+         result = AllDataType::compareVal(val1, val2, compOp, type,length);
     } 
     else if(operand != NULL && operandPtr == NULL)
     { 
         val2 = (char*) operand;
+        result = AllDataType::compareVal(val1, val2, compOp, type,length);
     }
-    else if(operand == NULL && operandPtr != NULL)
-    { 
-        val2 = *(char**)operandPtr;
-    }
-    int ret = 0;
-    if (compOp == OpLike) result = ! fnmatch(val2, val1, 0);
-    else result = AllDataType::compareVal(val1, val2, compOp, type,length);
     return OK;
 }
 void PredicateImpl::setOffsetAndType()
@@ -501,6 +493,7 @@ void* PredicateImpl::valPtrForIndexField(const char *fname)
     {
         if(0 == strcmp(fieldName1, fname)) 
         {
+            isPushedDown = true;
             if (operand) return operand; else return *(void**)operandPtr;
         }
     }

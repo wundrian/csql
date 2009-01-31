@@ -39,12 +39,6 @@ void* ChunkIterator::nextElement()
         printError(ErrNotExists,"No iter page exists.");
         return NULL;
     }
-    //No iterators for variable size allocators
-    if(0 == allocSize_)
-    {
-        printError(ErrNotExists,"Iterators are not for variable size allocators");
-        return NULL;
-    }
     PageInfo* pageInfo = (PageInfo*)iterPage_;
     if (0 == noOfNodes_)
     {

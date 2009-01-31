@@ -39,6 +39,7 @@ class PredicateImpl:public Predicate
     //Members set during execution
     void *tuple; //pointer to the tuple
     List *projList;
+    bool isPushedDown;
 
     //This will be set before calling evaluate
     TableImpl *table;
@@ -54,6 +55,7 @@ class PredicateImpl:public Predicate
         offset1 = -1;  offset2 =-1;
         type = typeUnknown;
         length = 0;
+        isPushedDown=false;
     }
     ~PredicateImpl(){}
 

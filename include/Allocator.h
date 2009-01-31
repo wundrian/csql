@@ -85,6 +85,8 @@ class ChunkIterator
     int noOfNodes_;
 
     public:
+    ChunkIterator() { allocSize_ =0; iterPage_ = NULL; nodeOffset_ =0; 
+                      chunkID_ = -1; noOfNodes_  =0; }
     void* nextElement();
     friend class Chunk;
 };

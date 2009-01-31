@@ -35,6 +35,7 @@
 #include <signal.h>
 #include <ctype.h>
 #include <sys/socket.h>
+#include <fnmatch.h>
 #if defined(solaris)
     #include <sys/varargs.h>
 #endif
@@ -154,6 +155,7 @@ class os
     static size_t send(int fd, const void *buf, size_t len, int flags);
     static size_t recv(int fd, void *buf, size_t len, int flags);
     static int gethostname(char *hostname, size_t len);
+    static int strmatch(char *pattern, char *str);
 };
 
 #endif

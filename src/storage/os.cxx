@@ -258,3 +258,7 @@ int os::gethostname(char *hostname, size_t len)
 {
     return ::gethostname(hostname, len);
 }
+int os::strmatch(char *pattern, char *str)
+{
+    return ::fnmatch(pattern, str, 0);
+}

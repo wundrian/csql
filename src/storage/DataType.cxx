@@ -505,59 +505,36 @@ void AllDataType::copyVal(void* dest, void *src, DataType type, int length)
         return;
     }else if (typeString == type)
     {
+        //null is always put at the last byte by insert
+        //so using strcpy is safe
+        //strcpy((char*)dest, (char*)src);
         strncpy((char*)dest, (char*)src, length);
         char *d =(char*)dest;
         d[length-1] = '\0';
         return;
+    }else if (typeShort == type) {
+        *(short*)dest = *(short*)src;
+    }else if (typeDouble == type) {
+        *(double*)dest = *(double*)src;
+    }else if (typeTimeStamp == type) {
+        *(TimeStamp*)dest = *(TimeStamp*)src;
+    }else if (typeDate == type) {
+        *(Date*)dest = *(Date*)src;
+    }else if (typeFloat == type) {
+        *(float*)dest = *(float*)src;
+    }else if (typeTime == type) {
+        *(Time*)dest = *(Time*)src;
+    }else if (typeLong == type) {
+        *(long*)dest = *(long*)src;
+    }else if (typeLongLong == type) {
+        *(long long*)dest = *(long long*)src;
+    }else if (typeByteInt == type) {
+        *(char*)dest = *(char*)src;
+    }else if (typeBinary == type) {
+        os::memcpy(dest, src, length);
+    }else if (typeComposite == type) {
+        os::memcpy(dest, src, length);
     }
-
-    switch(type)
-    {
-        case typeInt:
-            *(int*)dest = *(int*)src;
-            break;
-        case typeLong:
-            *(long*)dest = *(long*)src;
-            break;
-        case typeLongLong:
-            *(long long*)dest = *(long long*)src;
-            break;
-        case typeShort:
-            *(short*)dest = *(short*)src;
-            break;
-        case typeByteInt:
-            *(char*)dest = *(char*)src;
-            break;
-        case typeDouble:
-            *(double*)dest = *(double*)src;
-            break;
-        case typeFloat:
-            *(float*)dest = *(float*)src;
-            break;
-        case typeDecimal:
-            //TODO::for porting
-        case typeDate:
-            *(Date*)dest = *(Date*)src;
-            break;
-        case typeTime:
-            *(Time*)dest = *(Time*)src;
-            break;
-        case typeTimeStamp:
-            *(TimeStamp*)dest = *(TimeStamp*)src;
-            break;
-        case typeString: 
-            {
-                strncpy((char*)dest, (char*)src, length);
-                char *d =(char*)dest;
-                d[length-1] = '\0';
-                break;
-            }
-        case typeBinary:
-            os::memcpy(dest, src, length);
-            break;
-        default:
-            break;
-        }
     return;
 }
 void AllDataType::addVal(void* dest, void *src, DataType type)
@@ -796,91 +773,81 @@ void AllDataType::divVal(void* dest, int src, DataType type)
 bool AllDataType::compareVal(void *val1, void *val2, ComparisionOp op,
                              DataType type, long length)
 {
-    //Performance optimization. putting likely case first
-    if (typeInt == type && OpEquals == op) 
+    //Performance optimization.
+    //do not convert compareXXXVal to virtual functions. it takes more time
+    if (typeInt == type) 
     {
+        //as int is the heavily used type, hardcoding the compare here itself
+        if (OpEquals == op) {
             if (*(int*)val1 == *(int*)val2) return true;
             else return false;
+        }else if (OpGreaterThanEquals == op) {
+            if (*(int*)val1 >= *(int*)val2) return true;
+            else return false;
+        }else if (OpLessThanEquals == op) {
+            if (*(int*)val1 <= *(int*)val2) return true;
+            else return false;
+        }else if (OpGreaterThan == op) {
+            if (*(int*)val1 > *(int*)val2) return true;
+            else return false;
+        }else if (OpLessThan == op) {
+            if (*(int*)val1 < *(int*)val2) return true;
+            else return false;
+        }else if (OpNotEquals == op) {
+            if (*(int*)val1 != *(int*)val2) return true;
+            else return false;
+        }
+       
+    }else if(typeString == type) {
+        return AllDataType::compareStringVal(val1, val2, op);
+    } else if (typeShort == type) {
+        return AllDataType::compareShortVal(val1, val2, op);
+    } else if (typeDouble == type) {
+        return AllDataType::compareDoubleVal(val1, val2, op);
+    } else if (typeFloat == type) {
+        return AllDataType::compareFloatVal(val1, val2, op);
+    } else if (typeLong == type) {
+        return AllDataType::compareLongVal(val1, val2, op);
+    } else if (typeLongLong == type) {
+        return AllDataType::compareLongLongVal(val1, val2, op);
+    } else if (typeByteInt == type) {
+        return AllDataType::compareByteIntVal(val1, val2, op);
+    } else if (typeTimeStamp == type) {
+        return AllDataType::compareTimeStampVal(val1, val2, op);
+    } else if (typeDate == type) {
+        return AllDataType::compareDateVal(val1, val2, op);
+    } else if (typeTime == type) {
+        return AllDataType::compareTimeVal(val1, val2, op);
+    } else if (typeBinary == type) {
+        return AllDataType::compareBinaryVal(val1, val2, op, length);
+    } else if (typeComposite == type) {
+        return AllDataType::compareBinaryVal(val1, val2, op, length);
     }
-    bool result = false;
-    switch(type)
-    {
-       case typeInt:
-           result = AllDataType::compareIntVal(val1, val2, op);
-           break;
-       case typeLong:
-           result = AllDataType::compareLongVal(val1, val2, op);
-           break;
-       case typeLongLong:
-           result = AllDataType::compareLongLongVal(val1, val2, op);
-           break;
-       case typeShort:
-           result = AllDataType::compareShortVal(val1, val2, op);
-           break;
-       case typeByteInt:
-           result = AllDataType::compareByteIntVal(val1, val2, op);
-           break;
-       case typeDouble:
-           result = AllDataType::compareDoubleVal(val1, val2, op);
-           break;
-       case typeFloat:
-           result = AllDataType::compareFloatVal(val1, val2, op);
-           break;
-       case typeDecimal:
-           //TODO::for porting
-           break;
-       case typeDate:
-           result = AllDataType::compareDateVal(val1, val2, op);
-           break;
-       case typeTime:
-           result = AllDataType::compareTimeVal(val1, val2, op);
-           break;
-       case typeTimeStamp:
-           result = AllDataType::compareTimeStampVal(val1, val2, op);
-           break;
-       case typeString:
-           result = AllDataType::compareStringVal(val1, val2, op);
-           break;
-       case typeComposite:
-       case typeBinary:
-           result = AllDataType::compareBinaryVal(val1, val2, op, length);
-           break;
-    }
-    return result;
 }
 
 bool AllDataType::compareIntVal(void* src1, void *src2, ComparisionOp op)
 {
-    if (OpEquals == op) 
-    {
-            if (*(int*)src1 == *(int*)src2) return true;
-            else return false;
+    printf("This function should never be called by anyone");
+    if (OpEquals == op) {
+        if (*(int*)src1 == *(int*)src2) return true;
+        else return false;
+    }else if (OpGreaterThan == op) {
+        if (*(int*)src1 > *(int*)src2) return true;
+        else return false;
+    }else if (OpLessThan == op) {
+        if (*(int*)src1 < *(int*)src2) return true;
+        else return false;
+    }else if (OpLessThanEquals == op) {
+        if (*(int*)src1 <= *(int*)src2) return true;
+        else return false;
+    }else if (OpGreaterThanEquals == op) {
+        if (*(int*)src1 >= *(int*)src2) return true;
+        else return false;
+    }else if (OpNotEquals == op) {
+        if (*(int*)src1 != *(int*)src2) return true;
+        else return false;
     }
-    bool result = false;
-    switch(op)
-    {
-        case OpLessThan:
-            if (*(int*)src1 < *(int*)src2) result = true;
-            else result = false;
-            break;
-        case OpGreaterThan:
-            if (*(int*)src1 > *(int*)src2) result = true;
-            else result = false;
-            break;
-        case OpLessThanEquals:
-            if (*(int*)src1 <= *(int*)src2) result = true;
-            else result = false;
-            break;
-        case OpGreaterThanEquals:
-            if (*(int*)src1 >= *(int*)src2) result = true;
-            else result = false;
-            break;
-        case OpNotEquals:
-            if (*(int*)src1 != *(int*)src2) result = true;
-            else result = false;
-            break;
-   }
-   return result;
+    return false;
 }
 
 bool AllDataType::compareLongVal(void* src1, void *src2, ComparisionOp op)
@@ -1183,30 +1150,33 @@ bool AllDataType::compareTimeStampVal(void* src1, void *src2, ComparisionOp op)
 
 bool AllDataType::compareStringVal(void* src1, void *src2, ComparisionOp op)
 {
-    bool result = false;
-    int ret = strcmp((char*)src1, (char*)src2);
-    switch(op)
-    {
-        case OpEquals:
-            if (ret == 0 ) result= true; else result = false;
-            break;
-        case OpNotEquals:
-            if (ret != 0 ) result= true; else result = false;
-            break;
-        case OpLessThan:
-            if (ret < 0 ) result= true; else result = false;
-            break;
-        case OpLessThanEquals:
-            printf("Illegal Operator:Not Supported for String\n");
-            break;
-        case OpGreaterThan:
-            if (ret > 0 ) result= true; else result = false;
-            break;
-        case OpGreaterThanEquals:
-            printf("Illegal Operator:Not Supported for String\n");
-            break;
-   }
-   return result;
+    if (OpEquals == op) {
+        if (strcmp((char*)src1, (char*)src2) ==0) return true;
+            else return false;
+    }else if (OpGreaterThan == op) {
+        if (strcmp((char*)src1, (char*)src2) >0) return true;
+        else return false;
+    }else if (OpLessThan == op) {
+        if (strcmp((char*)src1, (char*)src2) <0 ) return true;
+        else return false;
+    }else if (OpLessThanEquals == op) {
+        printf("Illegal Operator:Not Supported for String\n");
+        return false;
+       //if (strcmp((char*)src1, (char*)src2)<= 0) return true;
+       //else return false;
+    }else if (OpGreaterThanEquals == op) {
+        printf("Illegal Operator:Not Supported for String\n");
+        return false;
+        //if (strcmp((char*)src1, (char*)src2) >=0) return true;
+        //else return false;
+    }else if (OpNotEquals == op) {
+        if (strcmp((char*)src1, (char*)src2) != 0) return true;
+        else return false;
+    }else if (OpLike == op) {
+        return !os::strmatch((char*)src2, (char*)src1);
+    }
+    printf("Illegeal Operator:Not supported for String\n");
+    return false;
 }
 
 bool AllDataType::compareBinaryVal(void* src1, void *src2,

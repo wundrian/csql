@@ -23,6 +23,10 @@
 ChunkIterator Chunk::getIterator()
 {
     ChunkIterator iter;
+    if (0 == allocSize_) {
+        printError(ErrNotExists,"Iterators are not for variable size allocators");
+        return iter;
+    }
     iter.chunkID_ = chunkID_;
     iter.allocSize_ = allocSize_;
     iter.allocType_ = allocType_;
@@ -37,12 +41,6 @@ void* ChunkIterator::nextElement()
     if(NULL == iterPage_)
     {
         printError(ErrNotExists,"No iter page exists.");
-        return NULL;
-    }
-    //No iterators for variable size allocators
-    if(0 == allocSize_)
-    {
-        printError(ErrNotExists,"Iterators are not for variable size allocators");
         return NULL;
     }
     PageInfo* pageInfo = (PageInfo*)iterPage_;
