@@ -252,6 +252,19 @@ DbRetVal TableImpl::createPlan()
     isBetween=false;
     isPointLook = false;
     useIndex_ = -1;
+
+    FieldIterator fIter = fldList_.getIterator();
+    FieldDef *def = NULL;
+    while ((def = fIter.nextElement())!= NULL) {
+        if (NULL != def->bindVal_) bindList_.append(def);
+    }
+    numBindFlds_ = bindList_.size();
+    bindListArray_ = (void **) malloc(numBindFlds_ * sizeof (void *));
+    void *elem = NULL;
+    int i = 0;
+    ListIterator it = bindList_.getIterator();
+    while ((elem = it.nextElement()) != NULL) bindListArray_[i++] = elem;
+
     //if there are no predicates then go for full scan
     //if there are no indexes then go for full scan
     if (NULL == pred_ || NULL == indexPtr_)
@@ -849,14 +862,12 @@ void TableImpl::setNullBit(int fldpos)
 DbRetVal TableImpl::copyValuesToBindBuffer(void *tuplePtr)
 {
     //Iterate through the bind list and copy the value here
-    FieldIterator fIter = fldList_.getIterator();
     char *colPtr = (char*) tuplePtr;
-    while (fIter.hasElement())
-    {
-        FieldDef *def = fIter.nextElement();
-        if (NULL != def->bindVal_)
-            AllDataType::copyVal(def->bindVal_, colPtr, def->type_, def->length_);
-        colPtr = colPtr + def->length_;
+    FieldDef *def = NULL;
+    for (int i = 0; i < numBindFlds_; i++) {
+       def = (FieldDef *) bindListArray_[i];
+       colPtr =  (char *) tuplePtr + def->offset_;
+       AllDataType::copyVal(def->bindVal_, colPtr, def->type_, def->length_);
     }
     return OK;
 }

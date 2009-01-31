@@ -107,6 +107,9 @@ class TableImpl:public Table
 
     public:
     FieldList fldList_;
+    List bindList_;
+    void **bindListArray_;
+    int numBindFlds_;
     int numIndexes_;
     char** indexPtr_; // array of index ptrs to the catalog table for the indexes of this table.
     IndexInfo **idxInfo;
