@@ -16,6 +16,36 @@
 #include<Index.h>
 #include<Debug.h>
 
+void* TreeIter::getFirstElement()
+{
+   if (NULL == iter) return NULL;
+   TreeNode *node = iter;
+   while(node != NULL) {
+      if(NULL == node->prev_)  break;
+      node = node->prev_;
+   }
+   if (node == NULL) printf("Node returned is NULL\n");
+   if (0 == node->noElements_) return NULL;
+   char **rec = (char**)((char*)node + sizeof(TreeNode));
+   int loc = 0; //first element
+   char **tuple = (char**)((char*)rec + (loc * sizeof(void *)));
+   return *tuple;
+}
+void* TreeIter::getLastElement()
+{
+   if (NULL == iter) return NULL;
+   TreeNode *node = iter;
+   while(node != NULL ) {
+      if(NULL == node->next_)  break;
+      node = node->next_;
+   }
+   if (node == NULL) printf("Node returned is NULL\n");
+   if (0 == node->noElements_)  return NULL;
+   char **rec = (char**)((char*)node + sizeof(TreeNode));
+   int loc = node->noElements_-1; //last element
+   char **tuple = (char**)((char*)rec + (loc * sizeof(void *)));
+   return *tuple;
+}
 void* TreeIter::prev()
 {
    if (0 != nodeOffset )

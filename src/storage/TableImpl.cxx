@@ -182,6 +182,27 @@ bool TableImpl::hasIndex(char* fName)
    } 
    return false;
 }
+
+IndexType TableImpl::getIndexType(char *fName, int *pos)
+{
+   if (NULL == indexPtr_) return unknownIndex;
+   for (int i =0; i < numIndexes_; i++)
+   {
+      HashIndexInfo* info = (HashIndexInfo*) idxInfo[i];
+      FieldIterator iter = info->idxFldList.getIterator();
+      if(iter.hasElement())
+      {
+        FieldDef *def = iter.nextElement();
+        if(strcmp(def->fldName_, fName) == 0)
+            if(!iter.hasElement()) {//neglet if it is composite index
+                *(int*)pos = i;
+                return info->indType;
+            }
+      }
+   } 
+   *(int*)pos = -1;
+   return unknownIndex;
+}
 void TableImpl::addPredicate(char *fName, ComparisionOp op, void *buf)
 {
     //char fieldName[IDENTIFIER_LENGTH];
@@ -472,7 +493,40 @@ DbRetVal TableImpl::fetchAgg(const char * fldName, AggType aType, void *buf)
    DbRetVal rv = getFieldInfo(fldName, info);
    if (OK != rv) return rv;
    bool res= false;
-   
+   if (AGG_MIN == aType || AGG_MAX == aType) {
+      int pos =0;
+      IndexType iType = getIndexType((char*)fldName, &pos);
+      if (pos <0) { printError(ErrSysInternal, "should never happen"); }
+      if(treeIndex == iType) {
+          if (AGG_MIN == aType) {
+              HashIndexInfo* hInfo = (HashIndexInfo*) idxInfo[pos];
+              CINDEX *iptr = (CINDEX*) hInfo->indexPtr;
+              TreeIter *iter = new TreeIter((TreeNode*)iptr->hashNodeChunk_);
+              char *tuple = (char*) iter->getFirstElement();	
+              if (tuple != NULL) {
+                  AllDataType::copyVal(buf,(void*)(tuple+info->offset), 
+                                   info->type, info->length);
+                  delete iter; 
+                  return OK;
+              }
+              delete iter;
+          }
+          else if (AGG_MAX == aType) {
+              HashIndexInfo* hInfo = (HashIndexInfo*) idxInfo[pos];
+              CINDEX *iptr = (CINDEX*) hInfo->indexPtr;
+              TreeIter *iter = new TreeIter((TreeNode*)iptr->hashNodeChunk_);
+              char *tuple = (char*) iter->getLastElement();	
+              if (tuple != NULL) { 
+                  AllDataType::copyVal(buf,(void*)(tuple+info->offset), 
+                                   info->type, info->length);
+                  delete iter;
+                  return OK;
+              }
+              delete iter;
+          }
+      }
+   }
+
    char *tuple = (char*) fetchNoBind(rv);
    if ( NULL == tuple) 
    { 

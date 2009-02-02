@@ -156,7 +156,7 @@ class TreeIter
 
     public:
     TreeIter(){}
-    TreeIter(TreeNode *head) { iter = head = head; firstCall = true; recordsOver=false;}
+    TreeIter(TreeNode *hd) { iter = head = hd; firstCall = true; recordsOver=false;}
     void setSearchKey(void *key, ComparisionOp cop, bool ascending = true)
     {
         searchKey = key; op = cop; asc =ascending;
@@ -166,6 +166,8 @@ class TreeIter
     void* prev();
     void* next();
     void nextNode();
+    void* getFirstElement();
+    void* getLastElement();
     void reset() { iter = head; firstCall = true; recordsOver=false; }
 };
 

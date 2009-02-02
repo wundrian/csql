@@ -13,7 +13,6 @@
  *   GNU General Public License for more details.                          *
  *                                                                         *
   ***************************************************************************/
-#include <math.h>
 #include <os.h>
 #include <Debug.h>
 
@@ -53,11 +52,6 @@ int os::shm_detach (void* addr)
     return ::shmdt((char*)addr);
 }
 
-double os::floor(double val)
-{
-    return ::floor(val);
-}
-
 int os::gettimeofday(struct timeval *tp)
 {
     int retval;
@@ -69,18 +63,6 @@ struct tm* os::localtime(long *secs)
 {
     return ::localtime(secs);
 }
-
-pid_t os::getpid()
-{
-    return ::getpid();
-}
-pthread_t os::getthrid()
-{
-    return ::pthread_self();
-}
-
-
-
 
 int os::openFile(const char *name, FileOpenMode flags, size_t size)
 {
@@ -142,17 +124,6 @@ int os::memcmp(const void *s1, const void *s2, size_t size)
 sighandler_t os::signal(int signum, sighandler_t handler)
 {
     return ::signal(signum, handler);
-}
-
-size_t os::alignLong(size_t size)
-{
-    return ((size - 1) | (sizeof(long) - 1)) + 1;
-}
-
-size_t os::align(size_t size)
-{
-    //Calls alignLong
-    return ((size - 1) | (sizeof(long) - 1)) + 1;
 }
 
 int os::select(int nfds, fd_set *readfds, fd_set *writefds,

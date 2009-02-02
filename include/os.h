@@ -31,7 +31,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <pthread.h>
-//#include <math.h>
+#include <math.h>
 #include <signal.h>
 #include <ctype.h>
 #include <sys/socket.h>
@@ -122,8 +122,10 @@ class os
     static size_t write(int fildes, char *buf, size_t size);
     static int msync(caddr_t addr, size_t len, int flags);
     static int fsync(int fildes);
-    static size_t alignLong(size_t size);
-    static size_t align(size_t size);
+    inline static size_t alignLong(size_t size)
+        { return ((size - 1) | (sizeof(long) - 1)) + 1;}
+    inline static size_t align(size_t size)
+        { return ((size - 1) | (sizeof(long) - 1)) + 1;}
     static char*  encrypt(const char * key, const char *salt);
     static void* memset(void *src, int c, size_t size);
     static void* memcpy(void *src, const void *dest, size_t size);
@@ -138,13 +140,16 @@ class os
     static void*  shm_attach(shared_memory_id id, const void *ptr, int flag);
     static int shm_detach (void*);
     static int shmctl(int shmid, int cmd);
-    static double floor(double val);
+    inline static double floor(double val)
+        { return ::floor(val); }
     static sighandler_t signal(int signum, sighandler_t handler);
 
     static int gettimeofday(struct timeval *tp);
     static struct tm* localtime(long *secs);
-    static pid_t getpid();
-    static pthread_t getthrid();
+    static pid_t getpid()
+       { return ::getpid(); }
+    static pthread_t getthrid()
+       { return ::pthread_self(); }
     static char* getenv(const char *envVarName);
     static int setenv(const char *envVarName, const char *value);
 

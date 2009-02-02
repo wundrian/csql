@@ -21,16 +21,20 @@
 #include<Debug.h>
 #include<Config.h>
 #include<Process.h>
+LockManager::LockManager(Database *sysDb_)
+{
+    systemDatabase_ = sysDb_;
+    lockBuckets = systemDatabase_->getLockHashBuckets();
+}
 Bucket* LockManager::getLockBucket(void *tuple)
 {
-   int noOfBuckets = LOCK_BUCKET_SIZE;
-   Bucket* buckets = systemDatabase_->getLockHashBuckets();
+   //Bucket* buckets = systemDatabase_->getLockHashBuckets();
    unsigned long key =(unsigned long)tuple ;
-   int bucketNo = HashIndex::computeHashBucket(typeULong, &key, noOfBuckets);
+   int bucketNo = key % LOCK_BUCKET_SIZE;
 
-   Bucket *bucket = &(buckets[bucketNo]);
-   printDebug(DM_Lock, "getLockBucket bucketno:%d bucket:%x",bucketNo, bucket);
-   return bucket;
+   //Bucket *bucket = &(buckets[bucketNo]);
+   printDebug(DM_Lock, "getLockBucket bucketno:%d",bucketNo);
+   return &(lockBuckets[bucketNo]);
 }
 
 void LockManager::printUsageStatistics()
@@ -583,6 +587,13 @@ DbRetVal LockManager::isExclusiveLocked(void *tuple, Transaction **trans, bool &
 {
    Bucket *bucket = getLockBucket(tuple);
    printDebug(DM_Lock,"Bucket is %x", bucket);
+   LockHashNode *lockNode = (LockHashNode*) bucket->bucketList_;
+   if (NULL == lockNode)
+   {
+       printDebug(DM_Lock, "bucketList is empty. so data element not locked");
+       status = false;
+       return OK;
+   }
    int lockRet = bucket->mutex_.getLock(systemDatabase_->procSlot);
    if (lockRet != 0)
    {
@@ -590,14 +601,6 @@ DbRetVal LockManager::isExclusiveLocked(void *tuple, Transaction **trans, bool &
        printDebug(DM_Lock, "LockManager:releaseLock End");
        printError(ErrLockTimeOut, "Unable to get bucket mutex");
        return ErrLockTimeOut;
-   }
-   LockHashNode *lockNode = (LockHashNode*) bucket->bucketList_;
-   if (NULL == lockNode)
-   {
-       bucket->mutex_.releaseLock(systemDatabase_->procSlot);
-       printDebug(DM_Lock, "bucketList is empty. so data element not locked");
-       status = false;
-       return OK;
    }
 
    LockHashNode *iter = lockNode;

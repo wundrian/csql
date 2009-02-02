@@ -235,6 +235,7 @@ class TableImpl:public Table
     void setPredicate(Predicate *pred);
     ScanType getScanType() { return scanType_; }
     bool hasIndex(char *fldName);
+    IndexType getIndexType(char *fldName, int* pos);
     void addPredicate(char *fName, ComparisionOp op, void *buf);
 
     char* getName() { return tblName_; }

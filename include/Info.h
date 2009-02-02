@@ -132,7 +132,8 @@ class FieldInfo
 enum IndexType
 {
     hashIndex = 0, /**<hash index*/
-    treeIndex      /**<tree index*/
+    treeIndex,      /**<tree index*/
+    unknownIndex      /**<no index*/
 };
 
 /**

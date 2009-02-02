@@ -69,92 +69,41 @@ unsigned int hashBinary(char *strVal, int length)
 unsigned int HashIndex::computeHashBucket(DataType type, void *key, int noOfBuckets, int length)
 
 {
-    switch(type)
-    {
-        case typeInt:
-        {
-            int val = *(int*)key;
-            return val % noOfBuckets;
-            break;
-        }
-        case typeLong:
-        {
-            long val = *(long*)key;
-            return val % noOfBuckets;
-            break;
-        }
-        case typeULong:
-        {
-            unsigned long val = *(unsigned long*)key;
-            return val % noOfBuckets;
-            break;
-        }
-        case typeLongLong:
-        {
-            long long val = *(long long*)key;
-            return val % noOfBuckets;
-            break;
-        }
-        case typeShort:
-        {
-            short val = *(short*)key;
-            return val % noOfBuckets;
-            break;
-        }
-        case typeByteInt:
-        {
-            ByteInt val = *(ByteInt*)key;
-            return val % noOfBuckets;
-            break;
-        }
-        case typeDate:
-        {
-            int val = *(int*)key;
-            return val % noOfBuckets;
-            break;
-        }
-        case typeTime:
-        {
-            int val = *(int*)key;
-            return val % noOfBuckets;
-            break;
-        }
-        case typeTimeStamp:
-        {
-            TimeStamp val = *(TimeStamp*)key;
-            //TODO return val % noOfBuckets;
-            break;
-        }
-        case typeDouble:
-        {
-            //TODO
-            break;
-        }
-        case typeFloat:
-        {
-            //TODO
-            break;
-        }
-        case typeDecimal:
-        {
-            //TODO::for porting
-        }
-        case typeString:
-        {
-            unsigned int val = hashString((char*)key);
-            return val % noOfBuckets;
-        }
-        case typeComposite:
-        case typeBinary:
-        {
-            unsigned int val = hashBinary((char*)key, length);
-            return val % noOfBuckets;
-        }
-        default:
-        {
-            break;
-        }
+    if (typeInt == type) {
+        int val = *(int*)key;
+        return val % noOfBuckets;
+    }else if (typeString == type) {
+        unsigned int val = hashString((char*)key);
+        return val % noOfBuckets;
+    }else if (typeShort == type) {
+        short val = *(short*) key;
+        return val % noOfBuckets;
+    }else if (typeLong == type) {
+        long val = *(long*) key;
+        return val % noOfBuckets;
+    }else if (typeLongLong == type) {
+        long long val = *(long long*) key;
+        return val % noOfBuckets;
+    }else if (typeByteInt == type) {
+        ByteInt val = *(ByteInt*)key;
+        return val % noOfBuckets;
+    }else if (typeDate == type) {
+        int val = *(int*)key;
+        return val % noOfBuckets;
+    }else if (typeTime == type) {
+        int val = *(int*)key;
+        return val % noOfBuckets;
+    }else if (typeComposite == type) {
+        unsigned int val = hashBinary((char*)key, length);
+        return val % noOfBuckets;
+    }else if (typeBinary == type) {
+        unsigned int val = hashBinary((char*)key, length);
+        return val % noOfBuckets;
+    }else if (typeULong == type) {
+        unsigned long val = *(unsigned long*)key;
+        return val % noOfBuckets;
     }
+    printError(ErrSysFatal,"Type not supported for hashing\n");
     return -1;
 }
 

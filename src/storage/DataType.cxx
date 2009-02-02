@@ -1290,25 +1290,25 @@ void  AllDataType::memoryset(void *value,DataType type)
     switch(type)
     {
         case typeInt:
-            value=os::memset(value, 0, sizeof(int));
+            value= ::memset(value, 0, sizeof(int));
             break;
         case typeLong:
-            value = os::memset(value, 0, sizeof(long));
+            value = ::memset(value, 0, sizeof(long));
             break;
         case typeLongLong:
-            value =os::memset(value, 0, sizeof(long long));
+            value =::memset(value, 0, sizeof(long long));
             break;
         case typeShort:
-            value = os::memset(value, 0, sizeof(short));
+            value = ::memset(value, 0, sizeof(short));
             break;
         case typeByteInt:
-            value = os::memset(value, 0, sizeof(char));
+            value = ::memset(value, 0, sizeof(char));
             break;
         case typeDouble:
-            value = os::memset(value, 0, sizeof(double));
+            value = ::memset(value, 0, sizeof(double));
             break;
         case typeFloat:
-            value = os::memset(value, 0, sizeof(float));
+            value = ::memset(value, 0, sizeof(float));
             break;
         case typeDecimal:
             break;
@@ -1323,13 +1323,13 @@ void  AllDataType::memoryset(void *value,DataType type)
                         memset(dest, 0, length);*/
                         break;
         case typeDate:
-            value = os::memset(value, 0, sizeof(Date));
+            value = ::memset(value, 0, sizeof(Date));
             break;
         case typeTime:
-            value = os::memset(value, 0, sizeof(Time));
+            value = ::memset(value, 0, sizeof(Time));
             break;
         case typeTimeStamp:
-            value = os::memset(value, 0, sizeof(TimeStamp));
+            value = ::memset(value, 0, sizeof(TimeStamp));
             break;
         defalut:
             break;

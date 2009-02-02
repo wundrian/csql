@@ -130,7 +130,11 @@ int TSL(Lock *lock)
 
 int Mutex::tryLock(int tryTimes, int waitmsecs)
 {
-    int tries = 0;
+    if (TSL(&lock) == 0) 
+    {
+        return 0; 
+    }
+    int tries = 1;
     int ret = 0;
     struct timeval timeout;
     timeout.tv_sec = 0;

@@ -140,6 +140,7 @@ void ParsedData::reset()
     }
     fieldValueList.reset();
     inValueList.reset();
+
     predicate.reset();
 
     iter = conditionValueList.getIterator();

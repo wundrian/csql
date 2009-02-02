@@ -76,6 +76,7 @@ class LockManager
 {
     public:
     Database *systemDatabase_;
+    Bucket *lockBuckets;
 
     private:
     LockHashNode* allocLockNode(LockInfo &info, void *tuple, DbRetVal *rv);
@@ -84,7 +85,7 @@ class LockManager
 
     public:
 
-    LockManager(Database *sysDb_){ systemDatabase_ = sysDb_;}
+    LockManager(Database *sysDb_);
     DbRetVal getSharedLock(void *tuple, Transaction **trans);
     DbRetVal getExclusiveLock(void * tuple, Transaction **trans);
     DbRetVal releaseLock(void *tuple);
