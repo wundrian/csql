@@ -182,6 +182,7 @@ class IndexInfo
 {
     public:
     IndexType indType;
+    virtual ~IndexInfo() {}
 };
 
 //Used by TableImpl to cache information related to hash indexes on that table
@@ -200,6 +201,7 @@ class HashIndexInfo :public IndexInfo
     {
         printf("HashIndexInfo indexPtr:%x noOfBuckets:%d buckets:%x \n",indexPtr, noOfBuckets, buckets);
     }
+    ~HashIndexInfo() { idxFldList.removeAll(); }
 };
 #endif
 

@@ -16,7 +16,7 @@ int main()
     if (rv != OK) { printf("Table creation failed\n"); conn.close(); return 3; }
     printf("Table created\n");
     
-HashIndexInitInfo *idxInfo = new HashIndexInitInfo();
+    HashIndexInitInfo *idxInfo = new HashIndexInitInfo();
     strcpy(idxInfo->tableName, "t1");
     idxInfo->list.append("f1");
     idxInfo->isUnique = true;
@@ -24,7 +24,7 @@ HashIndexInitInfo *idxInfo = new HashIndexInitInfo();
     idxInfo->indType = hashIndex;
     rv = dbMgr->createIndex("indx", idxInfo);
     if (rv != OK) { printf("Index creation failed\n"); return ErrUnknown; }
-
+    delete idxInfo; 
     Table *table = dbMgr->openTable("t1");
     if (table == NULL) 
     { 

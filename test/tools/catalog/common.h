@@ -9,6 +9,7 @@ DbRetVal createIndex(DatabaseManager *dbMgr, char *tblname, char *fldname, char 
     idxInfo->isUnique = true;
     DbRetVal rv = dbMgr->createIndex(indname, idxInfo);
     if (rv != OK) { printf("Index creation failed\n"); return rv; }
+    delete idxInfo;
     printf("Index created for %s\n", fldname);
     return OK;
 }

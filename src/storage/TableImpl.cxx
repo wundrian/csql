@@ -1108,7 +1108,8 @@ TableImpl::~TableImpl()
         idxInfo = NULL; 
     }
     if (numFlds_ > 31 && cNullInfo != NULL) { free(cNullInfo); cNullInfo = NULL; }
-
+    if (bindList_.size()) bindList_.reset();
+    if (bindListArray_) { free (bindListArray_); bindListArray_ = NULL; }
     fldList_.removeAll();
 
 }

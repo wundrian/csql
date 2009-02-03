@@ -57,15 +57,19 @@ class TupleIterator
     bool isBetween;
     bool isPointLook;
     
-    TupleIterator(){}
+    TupleIterator() { }
     public:
     TupleIterator(Predicate *p, ScanType t, IndexInfo *i, void *cptr, int pslot,bool between , bool isPtLook)
-    { bIter = NULL; pred_ = p ; scanType_ = t; info = i; chunkPtr_ = cptr; procSlot =pslot; isBetween=between; isPointLook=isPtLook; }
+    { bIter = NULL; cIter = NULL; tIter = NULL; 
+      pred_ = p ; scanType_ = t; info = i; chunkPtr_ = cptr; 
+      procSlot =pslot; isBetween=between; isPointLook=isPtLook; 
+    }
     
     ~TupleIterator() 
 	{ 
-        if (bIter) delete bIter; 
-        bIter = NULL; 
+        if (bIter) { delete bIter; bIter = NULL; }
+        if (cIter) { delete cIter; cIter = NULL; }
+        if (tIter) { delete tIter; tIter = NULL; }
     }
     bool isBetInvolved(){ return isBetween;}
     void setBetInvolved(bool between){ isBetween=between;}
@@ -148,7 +152,7 @@ class TableImpl:public Table
     public:
     TableImpl() { db_ = NULL; chunkPtr_ = NULL; iter = NULL;
         idxInfo = NULL; indexPtr_ = NULL; scanType_ = unknownScan; 
-        pred_ = NULL; useIndex_ = -1; numFlds_ = 0;
+        pred_ = NULL; useIndex_ = -1; numFlds_ = 0; bindListArray_ = NULL;
         iNullInfo = 0; cNullInfo = NULL; isIntUsedForNULL = true; 
         iNotNullInfo = 0; cNotNullInfo = NULL; curTuple_ = NULL;
         isPlanCreated = false; undoFlag = true;}
