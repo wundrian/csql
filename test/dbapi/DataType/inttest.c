@@ -14,7 +14,7 @@ int select(Table *table, ComparisionOp op)
     while ((tuple = (char*) table->fetch())) {
         printf("tuple value is %d %s \n", id, name);
     }
-    table->close();
+    table->closeScan();
     return 0;
 }
 
@@ -101,10 +101,10 @@ int main()
         val1 = i;
         table->execute();
         tuple = (char*)table->fetch() ;
-        if (tuple == NULL) {printf("loop break in %d\n", i);table->close();break;}
+        if (tuple == NULL) {printf("loop break in %d\n", i);table->closeScan();break;}
         strcpy(name, "PRABAKARAN0950576543210");
         table->updateTuple();
-        table->close();
+        table->closeScan();
     }
     conn.commit();
     rv = conn.startTransaction();
@@ -114,10 +114,10 @@ int main()
         val1 = i;
         table->execute();
         tuple = (char*)table->fetch() ;
-        if (tuple == NULL) {printf("loop break in %d\n", i);table->close();break;}
+        if (tuple == NULL) {printf("loop break in %d\n", i);table->closeScan();break;}
         printf("deleting tuple %d %s \n", id, name);
         table->deleteTuple();
-        table->close();
+        table->closeScan();
     }
     conn.commit();
 
@@ -129,7 +129,7 @@ int main()
         dbMgr->dropTable("t1");
         return 10;
     }
-    table->close();
+    table->closeScan();
     conn.commit();
 
     dbMgr->closeTable(table);

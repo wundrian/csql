@@ -16,7 +16,7 @@ int select(Table *table, ComparisionOp op)
         AllDataType::printVal(&id, typeTime,0);
         printf(" %s \n", name);
     }
-    table->close();
+    table->closeScan();
     return 0;
 }
 
@@ -108,7 +108,7 @@ int main()
         strcpy(name, "My value is updated");
         table->updateTuple();
     }
-    table->close();
+    table->closeScan();
 
     conn.commit();
     rv = conn.startTransaction();
@@ -119,12 +119,12 @@ int main()
         //val1 = i;
         table->execute();
         tuple = (char*)table->fetch() ;
-        if (tuple == NULL) {printf("loop break in %d\n", i);table->close();break;}
+        if (tuple == NULL) {printf("loop break in %d\n", i);table->closeScan();break;}
         printf("deleting tuple ");
         AllDataType::printVal(&id, typeTime,0);
         printf(" %s \n", name);
         table->deleteTuple();
-        table->close();
+        table->closeScan();
     }
     conn.commit();
 
@@ -136,7 +136,7 @@ int main()
         AllDataType::printVal(&id, typeTime,0);
         printf(" %s \n", name);
     }
-    table->close();
+    table->closeScan();
     conn.commit();
 
     dbMgr->closeTable(table);

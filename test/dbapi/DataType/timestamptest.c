@@ -16,7 +16,7 @@ int select(Table *table, ComparisionOp op)
         AllDataType::printVal(&id, typeTimeStamp,0);
         printf(" %s \n", name);
     }
-    table->close();
+    table->closeScan();
     return 0;
 }
 
@@ -112,7 +112,7 @@ int main()
         strcpy(name, "My value is updated");
         table->updateTuple();
     }
-    table->close();
+    table->closeScan();
 
     conn.commit();
     rv = conn.startTransaction();
@@ -129,7 +129,7 @@ int main()
             printf(" %s \n", name);
             table->deleteTuple();
         }
-        table->close();
+        table->closeScan();
     conn.commit();
 
     table->setCondition(NULL);
@@ -140,7 +140,7 @@ int main()
         AllDataType::printVal(&id, typeTimeStamp,0);
         printf(" %s \n", name);
     }
-    table->close();
+    table->closeScan();
     conn.commit();
 
     dbMgr->closeTable(table);

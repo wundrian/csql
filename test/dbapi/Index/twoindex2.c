@@ -68,9 +68,9 @@ int main()
         val1 = i;
         table->execute();
         tuple = (char*)table->fetch() ;
-        if (tuple == NULL) {printf("loop break in %d\n", i);table->close();break;}
+        if (tuple == NULL) {printf("loop break in %d\n", i);table->closeScan();break;}
         printf("I:tuple value is %d %s \n", id1, id2);
-        table->close();
+        table->closeScan();
     }
 
     table->setCondition(&p2);
@@ -79,9 +79,9 @@ int main()
         sprintf(val2, "Aruna:%d", i);
         table->execute();
         tuple = (char*)table->fetch() ;
-        if (tuple == NULL) {printf("loop break in %d\n", i);table->close();break;}
+        if (tuple == NULL) {printf("loop break in %d\n", i);table->closeScan();break;}
         printf("II:tuple value is %d %s \n", id1, id2);
-        table->close();
+        table->closeScan();
     }
     conn.commit();
 
@@ -95,7 +95,7 @@ int main()
         sprintf(id2,"Aruna:%d", 99);
         table->updateTuple();
     }
-    table->close();
+    table->closeScan();
     table->setCondition(&p2);
     sprintf(val2, "Aruna:%d", 10);
     table->execute();
@@ -104,7 +104,7 @@ int main()
         id1=99;
         table->updateTuple();
     }
-    table->close();
+    table->closeScan();
     conn.commit();
 
 
@@ -117,7 +117,7 @@ int main()
     if (tuple != NULL) {
         table->deleteTuple();
     }
-    table->close();
+    table->closeScan();
     table->setCondition(&p2);
     sprintf(val2, "Aruna:%d", 101);
     table->execute();
@@ -125,7 +125,7 @@ int main()
     if (tuple != NULL) {
         table->deleteTuple();
     }
-    table->close();
+    table->closeScan();
     conn.commit();
 
     int count =0;
@@ -137,7 +137,7 @@ int main()
         printf("tuple value is %d %s \n", id1, id2);
         count++;
     }
-    table->close();
+    table->closeScan();
     conn.commit();
     printf("Total rows selected %d\n", count);
     dbMgr->closeTable(table);
