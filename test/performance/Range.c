@@ -76,7 +76,7 @@ int main()
         if (cnt != 100) printf("Error in fetching %d\n", cnt);
         icount++;
         conn.commit();
-        table->close();
+        table->closeScan();
         timer.stop();
     }
     sprintf(msgBuf,"%d rows selected %lld %lld %lld\n", icount, timer.min(), timer.max(), timer.avg());

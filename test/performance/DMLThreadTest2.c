@@ -67,7 +67,7 @@ int main()
       count++;
    }
    printf("Tuples found: %d\n",count);
-   table->close();
+   table->closeScan();
    conn.commit();
    
    dbMgr->closeTable(table);
@@ -186,7 +186,7 @@ void* runSelTest(void* message)
       rv = table->execute();
       tuple = (char*)table->fetch();
       if(tuple != NULL)count++;
-      table->close();
+      table->closeScan();
       conn.commit();
     }
 

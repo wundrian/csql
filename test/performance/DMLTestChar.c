@@ -71,9 +71,9 @@ int main()
         if (rv != OK) exit(1);
         table->execute();
         tuple = (char*)table->fetch();
-        if (tuple == NULL) {printf("loop break in %d\n", i);table->close();break;}
+        if (tuple == NULL) {printf("loop break in %d\n", i);table->closeScan();break;}
         //printf("Select f1 = %s, f2=%s\n", tuple, tuple + offset);
-        table->close();
+        table->closeScan();
         icount++;
         conn.commit();
         timer.stop();
@@ -89,10 +89,10 @@ int main()
         if (rv != OK) exit (1);
         table->execute();
         tuple = (char*)table->fetch() ;
-        if (tuple == NULL) {printf("loop break in %d\n", i);table->close();break;}
+        if (tuple == NULL) {printf("loop break in %d\n", i);table->closeScan();break;}
         strcpy(f2, "PRABAKARAN0950576543210");
         table->updateTuple();
-        table->close();
+        table->closeScan();
         conn.commit();
         timer.stop();
     }
@@ -107,11 +107,11 @@ int main()
         if (rv != OK) exit (1);
         table->execute();
         tuple = (char*)table->fetch() ;
-        if (tuple == NULL) {printf("loop break in %d\n", i);table->close();break;}
+        if (tuple == NULL) {printf("loop break in %d\n", i);table->closeScan();break;}
         //printf("Before delete f1 = %s, f2=%s\n", tuple, tuple + offset);
         table->deleteTuple();
         icount++;
-        table->close();
+        table->closeScan();
         conn.commit();
         timer.stop();
     }
@@ -125,10 +125,10 @@ int main()
         if (rv != OK) exit (1);
         table->execute();
         tuple = (char*)table->fetch() ;
-        if (tuple == NULL) {printf("loop break in %d\n", i);table->close();break;}
+        if (tuple == NULL) {printf("loop break in %d\n", i);table->closeScan();break;}
         //printf("tuple value is %d %s \n", *((int*)tuple), tuple+offset);
         count++;
-        table->close();
+        table->closeScan();
         conn.commit();
     }
     printf("Total rows selected %d\n", count);

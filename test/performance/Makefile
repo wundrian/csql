@@ -10,7 +10,7 @@ JAVAC = javac
 else
 ifeq ($(OSNAME), Linux)
 CPlus = g++
-CPlusFlags = -O2 -w 
+CPlusFlags = -g -w 
 JAVAC = javac -g:none
 SYSLIBS= -rdynamic -lrt -lpthread -lcrypt
 else

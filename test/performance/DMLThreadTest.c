@@ -50,7 +50,7 @@ int main()
          count++;
     }
     printf("Tuples found: %d\n", count);
-    table->close();
+    table->closeScan();
     conn.commit();
 
 
@@ -68,7 +68,7 @@ int main()
         tuple = (char*)table->fetch() ;
         if (tuple == NULL)  break;
         icount++;
-        table->close();
+        table->closeScan();
         conn.commit();
     }
     printf("Index Tuples found: %d\n", icount);
@@ -216,7 +216,7 @@ void* runSelTest(void *message)
         tuple = (char*)table->fetch() ;
         if (tuple == NULL)  break;
         icount++;
-        table->close();
+        table->closeScan();
         rv = conn.commit();
         if (rv != OK) {
             while (rv == ErrLockTimeOut) { 

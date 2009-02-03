@@ -92,9 +92,9 @@ int main()
             val1 = i *100000 + j;
             table->execute();
             tuple = (char*)table->fetch() ;
-            if (tuple == NULL) {printf("loop break in %d\n", i);table->close();break;}
+            if (tuple == NULL) {printf("loop break in %d\n", i);table->closeScan();break;}
     //    printf(" %d tuple value is %d %s \n", i, *((int*)tuple), tuple+offset1);
-            table->close();
+            table->closeScan();
             icount++;
             conn.commit();
         }

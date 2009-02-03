@@ -67,7 +67,7 @@ int main()
       count++;
    }
    printf("Tuples found: %d\n",count);
-   table->close();
+   table->closeScan();
    conn.commit();
    
    dbMgr->closeTable(table);
@@ -188,12 +188,12 @@ void* runSelTest(void* message)
       if(tuple == NULL)
       {
          printf("loop break in %d\n",i);
-         table->close();
+         table->closeScan();
          break;
       }
       strcpy(name,"LAKSHYA SOLUTIONS");
       table->updateTuple();
-      table->close();
+      table->closeScan();
       conn.commit();
       count++;
    }
