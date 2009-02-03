@@ -72,7 +72,7 @@ int main()
 
     }
     conn.commit();
-    rv=table->close();
+    rv=table->closeScan();
     if(rv!=OK){ printf("Error in closing the table\n"); return 3;}
  
     Condition p1;
@@ -99,7 +99,7 @@ int main()
         table->deleteTuple();
     }
    conn.commit();
-   table->close(); 
+   table->closeScan(); 
 
 
     conn.startTransaction();
@@ -126,7 +126,7 @@ int main()
 
     //unset the condtion set as we need to delete all rows
     table->setCondition(NULL);
-    table->close();
+    table->closeScan();
     dbMgr->closeTable(table);
     dbMgr->dropTable("t1");
     conn.close();

@@ -71,7 +71,7 @@ int main()
           return 5;   
        }
    }
-   table->close();
+   table->closeScan();
    printf("Updated successfully\n");
    
   //Delets the tuple having f1=8 
@@ -102,7 +102,7 @@ int main()
           return 6;   
        }
    }
-   table->close();
+   table->closeScan();
    printf("Deleted successfully");
 
    conn.rollback();
@@ -121,7 +121,7 @@ int main()
    }
    conn.commit();
 
-   table->close();
+   table->closeScan();
    dbMgr->closeTable(table);
    dbMgr->dropTable("t1");
    conn.close();

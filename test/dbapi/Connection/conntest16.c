@@ -60,7 +60,7 @@ int main()
        }
      //  printf("Updated tuple value is %d %s",id,name);
     }
-    table->close();
+    table->closeScan();
     conn.rollback();
     table->setCondition(NULL);
     table->execute();
@@ -71,7 +71,7 @@ int main()
         printf("\nBinded Tuple value is %d %s", id, name);
     }
 
-    table->close();
+    table->closeScan();
     dbMgr->closeTable(table);
     dbMgr->dropTable("t1");
     conn.close();

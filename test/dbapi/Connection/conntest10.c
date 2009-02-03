@@ -61,9 +61,9 @@ int main()
 
     }
     conn.commit();
-    table->close();
+    table->closeScan();
 	dbMgr->closeTable(table);
     dbMgr->dropTable("t1");
-    printf("test passed successfully");                      
+    printf("test passed successfully\n");                      
     return 0;
 }
