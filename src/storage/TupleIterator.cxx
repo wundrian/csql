@@ -104,6 +104,7 @@ void* TupleIterator::prev()
         if(NULL == tuple) {
             printDebug(DM_HashIndex, "prev::tuple is null");
         }
+        //TODO::evaluate as it is done in next() before returning
     }
     return tuple;
 }
@@ -129,10 +130,9 @@ void* TupleIterator::next()
             {
                 tuple = cIter->nextElement();
                 if(NULL == tuple) return NULL;
-                predImpl->setTuple(tuple);
+                //predImpl->setTuple(tuple);
                 printDebug(DM_Table, "Evaluating the predicate from fullTableScan");
-                rv = predImpl->evaluate(result);
-                if (rv != OK) return NULL;
+                predImpl->evaluateForTable(result, (char*)tuple);
             }
         }
     }else if (hashIndexScan == scanType_)
@@ -157,10 +157,9 @@ void* TupleIterator::next()
 
             //if (!predImpl->isSingleTerm()) {
                printDebug(DM_HashIndex, "next: predicate has more than single term");
-               predImpl->setTuple(tuple);
+               //predImpl->setTuple(tuple);
                printDebug(DM_Table, "Evaluating the predicate from hashIndexScan: has more than one term");
-               rv = predImpl->evaluate(result);
-               if (rv != OK) return NULL;
+               predImpl->evaluateForTable(result, (char*)tuple);
             //} 
             //else 
             //    return tuple;
@@ -177,9 +176,8 @@ void* TupleIterator::next()
                 printDebug(DM_HashIndex, "next::tuple is null");
                 return NULL;
            }
-           predImpl->setTuple(tuple);
-           rv = predImpl->evaluate(result);
-           if (rv != OK) return NULL;
+           //predImpl->setTuple(tuple);
+           predImpl->evaluateForTable(result, (char*)tuple);
            if(!result && (isBetInvolved() || isPointLookInvolved()))  tIter->nextNode();
         }
     }

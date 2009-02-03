@@ -293,10 +293,13 @@ condition: ident OPERATOR value
         {
             void **ptr1 = parsedData->insertCondValueAndGetPtr((char*)$1, (char*)$4);
             void **ptr2 = parsedData->insertCondValueAndGetPtr((char*)$1, (char*)$6);
-            Predicate *pred1, *pred2, *pred3, *finalPred;
-            pred1 = parsedData->insertPredicate((char*) $1, OpGreaterThanEquals, ptr1);
-            pred2 = parsedData->insertPredicate((char*) $1, OpLessThanEquals, ptr2);
-            finalPred = parsedData->insertPredicate(pred1, OpAnd, pred2);
+            Predicate *finalPred;
+ //           pred1 = parsedData->insertPredicate((char*) $1, OpGreaterThanEquals, ptr1);
+//            pred2 = parsedData->insertPredicate((char*) $1, OpLessThanEquals, ptr2);
+            finalPred = parsedData->insertBetPredicate((char*) $1, 
+                        OpGreaterThanEquals, ptr1, OpLessThanEquals, ptr2);
+                        //OpLessThanEquals, ptr2, OpGreaterThanEquals, ptr1);
+
             if( $2 == (char*) 1 )
                 finalPred = parsedData->insertPredicate(finalPred, OpNot, NULL);
             free( $1 );  free( $4 );  free( $6 );

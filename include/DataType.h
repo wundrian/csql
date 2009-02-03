@@ -95,14 +95,14 @@ static char LogOpNames[][10] =
 class AllDataType
 {
     public:
-    static long size(DataType type, int length =0);
+    inline static long size(DataType type, int length =0);
     static char* getSQLString(DataType type);
     static SQLSMALLINT convertToSQLType(DataType type);
     static SQLSMALLINT convertToSQL_C_Type(DataType type);
     static DataType convertFromSQLType(SQLSMALLINT type);
 
-    static void copyVal(void* dest, void *src, DataType type, int length = 0);
-    static void addVal(void* dest, void *src, DataType type);
+    inline static void copyVal(void* dest, void *src, DataType type, int length = 0);
+    inline static void addVal(void* dest, void *src, DataType type);
     static void divVal(void* dest, int src, DataType type);
     static void subVal(void* dest, void *src, DataType type);
     static void mulVal(void* dest, void *src, DataType type);
@@ -110,7 +110,7 @@ class AllDataType
     static void divVal(void* dest, void *src, DataType type);
 
 
-    static bool compareVal(void *src1, void *src2, ComparisionOp op,
+    inline static bool compareVal(void *src1, void *src2, ComparisionOp op,
                            DataType type, long length = 0);
     static bool compareIntVal(void* src1, void* src2, ComparisionOp op);
     static bool compareLongVal(void* src1, void* src2, ComparisionOp op);
@@ -139,10 +139,10 @@ class AllDataType
     static void convertToDate(void* dest, void* src, DataType srcType);
     static void convertToTime(void* dest, void* src, DataType srcType);
     static void convertToTimeStamp(void* dest, void* src, DataType srcType);
-	static void convertToBinary(void* dest, void* src, DataType srcType, int length);
+    static void convertToBinary(void* dest, void* src, DataType srcType, int length);
 
     static void memoryset(void *value,DataType type);
-    static ComparisionOp getComparisionOperator(char *str);
+    inline static ComparisionOp getComparisionOperator(char *str);
 
     static void* alloc(DataType type, int length =0);
     static DbRetVal strToValue(void *dest, char *src, DataType type, int length=0);
@@ -649,7 +649,7 @@ day".
     Time time;
 };
 
-
+#include<DataTypeInline.h>
 #endif
 
 

@@ -109,7 +109,7 @@ DbRetVal AggTableImpl::execute()
            {
                case AGG_MIN: {
                    bool result = AllDataType::compareVal(buffer+offset,
-                                 def->bindBuf, OpGreaterThan, def->type, def->length);
+                                 def->bindBuf, OpGreaterThanEquals, def->type, def->length);
                    if (result)
                        AllDataType::copyVal(buffer+offset, def->bindBuf,
                                             def->type, def->length);
@@ -117,7 +117,7 @@ DbRetVal AggTableImpl::execute()
                }
                case AGG_MAX: {
                    bool result = AllDataType::compareVal(buffer+offset,
-                                        def->bindBuf, OpLessThan, def->type, def->length);
+                                        def->bindBuf, OpLessThanEquals, def->type, def->length);
                    if (result)
                        AllDataType::copyVal(buffer+offset, def->bindBuf,
                                             def->type, def->length);

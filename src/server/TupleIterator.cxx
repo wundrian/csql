@@ -91,7 +91,7 @@ void* TupleIterator::next()
             {
                 tuple = cIter->nextElement();
                 if(NULL == tuple) return NULL;
-                predImpl->setTuple(tuple);
+                //predImpl->setTuple(tuple);
                 printDebug(DM_Table, "Evaluating the predicate from fullTableScan");
                 rv = predImpl->evaluate(result);
                 if (rv != OK) return NULL;
@@ -119,7 +119,7 @@ void* TupleIterator::next()
 
             //if (!predImpl->isSingleTerm()) {
                printDebug(DM_HashIndex, "next: predicate has more than single term");
-               predImpl->setTuple(tuple);
+               //predImpl->setTuple(tuple);
                printDebug(DM_Table, "Evaluating the predicate from hashIndexScan: has more than one term");
                rv = predImpl->evaluate(result);
                if (rv != OK) return NULL;

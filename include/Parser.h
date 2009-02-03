@@ -45,6 +45,7 @@ struct FieldValue
     int paramNo; // 0 ->not a param. It stores the param position
     DataType type;
     int length;
+    bool isNullable;
     bool isAllocVal;
 };
 
@@ -57,6 +58,7 @@ struct ConditionValue
     DataType type;
     int length;
     bool opLike;
+    bool isNullable;
     char fName[IDENTIFIER_LENGTH];
 };
 
@@ -84,8 +86,10 @@ struct UpdateFieldValue
     char fldName[IDENTIFIER_LENGTH];
     char *parsedString;
     void *value;
+    Expression *expre;
     DataType type;
     int length;
+    bool isNullable;
     int paramNo;
 };
 
@@ -165,6 +169,7 @@ class ParsedData
 
     Predicate* insertPredicate(char *fldName, ComparisionOp op, void** value);
     Predicate* insertPredicate(char *fldName, ComparisionOp op, char *fldName);
+    Predicate* insertBetPredicate(char *fldName, ComparisionOp op1, void **value1, ComparisionOp op2, void **value2);
     Predicate* insertPredicate(Predicate *p1, LogicalOp op, Predicate *p2 = NULL);
     void setCondition(Predicate *pred) 
     { 
@@ -197,6 +202,10 @@ class ParsedData
     IndexType getIndexType(){ return indexType; }
     bool getUnique() { return isUnique; }
     bool getPrimary() { return isPrimary; }
+    Expression* insertExpression(char *fldName);
+    Expression* insertExpression(char *value, bool flag);
+    Expression* insertExpression(Expression* exp1, ArithOperator op ,Expression* exp1);
+    void insertUpdateExpression(char *fName, Expression *exp);
 
     void insertFldDef(); //check if fldDef needs to be a part of ParsedData 
     

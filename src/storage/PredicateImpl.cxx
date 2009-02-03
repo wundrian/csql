@@ -36,6 +36,9 @@ void PredicateImpl::print(int space)
     printf("%s <LogOp> %s </LogOp>\n", spaceBuf, LogOpNames[logicalOp]);
     printf("%s <Operand> %x </Operand>\n", spaceBuf, operand);
     printf("%s <OperandPtr> %x </OperandPtr>\n", spaceBuf, operandPtr);
+    printf("%s <Comp2Op> %s </Comp2Op>\n", spaceBuf, CompOpNames[comp2Op]);
+    printf("%s <Operand2> %x </Operand2>\n", spaceBuf, operand2);
+    printf("%s <Operand2Ptr> %x </Operand2Ptr>\n", spaceBuf, operand2Ptr);
     if (lhs) {
        printf("%s <PRED-LEFT>\n", spaceBuf);
        lhs->print(space+2);
@@ -62,6 +65,9 @@ void PredicateImpl::setTerm(const char* fName1, ComparisionOp op,
     lhs = rhs = NULL;
     parent = NULL;
     logicalOp = OpInvalidLogicalOp;
+    comp2Op = OpInvalidComparisionOp;
+    operand2 =NULL;
+    operand2Ptr = NULL;
 }
 
 //Operand should be of the same type of the field.This is must
@@ -84,6 +90,9 @@ void PredicateImpl::setTerm(const char* fName1, ComparisionOp op, void *opnd)
     lhs = rhs = NULL;
     parent = NULL;
     logicalOp = OpInvalidLogicalOp;
+    comp2Op = OpInvalidComparisionOp;
+    operand2 =NULL;
+    operand2Ptr = NULL;
 }
 
 void PredicateImpl::setTerm(const char* fName1, ComparisionOp op, void **opnd)
@@ -95,6 +104,24 @@ void PredicateImpl::setTerm(const char* fName1, ComparisionOp op, void **opnd)
     lhs = rhs = NULL;
     parent = NULL;
     logicalOp = OpInvalidLogicalOp;
+    comp2Op = OpInvalidComparisionOp;
+    operand2 =NULL;
+    operand2Ptr = NULL;
+}
+void PredicateImpl::setTerm(const char* fName1, ComparisionOp op, void **opnd,
+                                              ComparisionOp op2, void **opnd2)
+{
+    strcpy(fldName1, fName1);
+    compOp = op;
+    operand = NULL;
+    operandPtr = opnd;
+    lhs = rhs = NULL;
+    parent = NULL;
+    logicalOp = OpInvalidLogicalOp;
+
+    comp2Op = op2;
+    operand2=NULL;
+    operand2Ptr = opnd2;
 }
 
 void PredicateImpl::setParent(PredicateImpl *pImpl)
@@ -130,6 +157,10 @@ void PredicateImpl::setTable(Table *tbl)
 }
 void PredicateImpl::setIfNoLeftRight()
 {
+    if (NULL != lhs)
+        lhs->setIfNoLeftRight();
+    if (NULL != rhs)
+        rhs->setIfNoLeftRight();
     if(NULL == lhs && NULL == rhs) isNoLeftRight=true;
     return;
 }
@@ -158,9 +189,36 @@ void PredicateImpl::setProjectionList(List *lst)
 }
 bool PredicateImpl::isSingleTerm()
 {
-    if (NULL == lhs  && NULL == rhs) return true; else false;
+    if (NULL == lhs  && NULL == rhs && comp2Op == OpInvalidComparisionOp) 
+        return true; 
+    return false;
 }
 
+bool PredicateImpl::appendIfSameFld(char *fName, ComparisionOp op, void *buf)
+{
+    char fieldName1[IDENTIFIER_LENGTH];
+    Table::getFieldNameAlone(fldName1, fieldName1);
+    if (strcmp(fName,fieldName1) == 0)
+    {
+        printDebug(DM_Predicate, "Field name matched");
+        /*
+        //switching so that in case of joins, first other conditions are 
+        //evaluated first and then matching tuples for join is evaluated
+        //otherwise it may give wrong result set
+        if (operand) {operand2 = operand; operand2Ptr = NULL; }
+        if (operandPtr)  {operand2Ptr = operandPtr; operand2 = NULL; }
+        comp2Op = compOp;
+        compOp = op;
+        operand = buf;
+        operandPtr = NULL;
+        */
+        comp2Op = op;
+        operand2 = buf;
+        
+        return true;
+    } 
+    return false;
+}
 
 bool PredicateImpl::isNotOrInvolved()
 {
@@ -193,25 +251,23 @@ bool PredicateImpl::isNotOrInvolved()
     return false;
 }
 
-DbRetVal PredicateImpl::evaluate(bool &result)
+DbRetVal PredicateImpl::evaluateLogical(bool &result)
 {
-    //if (isPushedDown) { result = true; return OK; }
-    if (!isNoLeftRight) {
-      bool rhsResult = false, lhsResult=false;
-      DbRetVal retCode =OK;
-      result = false;
-      if (NULL != lhs)
-      {
-        retCode = lhs->evaluate(lhsResult);
+    bool rhsResult = false, lhsResult=false;
+    DbRetVal retCode =OK;
+    result = false;
+    if (NULL != lhs)
+    {
+       retCode = lhs->evaluate(lhsResult);
         if (retCode != OK) return ErrInvalidExpr;
-      }else lhsResult = true;
-      if (NULL != rhs)
-      {
+    }else lhsResult = true;
+    if (NULL != rhs)
+    {
         retCode = rhs->evaluate(rhsResult);
         if (retCode != OK) return ErrInvalidExpr;
-      } else rhsResult = true;
-      if (NULL != lhs)
-      {
+    } else rhsResult = true;
+    if (NULL != lhs)
+    {
         //Means it involves only Logical operator
         if (OpAnd == logicalOp) {
             if (lhsResult && rhsResult) result = true;
@@ -221,13 +277,139 @@ DbRetVal PredicateImpl::evaluate(bool &result)
             if (lhsResult)  result = false; else result = true;
         }
         printDebug(DM_Predicate, "result is %d", result);
-        return OK;
-      }
+    }
+    return OK;
+}
+DbRetVal PredicateImpl::evaluateLogicalForTable(bool &result, char *tuple)
+{
+    bool rhsResult = false, lhsResult=false;
+    DbRetVal retCode =OK;
+    result = false;
+    if (NULL != lhs)
+    {
+        lhs->evaluateForTable(lhsResult, tuple);
+    }else lhsResult = true;
+    if (NULL != rhs)
+    {
+        rhs->evaluateForTable(rhsResult, tuple);
+    } else rhsResult = true;
+    if (NULL != lhs)
+    {
+        //Means it involves only Logical operator
+        if (OpAnd == logicalOp) {
+            if (lhsResult && rhsResult) result = true;
+        }else if (OpOr == logicalOp) {
+            if (lhsResult || rhsResult) result = true;
+        }else if (OpNot == logicalOp){
+            if (lhsResult)  result = false; else result = true;
+        }
+        printDebug(DM_Predicate, "result is %d", result);
+    }
+    return OK;
+}
+void PredicateImpl::evaluateForTable(bool &result, char *tuple)
+{
+    if (!isNoLeftRight) {
+        bool rhsResult = false;
+        if (NULL != rhs)
+        {
+            rhs->evaluateForTable(rhsResult, tuple);
+            if(rhsResult == false && OpAnd == logicalOp) {//do early return
+                return;
+            }
+        } else rhsResult = true;
+        bool lhsResult = false;
+        if (NULL != lhs)
+        {
+            lhs->evaluateForTable(lhsResult, tuple);
+        }else lhsResult = true;
+        if (NULL != lhs)
+        {
+            //Means it involves only Logical operator
+            if (OpAnd == logicalOp) {
+                if (lhsResult && rhsResult) result = true;
+            }else if (OpOr == logicalOp) {
+                if (lhsResult || rhsResult) result = true;
+            }else if (OpNot == logicalOp){
+                if (lhsResult)  result = false; else result = true;
+            }
+            printDebug(DM_Predicate, "result is %d", result);
+            return ;
+        }
+    }
+    //the below code works only for single table 
+    val1= tuple + offset1;
+    if(offset2 != -1 && operand == NULL && operandPtr == NULL)
+        val2 = tuple + offset2; 
+    if (!isBindBufSet) {
+       //Assumes that fldName2 data type is also same for expr f1 <f2
+       //Note:Perf: Do not change the order below
+       if(operand == NULL && operandPtr != NULL)
+       { 
+        val2 = *(char**)operandPtr;
+       } else if (operand == NULL && operandPtr == NULL)
+       {
+         if(offset2 != -1)
+             val2 = tuple + offset2; 
+       } else if(operand != NULL && operandPtr == NULL)
+       { 
+          val2 = (char*) operand;
+       } 
+       if(operand2 == NULL && operand2Ptr != NULL)
+       { 
+          val3 = *(char**)operand2Ptr;
+       } else if(operand2 != NULL && operand2Ptr == NULL)
+       { 
+          val3 = (char*) operand2;
+       }
+       isBindBufSet = true;
+    }
+    if(val3) {
+        //printf(" val1 %d val3 %d\n", *(int*)val1, *(int*)val3);
+        result = AllDataType::compareVal(val1, val3, comp2Op, type,length);
+        if(result==false) return;
+    }
+    //printf(" val1 %d val2 %d\n", *(int*)val1, *(int*)val2);
+    result = AllDataType::compareVal(val1, val2, compOp, type,length);
+    //if (!result && val3) AllDataType::copyVal(val3, 
+    return;
+}
+DbRetVal PredicateImpl::evaluate(bool &result)
+{
+    //if (isPushedDown) { result = true; return OK; }
+    if (!isNoLeftRight) {
+        bool rhsResult = false, lhsResult=false;
+        DbRetVal retCode =OK;
+        result = false;
+        if (NULL != lhs)
+        {
+            retCode = lhs->evaluate(lhsResult);
+            if (retCode != OK) return ErrInvalidExpr;
+        }else lhsResult = true;
+        if (NULL != rhs)
+        {
+            retCode = rhs->evaluate(rhsResult);
+            if (retCode != OK) return ErrInvalidExpr;
+        } else rhsResult = true;
+        if (NULL != lhs)
+        {
+            //Means it involves only Logical operator
+            if (OpAnd == logicalOp) {
+                if (lhsResult && rhsResult) result = true;
+            }else if (OpOr == logicalOp) {
+                if (lhsResult || rhsResult) result = true;
+            }else if (OpNot == logicalOp){
+                if (lhsResult)  result = false; else result = true;
+            }
+            printDebug(DM_Predicate, "result is %d", result);
+            return OK;
+        }
     }
     //Means it is relational expression
     //first operand is always field identifier
     //get the value in the tuple
     if (projList) {
+      if (dontEvaluate) {result= true; return OK; }
       if (!isBindBufSet)
       {
         //for join node evaluation
@@ -290,8 +472,9 @@ DbRetVal PredicateImpl::evaluate(bool &result)
       return OK;
 
     }
+    printf("PRABA::wrong method call\n");
     //the below code works only for single table 
-    val1= ((char*) tuple) + offset1;
+    val1= (char*)tuple + offset1;
     if(offset2 != -1 && operand == NULL && operandPtr == NULL)
         val2 = ((char*)tuple) + offset2; 
     if (!isBindBufSet) {

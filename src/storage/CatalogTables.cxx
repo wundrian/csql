@@ -136,7 +136,7 @@ DbRetVal CatalogTableFIELD::insert(FieldIterator &iter, int tblID, void *tptr)
         fldInfo->isDefault_ = fDef->isDefault_;
         fldInfo->width_ = 0; //TODO
         fldInfo->scale_ = 0; //TODO
-        printDebug(DM_SystemDatabase,"One Row inserted into FIELD %x %s",fldInfo, fDef.fldName_);
+        printDebug(DM_SystemDatabase,"One Row inserted into FIELD %x %s",fldInfo, fDef->fldName_);
 
     }
     return OK;

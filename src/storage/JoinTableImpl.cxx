@@ -440,6 +440,7 @@ bool JoinTableImpl::pushPredicate(Predicate *pr)
                         //if (ind) {
                             void *buf = getBindedBuf(lTabName, lFldName);
                             rightTableHdl->addPredicate(rFldName, op, buf);
+                            pImpl->setDontEvaluate();
                         //}
                     }else if (strcmp(rTbl, lTabName) ==0)
                     {
@@ -447,6 +448,7 @@ bool JoinTableImpl::pushPredicate(Predicate *pr)
                         //if (ind) {
                             void *buf = getBindedBuf(rTabName, rFldName);
                             rightTableHdl->addPredicate(lFldName, op, buf);
+                            pImpl->setDontEvaluate();
                         //}
                     }
                     //PRABA::END
@@ -466,6 +468,7 @@ bool JoinTableImpl::pushPredicate(Predicate *pr)
                         //if (ind) {
                             void *buf = getBindedBuf(lTabName, lFldName);
                             rightTableHdl->addPredicate(rFldName, op, buf);
+                            pImpl->setDontEvaluate();
                         //}
                     }else if (strcmp(rTbl, lTabName) ==0)
                     {
@@ -473,6 +476,7 @@ bool JoinTableImpl::pushPredicate(Predicate *pr)
                         //if (ind) {
                             void *buf = getBindedBuf(rTabName, rFldName);
                             rightTableHdl->addPredicate(lFldName, op, buf);
+                            pImpl->setDontEvaluate();
                         //}
                     }
                     //PRABA::END

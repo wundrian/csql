@@ -73,11 +73,13 @@ class ChunkIterator
     AllocType allocType_;
 
     //current iterating page
-    Page *iterPage_;
+    PageInfo *iterPage_;
 
     //Each page is divided into nodes of size allocSize_
     //This gives the offset of the node in the page
     int nodeOffset_;
+    char *data;
+    char *iterPageEnd;
 
     //Total number of nodes in the page
     //It is a constant value for this chunk

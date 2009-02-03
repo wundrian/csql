@@ -44,9 +44,15 @@ class PredicateImpl:public Predicate
     //optimization:caching val1 and val2 for evaluation
     char *val1;
     char *val2;
+    char *val3;
     bool isBindBufSet;
     bool isNoLeftRight;
+    bool dontEvaluate;
 
+    //opt for between queries
+    ComparisionOp comp2Op;
+    void *operand2;
+    void **operand2Ptr;
     //This will be set before calling evaluate
     TableImpl *table;
 
@@ -65,7 +71,9 @@ class PredicateImpl:public Predicate
         isBindBufSet = false;
         val1= NULL;
         val2=NULL;
+        val3=NULL;
         isNoLeftRight=false;
+        dontEvaluate=false;
     }
     ~PredicateImpl(){}
 
@@ -75,6 +83,8 @@ class PredicateImpl:public Predicate
     void setTerm(const char* fName1, ComparisionOp op, void *opnd);
 
     void setTerm(const char* fName1, ComparisionOp op, void **opnd);
+    void setTerm(const char* fName1, ComparisionOp op, void **opnd,
+                                     ComparisionOp op2, void **opnd2 );
 
 
     void setTerm(Predicate *p1, LogicalOp op, Predicate *p2 = NULL);
@@ -83,6 +93,10 @@ class PredicateImpl:public Predicate
     ComparisionOp opForIndexField(const char *name);
 
     DbRetVal evaluate(bool &result);
+    void evaluateForTable(bool &result, char*tuple);
+
+    DbRetVal evaluateLogical(bool &result);
+    DbRetVal evaluateLogicalForTable(bool &result, char *tuple);
 
     void setTable(Table *tbl);
     void setTuple(void *tpl);
@@ -107,6 +121,8 @@ class PredicateImpl:public Predicate
     ComparisionOp getCompOp() {return compOp; }
     void print(int space);
     void setIfNoLeftRight();
+    void setDontEvaluate(){dontEvaluate = true;}
+    bool appendIfSameFld(char *fname, ComparisionOp op, void* buf);
 };
 
 #endif

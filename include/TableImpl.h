@@ -163,7 +163,7 @@ class TableImpl:public Table
     void setSystemDB(Database *db) { sysDB_ = db; }
     void setLockManager(LockManager *lmgr) { lMgr_ = lmgr; }
     void setTrans(Transaction **t) { trans = t; }
-    void setCurTuple(void *tuple){ curTuple_=tuple; }
+    inline void setCurTuple(void *tuple){ curTuple_=tuple; }
     DataType getFieldType(const char *name)
         { return fldList_.getFieldType(name);   }
     int getFieldOffset(const char *name)

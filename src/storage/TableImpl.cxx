@@ -205,12 +205,20 @@ IndexType TableImpl::getIndexType(char *fName, int *pos)
 }
 void TableImpl::addPredicate(char *fName, ComparisionOp op, void *buf)
 {
-    //char fieldName[IDENTIFIER_LENGTH];
-    //Table::getFieldNameAlone(fName, fieldName);
+    char fieldName[IDENTIFIER_LENGTH];
+    Table::getFieldNameAlone(fName, fieldName);
     PredicateImpl *pred = (PredicateImpl*) pred_;
     PredicateImpl *newPred = new PredicateImpl();
     newPred->setTerm(fName, op, buf);
     if (NULL == pred) { pred_ = newPred; return; }
+    if (pred->isSingleTerm())
+    {
+       bool res = pred->appendIfSameFld(fName, op, buf);
+       if(res) { 
+           delete newPred;
+           return; 
+       }
+    }
     PredicateImpl *bothPred = new PredicateImpl();
     bothPred->setTerm(pred, OpAnd, newPred);
     pred_ = bothPred;
@@ -542,7 +550,7 @@ DbRetVal TableImpl::fetchAgg(const char * fldName, AggType aType, void *buf)
            case AGG_MIN:
            {
                res = AllDataType::compareVal(buf, (void*) (tuple+info->offset), 
-                               OpGreaterThan,
+                               OpGreaterThanEquals,
                                info->type, info->length);
                if (res) AllDataType::copyVal(buf, (void*) (tuple+info->offset), 
                                      info->type, info->length);
@@ -551,7 +559,7 @@ DbRetVal TableImpl::fetchAgg(const char * fldName, AggType aType, void *buf)
            case AGG_MAX:
            {
                res = AllDataType::compareVal(buf, (void*) (tuple+info->offset), 
-                               OpLessThan,
+                               OpLessThanEquals,
                                info->type, info->length);
                if (res) AllDataType::copyVal(buf, (void*) (tuple+info->offset), 
                                      info->type, info->length);

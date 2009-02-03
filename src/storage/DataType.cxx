@@ -324,7 +324,7 @@ int operator!=(const TimeStamp &d1, const TimeStamp &d2)
     { return d1.date != d2.date && d1.time != d2.time; }
 
 
-long AllDataType::size(DataType type, int length )
+/*long AllDataType::size(DataType type, int length )
 {
     if (type == typeInt) return sizeof(int);
     else if (type == typeString) return length;
@@ -377,6 +377,7 @@ long AllDataType::size(DataType type, int length )
     }
     return size;
 }
+*/
 char* AllDataType::getSQLString(DataType type)
 {
     switch(type)
@@ -497,6 +498,7 @@ DataType  AllDataType::convertFromSQLType(SQLSMALLINT type)
     }
     return typeInt;
 }
+/*
 void AllDataType::copyVal(void* dest, void *src, DataType type, int length)
 {
     //Performance optimization. putting likely case first
@@ -538,6 +540,7 @@ void AllDataType::copyVal(void* dest, void *src, DataType type, int length)
     }
     return;
 }
+
 void AllDataType::addVal(void* dest, void *src, DataType type)
 {
     if (type == typeInt)
@@ -579,6 +582,7 @@ void AllDataType::addVal(void* dest, void *src, DataType type)
      }
      return;
 }
+*/
 void AllDataType::subVal(void* dest, void *src, DataType type)
 {
     switch(type)
@@ -770,7 +774,7 @@ void AllDataType::divVal(void* dest, int src, DataType type)
      }
      return;
 }
-
+/*
 bool AllDataType::compareVal(void *val1, void *val2, ComparisionOp op,
                              DataType type, long length)
 {
@@ -782,11 +786,11 @@ bool AllDataType::compareVal(void *val1, void *val2, ComparisionOp op,
         if (OpEquals == op) {
             if (*(int*)val1 == *(int*)val2) return true;
             else return false;
-        }else if (OpGreaterThanEquals == op) {
-            if (*(int*)val1 >= *(int*)val2) return true;
-            else return false;
         }else if (OpLessThanEquals == op) {
             if (*(int*)val1 <= *(int*)val2) return true;
+            else return false;
+        }else if (OpGreaterThanEquals == op) {
+            if (*(int*)val1 >= *(int*)val2) return true;
             else return false;
         }else if (OpGreaterThan == op) {
             if (*(int*)val1 > *(int*)val2) return true;
@@ -825,6 +829,7 @@ bool AllDataType::compareVal(void *val1, void *val2, ComparisionOp op,
         return AllDataType::compareBinaryVal(val1, val2, op, length);
     }
 }
+*/
 
 bool AllDataType::compareIntVal(void* src1, void *src2, ComparisionOp op)
 {
@@ -1208,9 +1213,7 @@ bool AllDataType::compareBinaryVal(void* src1, void *src2,
    }
    return result;
 }
-
-
-
+/*
 ComparisionOp AllDataType::getComparisionOperator(char *str)
 {
     ComparisionOp op;
@@ -1232,6 +1235,7 @@ ComparisionOp AllDataType::getComparisionOperator(char *str)
         op = OpInvalidComparisionOp;
     return op;
 }
+*/
 
 void* AllDataType::alloc(DataType type, int length)
 {

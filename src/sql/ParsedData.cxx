@@ -108,6 +108,13 @@ Predicate* ParsedData::insertPredicate(char *fName, ComparisionOp op, void **val
     pImpl->setTerm(fName, op, val);
     return (Predicate*) pImpl;
 }
+Predicate* ParsedData::insertBetPredicate(char *fName, ComparisionOp op1, 
+                            void **val1, ComparisionOp op2, void **val2)
+{
+    PredicateImpl *pImpl = new PredicateImpl();
+    pImpl->setTerm(fName, op1, val1, op2, val2);
+    return (Predicate*) pImpl;
+}
 Predicate* ParsedData::insertPredicate(char *fName1, ComparisionOp op, char *fName2)
 {
     PredicateImpl *pImpl = new PredicateImpl();

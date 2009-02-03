@@ -96,6 +96,7 @@ void PredicateImpl::setTable(Table *tbl)
 
 void PredicateImpl::setTuple(void *tpl)
 {
+    printf("setTuple called\n");
     if (NULL != lhs)
         lhs->setTuple(tpl);
     if (NULL != rhs)

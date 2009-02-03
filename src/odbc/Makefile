@@ -94,7 +94,7 @@ CPPFLAGS =
 CXX = g++
 CXXCPP = g++ -E
 CXXDEPMODE = depmode=gcc3
-CXXFLAGS = -g  -I/home/praba/csql/jdk1.6.0_06/include -I/home/praba/csql/jdk1.6.0_06/include/linux
+CXXFLAGS = -O3  -I/home/praba/csql/jdk1.6.0_06/include -I/home/praba/csql/jdk1.6.0_06/include/linux
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
