@@ -711,7 +711,7 @@ Table* DatabaseManagerImpl::openTable(const char *name)
     logFinest(logger, "Opening Table %s" , name);
 
     tableHandleList.append(table);
-        
+
     return table;
 }
 
@@ -745,6 +745,7 @@ void DatabaseManagerImpl::closeTable(Table *table)
     if (NULL == table) return;
     //table->unlock();
     tableHandleList.remove(table, false);
+    if (table) delete table; table = NULL;
     logFinest(logger, "Closing Table");
 }
 
@@ -1076,7 +1077,6 @@ DbRetVal DatabaseManagerImpl::createTreeIndex(const char *indName, const char *t
     while ((recPtr = chIter.nextElement()) != NULL) {
         rv = tbl->insertIndexNode(*tbl->trans, tupleptr, indxInfo, recPtr);
         if (rv == ErrUnique) {
-            closeTable(tbl);
             dropIndex(indName);
             closeTable(tbl);
             return rv;
