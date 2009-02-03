@@ -33,13 +33,12 @@ public class JDBCBench
 	ResultSet  rs;
 	
 
-	for(int i=0; i<=100; i++) {
-
-		stmt.setInt(1,i);
+	for(int i=1000; i<=1100; i++) {
 		start = System.nanoTime();
+                stmt.setInt(1, i);
 		rs = stmt.executeQuery();
 		recordCount=0;
-		while(rs.next())
+		if(rs.next())
 		{
 		   recordCount++;
 		}
@@ -64,18 +63,13 @@ public class JDBCBench
    public static int onePerSel(Connection con, boolean flag) throws Exception
    {
           PreparedStatement stmt = null;
-          int searchVal = getRandom(9999 - 100);
-          int searchValEnd = searchVal+ 99;
-          
 	
 	  String stmtStr;
           if (flag) {
-              String buf= "SELECT * from big1 where unique2 between "+ 
-                          searchVal + " and "+ searchValEnd+ ";"; 
+              String buf= "SELECT unique1, unique2, stringu1 from big1 where unique2 between 1 and 100;"; 
               stmtStr= buf;
           }else{
-              String buf= "SELECT * from big1 where unique1 between "+ 
-                          searchVal + " and "+ searchValEnd+ ";"; 
+              String buf= "SELECT unique1, unique2, stringu1 from big1 where unique1 between 1 and 100;"; 
               stmtStr= buf;
           }
           stmt = con.prepareStatement(stmtStr);
@@ -84,7 +78,7 @@ public class JDBCBench
           long start =0, end =0, curr =0;
           long tot =0;
           ResultSet rs;
-          for (int i =0 ; i<= 100 ; i++) {
+          for (int i =0 ; i<= 10 ; i++) {
              start = System.nanoTime();
              
 	     rs = stmt.executeQuery();
@@ -110,7 +104,7 @@ public class JDBCBench
 
          }
          stmt.close();
-         return (int)tot/100/1000;
+         return (int)tot/10/1000;
    }
    
 // aggregate
@@ -172,7 +166,7 @@ public static int aggregate(Connection con, int val, boolean flag)throws Excepti
 		recordCount = 0;
 		while(rs.next())
 		{
-			recordCount++;
+	   	    recordCount++;
 		}
 		
 		rs.close();
@@ -279,10 +273,10 @@ public static int joining(Connection con,int val, boolean flag)throws Exception
 	else if(val==3)
 	{
            if (flag) {
-		String buf = "SELECT small.unique2, big1.unique2, big2.unique2, small.stringu1, big1.unique1, big2.unique1 FROM small,big1, big2 WHERE small.unique2=big1.unique2 AND big1.unique2=big2.unique2 AND big1.unique2 = 100;";
+		String buf = "SELECT small.unique2, big1.unique2, big2.unique2, small.stringu1, big1.unique1, big2.unique1 FROM big1, big2, small WHERE small.unique2=big1.unique2 AND big1.unique2=big2.unique2 AND big1.unique2 = 100;";
 		stmtStr=buf;
            }else{
-		String buf = "SELECT small.unique1, big1.unique1, big2.unique1, small.stringu1, big1.unique2, big2.unique2 FROM small,big1, big2 WHERE small.unique1=big1.unique1 AND big1.unique1=big2.unique1 AND big1.unique1 = 100;";
+		String buf = "SELECT small.unique1, big1.unique1, big2.unique1, small.stringu1, big1.unique2, big2.unique2 FROM big1, big2, small WHERE small.unique1=big1.unique1 AND big1.unique1=big2.unique1 AND big1.unique1 = 100;";
 		stmtStr=buf;
            }
 	}
@@ -292,11 +286,11 @@ public static int joining(Connection con,int val, boolean flag)throws Exception
 	long start=0,end=0,curr=0;
 	long tot=0;
 	ResultSet rs;
-	//for(int i=0;i<=100;i++)
+	//for(int i=0;i<=10;i++)
 	{
 		start = System.nanoTime();
 		rs = stmt.executeQuery();
-		while(rs.next())
+		if(rs.next())
 		{
                     //System.out.println("Record:"+ rs.getInt(1)+ " "+ rs.getInt(2)+" " +rs.getInt(3)+ " "+ rs.getString(4));
 		    recordCount++;
@@ -379,18 +373,16 @@ public static int joining(Connection con,int val, boolean flag)throws Exception
 public static  int tenPerSel(Connection con, boolean flag)throws Exception
 {
 	PreparedStatement  stmt = null;
-	int searchVal = getRandom(9999 - 1000);
-	int searchValEnd = searchVal + 999;
 	
 	String stmtStr;
 	if(flag)
 	{
-	   String buf = "SELECT * from big1 where unique2 between "+ searchVal + " and "+ searchValEnd + ";";
+	   String buf = "SELECT unique1, unique2, stringu1 from big1 where unique2 between 1 and 1000;";
 	   stmtStr = buf;
         }
 	else
 	{
-	    String buf = "SELECT * from big1 where unique1 between "+searchVal +" and "+ searchValEnd + ";";
+	    String buf = "SELECT unique1, unique2, stringu1 from big1 where unique1 between 1 and 1000;";
 		stmtStr = buf;
         }		
 		stmt = con.prepareStatement(stmtStr);
@@ -399,7 +391,7 @@ public static  int tenPerSel(Connection con, boolean flag)throws Exception
 		long start = 0, end = 0, curr = 0;
 		long tot =0;
 		ResultSet rs;
-		for(int i=0 ; i<=100 ; i++)
+		for(int i=0 ; i<=10 ; i++)
 		{
 			start = System.nanoTime();
 			rs = stmt.executeQuery();
@@ -426,7 +418,7 @@ public static  int tenPerSel(Connection con, boolean flag)throws Exception
 		}
 
 		stmt.close();
-		return (int)tot/100/1000;
+		return (int)tot/10/1000;
   }		
 
 
@@ -463,79 +455,89 @@ public static void main(String[] args)
 	  int min=1, sum=2, ming=3, sumg=4;// function parameter
 
          
-	  timeTaken[0][0] = singleTuple(con,true);
-	  timeTaken[1][0] = onePerSel(con, true);
-	  timeTaken[2][0] = tenPerSel(con,true);
-	  timeTaken[3][0] = aggregate(con,min, true);
-	  timeTaken[4][0] = aggregate(con,sum, true);
-	  timeTaken[5][0] = aggregate(con,ming, true);
-	  timeTaken[6][0] = aggregate(con,sumg, true);
-
-	  timeTaken[7][0] = dmlstatement(con,ins, true);
-	  //timeTaken[8][0] = dmlstatement(con,upd, true);
-	  timeTaken[9][0] = dmlstatement(con,del, true);
-
-	  timeTaken[10][0] = joining(con,1, true);
-
-	  timeTaken[11][0] = joining(con,2, true);
-	  timeTaken[12][0] = joining(con,3, true);
+	  timeTaken[0][0] = singleTuple(con,false);
+	  timeTaken[1][0] = onePerSel(con, false);
+	  timeTaken[2][0] = tenPerSel(con,false);
+	  timeTaken[3][0] = aggregate(con,min, false);
+	  timeTaken[4][0] = aggregate(con,sum, false);
+	  timeTaken[5][0] = aggregate(con,ming, false);
+	  timeTaken[6][0] = aggregate(con,sumg, false);
+	  timeTaken[7][0] = dmlstatement(con,ins, false);
+	  //timeTaken[8][0] = dmlstatement(con,upd, false);
+	  timeTaken[9][0] = dmlstatement(con,del, false);
+	  timeTaken[10][0] = joining(con,1, false);
+	  //timeTaken[11][0] = joining(con,2, false);
+	  timeTaken[12][0] = joining(con,3, false);
           System.out.println("Finished no index queries");
 
 	  //create index
 	  try{
             if (flag ==1) {
-	      cStmt.execute("CREATE INDEX idx1 ON big1(unique2) HASH");
+	      cStmt.execute("CREATE INDEX idx1 ON big1(unique1) HASH");
 	      cStmt.close();
-	      cStmt.execute("CREATE INDEX idx2 ON big1(unique1) TREE");
+	      cStmt.execute("CREATE INDEX idx2 ON big2(unique1) HASH");
 	      cStmt.close();
-	      cStmt.execute("CREATE INDEX idx3 ON big2(unique2) HASH");
-	      cStmt.close();
-	      cStmt.execute("CREATE INDEX idx4 ON big2(unique1) TREE");
-	      cStmt.close();
-	      cStmt.execute("CREATE INDEX idx5 ON small(unique2) HASH");
-	      cStmt.close();
-	      cStmt.execute("CREATE INDEX idx6 ON small(unique1) TREE");
+	      cStmt.execute("CREATE INDEX idx3 ON small(unique1) HASH");
 	      cStmt.close();
               con.commit();
             }else if (flag ==2) {
-	      cStmt.execute("CREATE INDEX mysqlc1 USING HASH ON big1(unique2)");
-	      cStmt.execute("CREATE INDEX mysqlc2 USING BTREE ON big1(unique1)");
-	      cStmt.execute("CREATE INDEX mysqlc3 USING HASH ON big2(unique2)");
-	      cStmt.execute("CREATE INDEX mysqlc4 USING BTREE ON big2(unique1)");
-	      cStmt.execute("CREATE INDEX mysqlc5 USING HASH ON small(unique2)");
-	      cStmt.execute("CREATE INDEX mysqlc6 USING BTREE ON small(unique1)");
-	      cStmt.close();
+	      cStmt.execute("CREATE INDEX mysqld1 USING HASH ON big1(unique1)");
+	      cStmt.execute("CREATE INDEX mysqld2 USING HASH ON big2(unique1)");
+	      cStmt.execute("CREATE INDEX mysqld3 USING HASH ON small(unique1)");
               con.commit();
             }
           }catch(Exception e ){e.printStackTrace(); System.out.println("Error creating index");}
-
-	  timeTaken[0][1] = singleTuple(con,true);
-	  timeTaken[1][1] = onePerSel(con, true);
-	  timeTaken[2][1] = tenPerSel(con,true);
-	  timeTaken[3][1] = aggregate(con,min, true);
-	  timeTaken[4][1] = aggregate(con,sum, true);
-	  timeTaken[5][1] = aggregate(con,ming, true);
-	  timeTaken[6][1] = aggregate(con,sumg, true);
-	  timeTaken[7][1] = dmlstatement(con,ins, true);
-	  //timeTaken[8][1] = dmlstatement(con,upd, true);
-	  timeTaken[9][1] = dmlstatement(con,del, true);
-	  timeTaken[10][1] = joining(con,1, true);
-	  timeTaken[11][1] = joining(con,2, true);
-	  timeTaken[12][1] = joining(con,3, true);
+	  timeTaken[0][1] = singleTuple(con,false);
+	  timeTaken[1][1] = 0;
+	  timeTaken[2][1] = 0;
+	  timeTaken[3][1] = 0;
+	  timeTaken[4][1] = 0;
+	  timeTaken[5][1] = 0;
+	  timeTaken[6][1] = 0;
+	  timeTaken[7][1] = dmlstatement(con,ins, false);
+	  //timeTaken[8][1] = dmlstatement(con,upd, false);
+	  timeTaken[9][1] = dmlstatement(con,del, false);
+	  timeTaken[10][1] = joining(con,1, false);
+	  //timeTaken[11][1] = joining(con,2, false);
+	  timeTaken[12][1] = joining(con,3, false);
           System.out.println("Finished hash index queries");
+
+
+	  try{
+            if (flag ==1) {
+	      cStmt.execute("DROP INDEX idx1");
+	      cStmt.close();
+	      cStmt.execute("DROP INDEX idx2");
+	      cStmt.close();
+	      cStmt.execute("DROP INDEX idx3");
+	      cStmt.close();
+	      cStmt.execute("CREATE INDEX idx4 ON big1(unique1) TREE");
+	      cStmt.execute("CREATE INDEX idx5 ON big2(unique1) TREE");
+	      cStmt.execute("CREATE INDEX idx6 ON small(unique1) TREE");
+              con.commit();
+            }else if (flag ==2) {
+	      cStmt.execute("DROP INDEX mysqld1 on big1");
+	      cStmt.execute("DROP INDEX mysqld2 on big2");
+	      cStmt.execute("DROP INDEX mysqld3 on small");
+	      cStmt.execute("CREATE INDEX mysqld4 USING BTREE ON big1(unique1)");
+	      cStmt.execute("CREATE INDEX mysqld5 USING BTREE ON big2(unique1)");
+	      cStmt.execute("CREATE INDEX mysqld6 USING BTREE ON small(unique1)");
+              con.commit();
+            }
+          }catch(Exception e ){e.printStackTrace(); System.out.println("Error creating index");}
 
 	  timeTaken[0][2] = singleTuple(con,false);
 	  timeTaken[1][2] = onePerSel(con, false);
 	  timeTaken[2][2] = tenPerSel(con,false);
 	  timeTaken[3][2] = aggregate(con,min, false);
-	  timeTaken[4][2] = aggregate(con,sum, false);
-	  timeTaken[5][2] = aggregate(con,ming, false);
-	  timeTaken[6][2] = aggregate(con,sumg, false);
+	  timeTaken[4][2] = 0;
+	  timeTaken[5][2] = 0;
+	  timeTaken[6][2] = 0;
 	  timeTaken[7][2] = dmlstatement(con,ins, false);
 	  //timeTaken[8][2] = dmlstatement(con,upd, false);
 	  timeTaken[9][2] = dmlstatement(con,del, false);
 	  timeTaken[10][2] = joining(con,1, false);
-	  timeTaken[11][2] = joining(con,2, false);
+	  //timeTaken[11][2] = joining(con,2, false);
 	  timeTaken[12][2] = joining(con,3, false);
           System.out.println("Finished tree index queries");
 
@@ -543,12 +545,6 @@ public static void main(String[] args)
 	 
 	  try{
             if (flag ==1) {
-	      cStmt.execute("DROP INDEX idx1;");
-	      cStmt.close();
-	      cStmt.execute("DROP INDEX idx2;");
-	      cStmt.close();
-	      cStmt.execute("DROP INDEX idx3;");
-	      cStmt.close();
 	      cStmt.execute("DROP INDEX idx4;");
 	      cStmt.close();
 	      cStmt.execute("DROP INDEX idx5;");
@@ -557,18 +553,9 @@ public static void main(String[] args)
 	      cStmt.close();
               con.commit();
             } else if (flag ==2) {
-	      cStmt.execute("DROP INDEX mysqlc1 on big1");
-	      cStmt.close();
-	      cStmt.execute("DROP INDEX mysqlc2 on big1");
-	      cStmt.close();
-	      cStmt.execute("DROP INDEX mysqlc3 on big2");
-	      cStmt.close();
-	      cStmt.execute("DROP INDEX mysqlc4 on big2");
-	      cStmt.close();
-	      cStmt.execute("DROP INDEX mysqlc5 on big2");
-	      cStmt.close();
-	      cStmt.execute("DROP INDEX mysqlc6 on big2");
-	      cStmt.close();
+	      cStmt.execute("DROP INDEX mysqld4 on big1");
+	      cStmt.execute("DROP INDEX mysqld5 on big2");
+	      cStmt.execute("DROP INDEX mysqld6 on small");
               con.commit();
             }
           }catch(Exception e ){System.out.println("Error dropping indexes");}
@@ -579,20 +566,20 @@ public static void main(String[] args)
 	  System.out.println(" Statement       \t NoIndex\tHash \tTree");
 	  System.out.println("**********************************************************");
           System.out.println(" 1 Tuple         \t "+timeTaken[0][0] +" \t \t"+ timeTaken[0][1]+ "   \t"+ timeTaken[0][2]); 
-          System.out.println(" 1% Sel          \t "+timeTaken[1][0] +" \t \t"+ timeTaken[1][1]+ "   \t"+ timeTaken[1][2]); 
-          System.out.println(" 10% Sel         \t "+timeTaken[2][0] +" \t \t"+ timeTaken[2][1]+ "   \t"+ timeTaken[2][2]); 
+          System.out.println(" 1% Sel          \t "+timeTaken[1][0] +" \t \t-   \t"+ timeTaken[1][2]); 
+          System.out.println(" 10% Sel         \t "+timeTaken[2][0] +" \t \t-   \t"+ timeTaken[2][2]); 
 
-          System.out.println(" Min All         \t "+timeTaken[3][0] +" \t \t"+ timeTaken[3][1]+ "   \t"+ timeTaken[3][2]); 
-          System.out.println(" Sum All         \t "+timeTaken[4][0] +" \t \t"+ timeTaken[4][1]+ "   \t"+ timeTaken[4][2]); 
-          System.out.println(" Min Grp(100)    \t "+timeTaken[5][0] +" \t \t"+ timeTaken[5][1]+ "\t"+ timeTaken[5][2]); 
-          System.out.println(" Sum Grp(100)    \t "+timeTaken[6][0] +" \t \t"+ timeTaken[6][1]+ "\t"+ timeTaken[6][2]); 
+          System.out.println(" Min All         \t "+timeTaken[3][0] +" \t \t-   \t"+ timeTaken[3][2]); 
+          System.out.println(" Sum All         \t "+timeTaken[4][0] +" \t \t-   \t-"); 
+          System.out.println(" Min Grp(100)    \t "+timeTaken[5][0] +" \t \t-   \t-");
+          System.out.println(" Sum Grp(100)    \t "+timeTaken[6][0] +" \t \t-   \t-");
 
           System.out.println(" Insert 1        \t "+timeTaken[7][0] +" \t \t"+ timeTaken[7][1]+ "   \t"+ timeTaken[7][2]); 
           System.out.println(" Update 1       \t "+timeTaken[8][0] +" \t \t"+ timeTaken[8][1]+ "   \t"+ timeTaken[8][2]); 
           System.out.println(" Delete 1        \t "+timeTaken[9][0] +" \t \t"+ timeTaken[9][1]+ "   \t"+ timeTaken[9][2]); 
           System.out.println(" Join(10K*10K)1  \t "+timeTaken[10][0] +" \t \t"+ timeTaken[10][1]+ "\t"+ timeTaken[10][2]); 
-          System.out.println(" Join(10K*10K)100 \t "+timeTaken[11][0] +"  \t"+ timeTaken[11][1]+ "\t"+ timeTaken[11][2]); 
-          System.out.println(" Join(10K*10K*1K)1\t "+timeTaken[12][0] +"  \t"+ timeTaken[12][1]+ "\t"+ timeTaken[12][2]); 
+//          System.out.println(" Join(10K*10K)100 \t "+timeTaken[11][0] +"  \t"+ timeTaken[11][1]+ "\t"+ timeTaken[11][2]); 
+          System.out.println(" Join(10K*10K*1K)1\t "+timeTaken[12][0] +"\t  \t"+ timeTaken[12][1]+ "\t"+ timeTaken[12][2]); 
 	  System.out.println("**********************************************************");
 
 	  con.close();
