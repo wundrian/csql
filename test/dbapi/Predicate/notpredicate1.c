@@ -28,7 +28,7 @@ int select(Table *table, ComparisionOp op)
     while ((tuple = (char*) table->fetch())) {
         printf("tuple value is %d %s \n", id, name);
     }
-    table->close();
+    table->closeScan();
     return 0;
 }
 

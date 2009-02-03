@@ -22,7 +22,7 @@ int select(Table *table, ComparisionOp op)
     {
 	printf("Tuple is %d %s \n",id,name);
     }
-    table->close();
+    table->closeScan();
     return 0;
 }
 

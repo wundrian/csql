@@ -66,6 +66,6 @@ DbRetVal execAndPrint(Table *table)
         printf("tuple value is %d %d %d %d %d\n", *(int*)t, *(int*)(t+4), 
                                *(int*)(t+8),*(int*)(t+12),*(int*)(t+16));
     }
-    table->close();
+    table->closeScan();
     return OK;
 }
