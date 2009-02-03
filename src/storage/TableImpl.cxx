@@ -725,12 +725,12 @@ int TableImpl::deleteWhere()
         rv = deleteTuple();
         if (rv != OK) {
             printError(rv, "Error: Could only delete %d tuples", tuplesDeleted);
-            close();
+            closeScan();
             return (int) rv;
         }
         tuplesDeleted++;
     }
-    close();
+    closeScan();
     return tuplesDeleted;
 }
 
@@ -1041,11 +1041,14 @@ DbRetVal TableImpl::close()
          //PRABA::when called multiple times it gives error
          return OK;
     }
-    iter->close();
-    delete iter;
-    iter = NULL;
+    if (iter) { iter->close(); delete iter; iter = NULL; }
+    printDebug(DM_Database,"Closing table handle: %x", this);
+    //table->unlock();
+    delete this;
+    logFinest(logger, "Closing Table");
     return OK;
 }
+
 DbRetVal TableImpl::closeScan()
 {
     //do not throw scan not open error
