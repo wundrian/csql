@@ -56,7 +56,7 @@ int main()
         if (tuple == NULL) {break;}
         icount++;
     }
-    table->close();
+    table->closeScan();
     dbMgr->closeTable(table);
     dbMgr->dropTable("t1");
     conn.close();

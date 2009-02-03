@@ -89,7 +89,7 @@ int deleteTuple(DatabaseManager *dbMgr, Connection &conn, char *tblname, int cou
         if (tuple == NULL) break;
         rv = table->deleteTuple();
         if (rv != OK) break;
-        table->close();
+        table->closeScan();
     }
     conn.commit();
     printf("Total Tuples deleted is %d\n", i);
@@ -118,7 +118,7 @@ int deleteAllTuple(DatabaseManager *dbMgr, Connection &conn, char *tblname)
         if (rv != OK) break;
         count++;
     }
-    table->close();
+    table->closeScan();
 
     conn.commit();
     printf("Total Tuples deleted is %d\n", count);
@@ -145,7 +145,7 @@ int totalTuples(DatabaseManager *dbMgr, Connection &conn, char *tblname)
     while ((tuple = (char*) table->fetch())) {
         count++;
     }
-    table->close();
+    table->closeScan();
 
     conn.commit();
     dbMgr->closeTable(table);

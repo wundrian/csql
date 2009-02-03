@@ -59,7 +59,7 @@ int main()
         if (table->isFldNull(3)) printf("Column 3 is null\n");
         printf("Binded Tuple value is %d %d %s \n", id1, id2, name);
     }
-    table->close();
+    table->closeScan();
     dbMgr->closeTable(table);
     dbMgr->dropTable("t1");
     conn.close();

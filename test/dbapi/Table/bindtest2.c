@@ -41,7 +41,7 @@ int main()
     char *tuple = (char*)table->fetch();
     int value = *(int*)((char*)tuple + 4);
     if (value !=8) ret = 5;
-    table->close();
+    table->closeScan();
 	dbMgr->closeTable(table);
     dbMgr->dropTable("t1");
     conn.close();

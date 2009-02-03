@@ -113,7 +113,7 @@ int deleteAllTuple(DatabaseManager *dbMgr, Connection &conn, char *tblname)
         if (rv != OK) break;
         count++;
     }
-    table->close();
+    table->closeScan();
 
     conn.commit();
     printf("Total Tuples deleted is %d\n", count);
@@ -129,6 +129,6 @@ DbRetVal execAndPrint(Table *table)
         printf("tuple value is %d %d %d %d %d\n", *(int*)t, *(int*)(t+4), 
                                *(int*)(t+8),*(int*)(t+12),*(int*)(t+16));
     }
-    table->close();
+    table->closeScan();
     return OK;
 }

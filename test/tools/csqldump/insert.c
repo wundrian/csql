@@ -65,7 +65,7 @@ HashIndexInitInfo *idxInfo = new HashIndexInitInfo();
         if (tuple == NULL) {break;}
         icount++;
     }
-    table->close();
+    table->closeScan();
     dbMgr->closeTable(table);
     conn.close();
     if (icount != 1000000) return 3;

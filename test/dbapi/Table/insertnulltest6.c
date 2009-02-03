@@ -64,7 +64,7 @@ int main()
       printf("Binded Tuple value is %d %d \n", id1, id2);
 
     }
-    table->close();
+    table->closeScan();
     dbMgr->closeTable(table);
     dbMgr->dropTable("t1");
     conn.close();

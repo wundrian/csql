@@ -71,7 +71,7 @@ int main()
 	   fld = (char*)tuple + os::align(sizeof(int));
 	   printf("Tuple value is %d %d\n",*((int*)tuple),*((int*)fld));
         }
-        table->close();
+        table->closeScan();
         dbMgr->closeTable(table);
 	dbMgr->dropTable("t1");
 	conn.close();

@@ -71,7 +71,7 @@ int main()
         if (table->isFldNull(3)) printf("Column 3 is null\n");
         printf("Binded Tuple value is %d %d %d\n", id1, id2, id3);
     }
-    rv=table->close();
+    rv=table->closeScan();
 
     Condition p1;
     int val1=4;
@@ -104,7 +104,7 @@ int main()
         table->clearFldNull("f1");
     }
     conn.commit();
-    table->close();
+    table->closeScan();
 
     conn.startTransaction();
     table->setCondition(NULL);
@@ -137,7 +137,7 @@ int main()
         if (table->isFldNull(3)) printf("Column 3 is null\n");
         printf("%d  | %d\t| %d\n", id1, id2, id3);
     }
-    table->close();
+    table->closeScan();
     dbMgr->closeTable(table);
     dbMgr->dropTable("t1");
     conn.close();
