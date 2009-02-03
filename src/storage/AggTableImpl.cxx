@@ -186,7 +186,7 @@ DbRetVal AggTableImpl::execute()
         offset = offset + def->length;
     }
     aggNodeIter.reset();
-    tableHdl->close();
+    tableHdl->closeScan();
     return OK;
 }
 void* AggTableImpl::insertOrGet()

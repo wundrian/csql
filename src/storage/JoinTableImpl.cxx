@@ -326,13 +326,16 @@ long JoinTableImpl::numTuples()
 }
 DbRetVal JoinTableImpl::closeScan()
 {
-    leftTableHdl->closeScan();
-    rightTableHdl->closeScan();
+    if (leftTableHdl) leftTableHdl->closeScan();
+    if (rightTableHdl) rightTableHdl->closeScan();
     return OK;
     
 }
+
 DbRetVal JoinTableImpl::close()
 {
+    if (leftTableHdl) { leftTableHdl->close(); leftTableHdl = NULL; }
+    if (rightTableHdl) { rightTableHdl->close(); rightTableHdl = NULL; }
     closeScan();
     ListIterator iter = projList.getIterator();
     JoinProjFieldInfo  *elem;
