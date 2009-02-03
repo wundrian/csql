@@ -33,12 +33,7 @@ SelStatement::SelStatement()
 
 SelStatement::~SelStatement()
 {
-    if (table) {
-        table->setCondition(NULL);
-        table->close();
-        //if (dbMgr) dbMgr->closeTable(table);
-        delete table;
-    }
+    if (table) { table->close(); table = NULL; }
     if (totalParams) {
         free(params);
         params =  NULL;

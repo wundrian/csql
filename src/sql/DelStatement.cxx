@@ -26,10 +26,7 @@ DelStatement::DelStatement()
 }
 
 DelStatement::~DelStatement() {
-    if (table) {
-        table->setCondition(NULL);
-        if (dbMgr) dbMgr->closeTable(table);
-    }
+    if (table) { table->close(); table = NULL; }
     if (totalParams) {
         free(params);
         params =  NULL;
@@ -80,7 +77,7 @@ DbRetVal DelStatement::execute(int &rowsAffected)
         if (rv != OK) break;
         rowsAffected++;
     }
-    table->close();
+    table->closeScan();
     return rv;
 }
 

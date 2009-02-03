@@ -28,6 +28,7 @@ UpdStatement::UpdStatement()
 }
 
 UpdStatement::~UpdStatement() {
+    if (table) { table->close(); table = NULL; }
     if (totalParams) {
         //TODO::below free cause memory corruption.
         free(params);
@@ -35,10 +36,6 @@ UpdStatement::~UpdStatement() {
         free(paramValues);
         paramValues = NULL;
 	}
-        if (table) {
-            table->setCondition(NULL);
-            if (dbMgr) dbMgr->closeTable(table);
-        }
 }
 void* UpdStatement::getParamValuePtr( int pos )
 {
@@ -138,7 +135,7 @@ DbRetVal UpdStatement::execute(int &rowsAffected)
         if (rv != OK) break;
         rowsAffected++;
     }
-    table->close();
+    table->closeScan();
     return rv;
 }
 

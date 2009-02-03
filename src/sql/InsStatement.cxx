@@ -28,10 +28,7 @@ InsStatement::InsStatement()
 
 InsStatement::~InsStatement()
 {
-    if (table) {
-        table->setCondition(NULL);
-        if (dbMgr) dbMgr->closeTable(table);
-    }
+    if (table) { table->close(); table = NULL; }
     if (totalParams) {
         free(params);
         params =  NULL;
