@@ -113,9 +113,9 @@ int main()
         val1 = i;
         table->execute();
         tuple = (char*)table->fetch() ;
-        if (tuple == NULL) {printf("loop break in %d\n", i);table->close();break;}
+        if (tuple == NULL) {printf("loop break in %d\n", i);table->closeScan();break;}
     //    printf(" %d tuple value is %d %s \n", i, *((int*)tuple), tuple+offset1);
-        table->close();
+        table->closeScan();
         icount++;
         conn.commit();
         timer.stop();
@@ -131,10 +131,10 @@ int main()
         val1 = i;
         table->execute();
         tuple = (char*)table->fetch() ;
-        if (tuple == NULL) {printf("loop break in %d\n", i);table->close();break;}
+        if (tuple == NULL) {printf("loop break in %d\n", i);table->closeScan();break;}
         strcpy(name, "PRABAKARAN0950576543210");
         table->updateTuple();
-        table->close();
+        table->closeScan();
         conn.commit();
         timer.stop();
     }
@@ -150,10 +150,10 @@ int main()
         val1 = i;
         table->execute();
         tuple = (char*)table->fetch() ;
-        if (tuple == NULL) {printf("No record for %d\n", i);table->close();break;}
+        if (tuple == NULL) {printf("No record for %d\n", i);table->closeScan();break;}
         table->deleteTuple();
         icount++;
-        table->close();
+        table->closeScan();
         conn.commit();
         timer.stop();
     }
