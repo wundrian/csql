@@ -127,3 +127,4 @@ echo select count(*) from t1 group by f2;
 	2	
 	1	
 	
+Statement Executed

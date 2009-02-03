@@ -15,3 +15,9 @@ then
    exit 1;
 fi
 
+$CSQL_INSTALL_ROOT/bin/csql -u root -p manager -s ${REL_PATH}/drop.sql
+if [ $? -ne 0 ]
+then
+   exit 1;
+fi
+
