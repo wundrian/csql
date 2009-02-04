@@ -454,6 +454,7 @@ DbRetVal UpdStatement::resolveForAssignment()
             return ErrSyntaxError;
         }
         if (fInfo->isUnique) {
+            delete fInfo;
             printError(ErrUnique, "Unique field %s cannot be updated", value->fldName);
             return ErrUnique;
         } 

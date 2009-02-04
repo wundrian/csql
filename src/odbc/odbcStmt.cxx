@@ -16,7 +16,8 @@ CSqlOdbcStmt::CSqlOdbcStmt( void ) :
     apd_(SQL_DESC_APP),
     ipd_(SQL_DESC_IMP),
     ard_(SQL_DESC_APP),
-    ird_(SQL_DESC_IMP)
+    ird_(SQL_DESC_IMP),
+    fsqlStmt_( NULL )
     //HACK::
     //fetchMode_(SQL_FETCH_SINGLE_TUPLE)
 {
@@ -96,14 +97,12 @@ SQLRETURN CSqlOdbcStmt::SQLFreeHandle(
         }
         iter++;
     }
-
     // Set Dbc state_ = no statement.
     if( inputStmt->parentDbc_->stmtList_.size() == 0 )
             inputStmt->parentDbc_->state_ = C4;
 
     inputStmt->handleType_ = -1; // Make object invalid.
     delete inputStmt;            // Delete Stmt.
-
     return( SQL_SUCCESS );
 }
 
@@ -1460,9 +1459,7 @@ void CSqlOdbcStmt::resetStmt( void ) // TO DO
     SQLFreeStmt( SQL_CLOSE );
     SQLFreeStmt( SQL_UNBIND );
     SQLFreeStmt( SQL_RESET_PARAMS );
-    if (fsqlStmt_) fsqlStmt_->free();
-    delete fsqlStmt_;
-    fsqlStmt_ = NULL;
+    if (fsqlStmt_) { fsqlStmt_->free(); delete fsqlStmt_; fsqlStmt_ = NULL; }
     isPrepared_ = false;
     state_ = S1;
 }

@@ -146,6 +146,12 @@ void ParsedData::reset()
         delete value;
     }
     fieldValueList.reset();
+    ListIterator inIter = inValueList.getIterator();
+    while (inIter.hasElement()) {
+        value = (FieldValue *) inIter.nextElement();    
+        if (value->parsedString) free(value->parsedString);
+        delete value;
+    }
     inValueList.reset();
 
     predicate.reset();

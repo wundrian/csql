@@ -20,7 +20,8 @@ CSqlOdbcDbc::CSqlOdbcDbc( void ) :
         curIsolationLevel_( READ_REPEATABLE ),
         accessMode_( ACCESSMODE_READ_WRITE ),
         isolationLevel_( READ_COMMITTED ),
-        autoCommit_( SQL_AUTOCOMMIT_ON )
+        autoCommit_( SQL_AUTOCOMMIT_ON ),
+        fsqlConn_( NULL ) 
 {}
 
 SQLRETURN SQLAllocConnect(

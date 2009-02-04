@@ -27,10 +27,7 @@ JoinTableImpl::JoinTableImpl()
     leftTableHdl = NULL;
     rightTableHdl = NULL;
 }
-JoinTableImpl::~JoinTableImpl()
-{
-    close();
-}
+JoinTableImpl::~JoinTableImpl() {}
 /* moved to Table class
  * shall be removed
 void JoinTableImpl::getFieldNameAlone(char *fname, char *name) {
@@ -346,6 +343,7 @@ DbRetVal JoinTableImpl::close()
         delete elem;
     }
     projList.reset();
+    delete this;
     return OK;
 }
 void* JoinTableImpl::getBindFldAddr(const char *name)
@@ -372,6 +370,8 @@ List JoinTableImpl::getFieldNameList()
         Identifier *elem = (Identifier*) rIter.nextElement();
         fldNameList.append(elem);
     }
+    leftList.reset();
+    rightList.reset();
     return fldNameList;
 }
 bool JoinTableImpl::isTableInvolved(char *tableName)

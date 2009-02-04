@@ -250,6 +250,8 @@ int main(int argc, char **argv)
            ret =1;
         }
     }
+    iter.reset();
+    while (iter.hasElement()) delete iter.nextElement();
     tableList.reset();
     conn.close();
     return ret;
