@@ -109,7 +109,6 @@ class SqlStatement: public AbsSqlStatement
     * @returns DbRetVal
     */
     DbRetVal close();
-    DbRetVal freeScan();
 
     /** get FieldValue->value ptr after fetch is done.
     * @returns address void*

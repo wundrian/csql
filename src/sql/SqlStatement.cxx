@@ -185,14 +185,7 @@ DbRetVal SqlStatement::close()
     SelStatement *selStmt = (SelStatement*) stmt; 
     return selStmt->close();
 }
-DbRetVal SqlStatement::freeScan()
-{
-    if (pData.getStmtType() != SelectStatement) return OK;
-    SelStatement *selStmt = (SelStatement*) stmt; 
-    if (stmt) return selStmt->freeScan();
-    return OK;
-    
-}
+
 void* SqlStatement::getParamValuePtr( int pos )
 {
     //if (pData.getStmtType() != SelectStatement) return 0;
@@ -265,7 +258,6 @@ DbRetVal SqlStatement::getParamFldInfo (int parampos, FieldInfo *&fInfo)
 
 DbRetVal SqlStatement::free()
 {
-    freeScan();
     delete stmt;
     stmt = NULL;
     pData.reset();

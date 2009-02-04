@@ -33,6 +33,7 @@ SelStatement::SelStatement()
 
 SelStatement::~SelStatement()
 {
+    close();
     if (table) { table->close(); table = NULL; }
     if (totalParams) {
         free(params);
@@ -686,12 +687,7 @@ void* SelStatement::fetch(DbRetVal &rv)
 DbRetVal SelStatement::close()
 {
     isPointReturned = false;
-    return table->closeScan();
-}
-
-DbRetVal SelStatement::freeScan()
-{
-    if (table) return table->close();
+    if (table) return table->closeScan();
     else return OK;
 }
 
