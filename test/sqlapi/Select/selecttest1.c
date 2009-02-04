@@ -47,7 +47,7 @@ int main()
 
  int f1var = 99;
  short int f2var = 1;
- char f3var[20] = "lakshya";
+ char f3var[32] = "lakshya";
  float f4var = 5.5;
  float f5var = 10.50;
  Date f6var;

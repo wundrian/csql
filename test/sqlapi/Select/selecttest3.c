@@ -45,7 +45,7 @@ int main()
  strcpy(statement,"INSERT INTO T1 VALUES(?,?);");
 
  int f1var = 1;
- char f2var[20] = "lakshya";
+ char f2var[32] = "lakshya";
  
 
  rv = stmt->prepare(statement);

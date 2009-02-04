@@ -1042,13 +1042,6 @@ List TableImpl::getFieldNameList()
 }
 DbRetVal TableImpl::close()
 {
-    if (NULL == iter)
-    {
-         //printError(ErrNotOpen,"Scan not open");
-         //return ErrNotOpen;
-         //PRABA::when called multiple times it gives error
-         return OK;
-    }
     if (iter) { iter->close(); delete iter; iter = NULL; }
     printDebug(DM_Database,"Closing table handle: %x", this);
     //table->unlock();
@@ -1062,7 +1055,7 @@ DbRetVal TableImpl::closeScan()
     //do not throw scan not open error
     //this function will be called by table handle
     if (iter) {
-        iter->reset();
+        // iter->reset();
         //PRABA::TEMP::otherwise fails.check with kishor
         delete iter;
         iter = NULL;

@@ -197,6 +197,8 @@ void ParsedData::reset()
 }
 void ParsedData::clearFieldNameList()
 {
+    ListIterator it = fieldNameList.getIterator();
+    while (it.hasElement()) delete ((FieldName *) it.nextElement());
     fieldNameList.reset();
 }
 

@@ -320,6 +320,7 @@ DbRetVal InsStatement::resolve()
         if (fInfo->type == typeBinary) 
             value->value = AllDataType::alloc(fInfo->type, 2 * fInfo->length);
         else value->value = AllDataType::alloc(fInfo->type, fInfo->length);
+        value->isAllocVal = true;
         if (value->parsedString == NULL) continue;
         table->bindFld(name->fldName, value->value);
         if (value->parsedString[0] == '?')
