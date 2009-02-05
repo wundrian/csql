@@ -30,8 +30,8 @@ int main()
     Table *table = dbMgr->openTable("t1");
     if (table == NULL) { printf("Unable to open table\n"); return -1; }
     int id = 0;
-    char f1[50] = "PRABAKARAN";
-    char f2[950] = "Static Data is stored here";
+    char f1[52] = "PRABAKARAN";
+    char f2[952] = "Static Data is stored here";
     table->bindFld("f1", f1);
     table->bindFld("f2", f2);
     char *tuple;
@@ -58,7 +58,7 @@ int main()
 
     int offset= os::align(50);
     Condition p1;
-    char val1[50];
+    char val1[52];
     p1.setTerm("f1", OpEquals, &val1);
     table->setCondition(&p1);
     icount=0;
