@@ -115,24 +115,12 @@ Illegal Operator:Not Supported for Binary
 Illegal Operator:Not Supported for Binary
 Illegal Operator:Not Supported for Binary
 Illegal Operator:Not Supported for Binary
-Illegal Operator:Not Supported for Binary
-Illegal Operator:Not Supported for Binary
-Illegal Operator:Not Supported for Binary
-Illegal Operator:Not Supported for Binary
-Illegal Operator:Not Supported for Binary
-Illegal Operator:Not Supported for Binary
 
 echo select * from t1 where f2 between '122' and '12a2';
 ---------------------------------------------------------
 	t1.f1	t1.f2	
 ---------------------------------------------------------
 	Illegal Operator:Not Supported for Binary
-Illegal Operator:Not Supported for Binary
-Illegal Operator:Not Supported for Binary
-Illegal Operator:Not Supported for Binary
-Illegal Operator:Not Supported for Binary
-Illegal Operator:Not Supported for Binary
-Illegal Operator:Not Supported for Binary
 Illegal Operator:Not Supported for Binary
 Illegal Operator:Not Supported for Binary
 Illegal Operator:Not Supported for Binary
