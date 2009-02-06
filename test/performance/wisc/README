@@ -1,7 +1,7 @@
 Wisconsin Benchmark Suite
 -------------------------
 set the following in csql.conf file
-MAX_SYS_DB_SIZE=10485760
+MAX_SYS_DB_SIZE=104857600
 MAX_DB_SIZE=104857600
 
 Run make to build the suite as follows
@@ -10,21 +10,21 @@ $make
 
 To populate the database run
 ----------------------------
-a)CSQL
-$csql <csql.sql
-b)MySQL
-$isql myodbc3 <csql.sql
-c)Postgres 
-$isql psql <csql.sql
+$java JDBCPopulate
+
+For mysql 
+$java JDBCPopulate mysql
 
 
 To run odbc test
 $./odbcBench
 
+For mysql, set the LD_LIBRARY_PATH and edit the Makefile to link with mysql odbc library
+$./odbcBench mysql
+
 To run csql jdbc test
 ---------------------
 $java JDBCBench
 
-To run mysql jdbc test
-----------------------
+For mysql, set the CLASSPATH to point to mysql jdbc jar file and run 
 $java JDBCBench mysql
