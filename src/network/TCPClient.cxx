@@ -29,7 +29,7 @@ TCPClient::~TCPClient()
 DbRetVal TCPClient::send(NetworkPacketType type, char *buf, int len)
 {
     DbRetVal rv = OK;
-    printf("NW:TCP Send\n");
+//    printf("NW:TCP Send\n");
     void* totalBuffer = malloc(sizeof(PacketHeader)+ len);
     PacketHeader *hdr=  new PacketHeader();
     hdr->packetType = type;
@@ -42,12 +42,12 @@ DbRetVal TCPClient::send(NetworkPacketType type, char *buf, int len)
         printError(ErrOS, "Unable to send the packet\n");
         return ErrOS;
     }
-    printf("Sent bytes %d\n", numbytes);
+//    printf("Sent bytes %d\n", numbytes);
     if ((numbytes=os::send(sockfd, buf, len, 0)) == -1) {
         printError(ErrOS, "Unable to send the packet\n");
         return ErrOS;
     }
-    printf("Sent bytes %d\n", numbytes);
+//    printf("Sent bytes %d\n", numbytes);
     free(totalBuffer);
     delete hdr;
     return rv;
@@ -55,7 +55,7 @@ DbRetVal TCPClient::send(NetworkPacketType type, char *buf, int len)
 DbRetVal TCPClient::receive()
 {
     DbRetVal rv = OK;
-    printf("NW:TCP receive\n");
+//    printf("NW:TCP receive\n");
     fd_set fdset; 
     FD_ZERO(&fdset);
     FD_SET(sockfd, &fdset);
@@ -104,7 +104,7 @@ DbRetVal TCPClient::connect()
         printError(ErrOS, "Unable to connect to peer site\n");
         return ErrOS;
     }
-    printf("NW:TCP connecting\n");
+//    printf("NW:TCP connecting\n");
     fd_set fdset;
     FD_ZERO(&fdset);
     FD_SET(sockfd, &fdset);
@@ -124,7 +124,7 @@ DbRetVal TCPClient::connect()
        printf("Unable to receive response from peer\n");
        return ErrOS;
     }
-    printf("Response from peer site is %d\n", response);
+//    printf("Response from peer site is %d\n", response);
 //    if (response != 1) return ErrPeerResponse;
     isConnectedFlag = true;
     return OK;
@@ -133,7 +133,7 @@ DbRetVal TCPClient::connect()
 DbRetVal TCPClient::disconnect()
 {
     if (isConnectedFlag) {
-        printf("NW:TCP disconnect %s %d\n", hostName, port);
+//        printf("NW:TCP disconnect %s %d\n", hostName, port);
         PacketHeader *hdr=  new PacketHeader();
         hdr->packetType = SQL_NW_PKT_DISCONNECT;
         hdr->packetLength = 0;
@@ -144,7 +144,7 @@ DbRetVal TCPClient::disconnect()
             printError(ErrOS, "Unable to send the packet\n");
             return ErrOS;   
         } else {
-            printf("Sent bytes %d\n", numbytes);
+//            printf("Sent bytes %d\n", numbytes);
             DbRetVal rv = receive();
             close(sockfd);
             delete hdr;

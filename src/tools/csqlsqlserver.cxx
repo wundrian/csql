@@ -121,7 +121,7 @@ int main(int argc, char **argv)
         printf("Unable to start the server\n");
         return 1;
     }
-    printf("Csql network server started\n");
+    printf("Csql Network Daemon started\n");
     fd_set fdset;
     int ret = 0;
     struct timeval timeout, tval;
@@ -138,9 +138,9 @@ int main(int argc, char **argv)
         if (ret > 0) {
             nwServer->handleClient();
         }
-        printf("Server Waiting for clients\n");
+    //    printf("Server Waiting for clients\n");
     }
-    printf("Replication Server Exiting\n");
+    printf("Csql Network Daemon Exiting\n");
     nwServer->stop();
     delete SqlNetworkHandler::conn;
     return 0;

@@ -18,6 +18,8 @@
 #include <Statement.h>
 #include <SqlFactory.h>
 #include <SqlStatement.h>
+#include <SqlNwConnection.h>
+#include <SqlNwStatement.h>
 #define SQL_STMT_LEN 1024
 enum STMT_TYPE
 {
@@ -32,15 +34,19 @@ AbsSqlStatement *stmt;
 
 bool gateway=false, silent=false;
 bool autocommitmode = true;
+bool network = false;
 IsolationLevel isoLevel = READ_COMMITTED;
 void printHelp();
 bool getInput(bool);
 void printUsage()
 {
-   printf("Usage: csql [-u username] [-p passwd] [-s sqlfile] \n");
+   printf("Usage: csql [ [-u username] [-p passwd] ] [ [-H hostname] [-P port] ]\n");
+   printf("            [-s sqlfile] \n");
    printf("       username -> username to connect to database\n");
    printf("       password -> password to connect to database\n");
-   printf("       sqlfile -> filename containing sql statements\n");
+   printf("       hostname -> hostname to connect to database through network\n");
+   printf("       port     -> port no\n");
+   printf("       sqlfile  -> filename containing sql statements\n");
    return;
   
 }
@@ -51,10 +57,14 @@ int main(int argc, char **argv)
     username [0] = '\0';
     char password[IDENTIFIER_LENGTH];
     password [0] = '\0';
+    char hostname[IDENTIFIER_LENGTH];
+    hostname[0] = '\0';
+    char port[8];
+    port[0] ='\0'; 
     char filename[512];
     filename [0] ='\0';
     int c = 0, opt=0;
-    while ((c = getopt(argc, argv, "u:p:s:gS?")) != EOF) 
+    while ((c = getopt(argc, argv, "u:p:s:H:P:gS?")) != EOF) 
     {
         switch (c)
         {
@@ -64,6 +74,10 @@ int main(int argc, char **argv)
             case '?' : { opt = 1; break; } //print help 
             case 'S' : { silent = true; break; } //silent 
             case 'g' : { gateway = true; break; } //print help 
+            case 'H' : { strcpy (hostname, argv[optind - 1]); 
+                         network = true; break; }
+            case 'P' : { strcpy (port,     argv[optind - 1]); 
+                         network = true; break; }
             default: printf("Wrong args\n"); exit(1);
 
         }
@@ -78,6 +92,10 @@ int main(int argc, char **argv)
     {
         strcpy(username, "root");
         strcpy(password, "manager");
+    }
+    if (network) {
+        if (hostname[0] == '\0') { printUsage(); return 0; }
+        if (port[0] == '\0') { printUsage(); return 0; }
     }
     bool fileFlag = false;
     if (filename [0] !='\0')
@@ -94,13 +112,24 @@ int main(int argc, char **argv)
     DbRetVal rv = OK;
     if (gateway)
       conn = SqlFactory::createConnection(CSqlGateway);
+    else if (network) {
+      conn = new SqlNwConnection();
+      conn->setInnerConnection(NULL);
+      SqlNwConnection *con = (SqlNwConnection *)conn;
+      con->setHost(hostname, atoi(port));
+    }
     else
       conn = SqlFactory::createConnection(CSql);
+
     rv = conn->connect(username,password);
     if (rv != OK) return 1;
     if (gateway)
       stmt =  SqlFactory::createStatement(CSqlGateway);
-    else
+    else if (network) {
+      stmt = new SqlNwStatement();
+      stmt->setInnerStatement(NULL);
+    }
+    else 
       stmt =  SqlFactory::createStatement(CSql);
     stmt->setConnection(conn);
     //rv = conn->beginTrans(READ_COMMITTED, TSYNC);

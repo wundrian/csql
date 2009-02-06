@@ -128,6 +128,18 @@ void startCacheServer()
      return;
 }
 
+void startServiceClient()
+{
+     printf("Starting Csql Network Daemon\n");
+     char execName[1024];
+     sprintf(execName, "%s/bin/csqlsqlserver", os::getenv("CSQL_INSTALL_ROOT"));
+     printf("filename is %s\n", execName);
+     cachepid = os::createProcess(execName, "-s");
+     if (cachepid != -1)
+         printf("Csql Network Daemon Started pid=%d\n", cachepid);
+     return;
+}
+
 void printUsage()
 {
    printf("Usage: csqlserver [-c] [-v]\n");
@@ -219,6 +231,7 @@ int main(int argc, char **argv)
             return 1;
         }
     }
+
     if (Conf::config.useReplication())
     {
         printf("Starting Replication Server\n");
@@ -231,8 +244,9 @@ int main(int argc, char **argv)
         
     }
     if (Conf::config.useCache() && Conf::config.useTwoWayCache()) startCacheServer();
-
     printf("Database server started\n");
+
+    startServiceClient();
 
     while(!srvStop)
     {

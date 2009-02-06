@@ -58,7 +58,7 @@ DbRetVal TCPServer::stop()
 }
 DbRetVal TCPServer::handleClient()
 {   
-   printf("PRABA::handling client \n");
+//   printf("PRABA::handling client \n");
    DbRetVal rv = OK;
    socklen_t addressLen = sizeof(struct sockaddr);
    clientfd = accept(sockfd, (struct sockaddr*) &clientAddress, &addressLen);
@@ -77,7 +77,7 @@ DbRetVal TCPServer::handleClient()
            printError(ErrOS, "Unable to communicate to peer\n");
            return ErrOS;
        }
-       printf("sent connect ack packet to client\n");
+//       printf("sent connect ack packet to client\n");
        fd_set fdset; 
        struct timeval timeout;
        SqlNetworkHandler handler;
@@ -89,14 +89,14 @@ DbRetVal TCPServer::handleClient()
            timeout.tv_usec = 0;
            int ret = os::select(clientfd+1, &fdset, 0, 0, &timeout);
            if (ret > 0) {
-                printf("something in fd\n");
+//                printf("something in fd\n");
                int numbytes = os::recv(clientfd,&header,sizeof(PacketHeader),0);
                if (numbytes == -1)
                {
                    printError(ErrOS, "Error reading from socket\n");
                    return ErrOS;
                }
-               printf("HEADER says packet type is %d\n", header.packetType);
+//               printf("HEADER says packet type is %d\n", header.packetType);
                char *buffer = NULL;
                if (header.packetType != SQL_NW_PKT_DISCONNECT && 
                    header.packetType != SQL_NW_PKT_COMMIT     &&
@@ -210,12 +210,12 @@ DbRetVal TCPServer::send(NetworkPacketType type, char *buf, int len)
         printError(ErrOS, "Unable to send the packet\n");
         return ErrOS;
     }
-    printf("Sent bytes %d\n", numbytes);
+//    printf("Sent bytes %d\n", numbytes);
     if ((numbytes=os::send(clientfd, buf, len, 0)) == -1) {
         printError(ErrOS, "Unable to send the packet\n");
         return ErrOS;
     }
-    printf("Sent bytes %d\n", numbytes);
+//    printf("Sent bytes %d\n", numbytes);
     free(totalBuffer);
     return rv;
 }
