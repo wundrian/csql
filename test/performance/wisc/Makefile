@@ -4,7 +4,7 @@ LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlodbc -lcrypt -lcacheload
 ALL_CC_FLAG=$(INCL) $(LIBS)
 JAVAC = javac -g:none
 
-all: odbcBench JDBCBench JDBCBenchPool
+all: odbcBench JDBCBench JDBCPopulate
 
 relBench.o: wbench.c
 	$(CC) -o relBench.o $(ALL_CC_FLAG) -c wbench.c 
@@ -26,8 +26,8 @@ odbcBench: odbcDB.o odbcBench.o wiscTimer.o support.o
 JDBCBench: JDBCBench.java
 	$(JAVAC) JDBCBench.java
 
-JDBCBenchPool: JDBCBenchPool.java
-	$(JAVAC) JDBCBenchPool.java
+JDBCPopulate: JDBCPopulate.java
+	$(JAVAC) JDBCPopulate.java
 clean:
 	rm -rf  *.o odbcBench 
 	rm -rf  *.class
