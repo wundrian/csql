@@ -123,6 +123,9 @@ class PredicateImpl:public Predicate
     void setIfNoLeftRight();
     void setDontEvaluate(){dontEvaluate = true;}
     bool appendIfSameFld(char *fname, ComparisionOp op, void* buf);
+    void* getValIfPointLookupOnInt(int &offset);
+    void* getVal1IfBetweenOnInt(int &offset);
+    void* getVal2IfBetweenOnInt(int &offset);
 };
 
 #endif

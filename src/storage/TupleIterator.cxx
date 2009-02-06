@@ -117,13 +117,38 @@ void* TupleIterator::next()
     if (fullTableScan == scanType_)
     {
 
-        if (NULL == pred_ )
+        if (NULL == pred_)
         {
             //no predicates
             return cIter->nextElement();
         }
         else
         {
+            int offset=0;
+            void *val = predImpl->getValIfPointLookupOnInt(offset);
+            char *tup = NULL;
+            if (val != NULL) {
+              while (true)
+              {
+                tup = (char*)cIter->nextElement();
+                if(NULL == tup) return NULL;
+                if (*(int*)val == *((int*)(tup+offset))) break;
+              }
+              return tup;
+            }
+            val = predImpl->getVal1IfBetweenOnInt(offset);
+            if (val != NULL) {
+              void *val2 = predImpl->getVal2IfBetweenOnInt(offset);
+              while (true)
+              {
+                tup = (char*)cIter->nextElement();
+                if(NULL == tup) return NULL;
+                if (*((int*)(tup+offset)) >= *(int*)val &&
+                    *((int*)(tup+offset)) <= *(int*)val2) break;
+              }
+              return tup;
+            }
+      
             //evaluate till it succeeds
             bool result = false;
             while (!result)

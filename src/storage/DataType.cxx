@@ -1166,15 +1166,15 @@ bool AllDataType::compareStringVal(void* src1, void *src2, ComparisionOp op)
         if (strcmp((char*)src1, (char*)src2) <0 ) return true;
         else return false;
     }else if (OpLessThanEquals == op) {
-        printf("Illegal Operator:Not Supported for String\n");
-        return false;
-       //if (strcmp((char*)src1, (char*)src2)<= 0) return true;
-       //else return false;
+       // printf("Illegal Operator:Not Supported for String\n");
+       // return false;
+       if (strcmp((char*)src1, (char*)src2)<= 0) return true;
+       else return false;
     }else if (OpGreaterThanEquals == op) {
-        printf("Illegal Operator:Not Supported for String\n");
-        return false;
-        //if (strcmp((char*)src1, (char*)src2) >=0) return true;
-        //else return false;
+    //    printf("Illegal Operator:Not Supported for String\n");
+    //    return false;
+        if (strcmp((char*)src1, (char*)src2) >=0) return true;
+        else return false;
     }else if (OpNotEquals == op) {
         if (strcmp((char*)src1, (char*)src2) != 0) return true;
         else return false;

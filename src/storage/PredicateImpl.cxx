@@ -374,6 +374,56 @@ void PredicateImpl::evaluateForTable(bool &result, char *tuple)
     //if (!result && val3) AllDataType::copyVal(val3, 
     return;
 }
+void* PredicateImpl::getValIfPointLookupOnInt(int &offset)
+{ //perf opt
+    if (NULL != lhs && NULL != rhs) return NULL;
+    if(typeInt != type || comp2Op !=OpInvalidComparisionOp) return NULL;
+    if (compOp != OpEquals) return NULL;
+    offset = offset1;
+    void *val =NULL;
+    if(operand == NULL && operandPtr != NULL)
+    { 
+        val = *(void**)operandPtr;
+    } else if(operand != NULL && operandPtr == NULL)
+    { 
+        val = (void*) operand;
+    }
+    return val;
+}
+void* PredicateImpl::getVal1IfBetweenOnInt(int &offset)
+{ //perf opt
+    if (NULL != lhs && NULL != rhs) return NULL;
+    if(typeInt != type)  return NULL;
+    if (compOp != OpGreaterThanEquals || 
+        comp2Op !=OpLessThanEquals) return NULL;
+    offset = offset1;
+    void *val =NULL;
+    if(operand == NULL && operandPtr != NULL)
+    { 
+        val = *(void**)operandPtr;
+    } else if(operand != NULL && operandPtr == NULL)
+    { 
+        val = (void*) operand;
+    }
+    return val;
+}
+void* PredicateImpl::getVal2IfBetweenOnInt(int &offset)
+{ //perf opt
+    if (NULL != lhs && NULL != rhs) return NULL;
+    if(typeInt != type)  return NULL;
+    if (compOp != OpGreaterThanEquals || 
+        comp2Op !=OpLessThanEquals) return NULL;
+    offset = offset1;
+    void *val =NULL;
+    if(operand2 == NULL && operand2Ptr != NULL)
+    { 
+        val = *(void**)operand2Ptr;
+    } else if(operand2 != NULL && operand2Ptr == NULL)
+    { 
+        val = (void*) operand2;
+    }
+    return val;
+}
 DbRetVal PredicateImpl::evaluate(bool &result)
 {
     //if (isPushedDown) { result = true; return OK; }

@@ -504,8 +504,7 @@ DbRetVal TableImpl::fetchAgg(const char * fldName, AggType aType, void *buf)
    if (AGG_MIN == aType || AGG_MAX == aType) {
       int pos =0;
       IndexType iType = getIndexType((char*)fldName, &pos);
-      if (pos <0) { printError(ErrSysInternal, "should never happen"); }
-      if(treeIndex == iType) {
+      if(treeIndex == iType && pos >=0) {
           if (AGG_MIN == aType) {
               HashIndexInfo* hInfo = (HashIndexInfo*) idxInfo[pos];
               CINDEX *iptr = (CINDEX*) hInfo->indexPtr;
@@ -535,46 +534,93 @@ DbRetVal TableImpl::fetchAgg(const char * fldName, AggType aType, void *buf)
       }
    }
 
-   char *tuple = (char*) fetchNoBind(rv);
-   if ( NULL == tuple) 
-   { 
-      *(int*)buf = 0; //assuming int. could create porting problems(64 |endian) 
-      return OK; 
+   DataType type = info->type;
+   int length = info->length;
+   int offset = info->offset;
+
+   if (NULL == pred_ && typeInt == type)
+   { //perf opt
+     ChunkIterator cIter = ((Chunk*)chunkPtr_)->getIterator();
+     char *tuple =(char*)cIter.nextElement();
+     if (NULL == tuple) return OK;
+     int count =1;
+     AllDataType::copyVal(buf, (void*) (tuple+offset), type, length);
+     while(1) {
+       tuple = (char*)cIter.nextElement();
+       if (NULL == tuple) break;
+       switch(aType) {
+           case AGG_MIN:
+           {
+               if (*(int*)buf >= *((int*)(tuple+offset)))
+                   *(int*)buf = *((int*)(tuple+offset));
+               break;
+           }
+           case AGG_MAX:
+           {
+               if (*(int*)buf <= *((int*)(tuple+offset)))
+                   *(int*)buf = *((int*)(tuple+offset));
+               break;
+           }
+           case AGG_SUM:
+           {
+               *(int*)buf = *(int*)buf + *((int*)(tuple+offset));
+               break;
+           }
+           case AGG_AVG:
+           {
+               *(int*)buf = *(int*)buf + *((int*)(tuple+offset));
+               count++;
+               break;
+           }
+           case AGG_COUNT:
+           {
+               count++;
+               break;
+           }
+         }
+       }
+       if( AGG_AVG == aType) AllDataType::divVal(buf, &count, type);
+       else if (AGG_COUNT == aType) (*(int*)buf) = count;
+       delete info;
+       return OK;
    }
+
+   char *tuple = (char*) fetchNoBind(rv);
+   if ( NULL == tuple)  return OK; 
    int count =1;
-   AllDataType::copyVal(buf, (void*) (tuple+info->offset), info->type, info->length);
+   AllDataType::copyVal(buf, (void*) (tuple+offset), type, length);
    while(1) {
        tuple = (char*) fetchNoBind(rv);
        if (NULL == tuple) break;
        switch(aType) {
            case AGG_MIN:
            {
-               res = AllDataType::compareVal(buf, (void*) (tuple+info->offset), 
+               res = AllDataType::compareVal(buf, (void*) (tuple+offset), 
                                OpGreaterThanEquals,
-                               info->type, info->length);
-               if (res) AllDataType::copyVal(buf, (void*) (tuple+info->offset), 
-                                     info->type, info->length);
+                               type, length);
+               if (res) AllDataType::copyVal(buf, (void*) (tuple+offset), 
+                                     type, length);
                break;
            }
            case AGG_MAX:
            {
-               res = AllDataType::compareVal(buf, (void*) (tuple+info->offset), 
+               res = AllDataType::compareVal(buf, (void*) (tuple+offset), 
                                OpLessThanEquals,
-                               info->type, info->length);
-               if (res) AllDataType::copyVal(buf, (void*) (tuple+info->offset), 
-                                     info->type, info->length);
+                               type, length);
+               if (res) AllDataType::copyVal(buf, (void*) (tuple+offset), 
+                                     type, length);
                break;
            }
            case AGG_SUM:
            {
-               AllDataType::addVal(buf, (void*) (tuple+info->offset), 
-                               info->type);
+               AllDataType::addVal(buf, (void*) (tuple+offset), 
+                               type);
                break;
            }
            case AGG_AVG:
            {
-               AllDataType::addVal(buf, (void*) (tuple+info->offset), 
-                               info->type);
+               AllDataType::addVal(buf, (void*) (tuple+offset), 
+                               type);
                count++;
                break;
            }
@@ -588,7 +634,7 @@ DbRetVal TableImpl::fetchAgg(const char * fldName, AggType aType, void *buf)
    switch(aType) {
        case AGG_AVG:
        {
-           AllDataType::divVal(buf, &count,info->type); 
+           AllDataType::divVal(buf, &count,type); 
            break;
        }
        case AGG_COUNT:
