@@ -11,19 +11,15 @@ tuple value is Value0 PRABAKARAN0123456750590
 tuple value is Value1 PRABAKARAN0123456750590 
 tuple value is Value2 PRABAKARAN0123456750590 
 Operator test for 3
-Illegal Operator:Not Supported for String
-Illegal Operator:Not Supported for String
-Illegal Operator:Not Supported for String
-Illegal Operator:Not Supported for String
-Illegal Operator:Not Supported for String
+tuple value is Value0 PRABAKARAN0123456750590 
+tuple value is Value1 PRABAKARAN0123456750590 
+tuple value is Value2 PRABAKARAN0123456750590 
+tuple value is Value3 PRABAKARAN0123456750590 
 Operator test for 4
 tuple value is Value4 PRABAKARAN0123456750590 
 Operator test for 5
-Illegal Operator:Not Supported for String
-Illegal Operator:Not Supported for String
-Illegal Operator:Not Supported for String
-Illegal Operator:Not Supported for String
-Illegal Operator:Not Supported for String
+tuple value is Value3 PRABAKARAN0123456750590 
+tuple value is Value4 PRABAKARAN0123456750590 
 deleting tuple Value0 PRABAKARAN0950576543210 
 deleting tuple Value1 PRABAKARAN0950576543210 
 deleting tuple Value2 PRABAKARAN0950576543210 
