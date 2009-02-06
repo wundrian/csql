@@ -34,8 +34,7 @@ bool isCached(char *tblName)
     if (!Conf::config.useCache()) return false;
     FILE *fp = fopen(Conf::config.getTableConfigFile(),"r");
     if( fp == NULL ) {
-        printError(ErrSysInit, "csqltable.conf file does not exist");
-        return ErrSysInit;
+        return OK;
     }
     char ctablename[IDENTIFIER_LENGTH];
     char fieldname[IDENTIFIER_LENGTH];
