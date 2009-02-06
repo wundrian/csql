@@ -10,7 +10,7 @@ JAVAC = javac
 else
 ifeq ($(OSNAME), Linux)
 CPlus = g++
-CPlusFlags = -g -w 
+CPlusFlags = -O2  -w 
 JAVAC = javac -g:none
 SYSLIBS= -rdynamic -lrt -lpthread -lcrypt
 else
@@ -21,7 +21,7 @@ endif
 endif
 
 INCL= -I$(CSQL_INSTALL_ROOT)/include
-LIBS= -L$(CSQL_INSTALL_ROOT)/lib -rdynamic -lcsql -lcacheload
+LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlodbc -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw -lcacheload
 
 TARGETS = \
         SQLGWTest \
@@ -29,14 +29,9 @@ TARGETS = \
         SQLTest \
         DMLTest \
         DMLThroughput \
-        DMLTestChar \
         DMLThreadTest \
-	DMLThreadTest1 \
-	DMLThreadTest2 \
-	DMLThreadTest3 \
         ODBCTest \
-        JDBCTest \
-	Range
+        JDBCTest 
        
 
 ifeq ($(PlatForm), supported)
@@ -48,26 +43,16 @@ DMLTest: DMLTest.c
 DMLThroughput: DMLThroughput.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 SQLTest: SQLTest.c
-	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw $(SYSLIBS)
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 SQLGWTest: SQLGWTest.c
-	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw $(SYSLIBS)
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 SQLAdapterTest: SQLAdapterTest.c
-	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw $(SYSLIBS)
-DMLTestChar: DMLTestChar.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 DMLThreadTest: DMLThreadTest.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
-DMLThreadTest1: DMLThreadTest1.c
-	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
-DMLThreadTest2: DMLThreadTest2.c
-	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
-DMLThreadTest3: DMLThreadTest3.c
-	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 
-Range: Range.c
-	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 ODBCTest: ODBCTest.c
-	$(CPlus) $(CPlusFlags) -lcsqlodbc -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+	$(CPlus) $(CPlusFlags)-o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 JDBCTest: JDBCTest.java
 	$(JAVAC)  JDBCTest.java
 
