@@ -34,3 +34,12 @@ Index* Index::getIndex(IndexType type)
     }
     return NULL;
 }
+void Index::destroy() 
+{
+     usageCount--;
+     if(!usageCount) {
+        if(!hIdx) { delete hIdx; hIdx=NULL; }
+        if(!tIdx) { delete tIdx; tIdx=NULL; }
+     }
+}
+

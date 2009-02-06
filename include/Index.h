@@ -104,12 +104,7 @@ class Index
     public:
     static Index* getIndex(IndexType type);
     static void init() { usageCount++; }
-    static void destroy() { 
-	 usageCount--;
-         if(!usageCount) {
-            if(!hIdx) { delete hIdx; hIdx=NULL; }
-	 }
-    }
+    static void destroy();
     virtual DbRetVal insert(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool undoFlag)=0;
     virtual DbRetVal remove(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool undoFlag)=0; 
     virtual DbRetVal update(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool undoFlag)=0;
