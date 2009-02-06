@@ -526,6 +526,36 @@ DbRetVal TreeIndex::removeElement(Database *db, TreeNode *iter, void *tuple, Has
 
 DbRetVal TreeIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *indInfo, void *tuple, bool undoFlag)
 {
+    CINDEX *iptr = (CINDEX*)indexPtr;
+
+    HashIndexInfo *info = (HashIndexInfo*) indInfo;
+    //check whether the index key is updated or not
+    //if it is not updated return from here
+    bool keyNotUpdated = false;
+    FieldIterator idxFldIter = info->idxFldList.getIterator();
+    while (idxFldIter.hasElement()) 
+    {
+        FieldDef *idef = idxFldIter.nextElement();
+        FieldIterator fldIter = tbl->fldList_.getIterator();
+        while (fldIter.hasElement()) 
+        {
+            FieldDef *def = fldIter.nextElement();
+            if (0 == strcmp(def->fldName_, idef->fldName_)) 
+            {
+                if (NULL != def->bindVal_) 
+                {
+                    //Not Implemented
+                    return ErrNotYet;
+                }  
+               keyNotUpdated = true;
+               break;
+            }
+        }
+    }
+    if (keyNotUpdated) 
+    {
+        return OK;
+    }
     return ErrNotYet;
 }
 
