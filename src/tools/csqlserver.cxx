@@ -246,7 +246,7 @@ int main(int argc, char **argv)
     if (Conf::config.useCache() && Conf::config.useTwoWayCache()) startCacheServer();
     printf("Database server started\n");
 
-    startServiceClient();
+    if(Conf::config.useCsqlSqlServer()) startServiceClient();
 
     while(!srvStop)
     {
