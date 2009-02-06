@@ -60,6 +60,7 @@ SQLRETURN CSqlOdbcStmt::SQLAllocHandle(
 
     // Initialize relation b/w Stmt and Dbc
     inputDbc->stmtList_.insert( inputDbc->stmtList_.begin(), (CSqlOdbcStmt*) *outputHandle );
+    inputDbc->stmtHdlList_.append(outputHandle);
     if( inputDbc->state_ <= C4 )
         inputDbc->state_ = C5;
     ((CSqlOdbcStmt*) *outputHandle)->parentDbc_ = inputDbc;
@@ -102,6 +103,13 @@ SQLRETURN CSqlOdbcStmt::SQLFreeHandle(
             inputStmt->parentDbc_->state_ = C4;
 
     inputStmt->handleType_ = -1; // Make object invalid.
+    SQLHANDLE *elem;
+    ListIterator it = inputStmt->parentDbc_->stmtHdlList_.getIterator();
+    while (it.hasElement()) {
+        elem = (SQLHANDLE *) it.nextElement();
+        if(*elem == inputStmt) *elem = NULL;
+    }
+    inputStmt->parentDbc_->stmtHdlList_.remove(elem);
     delete inputStmt;            // Delete Stmt.
     return( SQL_SUCCESS );
 }

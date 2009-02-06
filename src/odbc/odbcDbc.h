@@ -33,7 +33,7 @@ class CSqlOdbcDbc
         int mode_; //1->csql , 2->gateway
         SQLUINTEGER curAccessMode_;
         IsolationLevel curIsolationLevel_;
-
+        List stmtHdlList_;
         // Connection Attributes
         SQLUINTEGER accessMode_;    // Transaction access mode
                                     // SQL_MODE_READ_ONLY OR

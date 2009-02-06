@@ -18,7 +18,6 @@
 #include<PredicateImpl.h>
 Condition::Condition()
 {
-    //pred = new PredicateImpl();
     pred = NULL;
 }
 void Condition::reset()

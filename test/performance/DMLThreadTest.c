@@ -26,7 +26,7 @@ int main()
     idxInfo->indType = hashIndex;
     rv = dbMgr->createIndex("indx1", idxInfo);
     if (rv != OK) { printf("Index creation failed\n"); return -1; }
-
+    delete idxInfo;
     pthread_t thr[THREADS];
     int message[THREADS];
     int status;
@@ -86,7 +86,7 @@ int main()
         pthread_join(thr[i], (void**)&status);
     }
 
-    //dbMgr->dropTable("t1");
+    dbMgr->dropTable("t1");
     conn.close();
     return 0;
 }
@@ -104,7 +104,7 @@ void* runInsTest(void *message)
     Table *table = dbMgr->openTable("t1");
     if (table == NULL) { printf("Unable to open table\n"); return NULL; }
     int id = 0;
-    char name[1020] = "PRABAKARAN";
+    char name[200] = "PRABAKARAN";
     table->bindFld("f1", &id);
     table->bindFld("f2", name);
     char *tuple;
