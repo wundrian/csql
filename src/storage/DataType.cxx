@@ -1433,7 +1433,8 @@ DbRetVal AllDataType::strToValue(void* dest, char *src, DataType type, int lengt
             unsigned char c = 0;
             const char *str = (const char *)src;
             int i=0;
-            i = strlen(src)-1;        
+            i = strlen(src)-1;
+            if( i > (length*2)-1 ){ i = (length*2)-1 ; }         
             bool evenlegth=false;
             if(i%2){ evenlegth=true;}   
             unsigned char *val = (unsigned char *)dest+(length-1);
@@ -1825,6 +1826,7 @@ void AllDataType::convertToBinary(void *dest, void *src, DataType srcType, int l
             const char *str = (const char *)src;
             int i=0;
             i = strlen((char*)src)-1;
+            if( i > (length*2)-1 ){ i = (length*2)-1 ; }
             bool evenlegth=false;
             if(i%2){ evenlegth=true;}
             unsigned char *val = (unsigned char *)dest+(length-1);
