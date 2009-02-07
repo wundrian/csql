@@ -497,3 +497,35 @@ void JoinTableImpl::setPredicate(Predicate *pr)
     pred = newPred;
     return;
 }
+bool JoinTableImpl::isFldNull(const char *name)
+{
+    bool ret = false;
+    if(NULL==leftTableHdl->getName()) 
+    {
+        ret = leftTableHdl->isFldNull(name);
+        if(ret==true) return true;
+    }
+    else
+    {
+        char tableName[IDENTIFIER_LENGTH];
+        Table::getTableNameAlone((char*)name, tableName);    
+        if(0 == strcmp(tableName,leftTableHdl->getName()))
+        {
+            return leftTableHdl->isFldNull(name);
+        }
+    }
+    if(NULL==rightTableHdl->getName())
+    {
+        ret = rightTableHdl->isFldNull(name);
+        if(ret==true) return true;
+    }
+    else{
+        char tableName[IDENTIFIER_LENGTH];
+        Table::getTableNameAlone((char*)name, tableName);
+        if(0==strcmp(tableName,rightTableHdl->getName()))
+        {
+            return rightTableHdl->isFldNull(name);
+        }
+    }
+    return ret;
+}
