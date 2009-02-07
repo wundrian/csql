@@ -48,6 +48,12 @@ DbRetVal CreateTblStatement::execute(int &rowsAffected)
         char indName[IDENTIFIER_LENGTH];
         sprintf(indName, "%s_idx1_Primary", tblName);
         rv = dbMgr->createIndex(indName, idxInfo);
+        if (rv != OK)
+        {
+            dbMgr->dropTable(tblName);
+            delete idxInfo;
+            return rv;
+        }
         delete idxInfo;
     }
     return rv;
