@@ -582,7 +582,7 @@ DbRetVal CacheTableLoader::unload(bool tabDefinition)
     DbRetVal rv = conn.open(userName, password);
     if (rv != OK) return ErrSysInit;
 	  
-    if (isTableCached() != OK) {
+    if (CacheTableLoader::isTableCached(tableName) != OK) {
         printError(ErrNotCached, "The table \'%s\' is not cached", tableName);
         return ErrNotCached;
     }
@@ -652,7 +652,7 @@ DbRetVal CacheTableLoader::recoverAllCachedTables()
     return OK;
 }
 
-DbRetVal CacheTableLoader::isTableCached()
+DbRetVal CacheTableLoader::isTableCached(char *tabName)
 {
     FILE *fp;
     char tmpFileName[MAX_FILE_PATH_LEN];
@@ -669,7 +669,7 @@ DbRetVal CacheTableLoader::isTableCached()
     while(!feof(fp))
     {
         fscanf(fp, "%d:%s %s %s %s\n", &mode, tablename,fieldname,condition,field);
-        if (strcmp (tablename, tableName) == 0) {
+        if (strcmp (tablename, tabName) == 0) {
             fclose(fp);
             return OK;
         }

@@ -50,7 +50,7 @@ class CacheTableLoader
     DbRetVal refresh();
     DbRetVal recoverAllCachedTables();
     DbRetVal load(DatabaseManager *dbMgr, bool tabDef);
-    DbRetVal isTableCached();
+    static DbRetVal isTableCached(char *tablename);
     DbRetVal isTablePresent();// new one by :Jitendra
     bool isFieldExist(char *fieldname);
 };

@@ -102,7 +102,7 @@ int main(int argc, char **argv)
     if (opt==2) {
         cacheLoader.setTable(tablename);
         if(fieldNameSpecified){ cacheLoader.setFieldName(fieldname); }
-        rv = cacheLoader.isTableCached();
+        rv = CacheTableLoader::isTableCached(tablename);
         if(rv!=OK){
             rv = cacheLoader.load(tableDefinition);
             if(rv == OK){

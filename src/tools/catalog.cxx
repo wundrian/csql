@@ -17,6 +17,7 @@
 #include <DatabaseManagerImpl.h>
 #include <Database.h>
 #include <TableImpl.h>
+#include <CacheTableLoader.h>
 void printUsage()
 {
    printf("Usage: catalog [-u username] [-p passwd] [-l] [-i] [-d] [-T table] [-I index] [-D <lock|trans|proc|chunk>]\n");
@@ -141,8 +142,11 @@ int main(int argc, char **argv)
             while (iter.hasElement())
             {
                 elem = (Identifier*) iter.nextElement();
-                printf("  <TableName> %s </TableName>\n", elem->name);
-                dbMgr->dropTable(elem->name);
+                rv=CacheTableLoader::isTableCached(elem->name);
+                if(rv!=OK){
+                    printf("  <TableName> %s </TableName>\n", elem->name);
+                    dbMgr->dropTable(elem->name);
+                }
                 count++;
             }
             if (count ==0) printf("  <No tables exist></No tables exist>\n");
