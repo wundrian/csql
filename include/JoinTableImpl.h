@@ -113,7 +113,7 @@ class JoinTableImpl:public Table
 
     DbRetVal markFldNull(const char *name){}
     DbRetVal markFldNull(int colpos){}
-    bool isFldNull(const char *name){return false;}
+    bool isFldNull(const char *name);
     bool isFldNull(int colpos){return false;}
     void clearFldNull(const char *name){}
     void clearFldNull(int colpos){}
