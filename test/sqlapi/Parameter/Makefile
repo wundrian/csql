@@ -8,7 +8,7 @@ SYSLIBS=-ldl -lnsl -lsocket  -lposix4
 else 
 ifeq ($(OSNAME), Linux)
 CPlus = g++
-CPlusFlags = -O2 -w
+CPlusFlags = -g -w
 SYSLIBS= -rdynamic -lrt -lpthread -lcrypt
 else
 PlatForm=notsupported
@@ -18,37 +18,39 @@ endif
 endif
 
 INCL=  -I$(CSQL_INSTALL_ROOT)/install/include -I../../../include
-LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlsql -lcsql -lcsqlsqllog -lcsqlnw -lcacheload
+LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlsql -lcsql -lcsqlsqllog -lcsqlnw -lcacheload -lcsqlsqlnw
 
 TARGETS = \
-	test001\
-	test002\
-	test003\
-	test004\
-	test100
-	
-	
-	
-	
-
+	test001 test001n\
+	test002 test002n\
+	test003 test003n\
+	test004 test004n\
+	test100 test100n
 
 ifeq ($(PlatForm), supported)
 all: $(TARGETS)
 endif 
 
-.c.o:.c
-	$(CPlus) $(CPlusFlags) $(INCL) -c -o $@ $<
-
-test001: paratest1.o 
-	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw $(SYSLIBS)
-test002:paratest2.o
-	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS)  -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw $(SYSLIBS)
-test003:paratest3.o
-	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw  $(SYSLIBS)
-test004:paratest4.o
-	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS)  -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw $(SYSLIBS)
-test100 :paratest100.o
-	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS)  -lcsqlsql -lcsqlsqllog -lcsqlodbcadapter -lcsql -lcsqlnw -lodbc -lcsqlgw $(SYSLIBS)
+test001: paratest1.c common.h
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test001n: paratest1.c common.h
+	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test002:paratest2.c common.h
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test002n: paratest2.c common.h
+	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test003:paratest3.c common.h
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test003n: paratest3.c common.h
+	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test004:paratest4.c common.h  
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test004n: paratest4.c common.h
+	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test100:paratest100.c common.h
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test100n: paratest100.c common.h
+	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 
 clean:
 	rm -f *.o ${TARGETS}
