@@ -81,7 +81,9 @@ class SqlNwStatement: public AbsSqlStatement
     bool isSel;
     int stmtID;
     List paramList;
+    int noOfParams;
     List bindList;
+    int noOfProjs;
     friend class SqlFactory;
 };
 

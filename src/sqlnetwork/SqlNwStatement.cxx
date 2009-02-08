@@ -61,7 +61,7 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
             printError(ErrOS, "Error reading from socket\n");
             return ErrOS;
         }
-        printf("HEADER says packet type is %d\n", header.packetType);
+//        printf("HEADER says packet type is %d\n", header.packetType);
         buffer = (char*) malloc(header.packetLength);
         numbytes = os::recv(fd,buffer,header.packetLength,0);
         if (numbytes == -1) {
@@ -71,15 +71,27 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
         SqlPacketParamMetadata *mdpkt = new SqlPacketParamMetadata();
         mdpkt->setBuffer(buffer);
         mdpkt->unmarshall();
+        noOfParams = mdpkt->noParams;
         BindSqlField *bindField=NULL;
-        for (int i=0; i < mdpkt->noParams; i++) {
+        FieldInfo *fldInfo = new FieldInfo();
+        char *ptr = (char *) mdpkt->data;
+        for (int i=0; i < noOfParams; i++) {
+            *fldInfo = *(FieldInfo *) ptr;
             bindField = new BindSqlField();
-            bindField->type = (DataType) mdpkt->type[i];
-            bindField->length = mdpkt->length[i];
-            if (mdpkt->type[i] == typeBinary)
+            strcpy(bindField->fName, fldInfo->fldName);
+            bindField->type = fldInfo->type;
+            bindField->length = fldInfo->length;
+            bindField->offset = fldInfo->offset;
+            strcpy(bindField->defaultValueBuf, fldInfo->defaultValueBuf);
+            bindField->isNull = fldInfo->isNull;
+            bindField->isPrimary = fldInfo->isPrimary;
+            bindField->isDefault = fldInfo->isDefault;
+            bindField->isUnique = fldInfo->isUnique;
+            if (bindField->type == typeBinary)
                 bindField->value = AllDataType::alloc(bindField->type, 2 * bindField->length);
             else bindField->value = AllDataType::alloc(bindField->type, bindField->length);
             paramList.append(bindField);
+            ptr += sizeof (FieldInfo);
         }
         delete mdpkt;
     }
@@ -91,7 +103,7 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
             printError(ErrOS, "Error reading from socket\n");
             return ErrOS;
         }
-        printf("HEADER says packet type is %d\n", header.packetType);
+//        printf("HEADER says packet type is %d\n", header.packetType);
         buffer = (char*) malloc(header.packetLength);
         numbytes = os::recv(fd,buffer,header.packetLength,0);
         if (numbytes == -1) {
@@ -101,13 +113,27 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
         SqlPacketProjMetadata *prjmdpkt = new SqlPacketProjMetadata();
         prjmdpkt->setBuffer(buffer);
         prjmdpkt->unmarshall();
+        noOfProjs = prjmdpkt->noProjs;
         BindSqlProjectField *prjFld=NULL;
-        for (int i=0; i < prjmdpkt->noProjs; i++) {
+        FieldInfo *fldInfo = new FieldInfo();
+        char *ptr = (char *) prjmdpkt->data;
+        for (int i=0; i < noOfProjs; i++) {
+            *fldInfo = *(FieldInfo *) ptr;
             prjFld = new BindSqlProjectField();
-            prjFld->type = (DataType) prjmdpkt->type[i];
-            prjFld->length = prjmdpkt->length[i];
-            prjFld->value = AllDataType::alloc(prjFld->type, prjFld->length);
+            strcpy(prjFld->fName, fldInfo->fldName);
+            prjFld->type = fldInfo->type;
+            prjFld->length = fldInfo->length;
+            prjFld->offset = fldInfo->offset;
+            strcpy(prjFld->defaultValueBuf, fldInfo->defaultValueBuf);
+            prjFld->isNull = fldInfo->isNull;
+            prjFld->isPrimary = fldInfo->isPrimary;
+            prjFld->isDefault = fldInfo->isDefault;
+            prjFld->isUnique = fldInfo->isUnique;
+            if (prjFld->type == typeBinary)
+                prjFld->value = AllDataType::alloc(prjFld->type, 2 * prjFld->length);
+            else prjFld->value = AllDataType::alloc(prjFld->type, prjFld->length);
             bindList.append(prjFld);
+            ptr += sizeof (FieldInfo);
         }
         delete prjmdpkt;
     }
@@ -194,7 +220,7 @@ void* SqlNwStatement::fetch()
         printError(ErrOS, "Error reading from socket\n");
         return NULL;
     }
-    printf("HEADER says packet type is %d\n", header.packetType);
+//    printf("HEADER says packet type is %d\n", header.packetType);
     char *buffer = (char*) malloc(header.packetLength);
     numbytes = os::recv(fd,buffer,header.packetLength,0);
     if (numbytes == -1) {
@@ -249,7 +275,7 @@ void* SqlNwStatement::fetch(DbRetVal &ret)
         printError(ErrOS, "Error reading from socket\n");
         return NULL;
     }
-    printf("HEADER says packet type is %d\n", header.packetType);
+//    printf("HEADER says packet type is %d\n", header.packetType);
     char *buffer = (char*) malloc(header.packetLength);
     numbytes = os::recv(fd,buffer,header.packetLength,0);
     if (numbytes == -1) {
@@ -272,9 +298,16 @@ void* SqlNwStatement::fetch(DbRetVal &ret)
 void* SqlNwStatement::fetchAndPrint(bool SQL)
 {
     if (!isPrepared) return NULL;
-    void *ptrToFirstField = NULL;
-    //TODO
-    return ptrToFirstField;
+    void *tuple = NULL;
+    BindSqlProjectField *fld = NULL;
+    tuple = fetch();
+    if (NULL == tuple) return NULL;
+    for(int i = 0; i < noOfProjs; i++) {
+        fld = (BindSqlProjectField *) bindList.get(i + 1);
+        AllDataType::printVal(fld->value, fld->type, fld->length);
+        printf("\t");
+    }
+    return tuple;
 }
 
 void* SqlNwStatement::next()
@@ -298,27 +331,43 @@ void* SqlNwStatement::getFieldValuePtr( int pos )
 int SqlNwStatement::noOfProjFields()
 {
     if (!isPrepared) return 0;
-    //TODO
-    return 0;
+    return noOfProjs;
 }
 
 int SqlNwStatement::noOfParamFields()
 {
     if (!isPrepared) return 0;
-    //TODO
-    return 0;
+    return noOfParams;
 }
 
 DbRetVal SqlNwStatement::getProjFldInfo (int projpos, FieldInfo *&fInfo)
 {
-    //TODO
-    return ErrNotFound;
+    BindSqlProjectField *prjFld = (BindSqlProjectField *) bindList.get(projpos);
+    strcpy(fInfo->fldName, prjFld->fName);
+    fInfo->type = prjFld->type;
+    fInfo->length = prjFld->length;
+    fInfo->offset = prjFld->offset;
+    strcpy(fInfo->defaultValueBuf, prjFld->defaultValueBuf);
+    fInfo->isNull = prjFld->isNull;
+    fInfo->isPrimary = prjFld->isPrimary;
+    fInfo->isDefault = prjFld->isDefault;
+    fInfo->isUnique = prjFld->isUnique;
+    return OK;
 }
 
 DbRetVal SqlNwStatement::getParamFldInfo (int parampos, FieldInfo *&fInfo)
 {
-    //TODO
-    return ErrNotFound;
+    BindSqlField *bindField = (BindSqlField *) paramList.get(parampos);
+    strcpy(fInfo->fldName, bindField->fName);
+    fInfo->type = bindField->type;
+    fInfo->length = bindField->length;
+    fInfo->offset = bindField->offset;
+    strcpy(fInfo->defaultValueBuf, bindField->defaultValueBuf);
+    fInfo->isNull = bindField->isNull;
+    fInfo->isPrimary = bindField->isPrimary;
+    fInfo->isDefault = bindField->isDefault;
+    fInfo->isUnique = bindField->isUnique;
+    return OK;
 }
 
 DbRetVal SqlNwStatement::free()

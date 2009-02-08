@@ -312,13 +312,12 @@ class SqlPacketParamMetadata : public BasePacket
 {
     public:
     SqlPacketParamMetadata()
-    { buffer=NULL; bufferSize =0; noParams = 0;
-      type = NULL; length = NULL; pktType = SQL_NW_PKT_PARAM_METADATA;}
+    { buffer=NULL; bufferSize =0; noParams = 0; 
+      data = NULL; pktType = SQL_NW_PKT_PARAM_METADATA;}
     ~SqlPacketParamMetadata() { free(buffer); bufferSize = 0; buffer = NULL; }
     int stmtID;
     int noParams;
-    int *type;
-    int *length;
+    void *data;
     DbRetVal marshall();
     DbRetVal unmarshall();
 };
@@ -327,12 +326,11 @@ class SqlPacketProjMetadata : public BasePacket
 {
     public:
     SqlPacketProjMetadata() { buffer=NULL; bufferSize =0; noProjs = 0;
-      type = NULL; length = NULL; pktType = SQL_NW_PKT_PROJ_METADATA; }
+      data = NULL; pktType = SQL_NW_PKT_PROJ_METADATA; }
     ~SqlPacketProjMetadata() { free(buffer); bufferSize = 0; buffer = NULL; }
     int stmtID;
     int noProjs;
-    int *type;
-    int *length;
+    void *data;
     DbRetVal marshall();
     DbRetVal unmarshall();
 };

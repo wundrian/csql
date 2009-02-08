@@ -240,8 +240,15 @@ class AbsSqlStatement
 class BindSqlField
 {
     public:
+    char fName[IDENTIFIER_LENGTH];
     DataType type;
     int length;
+    int offset;
+    char defaultValueBuf[DEFAULT_VALUE_BUF_LENGTH];
+    bool isNull;
+    bool isPrimary;
+    bool isDefault;
+    bool isUnique;
     void *value;
     void *targetvalue;
     BindSqlField(){ value = NULL; targetvalue = NULL; }
@@ -253,6 +260,12 @@ class BindSqlProjectField
     char fName[IDENTIFIER_LENGTH];
     DataType type;
     int length;
+    int offset;
+    char defaultValueBuf[DEFAULT_VALUE_BUF_LENGTH];
+    bool isNull;
+    bool isPrimary;
+    bool isDefault;
+    bool isUnique;
     void *value;
     void *targetvalue;
     BindSqlProjectField(){ value = NULL; targetvalue = NULL; }

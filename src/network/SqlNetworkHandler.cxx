@@ -89,7 +89,7 @@ void * SqlNetworkHandler::processSqlConnect(PacketHeader &header, char *buffer)
     DbRetVal rv=conn->connect(pkt->userName, pkt->passWord);
     if (rv != OK) {
         *ptr = 0; 
-        strcpy(rpkt->errorString, "Error:Connect failure");
+        strcpy(rpkt->errorString, "User Authentication Failure");
         return rpkt;
         printf("connection failure\n");
     }
@@ -133,8 +133,15 @@ void* SqlNetworkHandler::processSqlPrepare(PacketHeader &header, char *buffer)
     for (int i = 0; i < param; i++) {
         bindField = new BindSqlField();
         sqlstmt->getParamFldInfo(i + 1, fInfo);
+        strcpy(bindField->fName, fInfo->fldName);
         bindField->type = fInfo->type;
         bindField->length = fInfo->length;
+        bindField->offset = fInfo->offset;
+        strcpy(bindField->defaultValueBuf, fInfo->defaultValueBuf);
+        bindField->isNull = fInfo->isNull;
+        bindField->isPrimary = fInfo->isPrimary;
+        bindField->isDefault = fInfo->isDefault;
+        bindField->isUnique = fInfo->isUnique;
         bindField->value = AllDataType::alloc(bindField->type, bindField->length);
         nwStmt->paramList.append(bindField);
     }
@@ -143,8 +150,15 @@ void* SqlNetworkHandler::processSqlPrepare(PacketHeader &header, char *buffer)
     for (int i = 0; i < proj; i++) {
         projField = new BindSqlProjectField();
         sqlstmt->getProjFldInfo(i + 1, fldInfo);
+        strcpy(projField->fName, fInfo->fldName);
         projField->type = fldInfo->type;
         projField->length = fldInfo->length;
+        projField->offset = fldInfo->offset;
+        strcpy(projField->defaultValueBuf, fldInfo->defaultValueBuf);
+        projField->isNull = fldInfo->isNull;
+        projField->isPrimary = fldInfo->isPrimary;
+        projField->isDefault = fldInfo->isDefault;
+        projField->isUnique = fldInfo->isUnique;
         projField->value = AllDataType::alloc(projField->type, projField->length);
         nwStmt->projList.append(projField);
     }
