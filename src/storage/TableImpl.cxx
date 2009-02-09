@@ -1091,6 +1091,7 @@ DbRetVal TableImpl::close()
     if (iter) { iter->close(); delete iter; iter = NULL; }
     printDebug(DM_Database,"Closing table handle: %x", this);
     //table->unlock();
+    delete pred_;
     delete this;
     logFinest(logger, "Closing Table");
     return OK;

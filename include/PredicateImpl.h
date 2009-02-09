@@ -75,7 +75,7 @@ class PredicateImpl:public Predicate
         isNoLeftRight=false;
         dontEvaluate=false;
     }
-    ~PredicateImpl(){}
+    ~PredicateImpl();
 
     void setTerm(const char* fName1, ComparisionOp op, const char *fName2);
 

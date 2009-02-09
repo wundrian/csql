@@ -343,6 +343,7 @@ DbRetVal JoinTableImpl::close()
         delete elem;
     }
     projList.reset();
+    delete pred;
     delete this;
     return OK;
 }

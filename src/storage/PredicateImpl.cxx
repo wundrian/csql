@@ -23,6 +23,11 @@
 #include<TableImpl.h>
 #include<JoinTableImpl.h>
 #include<Util.h>
+PredicateImpl::~PredicateImpl()
+{
+    if (lhs)  {delete lhs; lhs = NULL; }
+    if (rhs) { delete rhs; rhs = NULL; }
+}
 void PredicateImpl::print(int space)
 {
     char spaceBuf[IDENTIFIER_LENGTH];
