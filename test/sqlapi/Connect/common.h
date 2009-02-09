@@ -5,10 +5,7 @@
 AbsSqlConnection *createConnection()
 {
 #ifdef NET
-    AbsSqlConnection *con = new SqlNwConnection();
-    con->setInnerConnection(NULL);
-    SqlNwConnection *conn = (SqlNwConnection *)con;
-    conn->setHost("localhost", 5678);
+    AbsSqlConnection *con = SqlFactory::createConnection(CSqlNetwork, "localhost", 5678);
 #else
     AbsSqlConnection *con = SqlFactory::createConnection(CSql);
 #endif
@@ -18,8 +15,7 @@ AbsSqlConnection *createConnection()
 AbsSqlStatement *createStatement()
 {
 #ifdef NET
-    AbsSqlStatement *stmt = new SqlNwStatement();
-    stmt->setInnerStatement(NULL);
+    AbsSqlStatement *stmt = SqlFactory::createStatement(CSqlNetwork);
 #else
     AbsSqlStatement *stmt = SqlFactory::createStatement(CSql);
 #endif

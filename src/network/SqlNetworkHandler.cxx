@@ -85,6 +85,8 @@ void * SqlNetworkHandler::processSqlConnect(PacketHeader &header, char *buffer)
     pkt->setBuffer(buffer);
     pkt->setBufferSize(header.packetLength);
     pkt->unmarshall();
+    type = (SqlApiImplType) pkt->sqlApiImplType;
+    conn = createConnection(type);   
     char *ptr = (char *) &rpkt->retVal;
     DbRetVal rv=conn->connect(pkt->userName, pkt->passWord);
     if (rv != OK) {
@@ -110,7 +112,7 @@ void* SqlNetworkHandler::processSqlPrepare(PacketHeader &header, char *buffer)
     pkt->setBufferSize(header.packetLength);
     pkt->unmarshall();
     printDebug(DM_Network, "PREPARE %s\n", pkt->stmtString);
-    AbsSqlStatement *sqlstmt = SqlFactory::createStatement(type);
+    AbsSqlStatement *sqlstmt = createStatement(type);
     sqlstmt->setConnection(conn);
     NetworkStmt *nwStmt = new NetworkStmt();
     nwStmt->stmtID = ++stmtID; 
@@ -507,3 +509,38 @@ void SqlNetworkHandler::setParamValues(AbsSqlStatement *stmt, int parampos, Data
     return;
 }
 
+AbsSqlConnection * SqlNetworkHandler::createConnection(SqlApiImplType type)
+{
+    AbsSqlConnection *con = NULL;
+    switch(type) {
+        case CSqlNetwork:
+            con = SqlFactory::createConnection(CSql);
+            break;
+        case CSqlNetworkAdapter:
+            con = SqlFactory::createConnection(CSqlAdapter);
+            break;
+        case CSqlNetworkGateway:
+            con = SqlFactory::createConnection(CSqlGateway);
+            break;
+        default:
+            return NULL;
+    }
+}
+
+AbsSqlStatement * SqlNetworkHandler::createStatement(SqlApiImplType type)
+{
+    AbsSqlStatement *stmt = NULL;
+    switch(type) {
+        case CSqlNetwork:
+            stmt = SqlFactory::createStatement(CSql);
+            break;
+        case CSqlNetworkAdapter:
+            stmt = SqlFactory::createStatement(CSqlAdapter);
+            break;
+        case CSqlNetworkGateway:
+            stmt = SqlFactory::createStatement(CSqlGateway);
+            break;
+        default:
+            return NULL;
+    }
+}

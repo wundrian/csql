@@ -30,10 +30,7 @@ DbRetVal SqlNwConnection::connect (char *user, char * pass)
         return ErrAlready;
     }
     nwClient = new TCPClient();
-    int bufsize = 2 * IDENTIFIER_LENGTH;
-    // char hostName[IDENTIFIER_LENGTH];
-    // memset(hostName, 0, IDENTIFIER_LENGTH);
-    //os::gethostname(hostName, IDENTIFIER_LENGTH);
+    int bufsize = 2 * IDENTIFIER_LENGTH + sizeof(int);
     nwClient->setHost(hostname, port, 123);
     rv = nwClient->connect();
     if (rv != OK) {
@@ -41,7 +38,7 @@ DbRetVal SqlNwConnection::connect (char *user, char * pass)
         return rv;
     }
     SqlPacketConnect *pkt = new SqlPacketConnect();
-    pkt->setConnParam(user, pass);
+    pkt->setConnParam(user, pass, sqlApiImplType);
     pkt->setBufferSize(bufsize);
     char * buffer = (char *) malloc(bufsize);
     pkt->setBuffer(buffer);

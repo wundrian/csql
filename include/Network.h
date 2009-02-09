@@ -269,8 +269,9 @@ class SqlPacketConnect : public BasePacket
    ~SqlPacketConnect() { free(buffer); bufferSize = 0; buffer = NULL; }
    char userName[IDENTIFIER_LENGTH];
    char passWord[IDENTIFIER_LENGTH];
-   void setConnParam(char *user, char *pass)
-   { strcpy(userName, user); strcpy(passWord, pass); }
+   char sqlApiImplType;
+   void setConnParam(char *user, char *pass, char tp)
+   { strcpy(userName, user); strcpy(passWord, pass); sqlApiImplType = tp; }
    DbRetVal marshall();
    DbRetVal unmarshall();
 };

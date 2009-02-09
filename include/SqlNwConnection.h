@@ -34,10 +34,11 @@ class SqlNwConnection : public AbsSqlConnection
     bool isConnOpen;
     char hostname[128];
     int port;
+    char sqlApiImplType;
     public:
     NetworkClient *nwClient;
     IsolationLevel prevIsoLevel;
-    SqlNwConnection(){nwClient = NULL; innerConn = NULL; isConnOpen = false; }
+    SqlNwConnection(SqlApiImplType tp){nwClient = NULL; innerConn = NULL; isConnOpen = false; sqlApiImplType = tp; }
 
     //Note::forced to implement this as it is pure virtual in base class
     Connection& getConnObject(){  return dummyConn; }

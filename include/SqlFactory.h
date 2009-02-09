@@ -27,9 +27,13 @@
 enum SqlApiImplType
 {
     CSql =1,
-    CSqlAdapter =2,
-    CSqlGateway =3,
-    CSqlLog= 4
+    CSqlAdapter,
+    CSqlGateway,
+    CSqlNetwork,
+    CSqlNetworkAdapter,
+    CSqlNetworkGateway,
+    CSqlLog,
+    CSqlUnknown
 };
 /**
 * @class SqlFactory
@@ -45,7 +49,7 @@ class SqlFactory
     *   @param implFlag 1->SqlConnection, 2->?
     *   @return AbsSqlConnection
     */
-    static AbsSqlConnection* createConnection (SqlApiImplType implFlag);
+    static AbsSqlConnection* createConnection (SqlApiImplType implFlag, char *hostName=NULL, int port = 0);
 
     /** creates appropriate implementation of AbsSqlStatement based on implFlag passed
     *   @param implFlag 1->SqlConnection, 2->?

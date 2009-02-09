@@ -46,7 +46,8 @@ class SqlNetworkHandler
     void * processPrepare(PacketHeader &header, char *buffer);
     void * processCommit(PacketHeader &header, char *buffer);
     void * processFree(PacketHeader &header, char *buffer);
-    
+    AbsSqlConnection *createConnection(SqlApiImplType type);   
+    AbsSqlStatement *createStatement(SqlApiImplType type);   
     
 };
 

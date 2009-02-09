@@ -31,7 +31,7 @@ STMT_TYPE stmtType = SELECT;
 FILE *fp;
 AbsSqlConnection *conn;
 AbsSqlStatement *stmt;
-
+SqlApiImplType type = CSqlUnknown;
 bool gateway=false, silent=false;
 bool autocommitmode = true;
 bool network = false;
@@ -110,27 +110,20 @@ int main(int argc, char **argv)
     }
     
     DbRetVal rv = OK;
-    if (gateway)
-      conn = SqlFactory::createConnection(CSqlGateway);
-    else if (network) {
-      conn = new SqlNwConnection();
-      conn->setInnerConnection(NULL);
-      SqlNwConnection *con = (SqlNwConnection *)conn;
-      con->setHost(hostname, atoi(port));
+    if (network) {
+        if (gateway) type = CSqlNetworkGateway;
+        else type = CSqlNetwork;
+        conn = SqlFactory::createConnection(type, hostname, atoi(port));
     }
-    else
-      conn = SqlFactory::createConnection(CSql);
-
+    else {
+        if (gateway) type = CSqlGateway;
+        else type = CSql;  
+        conn = SqlFactory::createConnection(type);
+    }
     rv = conn->connect(username,password);
     if (rv != OK) return 1;
-    if (gateway)
-      stmt =  SqlFactory::createStatement(CSqlGateway);
-    else if (network) {
-      stmt = new SqlNwStatement();
-      stmt->setInnerStatement(NULL);
-    }
-    else 
-      stmt =  SqlFactory::createStatement(CSql);
+    stmt = SqlFactory::createStatement(type);
+    stmt->setInnerStatement(NULL);
     stmt->setConnection(conn);
     //rv = conn->beginTrans(READ_COMMITTED, TSYNC);
     rv = conn->beginTrans();
@@ -359,7 +352,7 @@ bool getInput(bool fromFile)
         printf("\t");
         for (int i = 0 ; i < stmt->noOfProjFields() ; i++)
         {
-            stmt->getProjFldInfo(i+1, info);
+			stmt->getProjFldInfo(i+1, info);
             printf("%s\t", info->fldName);
         }
         printf("\n---------------------------------------------------------\n");

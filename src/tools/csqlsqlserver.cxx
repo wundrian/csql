@@ -67,13 +67,6 @@ int main(int argc, char **argv)
     os::signal(SIGTERM, sigTermHandler);
 
     bool end = false;
-    if (gateway) {
-        SqlNetworkHandler::type = CSqlGateway;
-        SqlNetworkHandler::conn = SqlFactory::createConnection(CSqlGateway);
-    } else {
-        SqlNetworkHandler::type = CSql;
-        SqlNetworkHandler::conn = SqlFactory::createConnection(CSql);
-    }
     SqlNetworkHandler::stmtID = 0;
     if (!Conf::config.useCsqlSqlServer())
     {
@@ -142,6 +135,5 @@ int main(int argc, char **argv)
     }
     printf("Csql Network Daemon Exiting\n");
     nwServer->stop();
-    delete SqlNetworkHandler::conn;
     return 0;
 }

@@ -21,7 +21,11 @@
 #include <SqlOdbcConnection.h>
 #include <SqlOdbcStatement.h>
 #include <SqlGwStatement.h>
-AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
+#include <SqlNwConnection.h>
+#include <SqlNwStatement.h>
+
+AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag,
+                                char *hostName, int port)
 {
     AbsSqlConnection *conn = NULL ;
     switch(implFlag)
@@ -55,6 +59,45 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
             conn = gwconn;
             break;
             }
+        case CSqlNetwork:
+            {
+            if (hostName == NULL) return NULL;
+            AbsSqlConnection *sqlCon = new SqlConnection();
+            AbsSqlConnection *sqlLogCon = new SqlLogConnection();
+            SqlNwConnection *sqlNwCon = new SqlNwConnection(CSqlNetwork);
+            sqlLogCon->setInnerConnection(sqlCon);
+            sqlNwCon->setInnerConnection(sqlLogCon);
+            conn = sqlNwCon;
+            sqlNwCon->setHost(hostName, port);
+            break;
+            }
+        case CSqlNetworkAdapter:
+            {
+            if (hostName == NULL) return NULL;
+            AbsSqlConnection *adapterCon = new SqlOdbcConnection();
+            SqlNwConnection *sqlNwCon = new SqlNwConnection(CSqlNetworkAdapter);
+            adapterCon->setInnerConnection(NULL);
+            sqlNwCon->setInnerConnection(adapterCon);
+            sqlNwCon->setHost(hostName, port);
+            break;
+            }
+        case CSqlNetworkGateway:
+            {
+            if (hostName == NULL) return NULL;
+            AbsSqlConnection *sqlCon = new SqlConnection();
+            AbsSqlConnection *sqlLogCon = new SqlLogConnection();
+            AbsSqlConnection *adapterCon = new SqlOdbcConnection();
+            SqlGwConnection *sqlGwCon = new SqlGwConnection();
+            SqlNwConnection *sqlNwCon = new SqlNwConnection(CSqlNetworkGateway);
+            sqlLogCon->setInnerConnection(sqlCon);
+            sqlGwCon->setInnerConnection(sqlLogCon);
+            sqlGwCon->setAdapter(adapterCon);
+            sqlNwCon->setInnerConnection(sqlGwCon);
+            conn = sqlNwCon;
+            sqlNwCon->setHost(hostName, port);
+            break;
+            }
+            
         default:
             printf("Todo");
             break;
@@ -95,6 +138,39 @@ AbsSqlStatement* SqlFactory::createStatement(SqlApiImplType implFlag)
             stmt = gwstmt;
             break;
             }
+        case CSqlNetwork:
+            {
+            AbsSqlStatement *sqlStmt = new SqlStatement();
+            AbsSqlStatement *sqlLogStmt = new SqlLogStatement();
+            SqlNwStatement *sqlNwStmt = new SqlNwStatement();
+            sqlLogStmt->setInnerStatement(sqlStmt);
+            sqlNwStmt->setInnerStatement(sqlLogStmt);
+            stmt = sqlNwStmt;
+            break;
+            }
+        case CSqlNetworkAdapter:
+            {
+            AbsSqlStatement *adapterStmt = new SqlOdbcStatement();
+            SqlNwStatement *sqlNwStmt = new SqlNwStatement();
+            adapterStmt->setInnerStatement(NULL);
+            sqlNwStmt->setInnerStatement(adapterStmt);
+            break;
+            }
+        case CSqlNetworkGateway:
+            {
+            AbsSqlStatement *sqlStmt = new SqlStatement();
+            AbsSqlStatement *sqlLogStmt = new SqlLogStatement();
+            AbsSqlStatement *adapterStmt = new SqlOdbcStatement();
+            SqlGwStatement *sqlGwStmt = new SqlGwStatement();
+            SqlNwStatement *sqlNwStmt = new SqlNwStatement();
+            sqlLogStmt->setInnerStatement(sqlStmt);
+            sqlGwStmt->setInnerStatement(sqlLogStmt);
+            sqlGwStmt->setAdapter(adapterStmt);
+            sqlNwStmt->setInnerStatement(sqlGwStmt);
+            stmt = sqlNwStmt;
+            break;
+            }
+
         default:
             printf("Todo");
             break;
