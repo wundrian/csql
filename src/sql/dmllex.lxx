@@ -31,7 +31,7 @@ extern char *lexInput;
 %}
 
 
-letter          [a-zA-Z_.]
+letter          [a-zA-Z_]
 digit           [0-9]
 hex             [0-9A-Fa-f]
 letter_or_digit [a-zA-Z_0-9.]
