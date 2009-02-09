@@ -30,7 +30,8 @@ TARGETS = \
 	test007 test007n\
 	test008 test008n\
 	test009 test009n\
-	test010 test010n
+	test010 test010n\
+        test011
 
 ifeq ($(PlatForm), supported)
 all: $(TARGETS)
@@ -76,6 +77,8 @@ test010:selecttest10.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test010n: selecttest10.c common.h
 	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test011:selecttest11.c common.h
+	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 	
 clean:
 	rm -f *.o ${TARGETS}
