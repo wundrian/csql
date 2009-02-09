@@ -6,7 +6,8 @@ libcsqlsql_la_LDFLAGS = -avoid-version -module \
 	$(top_builddir)/src/storage/.libs/libcsql \
 	$(top_builddir)/src/gateway/.libs/libcsqlgw \
 	$(top_builddir)/src/sqllog/.libs/libcsqlsqllog \
-	$(top_builddir)/src/adapter/.libs/libcsqlodbcadapter
+	$(top_builddir)/src/adapter/.libs/libcsqlodbcadapter \
+	$(top_builddir)/src/sqlnetwork/.libs/libcsqlsqlnw
 libcsqlsql_la_SOURCES = dmlyacc.yxx dmllex.lxx ParsedData.cxx SelStatement.cxx \
 	InsStatement.cxx UpdStatement.cxx DelStatement.cxx \
 	DdlStatement.cxx \

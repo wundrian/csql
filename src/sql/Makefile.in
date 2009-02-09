@@ -205,6 +205,7 @@ libcsqlsql_la_LDFLAGS = -avoid-version -module \
 	$(top_builddir)/src/storage/.libs/libcsql \
 	$(top_builddir)/src/gateway/.libs/libcsqlgw \
 	$(top_builddir)/src/sqllog/.libs/libcsqlsqllog \
+	$(top_builddir)/src/sqlnetwork/.libs/libcsqlsqlnw \
 	$(top_builddir)/src/adapter/.libs/libcsqlodbcadapter
 
 libcsqlsql_la_SOURCES = dmlyacc.yxx dmllex.lxx ParsedData.cxx SelStatement.cxx \
@@ -215,6 +216,7 @@ libcsqlsql_la_SOURCES = dmlyacc.yxx dmllex.lxx ParsedData.cxx SelStatement.cxx \
 noinst_HEADERS = Parser.h Statement.h 
 libcsqlsql_a_LIBADD = $(top_builddir)/src/storage/libcsql.la \
 	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la \
 	$(top_builddir)/src/adapter/libcsqlgw.la
 
 all: all-am
