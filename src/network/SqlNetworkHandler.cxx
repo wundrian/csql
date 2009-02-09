@@ -150,7 +150,7 @@ void* SqlNetworkHandler::processSqlPrepare(PacketHeader &header, char *buffer)
     for (int i = 0; i < proj; i++) {
         projField = new BindSqlProjectField();
         sqlstmt->getProjFldInfo(i + 1, fldInfo);
-        strcpy(projField->fName, fInfo->fldName);
+        strcpy(projField->fName, fldInfo->fldName);
         projField->type = fldInfo->type;
         projField->length = fldInfo->length;
         projField->offset = fldInfo->offset;
