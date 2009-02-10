@@ -342,6 +342,13 @@ void PredicateImpl::evaluateForTable(bool &result, char *tuple)
             return ;
         }
     }
+    //Table null check of condition
+    table->setCurTuple(tuple);
+    if(table->isFldNull(fldName1))
+    {
+        result=false;
+        return ;
+    }
     //the below code works only for single table 
     val1= tuple + offset1;
     if(offset2 != -1 && operand == NULL && operandPtr == NULL)
@@ -460,6 +467,7 @@ DbRetVal PredicateImpl::evaluate(bool &result)
             return OK;
         }
     }
+
     //Means it is relational expression
     //first operand is always field identifier
     //get the value in the tuple
