@@ -101,7 +101,7 @@ echo select * from t1;
 	11	NULL	NULL	
 	
 echo update t1 set f1=f1+f2+f3;
-Statement Executed: Rows Affected = 5
+Statement execute failed with error -22
 echo commit;
 echo select * from t1;
 ---------------------------------------------------------
@@ -110,7 +110,7 @@ echo select * from t1;
 	6	2	3	
 	2	NULL	4	
 	3	4	NULL	
-	60	20	30	
+	10	20	30	
 	11	NULL	NULL	
 	
 echo drop table t1;
