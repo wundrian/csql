@@ -83,6 +83,9 @@ void *Expression::evaluate(DataType type,bool &result)
         if (NULL == rhsResult) return rhsResult;
     }
     if(result){return tuple;}
+    if (0==strcmp(fldName,"NULL")){
+        result=true;return tuple;
+    }
     int offset;
     char *val=NULL;
     if(NULL==lhs && NULL == rhs)

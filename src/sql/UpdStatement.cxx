@@ -128,7 +128,11 @@ DbRetVal UpdStatement::execute(int &rowsAffected)
                 uValue->expre->setTable(table);
                 AllDataType::copyVal(uValue->value,(uValue->expre)->evaluate(uValue->type,nullFlag),uValue->type, uValue->length);
                 uValue->expre->memFree();
-                if(nullFlag){ table->markFldNull(uValue->fldName);}
+                if(nullFlag)
+                { 
+                    rv=table->markFldNull(uValue->fldName);
+                    if(rv==ErrNullViolation){return ErrNullViolation;}
+                }
             }
         }
         rv = table->updateTuple();

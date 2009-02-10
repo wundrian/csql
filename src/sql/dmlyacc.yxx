@@ -202,6 +202,13 @@ atom    :  ident
             free($1);
             $$=exp;
         }
+        | NULL_VALUE
+        {
+            Expression* exp;
+            exp=parsedData->insertExpression("NULL");
+            free($1);
+            $$=exp;
+        }
         ;
      
 where_clause_opt:  WHERE conditions
