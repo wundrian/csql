@@ -23,15 +23,29 @@ JNIEXPORT void JNICALL Java_csql_jdbc_JSqlStatement_alloc
     jfieldID fid;
 
     AbsSqlStatement *stmt;
-    if (mode ==1 )
-        stmt = SqlFactory::createStatement(CSql);
-    else if(mode == 2)
-        stmt = SqlFactory::createStatement(CSqlGateway);
-    else {
-        stmt = new SqlNwStatement();
-        stmt->setInnerStatement(NULL);
+    switch(mode)
+    {
+        case 1:
+        {
+            stmt = SqlFactory::createStatement(CSql);
+            break;
+        }
+        case 2:
+        {
+            stmt = SqlFactory::createStatement(CSqlGateway);
+            break;
+        }
+        case 3:
+        {
+            stmt = SqlFactory::createStatement(CSqlAdapter);
+            break;
+        }
+        default:
+        {
+            stmt = new SqlNwStatement();
+            stmt->setInnerStatement(NULL);
+        }
     }
-
     cls = env->GetObjectClass( obj );
     fid = env->GetFieldID( cls, "sqlStmtPtr", "J");
     if (fid == 0)

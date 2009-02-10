@@ -21,21 +21,43 @@ JNIEXPORT void JNICALL Java_csql_jdbc_JSqlConnection_alloc
     char *hName;
     // Create new SqlConnection
     AbsSqlConnection *con;
-    if (mode ==1 )
-        con = SqlFactory::createConnection(CSql);
-    else if(mode==2)
-        con = SqlFactory::createConnection(CSqlGateway);
-    else if(mode==3){
-        con = new SqlNwConnection(CSqlNetwork); 
-        con->setInnerConnection(NULL);
-        SqlNwConnection *conn = (SqlNwConnection*)con;
-        jboolean isCopy = JNI_TRUE;
-        hName=(char*) env->GetStringUTFChars( hostname, &isCopy );
-        printf("Hostname : %s\n",hName);
-        conn->setHost(hName,port);
-    }else
+    switch(mode)
     {
-        con = new SqlNwConnection(CSqlNetworkGateway); 
+        case 1:
+        {
+            con = SqlFactory::createConnection(CSql);
+            break;
+        }
+        case 2:
+        {
+            con = SqlFactory::createConnection(CSqlGateway);
+            break;
+        }
+        case 3:
+        {
+            con = SqlFactory::createConnection(CSqlAdapter);
+            break;
+        }
+        case 5:
+        {
+            con = new SqlNwConnection(CSqlNetwork); 
+            break;
+        }
+        case 6:
+        {
+            con = new SqlNwConnection(CSqlNetworkGateway);
+            break;
+        }
+        case 7:
+        {
+            con = new SqlNwConnection(CSqlNetworkAdapter);
+            break;
+        }
+        default:
+            printf("Invalid Url.Use Proper Url To Connect CSQL\n");
+    }
+    if(mode >= 5)
+    {
         con->setInnerConnection(NULL);
         SqlNwConnection *conn = (SqlNwConnection*)con;
         jboolean isCopy = JNI_TRUE;
@@ -43,7 +65,6 @@ JNIEXPORT void JNICALL Java_csql_jdbc_JSqlConnection_alloc
         printf("Hostname : %s\n",hName);
         conn->setHost(hName,port);
     }
-
     cls = env->GetObjectClass( obj );
     fid = env->GetFieldID( cls, "sqlConPtr", "J");
     if (fid == 0)

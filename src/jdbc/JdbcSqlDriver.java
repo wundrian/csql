@@ -53,6 +53,11 @@ public final class JdbcSqlDriver extends JSqlError implements Driver, JSqlErrorT
                             tokenNo++;
                             mode = 2;
                             continue;
+                        }else if(t.equalsIgnoreCase("adapter"))
+                        {
+                            tokenNo++;
+                            mode = 3;
+                            continue;
                         }
                         tokenNo=6;
                         break;
@@ -63,8 +68,9 @@ public final class JdbcSqlDriver extends JSqlError implements Driver, JSqlErrorT
                            break;
                         }
 			            hostname = t.substring(2);
-                        if(mode==1){ mode=3;}
-                        else if(mode==2){ mode=4;}
+                        if(mode==1){ mode=5;}
+                        else if(mode==2){ mode=6;}
+                        else if(mode==3){ mode=7;}
                         else {tokenNo=6;break;}
                         tokenNo++;
                         continue;
@@ -82,7 +88,7 @@ public final class JdbcSqlDriver extends JSqlError implements Driver, JSqlErrorT
                        break;
             }
         }
-        if(tokenNo > 5 ) return false; 
+        if((tokenNo !=3) && (tokenNo !=5) ) return false; 
         return true;
     }
 
