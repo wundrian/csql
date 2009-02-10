@@ -25,15 +25,23 @@ JNIEXPORT void JNICALL Java_csql_jdbc_JSqlConnection_alloc
         con = SqlFactory::createConnection(CSql);
     else if(mode==2)
         con = SqlFactory::createConnection(CSqlGateway);
-    else {
-        con = new SqlNwConnection(); 
+    else if(mode==3){
+        con = new SqlNwConnection(CSqlNetwork); 
         con->setInnerConnection(NULL);
         SqlNwConnection *conn = (SqlNwConnection*)con;
         jboolean isCopy = JNI_TRUE;
         hName=(char*) env->GetStringUTFChars( hostname, &isCopy );
         printf("Hostname : %s\n",hName);
         conn->setHost(hName,port);
-        
+    }else
+    {
+        con = new SqlNwConnection(CSqlNetworkGateway); 
+        con->setInnerConnection(NULL);
+        SqlNwConnection *conn = (SqlNwConnection*)con;
+        jboolean isCopy = JNI_TRUE;
+        hName=(char*) env->GetStringUTFChars( hostname, &isCopy );
+        printf("Hostname : %s\n",hName);
+        conn->setHost(hName,port);
     }
 
     cls = env->GetObjectClass( obj );

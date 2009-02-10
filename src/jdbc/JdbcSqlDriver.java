@@ -62,12 +62,14 @@ public final class JdbcSqlDriver extends JSqlError implements Driver, JSqlErrorT
                            tokenNo=6;
                            break;
                         }
-			hostname = t.substring(2);
-                        mode=3;
+			            hostname = t.substring(2);
+                        if(mode==1){ mode=3;}
+                        else if(mode==2){ mode=4;}
+                        else {tokenNo=6;break;}
                         tokenNo++;
                         continue;
                 case 4 :
-			if(t.indexOf('/')!= -1)
+			            if(t.indexOf('/')!= -1)
                         {
                             String p=t.substring(0,t.indexOf('/'));
                             portno=Integer.parseInt(p);
