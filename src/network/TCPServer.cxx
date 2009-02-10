@@ -186,7 +186,7 @@ DbRetVal TCPServer::handleClient()
                if (header.packetType == SQL_NW_PKT_DISCONNECT) { 
                    exit(0); 
                }
-           } else printf("Nothing in fd %d\n", ret);
+           } //else printf("Nothing in fd %d\n", ret);
        }
    }else {
         printError(ErrOS, "Unable to fork new process");
