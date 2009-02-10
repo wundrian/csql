@@ -62,11 +62,8 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag,
         case CSqlNetwork:
             {
             if (hostName == NULL) return NULL;
-            AbsSqlConnection *sqlCon = new SqlConnection();
-            AbsSqlConnection *sqlLogCon = new SqlLogConnection();
             SqlNwConnection *sqlNwCon = new SqlNwConnection(CSqlNetwork);
-            sqlLogCon->setInnerConnection(sqlCon);
-            sqlNwCon->setInnerConnection(sqlLogCon);
+            sqlNwCon->setInnerConnection(NULL);
             conn = sqlNwCon;
             sqlNwCon->setHost(hostName, port);
             break;
@@ -74,25 +71,17 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag,
         case CSqlNetworkAdapter:
             {
             if (hostName == NULL) return NULL;
-            AbsSqlConnection *adapterCon = new SqlOdbcConnection();
             SqlNwConnection *sqlNwCon = new SqlNwConnection(CSqlNetworkAdapter);
-            adapterCon->setInnerConnection(NULL);
-            sqlNwCon->setInnerConnection(adapterCon);
+            sqlNwCon->setInnerConnection(NULL);
+            conn = sqlNwCon;
             sqlNwCon->setHost(hostName, port);
             break;
             }
         case CSqlNetworkGateway:
             {
             if (hostName == NULL) return NULL;
-            AbsSqlConnection *sqlCon = new SqlConnection();
-            AbsSqlConnection *sqlLogCon = new SqlLogConnection();
-            AbsSqlConnection *adapterCon = new SqlOdbcConnection();
-            SqlGwConnection *sqlGwCon = new SqlGwConnection();
             SqlNwConnection *sqlNwCon = new SqlNwConnection(CSqlNetworkGateway);
-            sqlLogCon->setInnerConnection(sqlCon);
-            sqlGwCon->setInnerConnection(sqlLogCon);
-            sqlGwCon->setAdapter(adapterCon);
-            sqlNwCon->setInnerConnection(sqlGwCon);
+            sqlNwCon->setInnerConnection(NULL);
             conn = sqlNwCon;
             sqlNwCon->setHost(hostName, port);
             break;
@@ -140,33 +129,22 @@ AbsSqlStatement* SqlFactory::createStatement(SqlApiImplType implFlag)
             }
         case CSqlNetwork:
             {
-            AbsSqlStatement *sqlStmt = new SqlStatement();
-            AbsSqlStatement *sqlLogStmt = new SqlLogStatement();
             SqlNwStatement *sqlNwStmt = new SqlNwStatement();
-            sqlLogStmt->setInnerStatement(sqlStmt);
-            sqlNwStmt->setInnerStatement(sqlLogStmt);
+            sqlNwStmt->setInnerStatement(NULL);
             stmt = sqlNwStmt;
             break;
             }
         case CSqlNetworkAdapter:
             {
-            AbsSqlStatement *adapterStmt = new SqlOdbcStatement();
             SqlNwStatement *sqlNwStmt = new SqlNwStatement();
-            adapterStmt->setInnerStatement(NULL);
-            sqlNwStmt->setInnerStatement(adapterStmt);
+            sqlNwStmt->setInnerStatement(NULL);
+            stmt=sqlNwStmt;
             break;
             }
         case CSqlNetworkGateway:
             {
-            AbsSqlStatement *sqlStmt = new SqlStatement();
-            AbsSqlStatement *sqlLogStmt = new SqlLogStatement();
-            AbsSqlStatement *adapterStmt = new SqlOdbcStatement();
-            SqlGwStatement *sqlGwStmt = new SqlGwStatement();
             SqlNwStatement *sqlNwStmt = new SqlNwStatement();
-            sqlLogStmt->setInnerStatement(sqlStmt);
-            sqlGwStmt->setInnerStatement(sqlLogStmt);
-            sqlGwStmt->setAdapter(adapterStmt);
-            sqlNwStmt->setInnerStatement(sqlGwStmt);
+            sqlNwStmt->setInnerStatement(NULL);
             stmt = sqlNwStmt;
             break;
             }

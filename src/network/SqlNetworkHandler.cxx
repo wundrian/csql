@@ -525,6 +525,7 @@ AbsSqlConnection * SqlNetworkHandler::createConnection(SqlApiImplType type)
         default:
             return NULL;
     }
+    return con;
 }
 
 AbsSqlStatement * SqlNetworkHandler::createStatement(SqlApiImplType type)
@@ -543,4 +544,5 @@ AbsSqlStatement * SqlNetworkHandler::createStatement(SqlApiImplType type)
         default:
             return NULL;
     }
+    return stmt;
 }
