@@ -3,4 +3,4 @@
 INCLUDES= $(all_includes)
 
 # the library search path.
-SUBDIRS = storage adapter gateway sqllog sql cache network sqlnetwork jdbc odbc tools oci 
+SUBDIRS = storage adapter gateway sqllog sqlnetwork sql cache network jdbc odbc tools oci 
