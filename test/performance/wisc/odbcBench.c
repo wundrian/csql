@@ -372,7 +372,7 @@ long long int joining(SQLHANDLE henv, SQLHANDLE hdbc, SQLHANDLE hstmt,int flag)
     char str1[200];
     char str2[200];
 
-    int val[] = {1, 5, 10, 50, 100, 500, 1000, 5000 ,7500, 9999};
+    int val[] = {1, 5, 10, 50, 100, 250, 500, 750, 900, 999};
     int tempTermVar=0;
     char tempval[124]="Value";
     int rc;
@@ -435,7 +435,7 @@ void printTime()
 {
     printf("Wisconsin Benchmark Report:\n");
     printf("*******************************************************\n");
-    printf(" Statement                  \t NoIndex\t Hash\t Tree\n");
+    printf(" Statement               \t NoIndex Hash\t Tree\n");
     printf("*******************************************************\n");
     printf(" SelectInt 1               \t %lld\t %lld \t %lld\n",timevalues[0],timevalues[1],timevalues[2]);
     printf(" SelectStr 1               \t %lld\t %lld \t %lld\n",timevalues[3],timevalues[4],timevalues[5]);
@@ -531,7 +531,7 @@ int main (int ac, char **av)
   timevalues[20] = dmlstatement(henv, hdbc, hstmt,upd);
   timevalues[23] = dmlstatement(henv, hdbc, hstmt,del);
   timevalues[26] = joining(henv, hdbc,hstmt,1);
-  //timevalues[29] = joining(henv, hdbc,hstmt,2);
+  timevalues[29] = joining(henv, hdbc,hstmt,2);
   dropTreeIndex(hstmt,true);
   printf("TREE INDEX OVER\n");
 

@@ -1,4 +1,4 @@
-CC=g++ -O2
+CC=g++ -g
 INCL= -I$(CSQL_INSTALL_ROOT)/include
 #LIBS= -L$(CSQL_INSTALL_ROOT)/lib -L/home/praba/csql/mysql-connector-odbc-3.51.23-linux-x86-32bit/lib -lcrypt  -lrt  -lmyodbc3
 LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcrypt  -lrt  -lcsqlodbc -lcacheload
