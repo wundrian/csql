@@ -9,6 +9,7 @@
 #include "NanoTimer.h"
 #define ITERATION 100
 using namespace std;
+bool mysql;
 
 NanoTimer timer;
 long long int timevalues[30]={0};
@@ -93,6 +94,16 @@ void readOnlyTrans (SQLHDBC hdbc)
 void createHashIndex(SQLHANDLE hstmt,bool flag)
 {
     int rc;
+  if (mysql) {
+    rc = SQLExecDirect(hstmt, (SQLCHAR*) "CREATE INDEX idx1 USING HASH ON big1(unique1);", SQL_NTS );
+    checkrc (rc, __LINE__);
+    rc = SQLExecDirect(hstmt, (SQLCHAR*) "CREATE INDEX idx2 USING HASH ON big2(unique1);", SQL_NTS );
+    checkrc (rc, __LINE__);
+    rc = SQLExecDirect(hstmt, (SQLCHAR*) "CREATE INDEX idx3 USING HASH ON small(unique1)", SQL_NTS );
+    checkrc (rc, __LINE__);
+    rc = SQLExecDirect(hstmt, (SQLCHAR*) "CREATE INDEX idx4 USING HASH ON big1(stringu1)", SQL_NTS );
+    checkrc (rc, __LINE__);
+  } else {
     rc = SQLExecDirect(hstmt, (SQLCHAR*) "CREATE INDEX idx1 ON big1(unique1) HASH;", SQL_NTS );
     checkrc (rc, __LINE__);
     rc = SQLExecDirect(hstmt, (SQLCHAR*) "CREATE INDEX idx2 ON big2(unique1) HASH;", SQL_NTS );
@@ -101,10 +112,22 @@ void createHashIndex(SQLHANDLE hstmt,bool flag)
     checkrc (rc, __LINE__);
     rc = SQLExecDirect(hstmt, (SQLCHAR*) "CREATE INDEX idx4 ON big1(stringu1) HASH", SQL_NTS );
     checkrc (rc, __LINE__);
+  }
 }
 void createTreeIndex(SQLHANDLE hstmt,bool flag)
 {
     int rc;
+    if (mysql)
+    {
+    rc = SQLExecDirect(hstmt, (SQLCHAR*) "CREATE INDEX idx5 USING BTREE ON big1(unique1);", SQL_NTS );
+    checkrc (rc, __LINE__);
+    rc = SQLExecDirect(hstmt, (SQLCHAR*) "CREATE INDEX idx6 USING BTREE ON big2(unique1);", SQL_NTS );
+    checkrc (rc, __LINE__);
+    rc = SQLExecDirect(hstmt, (SQLCHAR*) "CREATE INDEX idx7 USING BTREE ON small(unique1);", SQL_NTS );
+    checkrc (rc, __LINE__);
+    rc = SQLExecDirect(hstmt, (SQLCHAR*) "CREATE INDEX idx8 USING BTREE ON big1(stringu1);", SQL_NTS );
+    checkrc (rc, __LINE__);
+    }else {
     rc = SQLExecDirect(hstmt, (SQLCHAR*) "CREATE INDEX idx5 ON big1(unique1) TREE;", SQL_NTS );
     checkrc (rc, __LINE__);
     rc = SQLExecDirect(hstmt, (SQLCHAR*) "CREATE INDEX idx6 ON big2(unique1) TREE;", SQL_NTS );
@@ -113,11 +136,22 @@ void createTreeIndex(SQLHANDLE hstmt,bool flag)
     checkrc (rc, __LINE__);
     rc = SQLExecDirect(hstmt, (SQLCHAR*) "CREATE INDEX idx8 ON big1(stringu1) TREE;", SQL_NTS );
     checkrc (rc, __LINE__);
+    }
    
 }
 void dropHashIndex(SQLHANDLE hstmt,bool flag)
 {
     int rc;
+    if (mysql) {
+    rc = SQLExecDirect(hstmt, (SQLCHAR*) "DROP INDEX idx1 on big1 ;", SQL_NTS );
+    checkrc (rc, __LINE__);
+    rc = SQLExecDirect(hstmt, (SQLCHAR*) "DROP INDEX idx2 on big2;", SQL_NTS );
+    checkrc (rc, __LINE__);
+    rc = SQLExecDirect(hstmt, (SQLCHAR*) "DROP INDEX idx3 on small", SQL_NTS );
+    checkrc (rc, __LINE__);
+    rc = SQLExecDirect(hstmt, (SQLCHAR*) "DROP INDEX idx4 on big1;", SQL_NTS );
+    checkrc (rc, __LINE__);
+    } else {
     rc = SQLExecDirect(hstmt, (SQLCHAR*) "DROP INDEX idx1 ;", SQL_NTS );
     checkrc (rc, __LINE__);
     rc = SQLExecDirect(hstmt, (SQLCHAR*) "DROP INDEX idx2 ;", SQL_NTS );
@@ -126,10 +160,22 @@ void dropHashIndex(SQLHANDLE hstmt,bool flag)
     checkrc (rc, __LINE__);
     rc = SQLExecDirect(hstmt, (SQLCHAR*) "DROP INDEX idx4 ;", SQL_NTS );
     checkrc (rc, __LINE__);
+    }
 }
 void dropTreeIndex(SQLHANDLE hstmt,bool flag)
 {
     int rc;
+    if (mysql)
+    {
+    rc = SQLExecDirect(hstmt, (SQLCHAR*) "DROP INDEX idx5 on big1 ;", SQL_NTS );
+    checkrc (rc, __LINE__);
+    rc = SQLExecDirect(hstmt, (SQLCHAR*) "DROP INDEX idx6 on big2;", SQL_NTS );
+    checkrc (rc, __LINE__);
+    rc = SQLExecDirect(hstmt, (SQLCHAR*) "DROP INDEX idx7 on small;", SQL_NTS );
+    checkrc (rc, __LINE__);
+    rc = SQLExecDirect(hstmt, (SQLCHAR*) "DROP INDEX idx8 on big1;", SQL_NTS );
+    checkrc (rc, __LINE__);
+    }else {
     rc = SQLExecDirect(hstmt, (SQLCHAR*) "DROP INDEX idx5 ;", SQL_NTS );
     checkrc (rc, __LINE__);
     rc = SQLExecDirect(hstmt, (SQLCHAR*) "DROP INDEX idx6 ;", SQL_NTS );
@@ -138,6 +184,7 @@ void dropTreeIndex(SQLHANDLE hstmt,bool flag)
     checkrc (rc, __LINE__);
     rc = SQLExecDirect(hstmt, (SQLCHAR*) "DROP INDEX idx8 ;", SQL_NTS );
     checkrc (rc, __LINE__);
+    }
 
 }
 
@@ -448,7 +495,6 @@ void printTime()
     printf(" Join(10K*1K)1          \t %lld\t %lld \t %lld\n",timevalues[24],timevalues[25],timevalues[26]);
     printf(" Join(10K*10K*1K)1         \t %lld\t %lld \t %lld\n",timevalues[27],timevalues[28],timevalues[29]);
     printf("*******************************************************\n");
-
     
 }
 
@@ -458,19 +504,31 @@ int main (int ac, char **av)
   SQLHENV henv;
   SQLHDBC hdbc;
   SQLHSTMT hstmt;
-
+  mysql=false;
+  if (ac ==2) mysql = true;
+  //printf("Mysql Set %d \n", ac); return 0;
   rc = SQLAllocHandle (SQL_HANDLE_ENV, SQL_NULL_HANDLE, &henv);
   checkrc (rc, __LINE__);
   SQLSetEnvAttr(henv, SQL_ATTR_ODBC_VERSION, (void *) SQL_OV_ODBC3, 0);
 
   rc = SQLAllocHandle (SQL_HANDLE_DBC, henv, &hdbc);
   checkrc (rc, __LINE__);
-  rc = SQLConnect (hdbc,
+  if (!mysql) {
+      rc = SQLConnect (hdbc,
 		   (SQLCHAR *) "test", (SQLSMALLINT) strlen ("test"),
 		   (SQLCHAR *) "root",
 		   (SQLSMALLINT) strlen ("root"),
 		   (SQLCHAR *) "manager",
 		   (SQLSMALLINT) strlen (""));
+  }else {
+
+      SQLCHAR outstr[1024];
+      SQLSMALLINT outstrlen;
+      rc = SQLDriverConnect(hdbc, NULL, (SQLCHAR*)"DSN=myodbc3;", SQL_NTS,
+                         outstr, sizeof(outstr), &outstrlen,
+                         SQL_DRIVER_NOPROMPT);
+  }
+
  
   if (SQL_SUCCEEDED(rc)) {
     printf("Connected\n");

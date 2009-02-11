@@ -19,7 +19,7 @@ $java JDBCPopulate mysql
 To run odbc test
 $./odbcBench
 
-For mysql, set the LD_LIBRARY_PATH and edit the Makefile to link with mysql odbc library
+For mysql, edit(uncomment) Makefile to link with unixODBC library
 $./odbcBench mysql
 
 To run csql jdbc test
