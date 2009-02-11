@@ -46,6 +46,11 @@ class Expression
         tuple=NULL; constVal=NULL;
         strcpy(fldName,"\0");
     }
+    ~Expression()
+    {
+        if(lhs){ delete lhs; lhs=NULL;}
+        if(rhs){ delete rhs; rhs=NULL;}
+    }
     void setTable(Table *tbl);
     void setTuple(void *tpl);
     bool isSingleTerm();

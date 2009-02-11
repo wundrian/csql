@@ -174,8 +174,10 @@ void ParsedData::reset()
         updFldVal = (UpdateFieldValue*)iter.nextElement();
         if(updFldVal->parsedString!=NULL)
            free(updFldVal->parsedString);
-        if(updFldVal->expre!=NULL)
+        if(updFldVal->expre!=NULL){
            updFldVal->expre->freeVal();
+           delete updFldVal->expre;
+        }
         free(updFldVal->value);
         delete updFldVal;
     }
