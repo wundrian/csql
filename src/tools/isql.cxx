@@ -125,7 +125,6 @@ int main(int argc, char **argv)
     rv = conn->connect(username,password);
     if (rv != OK) return 1;
     stmt = SqlFactory::createStatement(type);
-    stmt->setInnerStatement(NULL);
     stmt->setConnection(conn);
     //rv = conn->beginTrans(READ_COMMITTED, TSYNC);
     rv = conn->beginTrans();
@@ -209,17 +208,8 @@ bool handleEchoAndComment(char *st)
     {
         printHelp();
         return true;
-    }else if (strcasecmp(st, "show tables;") == 0)
-    {
-      Connection conn;
-      conn.open("root","manager");
-      DatabaseManagerImpl *dbMgr =  (DatabaseManagerImpl*)conn.getDatabaseManager();
-      if (dbMgr == NULL)
-      {
-          printf("Unable to connect to csql server\n");
-          return true;
-      }
-      List tableList = dbMgr->getAllTableNames();
+    }else if (strcasecmp(st, "show tables;") == 0) {
+      List tableList = stmt->getAllTableNames();
       ListIterator iter = tableList.getIterator();
       Identifier *elem = NULL;
       int ret =0;
@@ -232,9 +222,9 @@ bool handleEchoAndComment(char *st)
           printf("   %s \n", elem->name);
       }
       if (count ==0) printf("  No tables exist\n");
-      printf("=========================================\n");
-      conn.close();
-      return true;
+      printf("==========================================\n");
+
+        return true;
     }
     return false;
 }

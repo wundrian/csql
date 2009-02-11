@@ -34,23 +34,23 @@ endif
 test001: paratest1.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test001n: paratest1.c common.h
-	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+	$(CPlus) -DNETWORK $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test002:paratest2.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test002n: paratest2.c common.h
-	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+	$(CPlus) -DNETWORK $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test003:paratest3.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test003n: paratest3.c common.h
-	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+	$(CPlus) -DNETWORK $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test004:paratest4.c common.h  
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test004n: paratest4.c common.h
-	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+	$(CPlus) -DNETWORK $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test100:paratest100.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test100n: paratest100.c common.h
-	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+	$(CPlus) -DNETWORK $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 
 clean:
 	rm -f *.o ${TARGETS}

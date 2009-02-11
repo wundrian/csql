@@ -367,3 +367,7 @@ void SqlLogStatement::setNull(int pos)
    if(innerStmt) innerStmt->setNull(pos);
 }
 
+List SqlLogStatement::getAllTableNames()
+{
+   if(innerStmt) return innerStmt->getAllTableNames(); 
+}

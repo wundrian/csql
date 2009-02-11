@@ -77,6 +77,7 @@ class SqlOdbcStatement: public AbsSqlStatement
     bool chechStmtType(char *stmtstr);
     void setNull(int pos);
     int getFldPos(char *name){} 
+    List getAllTableNames(){}
     private:
     bool isSelStmt;
     bool isPrepared;

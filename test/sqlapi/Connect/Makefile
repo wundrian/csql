@@ -41,47 +41,47 @@ endif
 test001:conntest1.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test001n:conntest1.c common.h
-	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+	$(CPlus) -DNETWORK $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test002:conntest2.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test002n:conntest2.c common.h
-	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+	$(CPlus) -DNETWORK $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test003:conntest3.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test003n:conntest3.c common.h 
-	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+	$(CPlus) -DNETWORK $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test004:conntest4.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test004n:conntest4.c common.h
-	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+	$(CPlus) -DNETWORK $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test005:conntest5.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test005n:conntest5.c common.h
-	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+	$(CPlus) -DNETWORK $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test006:conntest6.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test006n:conntest6.c common.h
-	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+	$(CPlus) -DNETWORK $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test007:conntest7.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test007n:conntest7.c common.h
-	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+	$(CPlus) -DNETWORK $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test008:conntest8.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test008n:conntest8.c common.h
-	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+	$(CPlus) -DNETWORK $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test009:conntest9.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test009n:conntest9.c common.h
-	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+	$(CPlus) -DNETWORK $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test010:conntest10.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test010n:conntest10.c common.h
-	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+	$(CPlus) -DNETWORK $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test011:conntest11.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test011n:conntest11.c common.h
-	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+	$(CPlus) -DNETWORK $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 
 clean:
 	rm -f ${TARGETS}

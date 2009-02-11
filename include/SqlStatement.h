@@ -238,6 +238,7 @@ class SqlStatement: public AbsSqlStatement
     bool isFldNull(int pos); 
     void setNull(int pos);
     int getFldPos(char *name);
+    List getAllTableNames();
     private:
     SqlConnection *sqlCon;
     Statement *stmt;

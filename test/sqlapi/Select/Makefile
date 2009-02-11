@@ -40,43 +40,43 @@ endif
 test001: selecttest1.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test001n: selecttest1.c common.h
-	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+	$(CPlus) -DNETWORK $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test002:selecttest2.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test002n: selecttest2.c common.h
-	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+	$(CPlus) -DNETWORK $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test003:selecttest3.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test003n: selecttest3.c common.h
-	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+	$(CPlus) -DNETWORK $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test004:selecttest4.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test004n: selecttest4.c common.h
-	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+	$(CPlus) -DNETWORK $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test005:selecttest5.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test005n: selecttest5.c common.h
-	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+	$(CPlus) -DNETWORK $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test006:selecttest6.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test006n: selecttest6.c common.h
-	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+	$(CPlus) -DNETWORK $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test007:selecttest7.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test007n: selecttest7.c common.h
-	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+	$(CPlus) -DNETWORK $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test008:selecttest8.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test008n: selecttest8.c common.h
-	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+	$(CPlus) -DNETWORK $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test009:selecttest9.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test009n: selecttest9.c common.h
-	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+	$(CPlus) -DNETWORK $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test010:selecttest10.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test010n: selecttest10.c common.h
-	$(CPlus) -DNET $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+	$(CPlus) -DNETWORK $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test011:selecttest11.c common.h
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 	

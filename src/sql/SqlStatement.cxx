@@ -321,4 +321,9 @@ int SqlStatement::getFldPos(char *name)
 {
     return stmt->getFldPos(name);
 }
+List SqlStatement::getAllTableNames()
+{
+    DatabaseManager *dbMgr = sqlCon->getConnObject().getDatabaseManager();
+    return dbMgr->getAllTableNames();
+}
 
