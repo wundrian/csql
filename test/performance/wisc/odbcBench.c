@@ -254,7 +254,7 @@ long long int runReadTest (SQLHANDLE henv, SQLHANDLE hdbc,SQLHANDLE hstmt,bool f
   char str1[200];
   char str2[200];
 
-  int val[] = {1, 5, 10, 50, 100, 500, 1000, 5000 ,7500, 9999};;
+  int val[] = {1, 10, 100, 500, 1000, 5000 ,7500, 8000, 9000, 9999};
   int tempTermVar=0;
   char tempval[124]="Value";
   int rc;

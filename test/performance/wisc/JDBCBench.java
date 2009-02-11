@@ -28,7 +28,7 @@ public class JDBCBench
 	long start=0, end=0, curr=0;
 	long tot=0;
 	ResultSet  rs;
-        int searchVal[] = {1, 5, 10, 50, 100, 500, 1000, 5000 ,7500, 9999};	
+        int searchVal[] = {1, 10, 100, 500, 1000, 5000 ,7500, 8000, 9000, 9999};	
 
 	for(int i=0; i<10; i++) {
 		start = System.nanoTime();
