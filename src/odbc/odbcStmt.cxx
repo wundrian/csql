@@ -502,9 +502,15 @@ SQLRETURN CSqlOdbcStmt::SQLPrepare(
     if (parentDbc_->mode_ ==1)
         fsqlStmt_ = SqlFactory::createStatement(CSql);
     else if (parentDbc_->mode_ ==2)
-        fsqlStmt_ = SqlFactory::createStatement(CSqlGateway);
-    else if (parentDbc_->mode_ ==3)
         fsqlStmt_ = SqlFactory::createStatement(CSqlAdapter);
+    else if (parentDbc_->mode_ ==3)
+        fsqlStmt_ = SqlFactory::createStatement(CSqlGateway);
+    else if (parentDbc_->mode_ ==4)
+        fsqlStmt_ = SqlFactory::createStatement(CSqlNetwork);
+    else if (parentDbc_->mode_ ==5)
+        fsqlStmt_ = SqlFactory::createStatement(CSqlNetworkAdapter);
+    else if (parentDbc_->mode_ ==6)
+        fsqlStmt_ = SqlFactory::createStatement(CSqlNetworkGateway);
     fsqlStmt_->setConnection( parentDbc_->fsqlConn_ ); 
 
     // Prepare

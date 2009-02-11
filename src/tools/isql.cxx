@@ -113,7 +113,9 @@ int main(int argc, char **argv)
     if (network) {
         if (gateway) type = CSqlNetworkGateway;
         else type = CSqlNetwork;
-        conn = SqlFactory::createConnection(type, hostname, atoi(port));
+        conn = SqlFactory::createConnection(type);
+        SqlNwConnection *con = (SqlNwConnection *)conn;
+        con->setHost(hostname, atoi(port));
     }
     else {
         if (gateway) type = CSqlGateway;

@@ -8,6 +8,7 @@
 */
 
 #include "odbcCommon.h"
+#include <SqlNwConnection.h>
 
 // Constructor
 CSqlOdbcDbc::CSqlOdbcDbc( void ) :
@@ -154,10 +155,12 @@ SQLRETURN CSqlOdbcDbc::SQLConnect(           // All param's are IN
     SQLSMALLINT len3)
 {
     int rc;
-    char *hostName,*portNo;
+    char str[IDENTIFIER_LENGTH];
+    char *hostName = NULL;
+    char *portNo = NULL;
+    char *connMode = NULL;
     // Start with NO_ERR
     err_.set( NO_ERR );
-
     // Can we proceed ?
     if( chkStateForSQLConnect() != SQL_SUCCESS )
         return( SQL_ERROR );
@@ -173,13 +176,34 @@ SQLRETURN CSqlOdbcDbc::SQLConnect(           // All param's are IN
         err_.set( ERROR_CONNINUSE);
         return ( SQL_ERROR );
     }
-    if (strcasecmp((char*)serverName, "gateway") == 0)
+
+    strncpy(str,(char *) serverName, IDENTIFIER_LENGTH);
+    connMode = strtok(str, ";");
+    hostName = strtok(NULL, ";");
+    portNo = strtok(NULL, ";");
+    if ((strcasecmp((char*)connMode, "Network") == 0) && (hostName == NULL || portNo == NULL)) return ( SQL_ERROR );
+    if (strcasecmp((char*)connMode, "Adapter") == 0)
     {
-        fsqlConn_ = SqlFactory::createConnection(CSqlGateway);
-        mode_ = 2;
-    }else if (strcasecmp((char*)serverName, "adapter") == 0){
         fsqlConn_ = SqlFactory::createConnection(CSqlAdapter);
+        mode_ = 2;
+    }else if (strcasecmp((char*)connMode, "Gateway") == 0){
+        fsqlConn_ = SqlFactory::createConnection(CSqlGateway);
         mode_ = 3;
+    } else if (strcasecmp((char*)connMode, "Network") == 0) {
+        fsqlConn_ = SqlFactory::createConnection(CSqlNetwork);
+        SqlNwConnection *con = (SqlNwConnection *)fsqlConn_;
+        con->setHost(hostName, atoi(portNo));
+        mode_ = 4;
+    } else if (strcasecmp((char*)connMode, "NetworkAdapter") == 0) {
+        fsqlConn_ = SqlFactory::createConnection(CSqlNetworkAdapter);
+        SqlNwConnection *con = (SqlNwConnection *)fsqlConn_;
+        con->setHost(hostName, atoi(portNo));
+        mode_ = 5;
+    } else if (strcasecmp((char*)connMode, "NetworkGateway") == 0) {     
+        fsqlConn_ = SqlFactory::createConnection(CSqlNetworkGateway);
+        SqlNwConnection *con = (SqlNwConnection *)fsqlConn_;
+        con->setHost(hostName, atoi(portNo));
+        mode_ = 6;
     }else{
         fsqlConn_ = SqlFactory::createConnection(CSql);
         mode_ = 1;

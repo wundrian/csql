@@ -49,7 +49,7 @@ class SqlFactory
     *   @param implFlag 1->SqlConnection, 2->?
     *   @return AbsSqlConnection
     */
-    static AbsSqlConnection* createConnection (SqlApiImplType implFlag, char *hostName=NULL, int port = 0);
+    static AbsSqlConnection* createConnection (SqlApiImplType implFlag);
 
     /** creates appropriate implementation of AbsSqlStatement based on implFlag passed
     *   @param implFlag 1->SqlConnection, 2->?

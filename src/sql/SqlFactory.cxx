@@ -24,8 +24,7 @@
 #include <SqlNwConnection.h>
 #include <SqlNwStatement.h>
 
-AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag,
-                                char *hostName, int port)
+AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
 {
     AbsSqlConnection *conn = NULL ;
     switch(implFlag)
@@ -61,29 +60,23 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag,
             }
         case CSqlNetwork:
             {
-            if (hostName == NULL) return NULL;
             SqlNwConnection *sqlNwCon = new SqlNwConnection(CSqlNetwork);
             sqlNwCon->setInnerConnection(NULL);
             conn = sqlNwCon;
-            sqlNwCon->setHost(hostName, port);
             break;
             }
         case CSqlNetworkAdapter:
             {
-            if (hostName == NULL) return NULL;
             SqlNwConnection *sqlNwCon = new SqlNwConnection(CSqlNetworkAdapter);
             sqlNwCon->setInnerConnection(NULL);
             conn = sqlNwCon;
-            sqlNwCon->setHost(hostName, port);
             break;
             }
         case CSqlNetworkGateway:
             {
-            if (hostName == NULL) return NULL;
             SqlNwConnection *sqlNwCon = new SqlNwConnection(CSqlNetworkGateway);
             sqlNwCon->setInnerConnection(NULL);
             conn = sqlNwCon;
-            sqlNwCon->setHost(hostName, port);
             break;
             }
             
