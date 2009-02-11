@@ -8,7 +8,7 @@ echo insert into t1 values(1,2,4);
 Statement execute failed with error -21
 echo select * from t1;
 ---------------------------------------------------------
-	f1	f2	f3	
+	t1.f1	t1.f2	t1.f3	
 ---------------------------------------------------------
 	1	2	3	
 	
@@ -24,7 +24,7 @@ echo insert into t1 values(1,2,4);
 Statement execute failed with error -21
 echo select * from t1;
 ---------------------------------------------------------
-	f1	f2	f3	
+	t1.f1	t1.f2	t1.f3	
 ---------------------------------------------------------
 	1	2	3	
 	
@@ -40,7 +40,7 @@ echo insert into t1 values(1,2,4);
 Statement execute failed with error -21
 echo select * from t1;
 ---------------------------------------------------------
-	f1	f2	f3	
+	t1.f1	t1.f2	t1.f3	
 ---------------------------------------------------------
 	1	2	3	
 	
@@ -56,7 +56,7 @@ echo insert into t1 values(1,2,4);
 Statement execute failed with error -21
 echo select * from t1;
 ---------------------------------------------------------
-	f1	f2	f3	
+	t1.f1	t1.f2	t1.f3	
 ---------------------------------------------------------
 	1	2	3	
 	
@@ -70,7 +70,7 @@ echo insert into t1 values(1,2,4);
 Statement execute failed with error -21
 echo select * from t1;
 ---------------------------------------------------------
-	f1	f2	f3	
+	t1.f1	t1.f2	t1.f3	
 ---------------------------------------------------------
 	1	2	3	
 	
@@ -86,7 +86,7 @@ echo insert into t1 values(1,4,3);
 Statement execute failed with error -21
 echo select * from t1;
 ---------------------------------------------------------
-	f1	f2	f3	
+	t1.f1	t1.f2	t1.f3	
 ---------------------------------------------------------
 	1	2	3	
 	
@@ -102,7 +102,7 @@ echo insert into t1 values(1,4,3);
 Statement execute failed with error -21
 echo select * from t1;
 ---------------------------------------------------------
-	f1	f2	f3	
+	t1.f1	t1.f2	t1.f3	
 ---------------------------------------------------------
 	1	2	3	
 	
@@ -118,7 +118,7 @@ echo insert into t1 values(1,4,3);
 Statement execute failed with error -21
 echo select * from t1;
 ---------------------------------------------------------
-	f1	f2	f3	
+	t1.f1	t1.f2	t1.f3	
 ---------------------------------------------------------
 	1	2	3	
 	
@@ -134,7 +134,7 @@ echo insert into t1 values(1,4,3);
 Statement execute failed with error -21
 echo select * from t1;
 ---------------------------------------------------------
-	f1	f2	f3	
+	t1.f1	t1.f2	t1.f3	
 ---------------------------------------------------------
 	1	2	3	
 	
@@ -148,7 +148,7 @@ echo insert into t1 values(1,4,3);
 Statement execute failed with error -21
 echo select * from t1;
 ---------------------------------------------------------
-	f1	f2	f3	
+	t1.f1	t1.f2	t1.f3	
 ---------------------------------------------------------
 	1	2	3	
 	
@@ -162,7 +162,7 @@ echo insert into t1 values(1,2,5,4);
 Statement execute failed with error -21
 echo select * from t1;
 ---------------------------------------------------------
-	f1	f2	f3	f4	
+	t1.f1	t1.f2	t1.f3	t1.f4	
 ---------------------------------------------------------
 	1	2	3	4	
 	

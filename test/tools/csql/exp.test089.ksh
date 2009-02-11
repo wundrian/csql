@@ -14,7 +14,7 @@ Statement Executed: Rows Affected = 1
 echo commit;
 echo select * from t1;
 ---------------------------------------------------------
-	f1	f2	f3	
+	t1.f1	t1.f2	t1.f3	
 ---------------------------------------------------------
 	1	2	3	
 	2	NULL	4	
@@ -23,7 +23,17 @@ echo select * from t1;
 	11	NULL	NULL	
 	
 echo update t1 set f1=f1+NULL;
-Statement prepare failed with error -22
+Statement execute failed with error -22
 echo commit;
+echo select * from t1;
+---------------------------------------------------------
+	t1.f1	t1.f2	t1.f3	
+---------------------------------------------------------
+	1	2	3	
+	2	NULL	4	
+	3	4	NULL	
+	10	20	30	
+	11	NULL	NULL	
+	
 echo drop table t1;
 Statement Executed
