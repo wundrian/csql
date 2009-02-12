@@ -232,7 +232,7 @@ class AbsSqlStatement
     virtual bool isFldNull(int pos)=0;
     virtual void setNull(int pos)=0;
     virtual int getFldPos(char *name)=0;
-    virtual List getAllTableNames()=0;
+    virtual List getAllTableNames(DbRetVal &ret)=0;
     virtual ~AbsSqlStatement(){}
 };
 

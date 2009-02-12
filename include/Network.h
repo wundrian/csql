@@ -50,6 +50,7 @@ enum NetworkPacketType
     SQL_NW_PKT_ROLLBACK=109,
     SQL_NW_PKT_FREE=110,
     SQL_NW_PKT_DISCONNECT=111,
+    SQL_NW_PKT_SHOWTABLES=112,
 };
 
 class ResponsePacket
@@ -373,6 +374,19 @@ class SqlPacketResultSet : public BasePacket
     DbRetVal unmarshall();
 };
 
+class SqlPacketShowTables : public BasePacket
+{
+    public:
+    SqlPacketShowTables() { buffer = NULL; bufferSize = 0; data = NULL;
+                            pktType= SQL_NW_PKT_SHOWTABLES; }
+    ~SqlPacketShowTables() { free(buffer); bufferSize = 0; buffer = NULL; }
+    int stmtID;
+    int numOfTables;
+    void *data;
+    DbRetVal marshall();
+    DbRetVal unmarshall();
+};
+
 class NetworkStmt
 {
     public:
@@ -382,6 +396,7 @@ class NetworkStmt
     AbsSqlStatement *stmt;
     List paramList;
     List projList;
+    List tableNamesList; // will be populated only for show tables query
 };
 
 class NetworkServer

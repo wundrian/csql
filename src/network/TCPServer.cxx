@@ -100,7 +100,8 @@ DbRetVal TCPServer::handleClient()
                char *buffer = NULL;
                if (header.packetType != SQL_NW_PKT_DISCONNECT && 
                    header.packetType != SQL_NW_PKT_COMMIT     &&
-                   header.packetType != SQL_NW_PKT_ROLLBACK)
+                   header.packetType != SQL_NW_PKT_ROLLBACK   &&
+                   header.packetType != SQL_NW_PKT_SHOWTABLES )
                {
                    buffer = (char*) malloc(header.packetLength);
                    numbytes = os::recv(clientfd,buffer,header.packetLength,0);
@@ -183,6 +184,23 @@ DbRetVal TCPServer::handleClient()
                        exit(1);
                    }
                }    
+               if (header.packetType == SQL_NW_PKT_SHOWTABLES) {
+                   SqlPacketShowTables *shTblPkt = new SqlPacketShowTables();
+                   shTblPkt->stmtID = rpkt->stmtID;
+                   shTblPkt->numOfTables = rpkt->rows;
+                   ListIterator stmtIter = SqlNetworkHandler::stmtList.getIterator();
+                   while (stmtIter.hasElement()) {
+                       stmt = (NetworkStmt*) stmtIter.nextElement();
+                       if (stmt->stmtID == shTblPkt->stmtID) break;
+                   }
+                   rv = shTblPkt->marshall(); 
+                   if (rv != OK) { printf("marshall failed\n"); }
+                   rv = send(SQL_NW_PKT_SHOWTABLES, shTblPkt->getMarshalledBuffer(), shTblPkt->getBufferSize());
+                   if (rv != OK) {
+                       printf("Error in sending the metadata to the client\n");
+                       exit(1);
+                   }
+               } 
                if (header.packetType == SQL_NW_PKT_DISCONNECT) { 
                    exit(0); 
                }

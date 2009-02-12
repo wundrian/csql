@@ -74,6 +74,9 @@ void *SqlNetworkHandler::process(PacketHeader &header, char *buffer)
         case SQL_NW_PKT_FREE:
             return processSqlFree(header, buffer);
             break;
+        case SQL_NW_PKT_SHOWTABLES:
+            return processSqlShowTables(header, buffer);
+            break; 
     }
 }
  
@@ -545,4 +548,23 @@ AbsSqlStatement * SqlNetworkHandler::createStatement(SqlApiImplType type)
             return NULL;
     }
     return stmt;
+}
+
+void * SqlNetworkHandler::processSqlShowTables(PacketHeader &header, char *buffer)
+{
+    ResponsePacket *rpkt = new ResponsePacket();
+    rpkt->isSelect = false;
+    char *retval = (char *) &rpkt->retVal;
+    AbsSqlStatement *sqlstmt = createStatement(type);
+    sqlstmt->setConnection(conn);
+    NetworkStmt *nwStmt = new NetworkStmt();
+    nwStmt->stmtID = ++stmtID;
+    nwStmt->stmt = sqlstmt;
+    DbRetVal rv = OK;
+    nwStmt->tableNamesList = sqlstmt->getAllTableNames(rv);
+    stmtList.append(nwStmt);
+    *retval = 1;
+    rpkt->rows = nwStmt->tableNamesList.size();
+    strcpy(rpkt->errorString, "Success");
+    return rpkt;
 }

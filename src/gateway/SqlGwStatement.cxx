@@ -292,9 +292,9 @@ void SqlGwStatement::setNull(int pos)
     if (adapter && shouldAdapterHandle()) adapter->setNull(pos);
     if (innerStmt && shouldCSqlHandle()) innerStmt-> setNull(pos);
 }
-List SqlGwStatement::getAllTableNames()
+List SqlGwStatement::getAllTableNames(DbRetVal &ret)
 {
-    printf("in csql\n"); if (innerStmt) return innerStmt->getAllTableNames();
-    printf("in Target Db\n"); if (adapter) adapter->getAllTableNames();
+    printf("in csql\n"); if (innerStmt) return innerStmt->getAllTableNames(ret);
+    printf("in Target Db\n"); if (adapter) adapter->getAllTableNames(ret);
 }
 

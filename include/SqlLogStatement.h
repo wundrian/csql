@@ -75,7 +75,7 @@ class SqlLogStatement: public AbsSqlStatement
     bool isFldNull(int pos);
     void setNull(int pos);
     int getFldPos(char *name){}
-    List getAllTableNames();
+    List getAllTableNames(DbRetVal &ret);
     bool isCached;
     TableSyncMode mode;
     private:

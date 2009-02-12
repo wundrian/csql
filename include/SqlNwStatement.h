@@ -76,7 +76,7 @@ class SqlNwStatement: public AbsSqlStatement
     void setNull(int pos){}
     void setStmtID(int id) { stmtID = id; }
     int getFldPos(char *name){} 
-    List getAllTableNames(){}
+    List getAllTableNames(DbRetVal &ret);
     private:
     bool isPrepared;
     bool isSel;
@@ -84,6 +84,7 @@ class SqlNwStatement: public AbsSqlStatement
     List paramList;
     int noOfParams;
     List bindList;
+    List tblNameList;
     int noOfProjs;
     friend class SqlFactory;
 };

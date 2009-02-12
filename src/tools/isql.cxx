@@ -209,7 +209,8 @@ bool handleEchoAndComment(char *st)
         printHelp();
         return true;
     }else if (strcasecmp(st, "show tables;") == 0) {
-      List tableList = stmt->getAllTableNames();
+      DbRetVal rv = OK;
+      List tableList = stmt->getAllTableNames(rv);
       ListIterator iter = tableList.getIterator();
       Identifier *elem = NULL;
       int ret =0;

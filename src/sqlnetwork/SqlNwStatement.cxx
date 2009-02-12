@@ -553,3 +553,55 @@ void SqlNwStatement::getPrimaryKeyFieldName(char *tablename, char *pkfieldname)
     //TODO
     return;
 }
+
+List SqlNwStatement::getAllTableNames(DbRetVal &ret)
+{
+    DbRetVal rv = OK;
+    SqlNwConnection *conn = (SqlNwConnection*)con;
+    if (! conn->isConOpen()) {
+        printError(ErrNoConnection, "No connection present");
+        ret = ErrNoConnection;
+    }
+    rv = conn->send(SQL_NW_PKT_SHOWTABLES, NULL, 0);
+    rv = conn->receive();
+    if (rv != OK) {
+        printError(rv, "Unable to Receive from peer");
+        ret = rv;
+    }
+    ResponsePacket *rpkt = (ResponsePacket *) ((TCPClient *)conn->nwClient)->respPkt;
+    char *ptr = (char *) &rpkt->retVal;
+    if (*ptr == 0) { ret = ErrPeerResponse; }
+    stmtID = rpkt->stmtID;
+    int noOfTables = rpkt->rows;
+    PacketHeader header;
+    int fd = ((TCPClient *)(conn->nwClient))->sockfd;
+    int numbytes = os::recv(fd, &header, sizeof(PacketHeader), 0);
+    if (numbytes == -1) {
+        printError(ErrOS, "Error reading from socket\n");
+        ret = ErrOS;
+    }
+//    printf("HEADER says packet type is %d\n", header.packetType);
+    char *buffer = (char*) malloc(header.packetLength);
+    numbytes = os::recv(fd,buffer,header.packetLength,0);
+    if (numbytes == -1) {
+        printError(ErrOS, "Error reading from socket\n");
+        ret = ErrOS;
+    }
+    SqlPacketShowTables *pkt = new SqlPacketShowTables();
+    pkt->stmtID = getStmtID();
+    pkt->setBuffer(buffer);
+    rv = pkt->unmarshall();
+    if (rv != OK) {
+        printError(rv, "Data could not be sent");
+        ret = rv;
+    }
+    ptr = (char *)pkt->data;
+    while (noOfTables) {
+        Identifier *id = new Identifier();
+        strncpy(id->name, ptr, IDENTIFIER_LENGTH);
+        ptr += IDENTIFIER_LENGTH;
+        noOfTables--;
+        tblNameList.append(id);
+    }
+    return tblNameList;
+}

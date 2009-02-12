@@ -367,7 +367,7 @@ void SqlLogStatement::setNull(int pos)
    if(innerStmt) innerStmt->setNull(pos);
 }
 
-List SqlLogStatement::getAllTableNames()
+List SqlLogStatement::getAllTableNames(DbRetVal &ret)
 {
-   if(innerStmt) return innerStmt->getAllTableNames(); 
+   if(innerStmt) return innerStmt->getAllTableNames(ret); 
 }

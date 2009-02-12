@@ -557,7 +557,34 @@ DbRetVal SqlPacketResultSet::unmarshall()
         prjFld = (BindSqlProjectField*) projList.get(i+1);
         AllDataType::copyVal(prjFld->value, bufIter, prjFld->type, prjFld->length);
         bufIter = bufIter + AllDataType::size(prjFld->type, prjFld->length);
-        
     }
+    return OK;
+}
+
+DbRetVal SqlPacketShowTables::marshall()
+{
+    bufferSize = numOfTables * IDENTIFIER_LENGTH;
+    buffer = (char*) malloc(bufferSize);
+    char *bufIter = buffer;
+    ListIterator stmtIter = SqlNetworkHandler::stmtList.getIterator();
+    NetworkStmt *stmt;
+    while (stmtIter.hasElement())
+    {
+       stmt = (NetworkStmt*) stmtIter.nextElement();
+       if (stmt->stmtID == stmtID ) break;
+    }
+    Identifier *elem = NULL;
+    ListIterator tblIter = stmt->tableNamesList.getIterator();
+    while (tblIter.hasElement()) {
+        elem = (Identifier*) tblIter.nextElement();
+        strncpy(bufIter, elem->name, IDENTIFIER_LENGTH);
+        bufIter += IDENTIFIER_LENGTH;
+    }
+    return OK;
+}
+
+DbRetVal SqlPacketShowTables::unmarshall()
+{
+    data = buffer;    
     return OK;
 }
