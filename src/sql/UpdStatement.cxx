@@ -527,6 +527,7 @@ DbRetVal UpdStatement::resolveForAssignment()
                 cValue->value = AllDataType::alloc(fInfo->type, 2 * fInfo->length);
         }
         else cValue->value = AllDataType::alloc(fInfo->type, fInfo->length);
+        if(cValue->paramNo == 1){continue;}
         if (cValue->parsedString == NULL)
         {
             delete fInfo;

@@ -159,6 +159,7 @@ class ParsedData
 	// eg: select * from t1 where f1 = ? and f2 like '_ti%';
 	// _ is converted to ? before it is processed
     void** insertCondValueAndGetPtr(char *fName, char *value, bool opLike=false);
+    void insertCondValue(char *fldName); //For Predecate t1.f1=t2.f1
     void insertUpdateValue(char *fldName, char *value);
 
     void insertField(char *fName, AggType aggType= AGG_UNKNOWN);

@@ -67,7 +67,18 @@ void** ParsedData::insertCondValueAndGetPtr(char *fldName, char *val, bool opLik
     return &(newVal->value);
 
 }
-
+void ParsedData::insertCondValue(char *fldName)
+{
+    ConditionValue *newVal = new ConditionValue();
+    newVal->parsedString = NULL;
+    newVal->value = NULL;
+    newVal->paramNo = 1;//To solve parsedString Null problem
+    newVal->type = typeUnknown;
+    newVal->length = 0;
+    strcpy(newVal->fName, fldName);
+    newVal->opLike = false;
+    conditionValueList.append(newVal);
+}
 void ParsedData::insertField(char *fName, AggType type)
 {
     FieldName *newVal = new FieldName();

@@ -576,6 +576,7 @@ DbRetVal SelStatement::resolveForCondition()
         value->isNullable = fInfo->isNull;
         value->value = AllDataType::alloc(fInfo->type, fInfo->length);
         //table->bindFld(name->fldName, value->value);
+        if(value->paramNo ==1) continue;//For Predecate t1.f1=t2.f1
         if (value->parsedString == NULL)
         {
             delete fInfo;

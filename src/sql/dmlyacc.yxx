@@ -291,6 +291,8 @@ condition: ident OPERATOR value
         {
             ComparisionOp  op = AllDataType::getComparisionOperator((char*)$2);
             Predicate *pred;
+            parsedData->insertCondValue((char*) $1);
+            parsedData->insertCondValue((char*) $3);
             pred = parsedData->insertPredicate((char*) $1, op, (char*) $3);
             free( $1 ); free($2); free( $3 );
             $$=pred;
