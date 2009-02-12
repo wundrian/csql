@@ -21,7 +21,7 @@ Checking for table created or not
       <FieldInfo>
         <FieldName> f2 </FieldName>
         <Type> 31 </Type>
-        <Length> 5 </Length>
+        <Length> 8 </Length>
         <Primary> 0 </Primary>
         <Null> 0 </Null>
         <Default> 0 </Default>
