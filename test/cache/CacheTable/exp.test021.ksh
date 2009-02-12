@@ -15,7 +15,7 @@ Recovering table t4 NULL NULL
       <FieldInfo>
         <FieldName> f2 </FieldName>
         <Type> 30 </Type>
-        <Length> 11 </Length>
+        <Length> 12 </Length>
         <Primary> 1 </Primary>
         <Null> 1 </Null>
         <Default> 0 </Default>
