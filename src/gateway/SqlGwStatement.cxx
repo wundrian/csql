@@ -22,15 +22,26 @@
 #include <CacheTableLoader.h>
 DbRetVal SqlGwStatement::prepare(char *stmtstr)
 {
-    DbRetVal rv = OK;
+    DbRetVal rv = OK,ret=OK;
     SqlGwConnection *conn = (SqlGwConnection*) con;
     //conn->connectCSqlIfNotConnected();
     //conn->connectAdapterIfNotConnected();
     stmtHdlr = NoHandler;
     if (innerStmt) rv = innerStmt->prepare(stmtstr);
     SqlLogStatement *stmt = (SqlLogStatement*) innerStmt;
+    bool isAllcachedTable = true;
+    int noOfTable = 0;
+    ListIterator titer =(stmt->getInnerStatement())->getTableNameList().getIterator();
+    while (titer.hasElement())
+    {
+        TableName *t  = (TableName*)titer.nextElement();
+        ret = CacheTableLoader::isTableCached(t->tblName);
+        if(ret!=OK) isAllcachedTable=false;
+        noOfTable++;
+    }
+    if(noOfTable == 1){ isAllcachedTable = true;}
     mode =CacheTableLoader::getTableMode((stmt->getInnerStatement())->getTableName());
-    if ((rv == OK)&& ((mode!=5 && mode!=6)||innerStmt->isSelect())) {
+    if ((rv == OK)&& ((mode!=5 && mode!=6)||innerStmt->isSelect()) && isAllcachedTable) {
         if (!stmt->isCached) { 
             stmtHdlr = CSqlHandler;
             return rv;  

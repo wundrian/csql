@@ -25,7 +25,10 @@ char *lexInput;
 extern ParsedData *parsedData;
 
 int yyparse ();
-
+List SqlStatement::getTableNameList()
+{
+    return pData.getTableNameList();
+}
 SqlStatement::SqlStatement()
 {
     sqlCon = NULL;

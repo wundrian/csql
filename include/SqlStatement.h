@@ -233,6 +233,7 @@ class SqlStatement: public AbsSqlStatement
     /**Returns whether the statement is prepared or not
     * @return bool true if it is prepared, false otherwise
     */
+    List getTableNameList();
     bool isPrepared();
     StatementType getStmtType() { return pData.getStmtType(); }
     bool isFldNull(int pos); 
