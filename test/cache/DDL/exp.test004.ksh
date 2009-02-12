@@ -23,7 +23,7 @@ Statement Executed
       <FieldInfo>
         <FieldName> f3 </FieldName>
         <Type> 30 </Type>
-        <Length> 11 </Length>
+        <Length> 12 </Length>
         <Primary> 0 </Primary>
         <Null> 0 </Null>
         <Default> 0 </Default>
