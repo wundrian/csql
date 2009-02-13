@@ -166,6 +166,6 @@ class HashIndexInitInfo : public IndexInitInfo
 {
     public:
     int bucketSize; /**<bucket size*/
-    HashIndexInitInfo() { bucketSize = 1009; }
+    HashIndexInitInfo() { bucketSize = 109; }
 };
 #endif
