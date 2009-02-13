@@ -56,7 +56,7 @@ int main()
         printf("%d  | %s\t| %6.2f\n", id1, name, sal);
     }
     conn.commit();
-    rv=table->close();
+    rv=table->closeScan();
 
     Condition p1;
     int val1 = 1006;
@@ -93,7 +93,7 @@ int main()
 		}
     }
     conn.commit();
-    table->close();
+    table->closeScan();
 
     conn.startTransaction();
     table->setCondition(NULL);
@@ -117,7 +117,7 @@ int main()
         printf("%d  | %s\t| %6.2f\n", id1, name, sal);
     }
     conn.commit();
-    rv=table->close();
+    rv=table->closeScan();
     dbMgr->closeTable(table);
     conn.close();
     return 0;

@@ -99,7 +99,7 @@ int main()
 	conn.commit();
     
 	//close the condition
-	table->close();
+	table->closeScan();
     
 	// close the table using the table handle
 	dbMgr->closeTable(table);

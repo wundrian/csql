@@ -92,7 +92,7 @@ int main()
         printf("    f1=%d f2=%s\n", id, name);
         icount++;
     }
-    table->close();
+    table->closeScan();
     conn.commit();
     sprintf(msgBuf,"Total Rows selected: %d \n", icount);
     os::write(1,msgBuf,strlen(msgBuf));
@@ -110,7 +110,7 @@ int main()
         icount++;
     }
     conn.commit();
-    table->close();
+    table->closeScan();
     printf("Total Deleted Rows %d\n", icount);
 
     dbMgr->closeTable(table);
