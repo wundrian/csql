@@ -2,7 +2,6 @@
 
 #include<stdio.h>
 #include<stdlib.h>
-#include<CSql.h>
 #include<sql.h>
 #include<sqlext.h>
 #include<string.h>

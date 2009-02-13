@@ -49,13 +49,20 @@ int main()
     ret = SQLAllocHandle(SQL_HANDLE_DBC,env,&dbc);
     checkrc(ret,__LINE__);
 
-    //connect to the DSN Data source
+
+    //connect to Data source
     ret = SQLConnect (dbc,
                    (SQLCHAR *) "test", (SQLSMALLINT) strlen ("test"),
                    (SQLCHAR *) "root",
                    (SQLSMALLINT) strlen ("root"),
                    (SQLCHAR *) "manager",
                    (SQLSMALLINT) strlen (""));
+/*
+    //connect using unixODBC Driver Manager
+    ret = SQLDriverConnect(dbc, NULL, (SQLCHAR*) 
+                     "DSN=mycsql;USER=root;PASSWORD=manager;", SQL_NTS, 
+                      outstr, sizeof(outstr), &outstrlen, SQL_DRIVER_NOPROMPT);
+*/
     if(SQL_SUCCEEDED(ret))
     { 
         printf("Connected to CSQL\n");
@@ -170,7 +177,7 @@ int main()
     checkrc(ret,__LINE__);
     printf("%d Rows deleted\n",count);
 
-	
+/*	
     // drop the table 'T1'
     SQLCHAR drop[50]="DROP TABLE T1";
     ret = SQLPrepare(stmt,drop,SQL_NTS);
@@ -179,7 +186,7 @@ int main()
     ret = SQLExecute(stmt);
     checkrc(ret,__LINE__);
     printf("Table T1 dropped\n");
-
+*/
     //Free the statement handle
     ret = SQLFreeHandle(SQL_HANDLE_STMT,stmt);
     checkrc(ret,__LINE__);

@@ -19,7 +19,8 @@ endif
 
 INCL= -I$(CSQL_INSTALL_ROOT)/include
 
-LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlodbc 
+LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlodbc -lcacheload
+#LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lodbc
 
 TARGETS =  ODBCman1 ODBCman2 ODBCman3 ODBCman4 ODBCman5 ODBCman6  odbcexample
 
