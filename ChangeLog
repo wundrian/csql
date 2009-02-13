@@ -54,3 +54,14 @@ CSQL - Version 2.2 - Beta
 3.Arithmetic Expression in update statement
 4.Multiple cache nodes 
 5.Partial Caching(field and row level)
+
+CSQL- Version 2.3 - Beta
+------------------------
+1.JDBC Datasource support
+2.Client/Server for ODBC / JDBC/ ISQL
+3.Support for simple expressions in UPDATE statement
+4.ResultSetMetaData and ParameterMetaData for JDBC
+5.Bug Fixes
+6.Performance Fixes
+7.Wisconsin Benchmark
+8.User Manual updates
