@@ -142,10 +142,12 @@ class ParsedData
     bool isUnique;
     bool isPrimary;
     IndexType indexType;
-
+    int bucketSize;
     public:
     ParsedData() { paramCounter = 0; stmtType = UnknownStatement; 
-                 isUnique = false; isPrimary = false; indexType = hashIndex;} 
+                 isUnique = false; isPrimary = false; indexType = hashIndex; bucketSize=0;}
+    int getBucketSize(){return bucketSize; };
+    void setBucketSize(int bucket){ bucketSize = bucket; }; 
     void setStmtType(StatementType type) { stmtType = type; }
     void setTableName(char *name) { strcpy(tblName, name); }
     void setIndexName(char *name) { strcpy(idxName, name); }

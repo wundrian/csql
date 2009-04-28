@@ -32,25 +32,26 @@
 #define TREE 288
 #define UNIQUE 289
 #define DROP 290
-#define INT_TYPE 291
-#define LONG_TYPE 292
-#define SHORT_TYPE 293
-#define DOUBLE_TYPE 294
-#define TIMESTAMP_TYPE 295
-#define DATE_TYPE 296
-#define CHAR_TYPE 297
-#define TIME_TYPE 298
-#define BIGINT_TYPE 299
-#define FLOAT_TYPE 300
-#define TINYINT_TYPE 301
-#define BINARY_TYPE 302
-#define MIN 303
-#define MAX 304
-#define AVG 305
-#define SUM 306
-#define COUNT 307
-#define GROUP 308
-#define BY 309
+#define SIZE 291
+#define INT_TYPE 292
+#define LONG_TYPE 293
+#define SHORT_TYPE 294
+#define DOUBLE_TYPE 295
+#define TIMESTAMP_TYPE 296
+#define DATE_TYPE 297
+#define CHAR_TYPE 298
+#define TIME_TYPE 299
+#define BIGINT_TYPE 300
+#define FLOAT_TYPE 301
+#define TINYINT_TYPE 302
+#define BINARY_TYPE 303
+#define MIN 304
+#define MAX 305
+#define AVG 306
+#define SUM 307
+#define COUNT 308
+#define GROUP 309
+#define BY 310
 typedef union
 {
    char *stringval;

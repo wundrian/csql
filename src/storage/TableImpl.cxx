@@ -1022,7 +1022,9 @@ void TableImpl::printSQLIndexString()
         printf(" ) ");
         if (iptr->indexType_ == hashIndex) printf(" HASH ");
         else printf(" TREE ");
-        if (((HashIndexInfo*) idxInfo[i])->isUnique) printf(" UNIQUE;\n"); else printf(";\n");
+        if (((HashIndexInfo*) idxInfo[i])->isUnique) printf(" UNIQUE");
+        if(((HashIndexInfo*) idxInfo[i])->noOfBuckets != 1009 ) printf(" SIZE %d ",((HashIndexInfo*) idxInfo[i])->noOfBuckets );
+        printf(";\n");
     }
 }
 

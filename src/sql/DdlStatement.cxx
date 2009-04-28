@@ -44,7 +44,9 @@ DbRetVal CreateTblStatement::execute(int &rowsAffected)
         idxInfo->indType = hashIndex;
         idxInfo->isPrimary = true;
         idxInfo->isUnique = true;
- 
+        int bucket = parsedData->getBucketSize();
+        if(bucket!=0)
+            idxInfo->bucketSize = bucket; 
         char indName[IDENTIFIER_LENGTH];
         sprintf(indName, "%s_idx1_Primary", tblName);
         rv = dbMgr->createIndex(indName, idxInfo);
@@ -146,6 +148,9 @@ DbRetVal CreateIdxStatement::execute(int &rowsAffected)
         idxInfo->indType = parsedData->getIndexType();
         idxInfo->isPrimary = parsedData->getPrimary();
         idxInfo->isUnique = parsedData->getUnique();
+        int bucket = parsedData->getBucketSize();
+        if(bucket!=0)
+            idxInfo->bucketSize = bucket;
         rv = dbMgr->createIndex(parsedData->getIndexName(), idxInfo);
         delete idxInfo;
     }

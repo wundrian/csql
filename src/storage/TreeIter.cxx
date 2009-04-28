@@ -67,6 +67,7 @@ void TreeIter::nextNode()
     if (recordsOver) return ;
     if (NULL== iter) return ;
     iter=iter->next_;
+    nodeOffset=0;
 }
 void* TreeIter::next()
 {

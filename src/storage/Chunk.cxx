@@ -80,6 +80,7 @@ void* Chunk::allocateForLargeDataSize(Database *db)
     char* data = ((char*)curPage_) + sizeof(PageInfo);
     //TODO::check whether it is locked
     *((int*)data) = 1;
+    pageInfo->hasFreeSpace_ =0;
     db->releaseAllocDatabaseMutex();
     return data + sizeof(int);
 

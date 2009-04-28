@@ -212,6 +212,7 @@ void ParsedData::reset()
     creFldList.removeAll();
     isUnique = false; 
     isPrimary = false; 
+    bucketSize = 0;
     indexType = hashIndex;
 }
 void ParsedData::clearFieldNameList()
