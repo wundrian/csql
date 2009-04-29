@@ -256,7 +256,7 @@ void setStmtType(char *st)
 
 char getQueryFromStdIn(char *buf)
 {
-    char    c=EOF, *bufBegin=buf;
+    char    c, *bufBegin=buf;
     int    ln, charCnt=0;
 /*
     ln=1;
