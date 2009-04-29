@@ -1,0 +1,210 @@
+----------------------------------README---------------------------------------
+This contains an example program that demonstrates usage of multiple bidirectional cache .
+
+What it does?
+-------------
+A) create.sql
+This will create a table employee with three field eid integer(primary key),zone integer,balance float and inserts 10 rows into table employee.
+
+B)insert.sql
+This will insert 2 rows into employee table.
+
+C)mysqllog.sql
+This will create csql_log_table for Bi-directional cache. 
+
+D)trigger.sql
+This will create trigger for cached table employee to generate log on any non-select DML statement.
+
+
+How to Configure
+----------------
+
+A) Take two csql.conf file (say csql.conf,csql1.conf). Change SYS_DB_KEY ,USER_DB_KEY as different in both configuration file. Set CACHE_TABLE=true ENABLE_BIDIRECTIONAL_CACHE=true and CACHE_ID=1 in csql.conf and CACHE_ID=2 in csql1.conf.Set TABLE_CONFIG_FILE path different for different cache node.
+
+B) Change CSQL_CONFIG_FILE enviroment variable in `setupenv.ksh` to sample/csql.conf and and in another setup file (say setupenv1.ksh)set CSQL_CONFIG_FILE to sample/csql1.conf.
+
+How to run
+----------
+
+A) In two different terminal set enviroment variables using the setup script and start csqlserver.
+
+       i) In one terminal
+         
+                $. ./setupenv.ksh
+                $csqlserver
+
+       ii) In another terminal
+
+                $. ./setupenv1.ksh
+                $csqlserver
+
+B) In mysql create log table, employee table and run trigger.
+
+       
+        $isql myodbc3 < create.sql
+        $isql myodbc3 < mysqllog.sql
+        $isql myodbc3 < trigger.sql
+
+C) In two different terminal set the necessary enviroment variables using the setup script and cache the table.
+
+             i) In one terminal
+
+                $. ./setupenv.ksh
+                $cachetable -t employee -c "zone=1"
+
+       ii) In another terminal
+
+                $. ./setupenv1.ksh
+                $cachetable -t employee -c "zone=2"
+
+D) Insert some record in mysql
+
+		$isql myodbc3 < insert.sql
+
+
+
+Output of example:
+------------------
+A) create.sql
++---------------------------------------+
+| Connected!                            |
+|                                       |
+| sql-statement                         |
+| help [tablename]                      |
+| quit                                  |
+|                                       |
++---------------------------------------+
+SQL> create table employee(eid int,zone int,balance float,primary key(eid));
+SQLRowCount returns 0
+SQL> insert into employee values(1020,1,1000.50);
+SQLRowCount returns 1
+SQL> insert into employee values(1021,1,2000.50);
+SQLRowCount returns 1
+SQL> insert into employee values(1022,1,3000.50);
+SQLRowCount returns 1
+SQL> insert into employee values(1023,1,4000.50);
+SQLRowCount returns 1
+SQL> insert into employee values(1024,1,5000.50);
+SQLRowCount returns 1
+SQL> insert into employee values(1025,2,6000.50);
+SQLRowCount returns 1
+SQL> insert into employee values(1026,2,7000.50);
+SQLRowCount returns 1
+SQL> insert into employee values(1027,2,8000.50);
+SQLRowCount returns 1
+SQL> insert into employee values(1028,2,9000.50);
+SQLRowCount returns 1
+SQL> insert into employee values(1029,2,1100.50);
+SQLRowCount returns 1
+
+B) mysqllog.sql
+
++---------------------------------------+
+| Connected!                            |
+|                                       |
+| sql-statement                         |
+| help [tablename]                      |
+| quit                                  |
+|                                       |
++---------------------------------------+
+SQL> create table csql_log_int(tablename char(64), pkid int, operation int,cacheid int, id int not null unique auto_increment)engine='innodb';
+SQLRowCount returns 0
+
+
+C) triger.sql
+
++---------------------------------------+
+| Connected!                            |
+|                                       |
+| sql-statement                         |
+| help [tablename]                      |
+| quit                                  |
+|                                       |
++---------------------------------------+
+SQL> drop trigger if exists triggerinsertemployee;
+SQLRowCount returns 0
+SQL> drop trigger if exists triggerupdateemployee;
+SQLRowCount returns 0
+SQL> drop trigger if exists triggerdeleteemployee;
+SQLRowCount returns 0
+SQL> create trigger triggerinsertemployee AFTER INSERT on employee FOR EACH ROW BEGIN Insert into csql_log_int (tablename, pkid, operation,cacheid) values ('employee', NEW.eid, 1,1); Insert into csql_log_int (tablename, pkid, operation,cacheid) values ('employee', NEW.eid, 1,2);End; 
+SQLRowCount returns 0
+SQL> create trigger triggerupdateemployee AFTER UPDATE on employee FOR EACH ROW BEGIN Insert into csql_log_int (tablename, pkid, operation,cacheid) values ('employee', OLD.eid, 2,1);Insert into csql_log_int (tablename, pkid, operation,cacheid) values ('employee', NEW.eid, 1,1);Insert into csql_log_int (tablename, pkid, operation,cacheid) values ('employee', OLD.eid, 2,2);Insert into csql_log_int (tablename, pkid, operation,cacheid) values ('employee', NEW.eid, 1,2); End; 
+SQLRowCount returns 0
+SQL> create trigger triggerdeleteemployee AFTER DELETE on employee FOR EACH ROW BEGIN Insert into csql_log_int (tablename, pkid, operation,cacheid) values ('employee', OLD.eid, 2,1); Insert into csql_log_int (tablename, pkid, operation,cacheid) values ('employee', OLD.eid, 2,2);End; 
+SQLRowCount returns 0
+
+D) After cache the table data in diiferent node.
+
+i) In one cache node 
+
+$ cachetable -t employee -c "zone = 1"
+$ csql
+CSQL>select * from employee;
+---------------------------------------------------------
+        employee.eid    employee.zone   employee.balance
+---------------------------------------------------------
+        1020                  1          1000.500000
+        1021                  1          2000.500000
+        1022                  1          3000.500000
+        1023                  1          4000.500000
+        1024                  1          5000.500000
+
+ii) In another cache node
+
+$ cachetable -t employee -c "zone = 2"
+$ csql
+CSQL>select * from employee;
+---------------------------------------------------------
+        employee.eid    employee.zone   employee.balance
+---------------------------------------------------------
+        1025                 2           6000.500000
+        1026                 2           7000.500000
+        1027                 2           8000.500000
+        1028                 2           9000.500000
+        1029                 2           1100.500000
+
+E) insert.sql
+
++---------------------------------------+
+| Connected!                            |
+|                                       |
+| sql-statement                         |
+| help [tablename]                      |
+| quit                                  |
+|                                       |
++---------------------------------------+
+SQL> insert into employee values(1030,1,6000.50);
+SQLRowCount returns 1
+SQL> insert into employee values(1031,2,7000.50);
+SQLRowCount returns 1
+
+
+F) After insert in mysql data in different node.
+
+i) In one cache node
+
+CSQL>select * from employee;
+---------------------------------------------------------
+        employee.eid    employee.zone   employee.balance
+---------------------------------------------------------
+        1020    1       1000.500000
+        1021    1       2000.500000
+        1022    1       3000.500000
+        1023    1       4000.500000
+        1024    1       5000.500000
+        1030    1       6000.500000
+
+ii) In another cache node
+CSQL>select * from employee;
+---------------------------------------------------------
+        employee.eid    employee.zone   employee.balance
+---------------------------------------------------------
+        1025                 2            6000.500000
+        1026                 2            7000.500000
+        1027                 2            8000.500000
+        1028                 2            9000.500000
+        1029                 2            1100.500000
+        1031                 2            7000.500000
+
+For Postgres and Oracle cache solution follow Cache Guide

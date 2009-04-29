@@ -1,0 +1,17 @@
+Wisconsin Benchmark Suite
+-------------------------
+1. Run make to build the suite as follows
+$make
+Note: CSQL requires JDK1.6 and javac path should be specified in PATH env variable
+
+2. Set CSQL environment variables using setupenv.ksh script under installation root directory.
+$. ./setupenv.ksh
+
+3. Populate the database 
+$java JDBCPopulate
+
+4.To run jdbc benchmark
+$java JDBCBench
+
+5.To run odbc benchmark
+$./odbcBench

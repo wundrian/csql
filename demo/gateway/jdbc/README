@@ -1,0 +1,67 @@
+----------------------------------README---------------------------------------
+This contains an example program that demonstrates usage of jdbc interface through gateway on cached table.
+
+
+What it does?
+-------------
+It inserts 10 rows in cached table T1.
+Select rows with f1 value 0 to 9 and displays
+Update rows where f1 value is 0,2,4,6,8
+Select rows with f1 value 0 to 9 and displays
+Delete rows where f1 value is 0,3,6,9
+Select rows with f1 value 0 to 9 and displays
+
+
+How to compile
+----------
+Use the make command to compile
+
+        $ make
+
+How to run
+----------
+1. Set CACHE_TABLE=true in csql.conf file
+
+2. Set the necessary enviroment variables using the setup script
+   under the csql root directory
+
+        $ . ./setupenv.ksh
+
+3. Create table T1 with two fields f1 integer(primary key) and f2 of length 10 string in mysql and cache the table.
+
+        $ cachetable -t T1
+
+4.  Run the class file created by make
+
+        $ java GwStmt
+
+Output of example:
+------------------
+Tuple value is 0 100
+Tuple value is 1 101
+Tuple value is 2 102
+Tuple value is 3 103
+Tuple value is 4 104
+Tuple value is 5 105
+Tuple value is 6 106
+Tuple value is 7 107
+Tuple value is 8 108
+Tuple value is 9 109
+After update, listing tuples:
+Tuple value is 0 200
+Tuple value is 1 101
+Tuple value is 2 202
+Tuple value is 3 103
+Tuple value is 4 204
+Tuple value is 5 105
+Tuple value is 6 206
+Tuple value is 7 107
+Tuple value is 8 208
+Tuple value is 9 109
+After delete, listing tuples:
+Tuple value is 1 101
+Tuple value is 2 202
+Tuple value is 4 204
+Tuple value is 5 105
+Tuple value is 7 107
+Tuple value is 8 208

@@ -1,0 +1,11 @@
+create table employee(eid int,zone int,balance float,primary key(eid));
+insert into employee values(1020,1,1000.50);
+insert into employee values(1021,1,2000.50);
+insert into employee values(1022,1,3000.50);
+insert into employee values(1023,1,4000.50);
+insert into employee values(1024,1,5000.50);
+insert into employee values(1025,2,6000.50);
+insert into employee values(1026,2,7000.50);
+insert into employee values(1027,2,8000.50);
+insert into employee values(1028,2,9000.50);
+insert into employee values(1029,2,1100.50);

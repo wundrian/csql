@@ -1,0 +1,48 @@
+----------------------------------README---------------------------------------
+This contains an example program that demonstrates usage of odbc interface through gateway on cached table.
+
+
+What it does?
+-------------
+It inserts 10 rows in cached table T1.
+Select rows with f1 value 51 to 60 and displays
+
+
+How to compile
+----------
+Use the make command to compile
+
+        $ make
+
+How to run
+----------
+1. Set CACHE_TABLE=true in csql.conf file
+
+2. Set the necessary enviroment variables using the setup script
+   under the csql root directory
+
+        $ . ./setupenv.ksh
+
+3. Create table T1 with two fields f1 integer(primary key) and f2 char(10) in mysql and cache the table.
+
+        $ cachetable -t T1
+
+4.  Run the class file created by make
+        $ ./GwStmt
+
+Output of example:
+------------------
+Connected to the Data Source SUCCESSFULLY..
+Total row inserted=10
+Fetching starts on table  T1 :
+ F1=51  F2=Praba
+ F1=52  F2=Praba
+ F1=53  F2=Praba
+ F1=54  F2=Praba
+ F1=55  F2=Praba
+ F1=56  F2=Praba
+ F1=57  F2=Praba
+ F1=58  F2=Praba
+ F1=59  F2=Praba
+ F1=60  F2=Praba
+ Total row fetched=10
