@@ -20,6 +20,8 @@
 #include <SqlStatement.h>
 #include <SqlNwConnection.h>
 #include <SqlNwStatement.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 #define SQL_STMT_LEN 1024
 enum STMT_TYPE
 {
@@ -254,9 +256,9 @@ void setStmtType(char *st)
 
 char getQueryFromStdIn(char *buf)
 {
-    char    c, *bufBegin=buf;
+    char    c=EOF, *bufBegin=buf;
     int    ln, charCnt=0;
-
+/*
     ln=1;
     printf("CSQL>");
     while( (c=(char ) getchar()) != EOF && c != ';')
@@ -274,6 +276,9 @@ char getQueryFromStdIn(char *buf)
     }
     *buf++ = ';';
     *buf = '\0';
+*/
+    char *line = readline("CSQL>");
+    if (line) {strcpy(buf, line); add_history(line); }
     return c;
 }
 char getQueryFromFile(char *buf)

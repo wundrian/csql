@@ -57,8 +57,8 @@ csqlsqlserver_LDADD = $(top_builddir)/src/sql/libcsqlsql.la \
 	$(top_builddir)/src/cache/libcacheload.la \
 	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
 	$(top_builddir)/src/storage/libcsql.la -lrt -lpthread -lcrypt
-csqlsqllserver_LDFLAGS = -lcrypt -lodbc
-csqlsqllserver_SOURCES = csqlsqlserver.cxx
+csqlsqlserver_LDFLAGS = -lcrypt -lodbc
+csqlsqlserver_SOURCES = csqlsqlserver.cxx
 
 csqldump_LDADD = $(top_builddir)/src/sql/libcsqlsql.la \
 	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
