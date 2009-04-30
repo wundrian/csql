@@ -42,6 +42,8 @@ ROOT_DIR=`pwd`
 mkdir -p $TEST_RUN_ROOT
 SERVOUT=$TEST_RUN_ROOT/serv.out
 touch $SERVOUT
+
+export CSQL_CONFIG_FILE=csql.conf
 $CSQL_INSTALL_ROOT/bin/csqlserver >${SERVOUT} &
 SERVER_PID=$!
 echo "Starting Server"
@@ -55,7 +57,7 @@ do
     fi
     echo "MODULE READ is $MODULE"
 
-if [ "$MODULE" = "system/lock" ]
+if [ "$MODULE" = "system/lock" -o "$MODULE" = "system/Allocator" ]
 then
    echo "Restarting the server for lock module"
    kill -9 ${SERVER_PID}
@@ -68,6 +70,7 @@ then
    echo "Restarting Server"
    sleep 5
 fi
+
 TEST_SCRIPT_DIR=${ROOT_DIR}/${MODULE}
 TEST_RUN_DIR=${TEST_RUN_ROOT}/${MODULE}
 if [ -s "$TEST_RUN_DIR" ]
@@ -215,7 +218,7 @@ fi
 
 done
 done < TestModules
-
+kill `ps -e | grep csqlsqlserver | gawk -F" " '{ print $1 }'`
 kill -9 ${SERVER_PID}
 ipcrm -M 2222 -M 3333 
 echo "csqlserver killed PID=${SERVER_PID}" >>${TEST_LOG}

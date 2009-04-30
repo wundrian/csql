@@ -1,7 +1,7 @@
 #!/bin/sh
 # TestCase:
 
-CSQL_CONFIG_FILE=$CSQL_SRCROOT/test/csql.conf
+CSQL_CONFIG_FILE=
 
 
 
