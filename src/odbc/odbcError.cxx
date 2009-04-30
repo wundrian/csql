@@ -141,10 +141,10 @@ SQLRETURN CSqlOdbcError::SQLGetDiagRec(
         if( bufLen > *textLen )
             bufLen = *textLen + 1;
         strncpy( (char*) Msg, (char*) errorInfoTbl[i].sqlMessage, (int) bufLen );
-        return( SQL_SUCCESS );
+        return( SQL_ERROR );
     }
 
-    return( SQL_ERROR );
+    return( SQL_SUCCESS );
 }
 
 void CSqlOdbcError::printDbg( char *msg )
