@@ -18,7 +18,7 @@
 
 void printUsage()
 {
-   printf("Usage: cachetable [-U username] [-P passwd] -t tablename[-D] -c \"condition\" -f \"selected field names\" -p fieldname\n"
+   printf("Usage: cachetable [-U username] [-P passwd] -t tablename[-D] -c \"condition\" -f \"selected field names\" -p fieldname \n"
           "       [-R] [-s] [-r]\n");
    printf("       username -> username to connect with csql.\n");
    printf("       passwd -> password for the above username to connect with csql.\n");
@@ -30,11 +30,25 @@ void printUsage()
    printf("       u -> unload the table. if used with -s option, removes only records and preserves the schema\n");
    printf("       no option -> get table definition and records from target db and create in csql.\n");
    printf("       D -> Enable direct access option to target database\n");
+   printf("	  S -> Cache Description\n");
    return;
 }
 
 int main(int argc, char **argv)
 {
+    DbRetVal rv = OK;
+    Connection conn;
+    rv = conn.open("root","manager");
+    if(rv != OK) return 1;
+	
+    if(!Conf::config.useCache())
+    {
+    	printf("CACHE_TABLE is set to FALSE in csql.conf file.\n");
+	conn.close();
+	return 1;
+    }
+    else{ conn.close(); }
+
     char username[IDENTIFIER_LENGTH];
     username [0] = '\0';
     char password[IDENTIFIER_LENGTH];
@@ -51,7 +65,7 @@ int main(int argc, char **argv)
     bool tableDefinition = true;
     bool tableNameSpecified = false;
     bool fieldNameSpecified = false;
-    while ((c = getopt(argc, argv, "U:P:t:f:c:p:RDsru?")) != EOF) 
+    while ((c = getopt(argc, argv, "U:P:t:f:c:p:RDSsru?")) != EOF) 
     {
         switch (c)
         {
@@ -91,7 +105,6 @@ int main(int argc, char **argv)
         strcpy(username, "root");
         strcpy(password, "manager");
     }
-    DbRetVal rv = OK;
     CacheTableLoader cacheLoader;
     cacheLoader.setConnParam(username, password);
     
