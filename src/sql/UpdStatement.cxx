@@ -461,7 +461,13 @@ DbRetVal UpdStatement::resolveForAssignment()
             delete fInfo;
             printError(ErrUnique, "Unique field %s cannot be updated", value->fldName);
             return ErrUnique;
-        } 
+        }
+        if (fInfo->isAutoIncrement){
+            delete fInfo;
+            printError(ErrAutoIncUpdate, "Auto_increment key field '%s' cannot be updated \n", value->fldName);
+            return ErrAutoIncUpdate;
+        }
+ 
         value->type = fInfo->type;
         value->length = fInfo->length;
         value->isNullable = fInfo->isNull;

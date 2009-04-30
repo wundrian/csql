@@ -44,6 +44,7 @@ class FieldDef
         isNull_ = false;
         isPrimary_ = false;
         isUnique_ = false;
+        isAutoIncrement_=false;
         strcpy(fldName_, "");
     }
     char fldName_[IDENTIFIER_LENGTH];
@@ -61,6 +62,7 @@ class FieldDef
     bool isPrimary_;
     bool isDefault_;
     bool isUnique_;
+    bool isAutoIncrement_;
     //TODO::width and scale
 };
 

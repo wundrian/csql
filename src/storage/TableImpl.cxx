@@ -904,6 +904,25 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
     while (fIter.hasElement())
     {
         FieldDef *def = fIter.nextElement();
+        if(def->isAutoIncrement_ && isInsert)
+        {
+            void *dest = AllDataType::alloc(def->type_, def->length_);
+            AllDataType::copyVal(dest,ptrToAuto, def->type_, def->length_);
+            if(def->bindVal_==NULL)
+            {
+                AllDataType::increment(colPtr, dest , def->type_);
+                AllDataType::copyVal(ptrToAuto,colPtr, def->type_, def->length_);
+                colPtr = colPtr + def->length_;
+                fldpos++;
+                free(dest);
+                continue;
+            }else {
+                if(AllDataType::compareVal(def->bindVal_, dest, OpGreaterThan, def->type_)){
+                    AllDataType::copyVal(ptrToAuto,def->bindVal_, def->type_, def->length_);
+                }
+                free(dest);
+            }
+        }
         if (def->isNull_ && !def->isDefault_ && NULL == def->bindVal_ && isInsert) 
         {
             printError(ErrNullViolation, "NOT NULL constraint violation for field %s\n", def->fldName_);
@@ -1004,10 +1023,13 @@ void TableImpl::printSQLIndexString()
     CatalogTableINDEXFIELD cIndexField(sysDB_);
     char fName[IDENTIFIER_LENGTH];
     char *fldName = fName; 
+    char idxName[IDENTIFIER_LENGTH];
     DataType type;
     for (int i = 0; i < numIndexes_ ; i++)
     {
         CINDEX *iptr = (CINDEX*) indexPtr_[i];
+        sprintf(idxName,"%s_idx_Auto_increment",getName());
+        if(strcmp(iptr->indName_,idxName)==0){ continue; }
         printf("CREATE INDEX %s on %s ( ", iptr->indName_, getName());
         FieldList fldList;
         cIndexField.getFieldInfo(iptr, fldList);

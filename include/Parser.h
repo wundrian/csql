@@ -114,7 +114,7 @@ class ParsedData
 
     //holds pointer to condition values.
     List conditionValueList;
-
+    List secondaryIndexFieldList;
     //holds pointer to field values. used in insert to store field values
     //used in update to store the current value returned by fetch().This gets replaced 
     //by value in updFldValList and then update() is called.
@@ -137,15 +137,16 @@ class ParsedData
 
     //stores list of fields for CREATE TABLE
     FieldList creFldList;
-
+    
     //stores index information
     bool isUnique;
     bool isPrimary;
     IndexType indexType;
     int bucketSize;
+    bool isAutoIncrement;
     public:
     ParsedData() { paramCounter = 0; stmtType = UnknownStatement; 
-                 isUnique = false; isPrimary = false; indexType = hashIndex; bucketSize=0;}
+                 isUnique = false; isPrimary = false; indexType = hashIndex; bucketSize=0; isAutoIncrement=false;}
     int getBucketSize(){return bucketSize; };
     void setBucketSize(int bucket){ bucketSize = bucket; }; 
     void setStmtType(StatementType type) { stmtType = type; }
@@ -154,6 +155,8 @@ class ParsedData
 
     char* getTableName() { return tblName; }
     char* getIndexName() { return idxName; }
+    DbRetVal setAutoIncreament(bool flag);
+    bool getAutoIncreament();
 
     void insertValue(char *value);
     void insertInValue(char *value);
@@ -191,9 +194,10 @@ class ParsedData
     List getInValueList() { return inValueList; }
     List getUpdateFieldValueList() { return updFldValList; }
     List getTableNameList() { return tableNameList; }
-
+    List getSecondaryIndexFieldList() { return secondaryIndexFieldList; }
     void setFldName(char *name);
     void setFldType(DataType type);
+    DataType getFldType();
     DbRetVal setFldLength(size_t length);
     void setDefaultValue(char * value);
     //void setFldDefaultValue -- will need two parametersers, check how u want to pass default value.
@@ -215,7 +219,8 @@ class ParsedData
     FieldList getCreFldList() { return creFldList; }
 
     StatementType getStmtType() { return stmtType; }
-
+    char *getFldName();
+    void setAutoFldName(char *fldName);
     void reset();
 
 };

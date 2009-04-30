@@ -87,7 +87,7 @@ class TableDef
     */
     int addField(const char *name,  DataType type = typeUnknown, size_t
                  length = 0, const void *defaultValue = 0,
-                 bool notNull = false);
+                 bool notNull = false,bool autoIn = false);
 
     /** removes a field from the schema definition
     *   @param name field name 
@@ -123,6 +123,7 @@ class FieldInfo
     bool isPrimary;
     bool isDefault;
     bool isUnique;
+    bool isAutoIncrement;
 };
 
 

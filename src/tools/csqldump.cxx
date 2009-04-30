@@ -128,6 +128,7 @@ int main(int argc, char **argv)
                  if (info->type == typeBinary) printf("(%d)",info->length);
                  if (info->isNull) printf(" NOT NULL ");
                  if (info->isDefault) printf(" DEFAULT '%s' ", info->defaultValueBuf);
+                 if (info->isAutoIncrement) printf(" AUTO_INCREMENT ");
             }
             printf(");\n");
             table->printSQLIndexString();

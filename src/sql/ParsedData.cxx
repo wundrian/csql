@@ -147,6 +147,11 @@ void ParsedData::reset()
     while (fNameIter.hasElement())
         delete ((FieldName *) fNameIter.nextElement());
     fieldNameList.reset();
+    fNameIter = secondaryIndexFieldList.getIterator();
+    fNameIter.reset();
+    while (fNameIter.hasElement())
+        delete ((FieldName *) fNameIter.nextElement());
+    secondaryIndexFieldList.reset();
     ListIterator iter = fieldValueList.getIterator();
     FieldValue *value;
     while (iter.hasElement())
@@ -212,8 +217,9 @@ void ParsedData::reset()
     creFldList.removeAll();
     isUnique = false; 
     isPrimary = false; 
-    bucketSize = 0;
+    isAutoIncrement =false;
     indexType = hashIndex;
+    bucketSize = 0;
 }
 void ParsedData::clearFieldNameList()
 {
@@ -295,3 +301,30 @@ void ParsedData::insertUpdateExpression(char *fName, Expression *exp)
     newVal->paramNo = 0;
     updFldValList.append(newVal);
 }
+DbRetVal ParsedData::setAutoIncreament(bool flag)
+{
+    if(isAutoIncrement){return ErrAlready;}
+    fldDef.isAutoIncrement_=flag;
+    isAutoIncrement=true;
+    return OK;
+}
+bool ParsedData::getAutoIncreament()
+{
+    return fldDef.isAutoIncrement_;
+}
+DataType ParsedData::getFldType()
+{
+   return fldDef.type_;
+}
+void ParsedData::setAutoFldName(char *fldName)
+{
+    FieldInfo *newVal = new FieldInfo();
+    strcpy(newVal->fldName , fldName);
+    newVal->isAutoIncrement = true;
+    secondaryIndexFieldList.append(newVal);
+}
+char *ParsedData::getFldName()
+{
+    return fldDef.fldName_;
+}
+

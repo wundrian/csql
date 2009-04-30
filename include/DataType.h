@@ -108,6 +108,8 @@ class AllDataType
     static void mulVal(void* dest, void *src, DataType type);
     static void mudVal(void* dest, void *src, DataType type);
     static void divVal(void* dest, void *src, DataType type);
+    static void increment(void* dest, void *src, DataType type);
+    static bool isValueZero(void* dest, DataType type);
 
 
     inline static bool compareVal(void *src1, void *src2, ComparisionOp op,

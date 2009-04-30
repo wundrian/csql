@@ -134,6 +134,8 @@ DbRetVal CatalogTableFIELD::insert(FieldIterator &iter, int tblID, void *tptr)
         fldInfo->isPrimary_ = fDef->isPrimary_;
         fldInfo->isUnique_ = fDef->isUnique_;
         fldInfo->isDefault_ = fDef->isDefault_;
+        fldInfo->isAutoIncrement_= fDef->isAutoIncrement_;
+        fldInfo->autoVal_ = 0;
         fldInfo->width_ = 0; //TODO
         fldInfo->scale_ = 0; //TODO
         printDebug(DM_SystemDatabase,"One Row inserted into FIELD %x %s",fldInfo, fDef->fldName_);
@@ -159,11 +161,12 @@ DbRetVal CatalogTableFIELD::remove(void *tptr)
     return OK;
 }
 
-void CatalogTableFIELD::getFieldInfo(void* tptr, FieldList &list)
+void *CatalogTableFIELD::getFieldInfo(void* tptr, FieldList &list)
 {
     Chunk *fChunk = systemDatabase_->getSystemDatabaseChunk(FieldTableId);
     ChunkIterator fIter = fChunk->getIterator();;
     void *data = NULL;
+    void *ptrToAutoVal;
     while (NULL != (data = fIter.nextElement()))
     {
         if (((CFIELD*)data)->tblPtr_ == tptr)
@@ -182,10 +185,14 @@ void CatalogTableFIELD::getFieldInfo(void* tptr, FieldList &list)
             fldDef.isNull_ = fTuple->isNull_;
             fldDef.isUnique_ = fTuple->isUnique_;
             fldDef.isPrimary_ = fTuple->isPrimary_;
+            fldDef.isAutoIncrement_= fTuple->isAutoIncrement_;
+            if(fTuple->isAutoIncrement_){
+                ptrToAutoVal = &fTuple->autoVal_;
+            }
             list.append(fldDef);
         }
     }
-    return;
+    return ptrToAutoVal;
 }
 
 DbRetVal CatalogTableFIELD::getFieldPtrs(FieldNameList &fldList,void *tptr, char **&fptr)

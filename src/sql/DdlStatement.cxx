@@ -58,6 +58,31 @@ DbRetVal CreateTblStatement::execute(int &rowsAffected)
         }
         delete idxInfo;
     }
+    if(parsedData->getSecondaryIndexFieldList().size() > 0)
+    {
+        HashIndexInitInfo *idxInfo = new HashIndexInitInfo();
+        strcpy(idxInfo->tableName, tblName);
+        ListIterator iter = parsedData->getSecondaryIndexFieldList().getIterator();
+        FieldInfo *name = NULL;
+        while (iter.hasElement())
+        {
+            name = (FieldInfo*)iter.nextElement();
+            idxInfo->list.append(name->fldName);
+        }
+        idxInfo->indType = hashIndex;
+        idxInfo->isPrimary = true;
+        idxInfo->isUnique = true;
+        char indName[IDENTIFIER_LENGTH];
+        sprintf(indName, "%s_idx_Auto_increment", tblName);
+        rv = dbMgr->createIndex(indName, idxInfo);
+        if (rv != OK)
+        {
+            dbMgr->dropTable(tblName);
+            delete idxInfo;
+            return rv;
+        }
+        delete idxInfo;
+    }
     return rv;
 }
 DbRetVal CreateTblStatement::checkForDot(char *name)
@@ -104,10 +129,10 @@ DbRetVal CreateTblStatement::resolve()
        //TODO : need a new addField function which can take FieldDef as parameter.
        if (!fDef->isDefault_)  {
            i = tblDef.addField(fDef->fldName_, fDef->type_, fDef->length_, 
-                        NULL,fDef->isNull_);
+                        NULL,fDef->isNull_, fDef->isAutoIncrement_);
        } else {
            i = tblDef.addField(fDef->fldName_, fDef->type_, fDef->length_, 
-                        fDef->defaultValueBuf_,fDef->isNull_);
+                        fDef->defaultValueBuf_,fDef->isNull_,fDef->isAutoIncrement_);
        }
        if( 0 != i )
        {

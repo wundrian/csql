@@ -643,7 +643,7 @@ Table* DatabaseManagerImpl::openTable(const char *name)
 
     //get field information from FIELD table
     CatalogTableFIELD cField(systemDatabase_);
-    cField.getFieldInfo(tptr, table->fldList_);
+    table->ptrToAuto = cField.getFieldInfo(tptr, table->fldList_);
 
     //populate the notnull info
     FieldIterator fIter = table->fldList_.getIterator();

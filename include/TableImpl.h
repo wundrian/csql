@@ -123,7 +123,7 @@ class TableImpl:public Table
     bool isBetween;
     Database *db_;
     Database *sysDB_;
-
+    void *ptrToAuto;
     //Either one of the below is populated based on the no of fields and 
     //is used for tuple insertions
     bool isIntUsedForNULL;
@@ -155,7 +155,7 @@ class TableImpl:public Table
         pred_ = NULL; useIndex_ = -1; numFlds_ = 0; bindListArray_ = NULL;
         iNullInfo = 0; cNullInfo = NULL; isIntUsedForNULL = true; 
         iNotNullInfo = 0; cNotNullInfo = NULL; curTuple_ = NULL;
-        isPlanCreated = false; undoFlag = true;}
+        isPlanCreated = false; undoFlag = true;ptrToAuto=NULL;}
     ~TableImpl();
 
     void setDB(Database *db) { db_ = db; }

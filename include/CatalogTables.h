@@ -112,6 +112,8 @@ class CFIELD
     bool isPrimary_;
     bool isUnique_;
     bool isDefault_;
+    bool isAutoIncrement_;
+    long long autoVal_;
     int width_;
     int scale_;
 };
@@ -130,7 +132,7 @@ class CatalogTableFIELD
     //II argument is OUT parameter
     //field list is populated from the catalog table for
     // the table pointed by tblPtr
-    void getFieldInfo( void* tblPtr, FieldList &list);
+    void *getFieldInfo( void* tblPtr, FieldList &list);
 
     //array is OUT param
     //returns the pointer to fields for the corresponding name

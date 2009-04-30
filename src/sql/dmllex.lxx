@@ -139,6 +139,7 @@ operator        "<"|">"|">="|"<="|"="|"\!="|"<>"|"LIKE"|"like"
                 if(strcasecmp(yytext,"GROUP") ==0) token = GROUP;
                 if(strcasecmp(yytext,"BY") ==0) token = BY;
                 if(strcasecmp(yytext,"SIZE") ==0) token = SIZE;
+                if(strcasecmp(yytext,"AUTO_INCREMENT") ==0) token = AUTO_INCREMENT;
                 if( token == FIELD )
                     yylval.stringval = strdup((const char*)yytext);
                 else

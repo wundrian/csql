@@ -23,7 +23,7 @@ void yyerror(const char* Msg);
 %left '+' '-'
 %left '*' '/' '%'
 %nonassoc UMINUS
-%token <stringval> STRING FIELD NUMBER_STRING BINARY_STRING DOUBLE OPERATOR PARAMETER
+%token <stringval> STRING FIELD NUMBER_STRING BINARY_STRING DOUBLE OPERATOR PARAMETER AUTO_INCREMENT
 %token <stringval> SELECT FROM WHERE BETWEEN IN AND OR NOT
 %token <stringval> INSERT INTO VALUES
 %token <stringval> DELETE UPDATE SET NULL_VALUE
@@ -31,7 +31,7 @@ void yyerror(const char* Msg);
 %token <stringval> INT_TYPE LONG_TYPE SHORT_TYPE DOUBLE_TYPE TIMESTAMP_TYPE DATE_TYPE CHAR_TYPE TIME_TYPE BIGINT_TYPE FLOAT_TYPE TINYINT_TYPE BINARY_TYPE
 %token <stringval> MIN MAX AVG SUM COUNT GROUP BY
 %token ';' ',' '(' ')'
-%type <stringval> ident field value not_opt doub_value num_value
+%type <stringval> ident field value not_opt doub_value num_value auto_increment_key
 %type <predicate> conditions condition 
 %type <Expression> stmt_exp atom
 %%
@@ -507,7 +507,7 @@ create_defn: field_defn
         }
         ;
 
-field_defn: field_name field_type size_opt null_expr_opt default_expr_opt
+field_defn: field_name field_type size_opt null_expr_opt default_expr_opt auto_increment_key
         ;
 
 field_name: ident
@@ -550,7 +550,27 @@ primary_key_constraint: PRIMARY KEY '(' field_list ')' opt_bucket
            parsedData->setPrimary(true);
         }
         ;
-
+auto_increment_key:
+        | AUTO_INCREMENT
+        {
+           DataType type = parsedData->getFldType();
+           if(type > 4)
+           {
+               yyerror("AUTO_INCREMENT KEY can't be created other than INTEGER field ");
+               free($1);
+               YYABORT;
+           }
+           DbRetVal ret = parsedData->setAutoIncreament(true);
+           if(ret != OK){
+               yyerror("A table should have only one AUTO_INCREMENT KEY ");
+               free($1);
+               YYABORT;
+           }
+           parsedData->setFldNotNull(true);
+           parsedData->setAutoFldName(parsedData->getFldName());
+           parsedData->setPrimary(true);
+        }
+        ;
 field_type: INT_TYPE
         {
             parsedData->setFldType(typeInt);

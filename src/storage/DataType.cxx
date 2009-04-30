@@ -774,6 +774,60 @@ void AllDataType::divVal(void* dest, int src, DataType type)
      }
      return;
 }
+void AllDataType::increment(void* dest, void *src, DataType type)
+{
+    switch(type)
+    {
+        case typeInt:
+            *(int*)dest = *(int*)src + 1;
+            break;
+        case typeLong:
+            *(long*)dest = *(long*)src + 1;
+            break;
+        case typeLongLong:
+            *(long long*)dest = *(long long*)src + 1;
+            break;
+        case typeShort:
+            *(short*)dest = *(short*)src + 1;
+            break;
+        case typeDouble:
+            *(double*)dest = *(double*)src + 1;
+            break;
+        case typeFloat:
+            *(float*)dest = *(float*)src+ 1;
+            break;
+        default:
+             break;
+     }
+}
+bool AllDataType::isValueZero(void *src, DataType type)
+{
+    switch(type)
+    {
+        case typeInt:
+            if (*(int*)src == 0) return true;
+            else return false;
+        case typeLong:
+            if (*(int*)src == 0) return true;
+            else return false;
+        case typeLongLong:
+            if (*(int*)src == 0) return true;
+            else return false;
+        case typeShort:
+            if (*(int*)src == 0) return true;
+            else return false;
+        case typeDouble:
+            if (*(int*)src == 0) return true;
+            else return false;
+        case typeFloat:
+            if (*(int*)src == 0) return true;
+            else return false;
+        default:
+             break;
+     }
+     return false;
+}
+
 /*
 bool AllDataType::compareVal(void *val1, void *val2, ComparisionOp op,
                              DataType type, long length)

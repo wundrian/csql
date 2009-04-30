@@ -28,7 +28,7 @@ void TableDef::reset()
     fldCount = 0;
 }
 int TableDef::addField(const char *name,  DataType type, size_t length,
-                 const void *defaultValue, bool notNull)
+                 const void *defaultValue, bool notNull, bool autoIn)
 {
     if (name == NULL) return (int)ErrBadArg;
     if(strlen(name)>64)
@@ -72,6 +72,7 @@ int TableDef::addField(const char *name,  DataType type, size_t length,
         os::memset(fldDef.defaultValueBuf_,0, DEFAULT_VALUE_BUF_LENGTH);
     }
     fldDef.isNull_ = notNull;
+    fldDef.isAutoIncrement_= autoIn;
     switch(type)
     {
         case typeString :
