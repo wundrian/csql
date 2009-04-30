@@ -277,9 +277,11 @@ char getQueryFromStdIn(char *buf)
     *buf++ = ';';
     *buf = '\0';
 */
+    strcpy(buf, "");
     char *line = readline("CSQL>");
     if (line) {strcpy(buf, line); add_history(line); }
-    return c;
+    else return EOF;
+    return 0;
 }
 char getQueryFromFile(char *buf)
 {
