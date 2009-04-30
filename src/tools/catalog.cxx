@@ -142,11 +142,16 @@ int main(int argc, char **argv)
             while (iter.hasElement())
             {
                 elem = (Identifier*) iter.nextElement();
+#ifndef MMDB
                 rv=CacheTableLoader::isTableCached(elem->name);
                 if(rv!=OK){
                     printf("  <TableName> %s </TableName>\n", elem->name);
                     dbMgr->dropTable(elem->name);
                 }
+#else
+                printf("  <TableName> %s </TableName>\n", elem->name);
+                dbMgr->dropTable(elem->name);
+#endif
                 count++;
             }
             if (count ==0) printf("  <No tables exist></No tables exist>\n");

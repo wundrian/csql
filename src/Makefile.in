@@ -171,7 +171,7 @@ top_srcdir = @top_srcdir@
 INCLUDES = $(all_includes)
 
 # the library search path.
-SUBDIRS = storage adapter gateway sqllog sqlnetwork sql cache network jdbc odbc tools 
+SUBDIRS = storage sqllog sqlnetwork sql network jdbc odbc tools 
 all: all-recursive
 
 .SUFFIXES:

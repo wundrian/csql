@@ -92,7 +92,7 @@ CPPFLAGS =
 CXX = g++
 CXXCPP = g++ -E
 CXXDEPMODE = depmode=gcc3
-CXXFLAGS = -g  -I/home/praba/csql/jdk1.6.0_06/include -I/home/praba/csql/jdk1.6.0_06/include/linux
+CXXFLAGS = -g  -DMMDB -I/home/praba/csql/jdk1.6.0_06/include -I/home/praba/csql/jdk1.6.0_06/include/linux
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
@@ -194,11 +194,8 @@ lib_LTLIBRARIES = libcsqlodbc.la
 libcsqlodbc_la_LDFLAGS = -avoid-version -module \
 	$(top_builddir)/src/storage/.libs/libcsql \
 	$(top_builddir)/src/sql/.libs/libcsqlsql \
-	$(top_builddir)/src/gateway/.libs/libcsqlgw \
 	$(top_builddir)/src/network/.libs/libcsqlnw \
-	$(top_builddir)/src/sqllog/.libs/libcsqlsqllog \
-	$(top_builddir)/src/cache/.libs/libcacheload \
-	$(top_builddir)/src/adapter/.libs/libcsqlodbcadapter -lcrypt
+	$(top_builddir)/src/sqllog/.libs/libcsqlsqllog -lcrypt
 
 libcsqlodbc_la_SOURCES = odbcCommon.cxx odbcDbc.cxx odbcDesc.cxx \
 odbcError.cxx odbcEnv.cxx odbcState.cxx \
