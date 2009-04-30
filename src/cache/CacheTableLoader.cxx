@@ -15,6 +15,65 @@
   ***************************************************************************/
 #include<CacheTableLoader.h>
 #include<Util.h>
+char *CacheTableLoader::getConditionVal(char *condition)
+{
+    char str[124];
+    int i=0;
+    char *ptr, *ptr1 = str;
+    while(condition[i]!='\0')
+    {
+        if(condition[i] == ' ')
+        {
+            ptr = (condition+(i+1));
+            if(strncasecmp(ptr,"and ",4)==0) {
+                *ptr1='#';ptr1++; strncpy(ptr1,ptr,3);  ptr1+=3;
+                *ptr1='#';ptr1++; i+=4;
+            }
+            else if(strncasecmp(ptr,"or ",3)==0) {
+                 *ptr1='#';ptr1++;strncpy(ptr1,ptr,2);  ptr1+=2;
+                 *ptr1='#';ptr1++; i+=3;
+            }
+	    else if(strncasecmp(ptr,"between ",8)==0) {
+	         *ptr1='#';ptr1++;strncpy(ptr1,ptr,7);  ptr1+=7;
+	         *ptr1='#';ptr1++; i+=8;
+	    }
+	    else if(strncasecmp(ptr,"in ",3)==0) {
+	         *ptr1='#'; ptr1++; strncpy(ptr1,ptr,2);  ptr1+=2;
+	         *ptr1='#';ptr1++; i+=3;
+	    }
+	    i++;
+	}else{
+	*ptr1 = condition[i++];
+	ptr1++;
+       }
+    }
+    *ptr1='\0';
+    strcpy(condition,str);
+    return condition;
+}
+char *CacheTableLoader::getRealConditionFromFile(char *condition)
+{
+   char str[124];
+   int i=0;
+   char *ptr = str;
+   while(condition[i]!='\0')
+   {
+        if(condition[i]=='#'){
+           *ptr=' ';
+           ptr++;i++;
+        }else{
+             *ptr=condition[i];
+              ptr++;
+              i++;
+        }
+   }
+   *ptr='\0';
+    strcpy(condition,str);
+//  printf("Condition %s\n",condition);
+    return condition;
+}
+
+
 DbRetVal CacheTableLoader::addToCacheTableFile(bool isDirect)
 {
     FILE *fp;
@@ -32,12 +91,12 @@ DbRetVal CacheTableLoader::addToCacheTableFile(bool isDirect)
     { 
         if((strcmp(conditionVal,"")!=0)&&(strcmp(fieldlistVal,"")!=0))
         {
-	    fprintf(fp,"%d:%s %s %s %s\n",6,tableName,fieldName,conditionVal,fieldlistVal);
+	    fprintf(fp,"%d:%s %s %s %s\n",6,tableName,fieldName,getConditionVal(conditionVal),fieldlistVal);
         }
         else if((strcmp(conditionVal,"")!=0)&&(strcmp(fieldlistVal,"")==0))
         {
 	    strcpy(fieldlistVal,"NULL");
-	    fprintf(fp,"%d:%s %s %s %s\n",6,tableName,fieldName,conditionVal,fieldlistVal);
+	    fprintf(fp,"%d:%s %s %s %s\n",6,tableName,fieldName,getConditionVal(conditionVal),fieldlistVal);
         }
         else if((strcmp(conditionVal,"")==0)&&(strcmp(fieldlistVal,"")!=0))
         {
@@ -55,12 +114,12 @@ DbRetVal CacheTableLoader::addToCacheTableFile(bool isDirect)
    {
        if((strcmp(conditionVal,"")!=0)&&(strcmp(fieldlistVal,"")!=0))
        {
-           fprintf(fp,"%d:%s %s %s %s\n",2,tableName,fieldName,conditionVal,fieldlistVal);
+           fprintf(fp,"%d:%s %s %s %s\n",2,tableName,fieldName,getConditionVal(conditionVal),fieldlistVal);
        }
        else if((strcmp(conditionVal,"")!=0)&&(strcmp(fieldlistVal,"")==0))
        {
            strcpy(fieldlistVal,"NULL");
-           fprintf(fp,"%d:%s %s %s %s\n",2,tableName,fieldName,conditionVal,fieldlistVal);
+           fprintf(fp,"%d:%s %s %s %s\n",2,tableName,fieldName,getConditionVal(conditionVal),fieldlistVal);
        }
        else if((strcmp(conditionVal,"")==0)&&(strcmp(fieldlistVal,"")!=0))
        {
@@ -640,7 +699,7 @@ DbRetVal CacheTableLoader::recoverAllCachedTables()
         //if (mode ==2 )  //just replicated table and not cached
         //continue;
         printDebug(DM_Gateway, "Recovering Table from target db: %s\n", tablename);
-        setCondition(condition);
+        setCondition(getRealConditionFromFile(condition));
         setTable(tablename);
         setFieldName(fieldname);
 	setFieldListVal(field);
@@ -727,3 +786,50 @@ bool CacheTableLoader::isFieldExist(char *fieldname)
     else
         return false;
 }
+
+DbRetVal CacheTableLoader::CacheInfo(bool isTabPresent)  /* Cacheh Description using "-S" option */
+{
+ 	   FILE *fp;
+           fp = fopen(Conf::config.getTableConfigFile(),"r");
+           if( fp == NULL ) {
+           printError(ErrSysInit, "cachetable.conf file does not exist");
+           fclose(fp);
+           return OK;
+           }
+  
+           char tablename[IDENTIFIER_LENGTH];
+           char pkfield[IDENTIFIER_LENGTH];
+           char condition[IDENTIFIER_LENGTH];
+           char field[IDENTIFIER_LENGTH];
+           int mode;
+           printf("\n=================================================================================================================\n");
+           printf("|\tMode\t|\tTable Name\t|\tPrimary Key\t|\tCondition\t|\tField List\t|\n");
+           printf("=================================================================================================================\n");
+ 	   
+	   while(!feof(fp))
+	   {
+	         fscanf(fp,"%d:%s %s %s %s\n",&mode,tablename,pkfield,condition,field);
+	         if((mode<1) || (mode >6))
+	         {return ErrNotFound;}
+	    
+	         if(isTabPresent)
+	         {
+	              if(strcmp(tableName,tablename)==0)
+	              {
+	                    printf("|%8d\t|%16s\t|%16s\t|%16s\t|%16s\t|\n",mode,tablename,pkfield,getRealConditionFromFile(condition),field);
+	                    printf("-----------------------------------------------------------------------------------------------------------------\n\n");
+	                    fclose(fp);
+	                    return OK;
+	               }
+	          }
+	          else
+	          {
+	             printf("|%8d\t|%16s\t|%16s\t|%16s\t|%16s\t|\n",mode,tablename,pkfield,getRealConditionFromFile(condition),field);
+	             printf("-----------------------------------------------------------------------------------------------------------------\n");
+	          }
+	    }
+	    printf("\n");
+	    fclose(fp);
+	    return OK;
+}
+
