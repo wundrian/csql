@@ -27,7 +27,7 @@ mv libcsqlsqllog libcsqlsqllog.so
 mv libcsqlodbc libcsqlodbc.so
 mv libcsqlodbcadapter libcsqlodbcadapter.so
 mv libcsqlgw libcsqlgw.so
-#mv libcacheload libcacheload.so
+mv libcacheload libcacheload.so
 ln -s libcsqlgw.so libcsqlgw
 ln -s libcsqlodbcadapter.so libcsqlodbcadapter
 ln -s libcsqlodbc.so libcsqlodbc
@@ -36,7 +36,7 @@ ln -s libcsqlnw.so libcsqlnw
 ln -s libcsqljdbc.so libcsqljdbc
 ln -s libcsqlsql.so libcsqlsql
 ln -s libcsql.so libcsql
-ln -s libcacheload libcacheload.so 
+ln -s libcacheload.so libcacheload
 
 
 cp ${root_dir}/src/sql/Statement.h ${install_dir}/include
@@ -51,14 +51,20 @@ cd ${install_dir}/bin
 rm csqlreplserver  repltable
 
 cp ${root_dir}/README ${install_dir}/README
-cp ${root_dir}/Doxyfile ${install_dir}
 cp ${root_dir}/COPYING ${install_dir}
 cp ${root_dir}/AUTHORS ${install_dir}
 cp ${root_dir}/ChangeLog ${install_dir}
 cp ${root_dir}/csql.conf ${install_dir}
+cp ${root_dir}/setupenv.ksh.install ${install_dir}/setupenv.ksh
 cp -R ${root_dir}/examples ${install_dir}
 find ${install_dir}/examples -name "CVS" -exec rm -rf {} \; 2>/dev/null
+rm -rf ${install_dir}/examples/dbapi
+rm -rf ${install_dir}/lib/*.a
+rm -rf ${install_dir}/lib/*.la
+
 cp -R ${root_dir}/docs ${install_dir}
 find ${install_dir}/docs -name "CVS" -exec rm -rf {} \; 2>/dev/null
+cp -R ${root_dir}/demo ${install_dir}
+find ${install_dir}/demo -name "CVS" -exec rm -rf {} \; 2>/dev/null
 cd ${root_dir}
 echo "Build completed Successfully"

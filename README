@@ -16,8 +16,8 @@ Compilers Supported
 -------------------
 g++ in linux
 
-Compiling the source
---------------------
+Compiling from source (If you have downloaded with source)
+----------------------------------------------------------
 Go to the root directory and enter the following commands.
 
 $ export JDK_HOME=<path of jdk home>
@@ -30,15 +30,8 @@ If you want to install in some other directory then change the directory in --pr
 Available Documentation
 -----------------------
 1.User Manual is available under the docs directory
-2.HTML API Reference for DB API under the docs/html directory (Refer next section)
-3.DB API, SQL API, JDBC, ISQL  example programs under the examples directory
-
-Generating API Reference
-------------------------
-Go to the root directory and enter
-$doxygen
-
-This will create "docs/html" directory under which API Reference html files are stored. Refer index.html in that directory.
+2.SQL API, ODBC, JDBC, ISQL  example programs under the examples directory
+3.Wisconsin benchmark and cache demo under the demo directory
 
 Starting the Server
 -------------------
@@ -47,25 +40,18 @@ Note: kernel.shmmax should be set to more than 500 MB before starting the server
 In linux for setting 1GB enter
 $sysctl -w kernel.shmmax=1000000000
 
-You should find csqlserver executable under the bin directory of the installation.
-Change csql.conf file under the installation root directory if necessary.
-Set the CSQL_CONFIG_FILE environment variable to absolute path of csql.conf file.
-
-For example, if csql.conf is available at /tmp directory, then
-$export CSQL_CONFIG_FILE=/tmp/csql.conf
-
-Set the LD_LIBRARY_PATH environment variable to point to csql libraries
-Let us say if you have installed csql under /home/csql/install, then
-$export LD_LIBRARY_PATH=/home/csql/install/lib:$LD_LIBRARY_PATH
-
-Note: 
 setupenv.ksh script is available at the root directory which shall be used to
 set the necessary environment variables.
+
+$. ./setupenv.ksh
 
 Start the server using csqlserver executable
 $./csqlserver
 
 This starts the server and creates the database file.
+Use csql tool to execute SQL statements interactively,
+$csql
+CSQL>
 
 Note:
 Refer UserManual.pdf available in docs folder to know how to work with csql
