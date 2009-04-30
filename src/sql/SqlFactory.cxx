@@ -40,6 +40,7 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
             conn->setInnerConnection(sqlCon);
             break;
             }
+#ifndef MMDB
         case CSqlAdapter:
             {
             conn = new SqlOdbcConnection();
@@ -58,6 +59,7 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
             conn = gwconn;
             break;
             }
+#endif
         case CSqlNetwork:
             {
             SqlNwConnection *sqlNwCon = new SqlNwConnection(CSqlNetwork);
@@ -102,6 +104,7 @@ AbsSqlStatement* SqlFactory::createStatement(SqlApiImplType implFlag)
             stmt->setInnerStatement(sqlStmt);
             break;
             }
+#ifndef MMDB
         case CSqlAdapter:
             {
             stmt = new SqlOdbcStatement();
@@ -120,6 +123,7 @@ AbsSqlStatement* SqlFactory::createStatement(SqlApiImplType implFlag)
             stmt = gwstmt;
             break;
             }
+#endif
         case CSqlNetwork:
             {
             SqlNwStatement *sqlNwStmt = new SqlNwStatement();

@@ -197,6 +197,7 @@ libcsqlodbc_la_LDFLAGS = -avoid-version -module \
 	$(top_builddir)/src/gateway/.libs/libcsqlgw \
 	$(top_builddir)/src/network/.libs/libcsqlnw \
 	$(top_builddir)/src/sqllog/.libs/libcsqlsqllog \
+	$(top_builddir)/src/cache/.libs/libcacheload \
 	$(top_builddir)/src/adapter/.libs/libcsqlodbcadapter -lcrypt
 
 libcsqlodbc_la_SOURCES = odbcCommon.cxx odbcDbc.cxx odbcDesc.cxx \

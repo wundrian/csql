@@ -77,12 +77,12 @@ HEADERS = $(noinst_HEADERS)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /home/csql/latest/csql/missing --run aclocal-1.10
-AMTAR = ${SHELL} /home/csql/latest/csql/missing --run tar
+ACLOCAL = ${SHELL} /home/praba/csql/latest/apr/apr30/csql/missing --run aclocal-1.10
+AMTAR = ${SHELL} /home/praba/csql/latest/apr/apr30/csql/missing --run tar
 AR = ar
-AUTOCONF = ${SHELL} /home/csql/latest/csql/missing --run autoconf
-AUTOHEADER = ${SHELL} /home/csql/latest/csql/missing --run autoheader
-AUTOMAKE = ${SHELL} /home/csql/latest/csql/missing --run automake-1.10
+AUTOCONF = ${SHELL} /home/praba/csql/latest/apr/apr30/csql/missing --run autoconf
+AUTOHEADER = ${SHELL} /home/praba/csql/latest/apr/apr30/csql/missing --run autoheader
+AUTOMAKE = ${SHELL} /home/praba/csql/latest/apr/apr30/csql/missing --run automake-1.10
 AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
@@ -92,7 +92,7 @@ CPPFLAGS =
 CXX = g++
 CXXCPP = g++ -E
 CXXDEPMODE = depmode=gcc3
-CXXFLAGS = -g  -I/usr/java/jdk1.6.0_10/include -I/usr/java/jdk1.6.0_10/include/linux
+CXXFLAGS = -g  -I/home/praba/csql/jdk1.6.0_06/include -I/home/praba/csql/jdk1.6.0_06/include/linux
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
@@ -119,7 +119,7 @@ LIBS =
 LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LN_S = ln -s
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} /home/csql/latest/csql/missing --run makeinfo
+MAKEINFO = ${SHELL} /home/praba/csql/latest/apr/apr30/csql/missing --run makeinfo
 MKDIR_P = /bin/mkdir -p
 OBJEXT = o
 PACKAGE = csql
@@ -137,10 +137,10 @@ STRIP = strip
 VERSION = 0.1
 YACC = bison -y
 YFLAGS = 
-abs_builddir = /home/csql/latest/csql/src/odbc
-abs_srcdir = /home/csql/latest/csql/src/odbc
-abs_top_builddir = /home/csql/latest/csql
-abs_top_srcdir = /home/csql/latest/csql
+abs_builddir = /home/praba/csql/latest/apr/apr30/csql/src/odbc
+abs_srcdir = /home/praba/csql/latest/apr/apr30/csql/src/odbc
+abs_top_builddir = /home/praba/csql/latest/apr/apr30/csql
+abs_top_srcdir = /home/praba/csql/latest/apr/apr30/csql
 ac_ct_CC = gcc
 ac_ct_CXX = g++
 ac_ct_F77 = gfortran
@@ -169,7 +169,7 @@ host_vendor = pc
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = $(SHELL) /home/csql/latest/csql/install-sh
+install_sh = $(SHELL) /home/praba/csql/latest/apr/apr30/csql/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -178,7 +178,7 @@ mandir = ${datarootdir}/man
 mkdir_p = /bin/mkdir -p
 oldincludedir = /usr/include
 pdfdir = ${docdir}
-prefix = /home/csql/latest/csql/install
+prefix = /home/praba/csql/latest/apr/apr30/csql/install
 program_transform_name = s,x,x,
 psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
@@ -197,6 +197,7 @@ libcsqlodbc_la_LDFLAGS = -avoid-version -module \
 	$(top_builddir)/src/gateway/.libs/libcsqlgw \
 	$(top_builddir)/src/network/.libs/libcsqlnw \
 	$(top_builddir)/src/sqllog/.libs/libcsqlsqllog \
+	$(top_builddir)/src/cache/.libs/libcacheload \
 	$(top_builddir)/src/adapter/.libs/libcsqlodbcadapter -lcrypt
 
 libcsqlodbc_la_SOURCES = odbcCommon.cxx odbcDbc.cxx odbcDesc.cxx \
