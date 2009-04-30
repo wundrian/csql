@@ -18,7 +18,7 @@
 
 void printUsage()
 {
-   printf("Usage: cachetable [-U username] [-P passwd] -t tablename[-D] -c \"condition\" -f \"selected field names\" -p fieldname \n"
+   printf("Usage: cachetable [-U username] [-P passwd] -t tablename[-D] -c \"condition\" -f \"selected field names\" -p fieldname -S\n"
           "       [-R] [-s] [-r]\n");
    printf("       username -> username to connect with csql.\n");
    printf("       passwd -> password for the above username to connect with csql.\n");
@@ -90,6 +90,7 @@ int main(int argc, char **argv)
             case 's' : { tableDefinition=false; break; } //do not get the schema information from target db
             case 'r' : { opt = 4; break; } //reload the table
             case 'u' : { opt = 5; break; } //unload the table
+	    case 'S' : { opt = 6; break; }
             default: opt=10; 
 
         }
@@ -153,6 +154,18 @@ int main(int argc, char **argv)
         rv = cacheLoader.removeFromCacheTableFile();
         if (rv != OK) exit (2);
 
-    }
-    return 0;
+    }else if(opt==6)
+     {
+         if(tableNameSpecified)
+         {
+              cacheLoader.setTable(tablename);
+         }
+         rv = cacheLoader.CacheInfo(tableNameSpecified);
+         if(rv !=OK)
+         {
+             printf("\nError (%d): None of the table found in Cache,You need to cache the table from Target DB.\n\n",rv);
+             exit(2);
+         }
+     }
+     return 0;
 }
