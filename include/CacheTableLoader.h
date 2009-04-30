@@ -53,6 +53,10 @@ class CacheTableLoader
     static DbRetVal isTableCached(char *tablename);
     DbRetVal isTablePresent();// new one by :Jitendra
     bool isFieldExist(char *fieldname);
+    DbRetVal CacheInfo(bool isTabPresent);
+    char *getRealConditionFromFile(char *condition);
+    char *getConditionVal(char *condition);
+
 };
 
 class BindBuffer
