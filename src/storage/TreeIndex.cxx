@@ -445,8 +445,7 @@ DbRetVal TreeIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     TreeNode *start = (TreeNode*) iptr->hashNodeChunk_;
     TreeNode *iter = locateNode(start, tuple, indInfo);
     if (NULL == iter) return OK; //element not found
-    removeElement(tbl->getDB(), iter, tuple, info);
-    return OK;
+    return removeElement(tbl->getDB(), iter, tuple, info);
 }
 TreeNode* TreeIndex::locateNode(TreeNode *iter, void *tuple, IndexInfo *indInfo)
 {

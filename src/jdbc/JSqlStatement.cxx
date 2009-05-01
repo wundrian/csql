@@ -689,7 +689,9 @@ JNIEXPORT jstring JNICALL Java_csql_jdbc_JSqlStatement_getParamFldName
     FieldInfo *field = new FieldInfo();
     DbRetVal rv = s->getParamFldInfo(pos,field);
     if(rv!=OK)return NULL;
-    return( env->NewStringUTF( (char*) field->fldName ) );
+    _jstring *name = env->NewStringUTF( (char*) field->fldName );
+    delete field;
+    return name;
 }
 
 /*
@@ -740,8 +742,9 @@ JNIEXPORT jint JNICALL Java_csql_jdbc_JSqlStatement_getType
     FieldInfo *field = new FieldInfo();
     DbRetVal rv = s->getParamFldInfo(pos,field);
     if(rv!=OK)return 100;
-    return(field->type  );
-
+    int type = field->type;
+    delete field;
+    return type;
 }
 
 /*
@@ -885,8 +888,9 @@ JNIEXPORT jstring JNICALL Java_csql_jdbc_JSqlStatement_getProjFldName
     AbsSqlStatement *s = (AbsSqlStatement*) env->GetLongField( obj, fid );
     FieldInfo *field = new FieldInfo();
     s->getProjFldInfo(pos,field);
-    //delete field;
-    return ( env->NewStringUTF( (char*) field->fldName ));
+    _jstring *name = env->NewStringUTF( (char*) field->fldName );
+    delete field;
+    return name;
 }
 
 

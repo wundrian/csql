@@ -36,6 +36,7 @@
 #include <ctype.h>
 #include <sys/socket.h>
 #include <fnmatch.h>
+#include <execinfo.h>
 #if defined(solaris)
     #include <sys/varargs.h>
 #endif

@@ -140,7 +140,7 @@ DataType getCSqlType( SQLSMALLINT type )
         case SQL_C_LONG:
         case SQL_C_SLONG:
         case SQL_C_ULONG:
-            return typeLong;
+            return typeInt;
         case SQL_C_FLOAT:
             return typeFloat;
         case SQL_C_DOUBLE:

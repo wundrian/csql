@@ -72,6 +72,10 @@ DbRetVal ProcessManager::registerThread()
     if (OK != rv)
     {
         printError(rv,"Unable to get process table mutex");
+        printError(rv,"Recovery may be going on. Retry after some time.");
+        mutex.getLock(-1, false);
+        noThreads--;
+        mutex.releaseLock(-1, false);
         return rv;
     }
     pid_t pid;
@@ -150,7 +154,7 @@ DbRetVal ProcessManager::deregisterThread(int procSlot)
     {
         if (pInfo->has_[muti] !=  NULL) 
         {
-            printError(ErrSysFatal, "Probable data corruption.some mutexes are not freed %x %s\n",  pInfo->has_[muti], pInfo->has_[muti]->name);
+            printError(ErrSysFatal, "Probable data corruption.some mutexes are not freed %x \n",  pInfo->has_[muti]);
             pInfo->has_[muti]->releaseLock(procSlot); 
             return ErrSysFatal;
         }
@@ -227,6 +231,10 @@ DbRetVal ProcessManager::removeMutex(Mutex *mut, int pslot)
         }
     }
     printError(ErrSysInternal, "Mutex could not be found in the list %s", mut->name);
+    void *array[10];
+    size_t size;
+    size = backtrace(array, 10);
+    backtrace_symbols_fd(array, size, 2);
     return ErrSysInternal;
 }
 

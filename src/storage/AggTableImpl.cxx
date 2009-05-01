@@ -318,7 +318,7 @@ DbRetVal AggTableImpl::closeScan()
     }
     aggNodes.reset();
     aggNodeMap.removeAll();
-    tableHdl->closeScan();
+    if(tableHdl) tableHdl->closeScan();
 }
 
 DbRetVal AggTableImpl::close()

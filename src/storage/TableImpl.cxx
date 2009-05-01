@@ -242,7 +242,7 @@ DbRetVal TableImpl::execute()
 {
     if (NULL != iter)
     {
-         printError(ErrAlready,"Scan already open:Close and re execute");
+         //printError(ErrAlready,"Scan already open:Close and re execute");
          return ErrAlready;
     }
     DbRetVal ret = OK;

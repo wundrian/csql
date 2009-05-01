@@ -33,7 +33,7 @@ int TableDef::addField(const char *name,  DataType type, size_t length,
     if (name == NULL) return (int)ErrBadArg;
     if(strlen(name)>64)
     {
-        printError(ErrBadRange,"Field name shpuldnot exceed 64 character");
+        printError(ErrBadRange,"Field name should not exceed 64 character");
         return (int)ErrBadRange;
     }
     // The following code checks for duplicates

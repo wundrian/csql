@@ -482,7 +482,7 @@ DbRetVal PredicateImpl::evaluate(bool &result)
         while (fIter.hasElement())
         {
             def = (JoinProjFieldInfo*) fIter.nextElement();
-            if (NULL != def->appBuf) {
+            if (NULL != def->bindBuf) {
                 if (0 == strcmp(fldName1, def->tabFieldName))
                 {
                     val1 = (char*)def->bindBuf;
@@ -506,7 +506,7 @@ DbRetVal PredicateImpl::evaluate(bool &result)
                 while (fIter.hasElement())
                 {
                     def = (JoinProjFieldInfo*) fIter.nextElement();
-                    if (NULL != def->appBuf) {
+                    if (NULL != def->bindBuf) {
                         if (0 == strcmp(fldName2, def->tabFieldName))
                         {
                             val2 = (char*)def->bindBuf;

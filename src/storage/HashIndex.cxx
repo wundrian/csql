@@ -116,6 +116,7 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     int offset = info->fldOffset;
     DataType type = info->type;
     char *keyBuffer = (char*) malloc(info->compLength);
+    memset(keyBuffer, 0, info->compLength);
     void *keyStartBuffer = keyBuffer, *keyPtr;
     FieldIterator iter = info->idxFldList.getIterator();
     while(iter.hasElement())
@@ -244,8 +245,8 @@ DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
 
     ChunkIterator citer = CatalogTableINDEX::getIterator(indexPtr);
     Bucket* buckets = (Bucket*)citer.nextElement();
-
     char *keyBuffer = (char*) malloc(info->compLength);
+    memset(keyBuffer, 0, info->compLength);
     void *keyStartBuffer = keyBuffer, *keyPtr;
     FieldIterator iter = info->idxFldList.getIterator();
     while(iter.hasElement())
@@ -327,6 +328,7 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     
     //creating old key value buffer for composite primary keys
     char *oldKeyBuffer = (char*) malloc(info->compLength);
+    memset(oldKeyBuffer, 0, info->compLength);
     void *oldKeyStartBuffer = oldKeyBuffer;
     FieldIterator iter = info->idxFldList.getIterator();
     while(iter.hasElement()) {
@@ -340,8 +342,13 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     //Iterate through the bind list and check
     FieldIterator idxFldIter = info->idxFldList.getIterator();
     char *keyBindBuffer ;
-    if(type==typeBinary) keyBindBuffer = (char*) malloc(2 * info->compLength);
-    else keyBindBuffer = (char*) malloc(info->compLength);
+    if(type==typeBinary) {
+        keyBindBuffer = (char*) malloc(2 * info->compLength);
+        memset(keyBindBuffer, 0, 2 * info->compLength);
+    }else {
+        keyBindBuffer = (char*) malloc(info->compLength);
+        memset(keyBindBuffer, 0, info->compLength);
+    }
     void *keyStartBuffer = (void*) keyBindBuffer;
     bool keyUpdated = false;
 
@@ -563,7 +570,9 @@ DbRetVal HashIndex::deleteLogicalUndoLog(Database *sysdb, void *data)
     Chunk *hChunk = (Chunk *) ((CINDEX *)info->indexPtr_)->hashNodeChunk_;
     HashIndexNode *head = (HashIndexNode *)((Bucket *)info->bucket_)->bucketList_;
     BucketList list(head);
-    list.remove(hChunk, tbl->db_, info->keyPtr_);
-    ((Bucket *)info->bucket_)->bucketList_ = list.getBucketListHead();
+    DbRetVal rc = list.remove(hChunk, tbl->db_, info->keyPtr_);
+    if (SplCase == rc) {
+        ((Bucket *)info->bucket_)->bucketList_ = list.getBucketListHead();
+    }
     return OK;
 }
