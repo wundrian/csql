@@ -705,9 +705,7 @@ DbRetVal TableImpl::insertTuple()
             lMgr_->releaseLock(tptr);
             (*trans)->removeFromHasList(db_, tptr);
             ((Chunk*)chunkPtr_)->free(db_, tptr);
-            //PRABA::TEMP
-            //printError(ret, "Unable to insert index node for tuple %x ", tptr);
-            printError(ret, "Unable to insert index node for tuple %x %d", tptr, *(int*)tptr);
+            printError(ret, "Unable to insert index node for tuple %x ", tptr);
             return ret;
         }
     }
