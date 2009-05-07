@@ -243,15 +243,16 @@ DbRetVal CacheTableLoader::load(bool tabDefinition)
         }
     }
     conn.startTransaction();
-    rv = load(dbMgr, tabDefinition);
+    rv = load(&conn, tabDefinition);
     conn.commit();
     conn.close();
     return rv;
 }
 
-DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
+DbRetVal CacheTableLoader::load(Connection *conn, bool tabDefinition)
 {
     char dsn[72];
+    DatabaseManager *dbMgr = (DatabaseManager *) conn->getDatabaseManager();
     sprintf(dsn, "DSN=%s;", Conf::config.getDSN());
     SQLCHAR outstr[1024];
     SQLSMALLINT outstrlen;
@@ -576,6 +577,7 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
     retValue = SQLExecute (hstmt);
     if (retValue) {printError(ErrSysInit, "Unable to execute ODBC statement\n"); return ErrSysInit; }
     int fldpos=0;
+    int countForCommit = 0;
     while(true)
     {
         retValue = SQLFetch (hstmt);
@@ -615,6 +617,23 @@ DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
         }
         
         table->insertTuple();
+        if (rv != OK)
+        {
+            dbMgr->closeTable(table);
+            dbMgr->dropTable(tableName);
+            SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
+            SQLDisconnect (hdbc);
+            SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
+            SQLFreeHandle (SQL_HANDLE_ENV, henv);
+            printError(rv, "Unable to load record to target for table %s\n",tableName);
+            return rv;
+        }
+        countForCommit++;
+        if (countForCommit == 1000) {
+            countForCommit = 0;
+            conn->commit();
+            conn->startTransaction();
+        }
     }
     //TODO::leak:: valBufList and its targetdb buffer
     valBufList.reset();
