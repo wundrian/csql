@@ -531,7 +531,7 @@ void Chunk::free(Database *db, void *ptr)
 PageInfo* Chunk::getPageInfo(Database *db, void *ptr)
 {
     if (allocSize_ < PAGE_SIZE - sizeof(PageInfo)) { 
-       int rem = (long) ptr % 8192;
+       int rem = (long) ptr % PAGE_SIZE;
        return (PageInfo*)(((char*)ptr) - rem);
     } else {
         //large size allocator
