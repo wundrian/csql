@@ -32,6 +32,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <math.h>
+#include <limits.h>
 #include <signal.h>
 #include <ctype.h>
 #include <sys/socket.h>

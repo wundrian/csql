@@ -21,7 +21,7 @@
 #include <Process.h>
 Mutex::Mutex()
 {
-#if defined(sparc) || defined(i686)
+#if defined(sparc) || defined(i686) || defined(x86_64)
     lock =0;
 #else
     pthread_mutexattr_t attr;
@@ -33,7 +33,7 @@ Mutex::Mutex()
 
 int Mutex::init()
 {
-#if defined(sparc) || defined(i686)
+#if defined(sparc) || defined(i686) || defined(x86_64)
     lock = 0;
 #else
     pthread_mutexattr_t attr;
@@ -54,7 +54,7 @@ int Mutex::init(char *mname)
 
 }
 
-#if defined(sparc) || defined(i686)
+#if defined(sparc) || defined(i686) || defined(x86_64)
 int TSL(Lock *lock)
 {
 /*
@@ -80,7 +80,7 @@ int TSL(Lock *lock)
 
         return oldval > 0;
 */
-#if defined(i686)
+#if defined(i686) || defined(x86_64)
     int*  lw;
     int   res;
     lw = (int*)lock;
@@ -117,7 +117,7 @@ int TSL(Lock *lock)
 
     return(res);
 
-#elif defined (sparc)
+#elif defined (sparc) 
     Lock res;
     __asm__ __volatile__("ldstub  [%2], %0    \n"
        "=r"(res), "+m"(*lock)
@@ -147,7 +147,7 @@ int Mutex::tryLock(int tryTimes, int waitmsecs)
     }
     while (tries < tryTimes)
     {
-#if defined(sparc) || defined(i686)
+#if defined(sparc) || defined(i686) || defined(x86_64)
     if (TSL(&lock) == 0) 
     {
         return 0; 
@@ -168,7 +168,7 @@ int Mutex::tryLock(int tryTimes, int waitmsecs)
 int Mutex::getLock(int procSlot, bool procAccount)
 {
     int ret=0;
-#if defined(sparc) || defined(i686)
+#if defined(sparc) || defined(i686) || defined(x86_64)
     ret = tryLock();
     //add it to the has_ of the ThreadInfo
     if (ret ==0 && procAccount) ProcessManager::addMutex(this, procSlot);
@@ -185,7 +185,7 @@ int Mutex::getLock(int procSlot, bool procAccount)
 int Mutex::releaseLock(int procSlot, bool procAccount)
 {
     int ret=0;
-#if defined(sparc) || defined(i686)
+#if defined(sparc) || defined(i686) || defined(x86_64)
     /*int *lw = &lock;
     if (*lw == 0) return 0;
     __asm__ __volatile__("movl $0, %%eax; xchgl (%%ecx), %%eax" :
@@ -208,7 +208,7 @@ int Mutex::releaseLock(int procSlot, bool procAccount)
 
 int Mutex::destroy()
 {
-#if defined(sparc) || defined(i686)
+#if defined(sparc) || defined(i686) || defined(x86_64)
 #else
     return pthread_mutex_destroy(&mutex_);
 #endif
@@ -218,7 +218,7 @@ int Mutex::destroy()
 int Mutex::recoverMutex()
 {
     int ret=0;
-#if defined(sparc) || defined(i686)
+#if defined(sparc) || defined(i686) || defined(x86_64)
     /*int *lw = &lock;
     if (*lw == 0) return 0;
     __asm__ __volatile__("movl $0, %%eax; xchgl (%%ecx), %%eax" :

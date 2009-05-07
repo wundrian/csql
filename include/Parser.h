@@ -174,7 +174,7 @@ class ParsedData
 
 
     Predicate* insertPredicate(char *fldName, ComparisionOp op, void** value);
-    Predicate* insertPredicate(char *fldName, ComparisionOp op, char *fldName);
+    Predicate* insertPredicate(char *fldName1, ComparisionOp op, char *fldName2);
     Predicate* insertBetPredicate(char *fldName, ComparisionOp op1, void **value1, ComparisionOp op2, void **value2);
     Predicate* insertPredicate(Predicate *p1, LogicalOp op, Predicate *p2 = NULL);
     void setCondition(Predicate *pred) 
@@ -211,7 +211,7 @@ class ParsedData
     bool getPrimary() { return isPrimary; }
     Expression* insertExpression(char *fldName);
     Expression* insertExpression(char *value, bool flag);
-    Expression* insertExpression(Expression* exp1, ArithOperator op ,Expression* exp1);
+    Expression* insertExpression(Expression* exp1, ArithOperator op ,Expression* exp2);
     void insertUpdateExpression(char *fName, Expression *exp);
 
     void insertFldDef(); //check if fldDef needs to be a part of ParsedData 

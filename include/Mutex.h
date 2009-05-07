@@ -18,13 +18,13 @@
 #include<os.h>
     #if defined(sparc)
     typedef unsigned char Lock;
-    #elif defined (i686)
+    #elif defined (i686)  || defined(x86_64)
     typedef unsigned int Lock;
     #endif
 class Mutex
 {
 
-    #if defined(sparc) || defined(i686)
+    #if defined(sparc) || defined(i686) || defined(x86_64)
     Lock lock;
     #else
     pthread_mutex_t mutex_;

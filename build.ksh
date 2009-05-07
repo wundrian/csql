@@ -1,16 +1,14 @@
-
-if [ "$JDK_HOME" == "" ]
+#!/bin/sh
+#if [ "$JDK_HOME" == "" ]
+if [ -z "$JDK_HOME" ]
 then
 	echo "Please set JDK_HOME"
 	exit 1
 fi
 
 ./configure --prefix=`pwd`/install CXXFLAGS="-g  -I$JDK_HOME/include -I$JDK_HOME/include/linux"
+#./configure --prefix=`pwd`/install CXXFLAGS="-g  -I$JDK_HOME/include -I$JDK_HOME/include/linux -Wno-write-strings"
 #./configure --prefix=`pwd`/install CXXFLAGS=-g
-#Note: You may have to fool the configure by making gcc link to g++, as it works only with g++
-#./configure --prefix=`pwd`/install --enable-static=no CXXFLAGS="-O2"
-#pdflatex -tex to pdf
-#kpdf - to open pdf
 make
 make install
 ./csqlinstall.ksh

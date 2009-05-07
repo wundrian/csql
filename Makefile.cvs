@@ -2,7 +2,7 @@ default: all
 
 all:
 	aclocal
-	autoheader
-	automake
 	autoconf
-
+	autoheader
+	libtoolize --automake
+	automake --add-missing --force-missing
