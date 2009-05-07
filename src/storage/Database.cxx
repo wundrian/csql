@@ -229,6 +229,7 @@ Page* Database::getFreePage(size_t size)
     printDebug(DM_Alloc, "Database::getFreePage firstPage:%x size:%ld",page, size);
     char* endAddr = ((char*)getMetaDataPtr())  + getMaxSize();
     int pageSize = PAGE_SIZE;
+    bool isEndAddchk = false;
     while(true){
         while( 1 == pageInfo->isUsed_)
         {
@@ -242,6 +243,13 @@ Page* Database::getFreePage(size_t size)
                 pageInfo = (PageInfo*)pageInfo->nextPageAfterMerge_;
                 printDebug(DM_Alloc,"Merged Page:Moving to page:%x",pageInfo);
             }
+            if((((char*) pageInfo) + offset) >= endAddr )
+            {
+                if(!isEndAddchk){ isEndAddchk=true; pageInfo=(PageInfo *)getFirstPage(); }
+                else
+                   break;
+            }
+
         }
         int i = 0;
         PageInfo *pInfo = pageInfo;

@@ -47,9 +47,17 @@ void* ChunkIterator::nextElement()
     if (0 == noOfNodes_)
     {
         //means tuple larger than PAGE_SIZE
-        char *record = ((char*)iterPage_)  +sizeof(PageInfo)+sizeof(int);
+        if(NULL == iterPage_) return NULL;
+        char *record =NULL;
+        record = ((char*)iterPage_)  +sizeof(PageInfo);
+        while(*(int*)record != 1)
+        {
+            iterPage_ = (PageInfo*) iterPage_->nextPage_;
+            if(NULL == iterPage_) return NULL;
+            record = ((char*)iterPage_)  +sizeof(PageInfo);
+        }
         iterPage_ = (PageInfo*) iterPage_->nextPage_;
-        return record;
+        return (record + sizeof(int));
     }
 
     //check whether there are any nodes in the current page

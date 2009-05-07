@@ -258,7 +258,10 @@ void* Chunk::allocateForLargeDataSize(Database *db, size_t size)
         printError(ErrLockTimeOut,"Unable to acquire alloc database Mutex");
         return NULL;
     }
-    pageInfo = (PageInfo*)db->getFreePage(allocSize_);
+    if(0==allocSize_)
+        pageInfo = (PageInfo*)db->getFreePage(size);
+    else
+        pageInfo = (PageInfo*)db->getFreePage(allocSize_);
     if (NULL == pageInfo)
     {
         db->releaseAllocDatabaseMutex();
@@ -267,8 +270,29 @@ void* Chunk::allocateForLargeDataSize(Database *db, size_t size)
     }
     printDebug(DM_VarAlloc,"Chunk::allocate Large Data Item id:%d Size:%d curPage:%x ",
                                             chunkID_, size, curPage_);
-    //TODO:: logic pending
-
+   if(allocSize_!=0){
+        //large size allocate for FixedSize data
+        pageInfo->nextPageAfterMerge_ = ((char*)pageInfo + offset);
+        ((PageInfo*)curPage_)->nextPage_ = (Page*) pageInfo;
+        curPage_ = (Page*) pageInfo;
+        char* data = ((char*)curPage_) + sizeof(PageInfo);
+        *((int*)data) = 1;
+        pageInfo->isUsed_=1;
+        pageInfo->hasFreeSpace_ = 0;
+        db->releaseAllocDatabaseMutex();
+        return data + sizeof(int);
+    }else{
+        //large size allocate for varSize data
+        VarSizeInfo *varInfo = (VarSizeInfo*)(((char*)pageInfo) + sizeof(PageInfo));
+        pageInfo->nextPageAfterMerge_ = ((char*)pageInfo + offset);
+        ((PageInfo*)curPage_)->nextPage_ = (Page*) pageInfo;
+        curPage_ = (Page*) pageInfo;
+        varInfo->size_= size;
+        varInfo->isUsed_= 1;       
+        pageInfo->isUsed_=1;
+        db->releaseAllocDatabaseMutex();
+        return (char *) varInfo + sizeof(VarSizeInfo);
+    }
 
     //REDESIGN MAY BE REQUIRED:Lets us live with this for now.
     //what happens to the space lets say 10000 bytes is allocated
@@ -370,13 +394,13 @@ void* Chunk::allocate(Database *db, size_t size, DbRetVal *status)
 
     size_t alignedSize = os::align(size);
     void *data = NULL;
-    int ret = getChunkMutex(db->procSlot);
+  /*  int ret = getChunkMutex(db->procSlot);
     if (ret != 0)
     {
         printError(ErrLockTimeOut,"Unable to acquire chunk Mutex");
         *status = ErrLockTimeOut;
         return NULL;
-    }
+    }*/
     if (alignedSize > PAGE_SIZE)
     {
         data =  allocateForLargeDataSize(db, alignedSize);
@@ -394,7 +418,7 @@ void* Chunk::allocate(Database *db, size_t size, DbRetVal *status)
             }
         }
     }
-    releaseChunkMutex(db->procSlot);
+    //releaseChunkMutex(db->procSlot);
     return data;
 }
 
@@ -443,10 +467,33 @@ void Chunk::freeForVarSizeAllocator(void *ptr, int pslot)
     }
     VarSizeInfo *varInfo = (VarSizeInfo*)((char*)ptr- sizeof(VarSizeInfo));
     varInfo->isUsed_ = 0;
+    if(varInfo->size_ > (PAGE_SIZE - (sizeof(VarSizeInfo)+sizeof(PageInfo)))) 
+    {
+        PageInfo *pageInfo = (PageInfo*)((char*)varInfo - sizeof(PageInfo));
+        PageInfo *pInfo = (PageInfo*)firstPage_, *prev = (PageInfo*)firstPage_;
+        bool found = false;
+        while(!found)
+        {
+            if(NULL==pInfo) break;
+            if (pInfo == pageInfo) {found = true;  break; }
+            prev = pInfo;
+            pInfo = (PageInfo*)pInfo->nextPage_;
+        }
+        if (!found)
+        {
+             printError(ErrSysFatal,"Page %x not found in page list:Logical error", pageInfo );
+             return ;
+        }
+         if(curPage_== pageInfo) {curPage_ = prev ; }
+         pageInfo->isUsed_ = 0;
+         pageInfo->nextPageAfterMerge_ = NULL;
+         pageInfo->hasFreeSpace_ = 1;
+         prev->nextPage_ = pageInfo->nextPage_;
+    }
+    varInfo->isUsed_ = 0;
     printDebug(DM_VarAlloc,"chunkID:%d Unset isUsed for %x", chunkID_, varInfo);
     releaseChunkMutex(pslot);
     return;
-
 }
 
 void Chunk::freeForLargeAllocator(void *ptr, int pslot)
@@ -475,11 +522,17 @@ void Chunk::freeForLargeAllocator(void *ptr, int pslot)
         releaseChunkMutex(pslot);
         return ;
     }
-    prev->nextPage_ = pageInfo->nextPage_;
-    pageInfo->nextPageAfterMerge_ = NULL;
-    pageInfo->isUsed_ = 0;
-    os::memset(pageInfo,  0 , allocSize_);
-    pageInfo->hasFreeSpace_ = 1;
+    os::memset(((char*)pageInfo+sizeof(PageInfo)),  0 , allocSize_);
+    if(((PageInfo*)firstPage_)->nextPage_ != NULL){
+        pageInfo->isUsed_ = 0;
+        pageInfo->nextPageAfterMerge_ = NULL;
+        pageInfo->hasFreeSpace_ = 1;
+        if(pageInfo == firstPage_ && ((PageInfo*)firstPage_)->nextPage_ != NULL)
+           firstPage_ = pageInfo->nextPage_ ;
+        else 
+           prev->nextPage_ = pageInfo->nextPage_;
+    }
+
     releaseChunkMutex(pslot);
     return;
 }
