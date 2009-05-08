@@ -58,7 +58,7 @@ int main()
         stmt->setTimeStampParam(8,f8var);
         stmt->setIntParam(9,f9var);
         stmt->setLongLongParam(10,f10var);
-        stmt->setBinaryParam(11,f11var);
+        stmt->setBinaryParam(11,f11var, 6);
         rv = stmt->execute(rows);
         if(rv!=OK)break;
     	rv = con->commit();

@@ -55,7 +55,7 @@ int main()
         stmt->setTimeStampParam(8,f8var);
         stmt->setIntParam(9,f9var);
         stmt->setLongLongParam(10,f10var);
-        stmt->setBinaryParam(11,f11var);
+        stmt->setBinaryParam(11,f11var, 4);
         rv = stmt->execute(rows);
         if(rv!=OK)break;
     	rv = con->commit();
@@ -108,7 +108,7 @@ int main()
     stmt->setTimeStampParam(8,f8var1);
     stmt->setIntParam(9,f9var1);
     stmt->setLongLongParam(10,f10var1);
-    stmt->setBinaryParam(11,f11var1);
+    stmt->setBinaryParam(11,f11var1, 4);
     stmt->execute(rows);
     while(stmt->fetch()!=NULL) {
         printf("F1=%d | F2=%hd | F3=%s | F4=%f | F5=%f | DATE=%d-%d-%d | TIME=%d:%d:%d | TIMESTAMP=%d-%d-%d %d:%d:%d | F9=%d | F10=%lld",f1var,f2var,f3var,f4var,f5var,f6var.year(),f6var.month(),f6var.dayOfMonth(),f7var.hours(),f7var.minutes(),f7var.seconds(),f8var.year(),f8var.month(),f8var.dayOfMonth(),f8var.hours(),f8var.minutes(),f8var.seconds(),f9var,f10var);

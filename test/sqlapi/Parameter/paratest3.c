@@ -59,7 +59,7 @@ int main()
         stmt->setTimeStampParam(8,f8var);
         stmt->setIntParam(9,f9var);
         stmt->setLongLongParam(10,f10var);
-        stmt->setBinaryParam(11,f11var);
+        stmt->setBinaryParam(11,f11var, 6);
         rv = stmt->execute(rows);
         if(rv!=OK)break;
     	rv = con->commit();
@@ -101,7 +101,7 @@ int main()
         stmt->setStringParam(8,f3var1);
         stmt->setShortParam(9,f2var1);
         stmt->setIntParam(10,i);
-        stmt->setBinaryParam(11,f11var);
+        stmt->setBinaryParam(11,f11var, 6);
         rv = stmt->execute(rows);
         if(rv!=OK)break;
         rv = con->commit();
