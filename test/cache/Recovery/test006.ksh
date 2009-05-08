@@ -17,7 +17,7 @@ echo "create table t1(f1 int , f2 int,f3 int,f4 char(10),primary key(f1,f2));">$
 echo "create index ix2 on t1(f3,f4);">>$REL_PATH/t1.sql
 
 rm /tmp/csql.conf
-cp $CSQL_CONFIG_FILE/csql.conf /tmp
+cp $CSQL_CONFIG_FILE /tmp/csql.conf
 export CSQL_CONFIG_FILE=/tmp/csql.conf
 echo DSN=$DSN >> $CSQL_CONFIG_FILE
 echo CACHE_TABLE=true >> $CSQL_CONFIG_FILE
