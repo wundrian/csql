@@ -18,7 +18,7 @@ endif
 endif
 
 INCL= -I$(CSQL_INSTALL_ROOT)/include
-LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlsql -lcsql -lcsqlsqllog -lcsqlnw -lcacheload
+LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlsql -lcsql -lcsqlsqllog -lcsqlnw 
 
 TARGETS = \
 	sqlapiexample 	insert	update	delete
