@@ -65,3 +65,11 @@ CSQL- Version 2.3 - Beta
 6.Performance Fixes
 7.Wisconsin Benchmark
 8.User Manual updates
+
+CSQL- Version 2.5 - Beta
+-----------------------
+1.Auto increment Key
+2.x86_64 support
+3.Separate MMDB and Cache package
+4.Bug Fixes
+5.Documentation Updates
