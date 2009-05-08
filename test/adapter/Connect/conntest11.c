@@ -17,7 +17,7 @@ int main()
    AbsSqlStatement *stmt = SqlFactory :: createStatement(CSqlAdapter);
    stmt->setConnection(con);
    char statement[200];
-   strcpy(statement,"CREATE TABLE T1(F1 INT,F2 INT);");
+   strcpy(statement,"CREATE TABLE T1(F1 INT,F2 INT) engine=innodb;");
    
    int rows = 0;
    rv = stmt->prepare(statement);
