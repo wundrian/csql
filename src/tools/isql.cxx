@@ -13,6 +13,7 @@
  *   GNU General Public License for more details.                          *
  *                                                                         *
  ***************************************************************************/
+#include <os.h>
 #include<CSql.h>
 #include<DatabaseManagerImpl.h>
 #include <Statement.h>
@@ -33,10 +34,13 @@ STMT_TYPE stmtType = SELECT;
 FILE *fp;
 AbsSqlConnection *conn;
 AbsSqlStatement *stmt;
+AbsSqlStatement *aconStmt; //stmt object when autocommit is on
+List sqlStmtList;
 SqlApiImplType type = CSqlUnknown;
 bool gateway=false, silent=false;
 bool autocommitmode = true;
 bool network = false;
+bool firstPrepare = false;
 IsolationLevel isoLevel = READ_COMMITTED;
 void printHelp();
 bool getInput(bool);
@@ -53,6 +57,8 @@ void printUsage()
   
 }
 
+int getConnType(int opt);
+
 int main(int argc, char **argv)
 {
     char username[IDENTIFIER_LENGTH];
@@ -66,15 +72,19 @@ int main(int argc, char **argv)
     char filename[512];
     filename [0] ='\0';
     int c = 0, opt=0;
-    while ((c = getopt(argc, argv, "u:p:s:H:P:gS?")) != EOF) 
+    bool exclusive=false;
+    int connOpt = 0;
+    while ((c = getopt(argc, argv, "u:p:s:o:H:P:gXS?")) != EOF) 
     {
         switch (c)
         {
             case 'u' : strcpy(username , argv[optind - 1]); break;
             case 'p' : strcpy(password , argv[optind - 1]); break;
             case 's' : strcpy(filename , argv[optind - 1]); break;
+            case 'o' : { connOpt = atoi(argv[optind - 1]); break; }
             case '?' : { opt = 1; break; } //print help 
             case 'S' : { silent = true; break; } //silent 
+            case 'X' : { silent = true; exclusive = true; break; } //silent 
             case 'g' : { gateway = true; break; } //print help 
             case 'H' : { strcpy (hostname, argv[optind - 1]); 
                          network = true; break; }
@@ -112,22 +122,48 @@ int main(int argc, char **argv)
     }
     
     DbRetVal rv = OK;
-    if (network) {
-        if (gateway) type = CSqlNetworkGateway;
-        else type = CSqlNetwork;
-        conn = SqlFactory::createConnection(type);
-        SqlNwConnection *con = (SqlNwConnection *)conn;
-        con->setHost(hostname, atoi(port));
-    }
-    else {
-        if (gateway) type = CSqlGateway;
-        else type = CSql;  
-        conn = SqlFactory::createConnection(type);
+    if (connOpt) {
+        type = (SqlApiImplType) getConnType(connOpt);
+        conn = SqlFactory::createConnection((SqlApiImplType)type);
+        if(connOpt == 4 || connOpt == 5 || connOpt == 6) {
+            SqlNwConnection *con = (SqlNwConnection *)conn;
+            con->setHost("localhost", 5678);
+        }
+        else if (connOpt == 7) 
+            conn = SqlFactory::createConnection((SqlApiImplType)type);
+    } else {
+        if (network) {
+            if (gateway) type = CSqlNetworkGateway;
+            else type = CSqlNetwork;
+            conn = SqlFactory::createConnection(type);
+            SqlNwConnection *con = (SqlNwConnection *)conn;
+            con->setHost(hostname, atoi(port));
+        }
+        else {
+            if (gateway) type = CSqlGateway;
+            else {
+               // if (exclusive) type=CSqlDirect; else type = CSql;  
+            }
+            conn = SqlFactory::createConnection(type);
+        }
     }
     rv = conn->connect(username,password);
     if (rv != OK) return 1;
-    stmt = SqlFactory::createStatement(type);
-    stmt->setConnection(conn);
+    if (exclusive) {
+        SqlConnection *sCon = (SqlConnection*) conn;
+        //rv = sCon->getExclusiveLock();
+        if (rv != OK) {
+            conn->disconnect();
+            delete conn;
+            return 1;
+        }
+    }
+    aconStmt = SqlFactory::createStatement(type);
+    if (exclusive) {
+       SqlStatement *sqlStmt = (SqlStatement*)aconStmt;
+       //sqlStmt->setLoading(true);
+    }
+    aconStmt->setConnection(conn);
     //rv = conn->beginTrans(READ_COMMITTED, TSYNC);
     rv = conn->beginTrans();
     if (rv != OK) return 2;
@@ -141,7 +177,7 @@ int main(int argc, char **argv)
        fclose(fp);
     }
     conn->disconnect();
-    delete stmt;
+    delete aconStmt;
     delete conn;
     return 0;
 }
@@ -152,6 +188,13 @@ bool handleTransaction(char *st)
         strcasecmp (st, "commit;") == 0 )
     {
         conn->commit();
+        ListIterator it = sqlStmtList.getIterator();
+        while(it.hasElement()) {
+            stmt = (AbsSqlStatement *) it.nextElement();
+            stmt->free();
+            delete stmt;
+        }
+        sqlStmtList.reset();
         //conn->beginTrans(isoLevel, TSYNC);
         conn->beginTrans(isoLevel);
         return true;
@@ -160,6 +203,13 @@ bool handleTransaction(char *st)
         strcasecmp (st, "rollback;") == 0)
     {
         conn->rollback();
+        ListIterator it = sqlStmtList.getIterator();
+        while(it.hasElement()) {
+            stmt = (AbsSqlStatement *)it.nextElement();
+            stmt->free();
+            delete stmt;
+        }
+        sqlStmtList.reset();
         //conn->beginTrans(isoLevel, TSYNC);
         conn->beginTrans(isoLevel);
         return true;
@@ -212,7 +262,7 @@ bool handleEchoAndComment(char *st)
         return true;
     }else if (strcasecmp(st, "show tables;") == 0) {
       DbRetVal rv = OK;
-      List tableList = stmt->getAllTableNames(rv);
+      List tableList = aconStmt->getAllTableNames(rv);
       ListIterator iter = tableList.getIterator();
       Identifier *elem = NULL;
       int ret =0;
@@ -236,13 +286,16 @@ void printHelp()
     printf("CSQL Command List\n");
     printf("======================================================\n");
     printf("SHOW TABLES\n");
-    printf("SET AUTOCOMMIT ON|OFF\n");
-    printf("SET ISOLATION LEVEL UNCOMMITTED|COMMITTED|REPEATABLE\n");
-    printf("CREATE TABLE|INDEX ...\n");
+    printf("SET AUTOCOMMIT ON | OFF\n");
+    printf("COMMIT | ROLLBACK\n");
+    printf("SET ISOLATION LEVEL UNCOMMITTED | COMMITTED | REPEATABLE\n");
+    printf("CREATE TABLE | INDEX ...\n");
+    printf("DROP TABLE | INDEX ...\n");
     printf("INSERT ...\n");
     printf("UPDATE ...\n");
     printf("DELETE ...\n");
     printf("SELECT ...\n");
+    printf("QUIT\n");
     printf("======================================================\n");
 }
 void setStmtType(char *st)
@@ -258,8 +311,7 @@ char getQueryFromStdIn(char *buf)
 {
     char    c, *bufBegin=buf;
     int    ln, charCnt=0;
-/*
-    ln=1;
+    /*ln=1;
     printf("CSQL>");
     while( (c=(char ) getchar()) != EOF && c != ';')
     {
@@ -273,10 +325,11 @@ char getQueryFromStdIn(char *buf)
             *bufBegin ='\0';
 	    return 0;
 	}
+        printf("=%d=\n", c);
     }
     *buf++ = ';';
     *buf = '\0';
-*/
+    */
     strcpy(buf, "");
     char *line = readline("CSQL>");
     if (line) {strcpy(buf, line); add_history(line); }
@@ -323,18 +376,43 @@ bool getInput(bool fromFile)
     
     setStmtType(buf);
 
-    DbRetVal rv = stmt->prepare(buf);
-    if (rv != OK) 
-    {
-        printf("Statement prepare failed with error %d\n", rv); 
-        return true; 
+    DbRetVal rv;
+    if (autocommitmode) {
+        if (firstPrepare) aconStmt->free(); 
+        rv  = aconStmt->prepare(buf);
+        if (rv != OK) {
+            printf("Statement prepare failed with error %d\n", rv); 
+            return true; 
+        }
+        firstPrepare = true;
+        stmt=aconStmt;
+    }
+    else {
+        stmt = SqlFactory::createStatement(type);
+        stmt->setConnection(conn);
+        rv  = stmt->prepare(buf);
+        if (rv != OK) {
+            printf("Statement prepare failed with error %d\n", rv); 
+            return true; 
+        }
+        sqlStmtList.append(stmt);
     }
     int rows =0;
     rv = stmt->execute(rows);
     if (rv != OK) 
     {
         printf("Statement execute failed with error %d\n", rv);
-        stmt->free();
+        if (autocommitmode) {
+            conn->rollback();
+            aconStmt->free();
+            firstPrepare = false; //set this so that it does not free again
+            conn->beginTrans(isoLevel);
+        }
+        else {
+            stmt->free();
+            sqlStmtList.remove(stmt); 
+            delete stmt; stmt = NULL;
+        }
         return true; 
     }
     if (stmtType == OTHER)
@@ -367,13 +445,26 @@ bool getInput(bool fromFile)
         }
         stmt->close();
     }
-    stmt->free();
     if (autocommitmode)
     {
         conn->commit();
         //conn->beginTrans(isoLevel, TSYNC);
+        stmt->free();
+        firstPrepare = false; //set this so that it does not free again
         conn->beginTrans(isoLevel);
         return true;
     }
     return true;
+}
+
+int getConnType(int opt) 
+{
+    switch(opt) {
+		case 1: { printf("Local CSql\n"); return (int) CSql; }
+		case 2: { printf("Local Adapter\n"); return (int) CSqlAdapter; }
+		case 3: { printf("Local Gateway\n"); return (int) CSqlGateway; }
+		case 4: { printf("Network CSql\n");  return (int) CSqlNetwork; }
+		case 5: { printf("Network Adapter\n"); return (int) CSqlNetworkAdapter;}
+		case 6: { printf("Netwrok Gateway\n"); return (int) CSqlNetworkGateway;}
+    }
 }
