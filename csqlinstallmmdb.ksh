@@ -23,11 +23,13 @@ mv libcsql libcsql.so
 mv libcsqlsql libcsqlsql.so
 mv libcsqljdbc libcsqljdbc.so
 mv libcsqlnw libcsqlnw.so
+mv libcsqlsqlnw libcsqlsqlnw.so
 mv libcsqlsqllog libcsqlsqllog.so
 mv libcsqlodbc libcsqlodbc.so
 ln -s libcsqlodbc.so libcsqlodbc
 ln -s libcsqlsqllog.so libcsqlsqllog
 ln -s libcsqlnw.so libcsqlnw
+ln -s libcsqlsqlnw.so libcsqlsqlnw
 ln -s libcsqljdbc.so libcsqljdbc
 ln -s libcsqlsql.so libcsqlsql
 ln -s libcsql.so libcsql
