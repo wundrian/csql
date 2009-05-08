@@ -142,7 +142,9 @@ int main(int argc, char **argv)
         else {
             if (gateway) type = CSqlGateway;
             else {
-               // if (exclusive) type=CSqlDirect; else type = CSql;  
+               // if (exclusive) type=CSqlDirect; 
+               // else type = CSql;  
+               type = CSql;
             }
             conn = SqlFactory::createConnection(type);
         }
