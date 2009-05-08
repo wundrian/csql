@@ -28,6 +28,7 @@ mv libcsqlodbc libcsqlodbc.so
 mv libcsqlodbcadapter libcsqlodbcadapter.so
 mv libcsqlgw libcsqlgw.so
 mv libcacheload libcacheload.so
+mv libcsqlsqlnw libcsqlsqlnw.so
 ln -s libcsqlgw.so libcsqlgw
 ln -s libcsqlodbcadapter.so libcsqlodbcadapter
 ln -s libcsqlodbc.so libcsqlodbc
@@ -37,6 +38,7 @@ ln -s libcsqljdbc.so libcsqljdbc
 ln -s libcsqlsql.so libcsqlsql
 ln -s libcsql.so libcsql
 ln -s libcacheload.so libcacheload
+ln -s libcsqlsqlnw.so libcsqlsqlnw
 
 
 cp ${root_dir}/src/sql/Statement.h ${install_dir}/include
