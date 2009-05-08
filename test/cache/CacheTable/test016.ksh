@@ -20,6 +20,7 @@ fi
 
 cp $CSQL_CONFIG_FILE /tmp/csql.conf
 echo DSN=$DSN >>$CSQL_CONFIG_FILE
+echo CACHE_TABLE=true >>$CSQL_CONFIG_FILE
 # create table t1,t2 in target DB.
 isql $DSN < ${REL_PATH}/create.sql >/dev/null 2>&1
 if [ $? -ne 0 ]

@@ -11,7 +11,8 @@ if [ -s "$input" ]
 then
     REL_PATH=${PWD}/cache/CacheTable
 fi
-
+cp $CSQL_CONFIG_FILE /tmp/csql.conf
+echo CACHE_TABLE=true >>$CSQL_CONFIG_FILE
 # create table t5,t6 in target DB.
 isql $DSN < ${REL_PATH}/createt5.sql >/dev/null 2>&1
 if [ $? -ne 0 ]

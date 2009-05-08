@@ -16,7 +16,8 @@ if [ -s "$input" ]
  then
  REL_PATH=${PWD}/cache/CacheTable
 fi
-
+cp $CSQL_CONFIG_FILE /tmp/csql.conf
+echo CACHE_TABLE=true >>$CSQL_CONFIG_FILE
 isql  $DSN < ${REL_PATH}/fmodeinsert.sql >/dev/null 2>&1
 if [ $? -ne 0 ]
  then

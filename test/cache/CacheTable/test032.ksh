@@ -12,7 +12,8 @@ if [ -s "$input" ]
 then
     REL_PATH=${PWD}/cache/CacheTable
 fi
-
+cp $CSQL_CONFIG_FILE /tmp/csql.conf
+echo CACHE_TABLE=true >>$CSQL_CONFIG_FILE
 echo "create table t1 (f1 int,f2 char(10),primary key(f1));" >${REL_PATH}/t1create.sql
 
 for((a=1;a<=5;a++))

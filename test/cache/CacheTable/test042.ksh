@@ -18,7 +18,7 @@ rm -f /tmp/csql1.conf
 cp $REL_PATH/csql1.conf /tmp
 export CSQL_CONFIG_FILE=/tmp/csql1.conf
 echo DSN=$DSN >>$CSQL_CONFIG_FILE
-
+echo CACHE_TABLE=true >>$CSQL_CONFIG_FILE
 echo "create table t1(f1 int unique,f2 char(12),f3 smallint , f4 bigint,primary key(f2));">$REL_PATH/t1.sql
 for((a=1;a<10;a++))
 do

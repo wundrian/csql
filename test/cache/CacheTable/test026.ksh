@@ -19,6 +19,8 @@ if [ -s "$input" ]
 fi
 
 # create table t1,t2 in target DB.
+cp $CSQL_CONFIG_FILE /tmp/csql.conf
+echo CACHE_TABLE=true >>$CSQL_CONFIG_FILE
 isql $DSN < ${REL_PATH}/fmodecreate.sql >/dev/null 2>&1
 if [ $? -ne 0 ]
 then

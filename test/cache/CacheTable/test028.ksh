@@ -13,7 +13,8 @@ if [ -s "$input" ]
 then
 REL_PATH=${PWD}/cache/CacheTable
 fi
-
+cp $CSQL_CONFIG_FILE /tmp/csql.conf
+echo CACHE_TABLE=true >>$CSQL_CONFIG_FILE
 isql $DSN < ${REL_PATH}/fmodeinsert.sql >/dev/null 2>&1
 
 $CSQL_INSTALL_ROOT/bin/csql -s ${REL_PATH}/fcsqlinput.sql > /dev/null 2>&1

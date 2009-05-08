@@ -25,6 +25,7 @@ fi
 
 cp $CSQL_CONFIG_FILE /tmp/csql.conf
 echo DSN=$DSN >>$CSQL_CONFIG_FILE
+echo CACHE_TABLE=true >>$CSQL_CONFIG_FILE
 isql $DSN < ${REL_PATH}/inputtest4.sql >/dev/null 2>&1
 
 rm -f /tmp/csql/csqltable.conf /tmp/csql/csql.db
