@@ -59,7 +59,7 @@ Case 1: With -D chunk option with empty database
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > FieldTableId </ChunkName> 
                 <TotalDataNodes> 0 </TotalDataNodes> 
-                <SizeOfDataNodes> 132 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 144 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 14 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
@@ -156,7 +156,7 @@ Case 2: With -D chunk  option after table creation:
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > FieldTableId </ChunkName> 
                 <TotalDataNodes> 2 </TotalDataNodes> 
-                <SizeOfDataNodes> 132 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 144 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 14 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
@@ -250,7 +250,7 @@ Case 3: With -D chunk  option after drop t1 :
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > FieldTableId </ChunkName> 
                 <TotalDataNodes> 0 </TotalDataNodes> 
-                <SizeOfDataNodes> 132 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 144 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 14 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
