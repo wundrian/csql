@@ -169,7 +169,7 @@ DbRetVal verifyMismatchingRecords(const char *tblName, int option)
         pkFldVal->inTrgtDb = true;
         valListInCsql.append(pkFldVal);
     }    
-    table->close();
+    table->closeScan();
     conn.commit();
     int trgtDbVal = 0;
     int rows = 0;
