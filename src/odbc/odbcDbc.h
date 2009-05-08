@@ -56,7 +56,7 @@ class CSqlOdbcDbc
         SQLRETURN chkStateForSQLDisconnect( void );
         SQLRETURN chkStateForSQLEndTran( void );
         SQLRETURN chkStateForSQLSetConnectAttr( void );
-
+        
         // ODBC API's
         static SQLRETURN SQLAllocHandle(
             SQLHANDLE   inputHandle,    // IN
@@ -89,7 +89,16 @@ class CSqlOdbcDbc
             SQLINTEGER bufferLength,    // IN
             SQLINTEGER *stringLength);  // OUT
             
+        SQLRETURN SQLGetInfo(
+            SQLUSMALLINT     InfoType,
+            SQLPOINTER     InfoValuePtr,
+            SQLSMALLINT     BufferLength,
+            SQLSMALLINT *     StringLengthPtr);
+
+
+
         // Others
+        char *getFromUrl(char *url,char *name);
 };
 
 #endif // _ODBC_DBC_H_

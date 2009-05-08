@@ -118,15 +118,36 @@ SQLRETURN SQLDriverConnect(
      SQLSMALLINT *     StringLength2Ptr,
      SQLUSMALLINT     DriverCompletion)
 {
-    printf("Connection string is %s\n", InConnectionString);
     // Validate handle
     if( isValidHandle( ConnectionHandle, SQL_HANDLE_DBC ) != SQL_SUCCESS )
                  return( SQL_INVALID_HANDLE );
     
-    return( ((CSqlOdbcDbc*) ConnectionHandle)->SQLConnect((SQLCHAR*)"a", 
-                      (SQLSMALLINT)strlen("a"), (SQLCHAR*)"root", (SQLSMALLINT)strlen("root"), 
+    return( ((CSqlOdbcDbc*) ConnectionHandle)->SQLConnect(InConnectionString, 
+                      SQL_NTS, (SQLCHAR*)"root", (SQLSMALLINT)strlen("root"), 
                       (SQLCHAR*)"manager", (SQLSMALLINT)strlen("manager")) );
    
+}
+
+char * CSqlOdbcDbc::getFromUrl(char *url,char *name)
+{
+    char *token=NULL, *subtoken=NULL;
+    char *saveptr1, *saveptr2,*str1,*str2;
+    for ( str1 = url; ; str1 = NULL) {
+        token = strtok_r(str1, ";" , &saveptr1);
+        if (token == NULL)
+            break;
+      //  printf("TOKEN: %s\n",token);
+        str2 = token; 
+        subtoken = strtok_r(str2, "=", &saveptr2);
+        //printf(" --> %s\n", subtoken);
+        if (subtoken != NULL){
+            if(strcasecmp(subtoken,name)==0)
+            {
+                return strtok_r(NULL,"=",&saveptr2);
+            }
+        }
+    }
+    return NULL;
 }
 
 SQLRETURN SQLConnect(           // All param's are IN
@@ -156,6 +177,7 @@ SQLRETURN CSqlOdbcDbc::SQLConnect(           // All param's are IN
 {
     int rc;
     char str[IDENTIFIER_LENGTH];
+    char *dsn=NULL;
     char *hostName = NULL;
     char *portNo = NULL;
     char *connMode = NULL;
@@ -176,39 +198,52 @@ SQLRETURN CSqlOdbcDbc::SQLConnect(           // All param's are IN
         err_.set( ERROR_CONNINUSE);
         return ( SQL_ERROR );
     }
-
+    
     strncpy(str,(char *) serverName, IDENTIFIER_LENGTH);
-    connMode = strtok(str, ";");
-    hostName = strtok(NULL, ";");
-    portNo = strtok(NULL, ";");
-    if ((strcasecmp((char*)connMode, "Network") == 0) && (hostName == NULL || portNo == NULL)) return ( SQL_ERROR );
-    if (strcasecmp((char*)connMode, "Adapter") == 0)
-    {
-        fsqlConn_ = SqlFactory::createConnection(CSqlAdapter);
-        mode_ = 2;
-    }else if (strcasecmp((char*)connMode, "Gateway") == 0){
-        fsqlConn_ = SqlFactory::createConnection(CSqlGateway);
-        mode_ = 3;
-    } else if (strcasecmp((char*)connMode, "Network") == 0) {
-        fsqlConn_ = SqlFactory::createConnection(CSqlNetwork);
-        SqlNwConnection *con = (SqlNwConnection *)fsqlConn_;
-        con->setHost(hostName, atoi(portNo));
-        mode_ = 4;
-    } else if (strcasecmp((char*)connMode, "NetworkAdapter") == 0) {
-        fsqlConn_ = SqlFactory::createConnection(CSqlNetworkAdapter);
-        SqlNwConnection *con = (SqlNwConnection *)fsqlConn_;
-        con->setHost(hostName, atoi(portNo));
-        mode_ = 5;
-    } else if (strcasecmp((char*)connMode, "NetworkGateway") == 0) {     
-        fsqlConn_ = SqlFactory::createConnection(CSqlNetworkGateway);
-        SqlNwConnection *con = (SqlNwConnection *)fsqlConn_;
-        con->setHost(hostName, atoi(portNo));
-        mode_ = 6;
+    dsn = getFromUrl(str,"DSN");
+    strncpy(str,(char *) serverName, IDENTIFIER_LENGTH);
+    connMode = getFromUrl(str,"MODE");
+    strncpy(str,(char *) serverName, IDENTIFIER_LENGTH);
+    hostName = getFromUrl(str,"SERVER");
+    strncpy(str,(char *) serverName, IDENTIFIER_LENGTH);
+    portNo = getFromUrl(str,"PORT");
+    //printf("Mode=%s , hostName=%s port=%s\n",connMode,hostName,portNo);
+    if(NULL != connMode){ 
+        if (hostName == NULL || portNo == NULL) return ( SQL_ERROR );
+        if (strcasecmp((char*)hostName, "localhost") == 0 ){
+             if (strcasecmp((char*)connMode, "Gateway") == 0){
+                 fsqlConn_ = SqlFactory::createConnection(CSqlGateway);
+                 mode_ = 3;
+             }else if (strcasecmp((char*)connMode, "Adapter") == 0){
+                 fsqlConn_ = SqlFactory::createConnection(CSqlAdapter);
+                 mode_ = 2;
+             }else if (strcasecmp((char*)connMode, "csql") == 0){
+                 fsqlConn_ = SqlFactory::createConnection(CSql);
+                 mode_ = 1;
+             }else return ( SQL_ERROR );
+        } else {
+             if (strcasecmp((char*)connMode, "Gateway") == 0){
+                 fsqlConn_ = SqlFactory::createConnection(CSqlNetworkGateway);
+                 SqlNwConnection *con = (SqlNwConnection *)fsqlConn_;
+                 con->setHost(hostName, atoi(portNo));
+                 mode_ = 6;
+             }else if (strcasecmp((char*)connMode, "Adapter") == 0){
+                 fsqlConn_ = SqlFactory::createConnection(CSqlNetworkAdapter);
+                 SqlNwConnection *con = (SqlNwConnection *)fsqlConn_;
+                 con->setHost(hostName, atoi(portNo));
+                 mode_ = 5;
+             }else if (strcasecmp((char*)connMode, "csql") == 0){
+                 fsqlConn_ = SqlFactory::createConnection(CSqlNetwork);
+                 SqlNwConnection *con = (SqlNwConnection *)fsqlConn_;
+                 con->setHost(hostName, atoi(portNo));
+                 mode_ = 4;
+             }else return ( SQL_ERROR );
+
+        }
     }else{
         fsqlConn_ = SqlFactory::createConnection(CSql);
         mode_ = 1;
     }
-
     rc = fsqlConn_->connect( (char*) user, (char*) pass );
     if( rc != OK )
     {
@@ -229,6 +264,7 @@ SQLRETURN CSqlOdbcDbc::SQLConnect(           // All param's are IN
 
     return( SQL_SUCCESS );
 }
+
 
 SQLRETURN SQLDisconnect(
     SQLHDBC ConnectionHandle)   // IN
@@ -471,3 +507,27 @@ SQLRETURN CSqlOdbcDbc::SQLGetConnectAttr(
 
     return( SQL_SUCCESS );
 }
+
+SQLRETURN SQLGetInfo(
+     SQLHDBC     ConnectionHandle,
+     SQLUSMALLINT     InfoType,
+     SQLPOINTER     InfoValuePtr,
+     SQLSMALLINT     BufferLength,
+     SQLSMALLINT *     StringLengthPtr)
+{
+   if( isValidHandle( ConnectionHandle, SQL_HANDLE_DBC ) != SQL_SUCCESS )
+        return( SQL_INVALID_HANDLE );
+
+   return( ((CSqlOdbcDbc*)ConnectionHandle)->SQLGetInfo( InfoType,InfoValuePtr,BufferLength,StringLengthPtr ) );
+
+}
+
+SQLRETURN CSqlOdbcDbc::SQLGetInfo(
+     SQLUSMALLINT     InfoType,
+     SQLPOINTER     InfoValuePtr,
+     SQLSMALLINT     BufferLength,
+     SQLSMALLINT *     StringLengthPtr)
+{
+     return (SQL_SUCCESS);
+}
+
