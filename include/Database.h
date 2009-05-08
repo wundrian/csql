@@ -157,6 +157,7 @@ class Database
     bool isValidAddress(void *ptr);
     friend class DatabaseManagerImpl;
     friend class Table;
+    friend class HashIndex;
 
 };
 

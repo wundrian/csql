@@ -252,22 +252,40 @@ DbRetVal Transaction::applyUndoLogs(Database *sysdb)
         switch(logInfo->opType_)
         {
                 case InsertOperation:
-                *((int*)(logInfo->ptrToTuple_) - 1) = 0;
-                //May memcpy is not needed as no one will update this
-                //as lock is taken on this tuple
-                os::memcpy(logInfo->ptrToTuple_, (char*) logInfo +
+                {
+                 int *isUsed = ((int*)(logInfo->ptrToTuple_) - 1);
+                   if (*isUsed == 0) {
+                      printError(ErrSysFatal, "Fatal: Row is already not in use");
+                   }
+                   *isUsed = 0;
+                   //May memcpy is not needed as no one will update this
+                   //as lock is taken on this tuple
+                   os::memcpy(logInfo->ptrToTuple_, (char*) logInfo +
                             sizeof(UndoLogInfo), logInfo->size_);
+                   break;
+                }
                 break;
                 case DeleteOperation:
-                *((int*)(logInfo->ptrToTuple_) - 1) = 1;
-                os::memcpy(logInfo->ptrToTuple_, (char*) logInfo +
+                {
+                   int *isUsed = ((int*)(logInfo->ptrToTuple_) - 1);
+                   if (*isUsed == 1) {
+                       printError(ErrSysFatal, "Fatal: Row is already in use");
+                   }
+                   *isUsed = 1;
+                   os::memcpy(logInfo->ptrToTuple_, (char*) logInfo +
                             sizeof(UndoLogInfo), logInfo->size_);
-                break;
+                   break;
+                }
                 case UpdateOperation:
-                os::memcpy(logInfo->ptrToTuple_, (char*) logInfo +
+                {
+                   int *isUsed = ((int*)(logInfo->ptrToTuple_) - 1);
+                   if (*isUsed == 0) {
+                       printError(ErrSysFatal, "Fatal: Row is not in use");
+                   }
+                   os::memcpy(logInfo->ptrToTuple_, (char*) logInfo +
                             sizeof(UndoLogInfo), logInfo->size_);
-                break;
-
+                   break;
+                }
                 case InsertHashIndexOperation:
                 HashIndex::deleteLogicalUndoLog(sysdb, (char *)logInfo 
                                                     + sizeof(UndoLogInfo));

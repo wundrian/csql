@@ -61,13 +61,13 @@ class UndoLogInfo
 class HashUndoLogInfo
 {
     public:
-    void *tblPtr_;
+    void *metaData_;
     void *tuple_;
     void *keyPtr_;
-    void *indexPtr_;
+    void *hChunk_;
     void *bucket_;
     HashUndoLogInfo()
-    { tblPtr_ = tuple_ = keyPtr_ = indexPtr_ = bucket_ = NULL; }
+    { metaData_ = tuple_ = keyPtr_ = hChunk_ = bucket_ = NULL; }
 };
 
 class Transaction
