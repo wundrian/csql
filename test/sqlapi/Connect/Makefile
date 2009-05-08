@@ -18,7 +18,7 @@ endif
 endif
 
 INCL=  -I$(CSQL_INSTALL_ROOT)/install/include -I../../../include
-LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlsql -lcsql -lcsqlsqllog -lcsqlnw -lcacheload -lcsqlsqlnw
+LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlsql -lcsql -lcsqlsqllog -lcsqlnw -lcsqlsqlnw
 
 TARGETS = \
 	test001 test001n\
