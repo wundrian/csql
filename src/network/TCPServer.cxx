@@ -17,6 +17,7 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
+#include <os.h>
 #include <CSql.h>
 #include <Network.h>
 #include <SqlNetworkHandler.h>
@@ -81,6 +82,7 @@ DbRetVal TCPServer::handleClient()
        fd_set fdset; 
        struct timeval timeout;
        SqlNetworkHandler handler;
+       handler.sockfd = clientfd;
        PacketHeader header;
        while(true) {
            FD_ZERO(&fdset);
@@ -101,8 +103,15 @@ DbRetVal TCPServer::handleClient()
                if (header.packetType != SQL_NW_PKT_DISCONNECT && 
                    header.packetType != SQL_NW_PKT_COMMIT     &&
                    header.packetType != SQL_NW_PKT_ROLLBACK   &&
+                   header.packetType != SQL_NW_PKT_FETCH      && 
                    header.packetType != SQL_NW_PKT_SHOWTABLES )
                {
+                   int dummy=0;
+                   numbytes = os::send(clientfd, &dummy , sizeof(int), 0);
+                   if (numbytes == -1) {
+                       printError(ErrOS, "Error writing to socket\n");
+                       return ErrOS;
+                   }
                    buffer = (char*) malloc(header.packetLength);
                    numbytes = os::recv(clientfd,buffer,header.packetLength,0);
                    if (numbytes == -1)
@@ -112,6 +121,10 @@ DbRetVal TCPServer::handleClient()
                    }
                }
                ResponsePacket *rpkt = (ResponsePacket *) handler.process(header, buffer);
+               int params=0;
+               int proj=0;
+               NetworkStmt *stmt=NULL;
+               if (rpkt != NULL) {
                numbytes = os::send(clientfd, rpkt, sizeof(ResponsePacket), 0);
                if (numbytes == -1)
                {
@@ -121,9 +134,9 @@ DbRetVal TCPServer::handleClient()
                char *ptr = (char *)&rpkt->retVal;
                if (*ptr==0) continue;
                if (*(ptr + 1)  == 1) continue; // for end of fetch
-               NetworkStmt *stmt=NULL;
-               int params =  *(ptr + 2);
-               int proj = *(ptr + 3);  
+               params =  *(ptr + 2);
+               proj = *(ptr + 3);  
+               }//new if added
                if ((header.packetType == SQL_NW_PKT_PREPARE && params != 0) ||
                    (header.packetType == SQL_NW_PKT_PREPARE && proj != 0)) {
                    if (params) {     
@@ -166,41 +179,22 @@ DbRetVal TCPServer::handleClient()
                        }
                    }
                }   
-               if (header.packetType == SQL_NW_PKT_FETCH) {
-                   SqlPacketResultSet *rspkt = new SqlPacketResultSet();
-                   rspkt->stmtID = rpkt->stmtID;
-                   ListIterator stmtIter = SqlNetworkHandler::stmtList.getIterator();
-                   while (stmtIter.hasElement()) {
-                       stmt = (NetworkStmt*) stmtIter.nextElement();
-                       if (stmt->stmtID == rspkt->stmtID) break;
-                   }
-                   rspkt->noProjs = stmt->projList.size();
-                   rspkt->setProjList(stmt->projList);
-                   rspkt->marshall();
-                   if (rv != OK) { printf("marshall failed\n"); }
-                   rv = send(SQL_NW_PKT_RESULT_SET, rspkt->getMarshalledBuffer(), rspkt->getBufferSize());
-                   if (rv != OK) {
-                       printf("Error in sending the metadata to the client\n");
-                       exit(1);
-                   }
-               }    
                if (header.packetType == SQL_NW_PKT_SHOWTABLES) {
                    SqlPacketShowTables *shTblPkt = new SqlPacketShowTables();
-                   shTblPkt->stmtID = rpkt->stmtID;
                    shTblPkt->numOfTables = rpkt->rows;
-                   ListIterator stmtIter = SqlNetworkHandler::stmtList.getIterator();
-                   while (stmtIter.hasElement()) {
-                       stmt = (NetworkStmt*) stmtIter.nextElement();
-                       if (stmt->stmtID == shTblPkt->stmtID) break;
-                   }
                    rv = shTblPkt->marshall(); 
                    if (rv != OK) { printf("marshall failed\n"); }
+                   ListIterator tblIter = 
+                       SqlNetworkHandler::tableNameList.getIterator();
+                   while (tblIter.hasElement()) delete tblIter.nextElement();
+                   SqlNetworkHandler::tableNameList.reset();
+
                    rv = send(SQL_NW_PKT_SHOWTABLES, shTblPkt->getMarshalledBuffer(), shTblPkt->getBufferSize());
                    if (rv != OK) {
                        printf("Error in sending the metadata to the client\n");
                        exit(1);
                    }
-               } 
+               }
                if (header.packetType == SQL_NW_PKT_DISCONNECT) { 
                    exit(0); 
                }
@@ -216,13 +210,13 @@ DbRetVal TCPServer::handleClient()
 DbRetVal TCPServer::send(NetworkPacketType type, char *buf, int len)
 {
     DbRetVal rv = OK;
-    void* totalBuffer = malloc(sizeof(PacketHeader)+ len);
+    //void* totalBuffer = malloc(sizeof(PacketHeader)+ len);
     PacketHeader *hdr=  new PacketHeader();
     hdr->packetType = type;
     hdr->packetLength = len;
     hdr->srcNetworkID = 0;//networkid;
     hdr->version = 1;
-    memcpy(((char*)totalBuffer) + sizeof(PacketHeader) , buf, len);
+    //memcpy(((char*)totalBuffer) + sizeof(PacketHeader) , buf, len);
     int numbytes=0;
     if ((numbytes=os::send(clientfd, hdr, sizeof(PacketHeader), 0)) == -1) {
         printError(ErrOS, "Unable to send the packet\n");
@@ -234,6 +228,6 @@ DbRetVal TCPServer::send(NetworkPacketType type, char *buf, int len)
         return ErrOS;
     }
 //    printf("Sent bytes %d\n", numbytes);
-    free(totalBuffer);
+    //free(totalBuffer);
     return rv;
 }

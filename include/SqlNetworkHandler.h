@@ -28,18 +28,20 @@ class SqlNetworkHandler
 
 
     DbRetVal applyExecPackets(List sList, List pList);
-    void setParamValues(AbsSqlStatement *stmt, int parampos, DataType type,
-                        int length, char *value);
     public:
+    static void setParamValues(AbsSqlStatement *stmt, int parampos, DataType type, int length, char *value);
     static List stmtList;
+    static List tableNameList;
     static AbsSqlConnection *conn;
     static SqlApiImplType type;
     static int stmtID;
+    static int sockfd;
+    void fillErrorString(ResponsePacket *rpkt);
     void *process(PacketHeader &header, char *buffer);
     void * processSqlConnect(PacketHeader &header, char *buffer);
     void * processSqlPrepare(PacketHeader &header, char *buffer);
     void * processSqlExecute(PacketHeader &header, char *buffer);
-    void * processSqlFetch(PacketHeader &header, char *buffer);
+    void * processSqlFetch(PacketHeader &header);
     void * processSqlFree(PacketHeader &header, char *buffer);
     void * processSqlCommit(PacketHeader &header, char *buffer);
     void * processSqlRollback(PacketHeader &header, char *buffer);
@@ -47,8 +49,10 @@ class SqlNetworkHandler
     void * processCommit(PacketHeader &header, char *buffer);
     void * processFree(PacketHeader &header, char *buffer);
     void * processSqlShowTables(PacketHeader &header, char *buffer);
-    AbsSqlConnection *createConnection(SqlApiImplType type);   
-    AbsSqlStatement *createStatement(SqlApiImplType type);   
+    void * processSqlIsTablePresent(PacketHeader &header, char *buffer);
+    void * processSqlLoadRecords(PacketHeader &header, char *buffer);
+    static AbsSqlConnection *createConnection(SqlApiImplType type);   
+    static AbsSqlStatement *createStatement(SqlApiImplType type);   
     
 };
 

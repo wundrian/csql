@@ -287,15 +287,21 @@ void SqlGwStatement::setTimeStampParam(int paramPos, TimeStamp value)
     if (innerStmt && shouldCSqlHandle()) innerStmt->setTimeStampParam(paramPos,value);
     return;
 }
-void SqlGwStatement::setBinaryParam(int paramPos, void *value)
+void SqlGwStatement::setBinaryParam(int paramPos, void *value, int length)
 {
-    if (adapter && shouldAdapterHandle()) adapter->setBinaryParam(paramPos, value);
-    if (innerStmt && shouldCSqlHandle()) innerStmt->setBinaryParam(paramPos,value);
+    if (adapter && shouldAdapterHandle()) adapter->setBinaryParam(paramPos, value, length);
+    if (innerStmt && shouldCSqlHandle()) innerStmt->setBinaryParam(paramPos,value, length);
 }
 bool SqlGwStatement::isFldNull(int pos)
 {
     if (adapter && shouldAdapterHandle()) return adapter->isFldNull(pos);
     if (innerStmt && shouldCSqlHandle()) return innerStmt->isFldNull(pos);
+
+}
+bool SqlGwStatement::isFldNull(char *name)
+{
+    if (adapter && shouldAdapterHandle()) return adapter->isFldNull(name);
+    if (innerStmt && shouldCSqlHandle()) return innerStmt->isFldNull(name);
 
 }
 void SqlGwStatement::setNull(int pos)

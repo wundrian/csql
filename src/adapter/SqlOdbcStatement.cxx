@@ -635,7 +635,7 @@ void SqlOdbcStatement::setTimeStampParam(int paramPos, TimeStamp value)
     //*(TimeStamp*)(bindField->value) = value;
     AllDataType::convertToString(bindField->value, &value, typeTimeStamp);
 }
-void SqlOdbcStatement::setBinaryParam(int paramPos, void *value)
+void SqlOdbcStatement::setBinaryParam(int paramPos, void *value, int length)
 {
     if (!isPrepared) return;
 	BindSqlField *bindField = (BindSqlField*) paramList.get(paramPos);
@@ -668,6 +668,27 @@ bool SqlOdbcStatement::isFldNull(int pos)
     else
         return false;
 }
+
+bool SqlOdbcStatement::isFldNull(char *name)
+{
+    ListIterator iter = bindList.getIterator();
+    BindSqlProjectField *bindField = NULL;
+    int pos=1;
+    while (iter.hasElement())
+    {
+        bindField = (BindSqlProjectField*)iter.nextElement();
+        if(strcmp(name,bindField->fName)==0)
+        {
+            break;
+        }
+        pos++;
+    }
+    if( len[pos] == SQL_NULL_DATA )
+        return true;
+    else
+        return false;
+}
+
 void SqlOdbcStatement::setNull(int pos)
 {
     len[pos] = SQL_NULL_DATA ;

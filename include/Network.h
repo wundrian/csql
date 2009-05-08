@@ -60,6 +60,7 @@ class ResponsePacket
     { stmtID = 0; retVal = 0; isSelect = false; rows=0; }
     ~ResponsePacket() { }
     int retVal; // will include for fetch end flag, params flag, proj flag
+    DbRetVal errRetVal;
     int stmtID;
     int rows;
     bool isSelect;
@@ -80,6 +81,8 @@ class NetworkClient {
     bool cacheClient;
 
     public:
+    virtual DbRetVal send( NetworkPacketType type) =0;
+    virtual DbRetVal send( NetworkPacketType type, int stmtid)=0;
     virtual DbRetVal send( NetworkPacketType type, char *buf, int len)=0;
     virtual DbRetVal receive()=0;
     virtual DbRetVal connect()=0;
@@ -107,6 +110,8 @@ class UDPClient : public NetworkClient{
     struct sockaddr_in srvAddr;
     struct sockaddr_in fromAddr;
     UDPClient(){ isConnectedFlag =false; cacheClient = false;}
+    DbRetVal send(NetworkPacketType type);
+    DbRetVal send(NetworkPacketType type,int stmtid);
     DbRetVal send(NetworkPacketType type, char *buf, int len);
     DbRetVal receive();
     DbRetVal connect();
@@ -114,12 +119,16 @@ class UDPClient : public NetworkClient{
     void * getResponsePacket() { return NULL; }
     ~UDPClient();
 };
+struct PacketHeader;
 class TCPClient : public NetworkClient{
     public:
     int sockfd;
     struct sockaddr_in srvAddr;
     ResponsePacket *respPkt;
-    TCPClient(){ isConnectedFlag =false; cacheClient = false; respPkt = new ResponsePacket(); }
+    PacketHeader *pktHdr;
+    TCPClient();
+    DbRetVal send(NetworkPacketType type);
+    DbRetVal send(NetworkPacketType type, int stmtid);
     DbRetVal send(NetworkPacketType type, char *buf, int len);
     DbRetVal receive();
     DbRetVal connect();
@@ -169,14 +178,15 @@ class PacketHeader
     int packetType;
     int packetLength;
     int srcNetworkID;
+    int stmtID;
     int version;
 };
-class SqlPacketHeader
+/*class SqlPacketHeader
 {
     public:
     int packetType;
     int packetLength;
-};
+};*/
 class BasePacket{
     protected:
     //TOTOD:: bool encrypt;
@@ -292,20 +302,23 @@ class SqlPacketPrepare : public BasePacket
 class SqlPacketExecute : public BasePacket
 {
     public:
-    SqlPacketExecute() { buffer=NULL; bufferSize =0; pktType = SQL_NW_PKT_EXECUTE;}
-    ~SqlPacketExecute() { free(buffer); bufferSize = 0; buffer = NULL; paramValues = NULL; noParams = 0; }
+    SqlPacketExecute();// { buffer=NULL; bufferSize =0; pktType = SQL_NW_PKT_EXECUTE;}
+    ~SqlPacketExecute();// { free(buffer); bufferSize = 0; buffer = NULL; paramValues = NULL; noParams = 0; }
     //TODO::need to free paramvalues based on marshall or unmarshall
 
     int stmtID;
     int noParams;
+    char *nullInfo;
     char **paramValues;
 
     List paramList;
     List stmtList;
+    char *localBuf[10]; //to store paramValues if noParams <10
 
     void setStatementList(List stmtlist);
     void setParams(List list);
-
+    void setNullInfo(char *nInfo) { nullInfo = nInfo; } 
+    char *getNullInfo() { return nullInfo; } 
     DbRetVal marshall();
     DbRetVal unmarshall();
 };
@@ -362,13 +375,18 @@ class SqlPacketFree : public BasePacket
 class SqlPacketResultSet : public BasePacket
 {
     public:
-    SqlPacketResultSet() { buffer=NULL; bufferSize = 0; noProjs = 0;
-                       projValues=NULL; pktType = SQL_NW_PKT_RESULT_SET; }
-    ~SqlPacketResultSet() { free(buffer); bufferSize = 0; buffer = NULL; }
-    int stmtID;
+    SqlPacketResultSet() { buffer=NULL; bufferSize = 0; noProjs = 0; 
+                           nullInfo = NULL; projValues=NULL; 
+                                           pktType = SQL_NW_PKT_RESULT_SET; }
+    ~SqlPacketResultSet() { free(buffer); bufferSize = 0; buffer = NULL; 
+                                                           nullInfo = NULL; }
+    int hasData;
     int noProjs;
+    int nullInfoLen;
+    void *nullInfo;
     char **projValues;
     List projList;
+    void setNullInfo(char *info){ nullInfo = info; }
     void setProjList(List list);
     DbRetVal marshall();
     DbRetVal unmarshall();
@@ -380,7 +398,6 @@ class SqlPacketShowTables : public BasePacket
     SqlPacketShowTables() { buffer = NULL; bufferSize = 0; data = NULL;
                             pktType= SQL_NW_PKT_SHOWTABLES; }
     ~SqlPacketShowTables() { free(buffer); bufferSize = 0; buffer = NULL; }
-    int stmtID;
     int numOfTables;
     void *data;
     DbRetVal marshall();

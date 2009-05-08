@@ -17,6 +17,7 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
+#include <os.h>
 #include <SqlNetworkHandler.h>
 #include <AbsSqlConnection.h>
 #include <SqlConnection.h>
@@ -28,9 +29,11 @@
 #include <Parser.h>
 
 List SqlNetworkHandler::stmtList;
+List SqlNetworkHandler::tableNameList;
 AbsSqlConnection* SqlNetworkHandler::conn;
 SqlApiImplType SqlNetworkHandler::type;
 int SqlNetworkHandler::stmtID;
+int SqlNetworkHandler::sockfd;
 
 void *SqlNetworkHandler::process(PacketHeader &header, char *buffer)
 {
@@ -55,7 +58,7 @@ void *SqlNetworkHandler::process(PacketHeader &header, char *buffer)
             return processSqlExecute(header, buffer);
             break;
         case SQL_NW_PKT_FETCH:
-            return processSqlFetch(header, buffer);
+            return processSqlFetch(header);
             break;
         case SQL_NW_PKT_COMMIT:
             return processSqlCommit(header, buffer);
@@ -94,9 +97,9 @@ void * SqlNetworkHandler::processSqlConnect(PacketHeader &header, char *buffer)
     DbRetVal rv=conn->connect(pkt->userName, pkt->passWord);
     if (rv != OK) {
         *ptr = 0; 
-        strcpy(rpkt->errorString, "User Authentication Failure");
+        rpkt->errRetVal = rv;
+        fillErrorString(rpkt);
         return rpkt;
-        printf("connection failure\n");
     }
     if (rv == OK) { 
         *ptr = 1; 
@@ -126,7 +129,8 @@ void* SqlNetworkHandler::processSqlPrepare(PacketHeader &header, char *buffer)
     {
         printError(ErrSysInit, "statement prepare failed\n");
         *retval = 0;
-        strcpy(rpkt->errorString, "Error:Statement prepare failed");
+        rpkt->errRetVal = rv;
+        fillErrorString(rpkt);
         return rpkt;
     }
     int param = sqlstmt->noOfParamFields();
@@ -187,7 +191,7 @@ void * SqlNetworkHandler::processSqlExecute(PacketHeader &header, char *buffer)
     pkt->setBufferSize(header.packetLength);
     pkt->setStatementList(stmtList);
     pkt->unmarshall();
-    printDebug(DM_Network, "PREPARE %d\n", pkt->stmtID);
+    printDebug(DM_Network, "EXECUTE %d\n", pkt->stmtID);
     rpkt->stmtID = pkt->stmtID;
     ListIterator stmtIter = stmtList.getIterator();
     NetworkStmt *stmt;
@@ -199,9 +203,12 @@ void * SqlNetworkHandler::processSqlExecute(PacketHeader &header, char *buffer)
     }
     AbsSqlStatement *sqlstmt = stmt->stmt;
     int rows = 0;
+    char *nullInfo = NULL;
+    if (pkt->noParams) nullInfo = pkt->getNullInfo();
     for (int i=0; i < pkt->noParams; i++) {
         BindSqlField *bindField = (BindSqlField *) stmt->paramList.get(i+1);
-        setParamValues(sqlstmt, i+1, bindField->type, bindField->length, (char *)bindField->value);
+        if (nullInfo[i]) sqlstmt->setNull(i+1);
+        else setParamValues(sqlstmt, i+1, bindField->type, bindField->length, (char *)bindField->value);
     }
     //SqlStatement *st = (SqlStatement *)sqlstmt;
     if(sqlstmt->isSelect()) { 
@@ -214,51 +221,83 @@ void * SqlNetworkHandler::processSqlExecute(PacketHeader &header, char *buffer)
     DbRetVal rv = sqlstmt->execute(rows);
     if (rv != OK) { 
         *retval = 0;
-        strcpy(rpkt->errorString, "Execute failed");
+        rpkt->errRetVal = rv;
+        fillErrorString(rpkt);
+      //  delete pkt;
         return rpkt; 
     }
     *retval = 1;
     rpkt->rows = rows;
     strcpy(rpkt->errorString, "Success");
+    //delete pkt;
     return rpkt;
 }
 
-void * SqlNetworkHandler::processSqlFetch(PacketHeader &header, char *buffer)
+void * SqlNetworkHandler::processSqlFetch(PacketHeader &header)
 {
-    ResponsePacket *rpkt = new ResponsePacket();
-    char *retval = (char *) &rpkt->retVal;
-    SqlPacketFetch *pkt = new SqlPacketFetch();
-    pkt->setBuffer(buffer);
-    pkt->unmarshall();
-    rpkt->stmtID = pkt->stmtID;
+    //ResponsePacket *rpkt = new ResponsePacket();
+    //char *retval = (char *) &rpkt->retVal;
+    //SqlPacketFetch *pkt = new SqlPacketFetch();
+    //pkt->setBuffer(buffer);
+    //pkt->unmarshall();
     ListIterator stmtIter = stmtList.getIterator();
     NetworkStmt *stmt;
+    SqlPacketResultSet *rspkt = new SqlPacketResultSet();
     while (stmtIter.hasElement())
     {
        stmt = (NetworkStmt*) stmtIter.nextElement();
-       //TODO::Also check teh srcNetworkID
-       if (stmt->stmtID == pkt->stmtID ) break;
+       //TODO::Also check srcNetworkID
+       if (stmt->stmtID == header.stmtID ) break;
     }
+    printDebug(DM_Network, "FETCH STMTID: %d", stmt->stmtID);
     AbsSqlStatement *sqlstmt = stmt->stmt;
     void *data=NULL;
+    int len=1;
     DbRetVal rv = OK;
     if ((data = sqlstmt->fetch(rv)) != NULL && rv == OK) {
-        *retval = 1; 
-        strcpy(rpkt->errorString, "Success");
-        return rpkt;
+        len = 0;//means record is there
     }
-    if (data == NULL && rv == OK) {
+    else if (data == NULL && rv == OK) {
         sqlstmt->close();
-        *retval = 1; 
-        *(retval + 1) = 1;
-        strcpy(rpkt->errorString, "Success fetch completed");
-        return rpkt;
+        len =1; //end of resultset
     }
     else { 
-        *retval = 0; 
-        strcpy(rpkt->errorString, "fetch completed"); 
-        return rpkt;
+        len=2;//error
     }
+    rspkt->noProjs = stmt->projList.size();
+    // set null info for all the fetched field values in projection list
+    int nullInfoLen = os::align(rspkt->noProjs);
+    char *nullInfo = (char *) malloc(nullInfoLen);
+    memset(nullInfo, 0, nullInfoLen);
+    char *ptr = nullInfo;
+    ListIterator it = stmt->projList.getIterator();
+    while (it.hasElement()) {
+        BindSqlProjectField *prjFld = (BindSqlProjectField *) it.nextElement();
+        if (sqlstmt->isFldNull(prjFld->fName)) *ptr = 1;
+        ptr++;
+    }
+    rspkt->setNullInfo(nullInfo);
+    rspkt->setProjList(stmt->projList);
+    rspkt->marshall();
+    if (rv != OK) { printf("marshall failed\n"); }
+    
+    if(len == 0) len = rspkt->getBufferSize();
+    int numbytes = os::send(sockfd, &len , 4, 0);
+    if (len == 1 || len == 2) { ::free (nullInfo); return NULL; }
+    int dummy =0;
+    numbytes = os::recv(sockfd, &dummy, 4, 0);
+    numbytes = os::send(sockfd,rspkt->getMarshalledBuffer(),  
+                           rspkt->getBufferSize(), 0);
+    if (numbytes == -1) {
+       printf("Error in sending the row to the client\n");
+       ::free (nullInfo);
+       sqlstmt->free();
+       delete sqlstmt;
+       conn->disconnect();
+       exit(1);
+    }
+    ::free (nullInfo);
+    return NULL;
 }
 
 void * SqlNetworkHandler::processSqlFree(PacketHeader &header, char *buffer)
@@ -290,6 +329,7 @@ void * SqlNetworkHandler::processSqlFree(PacketHeader &header, char *buffer)
     delete stmt->stmt;
     stmtList.remove(stmt);
     delete stmt;
+    delete pkt;
     *retval = 1;
     strcpy(rpkt->errorString, "Success");
     return rpkt;
@@ -506,7 +546,7 @@ void SqlNetworkHandler::setParamValues(AbsSqlStatement *stmt, int parampos, Data
                 break;
             }
         case typeBinary:
-            stmt->setBinaryParam(parampos, (char *) value);
+            stmt->setBinaryParam(parampos, (char *) value, length);
             break; 
     }
     return;
@@ -557,14 +597,27 @@ void * SqlNetworkHandler::processSqlShowTables(PacketHeader &header, char *buffe
     char *retval = (char *) &rpkt->retVal;
     AbsSqlStatement *sqlstmt = createStatement(type);
     sqlstmt->setConnection(conn);
-    NetworkStmt *nwStmt = new NetworkStmt();
-    nwStmt->stmtID = ++stmtID;
-    nwStmt->stmt = sqlstmt;
     DbRetVal rv = OK;
-    nwStmt->tableNamesList = sqlstmt->getAllTableNames(rv);
-    stmtList.append(nwStmt);
+    tableNameList = sqlstmt->getAllTableNames(rv);
     *retval = 1;
-    rpkt->rows = nwStmt->tableNamesList.size();
+    rpkt->stmtID = 0;
+    rpkt->rows = tableNameList.size();
     strcpy(rpkt->errorString, "Success");
+    delete sqlstmt;
     return rpkt;
+}
+
+void SqlNetworkHandler::fillErrorString(ResponsePacket *rpkt)
+{
+    switch(rpkt->errRetVal) {
+        case ErrNoConnection:
+            strcpy(rpkt->errorString, "Connection not open.");
+            break;
+        case ErrUnique:
+            strcpy(rpkt->errorString, "Unique constraint violation");
+            break;
+        case ErrNullViolation:
+            strcpy(rpkt->errorString, "Not null constraint violation");
+            break;
+    }
 }

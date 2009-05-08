@@ -17,6 +17,7 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
+#include <os.h>
 #include <CSql.h>
 #include <Network.h>
 #include <DataType.h>
@@ -102,12 +103,28 @@ void PacketExecute::setParams(List list)
     return; 
 }
 
+SqlPacketExecute::SqlPacketExecute()
+{
+    buffer=NULL; bufferSize =0; pktType = NW_PKT_EXECUTE;
+    paramValues = NULL; nullInfo = NULL;
+}
+SqlPacketExecute::~SqlPacketExecute()
+{
+    if(noParams >= 10) delete [] paramValues;
+    nullInfo = NULL;
+    free(buffer); 
+    bufferSize =0;
+    buffer = NULL;
+}
 void SqlPacketExecute::setParams(List list)
 {
     paramList = list;
     noParams = list.size();
     if (!noParams) return;
-    paramValues = new char*[noParams];
+    if (noParams <10) 
+        paramValues = localBuf;
+    else 
+        paramValues = new char*[noParams];
     BindSqlField* bindField = NULL;
     for (int i = 0 ; i < noParams; i++)
     {
@@ -286,13 +303,14 @@ DbRetVal SqlPacketConnect::unmarshall()
 DbRetVal SqlPacketPrepare::marshall()
 {
     printDebug(DM_Network, "PacketPrepare::marshall called\n");
-    bufferSize  = sizeof(int) + strlen(stmtString) + 1;
+    bufferSize  = sizeof(int) + stmtLength;
     printDebug(DM_Network, "Buffer size %d\n", bufferSize);
     printDebug(DM_Network, "stmt %s size %d\n", stmtString, strlen(stmtString));
     buffer = (char*) malloc(bufferSize);
-    *(int*)buffer = strlen(stmtString) + 1;
+    *(int*)buffer = stmtLength;
     char *bufIter = buffer + sizeof(int);
     strcpy(bufIter, stmtString);
+    bufIter[strlen(stmtString)] = '\0';
     printDebug(DM_Network, "PacketPrepare::marshall ended\n");
     return OK;
 }
@@ -305,7 +323,7 @@ DbRetVal SqlPacketPrepare::unmarshall()
     char *bufIter = buffer + sizeof(int);
     stmtString = bufIter;
     printDebug(DM_Network, "stmtString ptr is %x\n", stmtString);
-    stmtString[stmtLength] = '\0';
+    stmtString[strlen(stmtString)] = '\0';
     printDebug(DM_Network, "PacketPrepare::unmarshall ended\n");
     return OK;
 }
@@ -327,6 +345,8 @@ DbRetVal SqlPacketExecute::marshall()
         else 
             bufferSize = bufferSize + AllDataType::size(bindField->type, bindField->length);
     }
+    //allocate null info for setNull info for dml parameterized statements.
+    if (noParams) bufferSize += os::align(noParams);
     buffer = (char*) malloc(bufferSize);
     *(int*)buffer = stmtID;
     char* bufIter = (char*) buffer + sizeof(int);
@@ -351,6 +371,7 @@ DbRetVal SqlPacketExecute::marshall()
             bufIter = bufIter + AllDataType::size(bindField->type, bindField->length);
         } 
     }
+    if(noParams) memcpy(bufIter, nullInfo, os::align(noParams));
     return OK;
 }
 
@@ -386,6 +407,8 @@ DbRetVal SqlPacketExecute::unmarshall()
         else
             bufIter = bufIter + AllDataType::size(bindField->type, bindField->length);
     }
+    nullInfo = (char*) malloc(os::align(noParams));
+    memcpy(nullInfo, bufIter, os::align(noParams));
     return OK;
 }
 
@@ -530,8 +553,10 @@ DbRetVal SqlPacketResultSet::marshall()
         prjFld = (BindSqlProjectField*) projList.get(i+1);
         bufferSize = bufferSize + AllDataType::size(prjFld->type, prjFld->length);
     }
+    //allocate buffer for nullInfo
+    bufferSize = bufferSize + os::align(noProjs);
     buffer = (char*) malloc(bufferSize);
-    *(int*)buffer = stmtID;
+    *(int*)buffer = hasData;
     char* bufIter = (char*) buffer + sizeof(int);
     *(int*)bufIter = noProjs;
     bufIter = (char*) bufIter + sizeof(int);
@@ -540,14 +565,14 @@ DbRetVal SqlPacketResultSet::marshall()
         prjFld = (BindSqlProjectField*) projList.get(i+1);
         AllDataType::copyVal(bufIter, prjFld->value, prjFld->type, prjFld->length);
         bufIter = bufIter + AllDataType::size(prjFld->type, prjFld->length);
-        
     }
+    memcpy(bufIter, nullInfo, os::align(noProjs));
     return OK;
 }
 
 DbRetVal SqlPacketResultSet::unmarshall()
 {
-    stmtID = *(int*)buffer;
+    hasData = *(int*)buffer;
     char *bufIter = buffer + sizeof(int);
     noProjs = *(int*)bufIter;
     bufIter = bufIter + sizeof(int);
@@ -558,6 +583,7 @@ DbRetVal SqlPacketResultSet::unmarshall()
         AllDataType::copyVal(prjFld->value, bufIter, prjFld->type, prjFld->length);
         bufIter = bufIter + AllDataType::size(prjFld->type, prjFld->length);
     }
+    memcpy(nullInfo, bufIter, os::align(noProjs));
     return OK;
 }
 
@@ -566,15 +592,8 @@ DbRetVal SqlPacketShowTables::marshall()
     bufferSize = numOfTables * IDENTIFIER_LENGTH;
     buffer = (char*) malloc(bufferSize);
     char *bufIter = buffer;
-    ListIterator stmtIter = SqlNetworkHandler::stmtList.getIterator();
-    NetworkStmt *stmt;
-    while (stmtIter.hasElement())
-    {
-       stmt = (NetworkStmt*) stmtIter.nextElement();
-       if (stmt->stmtID == stmtID ) break;
-    }
     Identifier *elem = NULL;
-    ListIterator tblIter = stmt->tableNamesList.getIterator();
+    ListIterator tblIter = SqlNetworkHandler::tableNameList.getIterator();
     while (tblIter.hasElement()) {
         elem = (Identifier*) tblIter.nextElement();
         strncpy(bufIter, elem->name, IDENTIFIER_LENGTH);

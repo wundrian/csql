@@ -231,7 +231,7 @@ DbRetVal DelStatement::setTimeStampParam(int paramNo, TimeStamp value)
     return OK;
 }
 
-DbRetVal DelStatement::setBinaryParam(int paramNo, void *value)
+DbRetVal DelStatement::setBinaryParam(int paramNo, void *value, int length)
 {
     if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
     ConditionValue *cValue = (ConditionValue*) params [paramNo-1];

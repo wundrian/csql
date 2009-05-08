@@ -17,39 +17,99 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
+#include <os.h>
 #include <CSql.h>
 #include <Network.h>
 #include <Parser.h>
+TCPClient::TCPClient()
+{
+    isConnectedFlag =false; 
+    cacheClient = false; 
+    respPkt = new ResponsePacket(); 
+    pktHdr = new PacketHeader();
+}
 
 TCPClient::~TCPClient()
 {
    if (isConnectedFlag) disconnect();
    delete respPkt;
+   delete pktHdr;
+}
+DbRetVal TCPClient::send(NetworkPacketType type)
+{
+    DbRetVal rv = OK;
+    pktHdr->packetType = type;
+    pktHdr->packetLength = 0;
+    int numbytes=0;
+    if ((numbytes=os::send(sockfd, pktHdr, sizeof(PacketHeader), MSG_NOSIGNAL)) == -1) {
+        if (errno == EPIPE) {
+            printError(ErrNoConnection, "connection not present");
+            isConnectedFlag = false;
+            return ErrNoConnection;
+        }
+        printError(ErrOS, "Unable to send the packet\n");
+        return ErrOS;
+    }
+    return rv;
+}
+DbRetVal TCPClient::send(NetworkPacketType type, int stmtid)
+{
+    DbRetVal rv = OK;
+    pktHdr->packetType = type;
+    pktHdr->packetLength = 0;
+    pktHdr->stmtID = stmtid;
+    int numbytes=0;
+    if ((numbytes=os::send(sockfd, pktHdr, sizeof(PacketHeader), MSG_NOSIGNAL)) == -1) {
+        if (errno == EPIPE) {
+            printError(ErrNoConnection, "connection not present");
+            isConnectedFlag = false;
+            return ErrNoConnection;
+        }
+        printError(ErrOS, "Unable to send the packet\n");
+        return ErrOS;
+    }
+    return rv;
 }
 DbRetVal TCPClient::send(NetworkPacketType type, char *buf, int len)
 {
     DbRetVal rv = OK;
 //    printf("NW:TCP Send\n");
-    void* totalBuffer = malloc(sizeof(PacketHeader)+ len);
-    PacketHeader *hdr=  new PacketHeader();
-    hdr->packetType = type;
-    hdr->packetLength = len;
-    hdr->srcNetworkID = networkid;
-    hdr->version = 1;
-    memcpy(((char*)totalBuffer) + sizeof(PacketHeader) , buf, len);
+    //void* totalBuffer = malloc(sizeof(PacketHeader)+ len);
+    //PacketHeader *hdr=  new PacketHeader();
+    pktHdr->packetType = type;
+    pktHdr->packetLength = len;
+    pktHdr->srcNetworkID = networkid;
+    pktHdr->version = 1;
+    pktHdr->stmtID = 0;
+    //memcpy(((char*)totalBuffer) + sizeof(PacketHeader) , buf, len);
     int numbytes=0;
-    if ((numbytes=os::send(sockfd, hdr, sizeof(PacketHeader), 0)) == -1) {
+    if ((numbytes=os::send(sockfd, pktHdr, sizeof(PacketHeader), MSG_NOSIGNAL)) == -1) {
+        if (errno == EPIPE) {
+            printError(ErrNoConnection, "connection not present");
+            isConnectedFlag = false;
+            return ErrNoConnection;
+        }
+        printError(ErrOS, "Unable to send the packet\n");
+        return ErrOS;
+    }
+    int dummy;
+    if ((numbytes=os::recv(sockfd, &dummy, sizeof(int), 0)) == -1) {
+        printError(ErrOS, "Unable to receive the packet\n");
+        return ErrOS;
+    }
+//    printf("Sent bytes %d\n", numbytes);
+    if ((numbytes=os::send(sockfd, buf, len, MSG_NOSIGNAL)) == -1) {
+        if (errno == EPIPE) {
+            printError(ErrNoConnection, "connection not present");
+            isConnectedFlag = false;
+            return ErrNoConnection;
+        }
         printError(ErrOS, "Unable to send the packet\n");
         return ErrOS;
     }
 //    printf("Sent bytes %d\n", numbytes);
-    if ((numbytes=os::send(sockfd, buf, len, 0)) == -1) {
-        printError(ErrOS, "Unable to send the packet\n");
-        return ErrOS;
-    }
-//    printf("Sent bytes %d\n", numbytes);
-    free(totalBuffer);
-    delete hdr;
+    //free(totalBuffer);
+    //delete hdr;
     return rv;
 }
 DbRetVal TCPClient::receive()
@@ -126,6 +186,10 @@ DbRetVal TCPClient::connect()
     }
 //    printf("Response from peer site is %d\n", response);
 //    if (response != 1) return ErrPeerResponse;
+
+    //packet header information
+    pktHdr->srcNetworkID = networkid;
+    pktHdr->version = 1;
     isConnectedFlag = true;
     return OK;
 }
@@ -134,20 +198,21 @@ DbRetVal TCPClient::disconnect()
 {
     if (isConnectedFlag) {
 //        printf("NW:TCP disconnect %s %d\n", hostName, port);
-        PacketHeader *hdr=  new PacketHeader();
-        hdr->packetType = SQL_NW_PKT_DISCONNECT;
-        hdr->packetLength = 0;
-        hdr->srcNetworkID =
-        hdr->version = 1;
+        pktHdr->packetType = SQL_NW_PKT_DISCONNECT;
+        pktHdr->packetLength = 0;
         int numbytes=0;
-        if ((numbytes=os::send(sockfd, hdr, sizeof(PacketHeader), 0)) == -1) {
+        if ((numbytes=os::send(sockfd, pktHdr, sizeof(PacketHeader), MSG_NOSIGNAL)) == -1) {
+            if (errno == EPIPE) {
+                printError(ErrNoConnection, "connection not present");
+                isConnectedFlag = false;
+                return ErrNoConnection;
+            }
             printError(ErrOS, "Unable to send the packet\n");
             return ErrOS;   
         } else {
 //            printf("Sent bytes %d\n", numbytes);
             DbRetVal rv = receive();
             close(sockfd);
-            delete hdr;
         }
     }
     isConnectedFlag = false;

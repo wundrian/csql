@@ -222,7 +222,7 @@ class AbsSqlStatement
     * @param paramPos int - parameter position
     * @param value Binary - value to be set 
     */
-    virtual void setBinaryParam(int paramPos, void *value)  = 0;
+    virtual void setBinaryParam(int paramPos, void *value, int length) = 0;
 
     /**Returns whether the statement prepared is select statement
     * @return bool true if it is select stmt, false otherwise
@@ -230,6 +230,7 @@ class AbsSqlStatement
     virtual List getTableNameList(){}
     virtual bool isSelect() = 0;
     virtual bool isFldNull(int pos)=0;
+    virtual bool isFldNull(char *name)=0;
     virtual void setNull(int pos)=0;
     virtual int getFldPos(char *name)=0;
     virtual List getAllTableNames(DbRetVal &ret)=0;

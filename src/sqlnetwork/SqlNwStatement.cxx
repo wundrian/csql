@@ -30,9 +30,11 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
         return ErrNoConnection;
     }
     if (isPrepared) free(); 
+    if (nullInfoSel) { ::free(nullInfoSel);  nullInfoSel = NULL; }  
+    if (nullInfoDml) { ::free(nullInfoDml);  nullInfoDml = NULL; }  
     SqlPacketPrepare *pkt = new SqlPacketPrepare();
     pkt->stmtString = stmtstr;
-    pkt->stmtLength = strlen(stmtstr) + 1;
+    pkt->stmtLength = os::align(strlen(stmtstr) + 1);
     pkt->marshall(); 
     rv = conn->send(SQL_NW_PKT_PREPARE, pkt->getMarshalledBuffer(), pkt->getBufferSize());
     if (rv != OK) {
@@ -72,6 +74,12 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
         mdpkt->setBuffer(buffer);
         mdpkt->unmarshall();
         noOfParams = mdpkt->noParams;
+        //allocate null info for dml paramterized stmts to be filled up 
+        //during set null
+        int nullInfoLen = os::align(noOfParams);
+        nullInfoDml = (char *) malloc(nullInfoLen);
+        memset(nullInfoDml, 0, nullInfoLen);
+
         BindSqlField *bindField=NULL;
         FieldInfo *fldInfo = new FieldInfo();
         char *ptr = (char *) mdpkt->data;
@@ -155,6 +163,7 @@ DbRetVal SqlNwStatement::execute(int &rowsAffected)
     pkt->stmtID = getStmtID();
     pkt->noParams=paramList.size();
     pkt->setParams(paramList);
+    pkt->setNullInfo(nullInfoDml);
     pkt->marshall();
     rv = conn->send(SQL_NW_PKT_EXECUTE, pkt->getMarshalledBuffer(), pkt->getBufferSize());
     if (rv != OK) {
@@ -163,12 +172,16 @@ DbRetVal SqlNwStatement::execute(int &rowsAffected)
     }
     rv = conn->receive();
     if (rv != OK) return rv; 
-    if(pkt->noParams) delete [] pkt->paramValues;
+    memset(nullInfoDml, 0, os::align(pkt->noParams));
+    //if(pkt->noParams) delete [] pkt->paramValues;
     delete pkt;
     ResponsePacket *rpkt = (ResponsePacket *) ((TCPClient *)conn->nwClient)->respPkt;
     char *ptr = (char *) &rpkt->retVal;
     rowsAffected = rpkt->rows;
-    if (*ptr != 1) return ErrPeerResponse;
+    if (*ptr != 1) {
+        printError(rpkt->errRetVal, "%s", rpkt->errorString);
+        return rpkt->errRetVal;
+    }
     return rv;
 }
 
@@ -189,55 +202,7 @@ DbRetVal SqlNwStatement::bindField(int pos, void* value)
 void* SqlNwStatement::fetch()
 {
     DbRetVal rv = OK;
-    SqlNwConnection *conn = (SqlNwConnection*)con;
-    if (! conn->isConOpen()) {
-        printError(ErrNoConnection, "No connection present");
-        return NULL;
-    }
-    if (!isPrepared) return NULL;
-    void *ptrToFirstField = NULL;
-    SqlPacketFetch *pkt = new SqlPacketFetch();
-    pkt->stmtID = getStmtID();
-    pkt->marshall();
-    rv = conn->send(SQL_NW_PKT_FETCH, pkt->getMarshalledBuffer(), pkt->getBufferSize());
-    if (rv != OK) {
-        printError(rv, "Data could not be sent");
-        return NULL;
-    }
-    rv = conn->receive();
-    if (rv != OK) {
-        printError(rv, "Unable to receive from Network");
-        return NULL;
-    }
-    ResponsePacket *rpkt = (ResponsePacket *) ((TCPClient *)conn->nwClient)->respPkt;
-    char *ptr = (char *) &rpkt->retVal;
-    if (*ptr == 0) { delete pkt; return NULL; }
-    if (*(ptr+1) == 1) { delete pkt; rv = OK; return NULL; }
-    PacketHeader header;
-    int fd = ((TCPClient *)(conn->nwClient))->sockfd;
-    int numbytes = os::recv(fd, &header, sizeof(PacketHeader), 0);
-    if (numbytes == -1) {
-        printError(ErrOS, "Error reading from socket\n");
-        return NULL;
-    }
-//    printf("HEADER says packet type is %d\n", header.packetType);
-    char *buffer = (char*) malloc(header.packetLength);
-    numbytes = os::recv(fd,buffer,header.packetLength,0);
-    if (numbytes == -1) {
-        printError(ErrOS, "Error reading from socket\n");
-        
-        return NULL;
-    }
-    SqlPacketResultSet *rspkt = new SqlPacketResultSet();
-    rspkt->setBuffer(buffer);
-    rspkt->setProjList(bindList);
-    rspkt->noProjs = bindList.size();
-    rspkt->unmarshall();
-    delete [] rspkt->projValues;
-    ptrToFirstField = bindList.get(1);
-    delete rspkt;
-    delete pkt;
-    return ptrToFirstField;
+    return fetch(rv);
 }
 
 void* SqlNwStatement::fetch(DbRetVal &ret)
@@ -250,47 +215,56 @@ void* SqlNwStatement::fetch(DbRetVal &ret)
     }
     if (!isPrepared) return NULL;
     void *ptrToFirstField = NULL;
-    SqlPacketFetch *pkt = new SqlPacketFetch();
+
+    DbRetVal rv = conn->nwClient->send(SQL_NW_PKT_FETCH, getStmtID());
+    if (rv != OK) {
+        printError(rv, "Data could not be sent");
+        return NULL;
+    }
+    
+    /*SqlPacketFetch *pkt = new SqlPacketFetch();
     pkt->stmtID = getStmtID();
     pkt->marshall();
     DbRetVal rv = conn->send(SQL_NW_PKT_FETCH, pkt->getMarshalledBuffer(), pkt->getBufferSize());
     if (rv != OK) {
         printError(rv, "Data could not be sent");
         return NULL;
-    }
-    rv = conn->receive();
-    if (rv != OK) {
-        printError(rv, "Unable to receive from Network");
-        return NULL;
-    }
-    ResponsePacket *rpkt = (ResponsePacket *) ((TCPClient *)conn->nwClient)->respPkt;
-    char *ptr = (char *) &rpkt->retVal;
-    if (*ptr == 0) { delete pkt; ret = ErrPeerResponse; return NULL; }
-    if (*(ptr+1) == 1) { delete pkt; ret = OK; return NULL; }
-    
-    PacketHeader header;
-    int fd = ((TCPClient *)(conn->nwClient))->sockfd;
-    int numbytes = os::recv(fd, &header, sizeof(PacketHeader), 0);
-    if (numbytes == -1) {
-        printError(ErrOS, "Error reading from socket\n");
-        return NULL;
-    }
+    }*/
 //    printf("HEADER says packet type is %d\n", header.packetType);
-    char *buffer = (char*) malloc(header.packetLength);
-    numbytes = os::recv(fd,buffer,header.packetLength,0);
+    int rowLength=0;
+    int dummy =0;
+    int fd = ((TCPClient *)(conn->nwClient))->sockfd;
+    int numbytes = os::recv(fd, &rowLength, 4, 0);
+    if (rowLength ==1 ) return NULL;
+    else if (rowLength == 2) {ret = ErrUnknown; return NULL; }
+
+    if ((numbytes = os::send(fd, &dummy, 4,MSG_NOSIGNAL)) == -1) {
+        if (errno == EPIPE) {
+            printError(ErrNoConnection, "connection not present");
+            return NULL;
+        }
+        printError(ErrOS, "Unable to send the packet\n");
+        return NULL;
+    }
+    char *rowBuffer = (char*) malloc(rowLength);
+    numbytes = os::recv(fd,rowBuffer,rowLength,0);
     if (numbytes == -1) {
         printError(ErrOS, "Error reading from socket\n");
         return NULL;
     }
     SqlPacketResultSet *rspkt = new SqlPacketResultSet();
-    rspkt->setBuffer(buffer);
+    rspkt->setBuffer(rowBuffer);
     rspkt->setProjList(bindList);
     rspkt->noProjs = bindList.size();
+    if (nullInfoSel == NULL) 
+        nullInfoSel = (char *) malloc(os::align(rspkt->noProjs));
+    memset(nullInfoSel, 0, os::align(rspkt->noProjs));
+    rspkt->setNullInfo(nullInfoSel);
     rspkt->unmarshall();
     delete [] rspkt->projValues;
     ptrToFirstField = bindList.get(1);
     delete rspkt;
-    delete pkt;
+    //delete pkt;
     return ptrToFirstField;
 }
 
@@ -304,7 +278,8 @@ void* SqlNwStatement::fetchAndPrint(bool SQL)
     if (NULL == tuple) return NULL;
     for(int i = 0; i < noOfProjs; i++) {
         fld = (BindSqlProjectField *) bindList.get(i + 1);
-        AllDataType::printVal(fld->value, fld->type, fld->length);
+        if (isFldNull(i+1)) printf("NULL");
+        else AllDataType::printVal(fld->value, fld->type, fld->length);
         printf("\t");
     }
     return tuple;
@@ -406,7 +381,10 @@ DbRetVal SqlNwStatement::free()
     while((pfld = (BindSqlProjectField *) itprj.nextElement()) != NULL) {
         delete pfld;
     }
+    if (nullInfoSel) { ::free(nullInfoSel); nullInfoSel = NULL; }
+    if (nullInfoDml) { ::free(nullInfoDml); nullInfoDml = NULL; }
     bindList.reset();
+
     isPrepared = false;
     delete pkt;
     return rv;
@@ -433,7 +411,7 @@ void SqlNwStatement::setIntParam(int paramPos, int value)
     if (paramPos <= 0) return;
     BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
     bindField->type = typeInt;
-    bindField->length = AllDataType::size(typeInt);
+    bindField->length = sizeof(int);
     *(int *) bindField->value = value;
     return;
 }
@@ -444,7 +422,7 @@ void SqlNwStatement::setLongParam(int paramPos, long value)
     if (paramPos <= 0) return;
     BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
     bindField->type = typeLong;
-    bindField->length = AllDataType::size(typeLong);
+    bindField->length = sizeof(long);
     *(long *) bindField->value = value;
     return;
 
@@ -510,7 +488,7 @@ void SqlNwStatement::setDateParam(int paramPos, Date value)
     if (paramPos <= 0) return;
     BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
     bindField->type = typeDate;
-    bindField->length = AllDataType::size(typeDate);
+    bindField->length = sizeof(Date);
     *(Date *)bindField->value = value;
     return;
 }
@@ -521,7 +499,7 @@ void SqlNwStatement::setTimeParam(int paramPos, Time value)
     if (paramPos <= 0) return;
     BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
     bindField->type = typeTime;
-    bindField->length = AllDataType::size(typeTime);
+    bindField->length = sizeof(Time);
     * (Time *) bindField->value = value;
     return;
 }
@@ -532,12 +510,12 @@ void SqlNwStatement::setTimeStampParam(int paramPos, TimeStamp value)
     if (paramPos <= 0) return;
     BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
     bindField->type = typeTimeStamp;
-    bindField->length = AllDataType::size(typeTimeStamp);
+    bindField->length = sizeof(TimeStamp);
     *(TimeStamp *) bindField->value = value;
     return;
 }
 
-void SqlNwStatement::setBinaryParam(int paramPos, void *value)
+void SqlNwStatement::setBinaryParam(int paramPos, void *value, int length)
 {
     if (!isPrepared) return;
     if (paramPos <= 0) return;
@@ -557,12 +535,17 @@ void SqlNwStatement::getPrimaryKeyFieldName(char *tablename, char *pkfieldname)
 List SqlNwStatement::getAllTableNames(DbRetVal &ret)
 {
     DbRetVal rv = OK;
+    
+    ListIterator tblIter = tblNameList.getIterator();
+    while (tblIter.hasElement()) delete tblIter.nextElement();
+    tblNameList.reset();
+
     SqlNwConnection *conn = (SqlNwConnection*)con;
     if (! conn->isConOpen()) {
         printError(ErrNoConnection, "No connection present");
         ret = ErrNoConnection;
     }
-    rv = conn->send(SQL_NW_PKT_SHOWTABLES, NULL, 0);
+    rv = conn->send(SQL_NW_PKT_SHOWTABLES);
     rv = conn->receive();
     if (rv != OK) {
         printError(rv, "Unable to Receive from peer");
@@ -588,7 +571,6 @@ List SqlNwStatement::getAllTableNames(DbRetVal &ret)
         ret = ErrOS;
     }
     SqlPacketShowTables *pkt = new SqlPacketShowTables();
-    pkt->stmtID = getStmtID();
     pkt->setBuffer(buffer);
     rv = pkt->unmarshall();
     if (rv != OK) {
@@ -604,4 +586,23 @@ List SqlNwStatement::getAllTableNames(DbRetVal &ret)
         tblNameList.append(id);
     }
     return tblNameList;
+}
+
+bool SqlNwStatement::isFldNull(int pos)
+{
+    if (nullInfoSel[pos - 1]) return true;
+    else return false;
+}
+
+bool SqlNwStatement::isFldNull(char *fname) 
+{
+    for (int i=0; i < bindList.size(); i++) {
+        BindSqlProjectField *fld = (BindSqlProjectField *) bindList.get(i+1);
+        if (strcmp(fname, fld->fName) == 0) return isFldNull(i+1);
+    }
+}
+
+void SqlNwStatement::setNull(int fldPos)
+{
+    if (nullInfoDml) nullInfoDml[fldPos-1] = 1;
 }

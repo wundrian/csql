@@ -17,12 +17,22 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
+#include <os.h>
 #include <CSql.h>
 #include <Network.h>
 
 UDPClient::~UDPClient()
 {
    if (isConnectedFlag) disconnect();
+}
+DbRetVal UDPClient::send(NetworkPacketType type)
+{
+    send(type, NULL, 0);
+}
+DbRetVal UDPClient::send(NetworkPacketType type, int stmtid)
+{
+    //TODO:
+    send(type, NULL, 0);
 }
 DbRetVal UDPClient::send(NetworkPacketType type, char *buf, int len)
 {

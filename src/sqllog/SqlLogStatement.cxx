@@ -348,9 +348,9 @@ void SqlLogStatement::setTimeStampParam(int paramPos, TimeStamp value)
     if (bindField->type != typeTimeStamp) return;
     *(TimeStamp*)(bindField->value) = value;
 }
-void SqlLogStatement::setBinaryParam(int paramPos, void *value)
+void SqlLogStatement::setBinaryParam(int paramPos, void *value, int length)
 {
-    if (innerStmt) innerStmt->setBinaryParam(paramPos,value);
+    if (innerStmt) innerStmt->setBinaryParam(paramPos,value, length);
 	SqlLogConnection* logConn = (SqlLogConnection*)con;
 	if (logConn->getSyncMode() == OSYNC) return;
 	if (!isCached) return;

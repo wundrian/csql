@@ -60,6 +60,8 @@ class SqlNwConnection : public AbsSqlConnection
 
     DbRetVal send(NetworkPacketType type, char *buffer, size_t len)
     { return  nwClient->send(type, buffer, len); }
+    DbRetVal send(NetworkPacketType type)
+    { return  nwClient->send(type); }
     DbRetVal receive() { return nwClient->receive(); }
     bool isConOpen() { return isConnOpen; }
     void * getResponsePacket() { return nwClient->getResponsePacket(); }

@@ -69,11 +69,12 @@ class SqlOdbcStatement: public AbsSqlStatement
     void setDateParam(int paramPos, Date value);
     void setTimeParam(int paramPos, Time value);
     void setTimeStampParam(int paramPos, TimeStamp value);
-    void setBinaryParam(int paramPos, void *value);
+    void setBinaryParam(int paramPos, void *value, int length);
 	bool isSelect();
     void getPrimaryKeyFieldName(char *tablename, char *pkfieldname);
     void setNullInfo(Table *table);
     bool isFldNull(int pos);
+    bool isFldNull(char *name);
     bool chechStmtType(char *stmtstr);
     void setNull(int pos);
     int getFldPos(char *name){} 

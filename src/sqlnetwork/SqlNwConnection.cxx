@@ -17,9 +17,9 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
+#include<os.h>
 #include <SqlNwConnection.h>
 #include <Network.h>
-#include<os.h>
 #include <CSql.h>
 
 DbRetVal SqlNwConnection::connect (char *user, char * pass)
@@ -43,7 +43,7 @@ DbRetVal SqlNwConnection::connect (char *user, char * pass)
     char * buffer = (char *) malloc(bufsize);
     pkt->setBuffer(buffer);
     pkt->marshall();
-    rv = send(SQL_NW_PKT_CONNECT, buffer, bufsize);
+    rv = nwClient->send(SQL_NW_PKT_CONNECT, buffer, bufsize);
     if (rv != OK) {
         printError(rv, "Data could not be sent");
         return rv;
@@ -92,7 +92,7 @@ DbRetVal SqlNwConnection::commit()
         return ErrNoConnection;
     }
     DbRetVal rv = OK;
-    rv = nwClient->send(SQL_NW_PKT_COMMIT, NULL, 0);
+    rv = nwClient->send(SQL_NW_PKT_COMMIT);
     int response = 0;
     return nwClient->receive();
 }
@@ -104,7 +104,7 @@ DbRetVal SqlNwConnection::rollback()
         return ErrNoConnection;
     }
     DbRetVal rv = OK;
-    rv = nwClient->send(SQL_NW_PKT_ROLLBACK, NULL, 0);
+    rv = nwClient->send(SQL_NW_PKT_ROLLBACK);
     int response = 0;
     return nwClient->receive();
 }

@@ -26,7 +26,7 @@
 class SqlNwStatement: public AbsSqlStatement
 {
     public:
-    SqlNwStatement(){innerStmt = NULL; con = NULL; isPrepared=false; isSel = true; }
+    SqlNwStatement(){innerStmt = NULL; con = NULL; isPrepared=false; isSel = true; nullInfoDml = NULL; nullInfoSel = NULL; }
     void setConnection(AbsSqlConnection *conn)
     {
         if (innerStmt) innerStmt->setConnection(conn->getInnerConnection());
@@ -48,6 +48,7 @@ class SqlNwStatement: public AbsSqlStatement
     int noOfProjFields();
 
     void* getFieldValuePtr( int pos );
+    void* getFieldValuePtr( char *name ){}
 
     DbRetVal free();
 
@@ -68,12 +69,13 @@ class SqlNwStatement: public AbsSqlStatement
     void setDateParam(int paramPos, Date value);
     void setTimeParam(int paramPos, Time value);
     void setTimeStampParam(int paramPos, TimeStamp value);
-    void setBinaryParam(int paramPos, void *value);
+    void setBinaryParam(int paramPos, void *value, int length);
     bool isSelect(){return isSel;}
     void getPrimaryKeyFieldName(char *tablename, char *pkfieldname);
     int getStmtID() { return stmtID; }
-    bool isFldNull(int pos){}
-    void setNull(int pos){}
+    bool isFldNull(int pos);
+    bool isFldNull(char *name);
+    void setNull(int pos);
     void setStmtID(int id) { stmtID = id; }
     int getFldPos(char *name){} 
     List getAllTableNames(DbRetVal &ret);
@@ -86,6 +88,8 @@ class SqlNwStatement: public AbsSqlStatement
     List bindList;
     List tblNameList;
     int noOfProjs;
+    char *nullInfoSel; // for nullinfo in fetch
+    char *nullInfoDml; // for nullinfo in insert and update
     friend class SqlFactory;
 };
 

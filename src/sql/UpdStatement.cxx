@@ -173,7 +173,6 @@ DbRetVal UpdStatement::setShortParam(int paramNo, short value)
     return OK;
 }
 
-
 DbRetVal UpdStatement::setIntParam(int paramNo, int value)
 {
     if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
@@ -192,6 +191,24 @@ DbRetVal UpdStatement::setIntParam(int paramNo, int value)
         *(int*)cValue->value = value;
     }
     return OK;
+}
+
+DbRetVal UpdStatement::setNull(int paramNo)
+{
+    if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
+    if (NULL == params[paramNo-1])
+    {
+        printError(ErrSysFatal, "param not set. Should never happen");
+        return ErrSysFatal;
+    }
+    ConditionValue *cValue;
+    UpdateFieldValue *uValue;
+    if (paramNo <= totalAssignParams) {
+        uValue = (UpdateFieldValue*) params[paramNo-1];
+        table->markFldNull(uValue->fldName);
+    } else {
+        printf("paramerise for predicate nullset not supported\n");
+    }
 }
 
 DbRetVal UpdStatement::setLongParam(int paramNo, long value)
@@ -386,7 +403,7 @@ DbRetVal UpdStatement::setTimeStampParam(int paramNo, TimeStamp value)
     return OK;
 }
 
-DbRetVal UpdStatement::setBinaryParam(int paramNo, void *value)
+DbRetVal UpdStatement::setBinaryParam(int paramNo, void *value, int length)
 {
     if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
     if (NULL == params[paramNo-1])

@@ -223,7 +223,7 @@ class SqlStatement: public AbsSqlStatement
 	* @param paramPos int - parameter position
 	* @param value Binary - value to be set 
 	*/
-	void setBinaryParam(int paramPos, void *value);
+	void setBinaryParam(int paramPos, void *value, int length);
 
     /**Returns whether the statement prepared is select statement
     * @return bool true if it is select stmt, false otherwise
@@ -237,6 +237,7 @@ class SqlStatement: public AbsSqlStatement
     bool isPrepared();
     StatementType getStmtType() { return pData.getStmtType(); }
     bool isFldNull(int pos); 
+    bool isFldNull(char *name); 
     void setNull(int pos);
     int getFldPos(char *name);
     List getAllTableNames(DbRetVal &ret);

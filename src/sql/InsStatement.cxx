@@ -241,7 +241,7 @@ DbRetVal InsStatement::setTimeStampParam(int paramNo, TimeStamp value)
     return OK;
 }
 
-DbRetVal InsStatement::setBinaryParam(int paramNo, void *value)
+DbRetVal InsStatement::setBinaryParam(int paramNo, void *value, int length)
 {
     if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
     FieldValue *fValue = (FieldValue*) params [paramNo-1];

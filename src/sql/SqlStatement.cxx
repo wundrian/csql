@@ -182,6 +182,14 @@ bool SqlStatement::isFldNull(int pos)
     SelStatement *selStmt = (SelStatement*) stmt;
     return (selStmt->isFldNull(pos));
 }
+
+bool SqlStatement::isFldNull(char *name)
+{
+    if (pData.getStmtType() != SelectStatement) return 0;
+    SelStatement *selStmt = (SelStatement*) stmt;
+    return (selStmt->isFldNull(name));
+}
+
 DbRetVal SqlStatement::close()
 {
     if (pData.getStmtType() != SelectStatement) return OK;
@@ -316,9 +324,9 @@ void SqlStatement::setTimeStampParam(int paramPos, TimeStamp value)
 {
     stmt->setTimeStampParam(paramPos, value);
 }
-void SqlStatement::setBinaryParam(int paramPos, void *value)
+void SqlStatement::setBinaryParam(int paramPos, void *value, int length)
 {
-    stmt->setBinaryParam(paramPos, value);
+    stmt->setBinaryParam(paramPos, value, length);
 }
 int SqlStatement::getFldPos(char *name)
 {

@@ -70,9 +70,10 @@ class SqlLogStatement: public AbsSqlStatement
     void setDateParam(int paramPos, Date value);
     void setTimeParam(int paramPos, Time value);
     void setTimeStampParam(int paramPos, TimeStamp value);
-    void setBinaryParam(int paramPos, void *value);
+    void setBinaryParam(int paramPos, void *value, int length);
 	bool isSelect();
     bool isFldNull(int pos);
+    bool isFldNull(char *name){};
     void setNull(int pos);
     int getFldPos(char *name){}
     List getAllTableNames(DbRetVal &ret);
