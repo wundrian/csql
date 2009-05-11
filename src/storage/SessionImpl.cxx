@@ -142,6 +142,7 @@ DbRetVal SessionImpl::open(const char *username, const char *password)
     }
     ((DatabaseManagerImpl*)dbMgr)->setProcSlot();
     //ProcessManager::systemDatabase = dbMgr->sysDb();
+    isXTaken = false;
     return OK;
 }
 DbRetVal SessionImpl::authenticate(const char *username, const char *password)
@@ -163,9 +164,20 @@ DbRetVal SessionImpl::authenticate(const char *username, const char *password)
     }
     return OK;
 }
+DbRetVal SessionImpl::getExclusiveLock()
+{
+   if (dbMgr->isAnyOneRegistered()) {
+      printError(ErrLockTimeOut, "Unable to acquire exclusive lock. somebody is connected");
+      return ErrLockTimeOut;
+   }
+   DbRetVal rv = dbMgr->sysDb()->getProcessTableMutex(true);
+   if (OK == rv) isXTaken = true;
+   return rv;
+}
 DbRetVal SessionImpl::close()
 {
     DbRetVal rv = OK;
+    if (isXTaken && dbMgr ) dbMgr->sysDb()->releaseProcessTableMutex(true);
     if (dbMgr)
     {
         rv = dbMgr->closeDatabase();

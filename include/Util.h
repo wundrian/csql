@@ -12,11 +12,20 @@
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
  *   GNU General Public License for more details.                          *
  *                                                                         *
-  ***************************************************************************/
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, write to the                         *
+ *   Free Software Foundation, Inc.,                                       *
+ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+ ***************************************************************************/
 #ifndef UTIL_H
 #define UTIL_H
 #include<ErrorType.h>
 #include<Debug.h>
+enum UniqueIDType {
+    STMT_ID=0,
+    TXN_ID
+};
+
 class ListNode
 {
     public:
@@ -51,7 +60,6 @@ class ListIterator
         iter = iter ->next;
         return node->element;
     }
-
     //index start with one, such that 1->first element in list
     void* getElement(int index)
     {
@@ -175,6 +183,19 @@ class List
     }
 
 };
+#define MAX_UNIQUE_ID 10
+class GlobalUniqueID
+{
+   void *ptr;
+   public:
+   GlobalUniqueID() { ptr = NULL; }
+   DbRetVal create();
+   DbRetVal open();
+   DbRetVal close() { os::shm_detach(ptr); return OK; }
+   DbRetVal destroy();
+   int getID(UniqueIDType type);
+};
+
 class UniqueID
 {
    int startID;

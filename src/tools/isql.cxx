@@ -142,9 +142,8 @@ int main(int argc, char **argv)
         else {
             if (gateway) type = CSqlGateway;
             else {
-               // if (exclusive) type=CSqlDirect; 
-               // else type = CSql;  
-               type = CSql;
+               if (exclusive) type=CSqlDirect; 
+               else type = CSql;  
             }
             conn = SqlFactory::createConnection(type);
         }
@@ -153,7 +152,7 @@ int main(int argc, char **argv)
     if (rv != OK) return 1;
     if (exclusive) {
         SqlConnection *sCon = (SqlConnection*) conn;
-        //rv = sCon->getExclusiveLock();
+        rv = sCon->getExclusiveLock();
         if (rv != OK) {
             conn->disconnect();
             delete conn;
@@ -163,7 +162,7 @@ int main(int argc, char **argv)
     aconStmt = SqlFactory::createStatement(type);
     if (exclusive) {
        SqlStatement *sqlStmt = (SqlStatement*)aconStmt;
-       //sqlStmt->setLoading(true);
+       sqlStmt->setLoading(true);
     }
     aconStmt->setConnection(conn);
     //rv = conn->beginTrans(READ_COMMITTED, TSYNC);

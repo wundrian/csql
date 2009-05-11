@@ -107,7 +107,7 @@ unsigned int HashIndex::computeHashBucket(DataType type, void *key, int noOfBuck
     return -1;
 }
 
-DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *indInfo, void *tuple, bool undoFlag)
+DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *indInfo, void *tuple, bool loadFlag)
 {
     HashIndexInfo *info = (HashIndexInfo*) indInfo;
     CINDEX *iptr = (CINDEX*)indexPtr;
@@ -217,7 +217,7 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         }
         
     }
-    if (undoFlag) {
+    if (!loadFlag) {
          rc = tr->appendLogicalHashUndoLog(tbl->sysDB_, InsertHashIndexOperation, hInfo, sizeof(HashUndoLogInfo));
         if (rc !=OK)
         {
@@ -234,7 +234,7 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
 }
 
 
-DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *indInfo, void *tuple, bool undoFlag)
+DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *indInfo, void *tuple, bool loadFlag)
 {
     CINDEX *iptr = (CINDEX*)indexPtr;
 
@@ -297,7 +297,7 @@ DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
        bucket1->bucketList_ = list.getBucketListHead(); 
        rc = OK;
     }
-    if (undoFlag) {
+    if (!loadFlag) {
         rc =tr->appendLogicalHashUndoLog(tbl->sysDB_, DeleteHashIndexOperation, hInfo, sizeof(HashUndoLogInfo));
         if (rc !=OK)
         {
@@ -312,7 +312,7 @@ DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     return rc;
 }
 
-DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *indInfo, void *tuple, bool undoFlag)
+DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *indInfo, void *tuple, bool loadFlag)
 {
     CINDEX *iptr = (CINDEX*)indexPtr;
 
@@ -473,7 +473,7 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         return ErrSysInternal;
     }
     DbRetVal rc = OK;
-    if (undoFlag) {
+    if (!loadFlag) {
          rc = tr->appendLogicalHashUndoLog(tbl->sysDB_, DeleteHashIndexOperation, hInfo1, sizeof(HashUndoLogInfo));
         if (rc !=OK) 
         { 
@@ -523,7 +523,7 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         list2.insert((Chunk*)iptr->hashNodeChunk_, tbl->db_, keyPtr, tuple);
         bucket1->bucketList_ = list2.getBucketListHead();
     }
-    if (undoFlag) {
+    if (!loadFlag) {
 
         rc = tr->appendLogicalHashUndoLog(tbl->sysDB_, InsertHashIndexOperation, hInfo2, sizeof(HashUndoLogInfo));
         if (rc !=OK)

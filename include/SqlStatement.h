@@ -241,6 +241,7 @@ class SqlStatement: public AbsSqlStatement
     void setNull(int pos);
     int getFldPos(char *name);
     List getAllTableNames(DbRetVal &ret);
+    void setLoading(bool flag);
     private:
     SqlConnection *sqlCon;
     Statement *stmt;

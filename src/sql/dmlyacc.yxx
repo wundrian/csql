@@ -518,7 +518,7 @@ field_name: ident
 size_opt:
         | '(' NUMBER_STRING ')'
         {
-            DbRetVal rv = parsedData->setFldLength(atoi($2)+1);
+            DbRetVal rv = parsedData->setFldLength(atoi($2));
             if (rv != OK) {
                 yyerror("Binary field length < 256");
                 free($2);

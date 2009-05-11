@@ -30,11 +30,12 @@ class SessionImpl : public Session
     char userName[IDENTIFIER_LENGTH];
     bool isAuthenticated;
     bool isDba;
+    bool isXTaken;
 
     public:
     SessionImpl()
     {
-        dbMgr = NULL; uMgr = NULL; 
+        dbMgr = NULL; uMgr = NULL; isXTaken = false;
     }
     ~SessionImpl()
     {
@@ -58,6 +59,7 @@ class SessionImpl : public Session
 
     DbRetVal readConfigFile();
     Database* getSystemDatabase();
+    DbRetVal getExclusiveLock();
     private:
     DbRetVal authenticate(const char *username, const char *password);
 };

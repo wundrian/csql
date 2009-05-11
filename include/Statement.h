@@ -93,6 +93,7 @@ class DmlStatement : public Statement
     virtual void* getParamValuePtr( int pos )=0;
     virtual int getFldPos(char *name)=0;
     virtual ~DmlStatement(){}
+    void setLoading(bool flag) { table->setLoading(flag); }
 };
 
 class InsStatement : public DmlStatement

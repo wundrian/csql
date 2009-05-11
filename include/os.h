@@ -92,6 +92,7 @@ enum MapMode
 #define DBAUSER "root"
 #define DBAPASS "manager"
 #define LOCK_BUCKET_SIZE 2048
+#define STMT_BUCKET_SIZE 1023
 #define MAX_CHUNKS 20
 #define PAGE_SIZE Conf::config.getPageSize()
 #define MAX_MUTEX_PER_THREAD 3

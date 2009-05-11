@@ -19,7 +19,6 @@
  ***************************************************************************/
 #ifndef SQLFACTORY_H
 #define SQLFACTORY_H
-#include<CSql.h>
 
 #include<AbsSqlConnection.h>
 #include<AbsSqlStatement.h>
@@ -33,6 +32,7 @@ enum SqlApiImplType
     CSqlNetworkAdapter,
     CSqlNetworkGateway,
     CSqlLog,
+    CSqlDirect,
     CSqlUnknown
 };
 /**

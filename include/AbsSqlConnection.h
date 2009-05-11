@@ -21,6 +21,11 @@
 #define ABSSQLCONNECTION_H
 #include<CSql.h>
 
+class CachedTable{
+    public:
+    char tableName[IDENTIFIER_LENGTH];
+};
+
 enum TransSyncMode {
     OSYNC=1,
     ASYNC=2,

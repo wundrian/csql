@@ -24,13 +24,24 @@
 #include <SqlNwConnection.h>
 #include <SqlNwStatement.h>
 
+Config Conf::config;
+
 AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
 {
     AbsSqlConnection *conn = NULL ;
+    Conf::config.readAllValues(os::getenv("CSQL_CONFIG_FILE"));
+    bool isSqlLogNeeded = Conf::config.useDurability();
+
     switch(implFlag)
     {
         case CSql:
-            conn = new SqlConnection();
+            if (!Conf::config.useDurability()) {
+                conn = new SqlConnection();
+            }else {
+               AbsSqlConnection *sqlCon = new SqlConnection();
+               conn = new SqlLogConnection();
+               conn->setInnerConnection(sqlCon);
+            }
             break;
         case CSqlLog:
             {
@@ -50,11 +61,13 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
         case CSqlGateway:
             {
             AbsSqlConnection *sqlCon = new SqlConnection();
-            AbsSqlConnection *sqllogconn = new SqlLogConnection();
-            sqllogconn->setInnerConnection(sqlCon);
-            AbsSqlConnection *adapterCon = new SqlOdbcConnection();
             SqlGwConnection *gwconn = new SqlGwConnection();
-            gwconn->setInnerConnection(sqllogconn);
+            if (isSqlLogNeeded) {
+                AbsSqlConnection *sqllogconn = new SqlLogConnection();
+                sqllogconn->setInnerConnection(sqlCon);
+                gwconn->setInnerConnection(sqllogconn);
+            } else gwconn->setInnerConnection(sqlCon);
+            AbsSqlConnection *adapterCon = new SqlOdbcConnection();
             gwconn->setAdapter(adapterCon);
             conn = gwconn;
             break;
@@ -81,20 +94,30 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
             conn = sqlNwCon;
             break;
             }
-            
+        case CSqlDirect:
+            conn = new SqlConnection();
+            break;
         default:
             printf("Todo");
             break;
     }
     return conn;
 }
+
 AbsSqlStatement* SqlFactory::createStatement(SqlApiImplType implFlag)
 {
     AbsSqlStatement *stmt = NULL;
+    bool isSqlLogNeeded = Conf::config.useDurability();
     switch(implFlag)
     {
         case CSql:
-            stmt = new SqlStatement();
+            if (!Conf::config.useDurability()) {
+                stmt = new SqlStatement();
+            }else {
+               AbsSqlStatement *sqlStmt = new SqlStatement();
+               stmt = new SqlLogStatement();
+               stmt->setInnerStatement(sqlStmt);
+            }
             break;
         case CSqlLog:
             {
@@ -113,12 +136,14 @@ AbsSqlStatement* SqlFactory::createStatement(SqlApiImplType implFlag)
             }
         case CSqlGateway:
             {
-            AbsSqlStatement *sqlstmt = new SqlStatement();
-            AbsSqlStatement *sqllogstmt = new SqlLogStatement();
-            sqllogstmt->setInnerStatement(sqlstmt);
-            AbsSqlStatement *adapterstmt = new SqlOdbcStatement();
             SqlGwStatement *gwstmt = new SqlGwStatement();
-            gwstmt->setInnerStatement(sqllogstmt);
+            AbsSqlStatement *sqlstmt = new SqlStatement();
+            if (isSqlLogNeeded) {
+                AbsSqlStatement *sqllogstmt = new SqlLogStatement();
+                sqllogstmt->setInnerStatement(sqlstmt);
+                gwstmt->setInnerStatement(sqllogstmt);
+            } else gwstmt->setInnerStatement(sqlstmt);
+            AbsSqlStatement *adapterstmt = new SqlOdbcStatement();
             gwstmt->setAdapter(adapterstmt);
             stmt = gwstmt;
             break;
@@ -145,7 +170,9 @@ AbsSqlStatement* SqlFactory::createStatement(SqlApiImplType implFlag)
             stmt = sqlNwStmt;
             break;
             }
-
+        case CSqlDirect:
+            stmt = new SqlStatement();
+            break;
         default:
             printf("Todo");
             break;

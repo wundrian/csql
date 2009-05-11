@@ -43,13 +43,12 @@ class ConfigValues
     bool isTwoWay;
     int  cacheWaitSecs;
 
-    bool isReplication;
+    bool isDurable;
     bool isCsqlSqlServer;
     int port;
-    char replConfigFile[MAX_FILE_PATH_LEN];
     int networkID;
     int cacheNetworkID;
-
+    int shmKeyForId;
     long logStoreSize;
     int nwResponseTimeout;
     int nwConnectTimeout;
@@ -71,20 +70,19 @@ class ConfigValues
         lockSecs =0;
         lockUSecs = 10;
         lockRetries = 10;
-	cacheId=1;
+        cacheId=1;
         isCache = false;
         cacheNetworkID =-1;
         strcpy(dsn, "myodbc3");
         strcpy(tableConfigFile, "/tmp/csql/csqltable.conf");
-        isReplication = false;        
         isCsqlSqlServer = false;
         port = 5678;
-        strcpy(replConfigFile, "/tmp/csql/csqlnw.conf");
         logStoreSize = 10485760;
         networkID=-1;
+        shmKeyForId = -1;
         nwResponseTimeout=3;
         nwConnectTimeout=5;
-        isTwoWay=true;
+        isTwoWay=false;
         cacheWaitSecs =10;
     }
 };
@@ -118,11 +116,11 @@ class Config
     inline bool useCache() { return cVal.isCache; }
     inline char* getDSN() { return cVal.dsn; }
     inline char* getTableConfigFile() { return cVal.tableConfigFile; }
-    inline bool useReplication() { return cVal.isReplication; }
+    inline bool useDurability() { return cVal.isDurable; }
     inline bool useCsqlSqlServer() { return cVal.isCsqlSqlServer; }
     inline int getPort() { return cVal.port; }
-    inline char* getReplConfigFile() { return cVal.replConfigFile; }
     inline long getMaxLogStoreSize() { return cVal.logStoreSize; }
+    inline int getShmIDKey() { return cVal.shmKeyForId; }
     inline int getNetworkID() { return cVal.networkID; }
     inline int getCacheNetworkID() { return cVal.cacheNetworkID; }
     inline int getNetworkResponseTimeout() { return cVal.nwResponseTimeout; }

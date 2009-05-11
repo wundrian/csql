@@ -13,6 +13,7 @@
  *   GNU General Public License for more details.                          *
  *                                                                         *
   ***************************************************************************/
+#include<os.h>
 #include<CSql.h>
 #include<SessionImpl.h>
 #include<Debug.h>
@@ -23,9 +24,11 @@
 #include<CacheTableLoader.h>
 char* version = "csql-linux-i686-2.0GA";
 int srvStop =0;
-pid_t replpid=0;
+pid_t sqlserverpid=0;
 pid_t cachepid=0;
+bool recoverFlag=false;
 void dumpData();
+SessionImpl *session = NULL;
 static void sigTermHandler(int sig)
 {
     printf("Received signal %d\nStopping the server\n", sig);
@@ -62,6 +65,7 @@ DbRetVal releaseAllResources(Database *sysdb, ThreadInfo *info )
         {
             printf("Rollback Transaction %x\n", info->thrTrans_[i].trans_);
             tm->rollback(lm, info->thrTrans_[i].trans_);
+            info->thrTrans_[i].trans_->status_ = TransNotUsed;
         }
     }
     info->init();
@@ -106,15 +110,19 @@ DbRetVal logActiveProcs(Database *sysdb)
         return rv;
     }
     ThreadInfo* pInfo = sysdb->getThreadInfo(0);
-    int i=0;
+    int i=0, count =0;
     ThreadInfo* freeSlot = NULL;
     for (; i < Conf::config.getMaxProcs(); i++)
     {
-        if (pInfo->pid_ !=0 )  logFine(logger, "Registered Procs: %d %lu\n", pInfo->pid_, pInfo->thrid_);
+        if (pInfo->pid_ !=0 ) {
+           logFine(logger, "Registered Procs: %d %lu\n", pInfo->pid_, pInfo->thrid_);
+           printf("Client process with pid %d is still registered\n", pInfo->pid_); 
+           count++;
+        }
         pInfo++;
     }
     sysdb->releaseProcessTableMutex(false);
-    return OK;
+    if (count) return ErrSysInternal; else return OK;
 }
 void startCacheServer()
 {
@@ -122,7 +130,7 @@ void startCacheServer()
      char execName[1024];
      sprintf(execName, "%s/bin/csqlcacheserver", os::getenv("CSQL_INSTALL_ROOT"));
      printf("filename is %s\n", execName);
-     cachepid = os::createProcess(execName, "-s");
+     cachepid = os::createProcess(execName, "csqlcacheserver");
      if (cachepid != -1)
          printf("Cache Recv Server Started pid=%d\n", cachepid);
      return;
@@ -134,9 +142,9 @@ void startServiceClient()
      char execName[1024];
      sprintf(execName, "%s/bin/csqlsqlserver", os::getenv("CSQL_INSTALL_ROOT"));
      printf("filename is %s\n", execName);
-     cachepid = os::createProcess(execName, "-s");
-     if (cachepid != -1)
-         printf("Csql Network Daemon Started pid=%d\n", cachepid);
+     sqlserverpid = os::createProcess(execName, "csqlsqlserver");
+     if (sqlserverpid != -1)
+         printf("Csql Network Daemon Started pid=%d\n", sqlserverpid);
      return;
 }
 
@@ -170,9 +178,8 @@ int main(int argc, char **argv)
         printf("%s\n",version);
         return 0;
     }
-
-    SessionImpl session;
-    DbRetVal rv = session.readConfigFile();
+    session = new SessionImpl();
+    DbRetVal rv = session->readConfigFile();
     if (rv != OK)
     {
         printf("Unable to read the configuration file \n");
@@ -186,68 +193,114 @@ int main(int argc, char **argv)
         printf("Unable to start the logger\n");
         return 2;
     }
-
+    bool isInit = true;
     logFine(logger, "Server Started");
-    int ret  = session.initSystemDatabase();
+    int ret  = session->initSystemDatabase();
     if (0  != ret)
     {
-        printf(" System Database Initialization failed\n");
-        return 3;
+        //printf(" System Database Initialization failed\n");
+        printf("Attaching to exising database\n");
+        isInit = false;
+        delete session;
+        session = new SessionImpl();
+        ret = session->open(DBAUSER, DBAPASS);
+        if (ret !=0) {
+            printf("Unable to attach to existing database\n");
+            return 3;
+        }
+    }else { 
+        printf("System Database initialized\n");
     }
-    printf("System Database initialized\n");
-
 
     bool end = false;
-
     struct timeval timeout, tval;
     timeout.tv_sec = 5;
     timeout.tv_usec = 0;
-    Database* sysdb = session.getSystemDatabase();
-    if (FILE *file = fopen(Conf::config.getDbFile(), "r"))
+    Database* sysdb = session->getSystemDatabase();
+    recoverFlag = false;
+    if(isInit && Conf::config.useDurability())
     {
-        fclose(file);
+        char dbChkptFileName[1024];
+        char dbRedoFileName[1024];
         char cmd[1024];
-        sprintf(cmd, "csql -S -s %s",Conf::config.getDbFile()); 
-        int ret = system(cmd);
-        if (ret != 0) { 
-            printf("Tables cannot be recovered. DB file corrupted\n");
+        sprintf(dbChkptFileName, "%s/csql.db.chkpt", Conf::config.getDbFile());
+        if (FILE *file = fopen(dbChkptFileName, "r"))
+        {
+            fclose(file);
+            sprintf(cmd, "csql -X -s %s",dbChkptFileName); 
+            int ret = system(cmd);
+            if (ret != 0) { 
+                printf("Tables cannot be recovered. chkpt file corrupted\n");
+            }
+        }
+        sprintf(dbRedoFileName, "%s/csql.db.cur", Conf::config.getDbFile());
+        if (FILE *file = fopen(dbRedoFileName, "r"))
+        {
+            fclose(file);
+            int ret = system("redo -a");
+            if (ret != 0) { 
+                printf("Recovery failed. Redo log file corrupted\n");
+                logger.stopLogger();
+                session->destroySystemDatabase();
+                delete session;
+                return 10;
+            }
+        //TODO::generate checkpoint file
+            sprintf(cmd, "csqldump -X > %s",dbChkptFileName); 
+            ret = system(cmd);
+            if (ret != 0) { 
+                printf("Unable to create checkpoint file\n");
+                logger.stopLogger();
+                session->destroySystemDatabase();
+                delete session;
+                return 11;
+            }
+            ret = unlink(dbRedoFileName);
+            if (ret != 0) { 
+                printf("Unable to delete redo log file. Delete and restart the server\n");
+                logger.stopLogger();
+                session->destroySystemDatabase();
+                delete session;
+                return 11;
+            }
         }
     }
-    if (opt == 1) {
+    recoverFlag = true;
+    if (opt == 1 && isInit && ! Conf::config.useDurability()) {
         if (Conf::config.useCache()) {
             printf("Database server recovering cached tables...\n");
             int ret = system("cachetable -U root -P manager -R");
             if (ret != 0) { 
                 printf("Cached Tables recovery failed %d\n", ret);
                 logger.stopLogger();
-                session.destroySystemDatabase();
+                session->destroySystemDatabase();
+                delete session;
                 return 2;
             }
             printf("Cached Tables recovered\n");
         } else {
             printf("Cache mode is not set in csql.conf. Cannot recover\n");
             logger.stopLogger();
-            session.destroySystemDatabase();
+            session->destroySystemDatabase();
+            delete session;
             return 1;
         }
     }
-
-    if (Conf::config.useReplication())
-    {
-        printf("Starting Replication Server\n");
-        char execName[1024];
-        sprintf(execName, "%s/bin/csqlreplserver", os::getenv("CSQL_INSTALL_ROOT"));
-        printf("filename is %s\n", execName);
-        replpid = os::createProcess(execName, "-s");
-        if (replpid != -1) 
-            printf("Repl Server Started pid=%d\n", replpid);
-        
+    GlobalUniqueID UID;
+    if (isInit) UID.create();
+    //TODO:: kill all the child servers and restart if !isInit
+    
+    bool isCacheReq = false, isSQLReq= false;
+    if(Conf::config.useCsqlSqlServer()) {
+        isSQLReq = true;
+        startServiceClient();
     }
-    if (Conf::config.useCache() && Conf::config.useTwoWayCache()) startCacheServer();
+    if (Conf::config.useCache() && Conf::config.useTwoWayCache()) {
+        isCacheReq = true;
+        startCacheServer();
+    }
     printf("Database server started\n");
-
-    if(Conf::config.useCsqlSqlServer()) startServiceClient();
-
+reloop:
     while(!srvStop)
     {
         tval.tv_sec = timeout.tv_sec;
@@ -257,29 +310,35 @@ int main(int argc, char **argv)
         //send signal to all the registered process..check they are alive
         cleanupDeadProcs(sysdb);
 
-        //TODO::check repl server is alive, if not restart it
-        
         //TODO::if it fails to start 5 times, exit
-        if (cachepid !=0  && checkDead(cachepid)) startCacheServer();
-        
+        if (isCacheReq && cachepid !=0  && checkDead(cachepid)) 
+              startCacheServer();
+        if (isSQLReq && sqlserverpid !=0  && checkDead(sqlserverpid)) 
+              startServiceClient();
     }
+    if (logActiveProcs(sysdb) != OK) {srvStop = 0; goto reloop; }
     os::kill(cachepid, SIGTERM);
-    dumpData();
+    os::kill(sqlserverpid, SIGTERM);
+    //if (recoverFlag) dumpData();
     logFine(logger, "Server Exiting");
-    logActiveProcs(sysdb);
     printf("Server Exiting\n");
     logFine(logger, "Server Ended");
+    UID.destroy();
     logger.stopLogger();
-    session.destroySystemDatabase();
+    session->destroySystemDatabase();
+    delete session;
     return 0;
 }
 void dumpData()
 {
     char cmd[1024];
-    sprintf(cmd, "csqldump >%s",Conf::config.getDbFile()); 
+    //TODO::TAKE exclusive lock
+    sprintf(cmd, "csqldump >%s/csql.db.chkpt.1",Conf::config.getDbFile()); 
     int ret = system(cmd);
-    if (ret != 0) { 
-        printf("Table cannot be written. Recovery will fail\n");
-    }
+    if (ret != 0) return;
+    sprintf(cmd, "rm -rf %s/csql.db.cur", Conf::config.getDbFile());
+    if (ret != 0) return;
+    sprintf(cmd, "mv %s/csql.db.chkpt.1 %s/csql.db.chkpt", Conf::config.getDbFile());
+    if (ret != 0) return;
     return;
 }

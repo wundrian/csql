@@ -23,7 +23,7 @@
 DbRetVal NetworkTable::initialize()
 {
     DbRetVal rv = OK;
-    if (!Conf::config.useReplication() && !Conf::config.useCache()) return OK;
+    //if (!Conf::config.useReplication() && !Conf::config.useCache()) return OK;
     rv = readNetworkConfig();
     return rv;
     
@@ -38,7 +38,7 @@ DbRetVal NetworkTable::readNetworkConfig()
     int nwid;
     char hostname[IDENTIFIER_LENGTH];
     int port;
-    fp = fopen(Conf::config.getReplConfigFile(),"r");
+    //fp = fopen(Conf::config.getReplConfigFile(),"r");
     if( fp == NULL ) {
         printError(ErrSysInit, "Invalid path/filename for NETWORK_CONFIG_FILE.\n");
         return ErrSysInit;

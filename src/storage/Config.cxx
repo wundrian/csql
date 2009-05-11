@@ -72,19 +72,18 @@ int Config::storeKeyVal(char *key, char *value)
            { cVal.isCache = os::atobool(value); }
     else if(strcasestr(key,"CACHE_ID")!=NULL)
            { cVal.cacheId = atoi(value);}
-
-    else if (strcasestr(key, "REPLICATION") != NULL)
-           { cVal.isReplication = os::atobool(value); }
+    else if (strcasestr(key, "DURABILITY") != NULL)
+           { cVal.isDurable = os::atobool(value); }
     else if (strcasestr(key, "CSQL_SQL_SERVER") != NULL)
            { cVal.isCsqlSqlServer = os::atobool(value); }
     else if (strcasestr(key, "PORT") != NULL)
            { cVal.port = atoi(value); }
-    else if (strcasestr(key, "NETWORK_CONFIG_FILE") != NULL)
-           { strcpy(cVal.replConfigFile , value);  }
     else if (strcasestr(key, "MAX_LOG_STORE_SIZE") != NULL)
            { cVal.logStoreSize = atol(value);  }
     else if (strcasestr(key, "MY_NETWORK_ID") != NULL)
            { cVal.networkID = atoi(value);  }
+    else if (strcasestr(key, "ID_SHM_KEY") != NULL)
+           { cVal.shmKeyForId = atoi(value);  }
     else if (strcasestr(key, "CACHE_NETWORK_ID") != NULL)
            { cVal.cacheNetworkID = atoi(value);  }
     else if (strcasestr(key, "NETWORK_RESPONSE_TIMEOUT") != NULL)
@@ -198,50 +197,12 @@ int Config::validateValues()
         printError(ErrBadArg,  "LOCK_TIMEOUT_RETRY should be >= 0 and <= 100");
         return 1;
     }
-    if (cVal.isCache && cVal.isReplication) {
-        printError(ErrBadArg, "Either caching or replication option should be set."
-                              " Both options are not supported together");
-        return 1;
-    }
     if (cVal.isCache) {
         if (0 == strcmp(cVal.dsn,""))
         {
             printError(ErrBadArg,  "DSN is set to NULL");
             return 1;
         }
-    }
-    if (cVal.isReplication || cVal.isCache) {
-        if (0 == strcmp(cVal.replConfigFile,""))
-        {
-            //TODO::check whether file exists
-            printError(ErrBadArg,  "NETWORK_CONFIG_FILE is set to NULL");
-            return 1;
-        }
-        if (0 == strcmp(cVal.tableConfigFile,""))
-        {
-            //TODO::check whether file exists
-            printError(ErrBadArg,  "TABLE_CONFIG_FILE is set to NULL");
-            return 1;
-        }
-        /*FILE *fp = fopen(cVal.replConfigFile,"r");
-        if( fp == NULL ) {
-            printError(ErrSysInit, "Invalid path/filename for NETWORK_CONFIG_FILE.\n");
-            return 1;
-        }
-        int count =0;
-        int nwid, port;
-        char hostname[IDENTIFIER_LENGTH];
-        char nwmode;
- 
-        while(!feof(fp)) {
-            fscanf(fp, "%d:%d:%s\n", &nwid, &port, hostname);
-            count++;
-        }
-        if (count >2) {
-            printError(ErrSysInit, "NETWORK_CONFIG_FILE has more than 2 entries\n");
-            return 1;
-        }*/
-
     }
     /*if (cVal.isCache)
     {
@@ -365,15 +326,16 @@ void Config::print()
     printf(" getLockSecs %d\n", getLockSecs());
     printf(" getLockUSecs %d\n", getLockUSecs());
     printf(" getLockRetries %d\n", getLockRetries());
+    printf(" isDurable %d\n", useDurability());
     printf(" useCache %d\n", useCache());
+    printf(" getCacheID %d\n", getCacheID());
     printf(" getDSN %s\n", getDSN());
     printf(" getTableConfigFile %s\n", getTableConfigFile());
     printf(" isTwoWayCache %d\n", useTwoWayCache());
     printf(" getCacheWaitSecs %d\n", getCacheWaitSecs());
     printf(" useCsqlSqlServer %d\n", useCsqlSqlServer());
     printf(" getPort %d\n", getPort());
-    //printf(" useReplication %d\n", useReplication());
-    //printf(" getReplConfigFile %s\n", getReplConfigFile());
+    printf(" getShmIDKey %d\n", getShmIDKey());
     //printf(" getMaxLogStoreSize %ld\n", getMaxLogStoreSize());
     //printf(" getNetworkID %d\n", getNetworkID());
     //printf(" getCacheNetworkID %d\n", getCacheNetworkID());

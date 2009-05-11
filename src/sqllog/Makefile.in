@@ -51,7 +51,8 @@ am__installdirs = "$(DESTDIR)$(libdir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libcsqlsqllog_la_LIBADD =
-am_libcsqlsqllog_la_OBJECTS = SqlLogConnection.lo SqlLogStatement.lo
+am_libcsqlsqllog_la_OBJECTS = SqlLogConnection.lo SqlLogStatement.lo \
+	FileSend.lo
 libcsqlsqllog_la_OBJECTS = $(am_libcsqlsqllog_la_OBJECTS)
 libcsqlsqllog_la_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
@@ -188,7 +189,7 @@ INCLUDES = -I$(top_srcdir)/include $(all_includes)
 METASOURCES = AUTO
 lib_LTLIBRARIES = libcsqlsqllog.la
 libcsqlsqllog_la_LDFLAGS = -avoid-version -module 
-libcsqlsqllog_la_SOURCES = SqlLogConnection.cxx  SqlLogStatement.cxx
+libcsqlsqllog_la_SOURCES = SqlLogConnection.cxx  SqlLogStatement.cxx FileSend.cxx
 libcsqlsqllog_a_LIBADD = $(top_builddir)/src/sql/libcsqlsql.la $(top_builddir)/src/network/libcsqlnw.la
 all: all-am
 
@@ -259,6 +260,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FileSend.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SqlLogConnection.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SqlLogStatement.Plo@am__quote@
 

@@ -39,6 +39,55 @@ class Mutex
     int releaseLock(int procSlot, bool procAccount=true);
     int destroy();
     int recoverMutex();
+    static int CAS(int *ptr, int oldVal, int newVal)
+    {
+        unsigned char ret;
+        __asm__ __volatile__ (
+                "  lock\n"
+                "  cmpxchgl %2,%1\n"
+                "  sete %0\n"
+                : "=q" (ret), "=m" (*ptr)
+                : "r" (newVal), "m" (*ptr), "a" (oldVal)
+                : "memory");
+
+        //above assembly returns 0 in case of failure
+        if (ret) return 0;
+
+        struct timeval timeout;
+        timeout.tv_sec=0;
+        timeout.tv_usec=1000;
+        os::select(0,0,0,0, &timeout);
+            __asm__ __volatile__ (
+                "  lock\n"
+                "  cmpxchgl %2,%1\n"
+                "  sete %0\n"
+                : "=q" (ret), "=m" (*ptr)
+                : "r" (newVal), "m" (*ptr), "a" (oldVal)
+                : "memory");
+        //if (ret) return 0;  else {printf("DEBUG::CAS Fails %d-\n", ret); return 1; } 
+        if (ret) return 0;  else return 1;
+
+    }
+    /*static int CASB(char *ptr, char oldVal, char newVal)
+    {   
+        unsigned char ret;
+        __asm__ __volatile__ ("lock; cmpxchgb %b1, %2"
+                               : "=a" (ret)
+                               : "m" (*(ptr), "q" (newVal), "0" (oldVal)
+                               : "memory");
+        printf("Value of ret is %d\n", ret); 
+        //above assembly returns 0 in case of failure
+        if (ret) return 0;
+        struct timeval timeout;
+        timeout.tv_sec=0;
+        timeout.tv_usec=500;
+        os::select(0,0,0,0, &timeout);
+        __asm__ __volatile__ ("lock; cmpxchgb %b1, %2"
+                               : "=a" (ret)
+                               : "m" (*(ptr), "q" (newVal), "0" (oldVal)
+                               : "memory");
+        if(!ret) { printf("DEBUG::CAS Fails\n"); return 1; } else return 0;
+    }*/
 };
 
 #endif

@@ -82,6 +82,7 @@ class SqlConnection : public AbsSqlConnection
 
     Connection& getConnObject(){  return conn; }
     bool isConnectionOpen() { if (isConnOpen) return true; return false; };
+    DbRetVal getExclusiveLock(){ return conn.getExclusiveLock(); }
 
     friend class SqlFactory;
 };

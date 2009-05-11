@@ -107,7 +107,7 @@ class TableImpl:public Table
 
     TupleIterator *iter;
 
-    bool undoFlag;
+    bool loadFlag;
 
     public:
     FieldList fldList_;
@@ -139,7 +139,7 @@ class TableImpl:public Table
     DbRetVal copyValuesToBindBuffer(void *tuple);
     void setNullBit(int fldpos);
     void clearNullBit(int fldpos);
-    DbRetVal insertIndexNode(Transaction *trans, void *indexPtr, IndexInfo *info, void *tuple);
+    DbRetVal insertIndexNode(Transaction *trans, void *indexPtr, IndexInfo *info, void *tuple, bool loadFlag=0);
     DbRetVal updateIndexNode(Transaction *trans, void *indexPtr, IndexInfo *info, void *tuple);
     DbRetVal deleteIndexNode(Transaction *trans, void *indexPtr, IndexInfo *info, void *tuple);
 
@@ -155,7 +155,7 @@ class TableImpl:public Table
         pred_ = NULL; useIndex_ = -1; numFlds_ = 0; bindListArray_ = NULL;
         iNullInfo = 0; cNullInfo = NULL; isIntUsedForNULL = true; 
         iNotNullInfo = 0; cNotNullInfo = NULL; curTuple_ = NULL;
-        isPlanCreated = false; undoFlag = true;ptrToAuto=NULL;}
+        isPlanCreated = false; loadFlag = false; ptrToAuto=NULL;}
     ~TableImpl();
 
     void setDB(Database *db) { db_ = db; }
@@ -229,7 +229,7 @@ class TableImpl:public Table
     DbRetVal lock(bool shared);
     DbRetVal unlock();
    
-    DbRetVal setUndoLogging(bool flag) { undoFlag = flag; }
+    DbRetVal setUndoLogging(bool flag) { loadFlag = flag; }
 
     void printSQLIndexString();
 
@@ -245,6 +245,7 @@ class TableImpl:public Table
     char* getName() { return tblName_; }
     void setTableInfo(char *name, int tblid, size_t  length,
                        int numFld, int numIdx, void *chunk);
+    void setLoading(bool flag) { loadFlag = flag; }
     friend class DatabaseManagerImpl;
 };
 

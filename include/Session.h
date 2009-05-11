@@ -110,6 +110,7 @@ class Connection
     *   @return DbRetVal 
     */
     DbRetVal rollback();
+    DbRetVal getExclusiveLock();
 };
 
 
@@ -125,6 +126,7 @@ class Session
     virtual DbRetVal startTransaction(IsolationLevel level)=0;
     virtual DbRetVal commit()=0;
     virtual DbRetVal rollback()=0;
+    virtual DbRetVal getExclusiveLock()=0;
     //TODO:: virtual int setAutoCommit(bool flag)=0;
     //TODO::support for save points
     virtual ~Session() { }

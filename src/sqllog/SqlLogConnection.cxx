@@ -17,11 +17,13 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
+#include <os.h>
 #include <SqlLogConnection.h>
+#include <SqlLogStatement.h>
 #include <CSql.h>
 #include <Network.h>
 
-UniqueID SqlLogConnection::txnUID;
+GlobalUniqueID SqlLogConnection::txnUID;
 List SqlLogConnection::cacheList;
 
 DbRetVal SqlLogConnection::addPacket(BasePacket* pkt)
@@ -62,12 +64,13 @@ DbRetVal SqlLogConnection::connect (char *user, char *pass)
     //printf("LOG: connect\n");
     if (innerConn) rv = innerConn->connect(user,pass);
     if (rv != OK) return rv;
-    if (!Conf::config.useReplication() && !Conf::config.useCache()) return OK;
-    if (rv !=OK) { innerConn->disconnect(); return rv; }
+    if (!Conf::config.useDurability()) return OK;
 
     //populate cacheList if not populated by another thread in same process
     //TODO::cacheList requires mutex guard
     if (0 == cacheList.size()) rv = populateCachedTableList(); 
+    rv = SqlLogStatement::stmtUID.open();
+    rv = SqlLogConnection::txnUID.open();
     return rv;
     
 }
@@ -77,7 +80,8 @@ DbRetVal SqlLogConnection::disconnect()
     //printf("LOG: disconnect\n");
     if (innerConn) rv =innerConn->disconnect();
     if (rv != OK) return rv;
-    if (!Conf::config.useReplication() && !Conf::config.useCache()) return OK;
+    if (!Conf::config.useDurability()) return OK;
+    SqlLogStatement::stmtUID.close();
     return rv;
 }
 DbRetVal SqlLogConnection::beginTrans(IsolationLevel isoLevel, TransSyncMode mode)
@@ -85,8 +89,8 @@ DbRetVal SqlLogConnection::beginTrans(IsolationLevel isoLevel, TransSyncMode mod
     DbRetVal rv = OK;
     if (innerConn) rv =  innerConn->beginTrans(isoLevel);
     if (rv != OK) return rv;
-
     syncMode = mode;
+    txnID = SqlLogConnection::txnUID.getID(TXN_ID);
     return OK;
 }
 DbRetVal SqlLogConnection::commit()
@@ -94,12 +98,10 @@ DbRetVal SqlLogConnection::commit()
     DbRetVal rv = OK;
     //printf("LOG: commit %d\n", syncMode);
     //if (innerConn) rv =  innerConn->commit();
-    if (syncMode == OSYNC) {
-        if (innerConn) rv = innerConn->commit();
-        return rv;
-    }
-    if (logStore.size() == 0) 
-    { 
+    if (innerConn) rv = innerConn->commit();
+    if (!Conf::config.useDurability()) return OK;
+    
+    if (execLogStore.size() == 0) { 
         //This means no execution for any non select statements in 
         //this transaction
         //rollback so that subsequent beginTrans will not report that
@@ -111,7 +113,7 @@ DbRetVal SqlLogConnection::commit()
         }
         return rv; 
     }
-    if (syncMode == ASYNC) {
+
     //TODO::put the packet in global log store
     /*
     PacketCommit *pkt = new PacketCommit();
@@ -136,17 +138,51 @@ DbRetVal SqlLogConnection::commit()
         }
         //TODO::remove all sql logs nodes and the list which contains ptr to it
         */
+    int txnId = getTxnID(); 
+    // len to be sent should also contain txnId 
+    int len = 2 * sizeof(int) + os::align(getExecLogStoreSize());
+    printDebug(DM_SqlLog, "commit: size of logstore: %d", len);
+    int bufferSize = sizeof(long) + len;
+    printDebug(DM_SqlLog, "commit: size of buffer: %d", bufferSize);
+    void *buffer = malloc(bufferSize);
+    printDebug(DM_SqlLog, "commit: buffer address: %x", buffer);
+    char *ptr = (char *)buffer + sizeof(long); // long type is for msgtype
+    char *data = ptr;
+    printDebug(DM_SqlLog, "commit: data address: %x", data);
+    *(int *) ptr = len; 
+    ptr += sizeof(int);
+    *(int *) ptr = txnId;
+    ptr += sizeof(int);
+    ListIterator logStoreIter = execLogStore.getIterator();
+    ExecLogInfo *elInfo = NULL;
+    while (logStoreIter.hasElement()) {
+        elInfo = (ExecLogInfo *)logStoreIter.nextElement();
+        printDebug(DM_SqlLog, "commit: elem from logstore:: %x", elInfo);
+        *(int *) ptr = elInfo->stmtId;
+        printDebug(DM_SqlLog, "commit: stmtId to marshall: %d", elInfo->stmtId);
+        ptr += sizeof(int);
+        *(int *) ptr = (int) elInfo->type;
+        printDebug(DM_SqlLog, "commit: ExType to marshall: %d", elInfo->type);
+        //printf("PRABA::type is %d\n" , *(int *) ptr);
+        ptr += sizeof(int);
+        if (elInfo->type == SETPARAM) {
+            *(int *) ptr = elInfo->pos;
+            printDebug(DM_SqlLog, "commit: PrmPos to marshall: %d", elInfo->pos);
+            ptr += sizeof(int);
+            *(int *) ptr = (int) elInfo->dataType;
+            printDebug(DM_SqlLog, "commit: DtType to marshall: %d", elInfo->dataType);
+            ptr += sizeof(int);
+            *(int *) ptr = elInfo->len;
+            printDebug(DM_SqlLog, "commit: length to marshall: %d", elInfo->len);
+            ptr += sizeof(int);
+            memcpy(ptr, &elInfo->value, elInfo->len);
+            ptr += elInfo->len;
+        }
     }
-    
-    ListIterator logStoreIter = logStore.getIterator();
-    PacketExecute *execPkt = NULL;
-    while (logStoreIter.hasElement())
-    {
-        execPkt = (PacketExecute*)logStoreIter.nextElement();
-        delete execPkt;
-    }
-    logStore.reset();
-    if (innerConn) rv = innerConn->commit();
+    commitLogs(len, data);
+    execLogStore.reset();
+    execLogStoreSize =0;
+    //if (innerConn) rv = innerConn->commit();
     return rv;
 }
 DbRetVal SqlLogConnection::rollback()
@@ -163,8 +199,12 @@ DbRetVal SqlLogConnection::rollback()
         delete execPkt;
     }
     logStore.reset();
+
+    execLogStore.reset();
+    execLogStoreSize =0;
     return rv;
 }
+
 DbRetVal SqlLogConnection::populateCachedTableList()
 {
     FILE *fp = NULL;
@@ -189,6 +229,7 @@ DbRetVal SqlLogConnection::populateCachedTableList()
     fclose(fp);
     return OK;
 }
+
 bool SqlLogConnection::isTableCached(char *tblName)
 {
     if (NULL == tblName)
@@ -206,39 +247,4 @@ bool SqlLogConnection::isTableCached(char *tblName)
         }
     }
     return false;
-}
-
-
-DbRetVal SqlLogConnection::sendAndReceive(NetworkPacketType type, char *packet, int length)
-{
-    return OK;
-    NetworkClient* nwClient = nwTable.getNetworkClient();
-    DbRetVal rv = OK, retRV=OK;
-    printf("isCacheClient %d\n", nwClient->isCacheClient());
-    printf("isConnected %d\n", nwClient->isConnected());
-/*
-    if (!nwClient->isConnected()) {
-        if (nwClient->isCacheClient()) return ErrOS; 
-        //TODO::put this packet in send buffer.
-        return OK;
-    }
-*/
-    rv = nwClient->send(type, packet, length);
-    if (rv != OK) 
-    {
-       printf("Unable to send pkt to peer with nwid %d\n", nwClient->getNetworkID());
-       //TODO:: put this packet in resend buffer, so that it will sent later by another thread for repl mode
-        nwClient->setConnectFlag(false);
-        if (nwClient->isCacheClient()) return ErrOS; else return OK;
-    }
-    rv = nwClient->receive();
-    if (rv != OK)
-    {
-        printf("Unable to receive ack pkt from peer with nwid %d\n", nwClient->getNetworkID());
-        nwClient->setConnectFlag(false);
-        if (nwClient->isCacheClient()) return ErrOS;
-        //TODO:: put this packet to resend buffer so that it can be sent later
-        //and call continue;
-    }
-    return OK;
 }

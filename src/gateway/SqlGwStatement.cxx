@@ -20,6 +20,8 @@
 #include <SqlGwStatement.h>
 #include <SqlLogStatement.h>
 #include <CacheTableLoader.h>
+#include <TableConfig.h>
+
 DbRetVal SqlGwStatement::prepare(char *stmtstr)
 {
     DbRetVal rv = OK,ret=OK;
@@ -28,31 +30,28 @@ DbRetVal SqlGwStatement::prepare(char *stmtstr)
     //conn->connectAdapterIfNotConnected();
     stmtHdlr = NoHandler;
     if (innerStmt) rv = innerStmt->prepare(stmtstr);
-    SqlLogStatement *stmt = (SqlLogStatement*) innerStmt;
-    bool isAllcachedTable = true;
+//    SqlLogStatement *stmt = (SqlLogStatement*) innerStmt;
+    bool isAllcachedTableForJoin = true;
     int noOfTable = 0;
-    ListIterator titer =(stmt->getInnerStatement())->getTableNameList().getIterator();
+    ListIterator titer =innerStmt->getTableNameList().getIterator();
     while (titer.hasElement())
     {
         TableName *t  = (TableName*)titer.nextElement();
-        ret = CacheTableLoader::isTableCached(t->tblName);
-        if(ret!=OK) isAllcachedTable=false;
+        ret = TableConf::config.isTableCached(t->tblName);
+        if(ret!=OK) isAllcachedTableForJoin=false;
         noOfTable++;
     }
-    if(noOfTable == 1){ isAllcachedTable = true;}
-    mode =CacheTableLoader::getTableMode((stmt->getInnerStatement())->getTableName());
-    if ((rv == OK)&& ((mode!=5 && mode!=6)||innerStmt->isSelect()) && isAllcachedTable) {
-        if (!stmt->isCached) { 
-            stmtHdlr = CSqlHandler;
-            return rv;  
-        }else {
-            if (stmt->mode != TABLE_OSYNC) {
-                stmtHdlr = CSqlHandler;
-                return rv;
-            }else {
-                stmtHdlr = CSqlAndAdapterHandler;
-            }
-        }
+    if(noOfTable == 1){ isAllcachedTableForJoin = true;}
+    mode = TableConf::config.getTableMode(innerStmt->getTableName());
+/*    if((mode==2||mode==6) && !innerStmt->isSelect())
+    {
+       printError(ErrReadOnlyCache, "Partial Cache Condition Violation for Non select Dml statement\n");
+       return ErrReadOnlyCache;
+    }*/
+    if ((rv == OK)&& ((mode!=5 && mode!=6)||innerStmt->isSelect()) && isAllcachedTableForJoin)
+    {
+        stmtHdlr = CSqlHandler;
+        if(mode !=1) return rv;
     }
 
     //TODO::add procedures also in the below checking
@@ -61,30 +60,28 @@ DbRetVal SqlGwStatement::prepare(char *stmtstr)
         !strncasecmp(stmtstr, "SELECT", 6) ==0 &&
         !strncasecmp(stmtstr, "DELETE", 6) ==0) return rv;
 
+    printDebug(DM_Gateway, "Handled by csql %d\n", shouldCSqlHandle());
+
+    if (!shouldCSqlHandle()) stmtHdlr = AdapterHandler;
+    if ( shouldCSqlHandle() && !innerStmt->isSelect() ) 
+        stmtHdlr = CSqlAndAdapterHandler;
+    printDebug(DM_Gateway, "Handled  %d\n", stmtHdlr);
     //prepare failed. means table not there in csql->uncached table
     //or sql statement is complex and csql parser failed
-    if (adapter) rv = adapter->prepare(stmtstr);
-    if (rv == OK) { 
-        printDebug(DM_Gateway, "Handled by csql %d\n", shouldCSqlHandle());
-        if (!shouldCSqlHandle()) stmtHdlr = AdapterHandler;
-        else stmtHdlr = CSqlAndAdapterHandler;
-        printDebug(DM_Gateway, "Handled  %d\n", stmtHdlr);
-    }
-    else
-        printError(ErrSysInit, "Both csql and adapter could not prepare\n");
+    if (adapter && shouldAdapterHandle()) rv = adapter->prepare(stmtstr);
+    if (rv != OK)
+        printError(ErrBadCall, "Both adapter and csql could not prepare");
     return rv;
 }
 bool SqlGwStatement::shouldAdapterHandle()
 {
-    if (stmtHdlr == AdapterHandler || 
-        stmtHdlr == CSqlAndAdapterHandler) return true;
+    if (stmtHdlr == AdapterHandler || stmtHdlr == CSqlAndAdapterHandler) return true;
     return false;
 }
 bool SqlGwStatement::shouldCSqlHandle()
 {
     SqlGwConnection *conn = (SqlGwConnection*) con;
-    if (stmtHdlr == CSqlHandler || 
-        stmtHdlr == CSqlAndAdapterHandler) return true;
+    if (stmtHdlr == CSqlHandler || stmtHdlr == CSqlAndAdapterHandler) return true;
     return false;
 }
 bool SqlGwStatement::isSelect()

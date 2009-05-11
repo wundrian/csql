@@ -62,7 +62,7 @@ int main(int argc, char **argv)
     SqlNetworkHandler::conn = SqlFactory::createConnection(CSql);
     DbRetVal rv = SqlNetworkHandler::conn->connect("root", "manager");
     if (rv != OK) return 1;
-    if (!Conf::config.useReplication())
+    //if (!Conf::config.useReplication())
     {
         printf("Replication is set to OFF in csql.conf file\n");
         SqlNetworkHandler::conn->disconnect();
@@ -74,7 +74,7 @@ int main(int argc, char **argv)
     int nwid =0;
     char hostname[IDENTIFIER_LENGTH];
     int port=0;
-    fp = fopen(Conf::config.getReplConfigFile(),"r");
+    //fp = fopen(Conf::config.getReplConfigFile(),"r");
     if( fp == NULL ) {
         printError(ErrSysInit, "Invalid path/filename for REPL_CONFIG_FILE.\n");
         SqlNetworkHandler::conn->disconnect();

@@ -19,7 +19,7 @@
  ***************************************************************************/
 #include <SqlLogStatement.h>
 
-UniqueID SqlLogStatement::stmtUID;
+GlobalUniqueID SqlLogStatement::stmtUID;
 
 bool SqlLogStatement::isNonSelectDML(char *stmtstr)
 {
@@ -33,56 +33,27 @@ bool SqlLogStatement::isNonSelectDML(char *stmtstr)
 DbRetVal SqlLogStatement::prepare(char *stmtstr)
 {
     DbRetVal rv = OK;
+    SqlLogConnection *conn = (SqlLogConnection *)con;
+    int txnId=conn->getTxnID();
     if (innerStmt) rv = innerStmt->prepare(stmtstr);
-    if (rv != OK) return rv;
-
-    isCached = false;
-    //check if it is INSERT UPDATE DELETE statement
-    //if not, then no need to generate logs
-    if (!isNonSelectDML(stmtstr)) { return rv;}
-    if (!Conf::config.useReplication() && !Conf::config.useCache()) return OK;
-    SqlLogConnection* logConn = (SqlLogConnection*)con;
-    if (!logConn->isTableCached(innerStmt->getTableName())) return OK;
-    isCached = true;
-    mode = TABLE_OSYNC;//TEMP::support only OSYNC 
-
-    sid  = SqlLogStatement::stmtUID.getID();
-    //TODO::if connected to peer then only send this packet
-    PacketPrepare *pkt = new PacketPrepare();
-    pkt->stmtID= sid;
-    pkt->syncMode = ASYNC;
-    pkt->stmtString = stmtstr;
-    pkt->noParams = innerStmt->noOfParamFields();
-    FieldInfo *info = new FieldInfo();
-    if (pkt->noParams > 0) {
-      pkt->type = new int [pkt->noParams];
-      pkt->length = new int [pkt->noParams];
-      BindSqlField *bindField = NULL;
-      for (int i = 0; i < innerStmt->noOfParamFields(); i++)
-      {
-        innerStmt->getParamFldInfo(i+1, info);
-        bindField = new BindSqlField();
-        bindField->type = info->type;
-        bindField->length = info->length;
-        pkt->type[i] =  info->type;
-        pkt->length[i] =  info->length;
-        bindField->value = AllDataType::alloc(info->type, info->length);
-        paramList.append(bindField);
-      }
-    }
-    pkt->marshall();
-    /*logConn->connectIfNotConnected();
-    //printf("Sending PREPARE packet of size %d\n", pkt->getBufferSize());
-    rv = logConn->sendAndReceive(NW_PKT_PREPARE, pkt->getMarshalledBuffer(), pkt->getBufferSize());
-    printf("RV from PREPARE SQLLOG %d\n", rv);
-    if (rv != OK) { 
-       logConn->addPreparePacket(pkt); 
-       delete info; 
-       return OK;
-    }*/
-    logConn->addPreparePacket(pkt); 
-    delete info;
-    return rv;
+    if (rv != OK) { isNonSelDML = false; return rv; }
+    if (Conf::config.useDurability()) {
+        if (strlen(stmtstr) > 6 && ((strncasecmp(stmtstr,"CREATE", 6) == 0) ||
+                                   (strncasecmp(stmtstr,"DROP", 4) == 0))) {
+            sid  = SqlLogStatement::stmtUID.getID(STMT_ID);
+            printDebug(DM_SqlLog, "CREATE|DROP: stmt id = %d\n", sid);
+            conn->fileLogPrepare(0, sid, strlen(stmtstr)+1, stmtstr);
+            isNonSelDML = false;
+            return OK;
+        }
+    } 
+    if (!isNonSelectDML(stmtstr)) { isNonSelDML = false; return rv;}
+    isNonSelDML = true;
+    sid  = SqlLogStatement::stmtUID.getID(STMT_ID);
+    printDebug(DM_SqlLog, "stmt id = %d\n", sid);
+    if (Conf::config.useDurability()) 
+        conn->fileLogPrepare(txnId, sid, strlen(stmtstr) + 1, stmtstr);
+    return OK;
 }
 
 bool SqlLogStatement::isSelect()
@@ -93,30 +64,22 @@ bool SqlLogStatement::isSelect()
 
 DbRetVal SqlLogStatement::execute(int &rowsAffected)
 {
-
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-
     DbRetVal rv = OK;
     if (innerStmt) rv = innerStmt->execute(rowsAffected);
-    if (rv != OK) return rv;
-
-    //no need to generate log if it does not actually modify the table
-    if (rowsAffected == 0 ) return OK;
-    if (!isCached) return OK;
-    if (logConn->getSyncMode() == OSYNC) return OK;
-
-    //printf("LOG:execute\n");
-    PacketExecute *pkt = new PacketExecute();
-    pkt->stmtID= sid;
-    pkt->noParams = innerStmt->noOfParamFields();
-    pkt->setParams(paramList);
-    pkt->marshall();
-    int *p = (int*)pkt->getMarshalledBuffer();
-    //printf("After EXEC packet marshall %d %d size %d\n", *p, *(p+1),
-    //                pkt->getBufferSize());
-   // printf("EXEC pkt ptr is %x\n", pkt);
-    logConn->addPacket(pkt);
-    return rv;
+    if (!isNonSelDML) return rv;
+    if ( rv != OK) return rv;
+    ExecLogInfo *elInfo = (ExecLogInfo *) malloc (sizeof(ExecLogInfo));
+    elInfo->stmtId = sid;
+    printDebug(DM_SqlLog, "Execute: stmtID: %d", elInfo->stmtId);
+    elInfo->type = EXECONLY;
+    printDebug(DM_SqlLog, "Execute: ExType: %d", elInfo->type);
+    logConn->addExecLog(elInfo);
+    printDebug(DM_SqlLog, "Execute: elem address: %x", elInfo);
+    int size = 2 * sizeof(int);
+    logConn->addToExecLogSize(size);
+    printDebug(DM_SqlLog, "Execute: log length: %d", size);
+    return OK;
 }
 
 DbRetVal SqlLogStatement::bindParam(int pos, void* value)
@@ -200,163 +163,236 @@ DbRetVal SqlLogStatement::free()
     DbRetVal rv = OK;
     if (innerStmt) rv = innerStmt->free();
     //TODO::DEBUG::always innsrStmt->free() returns error
-    //if (rv != OK) return rv;
-    SqlLogConnection* logConn = (SqlLogConnection*)con;
-    if (sid != 0 ) logConn->removePreparePacket(sid);
+    if (rv != OK)  return rv;
+    if (isNonSelDML) { 
+        SqlLogConnection* logConn = (SqlLogConnection*)con;
+        if (sid != 0 ) logConn->freeLogs(sid);
+    }
     if (!isCached) return rv;
-
-    //TODO
-    //If statement is freed before the txn commits, it will lead to issue 
-    //incase of async mode. when the other site goes down and comes back,
-    //it will not have the cached SqlStatement objects, so in that case 
-    //we need to send all the prepare packets again, so we should not free
-    //the statement straight away in client side as well as in server side
-
-
-
-    /*PacketFree *pkt = new PacketFree();
-    pkt->stmtID= sid;
-    pkt->marshall();
-    SqlLogConnection* logConn = (SqlLogConnection*)con;
-    logConn->sendAndReceiveAllPeers(NW_PKT_FREE, pkt->getMarshalledBuffer(), pkt->getBufferSize());
-    delete pkt;*/
     isCached= false;
     sid = 0;
-    paramList.reset();
+    isNonSelDML = false;
     return OK;
 }
 void SqlLogStatement::setShortParam(int paramPos, short value)
 {
     if (innerStmt) innerStmt->setShortParam(paramPos,value);
+    if (!isNonSelDML) return; 
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    if (logConn->getSyncMode() == OSYNC) return ;
-    BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
-    if (bindField->type != typeShort) return;
-    *(short*)(bindField->value) = value;
+    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(short);
+    ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
+    elInfo->stmtId = sid;
+    printDebug(DM_SqlLog, "setShort: stmtID: %d", elInfo->stmtId);
+    elInfo->type = SETPARAM;
+    printDebug(DM_SqlLog, "setShort: ExecTp: %d", elInfo->type);
+    elInfo->pos = paramPos;
+    printDebug(DM_SqlLog, "setShort: PrmPos: %d", elInfo->pos);
+    elInfo->dataType = typeShort;
+    printDebug(DM_SqlLog, "setShort: DtType: %d", elInfo->dataType);
+    elInfo->len = sizeof (short);
+    printDebug(DM_SqlLog, "setShort: Length: %d", elInfo->len);
+    *(short *)&elInfo->value = value;
+    printDebug(DM_SqlLog, "setShort: Value : %d", *(short *)&elInfo->value);
+    logConn->addExecLog(elInfo);
+    printDebug(DM_SqlLog, "appended elem addr: %x", elInfo);
+    logConn->addToExecLogSize(buffer);
+    printDebug(DM_SqlLog, "appended bufsize: %d", buffer);
     return;
 }
 void SqlLogStatement::setIntParam(int paramPos, int value)
 {
     if (innerStmt) innerStmt->setIntParam(paramPos,value);
+    if (!isNonSelDML) return; 
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    if (logConn->getSyncMode() == OSYNC) return ;
-    if (!isCached) return;
-    BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
-    if (bindField->type != typeInt) return;
-    *(int*)(bindField->value) = value;
+    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(int);
+    ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
+    elInfo->stmtId = sid;
+    printDebug(DM_SqlLog, "setInt: stmtID: %d", elInfo->stmtId);
+    elInfo->type = SETPARAM;
+    printDebug(DM_SqlLog, "setInt: ExecTp: %d", elInfo->type);
+    elInfo->pos = paramPos;
+    printDebug(DM_SqlLog, "setInt: PrmPos: %d", elInfo->pos);
+    elInfo->dataType = typeInt;
+    printDebug(DM_SqlLog, "setInt: DtType: %d", elInfo->dataType);
+    elInfo->len = sizeof(int);
+    printDebug(DM_SqlLog, "setInt: Length: %d", elInfo->len);
+    *(int *)&elInfo->value = value;
+    printDebug(DM_SqlLog, "setInt: Value : %d", *(int *)&elInfo->value);
+    logConn->addExecLog(elInfo);
+    printDebug(DM_SqlLog, "appended elem addr: %x", elInfo);
+    logConn->addToExecLogSize(buffer);
+    printDebug(DM_SqlLog, "appended bufsize: %d", buffer);
     return;
-
 }
 void SqlLogStatement::setLongParam(int paramPos, long value)
 {
     if (innerStmt) innerStmt->setLongParam(paramPos,value);
+    if (!isNonSelDML) return; 
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    if (logConn->getSyncMode() == OSYNC) return ;
-    if (!isCached) return;
-    BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
-    if (bindField->type != typeLong) return;
-    *(long*)(bindField->value) = value;
+    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(long);
+    ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
+    elInfo->stmtId = sid;
+    elInfo->type = SETPARAM;
+    elInfo->pos = paramPos;
+    elInfo->dataType = typeLong;
+    elInfo->len = sizeof(long);
+    *(long *)&elInfo->value = value;
+    logConn->addExecLog(elInfo);
+    logConn->addToExecLogSize(buffer);
     return;
-
 }
 void SqlLogStatement::setLongLongParam(int paramPos, long long value)
 {
     if (innerStmt) innerStmt->setLongLongParam(paramPos,value);
+    if (!isNonSelDML) return; 
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    if (logConn->getSyncMode() == OSYNC) return ;
-    if (!isCached) return;
-    BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
-    if (bindField->type != typeLongLong) return;
-    *(long long*)(bindField->value) = value;
+    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(long long);
+    ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
+    elInfo->stmtId = sid;
+    elInfo->type = SETPARAM;
+    elInfo->pos = paramPos;
+    elInfo->dataType = typeLongLong;
+    elInfo->len = sizeof (long long);
+    *(long long *)&elInfo->value = value;
+    logConn->addExecLog(elInfo);
+    logConn->addToExecLogSize(buffer);
     return;
 }
 void SqlLogStatement::setByteIntParam(int paramPos, ByteInt value)
 {
     if (innerStmt) innerStmt->setByteIntParam(paramPos,value);
+    if (!isNonSelDML) return; 
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    if (logConn->getSyncMode() == OSYNC) return ;
-    if (!isCached) return;
-    BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
-    if (bindField->type != typeByteInt) return;
-    *(char*)(bindField->value) = value;
-
+    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(ByteInt);
+    ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
+    elInfo->stmtId = sid;
+    elInfo->type = SETPARAM;
+    elInfo->pos = paramPos;
+    elInfo->dataType = typeByteInt;
+    elInfo->len = sizeof(ByteInt);
+    *(ByteInt *)&elInfo->value = value;
+    logConn->addExecLog(elInfo);
+    logConn->addToExecLogSize(buffer);
+    return;
 }
 void SqlLogStatement::setFloatParam(int paramPos, float value)
 {
     if (innerStmt) innerStmt->setFloatParam(paramPos,value);
+    if (!isNonSelDML) return; 
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    if (logConn->getSyncMode() == OSYNC) return ;
-    if (!isCached) return;
-    BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
-    if (bindField->type != typeFloat) return;
-    *(float*)(bindField->value) = value;
-
+    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(float);
+    ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
+    elInfo->stmtId = sid;
+    elInfo->type = SETPARAM;
+    elInfo->pos = paramPos;
+    elInfo->dataType = typeFloat;
+    elInfo->len = sizeof(float);
+    *(float *)&elInfo->value = value;
+    logConn->addExecLog(elInfo);
+    logConn->addToExecLogSize(buffer);
+    return;
 }
 void SqlLogStatement::setDoubleParam(int paramPos, double value)
 {
     if (innerStmt) innerStmt->setDoubleParam(paramPos,value);
+    if (!isNonSelDML) return; 
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    if (logConn->getSyncMode() == OSYNC) return ;
-    if (!isCached) return;
-    BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
-    if (bindField->type != typeDouble) return;
-    *(double*)(bindField->value) = value;
-
+    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(double);
+    ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
+    elInfo->stmtId = sid;
+    elInfo->type = SETPARAM;
+    elInfo->pos = paramPos;
+    elInfo->dataType = typeDouble;
+    elInfo->len = sizeof(double);
+    *(double *)&elInfo->value = value;
+    logConn->addExecLog(elInfo);
+    logConn->addToExecLogSize(buffer);
+    return;
 }
 void SqlLogStatement::setStringParam(int paramPos, char *value)
 {
     if (innerStmt) innerStmt->setStringParam(paramPos,value);
+    if (!isNonSelDML) return; 
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    if (logConn->getSyncMode() == OSYNC) return ;
-    if (!isCached) return;
-    BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
-    if (bindField->type != typeString) return;
-    char *dest = (char*)bindField->value;
-    strncpy(dest, value, bindField->length);
-    dest[ bindField->length - 1] ='\0';
+    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + os::align(strlen(value) + 1);
+    ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
+    elInfo->stmtId = sid;
+    elInfo->type = SETPARAM;
+    elInfo->pos = paramPos;
+    elInfo->dataType = typeString;
+    elInfo->len = os::align(strlen(value) + 1);
+    strcpy((char *) &elInfo->value, value);
+    logConn->addExecLog(elInfo);
+    logConn->addToExecLogSize(buffer);
     return;
 }
 void SqlLogStatement::setDateParam(int paramPos, Date value)
 {
     if (innerStmt) innerStmt->setDateParam(paramPos,value);
+    if (!isNonSelDML) return; 
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    if (logConn->getSyncMode() == OSYNC) return ;
-    if (!isCached) return;
-    BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
-    if (bindField->type != typeDate) return;
-    *(Date*)(bindField->value) = value;
-
+    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(Date);
+    ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
+    elInfo->stmtId = sid;
+    elInfo->type = SETPARAM;
+    elInfo->pos = paramPos; 
+    elInfo->dataType = typeDate;
+    elInfo->len = sizeof(Date);
+    *(Date *)&elInfo->value = value;
+    logConn->addExecLog(elInfo);
+    logConn->addToExecLogSize(buffer);
+    return;
 }
 void SqlLogStatement::setTimeParam(int paramPos, Time value)
 {
     if (innerStmt) innerStmt->setTimeParam(paramPos,value);
+    if (!isNonSelDML) return; 
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    if (logConn->getSyncMode() == OSYNC) return ;
-    if (!isCached) return;
-    BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
-    if (bindField->type != typeTime) return;
-    *(Time*)(bindField->value) = value;
-
+    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(Time);
+    ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
+    elInfo->stmtId = sid;
+    elInfo->type = SETPARAM;
+    elInfo->pos = paramPos; 
+    elInfo->dataType = typeTime;
+    elInfo->len = sizeof (Time);
+    *(Time *)&elInfo->value = value;
+    logConn->addExecLog(elInfo);
+    logConn->addToExecLogSize(buffer);
+    return;
 }
 void SqlLogStatement::setTimeStampParam(int paramPos, TimeStamp value)
 {
     if (innerStmt) innerStmt->setTimeStampParam(paramPos,value);
+    if (!isNonSelDML) return; 
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    if (logConn->getSyncMode() == OSYNC) return ;
-    if (!isCached) return;
-    BindSqlField *bindField = (BindSqlField*) paramList.get(paramPos);
-    if (bindField->type != typeTimeStamp) return;
-    *(TimeStamp*)(bindField->value) = value;
+    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(TimeStamp);
+    ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
+    elInfo->stmtId = sid;
+    elInfo->type = SETPARAM;
+    elInfo->pos = paramPos; 
+    elInfo->dataType = typeTimeStamp;
+    elInfo->len = sizeof(TimeStamp);
+    *(TimeStamp *)&elInfo->value = value;
+    logConn->addExecLog(elInfo);
+    logConn->addToExecLogSize(buffer);
+    return;
 }
 void SqlLogStatement::setBinaryParam(int paramPos, void *value, int length)
 {
     if (innerStmt) innerStmt->setBinaryParam(paramPos,value, length);
-	SqlLogConnection* logConn = (SqlLogConnection*)con;
-	if (logConn->getSyncMode() == OSYNC) return;
-	if (!isCached) return;
-	BindSqlField *bindField = (BindSqlField*) paramList.get(paramPos);
-	if (bindField->type != typeBinary) return;
-	memcpy(bindField->value, value, 2 * bindField->length);
+    if (!isNonSelDML) return; 
+    SqlLogConnection* logConn = (SqlLogConnection*)con;
+    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + os::align(length);
+    ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
+    elInfo->stmtId = sid;
+    elInfo->type = SETPARAM;
+    elInfo->pos = paramPos; 
+    elInfo->dataType = typeBinary;
+    elInfo->len = os::align(length);
+    memcpy(&elInfo->value, value, length);
+    logConn->addExecLog(elInfo);
+    logConn->addToExecLogSize(buffer);
+    return;
 }
 bool SqlLogStatement::isFldNull(int pos)
 {
@@ -371,3 +407,4 @@ List SqlLogStatement::getAllTableNames(DbRetVal &ret)
 {
    if(innerStmt) return innerStmt->getAllTableNames(ret); 
 }
+

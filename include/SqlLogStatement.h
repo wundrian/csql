@@ -23,10 +23,13 @@
 #include <SqlLogConnection.h>
 #include <SqlFactory.h>
 #include <CSql.h>
+
 class SqlLogStatement: public AbsSqlStatement
 {
     public:
-    SqlLogStatement(){innerStmt = NULL; con = NULL; needLog= false; sid=0; }
+    SqlLogStatement() {
+        innerStmt = NULL; con = NULL; needLog= false; 
+        sid=0; isNonSelDML = false; }
 
     void setConnection(AbsSqlConnection *conn)
     {
@@ -34,6 +37,8 @@ class SqlLogStatement: public AbsSqlStatement
         con = conn;
     }
     AbsSqlStatement *getInnerStatement(){ return innerStmt;}
+    List getTableNameList() { return innerStmt->getTableNameList(); }
+    char *getTableName() { return innerStmt->getTableName(); }
     bool isNonSelectDML(char *stmtstr);
     DbRetVal prepare(char *stmt);
 
@@ -50,6 +55,7 @@ class SqlLogStatement: public AbsSqlStatement
     int noOfProjFields();
 
     void* getFieldValuePtr( int pos );
+    void* getFieldValuePtr( char *name );
 
     DbRetVal free();
 
@@ -73,19 +79,20 @@ class SqlLogStatement: public AbsSqlStatement
     void setBinaryParam(int paramPos, void *value, int length);
 	bool isSelect();
     bool isFldNull(int pos);
-    bool isFldNull(char *name){};
+    bool isFldNull(char *name){}
     void setNull(int pos);
     int getFldPos(char *name){}
     List getAllTableNames(DbRetVal &ret);
+    int getNoOfPagesForTable(char *tbl){}
+    DbRetVal loadRecords(char *tbl, void *buf){}
     bool isCached;
     TableSyncMode mode;
+    bool isNonSelDML;
+    static GlobalUniqueID stmtUID;
     private:
-
     bool needLog;
     int sid; //statement id
-    List paramList;
-
-    static UniqueID stmtUID;
+    //static UniqueID stmtUID;
     friend class SqlFactory;
 };
 

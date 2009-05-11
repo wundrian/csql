@@ -13,6 +13,7 @@
  *   GNU General Public License for more details.                          *
  *                                                                         *
  ***************************************************************************/
+#include <os.h>
 #include <CSql.h>
 #include <DatabaseManagerImpl.h>
 #include <Database.h>
@@ -59,8 +60,9 @@ int main(int argc, char **argv)
     char tblName[IDENTIFIER_LENGTH];
     int c = 0, opt = 0;
     int noOfStmts =100;
+    bool exclusive = false;
     char name[IDENTIFIER_LENGTH];
-    while ((c = getopt(argc, argv, "u:p:n:T:?")) != EOF) 
+    while ((c = getopt(argc, argv, "u:p:n:T:X?")) != EOF) 
     {
         switch (c)
         {
@@ -68,6 +70,7 @@ int main(int argc, char **argv)
             case 'p' : { strcpy(password, argv[optind - 1]); opt=1; break; }
             case 'n' : { noOfStmts = atoi(argv[optind - 1]); opt = 5; break; }
             case 'T' : { strcpy(tblName,  argv[optind - 1]); opt = 15; break; }
+            case 'X' : { exclusive = true; break; }
             case '?' : { opt = 10; break; } //print help 
             default: opt=1; //list all the tables
 
@@ -84,19 +87,32 @@ int main(int argc, char **argv)
         strcpy(username, "root");
         strcpy(password, "manager");
     }
-    SqlConnection *sqlconn = (SqlConnection*) SqlFactory::createConnection(CSql);
-    sqlconn->connect("root", "manager");
-    SqlStatement *stmt = (SqlStatement*) SqlFactory::createStatement(CSql);
-    stmt->setConnection(sqlconn);
+    SqlConnection *sqlconn = (SqlConnection*) SqlFactory::createConnection(CSqlDirect);
+
+    SqlStatement *stmt = (SqlStatement*) SqlFactory::createStatement(CSqlDirect);
+    if (exclusive) {
+        stmt->setLoading(true);
+    }
     
-    Connection conn;
-    DbRetVal rv = conn.open(username, password);
-    if (rv != OK) return 1;
-    DatabaseManagerImpl *dbMgr = (DatabaseManagerImpl*) conn.getDatabaseManager();
     
-    if (dbMgr == NULL) { printf("Auth failed\n"); return 2;}
     if (opt == 0 || opt == 1) opt = 5;
     if (opt == 5) {
+        Connection conn;
+        DbRetVal rv = conn.open(username, password);
+        if (rv != OK)  {  
+           printf("Unable to get connection to csql\n");
+           delete sqlconn;
+           delete stmt;
+           return 1;
+        }
+        DatabaseManagerImpl *dbMgr = (DatabaseManagerImpl*) conn.getDatabaseManager();
+        if (dbMgr == NULL) {  
+            printf("Unable to retrive db manager\n"); 
+            conn.close();
+            delete sqlconn;
+            delete stmt;
+            return 2;
+        }
         List tableList = dbMgr->getAllTableNames();
         ListIterator iter = tableList.getIterator();
         Identifier *elem = NULL;
@@ -104,7 +120,7 @@ int main(int argc, char **argv)
         while (iter.hasElement())
         {
             elem = (Identifier*) iter.nextElement();
-            if (isCached(elem->name)) continue;
+            if (!exclusive && isCached(elem->name)) continue;
             printf("CREATE TABLE %s (", elem->name);
             Table *table = dbMgr->openTable(elem->name);
 	    FieldInfo *info = new FieldInfo();
@@ -117,7 +133,12 @@ int main(int argc, char **argv)
                  elem = (Identifier*) fNameIter.nextElement();
                  Table::getFieldNameAlone(elem->name, fieldName);
                  rv = table->getFieldInfo(elem->name, info);
-                 if (rv !=OK) return rv;
+                 if (rv !=OK)  {
+                     printf("unable to retrive info for table %s\n", elem->name);
+                     conn.close();
+                     delete sqlconn;
+                     delete stmt;
+                 }
                  if (firstField) {
                      printf("%s %s ", fieldName, AllDataType::getSQLString(info->type));
                      firstField = false;
@@ -135,12 +156,31 @@ int main(int argc, char **argv)
             delete info;
             dbMgr->closeTable(table);
        }
+       conn.close();
+       rv = sqlconn->connect("root", "manager");
+       if (OK !=rv) {
+        printf("unable to connect to csql\n");
+        delete sqlconn;
+        delete stmt;
+        return 10;
+       }
+       stmt->setConnection(sqlconn);
+        if (exclusive) {
+          rv = sqlconn->getExclusiveLock();
+          if (rv != OK) {
+            printf("Unable to get exclusive lock\n");
+            sqlconn->disconnect();
+            delete sqlconn;
+            delete stmt;
+            return 1;
+         }
+       }
        iter.reset();
        char sqlstring[1024];
        bool flag=false;
        while (iter.hasElement()) {
            elem = (Identifier*) iter.nextElement();
-           if (isCached(elem->name)) continue;
+           if (!exclusive && isCached(elem->name)) continue;
            if (!flag) { printf("SET AUTOCOMMIT OFF;\n"); flag=true; } 
            sprintf(sqlstring, "SELECT * FROM %s;", elem->name);
            sqlconn->beginTrans();
@@ -163,18 +203,22 @@ int main(int argc, char **argv)
            stmt->close();
            stmt->free();
        }   
-       conn.close();
-       sqlconn->disconnect();
-       delete sqlconn;
-       delete stmt;
-       return 0;
     } 
     if (opt == 15) {
+        Connection conn;
+        DbRetVal rv = conn.open(username, password);
+        if (rv != OK)  {  
+           printf("Unable to get connection to csql\n");
+           delete sqlconn;
+           delete stmt;
+           return 1;
+        }
+        DatabaseManagerImpl *dbMgr = (DatabaseManagerImpl*) conn.getDatabaseManager();
+        if (dbMgr == NULL) { printf("Auth failed\n"); return 2;}
         Table *table = dbMgr->openTable(tblName);
         if (table == NULL) {
             printf("csqldump: Table \'%s\' does not exist\n", tblName);
             conn.close();
-            sqlconn->disconnect();
             delete sqlconn;
             delete stmt;
             return 3;
@@ -204,12 +248,19 @@ int main(int argc, char **argv)
         printf(");\n");
         table->printSQLIndexString();
         delete info;
+        conn.close();
         char sqlstring[1024];
         bool flag=false;
         if (!flag) { printf("SET AUTOCOMMIT OFF;\n"); flag=true; } 
+       rv = sqlconn->connect("root", "manager");
+       if (OK !=rv) {
+        printf("unable to connect\n");
+        return 10;
+       }
+       stmt->setConnection(sqlconn);
         sprintf(sqlstring, "SELECT * FROM %s;", tblName);
         sqlconn->beginTrans();
-        DbRetVal rv = stmt->prepare(sqlstring);
+        rv = stmt->prepare(sqlstring);
         int rows = 0;
         rv = stmt->execute(rows);
         void *tuple = NULL;
@@ -228,7 +279,6 @@ int main(int argc, char **argv)
         stmt->close();
         stmt->free();
     }   
-    conn.close();
     sqlconn->disconnect();
     delete sqlconn;
     delete stmt;

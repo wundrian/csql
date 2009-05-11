@@ -222,6 +222,7 @@ class Table
     virtual int getFldPos(char *name)=0;
     virtual ~Table() { }
  
+    virtual void setLoading(bool flag){};
 
     //non virtual functions
     static void getFieldNameAlone(char *fname, char *name);

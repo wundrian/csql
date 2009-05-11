@@ -338,3 +338,14 @@ List SqlStatement::getAllTableNames(DbRetVal &ret)
     return dbMgr->getAllTableNames();
 }
 
+void SqlStatement::setLoading(bool flag)
+{
+    if (pData.getStmtType() == InsertStatement||
+        pData.getStmtType() == UpdateStatement||
+        pData.getStmtType() == DeleteStatement)
+    {
+        DmlStatement *dmlStmt = (DmlStatement*) stmt;
+        dmlStmt->setLoading(flag);
+    }
+    return;
+}

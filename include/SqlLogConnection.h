@@ -20,26 +20,60 @@
 #ifndef SQLLOGCONNECTION_H
 #define SQLLOGCONNECTION_H
 #include<CSql.h>
-#include<AbsSqlConnection.h>
 #include<SqlFactory.h>
 #include<Util.h>
 #include<Network.h>
-
-class CachedTable{
-    public:
-    char tableName[IDENTIFIER_LENGTH];
-};
 
 /**
 * @class SqlLogConnection
 *
 */
+
+class AbsSqlLogSend
+{
+    public:
+    virtual DbRetVal prepare(int txnId, int stmtId, int len, char *stmt)=0;
+    virtual DbRetVal commit(int len, void *data)=0;
+    virtual DbRetVal free(int txnId, int stmtId)=0;
+};
+
+class FileSend : public AbsSqlLogSend
+{
+    int fdRedoLog;
+    public:
+    FileSend();
+    DbRetVal prepare(int txnId, int stmtId, int len, char *stmt);
+    DbRetVal commit(int len, void *data);
+    DbRetVal free(int txnId, int stmtId);
+};
+
+enum ExecType
+{
+    EXECONLY = 0,
+    SETPARAM
+};
+
+class ExecLogInfo
+{
+    public:
+    ExecLogInfo() : pos(0), len(0) {}
+    int stmtId;
+    ExecType type;
+    int pos;
+    DataType dataType;
+    int len;
+    char value[1];
+};
+
 class SqlLogConnection : public AbsSqlConnection
 {
     Connection dummyConn;
 
     //stores all the sql log packets to be shipped to peers
     List logStore;
+    
+    List execLogStore;
+    int execLogStoreSize;
 
     //stores all the prepare log packets to be shipped to peers
     //as soon as connection is reestablished to cache server
@@ -55,15 +89,18 @@ class SqlLogConnection : public AbsSqlConnection
 
     //stores client objects in it for peer
     NetworkTable nwTable;
+    AbsSqlLogSend *fileSend;
 
-    static UniqueID txnUID;
-
+    static GlobalUniqueID txnUID;
     static List cacheList;
+    int txnID;
     DbRetVal populateCachedTableList();
-
     public:
-    SqlLogConnection(){innerConn = NULL; syncMode = ASYNC;}
-
+    SqlLogConnection() {
+        innerConn = NULL; syncMode = ASYNC; 
+        if (Conf::config.useDurability()) { fileSend = new FileSend(); } 
+        execLogStoreSize =0;
+    }
     bool isTableCached(char *name);
 
     //Note::forced to implement this as it is pure virtual in base class
@@ -79,15 +116,35 @@ class SqlLogConnection : public AbsSqlConnection
 
     DbRetVal beginTrans (IsolationLevel isoLevel, TransSyncMode mode);
 
+    DbRetVal fileLogPrepare(int txnId, int stmtId, int len, char *stmt) 
+    {
+        return fileSend->prepare(txnId, stmtId, len, stmt);
+    }
+    DbRetVal commitLogs(int logSize, void *data) 
+    {  
+        int txnId = getTxnID();
+        if (Conf::config.useDurability()) fileSend->commit(logSize, data);
+        return OK;
+    }
+    DbRetVal freeLogs(int stmtId)
+    {
+        int txnId = getTxnID(); 
+        if (Conf::config.useDurability()) fileSend->free(txnId, stmtId);
+        return OK;
+    }
+    void addExecLog(ExecLogInfo *info) { execLogStore.append(info); }
+    void addToExecLogSize(int size){ execLogStoreSize += size; }
+    int getExecLogStoreSize() { return execLogStoreSize; }
+    List getExecLogList() { return execLogStore; }
     DbRetVal addPacket(BasePacket *pkt);
-
     DbRetVal addPreparePacket(PacketPrepare *pkt);
     DbRetVal removePreparePacket(int stmtid);
 
     DbRetVal setSyncMode(TransSyncMode mode);
     TransSyncMode getSyncMode() { return syncMode; }
+    int getTxnID() { return txnID; }
     DbRetVal connectIfNotConnected() { return nwTable.connectIfNotConnected(); }
-    DbRetVal  sendAndReceive(NetworkPacketType type, char *packet, int length);
+    DbRetVal sendAndReceive(NetworkPacketType type, char *packet, int length);
     friend class SqlFactory;
 };
 

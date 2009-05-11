@@ -389,47 +389,46 @@ void* TableImpl::fetchNoBind()
         return NULL;
     }
     DbRetVal lockRet = OK;
-    if ((*trans)->isoLevel_ == READ_COMMITTED)
-    {
-        //if iso level is read committed, operation duration lock is sufficent 
-        //so release it here itself.
-        int tries = 5;
-        struct timeval timeout;
-        timeout.tv_sec = Conf::config.getMutexSecs();
-        timeout.tv_usec = Conf::config.getMutexUSecs();
+    if(!loadFlag) {
+        if ((*trans)->isoLevel_ == READ_COMMITTED)
+        {
+            //if iso level is read committed, operation duration lock is sufficent so release it here itself.
+            int tries = 5;
+            struct timeval timeout;
+            timeout.tv_sec = Conf::config.getMutexSecs();
+            timeout.tv_usec = Conf::config.getMutexUSecs();
 
-        bool status = false;
-        while(true) { 
-            lockRet = lMgr_->isExclusiveLocked( curTuple_, trans, status);
+            bool status = false;
+            while(true) { 
+                lockRet = lMgr_->isExclusiveLocked( curTuple_, trans, status);
+                if (OK != lockRet)
+                { 
+                    printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
+                    curTuple_ = prevTuple;
+                    return NULL;
+                }
+                if (!status) break; 
+                tries--;
+                if (tries == 0) break;
+                os::select(0, 0, 0, 0, &timeout);
+            }
+            if (tries == 0) 
+            { 
+                printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
+                curTuple_ = prevTuple;
+                return NULL;
+            }
+        }
+        else if ((*trans)->isoLevel_ == READ_REPEATABLE) {
+            lockRet = lMgr_->getSharedLock(curTuple_, trans);
             if (OK != lockRet)
             { 
                 printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
                 curTuple_ = prevTuple;
                 return NULL;
             }
-            if (!status) break; 
-            tries--;
-            if (tries == 0) break;
-            os::select(0, 0, 0, 0, &timeout);
-
         }
-        if (tries == 0) 
-        { 
-            printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
-            curTuple_ = prevTuple;
-            return NULL;
-        }
-    }
-    else if ((*trans)->isoLevel_ == READ_REPEATABLE) {
-        lockRet = lMgr_->getSharedLock(curTuple_, trans);
-        if (OK != lockRet)
-        { 
-            printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
-            curTuple_ = prevTuple;
-            return NULL;
-        }
-
-    }
+    }   
     return curTuple_;
 }
 
@@ -449,48 +448,47 @@ void* TableImpl::fetchNoBind(DbRetVal &rv)
         return NULL;
     }
     DbRetVal lockRet = OK;
-    if ((*trans)->isoLevel_ == READ_REPEATABLE) {
-        lockRet = lMgr_->getSharedLock(curTuple_, trans);
-        if (OK != lockRet)
-        {
-            printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
-            rv = ErrLockTimeOut;
-            curTuple_ = prevTuple;
-            return NULL;
-        }
-
-    }
-    else if ((*trans)->isoLevel_ == READ_COMMITTED)
-    {
-        //if iso level is read committed, operation duration lock is sufficent
-        //so release it here itself.
-        int tries = 5;
-        struct timeval timeout;
-        timeout.tv_sec = Conf::config.getMutexSecs();
-        timeout.tv_usec = Conf::config.getMutexUSecs();
-
-        bool status = false;
-        while(true) {
-            lockRet = lMgr_->isExclusiveLocked( curTuple_, trans, status);
+    if(!loadFlag) {
+        if ((*trans)->isoLevel_ == READ_REPEATABLE) {
+            lockRet = lMgr_->getSharedLock(curTuple_, trans);
             if (OK != lockRet)
+            {
+                printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
+                rv = ErrLockTimeOut;
+                curTuple_ = prevTuple;
+                return NULL;
+            }
+        }
+        else if ((*trans)->isoLevel_ == READ_COMMITTED)
+        {
+            //if iso level is read committed, operation duration lock is sufficent so release it here itself.
+            int tries = 5; 
+            struct timeval timeout;
+            timeout.tv_sec = Conf::config.getMutexSecs();
+            timeout.tv_usec = Conf::config.getMutexUSecs();
+
+            bool status = false;
+            while(true) {
+                lockRet = lMgr_->isExclusiveLocked( curTuple_, trans, status);
+                if (OK != lockRet)
+                {
+                    printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
+                    curTuple_ = prevTuple;
+                    rv = ErrLockTimeOut;
+                    return NULL;
+                }
+                if (!status) break;
+                tries--;
+                if (tries == 0) break;
+                os::select(0, 0, 0, 0, &timeout);
+            }
+            if (tries == 0)
             {
                 printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
                 curTuple_ = prevTuple;
                 rv = ErrLockTimeOut;
                 return NULL;
             }
-            if (!status) break;
-            tries--;
-            if (tries == 0) break;
-            os::select(0, 0, 0, 0, &timeout);
-
-        }
-        if (tries == 0)
-        {
-            printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
-            curTuple_ = prevTuple;
-            rv = ErrLockTimeOut;
-            return NULL;
         }
     }
     return curTuple_;
@@ -655,22 +653,25 @@ DbRetVal TableImpl::insertTuple()
         printError(ret, "Unable to allocate record from chunk");
         return ret;
     }
-    ret = lMgr_->getExclusiveLock(tptr, trans);
-    if (OK != ret)
-    {
-        ((Chunk*)chunkPtr_)->free(db_, tptr);
-        printError(ret, "Could not get lock for the insert tuple %x", tptr);
-        return ErrLockTimeOut;
+    if (!loadFlag) {
+        ret = lMgr_->getExclusiveLock(tptr, trans);
+        if (OK != ret)
+        {
+            ((Chunk*)chunkPtr_)->free(db_, tptr);
+            printError(ret, "Could not get lock for the insert tuple %x", tptr);
+            return ErrLockTimeOut;
+        }
     }
-
     curTuple_ = tptr;   
  
     ret = copyValuesFromBindBuffer(tptr);
     if (ret != OK)
     {
         printError(ret, "Unable to copy values from bind buffer");
-        (*trans)->removeFromHasList(db_, tptr);
-        lMgr_->releaseLock(tptr);
+        if (!loadFlag) { 
+            (*trans)->removeFromHasList(db_, tptr);
+            lMgr_->releaseLock(tptr);
+        }
         ((Chunk*)chunkPtr_)->free(db_, tptr);
         return ret;
     }
@@ -702,14 +703,16 @@ DbRetVal TableImpl::insertTuple()
                 printError(ErrWarning, "Deleting index node");
                 deleteIndexNode(*trans, indexPtr_[j], idxInfo[j], tptr);
             }
-            lMgr_->releaseLock(tptr);
-            (*trans)->removeFromHasList(db_, tptr);
+            if (!loadFlag) {
+                (*trans)->removeFromHasList(db_, tptr);
+                lMgr_->releaseLock(tptr);
+            }
             ((Chunk*)chunkPtr_)->free(db_, tptr);
             printError(ret, "Unable to insert index node for tuple %x ", tptr);
             return ret;
         }
     }
-    if (undoFlag)
+    if (!loadFlag)
         ret = (*trans)->appendUndoLog(sysDB_, InsertOperation, tptr, length_);
     if (ret != OK) {
         printError(ret, "Unable to create undo log for %x %d", tptr, *(int*)tptr);
@@ -717,8 +720,10 @@ DbRetVal TableImpl::insertTuple()
             printError(ErrWarning, "Deleting index node");
             deleteIndexNode(*trans, indexPtr_[j], idxInfo[j], tptr);
         }
-        lMgr_->releaseLock(tptr);
-        (*trans)->removeFromHasList(db_, tptr);
+        if (!loadFlag) {
+            (*trans)->removeFromHasList(db_, tptr);
+            lMgr_->releaseLock(tptr);
+        }
         ((Chunk*)chunkPtr_)->free(db_, tptr);
     }
     return ret;
@@ -731,11 +736,14 @@ DbRetVal TableImpl::deleteTuple()
         printError(ErrNotOpen, "Scan not open: No Current tuple");
         return ErrNotOpen;
     }
-    DbRetVal ret = lMgr_->getExclusiveLock(curTuple_, trans);
-    if (OK != ret)
-    {
-        printError(ret, "Could not get lock for the delete tuple %x", curTuple_);
-        return ErrLockTimeOut;
+    DbRetVal ret = OK;
+    if (!loadFlag) {
+        ret = lMgr_->getExclusiveLock(curTuple_, trans);
+        if (OK != ret)
+        {
+            printError(ret, "Could not get lock for the delete tuple %x", curTuple_);
+            return ErrLockTimeOut;
+        }
     }
 
     if (NULL != indexPtr_)
@@ -751,14 +759,16 @@ DbRetVal TableImpl::deleteTuple()
         {
             for (int j = 0; j < i ; j++)
                 insertIndexNode(*trans, indexPtr_[j], idxInfo[j], curTuple_);
-            lMgr_->releaseLock(curTuple_);
-            (*trans)->removeFromHasList(db_, curTuple_);
+            if (!loadFlag) {
+                lMgr_->releaseLock(curTuple_);
+                (*trans)->removeFromHasList(db_, curTuple_);
+            }
             printError(ret, "Unable to insert index node for tuple %x", curTuple_);
             return ret;
         }
     }
     ((Chunk*)chunkPtr_)->free(db_, curTuple_);
-    if (undoFlag)
+    if (!loadFlag)
         ret = (*trans)->appendUndoLog(sysDB_, DeleteOperation, curTuple_, length_);
     iter->prev();
     return ret;
@@ -813,11 +823,14 @@ DbRetVal TableImpl::updateTuple()
         printError(ErrNotOpen, "Scan not open: No Current tuple");
         return ErrNotOpen;
     }
-    DbRetVal ret = lMgr_->getExclusiveLock(curTuple_, trans);
-    if (OK != ret)
-    {
-        printError(ret, "Could not get lock for the update tuple %x", curTuple_);
-        return ErrLockTimeOut;
+    DbRetVal ret = OK;
+    if (!loadFlag) {
+        ret = lMgr_->getExclusiveLock(curTuple_, trans);
+        if (OK != ret)
+        {
+            printError(ret, "Could not get lock for the update tuple %x", curTuple_);
+            return ErrLockTimeOut;
+        }
     }
     if (NULL != indexPtr_)
     {
@@ -830,14 +843,16 @@ DbRetVal TableImpl::updateTuple()
             ret = updateIndexNode(*trans, indexPtr_[i], idxInfo[i], curTuple_);
             if (ret != OK)
             {
-                lMgr_->releaseLock(curTuple_);
-                (*trans)->removeFromHasList(db_, curTuple_);
+                if (!loadFlag) {
+                    lMgr_->releaseLock(curTuple_);
+                    (*trans)->removeFromHasList(db_, curTuple_);
+                }
                 printError(ret, "Unable to update index node for tuple %x", curTuple_);
                 return ret;
             }
         }
     }
-    if (undoFlag)
+    if (!loadFlag)
         ret = (*trans)->appendUndoLog(sysDB_, UpdateOperation, curTuple_, length_);
     if (ret != OK) return ret;
     int addSize = 0;
@@ -853,7 +868,7 @@ DbRetVal TableImpl::updateTuple()
 	}
     }
     DbRetVal rv = copyValuesFromBindBuffer(curTuple_, false);
-    if (rv != OK) { 
+    if (rv != OK && !loadFlag) { 
         lMgr_->releaseLock(curTuple_); 
         (*trans)->removeFromHasList(db_, curTuple_); 
         return rv; 
@@ -998,13 +1013,13 @@ DbRetVal TableImpl::copyValuesToBindBuffer(void *tuplePtr)
 }
 
 //-1 index not supported
-DbRetVal TableImpl::insertIndexNode(Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple)
+DbRetVal TableImpl::insertIndexNode(Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool loadFlag)
 {
     CINDEX *iptr = (CINDEX*)indexPtr;
     DbRetVal ret = OK;
     printDebug(DM_Table, "Inside insertIndexNode type %d", iptr->indexType_);
     Index* idx = Index::getIndex(iptr->indexType_);
-    ret = idx->insert(this, tr, indexPtr, info, tuple,undoFlag);
+    ret = idx->insert(this, tr, indexPtr, info, tuple, loadFlag);
     return ret;
 }
 
@@ -1013,7 +1028,7 @@ DbRetVal TableImpl::deleteIndexNode(Transaction *tr, void *indexPtr, IndexInfo *
     CINDEX *iptr = (CINDEX*)indexPtr;
     DbRetVal ret = OK;
     Index* idx = Index::getIndex(iptr->indexType_);
-    ret = idx->remove(this, tr, indexPtr, info, tuple, undoFlag);
+    ret = idx->remove(this, tr, indexPtr, info, tuple, loadFlag);
     return ret;
 }
 void TableImpl::printSQLIndexString()
@@ -1057,7 +1072,7 @@ DbRetVal TableImpl::updateIndexNode(Transaction *tr, void *indexPtr, IndexInfo *
     //TODO::currently it updates irrespective of whether the key changed or not 
     //because of this commenting the whole index update code. relook at it and uncomment
 
-    ret = idx->update(this, tr, indexPtr, info, tuple, undoFlag);
+    ret = idx->update(this, tr, indexPtr, info, tuple, loadFlag);
 
     return ret;
 }

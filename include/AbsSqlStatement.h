@@ -273,4 +273,18 @@ class BindSqlProjectField
     BindSqlProjectField(){ value = NULL; targetvalue = NULL; }
 };
 
+class StmtBucket
+{
+    public:
+    List bucketList;
+};
+
+class StmtNode
+{
+    public:
+    int stmtId;
+    AbsSqlStatement *stmt;
+    char stmtstr[1024];
+};
+
 #endif

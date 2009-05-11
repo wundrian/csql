@@ -36,7 +36,7 @@ bin_PROGRAMS = csql$(EXEEXT) catalog$(EXEEXT) cachetable$(EXEEXT) \
 	csqlserver$(EXEEXT) csqlreplserver$(EXEEXT) \
 	csqlsqlserver$(EXEEXT) repltable$(EXEEXT) \
 	csqlcacheserver$(EXEEXT) csqldump$(EXEEXT) \
-	cacheverify$(EXEEXT)
+	cacheverify$(EXEEXT) redo$(EXEEXT)
 subdir = src/tools
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -143,6 +143,16 @@ csqlsqlserver_DEPENDENCIES = $(top_builddir)/src/sql/libcsqlsql.la \
 csqlsqlserver_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
 	$(CXXFLAGS) $(csqlsqlserver_LDFLAGS) $(LDFLAGS) -o $@
+am_redo_OBJECTS = redo.$(OBJEXT)
+redo_OBJECTS = $(am_redo_OBJECTS)
+redo_DEPENDENCIES = $(top_builddir)/src/storage/.libs/libcsql \
+	$(top_builddir)/src/sql/.libs/libcsqlsql \
+	$(top_builddir)/src/sqllog/.libs/libcsqlsqllog \
+	$(top_builddir)/src/network/.libs/libcsqlnw \
+	$(top_builddir)/src/adapter/.libs/libcsqlodbcadapter \
+	$(top_builddir)/src/gateway/.libs/libcsqlgw \
+	$(top_builddir)/src/cache/.libs/libcacheload \
+	$(top_builddir)/src/sqlnetwork/.libs/libcsqlsqlnw
 am_repltable_OBJECTS = repltable.$(OBJEXT)
 repltable_OBJECTS = $(am_repltable_OBJECTS)
 repltable_DEPENDENCIES = $(top_builddir)/src/cache/libcacheload.la \
@@ -168,12 +178,12 @@ CXXLINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 SOURCES = $(cachetable_SOURCES) $(cacheverify_SOURCES) \
 	$(catalog_SOURCES) $(csql_SOURCES) $(csqlcacheserver_SOURCES) \
 	$(csqldump_SOURCES) $(csqlreplserver_SOURCES) \
-	$(csqlserver_SOURCES) $(csqlsqlserver_SOURCES) \
+	$(csqlserver_SOURCES) $(csqlsqlserver_SOURCES) $(redo_SOURCES) \
 	$(repltable_SOURCES)
 DIST_SOURCES = $(cachetable_SOURCES) $(cacheverify_SOURCES) \
 	$(catalog_SOURCES) $(csql_SOURCES) $(csqlcacheserver_SOURCES) \
 	$(csqldump_SOURCES) $(csqlreplserver_SOURCES) \
-	$(csqlserver_SOURCES) $(csqlsqlserver_SOURCES) \
+	$(csqlserver_SOURCES) $(csqlsqlserver_SOURCES) $(redo_SOURCES) \
 	$(repltable_SOURCES)
 ETAGS = etags
 CTAGS = ctags
@@ -293,6 +303,8 @@ INCLUDES = -I$(top_srcdir)/include $(all_includes) -I$(top_srcdir)/src/sql
 METASOURCES = AUTO
 csql_SOURCES = isql.cxx
 csql_LDADD = $(top_builddir)/src/storage/.libs/libcsql $(top_builddir)/src/sql/.libs/libcsqlsql $(top_builddir)/src/sqllog/.libs/libcsqlsqllog $(top_builddir)/src/network/.libs/libcsqlnw $(top_builddir)/src/adapter/.libs/libcsqlodbcadapter $(top_builddir)/src/gateway/.libs/libcsqlgw $(top_builddir)/src/cache/.libs/libcacheload $(top_builddir)/src/sqlnetwork/.libs/libcsqlsqlnw -lrt -lpthread -lcrypt -lodbc -lreadline
+redo_SOURCES = redo.cxx
+redo_LDADD = $(top_builddir)/src/storage/.libs/libcsql $(top_builddir)/src/sql/.libs/libcsqlsql $(top_builddir)/src/sqllog/.libs/libcsqlsqllog $(top_builddir)/src/network/.libs/libcsqlnw $(top_builddir)/src/adapter/.libs/libcsqlodbcadapter $(top_builddir)/src/gateway/.libs/libcsqlgw $(top_builddir)/src/cache/.libs/libcacheload $(top_builddir)/src/sqlnetwork/.libs/libcsqlsqlnw -lrt -lpthread -lcrypt -lodbc
 catalog_SOURCES = catalog.cxx
 catalog_LDADD = $(top_builddir)/src/storage/libcsql.la \
 	$(top_builddir)/src/cache/libcacheload.la 
@@ -456,6 +468,9 @@ csqlserver$(EXEEXT): $(csqlserver_OBJECTS) $(csqlserver_DEPENDENCIES)
 csqlsqlserver$(EXEEXT): $(csqlsqlserver_OBJECTS) $(csqlsqlserver_DEPENDENCIES) 
 	@rm -f csqlsqlserver$(EXEEXT)
 	$(csqlsqlserver_LINK) $(csqlsqlserver_OBJECTS) $(csqlsqlserver_LDADD) $(LIBS)
+redo$(EXEEXT): $(redo_OBJECTS) $(redo_DEPENDENCIES) 
+	@rm -f redo$(EXEEXT)
+	$(CXXLINK) $(redo_OBJECTS) $(redo_LDADD) $(LIBS)
 repltable$(EXEEXT): $(repltable_OBJECTS) $(repltable_DEPENDENCIES) 
 	@rm -f repltable$(EXEEXT)
 	$(repltable_LINK) $(repltable_OBJECTS) $(repltable_LDADD) $(LIBS)
@@ -475,6 +490,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/csqlserver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/csqlsqlserver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/isql.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/redo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/repltable.Po@am__quote@
 
 .cxx.o:

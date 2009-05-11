@@ -52,14 +52,15 @@ libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libcsql_la_LIBADD =
 am_libcsql_la_OBJECTS = BucketIter.lo TreeIter.lo BucketList.lo \
-	CatalogTables.lo Chunk.lo ChunkIterator.lo Condition.lo \
-	Connection.lo Database.lo DatabaseManagerImpl.lo DataType.lo \
-	Debug.lo FieldList.lo Index.lo LockListIter.lo LockManager.lo \
-	Logger.lo Mutex.lo os.lo PageInfo.lo PredicateImpl.lo \
-	SessionImpl.lo TableDef.lo TableImpl.lo Transaction.lo \
-	TransactionManager.lo TupleIterator.lo UserManagerImpl.lo \
-	HashIndex.lo TreeIndex.lo Config.lo Process.lo AggTableImpl.lo \
-	JoinTableImpl.lo Expression.lo
+	CatalogTables.lo Chunk.lo Util.lo TableConfig.lo \
+	ChunkIterator.lo Condition.lo Connection.lo Database.lo \
+	DatabaseManagerImpl.lo DataType.lo Debug.lo FieldList.lo \
+	Index.lo LockListIter.lo LockManager.lo Logger.lo Mutex.lo \
+	os.lo PageInfo.lo PredicateImpl.lo SessionImpl.lo TableDef.lo \
+	TableImpl.lo Transaction.lo TransactionManager.lo \
+	TupleIterator.lo UserManagerImpl.lo HashIndex.lo TreeIndex.lo \
+	Config.lo Process.lo AggTableImpl.lo JoinTableImpl.lo \
+	Expression.lo
 libcsql_la_OBJECTS = $(am_libcsql_la_OBJECTS)
 libcsql_la_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
@@ -196,7 +197,7 @@ INCLUDES = -I$(top_srcdir)/include $(all_includes)
 METASOURCES = AUTO
 lib_LTLIBRARIES = libcsql.la
 libcsql_la_LDFLAGS = -avoid-version -module
-libcsql_la_SOURCES = BucketIter.cxx TreeIter.cxx BucketList.cxx CatalogTables.cxx Chunk.cxx \
+libcsql_la_SOURCES = BucketIter.cxx TreeIter.cxx BucketList.cxx CatalogTables.cxx Chunk.cxx Util.cxx TableConfig.cxx\
 	ChunkIterator.cxx Condition.cxx Connection.cxx Database.cxx DatabaseManagerImpl.cxx DataType.cxx \
 	Debug.cxx FieldList.cxx Index.cxx LockListIter.cxx LockManager.cxx Logger.cxx Mutex.cxx os.cxx \
 	PageInfo.cxx PredicateImpl.cxx SessionImpl.cxx TableDef.cxx TableImpl.cxx Transaction.cxx \
@@ -297,6 +298,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PredicateImpl.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Process.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SessionImpl.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TableConfig.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TableDef.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TableImpl.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Transaction.Plo@am__quote@
@@ -305,6 +307,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TreeIter.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TupleIterator.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UserManagerImpl.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Util.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/os.Plo@am__quote@
 
 .cxx.o:

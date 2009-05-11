@@ -95,3 +95,9 @@ DbRetVal Connection::rollback()
     if (session == NULL) return ErrNoConnection;
     return session->rollback();
 }
+
+DbRetVal Connection::getExclusiveLock()
+{
+    if (session == NULL) return ErrNoConnection;
+    return session->getExclusiveLock();
+}
