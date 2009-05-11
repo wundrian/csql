@@ -16,6 +16,7 @@ system/trans
 tools/catalog
 tools/csql
 tools/csqldump
+tools/Durability
 jdbc/Connection
 jdbc/Statement
 sqlapi/Connect
