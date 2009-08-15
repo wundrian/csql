@@ -101,13 +101,13 @@ void* Chunk::allocateFromFirstPage(Database *db, int noOfDataNodes)
         data = ((char*)pageIter) + sizeof(PageInfo);
         if (pageIter->hasFreeSpace_ == 1)
         {
-            for (i = 0; i< noOfDataNodes -1; i++)
+            for (i = 0; i< noOfDataNodes; i++)
             {
                 if (1 == *((int*)data))
                     data = data + allocSize_;
                 else break;
             }
-            if (i != noOfDataNodes -1) break;
+            if (i != noOfDataNodes ) break;
         }
         printDebug(DM_Alloc, "Chunk ID: %d Page :%x does not have free nodes",
                                                            chunkID_, pageIter);
@@ -165,7 +165,7 @@ void* Chunk::allocate(Database *db, DbRetVal *status)
 {
     PageInfo* pageInfo = ((PageInfo*)curPage_);
 
-    int noOfDataNodes=os::floor((PAGE_SIZE - sizeof(PageInfo))/allocSize_);
+    int noOfDataNodes= (int) os::floor((PAGE_SIZE - sizeof(PageInfo))/allocSize_);
     char *data = ((char*)curPage_) + sizeof(PageInfo);
     printDebug(DM_Alloc, "Chunk::allocate id:%d curPage:%x noOfDataNodes:%d",
                          chunkID_, curPage_, noOfDataNodes);
