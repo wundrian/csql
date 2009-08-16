@@ -21,7 +21,8 @@
 #include <Process.h>
 Mutex::Mutex()
 {
-#if defined(sparc) || defined(i686) || defined(x86_64)
+    noOfRead = -1;
+#if defined(sparc) || defined(i686) || defined (x86_64)
     lock =0;
 #else
     pthread_mutexattr_t attr;
@@ -33,7 +34,8 @@ Mutex::Mutex()
 
 int Mutex::init()
 {
-#if defined(sparc) || defined(i686) || defined(x86_64)
+    noOfRead = -1;
+#if defined(sparc) || defined(i686) || defined (x86_64)
     lock = 0;
 #else
     pthread_mutexattr_t attr;
@@ -47,14 +49,14 @@ int Mutex::init()
 }
 int Mutex::init(char *mname)
 {
-    if (strlen(mname) > 19 ) return 0;
     init();
+    if (strlen(mname) > 19 ) return 0;
     strcpy(name, mname);
     return 0;
 
 }
 
-#if defined(sparc) || defined(i686) || defined(x86_64)
+#if defined(sparc) || defined(i686) || defined (x86_64)
 int TSL(Lock *lock)
 {
 /*
@@ -80,17 +82,11 @@ int TSL(Lock *lock)
 
         return oldval > 0;
 */
-#if defined(i686) || defined(x86_64)
+#if defined(LINUX) 
     int*  lw;
     int   res;
     lw = (int*)lock;
     if (*lock == 1) return 1;
-    /* In assembly we use the so-called AT & T syntax where
-    the order of operands is inverted compared to the ordinary Intel
-    syntax. The 'l' after the mnemonics denotes a 32-bit operation.
-    The line after the code tells which values come out of the asm
-    code, and the second line tells the input to the asm code. */
-
     /* This assembly compiles only with -O2 option, and not with -g option. Version1
     __asm__ __volatile__(
         "movl $1, %%eax; xchgl (%%ecx), %%eax" 
@@ -117,18 +113,15 @@ int TSL(Lock *lock)
 
     return(res);
 
-#elif defined (sparc) 
+#elif defined (SOLARIS)
     Lock res;
-    __asm__ __volatile__("ldstub  [%2], %0    \n"
-       "=r"(res), "+m"(*lock)
-       "r"(lock)
-       "memory");
-     return (int) res;
+    res = atomic_cas_32(lock, 0, 1);
+    return (res);
 #endif
 }
 #endif
 
-int Mutex::tryLock(int tryTimes, int waitmsecs)
+int Mutex::tryLock(int tryTimes, int waitmsecs,bool share)
 {
     if (TSL(&lock) == 0) 
     {
@@ -145,34 +138,49 @@ int Mutex::tryLock(int tryTimes, int waitmsecs)
         timeout.tv_usec = Conf::config.getMutexUSecs();
         tryTimes = Conf::config.getMutexRetries();
     }
+    int cnt=0;
     while (tries < tryTimes)
     {
-#if defined(sparc) || defined(i686) || defined(x86_64)
-    if (TSL(&lock) == 0) 
-    {
-        return 0; 
-    }
+#if defined(sparc) || defined(i686) || defined (x86_64)
+       if (Conf::config.getNoOfProcessors() >1) {
+          cnt=0;
+          while(true) {
+            if (TSL(&lock) == 0) 
+            {
+               return 0; 
+            }
+            cnt++;
+            if (cnt == tryTimes * 100) break;
+          }
+       }else {
+           if (TSL(&lock) == 0) return 0;
+       }
 #else
-    ret = pthread_mutex_trylock(&mutex_);
-    if (EBUSY  != ret) return 0;
+       ret = pthread_mutex_trylock(&mutex_);
+       if (EBUSY  != ret) return 0;
 
 #endif
         os::select(0, 0, 0, 0, &timeout);
         tries++;
+    }
+    if(share && noOfRead != -1) {
+       noOfRead++;
+       return 2;
     }
     printError(ErrLockTimeOut, "Unable to get the mutex , tried %d times", tries);
     return 1;
 }
 
 
-int Mutex::getLock(int procSlot, bool procAccount)
+int Mutex::getLock(int procSlot, bool procAccount,bool share)
 {
     int ret=0;
-#if defined(sparc) || defined(i686) || defined(x86_64)
-    ret = tryLock();
+#if defined(sparc) || defined(i686) || defined (x86_64)
+    ret = tryLock(0,0,share);
     //add it to the has_ of the ThreadInfo
     if (ret ==0 && procAccount) ProcessManager::addMutex(this, procSlot);
-
+    if(share & noOfRead == -1 && ret == 0 ) noOfRead ++;
+    if(ret == 2) return 0;
     return ret;
 #else
     ret = pthread_mutex_lock(&mutex_);
@@ -182,10 +190,11 @@ int Mutex::getLock(int procSlot, bool procAccount)
         return 1;
 }
 
-int Mutex::releaseLock(int procSlot, bool procAccount)
+int Mutex::releaseLock(int procSlot, bool procAccount,bool share)
 {
+    if (noOfRead > 0 && share){ noOfRead--; return 0;}
     int ret=0;
-#if defined(sparc) || defined(i686) || defined(x86_64)
+#if defined(sparc) || defined(i686) || defined (x86_64)
     /*int *lw = &lock;
     if (*lw == 0) return 0;
     __asm__ __volatile__("movl $0, %%eax; xchgl (%%ecx), %%eax" :
@@ -200,6 +209,7 @@ int Mutex::releaseLock(int procSlot, bool procAccount)
     if (ret == 0 && procAccount) 
     {
         ProcessManager::removeMutex(this, procSlot);
+        if( noOfRead == 0 && share) noOfRead--;
         return ret;
     }
     else
@@ -208,7 +218,7 @@ int Mutex::releaseLock(int procSlot, bool procAccount)
 
 int Mutex::destroy()
 {
-#if defined(sparc) || defined(i686) || defined(x86_64)
+#if defined(sparc) || defined(i686) || defined (x86_64)
 #else
     return pthread_mutex_destroy(&mutex_);
 #endif
@@ -218,7 +228,7 @@ int Mutex::destroy()
 int Mutex::recoverMutex()
 {
     int ret=0;
-#if defined(sparc) || defined(i686) || defined(x86_64)
+#if defined(sparc) || defined(i686) || defined (x86_64)
     /*int *lw = &lock;
     if (*lw == 0) return 0;
     __asm__ __volatile__("movl $0, %%eax; xchgl (%%ecx), %%eax" :
@@ -232,4 +242,74 @@ int Mutex::recoverMutex()
 #endif
     return ret;
 }
-    
+
+int Mutex::CASL(long *ptr, long oldVal, long newVal)
+{
+#ifdef SOLARIS
+#ifdef x86_64 //or sparc64
+    unsigned long res = atomic_cas_64((unsigned long*)ptr, 
+                             (unsigned long) oldVal, (unsigned long) newVal);
+    if (res == oldVal) return 0; else return 1;
+#else 
+    return CAS((int*)ptr, (int)oldVal, (int)newVal);
+#endif
+#endif
+#ifdef LINUX
+#ifdef x86_64
+        long result;
+        __asm__ __volatile__ ("lock; cmpxchgq %q2, %1"
+                        : "=a" (result), "=m" (*ptr)
+                        : "r" (newVal), "m" (*ptr), "0" (oldVal));
+        if (result == oldVal) return 0;
+
+        struct timeval timeout;
+        timeout.tv_sec=0;
+        timeout.tv_usec=1000;
+        os::select(0,0,0,0, &timeout);
+        __asm__ __volatile__ ("lock; cmpxchgq %q2, %1"
+                        : "=a" (result), "=m" (*ptr)
+                        : "r" (newVal), "m" (*ptr), "0" (oldVal));
+
+        //if (result) return 0;  else {printf("DEBUG::CAS Fails %d-\n", result); return 1; }
+        if (result == oldVal) return 0;  else return 1;
+#else
+        return CAS((int*)ptr, (int)oldVal, (int)newVal);
+#endif
+#endif
+
+}
+int Mutex::CAS(int *ptr, int oldVal, int newVal)
+{
+#ifdef LINUX
+        unsigned char ret;
+        __asm__ __volatile__ (
+                "  lock\n"
+                "  cmpxchgl %2,%1\n"
+                "  sete %0\n"
+                : "=q" (ret), "=m" (*ptr)
+                : "r" (newVal), "m" (*ptr), "a" (oldVal)
+                : "memory");
+
+        //above assembly returns 0 in case of failure
+        if (ret) return 0;
+
+        struct timeval timeout;
+        timeout.tv_sec=0;
+        timeout.tv_usec=1000;
+        os::select(0,0,0,0, &timeout);
+            __asm__ __volatile__ (
+                "  lock\n"
+                "  cmpxchgl %2,%1\n"
+                "  sete %0\n"
+                : "=q" (ret), "=m" (*ptr)
+                : "r" (newVal), "m" (*ptr), "a" (oldVal)
+                : "memory");
+        //if (ret) return 0;  else {printf("DEBUG::CAS Fails %d-\n", ret); return 1; }
+        if (ret) return 0;  else return 1;
+#else //for solaris
+    unsigned int ret;
+    ret = atomic_cas_32((unsigned int*)ptr, (unsigned int) oldVal, 
+                        (unsigned int) newVal);
+    if (ret == oldVal) return 0; else return 1;
+#endif
+}

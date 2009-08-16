@@ -34,65 +34,91 @@ int Config::readLine(FILE *fp, char * buffer)
 }
 int Config::storeKeyVal(char *key, char *value)
 {
-    if (strcasestr(key, "PAGE_SIZE") != NULL )
+    if (os::os::strcasestr(key, "PAGE_SIZE") != NULL )
            { cVal.pageSize = atoi(value);  }
-    else if (strcasestr(key, "MAX_PROCS") != NULL)
+    else if (os::strcasestr(key, "MAX_PROCS") != NULL)
            { cVal.maxProcs = atoi(value);  }
-    else if (strcasestr(key, "MAX_SYS_DB_SIZE") != NULL)
+    else if (os::strcasestr(key, "MAX_SYS_DB_SIZE") != NULL)
            { cVal.maxSysSize = atol(value);  }
-    else if (strcasestr(key, "MAX_DB_SIZE") != NULL)
+    else if (os::strcasestr(key, "MAX_DB_SIZE") != NULL)
            { cVal.maxDbSize = atol(value);  }
-    else if (strcasestr(key, "SYS_DB_KEY") != NULL)
+    else if (os::strcasestr(key, "MMAP") != NULL)
+           { cVal.mmap = os::atobool(value);  }
+    else if (os::strcasestr(key, "SYS_DB_KEY") != NULL)
            { cVal.sysDbKey = atoi(value);  }
-    else if (strcasestr(key, "USER_DB_KEY") != NULL)
+    else if (os::strcasestr(key, "USER_DB_KEY") != NULL)
            { cVal.userDbKey = atoi(value);  }
-    else if (strcasestr(key, "LOG_FILE") != NULL)
+    else if (os::strcasestr(key, "LOG_FILE") != NULL)
            { strcpy(cVal.logFile , value);  }
-    else if (strcasestr(key, "DATABASE_FILE") != NULL)
+    else if (os::strcasestr(key, "DATABASE_FILE") != NULL)
            { strcpy(cVal.dbFile , value);  }
-    else if (strcasestr(key, "MAP_ADDRESS") != NULL)
+    else if (os::strcasestr(key, "MAP_ADDRESS") != NULL)
            { cVal.mapAddr = atol(value);  }
-    else if (strcasestr(key, "MUTEX_TIMEOUT_SECS") != NULL)
+    else if (os::strcasestr(key, "MUTEX_TIMEOUT_SECS") != NULL)
            { cVal.mutexSecs = atoi(value);  }
-    else if (strcasestr(key, "MUTEX_TIMEOUT_USECS") != NULL)
+    else if (os::strcasestr(key, "MUTEX_TIMEOUT_USECS") != NULL)
            { cVal.mutexUSecs = atoi(value);  }
-    else if (strcasestr(key, "MUTEX_TIMEOUT_RETRIES") != NULL)
+    else if (os::strcasestr(key, "MUTEX_TIMEOUT_RETRIES") != NULL)
            { cVal.mutexRetries = atoi(value);  }
-    else if (strcasestr(key, "LOCK_TIMEOUT_SECS") != NULL)
+    else if (os::strcasestr(key, "LOCK_TIMEOUT_SECS") != NULL)
            { cVal.lockSecs = atoi(value);  }
-    else if (strcasestr(key, "LOCK_TIMEOUT_USECS") != NULL)
+    else if (os::strcasestr(key, "LOCK_TIMEOUT_USECS") != NULL)
            { cVal.lockUSecs = atoi(value);  }
-    else if (strcasestr(key, "LOCK_TIMEOUT_RETRIES") != NULL)
+    else if (os::strcasestr(key, "LOCK_TIMEOUT_RETRIES") != NULL)
            { cVal.lockRetries = atoi(value);  }
-    else if (strcasestr(key, "DSN") != NULL)
+    else if (os::strcasestr(key, "LOG_LEVEL") != NULL)
+           { cVal.logLevel = atoi(value);  }
+    else if (os::strcasestr(key, "DSN") != NULL)
            { strcpy(cVal.dsn , value);  }
-    else if (strcasestr(key, "TABLE_CONFIG_FILE") != NULL)
+    else if (os::strcasestr(key,"DS_CONFIG_FILE") !=NULL)
+           { strcpy(cVal.dsConfigFile,value);}
+    else if (os::strcasestr(key, "TABLE_CONFIG_FILE") != NULL)
            { strcpy(cVal.tableConfigFile , value);  }
-    else if (strcasestr(key, "CACHE_TABLE") != NULL)
+    else if (os::strcasestr(key, "STDERR_FILE") != NULL)
+           { strcpy(cVal.stderrFile, value);  }
+    else if (os::strcasestr(key, "CONFL_RESOL_FILE") != NULL)
+           { strcpy(cVal.conflResoFile , value);  }
+    else if (os::strcasestr(key, "CACHE_TABLE") != NULL)
            { cVal.isCache = os::atobool(value); }
-    else if(strcasestr(key,"CACHE_ID")!=NULL)
-           { cVal.cacheId = atoi(value);}
-    else if (strcasestr(key, "DURABILITY") != NULL)
+    else if (os::strcasestr(key, "CACHE_MODE") != NULL)
+           {
+               if (strcmp(value, "SYNC") == 0)
+               {    cVal.mode = SYNC_MODE;    }
+               else if (strcmp(value, "ASYNC") == 0)
+               {    cVal.mode = ASYNC_MODE;   }
+               else cVal.mode = UNKNOWN;
+           }
+    else if(os::strcasestr(key,"SITE_ID")!=NULL)
+           { cVal.siteID = atoi(value);}
+    else if(os::strcasestr(key,"REPLICATION_SITES")!=NULL)
+           { cVal.maxReplSites = atoi(value);}
+    else if (os::strcasestr(key, "REPLICATION") != NULL)
+           { cVal.isReplication = os::atobool(value); }
+    else if (os::strcasestr(key, "DURABILITY") != NULL)
            { cVal.isDurable = os::atobool(value); }
-    else if (strcasestr(key, "CSQL_SQL_SERVER") != NULL)
+    else if (os::strcasestr(key, "DURABLE_MODE") != NULL)
+           { cVal.durableMode = ::atoi(value); }
+    else if (os::strcasestr(key, "CSQL_SQL_SERVER") != NULL)
            { cVal.isCsqlSqlServer = os::atobool(value); }
-    else if (strcasestr(key, "PORT") != NULL)
+    else if (os::strcasestr(key, "PORT") != NULL)
            { cVal.port = atoi(value); }
-    else if (strcasestr(key, "MAX_LOG_STORE_SIZE") != NULL)
-           { cVal.logStoreSize = atol(value);  }
-    else if (strcasestr(key, "MY_NETWORK_ID") != NULL)
-           { cVal.networkID = atoi(value);  }
-    else if (strcasestr(key, "ID_SHM_KEY") != NULL)
+    else if (os::strcasestr(key, "NETWORK_CONFIG_FILE") != NULL)
+           { strcpy(cVal.replConfigFile , value);  }
+    else if (os::strcasestr(key, "MAX_QUEUE_LOGS") != NULL)
+           { cVal.maxQueueLogs = atol(value);  }
+    else if (os::strcasestr(key, "MSG_KEY") != NULL)
+           { cVal.msgKey = atoi(value);  }
+    else if (os::strcasestr(key, "ASYNC_MSGMAX") != NULL)
+           { cVal.asyncMsgMax = atoi(value);  }
+    else if (os::strcasestr(key, "ID_SHM_KEY") != NULL)
            { cVal.shmKeyForId = atoi(value);  }
-    else if (strcasestr(key, "CACHE_NETWORK_ID") != NULL)
-           { cVal.cacheNetworkID = atoi(value);  }
-    else if (strcasestr(key, "NETWORK_RESPONSE_TIMEOUT") != NULL)
+    else if (os::strcasestr(key, "NETWORK_RESPONSE_TIMEOUT") != NULL)
            { cVal.nwResponseTimeout = atoi(value);  }
-    else if (strcasestr(key, "NETWORK_CONNECT_TIMEOUT") != NULL)
+    else if (os::strcasestr(key, "NETWORK_CONNECT_TIMEOUT") != NULL)
            { cVal.nwConnectTimeout = atoi(value);  }
-    else if (strcasestr(key, "ENABLE_BIDIRECTIONAL_CACHE") != NULL)
+    else if (os::strcasestr(key, "ENABLE_BIDIRECTIONAL_CACHE") != NULL)
            { cVal.isTwoWay = os::atobool(value);  }
-    else if (strcasestr(key, "CACHE_RECEIVER_WAIT_SECS") != NULL)
+    else if (os::strcasestr(key, "CACHE_RECEIVER_WAIT_SECS") != NULL)
            { cVal.cacheWaitSecs = atoi(value);  }
     else  return 1;
     return 0;
@@ -109,11 +135,20 @@ int Config::validateValues()
         printError(ErrBadArg,  "PAGE_SIZE should be multiples of 1024");
         return 1;
     }
-    if (cVal.maxProcs < 10 || cVal.maxProcs > 8192)
+#if (defined TRIAL) || (defined BASIC)
+    if (cVal.maxProcs < 1 || cVal.maxProcs > 5)
+    {
+        printf("Trial license supports only 5 connections");
+        printf("Contact sales@csqldb.com to get full license");
+        return 1;
+    }
+#else
+    if (cVal.maxProcs < 10 || cVal.maxProcs > 8192) 
     {
         printError(ErrBadArg,  "MAX_PROCS should be >= 10 and <= 8192");
         return 1;
     }
+#endif
     if (cVal.maxSysSize < 1024 * 1024  || cVal.maxSysSize > 1024 *1024 *1024)
     {
         printError(ErrBadArg,  "MAX_SYS_DB_SIZE should be >= 1 MB and <= 1 GB");
@@ -125,11 +160,39 @@ int Config::validateValues()
         return 1;
     }
 
-    if (cVal.maxDbSize < 1024 * 1024  || cVal.maxDbSize > (1024*1024*1024))
+#ifdef TRIAL
+    if (cVal.maxDbSize < 1024 * 1024  || cVal.maxDbSize > (20 * 1024*1024))
     {
-        printError(ErrBadArg,  "MAX_DB_SIZE should be >= 1 MB and <= 2 GB");
+        printf("Trial license supports only 20 MB db size");
+        printf("Contact sales@csqldb.com to get full license");
         return 1;
     }
+#else
+#ifdef BASIC
+    if (cVal.maxDbSize < 1024 * 1024  || cVal.maxDbSize > (100 * 1024*1024))
+    {
+        printf("Basic subscription supports only 100 MB db size");
+        printf("Contact sales@csqldb.com to upgrade");
+        return 1;
+    }
+
+#else
+  #ifdef x86_64
+    if (cVal.maxDbSize < 1024 * 1024  || cVal.maxDbSize > ( 100*1024*1024*1024L))
+    {
+        printError(ErrBadArg,  "MAX_DB_SIZE should be >= 1 MB and <= 100 GB");
+        return 1;        
+    }
+  #else
+    unsigned long maxVal = 2*1024*1024*1024L;
+    if (cVal.maxDbSize < 1024 * 1024  || ((unsigned long)cVal.maxDbSize) > maxVal)
+    {
+        printError(ErrBadArg,  "MAX_DB_SIZE should be >= 1 MB and <= 2 GB");
+        return 1;        
+    }
+  #endif
+#endif
+#endif
     if (cVal.maxDbSize % 8192 !=0)
     {
         printError(ErrBadArg,  "MAX_DB_SIZE should be multiples of 8192");
@@ -197,12 +260,65 @@ int Config::validateValues()
         printError(ErrBadArg,  "LOCK_TIMEOUT_RETRY should be >= 0 and <= 100");
         return 1;
     }
+    if (cVal.logLevel < 0 || cVal.logLevel > 3) 
+    {
+        printError(ErrBadArg,  "LOG_LEVEL should be >= 0 and <= 3");
+        return 1;
+    }
+#ifdef NOREPL
+    if (cVal.isReplication) {
+        printf("This version does not support replication.\n");
+        printf("Please contact sales@csqldb.com to upgrade\n");
+        return 1;
+    }
+#endif
+/*    if (cVal.isCache && cVal.isReplication) {
+        printError(ErrBadArg, "Either caching or replication option should be set."
+                              " Both options are not supported together");
+        return 1;
+    }*/
+    
+    //printf("Debug:Config=%s\n",cVal.dsn);
     if (cVal.isCache) {
         if (0 == strcmp(cVal.dsn,""))
         {
             printError(ErrBadArg,  "DSN is set to NULL");
             return 1;
         }
+    }
+        
+    if (cVal.isReplication || cVal.isCache) {
+        if (0 == strcmp(cVal.replConfigFile,""))
+        {
+            //TODO::check whether file exists
+            printError(ErrBadArg,  "NETWORK_CONFIG_FILE is set to NULL");
+            return 1;
+        }
+        if (0 == strcmp(cVal.tableConfigFile,""))
+        {
+            //TODO::check whether file exists
+            printError(ErrBadArg,  "TABLE_CONFIG_FILE is set to NULL");
+            return 1;
+        }
+        /*FILE *fp = fopen(cVal.replConfigFile,"r");
+        if( fp == NULL ) {
+            printError(ErrSysInit, "Invalid path/filename for NETWORK_CONFIG_FILE.\n");
+            return 1;
+        }
+        int count =0;
+        int nwid, port;
+        char hostname[IDENTIFIER_LENGTH];
+        char nwmode;
+ 
+        while(!feof(fp)) {
+            fscanf(fp, "%d:%d:%s\n", &nwid, &port, hostname);
+            count++;
+        }
+        if (count >2) {
+            printError(ErrSysInit, "NETWORK_CONFIG_FILE has more than 2 entries\n");
+            return 1;
+        }*/
+
     }
     /*if (cVal.isCache)
     {
@@ -230,16 +346,6 @@ int Config::validateValues()
             if (!found) return 1;
         }
     }*/
-    if (cVal.logStoreSize < 1024 * 1024  || cVal.logStoreSize > 1024 *1024 *1024)
-    {
-        printError(ErrBadArg,  "MAX_LOG_STORE_SIZE should be >= 1 MB and <= 1 GB");
-        return 1;
-    }
-    if (cVal.logStoreSize % 8192 !=0)
-    {
-        printError(ErrBadArg,  "MAX_LOG_STORE_SIZE should be multiples of 8192");
-        return 1;
-    }
     if (cVal.nwResponseTimeout <0 || cVal.nwResponseTimeout > 60)
     {
         printError(ErrBadArg,  "NETWORK_RESPONSE_TIMEOUT should be 0 to 60");
@@ -260,13 +366,23 @@ int Config::validateValues()
         printError(ErrBadArg, "Invalid Port Number");
         return 1;
     }
+    if (cVal.durableMode < 1  || cVal.durableMode >4)
+    {
+        if (!cVal.isDurable) {
+            printError(ErrBadArg, "Durability is not enabled but mode is set");
+        } else {
+            printError(ErrBadArg, "Durable Mode should be 1 to 4");
+        }
+        return 1;
+    }
     return 0;
 }
 
 int Config::readAllValues(char *fileName)
 {
+    if (isLoaded) return 0;
     FILE *fp;
-
+    if (fileName == NULL) fileName = DEFAULT_CONFIG_FILE;
     fp = fopen(fileName,"r");
     if( fp == NULL ) {
         printError(ErrSysInit, "Invalid path/filename in CSQL_CONFIG_FILE.");
@@ -305,8 +421,34 @@ int Config::readAllValues(char *fileName)
     {
         return 1;
     }
-
+    cVal.noOfProcessors = os::getNoOfProcessors();
+    isLoaded = true;
+    logConfig();
     return 0;
+}
+void Config::logConfig()
+{
+    /*
+    logFinest(Conf::logger, "Config: MAX_SYS_DB_SIZE %d", getMaxSysDbSize());
+    logFinest(Conf::logger, "Config: MAX_DB_SIZE %d", getMaxDbSize());
+    logFinest(Conf::logger, "Config: SYS_DB_KEY %d", getSysDbKey());
+    logFinest(Conf::logger, "Config: USER_DB_KEY %d", getUserDbKey());
+    logFinest(Conf::logger, "Config: MAP_ADDRESS %ld", getMapAddress());
+    logFinest(Conf::logger, "Config: DATABASE_FILE %s", getDbFile());
+    //TODO:: for cache/sql/nw section
+    */
+
+    logFinest(Conf::logger, "Config: LOG_FILE %s", getLogFile());
+    logFinest(Conf::logger, "Config: LOG_LEVEL %d", getLogLevel());
+    logFinest(Conf::logger, "Config: DURABILITY %d", useDurability());
+    logFinest(Conf::logger, "Config: MMAP %d", useMmap());
+    logFinest(Conf::logger, "Config: DURABLE_MODE %d", getDurableMode());
+    logFinest(Conf::logger, "Config: MUTEX_TIMEOUT_SECS %d", getMutexSecs());
+    logFinest(Conf::logger, "Config: MUTEX_TIMEOUT_USECS %d", getMutexUSecs());
+    logFinest(Conf::logger, "Config: MUTEX_TIMEOUT_RETRIES %d", getMutexRetries());
+    logFinest(Conf::logger, "Config: LOCK_TIMEOUT_SECS %d", getLockSecs());
+    logFinest(Conf::logger, "Config: LOCK_TIMEOUT_USECS %d", getLockUSecs());
+    logFinest(Conf::logger, "Config: LOCK_TIMEOUT_RETRIES %d", getLockRetries());
 }
 void Config::print()
 {
@@ -318,6 +460,7 @@ void Config::print()
     printf(" getSysDbKey %d\n", getSysDbKey());
     printf(" getUserDbKey %d\n", getUserDbKey());
     printf(" getLogFile %s\n", getLogFile());
+    printf(" getLogLevel %d\n", getLogLevel());
     printf(" getDatabaseFile %s\n", getDbFile());
     printf(" getMapAddress %ld\n", getMapAddress());
     printf(" getMutexSecs %d\n", getMutexSecs());
@@ -326,17 +469,82 @@ void Config::print()
     printf(" getLockSecs %d\n", getLockSecs());
     printf(" getLockUSecs %d\n", getLockUSecs());
     printf(" getLockRetries %d\n", getLockRetries());
-    printf(" isDurable %d\n", useDurability());
     printf(" useCache %d\n", useCache());
-    printf(" getCacheID %d\n", getCacheID());
     printf(" getDSN %s\n", getDSN());
+    printf(" getDsConfigFile %s\n",getDsConfigFile());
     printf(" getTableConfigFile %s\n", getTableConfigFile());
     printf(" isTwoWayCache %d\n", useTwoWayCache());
+    printf(" getCacheMode %d\n", getCacheMode());
     printf(" getCacheWaitSecs %d\n", getCacheWaitSecs());
     printf(" useCsqlSqlServer %d\n", useCsqlSqlServer());
     printf(" getPort %d\n", getPort());
+    printf(" useReplication %d\n", useReplication());
+    printf(" isDurable %d\n", useDurability());
+    printf(" getReplConfigFile %s\n", getReplConfigFile());
+    printf(" getSiteID %d\n", getSiteID());
+    printf(" getMsgKey %d\n", getMsgKey());
     printf(" getShmIDKey %d\n", getShmIDKey());
-    //printf(" getMaxLogStoreSize %ld\n", getMaxLogStoreSize());
-    //printf(" getNetworkID %d\n", getNetworkID());
-    //printf(" getCacheNetworkID %d\n", getCacheNetworkID());
+}
+
+DbRetVal SiteInfo::populateSiteInfoList()
+{
+    if (!Conf::config.useReplication()) return OK;  
+    FILE *fp = fopen( Conf::config.getReplConfigFile(), "r");
+    if (fp == NULL) {
+        printError(ErrSysInit, "Invalid path/filename for REPL_CONFIG_FILE.\n");
+        return ErrSysInit;
+    }
+    char line[128];
+    while(fgets(line, sizeof (line), fp) != NULL) {
+        SiteInfoData *sInfo = new SiteInfoData();   
+        char *token = strtok(line, ":");
+        sInfo->siteId = atoi(token);
+        if ((token = strtok(NULL, ":")) != NULL) 
+            strncpy(sInfo->hostName, token, IDENTIFIER_LENGTH);
+        if ((token = strtok(NULL, ":")) != NULL) sInfo->port = atoi(token); 
+        if ((token = strtok(NULL, ":")) != NULL) 
+            strncpy(sInfo->mode, token, 32);
+        siteInfoList.append(sInfo);
+        if(strncasecmp(sInfo->mode, "ASYNC", 5)==0) asyncSiteList.append(sInfo);
+        if(strncasecmp(sInfo->mode, "SYNC", 4)==0) syncSiteList.append(sInfo);
+    }
+    fclose(fp);
+    return OK;
+}
+
+bool SiteInfo::isAsyncSitePresent()
+{
+    bool async = false;
+    if (!Conf::config.useReplication()) return false;
+    ListIterator it = siteInfoList.getIterator();
+    while (it.hasElement()) {
+        SiteInfoData *data = (SiteInfoData *) it.nextElement();
+        if (strncmp(data->mode, "ASYNC", 5) == 0) { async = true; break; }
+    }
+    return async;
+}
+
+bool SiteInfo::isSyncSitePresent()
+{
+    bool sync = false;
+    if (!Conf::config.useReplication()) return false;
+    ListIterator it = siteInfoList.getIterator();
+    while (it.hasElement()) {
+        SiteInfoData *data = (SiteInfoData *) it.nextElement();
+        if (strncmp(data->mode, "SYNC", 4) == 0) { sync = true; break; }
+    }
+    return sync;
+}
+
+SiteInfo::~SiteInfo() 
+{
+//    ListIterator it = siteInfoList.getIterator();
+//    while(it.hasElement()) delete (SiteInfoData *) it.nextElement();
+//    siteInfoList.reset();
+    ListIterator it = asyncSiteList.getIterator();
+    while(it.hasElement()) delete (SiteInfoData *) it.nextElement();
+    asyncSiteList.reset();
+    it = syncSiteList.getIterator();
+    while(it.hasElement()) delete (SiteInfoData *) it.nextElement();
+    syncSiteList.reset();
 }

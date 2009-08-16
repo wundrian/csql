@@ -55,12 +55,12 @@ DbRetVal NetworkTable::readNetworkConfig()
        fscanf(fp, "%d:%d:%s\n", &nwid, &port, hostname);
        printDebug(DM_Network, "%d:%d:%s\n", nwid, port, hostname);
        NetworkClient* nClient;
-       if (nwid == Conf::config.getNetworkID()) continue;
+       //if (nwid == Conf::config.getNetworkID()) continue;
 
        nClient = NetworkFactory::createClient(TCP);
 
-       printDebug(DM_Network, "nwid %d getCacheNetworkID %d\n", nwid,  Conf::config.getCacheNetworkID());
-       if (nwid == Conf::config.getCacheNetworkID()) nClient->setCacheClient();
+       //printDebug(DM_Network, "nwid %d getCacheNetworkID %d\n", nwid,  Conf::config.getCacheNetworkID());
+       //if (nwid == Conf::config.getCacheNetworkID()) nClient->setCacheClient();
        nClient->setHost(hostname, port, nwid);
        nwClient = nClient;
        count++;

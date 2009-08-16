@@ -14,6 +14,8 @@
  *                                                                         *
   ***************************************************************************/
 #include<Debug.h>
+#include<Config.h>
+Logger  Conf::logger;
 int Logger::createLogRecord(LogLevel level, char* filename,
                               int lineNo, char* message, char **buffer)
 {
@@ -21,24 +23,64 @@ int Logger::createLogRecord(LogLevel level, char* filename,
     struct timeval timeStamp;
     os::gettimeofday(&timeStamp);
     struct tm*      tempTm = os::localtime(&timeStamp.tv_sec);
-    strftime(tempBuffer, 25, "%d/%m/%Y %H:%M:%S.", tempTm);
-    snprintf(*buffer, MAX_TRACE_LOG_LENGTH, "%s::%s:%d::%s::%d::%d::%lu::%s\n",
-        levelNames[level], tempBuffer, timeStamp.tv_usec,
-        filename, lineNo,
+#if defined(SOLARIS) && defined(REMOTE_SOLARIS)
+    strftime(tempBuffer, 25, "%d/%m/%Y %H:%M:%S", (struct std::tm*) tempTm);
+#else
+    strftime(tempBuffer, 25, "%d/%m/%Y %H:%M:%S", tempTm);
+#endif
+    snprintf(*buffer, MAX_TRACE_LOG_LENGTH, "%s.%6d:%5d:%10lu:%s:%d:%s\n",
+        tempBuffer, timeStamp.tv_usec,
         os::getpid(),
         os::getthrid(),
+        filename, lineNo,
         message);
     return 0;
 }
+void Logger::rollOverIfRequired()
+{
+    char *fileName = Conf::config.getLogFile();
+    int fileSize = os::getFileSize(fileName);
+    char cmd[MAX_FILE_LEN];
+    int ret =0;
+        int tries=0, totalTries=3;
+        while (tries < totalTries) {
+            ret = os::lockFile(fdLog);
+            if (ret ==0) break;
+            os::usleep(10000);
+            tries++;
+        }
+        if (tries == totalTries)
+        {
+            printError(ErrLockTimeOut,"Unable to lock log file for rollover");
+            return ;
+        }
 
-//TODO::Multiple files: If it exceeeds some configured size, it rolls over to
-//next with suffix like file.1, file.2, ...
+    if (fileSize > LOG_ROLLOVER_SIZE) {
+          time_t cnow = ::time(NULL);
+          struct tm *tmval = localtime(&cnow);
+          sprintf(cmd, "cp %s %s.%d-%d-%d:%d:%d:%d", fileName, fileName, 
+                     tmval->tm_year+1900,
+                     tmval->tm_mon+1, tmval->tm_mday, tmval->tm_hour, 
+                     tmval->tm_min, tmval->tm_sec);
+          ret = system(cmd);
+          if (ret != 0) {
+            printError(ErrWarning, "Unable to rollover the log file");
+          }
+          truncate(fileName, 0);
+    }
+    os::unlockFile(fdLog);
+    return;
+}
+
 int Logger::log(LogLevel level, char* filename,
                   int lineNo, char *format, ...)
 {
+    int configLevel =  Conf::config.getLogLevel();
     if (LogOff == configLevel) return 0;
+    int ret =0;
     if (level <= configLevel )
     {
+        rollOverIfRequired();
         va_list ap;
         char mesgBuf[1024]; 
         va_start(ap, format);
@@ -49,64 +91,65 @@ int Logger::log(LogLevel level, char* filename,
         } 
         char *buffer = new char[MAX_TRACE_LOG_LENGTH];
         createLogRecord(level, filename, lineNo, mesgBuf, &buffer);
-        //TODO::There is some issue in locking. Need to look into this and then
-        //uncomment the below lines
-        //int ret = mutex_.tryLock(5, 100000);
-        int ret = 0;
-        if (ret != 0)
+        int tries=0, totalTries=3;
+        while (tries < totalTries) {
+            ret = os::lockFile(fdLog);
+            if (ret ==0) break;
+            os::usleep(10000);
+            tries++;
+        }
+        if (tries == totalTries)
         {
-            printError(ErrLockTimeOut,"Unable to acquire logger Mutex");
+            printError(ErrLockTimeOut,"Unable to lock log file %d", ret);
             delete[] buffer;
             return -1;
         }        
-        os::write(fdLog, buffer, strlen(buffer));
-        os::fsync(fdLog);
-        //mutex_.releaseLock();
+        int bytesWritten = os::write(fdLog, buffer, strlen(buffer));
+        if (bytesWritten != strlen(buffer))
+        {
+            printf("Unable to write log entry");
+            ret = -1;
+        }
+        os::unlockFile(fdLog);
         delete[] buffer;
     }
-    return 0;
+    return ret;
 }
 
 DbRetVal Logger::startLogger(char *filename, bool isCreate)
 {
-    char file[256];
-    int i =0;
-    if (isCreate) 
+    configLevel= (LogLevel) Conf::config.getLogLevel();
+    if (LogOff == configLevel) return OK;
+    char cmd[MAX_FILE_LEN];
+    int ret =0;
+    if (isCreate)
     {
-        while (true)
-        {
-            sprintf(file, "%s.%d", filename, i);
-            //check if file exists. If not create it
-            if (::access(file, F_OK) != 0 ) break;
-            i++;
-        }
-        fdLog = os::openFile(file, fileOpenCreat,0);
+       if (::access(filename, F_OK) == 0 ) {
+          //move the existing log file with timestamp and create new file
+          time_t cnow = ::time(NULL);
+          struct tm *tmval = localtime(&cnow);
+          sprintf(cmd, "cp %s %s.%d-%d-%d:%d:%d:%d", filename, filename, 
+                     tmval->tm_year+1900,
+                     tmval->tm_mon+1, tmval->tm_mday, tmval->tm_hour, 
+                     tmval->tm_min, tmval->tm_sec);
+          ret = system(cmd);
+          if (ret != 0) {
+            printError(ErrWarning, "Unable to copy old log file");
+          }
+          truncate(filename, 0);
+       }
     }
-    else
-    {
-        int newlyCreatedID =0;
-        while (true)
-        {
-            sprintf(file, "%s.%d", filename, i);
-            //check if file exists. If not create it
-            if (::access(file, F_OK) != 0 ) break;
-            newlyCreatedID = i;
-            i++;
-        }
-        sprintf(file, "%s.%d", filename, newlyCreatedID );
-        fdLog = os::openFile(file, fileOpenAppend,0);
-    }
+    fdLog = os::openFile(filename, fileOpenAppend,0);
     if (fdLog == -1)
     {
-        printError(ErrSysInit,"Unable to create log file. Check whether server started\n");
+        printError(ErrSysInit,"Unable to open log file");
         return ErrSysInit;
     }
-    //TODO::get this value from configuration file
-    configLevel= LogFinest;
     return OK;
 }
 
 void Logger::stopLogger()
 {
+    if (configLevel == 0) return ;
     os::closeFile(fdLog);
 }

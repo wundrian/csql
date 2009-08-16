@@ -1,108 +1,154 @@
 /***************************************************************************
- *   Copyright (C) 2007 by www.databasecache.com                           *
- *   Contact: praba_tuty@databasecache.com                                 *
  *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
+ *    Copyright (C) Lakshya Solutions Ltd. All rights reserved.            *
  *                                                                         *
- *   This program is distributed in the hope that it will be useful,       *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
- *   GNU General Public License for more details.                          *
- *                                                                         *
-  ***************************************************************************/
+ ***************************************************************************/
+
 #ifndef CONFIG_H
 #define CONFIG_H
 #include<os.h>
+#include<Util.h>
+
+enum CacheMode {
+    SYNC_MODE=0,
+    ASYNC_MODE=1,
+    UNKNOWN=100
+};
+enum TDBInfo
+{
+    mysql=0,
+    postgres,
+    oracle,
+    sybase,
+    db2,
+    sqlserver,
+};
+
 class ConfigValues
 {
     public:
     //All the members of the configuration file
-    int pageSize;
-    int maxProcs;
-    long maxSysSize;
-    long maxDbSize;
-    int sysDbKey;
-    int userDbKey;
     char logFile[MAX_FILE_PATH_LEN];
     char dbFile[MAX_FILE_PATH_LEN];
+    char tableConfigFile[MAX_FILE_PATH_LEN];
+    char dsConfigFile[MAX_FILE_PATH_LEN];// DSN Config file
+    char stderrFile[MAX_FILE_PATH_LEN];
+    char replConfigFile[MAX_FILE_PATH_LEN];
+    char conflResoFile[MAX_FILE_PATH_LEN];
+    
+    bool isDurable;
+    bool mmap;
+    bool isCsqlSqlServer;
+    bool isCache;
+    bool isTwoWay;
+    bool isReplication;
+    
+    int siteID;
+    int sysDbKey;
+    int userDbKey;
+    long maxSysSize;
+    long maxDbSize;
+    int pageSize;
+    int maxProcs;
+
     long mapAddr;
+    
     int mutexSecs;
     int mutexUSecs;
     int mutexRetries;
     int lockSecs;
     int lockUSecs;
     int lockRetries;
+    int logLevel;
     
-    int cacheId;
-    bool isCache;
+    int durableMode;
     char dsn[IDENTIFIER_LENGTH];
-    char tableConfigFile[MAX_FILE_PATH_LEN];
-    bool isTwoWay;
-    int  cacheWaitSecs;
-
-    bool isDurable;
-    bool isCsqlSqlServer;
+    CacheMode mode;
+    int cacheWaitSecs;
+    
     int port;
-    int networkID;
-    int cacheNetworkID;
-    int shmKeyForId;
-    long logStoreSize;
     int nwResponseTimeout;
     int nwConnectTimeout;
+    int maxReplSites;
+
+    int msgKey;
+    int asyncMsgMax;
+    int shmKeyForId;
+    long maxQueueLogs;
+    int noOfProcessors;
 
     ConfigValues()
     {
-        pageSize = 8192;
-        maxProcs = 20;
-        maxSysSize = 10485760;
-        maxDbSize = 104857600;
+        strcpy(logFile, "/tmp/log/log.out");
+        strcpy(dbFile, "/tmp/csql/db");
+        strcpy(tableConfigFile, "/tmp/csql/csqltable.conf");
+        strcpy(dsConfigFile,"/tmp/csql/csqlds.conf"); // DSN Config file
+        strcpy(stderrFile, "stderr");
+        strcpy(replConfigFile, "/tmp/csql/csqlnw.conf");
+        strcpy(conflResoFile, "/tmp/csql/ConflResoFile.txt");
+        
+        isDurable = false;        
+        mmap = false;
+        isCsqlSqlServer = false;
+        isCache = false;
+        isTwoWay=false;
+        isReplication = false;        
+       
+        siteID=1;
         sysDbKey = 2222;
         userDbKey = 5555;
-        strcpy(logFile, "/tmp/log/log.out");
-        strcpy(dbFile, "/tmp/csql/csql.db");
+        maxSysSize = 10485760;
+        maxDbSize = 104857600;
+        pageSize = 8192;
+        maxProcs = 20;
+        
         mapAddr=400000000;
+ 
         mutexSecs=0;
         mutexUSecs=10;
         mutexRetries = 10;
         lockSecs =0;
         lockUSecs = 10;
         lockRetries = 10;
-        cacheId=1;
-        isCache = false;
-        cacheNetworkID =-1;
-        strcpy(dsn, "myodbc3");
-        strcpy(tableConfigFile, "/tmp/csql/csqltable.conf");
-        isCsqlSqlServer = false;
+        logLevel = 0;
+        
+        durableMode=1;
+        strcpy(dsn,"myodbc3");
+        mode = SYNC_MODE;
+        cacheWaitSecs =10;
+        
         port = 5678;
-        logStoreSize = 10485760;
-        networkID=-1;
-        shmKeyForId = -1;
         nwResponseTimeout=3;
         nwConnectTimeout=5;
-        isTwoWay=false;
-        cacheWaitSecs =10;
+        maxReplSites=1;
+        msgKey=-1;
+        asyncMsgMax = 8192; //default for linux 
+        shmKeyForId = -1;
+        maxQueueLogs = 100;
+        noOfProcessors = 1;
     }
 };
 
 class Config
 {
     ConfigValues cVal;
+    bool isLoaded;
     int readLine(FILE *fp, char * buffer);
     int storeKeyVal(char *key, char *val);
     int validateValues();
 
     public:
+    Config() { isLoaded = false; }
     int readAllValues(char *filename);
     void print();
+    void logConfig();
     inline int getPageSize() { return cVal.pageSize; }
     inline int getMaxProcs() { return cVal.maxProcs; }
     inline long getMaxSysDbSize() { return cVal.maxSysSize; }
     inline long getMaxDbSize() { return cVal.maxDbSize; }
     inline int getSysDbKey() { return cVal.sysDbKey; }
     inline int getUserDbKey() { return cVal.userDbKey; }
+    inline bool useMmap() { return cVal.mmap; }
     inline char* getLogFile() { return cVal.logFile; }
     inline char* getDbFile() { return cVal.dbFile; }
     inline long getMapAddress() { return cVal.mapAddr; }
@@ -112,28 +158,65 @@ class Config
     inline int getLockSecs() { return cVal.lockSecs; }
     inline int getLockUSecs() { return cVal.lockUSecs; }
     inline int getLockRetries() { return cVal.lockRetries; }
-    inline int getCacheID(){ return cVal.cacheId;}
+    inline int getSiteID(){ return cVal.siteID;}
     inline bool useCache() { return cVal.isCache; }
+    inline int getCacheMode() { return (int) cVal.mode; }
     inline char* getDSN() { return cVal.dsn; }
+    inline char* getDsConfigFile() { return cVal.dsConfigFile; } 
     inline char* getTableConfigFile() { return cVal.tableConfigFile; }
+    inline char* getStderrFile() { return cVal.stderrFile; }
+    inline bool useReplication() { return cVal.isReplication; }
     inline bool useDurability() { return cVal.isDurable; }
+    inline int getDurableMode() { return cVal.durableMode; }
     inline bool useCsqlSqlServer() { return cVal.isCsqlSqlServer; }
     inline int getPort() { return cVal.port; }
-    inline long getMaxLogStoreSize() { return cVal.logStoreSize; }
+    inline char* getReplConfigFile() { return cVal.replConfigFile; }
+    inline char* getConflResoFile() { return cVal.conflResoFile; }
+    inline long getMaxQueueLogs() { return cVal.maxQueueLogs; }
+    inline int getNoOfReplSites() { return cVal.maxReplSites; }
+    inline int getMsgKey() { return cVal.msgKey; }
+    inline int getAsyncMsgMax() { return cVal.asyncMsgMax; }
     inline int getShmIDKey() { return cVal.shmKeyForId; }
-    inline int getNetworkID() { return cVal.networkID; }
-    inline int getCacheNetworkID() { return cVal.cacheNetworkID; }
     inline int getNetworkResponseTimeout() { return cVal.nwResponseTimeout; }
     inline int getNetworkConnectTimeout() { return cVal.nwConnectTimeout; }
     inline bool useTwoWayCache() { return cVal.isTwoWay; }
     inline int getCacheWaitSecs() { return cVal.cacheWaitSecs; }
+    inline int getLogLevel() { return cVal.logLevel; }
+    inline int getNoOfProcessors() { return cVal.noOfProcessors; }
 };
 
 class Conf
 {
     public:
     static Config config;
+    static Logger logger;
 };
 
+class SiteInfoData
+{
+    public:
+    int siteId;
+    char hostName[IDENTIFIER_LENGTH];
+    int port;
+    char mode[32];
+    SiteInfoData() { siteId = -1; port = 0; hostName[0]='\0'; mode[0]='\0';};
+};
+
+
+class SiteInfo
+{
+    DbRetVal populateSiteInfoList();
+    public:
+    List siteInfoList;
+    List asyncSiteList;
+    List syncSiteList;
+    bool isAsyncSitePresent();
+    bool isSyncSitePresent();
+    SiteInfo() { populateSiteInfoList(); }
+    ~SiteInfo();
+    List & getSiteInfoList() { return siteInfoList; }
+    List & getSyncSiteInfoList() { return syncSiteList; }
+    List & getAsyncSiteInfoList() { return asyncSiteList; }
+};    
 
 #endif

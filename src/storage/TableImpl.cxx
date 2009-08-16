@@ -1130,7 +1130,7 @@ DbRetVal TableImpl::close()
     //table->unlock();
     delete pred_;
     delete this;
-    logFinest(logger, "Closing Table");
+    logFinest(Conf::logger, "Closing Table");
     return OK;
 }
 

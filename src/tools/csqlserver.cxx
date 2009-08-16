@@ -50,7 +50,7 @@ DbRetVal releaseAllResources(Database *sysdb, ThreadInfo *info )
         if (info->has_[i] != NULL) 
         {
             printf("Dead Procs: %d %lu holding mutex %x %s \n", info->pid_, info->thrid_, info->has_[i], info->has_[i]->name);
-            logFine(logger, "Dead Procs: %d %lu holding mutex %x %s \n", info->pid_, info->thrid_, info->has_[i], info->has_[i]->name);
+            logFine(Conf::logger, "Dead Procs: %d %lu holding mutex %x %s \n", info->pid_, info->thrid_, info->has_[i], info->has_[i]->name);
             //TODO::recovery of mutexes 
             sysdb->recoverMutex(info->has_[i]);
             //srvStop = 1;
@@ -115,7 +115,7 @@ DbRetVal logActiveProcs(Database *sysdb)
     for (; i < Conf::config.getMaxProcs(); i++)
     {
         if (pInfo->pid_ !=0 ) {
-           logFine(logger, "Registered Procs: %d %lu\n", pInfo->pid_, pInfo->thrid_);
+           logFine(Conf::logger, "Registered Procs: %d %lu\n", pInfo->pid_, pInfo->thrid_);
            printf("Client process with pid %d is still registered\n", pInfo->pid_); 
            count++;
         }
@@ -187,14 +187,14 @@ int main(int argc, char **argv)
     }
     os::signal(SIGINT, sigTermHandler);
     os::signal(SIGTERM, sigTermHandler);
-    rv = logger.startLogger(Conf::config.getLogFile(), true);
+    rv = Conf::logger.startLogger(Conf::config.getLogFile(), true);
     if (rv != OK)
     {
         printf("Unable to start the logger\n");
         return 2;
     }
     bool isInit = true;
-    logFine(logger, "Server Started");
+    logFine(Conf::logger, "Server Started");
     int ret  = session->initSystemDatabase();
     if (0  != ret)
     {
@@ -240,7 +240,7 @@ int main(int argc, char **argv)
             int ret = system("redo -a");
             if (ret != 0) { 
                 printf("Recovery failed. Redo log file corrupted\n");
-                logger.stopLogger();
+                Conf::logger.stopLogger();
                 session->destroySystemDatabase();
                 delete session;
                 return 10;
@@ -250,7 +250,7 @@ int main(int argc, char **argv)
             ret = system(cmd);
             if (ret != 0) { 
                 printf("Unable to create checkpoint file\n");
-                logger.stopLogger();
+                Conf::logger.stopLogger();
                 session->destroySystemDatabase();
                 delete session;
                 return 11;
@@ -258,7 +258,7 @@ int main(int argc, char **argv)
             ret = unlink(dbRedoFileName);
             if (ret != 0) { 
                 printf("Unable to delete redo log file. Delete and restart the server\n");
-                logger.stopLogger();
+                Conf::logger.stopLogger();
                 session->destroySystemDatabase();
                 delete session;
                 return 11;
@@ -272,7 +272,7 @@ int main(int argc, char **argv)
             int ret = system("cachetable -U root -P manager -R");
             if (ret != 0) { 
                 printf("Cached Tables recovery failed %d\n", ret);
-                logger.stopLogger();
+                Conf::logger.stopLogger();
                 session->destroySystemDatabase();
                 delete session;
                 return 2;
@@ -280,7 +280,7 @@ int main(int argc, char **argv)
             printf("Cached Tables recovered\n");
         } else {
             printf("Cache mode is not set in csql.conf. Cannot recover\n");
-            logger.stopLogger();
+            Conf::logger.stopLogger();
             session->destroySystemDatabase();
             delete session;
             return 1;
@@ -320,11 +320,11 @@ reloop:
     os::kill(cachepid, SIGTERM);
     os::kill(sqlserverpid, SIGTERM);
     //if (recoverFlag) dumpData();
-    logFine(logger, "Server Exiting");
+    logFine(Conf::logger, "Server Exiting");
     printf("Server Exiting\n");
-    logFine(logger, "Server Ended");
+    logFine(Conf::logger, "Server Ended");
     UID.destroy();
-    logger.stopLogger();
+    Conf::logger.stopLogger();
     session->destroySystemDatabase();
     delete session;
     return 0;

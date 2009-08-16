@@ -80,20 +80,7 @@ int main(int argc, char **argv)
         SqlNetworkHandler::conn->disconnect();
         return 1;
     }
-    bool found =false;
-    while(!feof(fp)) {
-       fscanf(fp, "%d:%d:%s\n", &nwid, &port, hostname);
-       printf( "%d:%d:%s\n", nwid, port, hostname);
-       if (nwid == Conf::config.getNetworkID()) { found = true; break;}
-    }
     fclose(fp);
-    if (!found)
-    {
-        printf("Info not found in REPL_CONFIG_FILE for nwid %d\n", 
-               Conf::config.getNetworkID());
-        SqlNetworkHandler::conn->disconnect();
-        return 1;
-    }
     NetworkServer *nwServer;
 
     nwServer = new UDPServer();

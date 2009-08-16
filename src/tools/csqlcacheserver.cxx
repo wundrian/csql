@@ -123,7 +123,7 @@ int getRecordsFromTargetDb(int mode)
     int rows =0;
     DbRetVal rv = OK;
     char StmtStr[1024];
-    caId =Conf::config.getCacheID();
+    caId =Conf::config.getSiteID();
     AbsSqlStatement *stmt = SqlFactory::createStatement(CSqlAdapter);
     stmt->setConnection(targetconn);
     AbsSqlStatement *delstmt = SqlFactory::createStatement(CSqlAdapter);

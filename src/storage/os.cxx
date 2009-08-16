@@ -16,9 +16,13 @@
 #include <os.h>
 #include <Debug.h>
 
-caddr_t os::mmap(caddr_t addr, size_t len, int prot, int flags, int fildes, off_t off)
+void* os::mmap(void* addr, size_t len, int prot, int flags, int fildes, off_t off)
 {
-    return ((caddr_t)::mmap(addr,len,prot,flags,fildes,off));
+#ifdef SOLARIS
+    return ((void*)::mmap((char*)addr,len,prot,flags,fildes,off));
+#else
+    return ((void*)::mmap(addr,len,prot,flags,fildes,off));
+#endif
 }
 
 int os::munmap(caddr_t addr, size_t len)
@@ -61,15 +65,21 @@ int os::gettimeofday(struct timeval *tp)
 
 struct tm* os::localtime(long *secs)
 {
+#ifdef SOLARIS
+    return (struct tm*) ::localtime(secs);
+#else
     return ::localtime(secs);
+#endif
 }
 
 int os::openFile(const char *name, FileOpenMode flags, size_t size)
 {
     int retval = -1;
     //mode_t mode = S_IRWXU | S_IRGRP | S_IWGRP ;
-    mode_t mode = (mode_t)0755 ;
+    mode_t oldMode = umask(0000);
+    mode_t mode = (mode_t)0777 ;
     retval=::open(name, flags, mode);
+    umask(oldMode);
     if (0 == size)
         return retval;
     os::lseek(retval, size-1, SEEK_SET);
@@ -77,10 +87,24 @@ int os::openFile(const char *name, FileOpenMode flags, size_t size)
     os::write(retval, buf, 1);
     return retval;
 }
+int os::openFileForAppend(const char *name, int flag)
+{
+    mode_t mode = (mode_t)0644 ;
+    int flags = flag | O_WRONLY|O_APPEND;
+    return  ::open(name, flags, mode);
+}
 
 int os::closeFile(int fd)
 {
     return ::close(fd);
+}
+int os::lockFile(int fd)
+{
+    return flock(fd, LOCK_EX);
+}
+int os::unlockFile(int fd)
+{
+    return ::flock(fd, LOCK_UN);
 }
 
 off_t os::lseek(int fildes, off_t offset, int whence)
@@ -143,8 +167,12 @@ int os::usleep(int msecs)
     os::select(0,0,0,0, &timeout);
     return 0;
 }
-
-
+int os::getFileSize(const char *fileName)
+{
+    struct stat buf;
+    stat(fileName, &buf);
+    return buf.st_size;
+}
 
 char* os::getenv(const char *envVarName)
 {
@@ -155,7 +183,13 @@ char* os::getenv(const char *envVarName)
 
 int os::setenv(const char *envVarName, const char *value)
 {
+#ifdef SOLARIS
+    char str[IDENTIFIER_LENGTH*3];
+    sprintf(str, "%s=%s", envVarName, value);
+    return putenv(str);
+#else
     return ::setenv(envVarName, value,1);
+#endif
 }
 
 int os::kill(pid_t pid, int sig)
@@ -170,10 +204,10 @@ bool os::atobool(char *value)
     else if (strlen(value) ==5 && strncasecmp(value,"false",5)==0) return false;
     return false;
 }
-pid_t os::createProcess(const char* cmdName, const char *arg0, ...)
+pid_t os::createProcess(const char* cmdName, const char* execName)
 {
     pid_t pid;
-    pid = ::vfork();
+    pid = ::fork();
     if (pid == (pid_t) -1 )
     {
         printf("Process creation failed\n");
@@ -184,34 +218,10 @@ pid_t os::createProcess(const char* cmdName, const char *arg0, ...)
         //return for parent
         return pid;
     }
-    va_list ap;
-    va_start(ap,arg0);
-
-    const char *argv[5];
-
-    argv[0]=cmdName;
-    argv[1]=arg0;
-
-    argv[2]=NULL;
-    int i = 2;
-    while(argv[i++]=va_arg(ap,char *));
-    switch(i){
-        case 2:
-            pid=::execl(argv[0],argv[1]);break;
-        case 3:
-            pid=::execl(argv[0],argv[1],argv[2]);break;
-        case 4:
-            pid=::execl(argv[0],argv[1],argv[2],argv[3]);break;
-        case 5:
-            pid=::execl(argv[0],argv[1],argv[2],argv[3],argv[4]);break;
-        default:
-            printf("only three options allowed\n");
-            pid=-1;break;
-    }
+    pid=::execl(cmdName,execName, NULL);
     if (pid < 0)
         printf("Exec failed\n");
     return pid;
-
 }
 pid_t os::fork()
 {
@@ -219,11 +229,26 @@ pid_t os::fork()
 }
 size_t os::send(int fd, const void *buf, size_t len, int flags)
 {
-    return ::send(fd, buf, len, flags);
+    size_t totalLen = len;
+    size_t nbytes = ::send(fd, buf, len, flags);
+    while (nbytes != -1 && nbytes != len) {
+        len = len - nbytes;
+        nbytes = ::send(fd, ((char *)buf)+nbytes, len, flags);
+    }
+    if (nbytes == -1) return -1;
+    else return totalLen;       
 }
 size_t os::recv(int fd, void *buf, size_t len, int flags)
 {
-    return ::recv(fd, buf, len, flags);
+    size_t totalLen = len;
+    size_t nbytes = ::recv(fd, buf, len, flags);
+    if (!nbytes) return 0;
+    while (nbytes != -1 && nbytes != len) {
+        len = len - nbytes;
+        nbytes = ::recv(fd, ((char *)buf)+nbytes, len, flags);
+    }
+    if (nbytes == -1) return -1;
+    else return totalLen;
 }
 int os::gethostname(char *hostname, size_t len)
 {
@@ -233,3 +258,83 @@ int os::strmatch(char *pattern, char *str)
 {
     return ::fnmatch(pattern, str, 0);
 }
+
+int os::msgget(key_t key, int oflag) 
+{
+    return ::msgget(key, oflag | IPC_CREAT);
+}
+
+int os::msgsnd(int msqid, const void *ptr, size_t len, int flag) 
+{
+    return ::msgsnd(msqid, ptr, len, flag);
+}
+
+ssize_t os::msgrcv(int msqid, void *ptr, size_t len, long type, int flag) 
+{
+    return ::msgrcv(msqid, ptr, len, type, flag);
+};
+
+int os::msgctl(int msqid, int cmd, struct msqid_ds *buff)
+{
+    return ::msgctl(msqid, cmd, buff);
+}
+bool os::fileExists(char *fileName)
+{
+    int ret = access(fileName, R_OK);
+    if (0 == ret) return true; else return false;
+}
+int os::isValidIP(char ipstr[] )
+{
+#if defined(LINUX)
+    struct ifaddrs * ifAddrStruct=NULL;
+    void * tmpAddrPtr=NULL;
+    char  addressBuffer[100];
+    int i=0;
+    getifaddrs(&ifAddrStruct);
+
+    while (ifAddrStruct!=NULL)
+    {
+            if (ifAddrStruct->ifa_addr->sa_family==AF_INET && strcmp(ifAddrStruct->ifa_name, "lo0")!=0)
+            {
+                tmpAddrPtr=&((struct sockaddr_in *)ifAddrStruct->ifa_addr)->sin_addr;
+                inet_ntop(AF_INET, tmpAddrPtr, addressBuffer, 100);
+                if(strcmp(ipstr,addressBuffer) == 0)
+                {
+          //         printf("\nThe ip is matched %s and %s",ipstr,addressBuffer);
+                    return 1;
+                }
+             //   printf("IP Address %s\n", inet_ntop(AF_INET, tmpAddrPtr, addressBuffer, 100));
+            }
+            ifAddrStruct=ifAddrStruct->ifa_next;
+    }
+#endif
+    return 0;
+}
+char* os::strcasestr(char *str1, const char *str2)
+{
+#if defined(LINUX)
+    return ::strcasestr(str1, str2);
+#else
+    return ::strstr(str1, str2);
+    /*
+    int size=strlen(str1);
+    char *tmpStr=new char[size];
+    char *tmpStrPtr=NULL;
+    strcpy(tmpStr, str1);
+    tmpStrPtr=tmpStr;
+    while(*tmpStrPtr != '\0')
+    {
+        *tmpStrPtr=::toupper(*tmpStrPtr);
+        tmpStrPtr++;
+    }
+    char *subStrPtr = ::strstr(tmpStr, str2);
+    delete []tmpStr;
+    return subStrPtr;
+    */
+#endif
+}
+int os::getNoOfProcessors()
+{
+    return ::sysconf(_SC_NPROCESSORS_ONLN);
+}
+

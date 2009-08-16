@@ -45,9 +45,9 @@ DbRetVal Connection::open(const char *username, const char *password)
     }
     DbRetVal rv = session->open(username, password);
     if (rv != OK) { delete session; session = NULL; return rv; }
-    rv = logger.startLogger(Conf::config.getLogFile());
+    rv = Conf::logger.startLogger(Conf::config.getLogFile());
     if (rv != OK) { delete session; session = NULL; return rv; }
-    logFinest(logger, "User logged in %s",username);
+    logFinest(Conf::logger, "User logged in %s",username);
     Index::init();
     return OK;
 }
@@ -55,8 +55,8 @@ DbRetVal Connection::open(const char *username, const char *password)
 DbRetVal Connection::close()
 {
     if (session == NULL) return ErrNoConnection;
-    logFinest(logger, "User logged out");
-    logger.stopLogger();
+    logFinest(Conf::logger, "User logged out");
+    Conf::logger.stopLogger();
     session->rollback();
     delete session;  // this inturn calls session->close
     session = NULL;

@@ -1,18 +1,9 @@
 /***************************************************************************
- *   Copyright (C) 2007 by www.databasecache.com                           *
- *   Contact: praba_tuty@databasecache.com                                 *
  *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
+ *    Copyright (C) Lakshya Solutions Ltd. All rights reserved.            *
  *                                                                         *
- *   This program is distributed in the hope that it will be useful,       *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
- *   GNU General Public License for more details.                          *
- *                                                                         *
-  ***************************************************************************/
+ ***************************************************************************/
+
 #ifndef DEBUG_H
 #define DEBUG_H
 #include<ErrorType.h>
@@ -36,8 +27,13 @@ extern int DebugDM_Network;
 extern int DebugDM_Gateway;
 extern int DebugDM_Adapter;
 extern int DebugDM_SqlLog;
+extern int DebugDM_ReplServer;
+extern int DebugDM_ReplTool;
+extern int DebugDM_CacheServer;
+extern int DebugDM_TEST;
+extern int DebugDM_Warning;
 
-
+int printStackTrace();
 extern int printError1(DbRetVal val, char* fname, int lno, char *format, ...);
 
 #define printError(a, ...) printError1(a, __FILE__, __LINE__, __VA_ARGS__)
@@ -62,13 +58,19 @@ enum DebugModule
     DM_Network,
     DM_Gateway,
     DM_Adapter,
-    DM_SqlLog
+    DM_SqlLog,
+    DM_ReplServer,
+    DM_ReplTool,
+    DM_CacheServer,
+    DM_TEST,
+    DM_Warning
 };
 static char moduleNames[][20] =
 {
     "Alloc", "VariableAlloc", "Lock", "Trans", "UndoLog", "RedoLog", "Index",
     "HashIndex", "TreeIndex", "SysDb", "Db", "Table", "Predicate", "Iter", 
-    "Procmgmt", "Network", "Gateway", "Adapter", "SqlLog"
+    "Procmgmt", "Network", "Gateway", "Adapter", "SqlLog", "ReplServer", 
+    "ReplTool", "CacheServer", "TEST", "Warning"
 };
 
 extern int printDebug1(int module, char *fname, int lineno, char *format, ...);
@@ -99,18 +101,15 @@ static char     levelNames[][10] =
 #include<Mutex.h>
 class Logger
 {
-    Mutex mutex_; //guard in case of multi threaded programs
     int fdLog;  //file descriptor
     LogLevel configLevel;   //configuration file setting is cached here.
+    void rollOverIfRequired();
     public:
     int log(LogLevel level, char* filename, int lineNo, char *format, ...);
     int createLogRecord(LogLevel level, char* filename, int lineNo, char* message, char **in);
     DbRetVal startLogger(char *filename, bool isCreate = false);
     void stopLogger();
 };
-
-//Global object
-static Logger logger;
 
 #define logFinest(logger, ...) \
 {\

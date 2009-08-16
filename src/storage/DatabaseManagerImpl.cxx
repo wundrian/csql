@@ -65,7 +65,7 @@ DbRetVal DatabaseManagerImpl::openSystemDatabase()
     systemDatabase_ = db_;
     db_ = NULL;
     printDebug(DM_Database, "Opened system database");
-    logFinest(logger, "Opened system database");
+    logFinest(Conf::Conf::logger, "Opened system database");
     return OK;
 }
 
@@ -78,7 +78,7 @@ DbRetVal DatabaseManagerImpl::closeSystemDatabase()
     closeDatabase();
     db_ = db;
     printDebug(DM_Database, "Closed system database");
-    logFinest(logger, "Closed System database");
+    logFinest(Conf::logger, "Closed System database");
     return OK;
 }
 
@@ -164,7 +164,7 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
                                                                   chunkInfo);
 
     db_->setHashIndexChunk(chunkInfo);*/
-    logFinest(logger, "Created database %s" , name);
+    logFinest(Conf::logger, "Created database %s" , name);
 
     return OK;
 }
@@ -184,7 +184,7 @@ DbRetVal DatabaseManagerImpl::deleteDatabase(const char *name)
 		delete db_;
 		db_ = NULL;
     }
-    logFinest(logger, "Deleted database %s" , name);
+    logFinest(Conf::logger, "Deleted database %s" , name);
     return OK;
 }
 
@@ -279,7 +279,7 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
     if (firstThread) ProcessManager::systemDatabase = db_;
 
     printDebug(DM_Database, "Opening database: %s", name);
-    logFinest(logger, "Opened database %s" , name);
+    logFinest(Conf::logger, "Opened database %s" , name);
     return OK;
 }
 
@@ -304,7 +304,7 @@ DbRetVal DatabaseManagerImpl::closeDatabase()
             }
     }
     ProcessManager::mutex.releaseLock(-1, false);
-    logFinest(logger, "Closed database");
+    logFinest(Conf::logger, "Closed database");
     delete db_;
     db_ = NULL;
     return OK;
@@ -492,7 +492,7 @@ DbRetVal DatabaseManagerImpl::createTable(const char *name, TableDef &def)
     printDebug(DM_Database,"Inserted into FIELD:%s",name);
     systemDatabase_->releaseDatabaseMutex();
     printDebug(DM_Database,"Table Created:%s",name);
-    logFinest(logger, "Table Created %s" , name);
+    logFinest(Conf::logger, "Table Created %s" , name);
     return OK;
 }
 
@@ -564,7 +564,7 @@ DbRetVal DatabaseManagerImpl::dropTable(const char *name)
     chunkNode->free(systemDatabase_, (Chunk *) chunk);
     systemDatabase_->releaseDatabaseMutex();
     printDebug(DM_Database, "Deleted Table %s" , name);
-    logFinest(logger, "Deleted Table %s" , name);
+    logFinest(Conf::logger, "Deleted Table %s" , name);
     rv = lMgr_->releaseLock(chunk);
     if (rv !=OK)
     {
@@ -708,7 +708,7 @@ Table* DatabaseManagerImpl::openTable(const char *name)
    // lMgr->  tTuple->chunkPtr_
     printDebug(DM_Database,"Opening table handle name:%s chunk:%x numIndex:%d",
                                          name, chunk, table->numIndexes_);
-    logFinest(logger, "Opening Table %s" , name);
+    logFinest(Conf::logger, "Opening Table %s" , name);
 
     tableHandleList.append(table);
 
@@ -746,7 +746,7 @@ void DatabaseManagerImpl::closeTable(Table *table)
     //table->unlock();
     tableHandleList.remove(table, false);
     if (table) delete table; table = NULL;
-    logFinest(logger, "Closing Table");
+    logFinest(Conf::logger, "Closing Table");
 }
 
 DbRetVal DatabaseManagerImpl::createIndex(const char *indName, IndexInitInfo *info)
@@ -930,7 +930,7 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
     TableImpl *tbl = (TableImpl *) openTable(tblName);
     if (! tbl->numTuples()) { 
         printDebug(DM_Database, "Creating Hash Index Name:%s tblname:%s buckets:%x", indName, tblName, buckets);
-        logFinest(logger, "Creating HashIndex %s on %s with bucket size %d", indName, tblName, buckets);
+        logFinest(Conf::logger, "Creating HashIndex %s on %s with bucket size %d", indName, tblName, buckets);
         closeTable(tbl);
         return OK;
     }
@@ -954,7 +954,7 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
     }
     closeTable(tbl);
     printDebug(DM_Database, "Creating Hash Index Name:%s tblname:%s buckets:%x", indName, tblName, buckets);
-    logFinest(logger, "Creating HashIndex %s on %s with bucket size %d", indName, tblName, buckets);
+    logFinest(Conf::logger, "Creating HashIndex %s on %s with bucket size %d", indName, tblName, buckets);
     return OK;
 }
 
@@ -1061,7 +1061,7 @@ DbRetVal DatabaseManagerImpl::createTreeIndex(const char *indName, const char *t
     TableImpl *tbl = (TableImpl *) openTable(tblName);
     if (! tbl->numTuples()) {
         printDebug(DM_Database, "Creating Tree Index Name:%s tblname:%s node size:%x",indName, tblName, nodeSize);
-        logFinest(logger, "Creating TreeIndex %s on %s with node size %d",indName, tblName, nodeSize);
+        logFinest(Conf::logger, "Creating TreeIndex %s on %s with node size %d",indName, tblName, nodeSize);
         return OK;
     }
     HashIndexInfo *indxInfo = NULL;
@@ -1085,7 +1085,7 @@ DbRetVal DatabaseManagerImpl::createTreeIndex(const char *indName, const char *t
     closeTable(tbl);
     printDebug(DM_Database, "Creating Tree Index Name:%s tblname:%s node size:%x",
                                    indName, tblName, nodeSize);
-    logFinest(logger, "Creating TreeIndex %s on %s with node size %d",
+    logFinest(Conf::logger, "Creating TreeIndex %s on %s with node size %d",
                                    indName, tblName, nodeSize);
     return OK;
 }
@@ -1176,7 +1176,7 @@ DbRetVal DatabaseManagerImpl::dropIndexInt(const char *name, bool takeLock)
     //Take table lock
 
     printDebug(DM_Database, "Dropped hash index %s",name);
-    logFinest(logger, "Deleted Index %s", name);
+    logFinest(Conf::logger, "Deleted Index %s", name);
     return OK;
 }
 DbRetVal DatabaseManagerImpl::printIndexInfo(char *name)
