@@ -214,4 +214,4 @@ CSQL>select * from employee;
         1029                 2            1100.500000
         1031                 2            7000.500000
 
-For Postgres and Oracle cache solution follow Cache Guide
+For Postgres cache solution follow Cache Guide.
