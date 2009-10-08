@@ -18,10 +18,17 @@ This will create trigger for cached table employee to generate log on any non-se
 
 How to Configure
 ----------------
+A) Take two csql.conf file (say csql.conf,csql1.conf). Change SYS_DB_KEY ,USER_DB_KEY, ID_SHM_KEY, MSG_KEY, TABLE_CONFIG_FILE with different values for both configuration file. 
+Set CACHE_TABLE=true ENABLE_BIDIRECTIONAL_CACHE=true and CACHE_ID=1 in csql.conf and CACHE_ID=2 in csql1.conf.Set TABLE_CONFIG_FILE path different for different cache node.
 
-A) Take two csql.conf file (say csql.conf,csql1.conf). Change SYS_DB_KEY ,USER_DB_KEY as different in both configuration file. Set CACHE_TABLE=true ENABLE_BIDIRECTIONAL_CACHE=true and CACHE_ID=1 in csql.conf and CACHE_ID=2 in csql1.conf.Set TABLE_CONFIG_FILE path different for different cache node.
+B) Add an entry into csqlds.conf using csqlds tool mentioned as below.
 
-B) Change CSQL_CONFIG_FILE enviroment variable in `setupenv.ksh` to sample/csql.conf and and in another setup file (say setupenv1.ksh)set CSQL_CONFIG_FILE to sample/csql1.conf.
+	$ csqlds -U <tdbusername> -P <password> -D <dsnname> -N <tdbname> -a
+ 
+Note# tdb->target database
+
+
+C) Change CSQL_CONFIG_FILE enviroment variable in `setupenv.ksh` to sample/csql.conf and and in another setup file (say setupenv1.ksh)set CSQL_CONFIG_FILE to sample/csql1.conf.
 
 How to run
 ----------
