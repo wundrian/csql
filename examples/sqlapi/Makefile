@@ -2,8 +2,8 @@ OSNAME = $(shell  uname -s)
 PlatForm=supported
 
 ifeq ($(OSNAME), SunOS)
-CPlus = CC
-CPlusFlags = -O2 -w -mt -xarch=v8 
+CPlus = g++
+CPlusFlags = -O2 -w 
 SYSLIBS=-ldl -lnsl -lsocket  -lposix4 
 else 
 ifeq ($(OSNAME), Linux)
@@ -18,10 +18,9 @@ endif
 endif
 
 INCL= -I$(CSQL_INSTALL_ROOT)/include
-LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlsql -lcsql -lcsqlsqllog -lcsqlnw 
+LIBS= -rdynamic -L$(CSQL_INSTALL_ROOT)/lib -lcsqlsql -lcsql -lcsqlsqllog -lcsqlnw -lcacheload -lcsqlgw -lcsqlodbcadapter -lcsqlsqlnw
 
-TARGETS = \
-	sqlapiexample 	insert	update	delete
+TARGETS = sqlapiexample 
 
 ifeq ($(PlatForm), supported)
 all: $(TARGETS)
@@ -32,12 +31,6 @@ endif
 
 sqlapiexample: sqlapiexample.o
 	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) $(SYSLIBS)
-insert: manSQLAPIinsert.o
-	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) $(SYSLIBS)
-update: manSQLAPIupdate.o
-	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) $(SYSLIBS)
-delete: manSQLAPIdelete.o
-	$(CPlus) $(CPlusFlags) -o $@ $< $(LIBS) $(SYSLIBS)
 
 clean:
-	rm -f *.o sqlapiexample insert update delete
+	rm -f *.o $(TARGETS)

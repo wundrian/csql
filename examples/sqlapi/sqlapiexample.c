@@ -1,12 +1,19 @@
-#include<SqlStatement.h>
+/***************************************************************************
+ *                                                                         *
+ *    Copyright (C) Lakshya Solutions Ltd. All rights reserved.            *
+ *                                                                         *
+ ***************************************************************************/
+
+#include<SqlFactory.h>
+#include<AbsSqlStatement.h>
 int main()
 {
     DbRetVal rv = OK; 
-    SqlConnection *con = new SqlConnection();
+    AbsSqlConnection *con = SqlFactory::createConnection(CSql);
     rv = con->connect("root", "manager");
     if (rv != OK) return 1;
-    SqlStatement *stmt = new SqlStatement();
-    stmt->setSqlConnection(con);
+    AbsSqlStatement *stmt = SqlFactory::createStatement(CSql);
+    stmt->setConnection(con);
     char statement[1024];
     strcpy(statement, "CREATE TABLE t1 (f1 int, f2 char(20), primary key (f1));");
     int rows =0;
@@ -62,14 +69,13 @@ int main()
     stmt->free();
 
 
-    strcpy(statement, "DROP TABLE t1);");
+    strcpy(statement, "DROP TABLE t1;");
     rv = stmt->prepare(statement);
     if (rv != OK) {delete stmt; delete con; return -1; }
     rv = stmt->execute(rows);
     if (rv != OK) {delete stmt; delete con; return -1; }
     stmt->free();
     printf("Table dropped\n");
-
 
     delete stmt;
     delete con;
