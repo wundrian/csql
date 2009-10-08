@@ -41,9 +41,11 @@ enum StatementType
     CompactTableStatement,
     CopyTableStatement,
     MetaStatement,
-    UserStatement
+    UserStatement,
+    MgmtStatement
 };
 #endif
+
 struct FieldValue
 {
     char fldName[IDENTIFIER_LENGTH];

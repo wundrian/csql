@@ -93,6 +93,7 @@ class SqlConnection : public AbsSqlConnection
     DbRetVal getExclusiveLock(){ return conn.getExclusiveLock(); }
 
     SqlStatement* findInCache(char *stmtStr);
+    void flushCacheStmt();
     void addToCache(SqlStatement *stmt, char *stmtStr);
 
     friend class SqlFactory;

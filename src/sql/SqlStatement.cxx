@@ -43,6 +43,7 @@ SqlStatement::SqlStatement()
     stmt = NULL;
     isPrepd = false;
     isCachedStmt=false;
+    isMgmtStatement = false;
 }
 void SqlStatement::setConnection(AbsSqlConnection *conn)
 {
@@ -116,6 +117,15 @@ DbRetVal SqlStatement::prepare(char *stmtstr)
         sysdb->releasePrepareStmtMutex();    
         return ErrSyntaxError;
     }
+    if( parsedData->getStmtType() == MgmtStatement)
+    {
+        isPrepd = true;
+        parsedData = NULL;
+        isMgmtStatement = true;
+        sysdb->releasePrepareStmtMutex();
+        logFine(Conf::logger,"PREPARE: %s %x", stmtstr, stmt);
+        return OK;
+    }
     stmt = StatementFactory::getStatement(parsedData);
     stmt->setDbMgr(dbMgr);
     if( parsedData->getStmtType() == UserStatement)
@@ -136,7 +146,6 @@ DbRetVal SqlStatement::prepare(char *stmtstr)
     parsedData = NULL;
     //yyrestart(yyin);
     sysdb->releasePrepareStmtMutex();    
-    logFine(Conf::logger,"PREPARE: %s %x", stmtstr, stmt);
     isPrepd = true;
     if (stmt->noOfParamFields()>0) { 
         isCachedStmt = true; 
@@ -169,6 +178,12 @@ DbRetVal SqlStatement::execute(int &rowsAffected)
     if (! isPrepared()) {
         printError(ErrNotPrepared, "Statement Not Prepared");
         return ErrNotPrepared;
+    }
+    if( isMgmtStatement )
+    {
+        flushCacheStmt();
+        logFiner(Conf::logger,"EXECUTE: %x", stmt);
+        return OK;
     }
     rv = stmt->execute(rowsAffected);
     if (rv == ErrAlready  && pData.getStmtType() == SelectStatement )  
@@ -438,9 +453,10 @@ DbRetVal SqlStatement::free()
         isPrepd = false;
         return OK;
     }
-    delete stmt;
+    if(stmt) delete stmt;
     stmt = NULL;
     pData.reset();
+    isMgmtStatement = false;
     isPrepd = false;
     return OK;
 }
@@ -572,8 +588,26 @@ DbRetVal SqlStatement::pasteRecords(char *tblName, void *buffer)
     DatabaseManagerImpl *dbMgrImpl = (DatabaseManagerImpl *)dbMgr;
     return dbMgrImpl->pasteRecords(tblName, buffer);
 }
-
+void SqlStatement::flushCacheStmt()
+{
+    return sqlCon->flushCacheStmt();
+}
 //-------------------------------------------------------------------
+void SqlConnection::flushCacheStmt()
+{
+    ListIterator iter = cachedStmts.getIterator();
+    while (iter.hasElement()) {
+        CachedStmtNode* node = (CachedStmtNode*) iter.nextElement();
+        free(node->sqlString);
+        node->sqlStmt->setCachedStmt(false);
+        node->sqlStmt->free();
+        delete node->sqlStmt;
+        delete node;
+    }
+    cachedStmts.reset();
+    return;
+}
+
 SqlStatement* SqlConnection::findInCache(char *stmtstr)
 {
     ListIterator iter = cachedStmts.getIterator();
@@ -609,16 +643,7 @@ void SqlConnection::addToCache(SqlStatement *sqlStmt, char* stmtString)
 SqlConnection::~SqlConnection()
 {
     innerConn = NULL;
-    ListIterator iter = cachedStmts.getIterator();
-    while (iter.hasElement()) {
-        CachedStmtNode* node = (CachedStmtNode*) iter.nextElement();
-        free(node->sqlString);
-        node->sqlStmt->setCachedStmt(false);
-        node->sqlStmt->free();
-        delete node->sqlStmt;
-        delete node;
-    }
-    cachedStmts.reset();
+    flushCacheStmt();
     if (isConnOpen) disconnect();
 }
 

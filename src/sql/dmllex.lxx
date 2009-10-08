@@ -177,6 +177,7 @@ operator        "<"|">"|">="|"<="|"="|"\!="|"<>"|"LIKE"|"like"
                 if(strcasecmp(yytext,"USER") ==0) token = USER;
                 if(strcasecmp(yytext,"PASSWORD") ==0) token = PASSWORD;
                 if(strcasecmp(yytext,"ALTER") ==0) token = ALTER;
+                if(strcasecmp(yytext,"FLUSH") ==0) token = FLUSH;
                 if( token == FIELD )
                     yylval.stringval = strdup((const char*)yytext);
                 else

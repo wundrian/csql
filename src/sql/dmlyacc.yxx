@@ -30,7 +30,7 @@ void yyerror(const char* Msg);
 %token <stringval> CREATE TABLE PRIMARY KEY DEFAULT INDEX ON HASH TREE UNIQUE DROP SIZE FOREIGN REFERENCES COMPACT 
 %token <stringval> CACHE CONDITION FIELDLIST PK DIRECT DSN UNCACHE NOSCHEMA
 %token <stringval> INT_TYPE LONG_TYPE SHORT_TYPE DOUBLE_TYPE TIMESTAMP_TYPE DATE_TYPE CHAR_TYPE TIME_TYPE BIGINT_TYPE FLOAT_TYPE TINYINT_TYPE BINARY_TYPE
-%token <stringval> USER PASSWORD ALTER
+%token <stringval> USER PASSWORD ALTER FLUSH
 %token <stringval> MIN MAX AVG SUM COUNT GROUP BY HAVING ORDER ASC DESC DISTINCT
 %token ';' ',' '(' ')'
 %type <stringval> ident field value not_opt doub_value num_value 
@@ -47,8 +47,14 @@ command:  select_statement { YYACCEPT; }
         | cache_statement { YYACCEPT; }
         | copy_table_statement { YYACCEPT; }
         | user_manager_statement { YYACCEPT; }
+	| management_statement { YYACCEPT; }
         | other {YYACCEPT;}
         ;
+management_statement: FLUSH CACHE semicolon_opt
+	{
+           parsedData->setStmtType(MgmtStatement);
+	}
+	;
 user_manager_statement: CREATE USER ident PASSWORD STRING semicolon_opt
 	{
             parsedData->setStmtType(UserStatement);

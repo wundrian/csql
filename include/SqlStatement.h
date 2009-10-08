@@ -256,7 +256,9 @@ class SqlStatement: public AbsSqlStatement
     void setLoading(bool flag);
     void getProjFieldType(int *data);
     void setCachedStmt(bool flag){ isCachedStmt= flag; }
+    void flushCacheStmt();
     private:
+    bool isMgmtStatement;
     SqlConnection *sqlCon;
     Statement *stmt;
     ParsedData pData;
