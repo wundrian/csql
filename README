@@ -1,62 +1,62 @@
 Introduction 
 ------------
-	CSQL is a fast, multi-threaded SQL main memory database engine. It works in embedded mode, where database client and server run in the same host, avoiding network latency. It provides very high throughput of 100,000 selects/sec and 50,000 updates/sec. Applications shall access csql through standard interfaces,  ODBC or JDBC. It also provides proprietary APIs to access SQL engine and Storage engine directly.
-	It aids in the development of high performance, fault-resilent applications requiring concurrent access to the shared data.
+	CSQL is a fast, multi-threaded SQL main memory database engine. It works in both embedded mode (database client and server run in the same host) and client/server mode. It provides very high throughput of 100,000 selects/sec and 50,000 updates/sec from standard interface such as JDBC and ODBC. It aids in the development of high performance, fault-resilent applications requiring concurrent access to the shared data.
 
 	CSQL shall also be used as client side caching mechanism for any database system without compromising on transactional properties and indexed access. This is achieved by using CSQL-main memory database to cache the data from the target database (any traditional disk based database system). 
-	This solution has been designed with modern database requirements in mind, and particularly for use within high-volume environment that requires high performance, while still supporting the transactional properties. Applications shall use this caching solution with no or minimal application code changes.
-	Perfomance benchmarking reveals that application throughput may increase by a factor of 20 to 100 by incorporating data caching in its architecture.
-	It is a free software, licensed with the GNU GENERAL PUBLIC LICENSE, http://www.gnu.org/. Refer COPYING file for Licensing information.
+
+	This solution has been designed with modern database requirements in mind, and particularly for use within high-volume environment that requires high performance, while still supporting the transactional properties. Applications shall use this caching solution with no or minimal application code changes. Application throughput may increase by a factor of 20 to 100 by incorporating data caching in its architecture.
+
+        It comes in dual license, GPL for open source community edition and commercial license for enterprise edition.
 
 Platforms Supported
 -------------------
-Linux 
+Linux    - x86, x86_64
+Solaris  - x86, sparc32, sparc64
 
 Compilers Supported
 -------------------
-g++ in linux
-
-Compiling from source (If you have downloaded with source)
-----------------------------------------------------------
-Go to the root directory and enter the following commands.
-
-$ export JDK_HOME=<path of jdk home>
-$ export PATH=$PATH:$JDK_HOME/bin
-$ ./build.ksh
-
-This will create "install" directory under the current directory and places all the executables created in bin directory and libraries in lib directory. 
-If you want to install in some other directory then change the directory in --prefix option in build.ksh file before executing build.ksh script.
+g++ in Linux
+CC in Solaris
 
 Available Documentation
 -----------------------
-1.User Manual is available under the docs directory
-2.SQL API, ODBC, JDBC, ISQL  example programs under the examples directory
-3.Wisconsin benchmark and cache demo under the demo directory
+1.User Manual
+2.Programmer's Guide 
+3.Cache Guide
+4.Replication Guide
+
+All the manuals are available under the docs directory
 
 Starting the Server
 -------------------
-Note: kernel.shmmax should be set to more than 500 MB before starting the server
-
-In linux for setting 1GB enter
-$sysctl -w kernel.shmmax=1000000000
-
 setupenv.ksh script is available at the root directory which shall be used to
-set the necessary environment variables.
+set the necessary environment variables for CSQL.
 
 $. ./setupenv.ksh
 
 Start the server using csqlserver executable
-$./csqlserver
+$csqlserver
 
 This starts the server and creates the database file.
-Use csql tool to execute SQL statements interactively,
+
+Interacting with Server using csql client
+-----------------------------------------
+Open another terminal and run setupenv.ksh script to set the necessary 
+environment variables for CSQL.
+
+$. ./setupenv.ksh
+
+Run csql tool to get the CSQL prompt
+
 $csql
 CSQL>
 
+You can execute DDL and DML statements on CSQL prompt.
+
 Note:
-Refer UserManual.pdf available in docs folder to know how to work with csql
+Refer UserManual.pdf available in docs folder for details on working with CSQL
 
 Shutting down the Server
 ------------------------
 Pressing Ctrl-C on the terminal where csqlserver is running, 
-is safe and will stop the server gracefully by removing the database file.
+is safe and will stop the server gracefully.
