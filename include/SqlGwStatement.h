@@ -100,7 +100,6 @@ class SqlGwStatement: public AbsSqlStatement
     DbRetVal loadRecords(char *tbl, void *buf){ return ErrBadCall;}
     void setToCommit(char *dsName);
     void getProjFieldType(int *data);
-    void flushCacheStmt();
     private:
     bool shouldAdapterHandle();
     bool shouldCSqlHandle();

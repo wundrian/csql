@@ -96,7 +96,6 @@ class SqlLogStatement: public AbsSqlStatement
     int getNoOfPagesForTable(char *tbl){ return -1;}
     DbRetVal loadRecords(char *tbl, void *buf){ return ErrBadCall;}
     ResultSetPlan getResultSetPlan(){ return innerStmt->getResultSetPlan();}
-    void flushCacheStmt(){ return innerStmt->flushCacheStmt();}
     void getProjFieldType(int *data);
     TableSyncMode mode;
     bool isNonSelDML;

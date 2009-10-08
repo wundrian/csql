@@ -92,7 +92,6 @@ class SqlOdbcStatement: public AbsSqlStatement
     void setErrorState(SQLHSTMT hStmt);
     DbRetVal resolveForBindField(SQLHSTMT hstmt);
     void getProjFieldType(int *data);
-    void flushCacheStmt(){ return;};
     private:
     char errState[STATE_LENGTH];
     TDBInfo tdbname;

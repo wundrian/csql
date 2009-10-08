@@ -431,13 +431,6 @@ ResultSetPlan SqlGwStatement::getResultSetPlan()
    if (innerStmt && shouldCSqlHandle())  return innerStmt->getResultSetPlan();
    return Normal;
 }
-void SqlGwStatement::flushCacheStmt()
-{
-   if (innerStmt && shouldCSqlHandle())  return innerStmt->flushCacheStmt();
-   if (adapter && shouldAdapterHandle()) return adapter->flushCacheStmt();
-   return ;
-
-}
 
 //Function for COMMIT according to its name DSN 
 void SqlGwStatement::setToCommit(char *dsName)

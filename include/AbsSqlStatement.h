@@ -252,7 +252,6 @@ class AbsSqlStatement
     virtual List getAllUserNames(DbRetVal &ret)=0;
     virtual StatementType getStmtType()=0;
     virtual void getProjFieldType( int *data )=0;
-    virtual void flushCacheStmt()=0;
     virtual ~AbsSqlStatement()
     {
         if (innerStmt) { delete innerStmt; innerStmt = NULL; }
