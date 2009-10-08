@@ -21,7 +21,6 @@
 #include <Process.h>
 Mutex::Mutex()
 {
-    noOfRead = -1;
 #if defined(sparc) || defined(i686) || defined (x86_64)
     lock =0;
 #else
@@ -34,7 +33,6 @@ Mutex::Mutex()
 
 int Mutex::init()
 {
-    noOfRead = -1;
 #if defined(sparc) || defined(i686) || defined (x86_64)
     lock = 0;
 #else
@@ -115,13 +113,71 @@ int TSL(Lock *lock)
 
 #elif defined (SOLARIS)
     Lock res;
-    res = atomic_cas_32(lock, 0, 1);
+    res = atomic_cas_32((unsigned*)lock, 0, 1);
     return (res);
 #endif
 }
 #endif
+int Mutex::tryShareLock(int tryTimes, int waitmsecs,bool share, bool isDelete)
+{
+    int ret=0;
+    int oldValue = (int)lock;
+    if (oldValue >= 0  && share){
+        ret = CAS((int*)&lock, oldValue, oldValue+1);
+    }else if ((oldValue == 1 && isDelete ) || ( !share && oldValue == 0) ){
+        ret = CAS((int*)&lock, oldValue, -1);
+    }else { ret = 1;} 
+    if (0 == ret) return 0; 
+    int tries = 1;
+    struct timeval timeout;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = waitmsecs;
+    if (tryTimes == 0 && waitmsecs == 0)
+    {
+        timeout.tv_sec = Conf::config.getMutexSecs();
+        timeout.tv_usec = Conf::config.getMutexUSecs();
+        tryTimes = Conf::config.getMutexRetries();
+    }
+    int cnt=0;
+    while (tries < tryTimes)
+    {
+#if defined(sparc) || defined(i686) || defined (x86_64)
+    if (Conf::config.getNoOfProcessors() >1) {
+        cnt=0;
+        while(true) {
+            oldValue = (int)lock;
+            if (oldValue >= 0  && share) {
+                ret = CAS((int*)&lock, oldValue, oldValue+1);
+            }else if ((oldValue == 1 && isDelete ) || (!share && oldValue == 0) ) {
+                ret = CAS((int*)&lock, oldValue, -1);
+            }else { ret = 1; }
+         
+            if(0 == ret ) return 0;
+            cnt++;
+            if (cnt == tryTimes * 100) break;
+         }
+    }else {
+            oldValue = (int)lock;
+            if (oldValue >= 0  && share) {
+                ret = CAS((int*)&lock, oldValue, oldValue+1);
+            }else if ((oldValue == 1 && isDelete ) || (!share && oldValue == 0) ){
+                ret = CAS((int*)&lock, oldValue, -1);
+            } else { ret =1;}
+            if(ret==0) return 0;
+    }
+#else
+    ret = pthread_mutex_trylock(&mutex_);
+    if (EBUSY  != ret) return 0;
 
-int Mutex::tryLock(int tryTimes, int waitmsecs,bool share)
+#endif
+        os::select(0, 0, 0, 0, &timeout);
+        tries++;
+    }
+    printError(ErrLockTimeOut, "Unable to get the mutex %s, tried %d times", name,tries);
+    return 1;
+}
+
+int Mutex::tryLock(int tryTimes, int waitmsecs)
 {
     if (TSL(&lock) == 0) 
     {
@@ -142,45 +198,39 @@ int Mutex::tryLock(int tryTimes, int waitmsecs,bool share)
     while (tries < tryTimes)
     {
 #if defined(sparc) || defined(i686) || defined (x86_64)
-       if (Conf::config.getNoOfProcessors() >1) {
-          cnt=0;
-          while(true) {
+    if (Conf::config.getNoOfProcessors() >1) {
+        cnt=0;
+        while(true) {
             if (TSL(&lock) == 0) 
             {
                return 0; 
             }
             cnt++;
             if (cnt == tryTimes * 100) break;
-          }
-       }else {
-           if (TSL(&lock) == 0) return 0;
-       }
+        }
+    }else {
+        if (TSL(&lock) == 0)  return 0; 
+    }
 #else
-       ret = pthread_mutex_trylock(&mutex_);
-       if (EBUSY  != ret) return 0;
+    ret = pthread_mutex_trylock(&mutex_);
+    if (EBUSY  != ret) return 0;
 
 #endif
         os::select(0, 0, 0, 0, &timeout);
         tries++;
     }
-    if(share && noOfRead != -1) {
-       noOfRead++;
-       return 2;
-    }
-    printError(ErrLockTimeOut, "Unable to get the mutex , tried %d times", tries);
+    printError(ErrLockTimeOut, "Unable to get the mutex %s, val:%d tried %d times", name, lock, tries);
     return 1;
 }
 
-
-int Mutex::getLock(int procSlot, bool procAccount,bool share)
+int Mutex::getLock(int procSlot, bool procAccount)
 {
     int ret=0;
 #if defined(sparc) || defined(i686) || defined (x86_64)
-    ret = tryLock(0,0,share);
+    ret = tryLock();
     //add it to the has_ of the ThreadInfo
     if (ret ==0 && procAccount) ProcessManager::addMutex(this, procSlot);
-    if(share & noOfRead == -1 && ret == 0 ) noOfRead ++;
-    if(ret == 2) return 0;
+
     return ret;
 #else
     ret = pthread_mutex_lock(&mutex_);
@@ -190,9 +240,8 @@ int Mutex::getLock(int procSlot, bool procAccount,bool share)
         return 1;
 }
 
-int Mutex::releaseLock(int procSlot, bool procAccount,bool share)
+int Mutex::releaseLock(int procSlot, bool procAccount)
 {
-    if (noOfRead > 0 && share){ noOfRead--; return 0;}
     int ret=0;
 #if defined(sparc) || defined(i686) || defined (x86_64)
     /*int *lw = &lock;
@@ -203,13 +252,92 @@ int Mutex::releaseLock(int procSlot, bool procAccount,bool share)
                       "eax");   
     */
     lock = 0;
+    //TEMP::PRABA:TODO::CHANGE IT TO CAS
 #else
     ret = pthread_mutex_unlock(&mutex_);
 #endif
     if (ret == 0 && procAccount) 
     {
         ProcessManager::removeMutex(this, procSlot);
-        if( noOfRead == 0 && share) noOfRead--;
+        return ret;
+    }
+    else
+        return 1;
+}
+
+int Mutex::getShareLock(int procSlot, bool procAccount)
+{
+    int ret=0;
+#if defined(sparc) || defined(i686) || defined (x86_64)
+    ret = tryShareLock(0,0,true,false);
+    //add it to the has_ of the ThreadInfo
+    if (ret ==0 && procAccount) ProcessManager::addMutex(this, procSlot);
+    return ret;
+#else
+    ret = pthread_mutex_lock(&mutex_);
+#endif
+    if (ret == 0) return 0;
+    else
+        return 1;
+}
+
+int Mutex::getExclusiveLock(int procSlot, bool procAccount, bool isDelete)
+{
+    int ret=0;
+#if defined(sparc) || defined(i686) || defined (x86_64)
+    ret = tryShareLock(0,0,false,isDelete);
+    //add it to the has_ of the ThreadInfo
+    if (ret ==0 && procAccount) ProcessManager::addMutex(this, procSlot);
+    return ret;
+#else
+    ret = pthread_mutex_lock(&mutex_);
+#endif
+    if (ret == 0) return 0;
+    else
+        return 1;
+}
+
+int Mutex::releaseShareLock(int procSlot, bool procAccount)
+{
+    int ret=0;
+#if defined(sparc) || defined(i686) || defined (x86_64)
+    int oldValue  = (int)lock;
+    if( oldValue > 1)
+    { 
+        ret = CAS((int*)&lock, oldValue, oldValue-1 );
+    }
+    if( oldValue == 1 || oldValue == -1 )
+    {
+        ret = CAS((int*)&lock, oldValue, 0 );   
+    }
+    if( ret != 0)
+    {
+        int tries = 1;
+        struct timeval timeout;
+        timeout.tv_sec = Conf::config.getMutexSecs();
+        timeout.tv_usec = Conf::config.getMutexUSecs();
+        int tryTimes = Conf::config.getMutexRetries();
+        while (tries < tryTimes)
+        {
+             oldValue = (int)lock;
+             if( oldValue > 1){
+                 ret = CAS((int*)&lock, oldValue, (*(int*)&lock)-1 );
+                 if(ret == 0) break;
+             }
+             if( oldValue == 1 || oldValue == -1 )
+             {
+                  ret = CAS((int*)&lock, oldValue, 0 );
+                  if(ret == 0) break;
+             }
+             tries++; 
+        }
+    }
+#else
+    ret = pthread_mutex_unlock(&mutex_);
+#endif
+    if (ret == 0 && procAccount )
+    {
+        ProcessManager::removeMutex(this, procSlot);
         return ret;
     }
     else
@@ -246,7 +374,7 @@ int Mutex::recoverMutex()
 int Mutex::CASL(long *ptr, long oldVal, long newVal)
 {
 #ifdef SOLARIS
-#ifdef x86_64 //or sparc64
+#if defined(__sparcv9) || defined(x86_64) || defined (__x86_64)
     unsigned long res = atomic_cas_64((unsigned long*)ptr, 
                              (unsigned long) oldVal, (unsigned long) newVal);
     if (res == oldVal) return 0; else return 1;

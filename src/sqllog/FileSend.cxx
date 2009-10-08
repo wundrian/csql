@@ -25,13 +25,37 @@ FileSend::FileSend()
 {
     char fileName[1024];
     sprintf(fileName, "%s/csql.db.cur", Conf::config.getDbFile());
-    fdRedoLog = open(fileName, O_WRONLY|O_CREAT| O_APPEND, 0644);
+    int durableMode = Conf::config.getDurableMode();
+    switch(durableMode) {
+        case 1:
+        case 2:
+            fdRedoLog = os::openFileForAppend(fileName, O_CREAT);
+            break;
+        case 3:
+            fdRedoLog = os::openFileForAppend(fileName, O_CREAT|O_SYNC);
+            break;
+        case 4:
+#ifdef SOLARIS
+            fdRedoLog = os::openFileForAppend(fileName, O_CREAT|O_DSYNC);
+#else
+            fdRedoLog = os::openFileForAppend(fileName, O_CREAT|O_DIRECT);
+#endif
+            break;
+        default:
+            fdRedoLog = os::openFileForAppend(fileName, O_CREAT);
+            break;
+    }
 }
 
-DbRetVal FileSend::prepare(int txnId, int stmtId, int len, char *stmt) 
+FileSend::~FileSend() { if (fdRedoLog > 0) os::closeFile(fdRedoLog); fdRedoLog = -1; }
+
+DbRetVal FileSend::prepare(int txnId, int stmtId, int len, char *stmt, char *tblName) 
 {
     if (fdRedoLog < 0) return ErrBadArg;
-    int datalen = 5 * sizeof(int) + os::align(len); // for len + txnId + msg type + stmtId + len + string
+    //The following structure needs strlen after stmt id for traversal in 
+    //redolog file unlike msg queue structure where string is the last element 
+    //and is not a continuous piece of memory.
+    int datalen = os::align(5 * sizeof(int) + len); // for len + txnId + msg type + stmtId + tableName + stmtstrlen + stmtstring
     char *buf = (char*) malloc(datalen);
     char *msg = buf;
     //Note:: msg type is taken as -ve as we need to differentiate between 
@@ -50,7 +74,19 @@ DbRetVal FileSend::prepare(int txnId, int stmtId, int len, char *stmt)
     msg = msg+ sizeof(int);
     msg[len-1] = '\0';
     strcpy(msg, stmt);
-    int ret = os::write(fdRedoLog, buf, datalen);     
+    int ret =0;
+    if (Conf::config.getDurableMode() != 1) {
+        ret = os::lockFile(fdRedoLog);
+        if (-1 == ret) {
+            ::free(buf);
+            printError(ErrLockTimeOut,"Unable to get exclusive lock on redo log file");
+            return ErrLockTimeOut;
+        }
+    }
+    ret = os::write(fdRedoLog, buf, datalen);     
+    if (Conf::config.getDurableMode() != 1) {
+        os::unlockFile(fdRedoLog); 
+    }
     ::free(buf);
     //if (ret == datalen) { printf("log written successfully %d\n", ret); return OK; }
     if (ret == datalen) { return OK; }
@@ -62,7 +98,17 @@ DbRetVal FileSend::commit(int len, void *data)
     if (fdRedoLog < 0) return ErrBadArg;
     char *dat=(char*)data - sizeof(int);
     *(int*)dat = -2; //type 2->commit
-    int ret = write(fdRedoLog, dat, len+sizeof(int));     
+    if (Conf::config.getDurableMode() != 1) {
+        int ret = os::lockFile(fdRedoLog);
+        if (-1 == ret) {
+            printError(ErrLockTimeOut,"Unable to get exclusive lock on redo log file");
+            return ErrLockTimeOut;
+        }
+    }
+    int ret = os::write(fdRedoLog, dat, len+sizeof(int));     
+    if (Conf::config.getDurableMode() != 1) {
+        os::unlockFile(fdRedoLog); 
+    }
     //if (ret == len+sizeof(int)) { printf("log written successfully %d\n", ret); return OK; }
     if (ret == len+sizeof(int)) { return OK; }
     return ErrOS;
@@ -80,8 +126,20 @@ DbRetVal FileSend::free(int txnId, int stmtId)
     ptr += sizeof(int);
     *(int *)ptr = stmtId;
     printDebug(DM_SqlLog, "stmtID sent = %d\n", *(int *)ptr);
-    int ret = write(fdRedoLog, msg, buflen);
+    if (Conf::config.getDurableMode() != 1) {
+        int ret = os::lockFile(fdRedoLog);
+        if (-1 == ret) {
+            ::free(msg);
+            printError(ErrLockTimeOut,"Unable to get exclusive lock on redo log file");
+            return ErrLockTimeOut;
+        }
+    }
+    int ret = os::write(fdRedoLog, msg, buflen);
+    if (Conf::config.getDurableMode() != 1) {
+        os::unlockFile(fdRedoLog); 
+    }
     //if (ret == buflen) { printf("log written successfully %d\n", ret); return OK; }
+    ::free(msg);
     if (ret == buflen) { return OK; }
     return ErrOS;
 }

@@ -100,11 +100,21 @@ int os::closeFile(int fd)
 }
 int os::lockFile(int fd)
 {
+#ifdef SOLARIS
+    //TODO
+    return 0;
+#else
     return flock(fd, LOCK_EX);
+#endif
 }
 int os::unlockFile(int fd)
 {
+#ifdef SOLARIS
+    //TODO
+    return 0;
+#else
     return ::flock(fd, LOCK_UN);
+#endif
 }
 
 off_t os::lseek(int fildes, off_t offset, int whence)

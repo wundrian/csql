@@ -20,6 +20,44 @@
 #include <SqlNwStatement.h>
 #include <Network.h>
 
+DbRetVal SqlNwStatement::executeDirect(char *stmtstr)
+{
+    DbRetVal rv = OK;
+    isSel = false;
+    SqlNwConnection *conn = (SqlNwConnection*)con;
+    if (! conn->isConOpen()) {
+        printError(ErrNoConnection, "No connection present");
+        return ErrNoConnection;
+    }
+    if (isPrepared) free(); 
+    if (nullInfoSel) { ::free(nullInfoSel);  nullInfoSel = NULL; }  
+    SqlPacketPrepare *pkt = new SqlPacketPrepare();
+    pkt->stmtString = stmtstr;
+    pkt->stmtLength = os::align(strlen(stmtstr) + 1);
+    pkt->marshall(); 
+    rv = conn->send(SQL_NW_PKT_EXECDIRECT, pkt->getMarshalledBuffer(), pkt->getBufferSize());
+    if (rv != OK) {
+        conn->setConnClosed(false);
+        printError(rv, "Connection lost with the peer.");
+        delete pkt;
+        return rv;
+    }
+    rv = conn->receive();
+    if (rv == ErrNoConnection || rv == ErrPeerTimeOut) {
+        conn->setConnClosed(false);
+        printError(rv, "Connection lost with the peer.");
+        delete pkt;
+        return ErrNoConnection;
+    }
+    ResponsePacket *rpkt = (ResponsePacket *) 
+                                        ((TCPClient *)conn->nwClient)->respPkt;
+    if (rv != OK) { delete pkt; return rv; }
+    char *ptr = (char *) &rpkt->retVal;
+    isPrepared = true;
+    delete pkt;
+    return rv;
+}
+
 DbRetVal SqlNwStatement::prepare(char *stmtstr)
 {
     DbRetVal rv = OK;
@@ -38,19 +76,24 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
     pkt->marshall(); 
     rv = conn->send(SQL_NW_PKT_PREPARE, pkt->getMarshalledBuffer(), pkt->getBufferSize());
     if (rv != OK) {
-        printError(rv, "Data could not be sent");
+        conn->setConnClosed(false);
+        printError(rv, "Connection lost with the peer.");
+        delete pkt;
         return rv;
     }
-    int response = 0;
     rv = conn->receive();
-    if (rv != OK) { 
-        printError(rv, "Unable to Receive from peer");
-        return rv;
+    if (rv == ErrNoConnection || rv == ErrPeerTimeOut) {
+        conn->setConnClosed(false);
+        printError(rv, "Connection lost with the peer.");
+        delete pkt;
+        return ErrNoConnection;
     }
-    ResponsePacket *rpkt = (ResponsePacket *) ((TCPClient *)conn->nwClient)->respPkt;
+    ResponsePacket *rpkt = (ResponsePacket *) 
+                                        ((TCPClient *)conn->nwClient)->respPkt;
+    if (rv != OK) { delete pkt; return rv; }
     char *ptr = (char *) &rpkt->retVal;
-    if (*ptr == 0) { delete pkt; return ErrPeerResponse; }
     if (rpkt->isSelect) isSel = true; else isSel = false;
+    plan =(ResultSetPlan) *ptr ;
     int params = *(ptr + 2);
     int proj = *(ptr + 3);
     stmtID = rpkt->stmtID;
@@ -61,14 +104,25 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
         int numbytes = os::recv(fd, &header, sizeof(PacketHeader), 0);
         if (numbytes == -1) {
             printError(ErrOS, "Error reading from socket\n");
-            return ErrOS;
+            conn->setConnClosed(false);
+            os::closeFile(fd);
+            ((TCPClient *)(conn->nwClient))->sockfd = -1;
+            conn->setIsConnectedFlag(false);
+            delete pkt;
+            return ErrNoConnection;
         }
 //        printf("HEADER says packet type is %d\n", header.packetType);
         buffer = (char*) malloc(header.packetLength);
         numbytes = os::recv(fd,buffer,header.packetLength,0);
         if (numbytes == -1) {
             printError(ErrOS, "Error reading from socket\n");
-            return ErrOS;
+            conn->setConnClosed(false);
+            os::closeFile(fd);
+            ((TCPClient *)(conn->nwClient))->sockfd = -1;
+            conn->setIsConnectedFlag(false);
+            delete pkt;
+            ::free(buffer);
+            return ErrNoConnection;
         }
         SqlPacketParamMetadata *mdpkt = new SqlPacketParamMetadata();
         mdpkt->setBuffer(buffer);
@@ -102,6 +156,7 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
             ptr += sizeof (FieldInfo);
         }
         delete mdpkt;
+        delete fldInfo;
     }
     if (proj) {
         PacketHeader header;
@@ -109,14 +164,25 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
         int numbytes = os::recv(fd, &header, sizeof(PacketHeader), 0);
         if (numbytes == -1) {
             printError(ErrOS, "Error reading from socket\n");
-            return ErrOS;
+            conn->setConnClosed(false);
+            os::closeFile(fd);
+            ((TCPClient *)(conn->nwClient))->sockfd = -1;
+            conn->setIsConnectedFlag(false);
+            delete pkt;
+            return ErrNoConnection;
         }
 //        printf("HEADER says packet type is %d\n", header.packetType);
         buffer = (char*) malloc(header.packetLength);
         numbytes = os::recv(fd,buffer,header.packetLength,0);
         if (numbytes == -1) {
             printError(ErrOS, "Error reading from socket\n");
-            return ErrOS;
+            conn->setConnClosed(false);
+            os::closeFile(fd);
+            ((TCPClient *)(conn->nwClient))->sockfd = -1;
+            conn->setIsConnectedFlag(false);
+            ::free (buffer);
+            delete pkt;
+            return ErrNoConnection;
         }
         SqlPacketProjMetadata *prjmdpkt = new SqlPacketProjMetadata();
         prjmdpkt->setBuffer(buffer);
@@ -133,6 +199,7 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
             prjFld->length = fldInfo->length;
             prjFld->offset = fldInfo->offset;
             strcpy(prjFld->defaultValueBuf, fldInfo->defaultValueBuf);
+            prjFld->aType = fldInfo->aType;
             prjFld->isNull = fldInfo->isNull;
             prjFld->isPrimary = fldInfo->isPrimary;
             prjFld->isDefault = fldInfo->isDefault;
@@ -144,6 +211,7 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
             ptr += sizeof (FieldInfo);
         }
         delete prjmdpkt;
+        delete fldInfo;
     }
     isPrepared = true;
     delete pkt;
@@ -167,21 +235,27 @@ DbRetVal SqlNwStatement::execute(int &rowsAffected)
     pkt->marshall();
     rv = conn->send(SQL_NW_PKT_EXECUTE, pkt->getMarshalledBuffer(), pkt->getBufferSize());
     if (rv != OK) {
-        printError(rv, "Data could not be sent");
+        conn->setConnClosed(false);
+        printError(rv, "Connection lost with the peer.");
+        delete pkt;
         return rv;
     }
     rv = conn->receive();
-    if (rv != OK) return rv; 
-    memset(nullInfoDml, 0, os::align(pkt->noParams));
-    //if(pkt->noParams) delete [] pkt->paramValues;
-    delete pkt;
-    ResponsePacket *rpkt = (ResponsePacket *) ((TCPClient *)conn->nwClient)->respPkt;
-    char *ptr = (char *) &rpkt->retVal;
-    rowsAffected = rpkt->rows;
-    if (*ptr != 1) {
-        printError(rpkt->errRetVal, "%s", rpkt->errorString);
-        return rpkt->errRetVal;
+    if (rv == ErrNoConnection || rv == ErrPeerTimeOut) {
+        conn->setConnClosed(false);
+        delete pkt;
+        return ErrNoConnection;
     }
+    ResponsePacket *rpkt = (ResponsePacket *) ((TCPClient *)conn->nwClient)->respPkt;
+    if (rv != OK) { 
+        printError(rv, "%s", rpkt->errorString); 
+        delete pkt; 
+        return rv;  
+    }
+    rowsAffected = rpkt->rows;
+    memset(nullInfoDml, 0, os::align(pkt->noParams));
+    pkt->setNullInfo(NULL);
+    delete pkt;
     return rv;
 }
 
@@ -196,9 +270,11 @@ DbRetVal SqlNwStatement::bindField(int pos, void* value)
 {
     if (!isPrepared) return OK;
     BindSqlProjectField *prjFld = (BindSqlProjectField *) bindList.get(pos);
+    if(prjFld->value) { ::free(prjFld->value); prjFld->isFreed = true; }
     prjFld->value = value;
     return OK;
 }
+
 void* SqlNwStatement::fetch()
 {
     DbRetVal rv = OK;
@@ -215,41 +291,37 @@ void* SqlNwStatement::fetch(DbRetVal &ret)
     }
     if (!isPrepared) return NULL;
     void *ptrToFirstField = NULL;
-
     DbRetVal rv = conn->nwClient->send(SQL_NW_PKT_FETCH, getStmtID());
     if (rv != OK) {
-        printError(rv, "Data could not be sent");
+        conn->setConnClosed(false);
+        printError(rv, "Connection lost with peer.");
+        ret = ErrNoConnection;
         return NULL;
     }
-    
-    /*SqlPacketFetch *pkt = new SqlPacketFetch();
-    pkt->stmtID = getStmtID();
-    pkt->marshall();
-    DbRetVal rv = conn->send(SQL_NW_PKT_FETCH, pkt->getMarshalledBuffer(), pkt->getBufferSize());
-    if (rv != OK) {
-        printError(rv, "Data could not be sent");
-        return NULL;
-    }*/
-//    printf("HEADER says packet type is %d\n", header.packetType);
     int rowLength=0;
     int dummy =0;
     int fd = ((TCPClient *)(conn->nwClient))->sockfd;
     int numbytes = os::recv(fd, &rowLength, 4, 0);
-    if (rowLength ==1 ) return NULL;
-    else if (rowLength == 2) {ret = ErrUnknown; return NULL; }
-
-    if ((numbytes = os::send(fd, &dummy, 4,MSG_NOSIGNAL)) == -1) {
-        if (errno == EPIPE) {
-            printError(ErrNoConnection, "connection not present");
-            return NULL;
-        }
-        printError(ErrOS, "Unable to send the packet\n");
+    if (numbytes == -1) {
+        printError(ErrOS, "Connection lost with peer\n");
+        conn->setConnClosed(false);
+        os::closeFile(fd);
+        ((TCPClient *)(conn->nwClient))->sockfd = -1;
+        conn->setIsConnectedFlag(false);
+        ret = ErrNoConnection;
         return NULL;
     }
+    if (rowLength ==1 ) return NULL;
+    else if (rowLength == 2) {ret = ErrUnknown; return NULL; }
     char *rowBuffer = (char*) malloc(rowLength);
     numbytes = os::recv(fd,rowBuffer,rowLength,0);
     if (numbytes == -1) {
-        printError(ErrOS, "Error reading from socket\n");
+        printError(ErrOS, "Connection lost with peer\n");
+        conn->setConnClosed(false);
+        os::closeFile(fd);
+        ((TCPClient *)(conn->nwClient))->sockfd = -1;
+        conn->setIsConnectedFlag(false);
+        ret = ErrNoConnection;
         return NULL;
     }
     SqlPacketResultSet *rspkt = new SqlPacketResultSet();
@@ -261,13 +333,10 @@ void* SqlNwStatement::fetch(DbRetVal &ret)
     memset(nullInfoSel, 0, os::align(rspkt->noProjs));
     rspkt->setNullInfo(nullInfoSel);
     rspkt->unmarshall();
-    delete [] rspkt->projValues;
     ptrToFirstField = bindList.get(1);
     delete rspkt;
-    //delete pkt;
     return ptrToFirstField;
 }
-
 
 void* SqlNwStatement::fetchAndPrint(bool SQL)
 {
@@ -278,7 +347,10 @@ void* SqlNwStatement::fetchAndPrint(bool SQL)
     if (NULL == tuple) return NULL;
     for(int i = 0; i < noOfProjs; i++) {
         fld = (BindSqlProjectField *) bindList.get(i + 1);
-        if (isFldNull(i+1)) printf("NULL");
+        if (isFldNull(i+1)) {
+            if (fld->aType == AGG_COUNT) printf("0");
+            else printf("NULL");
+        } 
         else AllDataType::printVal(fld->value, fld->type, fld->length);
         printf("\t");
     }
@@ -301,6 +373,17 @@ void* SqlNwStatement::getFieldValuePtr( int pos )
 {
     BindSqlProjectField *fld=(BindSqlProjectField *) bindList.get(pos+1);
     return fld->value;   
+}
+void SqlNwStatement::getProjFieldType(int *data)
+{
+    ListIterator biter = bindList.getIterator();
+    BindSqlProjectField *elem = NULL;
+    int i = 1;
+    while (biter.hasElement())
+    {
+        elem = (BindSqlProjectField*) biter.nextElement();
+        data[i++] = elem->type;
+    }
 }
 
 int SqlNwStatement::noOfProjFields()
@@ -359,26 +442,29 @@ DbRetVal SqlNwStatement::free()
     pkt->marshall();
     rv = conn->send(SQL_NW_PKT_FREE, pkt->getMarshalledBuffer(), pkt->getBufferSize());
     if (rv != OK) {
-        printError(rv, "Data could not be sent");
+        printError(rv, "Connection lost with peer");
+        conn->setConnClosed(false); 
+        delete pkt;
         return rv;
     }
+    delete pkt;
     rv = conn->receive();
-    if (rv != OK) return rv;
-    ResponsePacket *rpkt = (ResponsePacket *) ((TCPClient *)conn->nwClient)->respPkt;
-    char *ptr = (char *) &rpkt->retVal;
-    if (*ptr != 1) {
-        printf("there is some error\n");
-        return ErrPeerResponse;
+    if (rv == ErrNoConnection || rv == ErrPeerTimeOut) {
+        conn->setConnClosed(false);
+        return ErrNoConnection;
     }
+    else if (rv != OK) return rv;
     ListIterator itprm = paramList.getIterator();
     BindSqlField *fld = NULL;
     while((fld = (BindSqlField *) itprm.nextElement()) != NULL) {
-        if (fld->value) ::free(fld->value); delete fld;
+        if (fld->value) ::free(fld->value); 
+        delete fld;
     }
     paramList.reset();
     ListIterator itprj = bindList.getIterator();
     BindSqlProjectField *pfld = NULL;
     while((pfld = (BindSqlProjectField *) itprj.nextElement()) != NULL) {
+        if(pfld->value && !pfld->isFreed) ::free(pfld->value);
         delete pfld;
     }
     if (nullInfoSel) { ::free(nullInfoSel); nullInfoSel = NULL; }
@@ -386,7 +472,6 @@ DbRetVal SqlNwStatement::free()
     bindList.reset();
 
     isPrepared = false;
-    delete pkt;
     return rv;
 }
 
@@ -478,7 +563,7 @@ void SqlNwStatement::setStringParam(int paramPos, char *value)
     if (paramPos <= 0) return;
     BindSqlField *bindField = (BindSqlField *) paramList.get(paramPos);
     bindField->type = typeString;
-    strcpy((char *) bindField->value, value);
+    strncpy((char *) bindField->value, value, bindField->length);
     return;
 }
 
@@ -546,38 +631,48 @@ List SqlNwStatement::getAllTableNames(DbRetVal &ret)
         ret = ErrNoConnection;
     }
     rv = conn->send(SQL_NW_PKT_SHOWTABLES);
-    rv = conn->receive();
     if (rv != OK) {
-        printError(rv, "Unable to Receive from peer");
-        ret = rv;
+        conn->setConnClosed(false);
+        ret = ErrNoConnection;
+        return tblNameList;
     }
-    ResponsePacket *rpkt = (ResponsePacket *) ((TCPClient *)conn->nwClient)->respPkt;
-    char *ptr = (char *) &rpkt->retVal;
-    if (*ptr == 0) { ret = ErrPeerResponse; }
-    stmtID = rpkt->stmtID;
+    rv = conn->receive();
+    if (rv == ErrNoConnection || rv == ErrPeerTimeOut) {
+        conn->setConnClosed(false);
+        ret = ErrNoConnection;
+        return tblNameList;
+    }
+    ResponsePacket *rpkt = (ResponsePacket *) 
+                                        ((TCPClient *)conn->nwClient)->respPkt;
     int noOfTables = rpkt->rows;
     PacketHeader header;
     int fd = ((TCPClient *)(conn->nwClient))->sockfd;
     int numbytes = os::recv(fd, &header, sizeof(PacketHeader), 0);
     if (numbytes == -1) {
-        printError(ErrOS, "Error reading from socket\n");
-        ret = ErrOS;
+        printError(ErrOS, "Connection lost with peer.");
+        conn->setConnClosed(false);
+        os::closeFile(fd);
+        ((TCPClient *)(conn->nwClient))->sockfd = -1;
+        conn->setIsConnectedFlag(false);
+        ret = ErrNoConnection;
+        return tblNameList;
     }
 //    printf("HEADER says packet type is %d\n", header.packetType);
     char *buffer = (char*) malloc(header.packetLength);
     numbytes = os::recv(fd,buffer,header.packetLength,0);
     if (numbytes == -1) {
-        printError(ErrOS, "Error reading from socket\n");
-        ret = ErrOS;
+        printError(ErrOS, "Connection lost with peer.");
+        conn->setConnClosed(false);
+        os::closeFile(fd);
+        ((TCPClient *)(conn->nwClient))->sockfd = -1;
+        conn->setIsConnectedFlag(false);
+        ret = ErrNoConnection;
+        return tblNameList;
     }
     SqlPacketShowTables *pkt = new SqlPacketShowTables();
     pkt->setBuffer(buffer);
     rv = pkt->unmarshall();
-    if (rv != OK) {
-        printError(rv, "Data could not be sent");
-        ret = rv;
-    }
-    ptr = (char *)pkt->data;
+    char *ptr = (char *)pkt->data;
     while (noOfTables) {
         Identifier *id = new Identifier();
         strncpy(id->name, ptr, IDENTIFIER_LENGTH);
@@ -586,6 +681,109 @@ List SqlNwStatement::getAllTableNames(DbRetVal &ret)
         tblNameList.append(id);
     }
     return tblNameList;
+}
+
+bool SqlNwStatement::isTablePresent(char *tblName, DbRetVal &ret)
+{
+    DbRetVal rv = OK;
+    SqlNwConnection *conn = (SqlNwConnection*)con;
+    if (! conn->isConOpen()) {
+        printError(ErrNoConnection, "No connection present");
+        ret = ErrNoConnection;
+        return false;
+    }
+
+    SqlPacketIsTablePresent *pkt = new SqlPacketIsTablePresent();
+    pkt->setTableName(tblName);
+    pkt->marshall();
+    rv = conn->send(SQL_NW_PKT_ISTABLEPRESENT, pkt->getMarshalledBuffer(), 
+                                                         pkt->getBufferSize());
+    if (rv != OK) {
+        delete pkt;
+        printError(ErrOS, "Connection lost with peer.");
+        conn->setConnClosed(false);
+        ret = ErrNoConnection;
+        return false;
+    }
+    delete pkt;
+    rv = conn->receive();
+    if (rv == ErrNoConnection || rv == ErrPeerTimeOut) {
+        conn->setConnClosed(false);
+        ret = ErrNoConnection;
+        return false;
+    }
+    if (rv != OK) return false;
+    return true;
+}
+
+void *SqlNwStatement::getLoadedRecords(char *tblName, DbRetVal &ret)
+{
+    DbRetVal rv = OK;
+    SqlNwConnection *conn = (SqlNwConnection*)con;
+    if (! conn->isConOpen()) {
+        printError(ErrNoConnection, "No connection present");
+        ret = ErrNoConnection;
+        return NULL;
+    }
+    SqlPacketGetRecords *pkt = new SqlPacketGetRecords();
+    pkt->setTableName(tblName);
+    pkt->marshall();
+    rv = conn->send(SQL_NW_PKT_GETRECORDS, pkt->getMarshalledBuffer(), 
+                                                         pkt->getBufferSize());
+    if (rv != OK) {
+        printError(rv, "Connection lost with peer.");
+        conn->setConnClosed(false);
+        ret = rv;
+        delete pkt;
+        return NULL;
+    }
+    delete pkt;
+    rv = conn->receive();
+    if (rv == ErrNoConnection || rv == ErrPeerTimeOut) {
+        conn->setConnClosed(false);
+        ret = ErrNoConnection;
+        return NULL;
+    }
+    ResponsePacket *rpkt = (ResponsePacket *) 
+                                        ((TCPClient *)conn->nwClient)->respPkt;
+    if (!rpkt->rows) {
+        ret = rpkt->errRetVal;
+        return NULL; 
+    }
+    PacketHeader header;
+    int fd = ((TCPClient *)(conn->nwClient))->sockfd;
+    int numbytes = os::recv(fd, &header, sizeof(PacketHeader), 0);
+    if (numbytes == -1) {
+        printError(ErrOS, "Connection lost with peer");
+        conn->setConnClosed(false);
+        os::closeFile(fd);
+        ((TCPClient *)(conn->nwClient))->sockfd = -1;
+        conn->setIsConnectedFlag(false);
+        ret = ErrNoConnection;
+        return NULL;
+    }
+//    printf("HEADER says packet length is %d\n", header.packetLength);
+    char *buffer = (char*) malloc(header.packetLength);
+    numbytes = os::recv(fd,buffer,header.packetLength,0);
+    if (numbytes == -1) {
+        printError(ErrOS, "Connection lost with peer");
+        conn->setConnClosed(false);
+        os::closeFile(fd);
+        ((TCPClient *)(conn->nwClient))->sockfd = -1;
+        conn->setIsConnectedFlag(false);
+        ret = ErrNoConnection;
+        return NULL;
+    }
+    SqlPacketLoadRecords *lpkt = new SqlPacketLoadRecords();
+    lpkt->setBuffer(buffer);
+    lpkt->unmarshall();
+    char * data = (char *) lpkt->getMarshalledBuffer();
+    int pages = *(int *) data;
+    int sizeToCopy = sizeof(int) + pages * PAGE_SIZE;
+    char *dataToReturn = (char *) malloc(sizeToCopy);
+    memcpy(dataToReturn, data, sizeToCopy);
+    delete lpkt;
+    return dataToReturn;
 }
 
 bool SqlNwStatement::isFldNull(int pos)

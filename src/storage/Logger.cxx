@@ -42,7 +42,7 @@ void Logger::rollOverIfRequired()
     int fileSize = os::getFileSize(fileName);
     char cmd[MAX_FILE_LEN];
     int ret =0;
-        int tries=0, totalTries=3;
+        int tries=0, totalTries=Conf::config.getMutexRetries();
         while (tries < totalTries) {
             ret = os::lockFile(fdLog);
             if (ret ==0) break;
@@ -57,7 +57,11 @@ void Logger::rollOverIfRequired()
 
     if (fileSize > LOG_ROLLOVER_SIZE) {
           time_t cnow = ::time(NULL);
+#ifdef SOLARIS
+          struct std::tm *tmval = localtime(&cnow);
+#else
           struct tm *tmval = localtime(&cnow);
+#endif
           sprintf(cmd, "cp %s %s.%d-%d-%d:%d:%d:%d", fileName, fileName, 
                      tmval->tm_year+1900,
                      tmval->tm_mon+1, tmval->tm_mday, tmval->tm_hour, 
@@ -91,7 +95,7 @@ int Logger::log(LogLevel level, char* filename,
         } 
         char *buffer = new char[MAX_TRACE_LOG_LENGTH];
         createLogRecord(level, filename, lineNo, mesgBuf, &buffer);
-        int tries=0, totalTries=3;
+        int tries=0, totalTries=Conf::config.getMutexRetries();
         while (tries < totalTries) {
             ret = os::lockFile(fdLog);
             if (ret ==0) break;
@@ -127,7 +131,11 @@ DbRetVal Logger::startLogger(char *filename, bool isCreate)
        if (::access(filename, F_OK) == 0 ) {
           //move the existing log file with timestamp and create new file
           time_t cnow = ::time(NULL);
+#ifdef SOLARIS
+          struct std::tm *tmval = localtime(&cnow);
+#else
           struct tm *tmval = localtime(&cnow);
+#endif
           sprintf(cmd, "cp %s %s.%d-%d-%d:%d:%d:%d", filename, filename, 
                      tmval->tm_year+1900,
                      tmval->tm_mon+1, tmval->tm_mday, tmval->tm_hour, 

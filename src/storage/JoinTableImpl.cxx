@@ -26,31 +26,19 @@ JoinTableImpl::JoinTableImpl()
     curTuple = NULL;
     leftTableHdl = NULL;
     rightTableHdl = NULL;
+    isLeftRecOver = false;
+    isFirstCall = true;
+    availableLeft = true;
+    isFirstFetch = true;
+    isReturnNull = false;
+    isOuterJoin = false;
+    leftSideFail = false;
+    jType = INNER_JOIN;
+    isNestedLoop = true;
+    rightExhausted = false;
 }
 JoinTableImpl::~JoinTableImpl() {}
-/* moved to Table class
- * shall be removed
-void JoinTableImpl::getFieldNameAlone(char *fname, char *name) {
-    bool dotFound= false;
-    char *fullname = fname;
-    while(*fullname != '\0')
-    {
-        if (*fullname == '.') { dotFound = true;  break; }
-        fullname++;
-    }
-    if (dotFound) strcpy(name, ++fullname); else strcpy(name, fname);
 
-}
-void JoinTableImpl::getTableNameAlone(char *fname, char *name) {
-    strcpy(name, fname);
-    while(*name != '\0')
-    {
-        if (*name == '.') { *name='\0';  break; }
-        name++;
-    }
-    return;
-}
-*/
 DbRetVal JoinTableImpl::bindFld(const char *fldname, void *val)
 {
     FieldInfo *info = new FieldInfo();
@@ -76,7 +64,12 @@ DbRetVal JoinTableImpl::bindFld(const char *fldname, void *val)
     strcpy(def->fieldName, fieldName);
     strcpy(def->tabFieldName, fldname);
     def->appBuf = val;
-    getFieldInfo(fldname, info);
+    DbRetVal rv = getFieldInfo(fldname, info);
+    if ( OK != rv) {
+        printError(ErrBadCall, "Field not found or unqualified field name %s", fldname);
+        delete info;
+        return ErrSyntaxError;
+    }
     def->bindBuf = AllDataType::alloc(info->type, info->length);
     if (availableLeft)
         leftTableHdl->bindFld(fldname, def->bindBuf);
@@ -200,6 +193,15 @@ void JoinTableImpl::printPlan(int space)
     spaceBuf[space] = '\0';
     PredicateImpl* predImpl = (PredicateImpl*) pred;
     printf("%s <JOIN-NODE>\n", spaceBuf);
+    if (jType == INNER_JOIN)
+        printf("%s <TYPE> INNER_JOIN </TYPE>\n", spaceBuf);
+    else if (jType == LEFT_JOIN)
+        printf("%s <TYPE> LEFT_JOIN </TYPE>\n", spaceBuf);
+    else if (jType == RIGHT_JOIN)
+        printf("%s <TYPE> RIGHT_JOIN </TYPE>\n", spaceBuf);
+    else if (jType == FULL_JOIN)
+        printf("%s <TYPE> FULL_JOIN </TYPE>\n", spaceBuf);
+
     if (predImpl) predImpl->print(space);
     printf("%s <LEFT>\n", spaceBuf);
     leftTableHdl->printPlan(space+2);
@@ -211,22 +213,56 @@ void JoinTableImpl::printPlan(int space)
 }
 DbRetVal JoinTableImpl::execute()
 {
+    //if (!leftTableHdl->getName())  printf("execute called with isFirstCall %d\n", isFirstCall);
     PredicateImpl* predImpl = (PredicateImpl*) pred;
     isNestedLoop = true;
-    if (pred) predImpl->setProjectionList(&projList);
+    if (pred) 
+    {
+        predImpl->setProjectionList(&projList);
+        predImpl->solveForProjList(this);
+    }
     //push the table scan predicates
-    optimize();
-    leftTableHdl->execute();
-    leftTableHdl->fetch();
+    //PRABA::TEMP:
+    //if( jType != LEFT_JOIN) optimize();
+    if (leftTableHdl->getName()) {
+       //printf("left execute call %s", leftTableHdl->getName());
+       optimize();
+       leftTableHdl->execute();
+       leftTableHdl->fetch();
+    }else if (isFirstCall) {
+       //printf("First call");
+       optimize();
+       leftTableHdl->execute();
+       void *rec = leftTableHdl->fetch();
+       //printf("rec value is %x\n", rec);
+       isFirstCall = false;
+    }
     rightTableHdl->execute();
-    //TODO
-    //if join condition is not set then do nl
-    //if it is inner join, hen do nl
-    //nl cannot be done for outer join
+    TableImpl *tImpl = (TableImpl*) rightTableHdl;
+    isOuterJoin= true;
+    isFirstFetch = true;
     return OK;
 }
-
 void* JoinTableImpl::fetch()
+{
+    //if (!leftTableHdl->getName())  printf("fetch called\n");
+    if (isLeftRecOver) return NULL;
+    void * rec = fetchInt();
+    //if (!leftTableHdl->getName())  printf("rec got %x\n", rec);
+    
+    if (rec == NULL && jType == LEFT_JOIN && isFirstFetch) 
+    { 
+        isFirstFetch= false; 
+        isReturnNull = true; 
+        copyValuesToBindBuffer(NULL);
+        //if (!leftTableHdl->getName())  printf("rec value is 0x1\n");
+        return (void*)0x1;
+    }
+    isReturnNull = false;
+    //if (!leftTableHdl->getName())  printf("rec value is %x\n", rec);
+    return rec;
+}
+void* JoinTableImpl::fetchInt()
 {
     PredicateImpl* predImpl = (PredicateImpl*) pred;
     DbRetVal rv = OK;
@@ -235,47 +271,82 @@ void* JoinTableImpl::fetch()
         void *rec = rightTableHdl->fetch();
         if (rec==NULL)
         {
-            rightTableHdl->closeScan();
-            rec = leftTableHdl->fetch();
-            if (rec == NULL) return NULL;
-            rightTableHdl->execute();
-            rec = rightTableHdl->fetch();
-            if (rec == NULL) return NULL;
-            bool result = true;
-            while (true) {
-                if (pred) rv = predImpl->evaluate(result);
-                if ( OK != rv) return NULL; 
-                if (result) break;
-                rec = rightTableHdl->fetch(); 
-                if (rec == NULL) return fetch();
-            }
-            copyValuesToBindBuffer(NULL);
-            return rec;
+            return fetchRightFail();
         }
         else {
+            if (jType == LEFT_JOIN  && leftSideFail
+                && !leftTableHdl->getName()
+                && !isFirstFetch) return fetchRightFail();
+            
             bool result = true;
             while (true) {
                 if (pred) rv = predImpl->evaluate(result);
                 if ( rv !=OK) return NULL; 
                 if (result) break;
                 rec = rightTableHdl->fetch(); 
-                if (rec == NULL) return fetch();
+                if (rec == NULL) {
+                    if (jType == LEFT_JOIN && isFirstFetch) return NULL;
+                    return fetchInt();
+                }
             }
             copyValuesToBindBuffer(NULL);
+            isFirstFetch = false;
             return rec;
         }
-        
     }
     return NULL;
+}
+
+void* JoinTableImpl::fetchRightFail()
+{
+    if (jType == LEFT_JOIN && isFirstFetch) { return NULL;}
+    //if (!leftTableHdl->getName())  printf("fetch right fail called\n");
+    PredicateImpl* predImpl = (PredicateImpl*) pred;
+    DbRetVal rv = OK;
+    rightTableHdl->closeScan();
+    void *rec = leftTableHdl->fetch();
+    //if (!leftTableHdl->getName()) printf("rec value is %x\n", rec);
+    leftSideFail= false;
+    if (rec == NULL) {isLeftRecOver= true; return NULL;}
+    else if (rec == (char*)0x1) { leftSideFail = true;}
+    rightTableHdl->execute();
+    isFirstFetch = true;
+    rec = rightTableHdl->fetch();
+    if (rec == NULL || leftSideFail) { 
+        //if(!leftTableHdl->getName()) printf("RIGHT FETCH returns NULL\n");
+        //if join condition(pred) is set and if it is pushed to tablehdl
+        //when there is index, it returns no record
+        if (jType == LEFT_JOIN && pred) return NULL;
+        return fetchRightFail();
+    } 
+    bool result = true;
+    isReturnNull = false;
+    while (true) {
+        if (pred) rv = predImpl->evaluate(result);
+        if ( OK != rv) return NULL;
+        if (result) {  break; }
+        rec = rightTableHdl->fetch();
+        if (rec == NULL) {
+            if (jType == LEFT_JOIN) {
+                //return from here so that null values for rhs table will be set
+                return (void*)  NULL;
+            }
+            return fetchInt();
+        }
+    }
+    isFirstFetch = false;
+    copyValuesToBindBuffer(NULL);
+    return rec;
 }
 void* JoinTableImpl::fetch(DbRetVal &rv)
 {
     rv = OK; 
-    return fetch();
+    return fetchInt();
 }
 
 void* JoinTableImpl::fetchNoBind()
 {
+    printError(ErrBadCall, "fetchNoBind not implemented for JoinTableImpl");
     return NULL;
 }
 
@@ -301,20 +372,21 @@ DbRetVal JoinTableImpl::copyValuesToBindBuffer(void *elem)
 }
 DbRetVal JoinTableImpl::getFieldInfo(const char* fldname, FieldInfo *&info)
 {
-    DbRetVal retCode = OK;
+    DbRetVal retCode = OK, retCode1 =OK;
+    availableLeft = false;
     retCode = leftTableHdl->getFieldInfo(fldname, info);
     if (retCode ==OK)
     {
         availableLeft= true;
-        return OK;
+        //return OK;
     }
-    retCode = rightTableHdl->getFieldInfo(fldname, info);
-    if (retCode ==OK)
+    retCode1 = rightTableHdl->getFieldInfo(fldname, info);
+    if (retCode1 ==OK)
     {
-        availableLeft= false;
+        if (availableLeft) return ErrSyntaxError;
         return OK;
     }
-    return ErrNotExists;
+    return retCode;
 }
 
 long JoinTableImpl::numTuples()
@@ -323,17 +395,20 @@ long JoinTableImpl::numTuples()
 }
 DbRetVal JoinTableImpl::closeScan()
 {
+    //if (leftTableHdl && leftTableHdl->getName()) leftTableHdl->closeScan();
     if (leftTableHdl) leftTableHdl->closeScan();
     if (rightTableHdl) rightTableHdl->closeScan();
+    isLeftRecOver = false;
+    isFirstCall = true;
     return OK;
     
 }
 
 DbRetVal JoinTableImpl::close()
 {
+    closeScan();
     if (leftTableHdl) { leftTableHdl->close(); leftTableHdl = NULL; }
     if (rightTableHdl) { rightTableHdl->close(); rightTableHdl = NULL; }
-    closeScan();
     ListIterator iter = projList.getIterator();
     JoinProjFieldInfo  *elem;
     while (iter.hasElement())
@@ -343,14 +418,22 @@ DbRetVal JoinTableImpl::close()
         delete elem;
     }
     projList.reset();
-    delete pred;
+    //delete pred;
+    ListIterator pIter = predList.getIterator();
+    while(pIter.hasElement())
+    {
+        PredicateImpl *pImpl = (PredicateImpl*) pIter.nextElement();
+        delete pImpl;
+    }
+    predList.reset();
     delete this;
     return OK;
 }
 void* JoinTableImpl::getBindFldAddr(const char *name)
 {
-    printf("PRABA::join getBindFldAddr not implemented\n");
-    return NULL;
+    void* bindAddr = leftTableHdl->getBindFldAddr(name);
+    if (bindAddr) return bindAddr;
+    return rightTableHdl->getBindFldAddr(name);
 }
 List JoinTableImpl::getFieldNameList()
 {
@@ -438,19 +521,19 @@ bool JoinTableImpl::pushPredicate(Predicate *pr)
                     if (strcmp(rTbl, rTabName) ==0)
                     {
                         //bool ind = rightTableHdl->hasIndex(rFldName);
-                        //if (ind) {
+                        if (OpEquals ==op) {
                             void *buf = getBindedBuf(lTabName, lFldName);
                             rightTableHdl->addPredicate(rFldName, op, buf);
                             pImpl->setDontEvaluate();
-                        //}
+                        }
                     }else if (strcmp(rTbl, lTabName) ==0)
                     {
                         //bool ind = rightTableHdl->hasIndex(lFldName);
-                        //if (ind) {
+                        if (OpEquals ==op) {
                             void *buf = getBindedBuf(rTabName, rFldName);
                             rightTableHdl->addPredicate(lFldName, op, buf);
                             pImpl->setDontEvaluate();
-                        //}
+                        }
                     }
                     //PRABA::END
                     setPredicate(pr);
@@ -466,19 +549,19 @@ bool JoinTableImpl::pushPredicate(Predicate *pr)
                     if (strcmp(rTbl, rTabName) ==0)
                     {
                         //bool ind = rightTableHdl->hasIndex(rFldName);
-                        //if (ind) {
+                        if (OpEquals ==op) {
                             void *buf = getBindedBuf(lTabName, lFldName);
                             rightTableHdl->addPredicate(rFldName, op, buf);
                             pImpl->setDontEvaluate();
-                        //}
+                        }
                     }else if (strcmp(rTbl, lTabName) ==0)
                     {
                         //bool ind = rightTableHdl->hasIndex(lFldName);
-                        //if (ind) {
+                        if (OpEquals ==op) {
                             void *buf = getBindedBuf(rTabName, rFldName);
                             rightTableHdl->addPredicate(lFldName, op, buf);
                             pImpl->setDontEvaluate();
-                        //}
+                        }
                     }
                     //PRABA::END
                 setPredicate(pr);
@@ -495,6 +578,7 @@ void JoinTableImpl::setPredicate(Predicate *pr)
     PredicateImpl *newPred = new PredicateImpl();
     newPred->setTerm(curPred, OpAnd, pr);
     newPred->setProjectionList(&projList);
+    predList.append(newPred);
     pred = newPred;
     return;
 }
@@ -517,6 +601,42 @@ bool JoinTableImpl::isFldNull(const char *name)
     }
     if(NULL==rightTableHdl->getName())
     {
+        if (isReturnNull) return true;
+        ret = rightTableHdl->isFldNull(name);
+        if(ret==true) return true;
+    }
+    else{
+        char tableName[IDENTIFIER_LENGTH];
+        Table::getTableNameAlone((char*)name, tableName);
+        if(0==strcmp(tableName,rightTableHdl->getName()))
+        {
+            if (isReturnNull) return true;
+            return rightTableHdl->isFldNull(name);
+        }
+    }
+    return ret;
+}
+//same as above expect it does not check for isRecordFound flag
+//as it is set only after predicate evaluate
+bool JoinTableImpl::isFldNullInt(const char *name)
+{
+    bool ret = false;
+    if(NULL==leftTableHdl->getName())
+    {
+        ret = leftTableHdl->isFldNull(name);
+        if(ret==true) return true;
+    }
+    else
+    {
+        char tableName[IDENTIFIER_LENGTH];
+        Table::getTableNameAlone((char*)name, tableName);
+        if(0 == strcmp(tableName,leftTableHdl->getName()))
+        {
+            return leftTableHdl->isFldNull(name);
+        }
+    }
+    if(NULL==rightTableHdl->getName())
+    {
         ret = rightTableHdl->isFldNull(name);
         if(ret==true) return true;
     }
@@ -530,3 +650,4 @@ bool JoinTableImpl::isFldNull(const char *name)
     }
     return ret;
 }
+

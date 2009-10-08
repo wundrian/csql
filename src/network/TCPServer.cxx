@@ -39,9 +39,14 @@ DbRetVal TCPServer::start()
     my_addr.sin_port = htons(port);
     my_addr.sin_addr.s_addr = INADDR_ANY;
     memset(&(my_addr.sin_zero), '\0', 8);
+    int on = 1;
+    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR,
+                                   (char *)&on, sizeof(on) );
+    
+
     if (bind(sockfd, (struct sockaddr *)&my_addr,
-                     sizeof(struct sockaddr)) == -1) {
-        printError(ErrOS, "bind failed");
+                    sizeof(struct sockaddr)) == -1) {
+        printError(ErrOS, "bind failed for port %d",port);
         return ErrOS;
     }
     if (listen(sockfd, 10) == -1) {
@@ -59,17 +64,20 @@ DbRetVal TCPServer::stop()
 }
 DbRetVal TCPServer::handleClient()
 {   
-//   printf("PRABA::handling client \n");
+   printf("DEBUG::handling client\n");
    DbRetVal rv = OK;
    socklen_t addressLen = sizeof(struct sockaddr);
    clientfd = accept(sockfd, (struct sockaddr*) &clientAddress, &addressLen);
    int ret = os::fork();
    if (ret) {
        //parent
-       os::signal(SIGCHLD, SIG_IGN);
        close(clientfd);
        return OK;
    }else if (ret == 0) {
+       int on = 1; 
+       setsockopt(clientfd, IPPROTO_TCP, TCP_NODELAY, 
+                                   (char *)&on, sizeof(on) );  
+
        //child
        int response = 1;
        int ret = os::send(clientfd, &response, 4, 0); 
@@ -93,10 +101,16 @@ DbRetVal TCPServer::handleClient()
            if (ret > 0) {
 //                printf("something in fd\n");
                int numbytes = os::recv(clientfd,&header,sizeof(PacketHeader),0);
+               if (!numbytes) { 
+                   close(clientfd); 
+                   handler.closeConnection(); 
+                   exit(1);
+               }
                if (numbytes == -1)
                {
-                   printError(ErrOS, "Error reading from socket\n");
-                   return ErrOS;
+                   printError(ErrOS, "Error reading from socket");
+                   handler.closeConnection();
+                   exit(1); 
                }
 //               printf("HEADER says packet type is %d\n", header.packetType);
                char *buffer = NULL;
@@ -106,128 +120,23 @@ DbRetVal TCPServer::handleClient()
                    header.packetType != SQL_NW_PKT_FETCH      && 
                    header.packetType != SQL_NW_PKT_SHOWTABLES )
                {
-                   int dummy=0;
-                   numbytes = os::send(clientfd, &dummy , sizeof(int), 0);
-                   if (numbytes == -1) {
-                       printError(ErrOS, "Error writing to socket\n");
-                       return ErrOS;
-                   }
                    buffer = (char*) malloc(header.packetLength);
                    numbytes = os::recv(clientfd,buffer,header.packetLength,0);
                    if (numbytes == -1)
                    {
-                       printError(ErrOS, "Error reading from socket\n");
-                       return ErrOS;
+                       printError(ErrOS, "Error reading from socket");
+                       handler.closeConnection();
+                       exit(1); 
                    }
                }
-               ResponsePacket *rpkt = (ResponsePacket *) handler.process(header, buffer);
-               int params=0;
-               int proj=0;
-               NetworkStmt *stmt=NULL;
-               if (rpkt != NULL) {
-               numbytes = os::send(clientfd, rpkt, sizeof(ResponsePacket), 0);
-               if (numbytes == -1)
-               {
-                   printError(ErrOS, "Error writing to socket\n");
-                   return ErrOS;
-               }
-               char *ptr = (char *)&rpkt->retVal;
-               if (*ptr==0) continue;
-               if (*(ptr + 1)  == 1) continue; // for end of fetch
-               params =  *(ptr + 2);
-               proj = *(ptr + 3);  
-               }//new if added
-               if ((header.packetType == SQL_NW_PKT_PREPARE && params != 0) ||
-                   (header.packetType == SQL_NW_PKT_PREPARE && proj != 0)) {
-                   if (params) {     
-                       SqlPacketParamMetadata *prmpkt = new SqlPacketParamMetadata();
-                       prmpkt->stmtID = rpkt->stmtID; 
-                       ListIterator stmtIter = SqlNetworkHandler::stmtList.getIterator();
-                       while (stmtIter.hasElement()) {
-                           stmt = (NetworkStmt*) stmtIter.nextElement();
-                           if (stmt->stmtID == prmpkt->stmtID) break;
-                       }
-                       prmpkt->noParams = stmt->paramList.size();
-                       rv = prmpkt->marshall();
-                       if (rv != OK) {
-                           printf("marshall failed\n");
-                       }
-                       rv = send(SQL_NW_PKT_PARAM_METADATA, prmpkt->getMarshalledBuffer(), prmpkt->getBufferSize()); 
-                       if (rv != OK) {
-                           printf("Error in sending the metadata to the client\n");
-                           exit(1);
-                       }
-                   }
-                   if (proj) {
-                       //fill projection list and send it to client   
-                       SqlPacketProjMetadata *prjpkt = new SqlPacketProjMetadata();
-                       prjpkt->stmtID = rpkt->stmtID;
-                       ListIterator stmtIter = SqlNetworkHandler::stmtList.getIterator();
-                       while (stmtIter.hasElement()) {
-                           stmt = (NetworkStmt*) stmtIter.nextElement();
-                           if (stmt->stmtID == prjpkt->stmtID) break;
-                       }
-                       prjpkt->noProjs = stmt->projList.size();
-                       rv = prjpkt->marshall();
-                       if (rv != OK) {
-                           printf("marshall failed\n");
-                       }
-                       rv = send(SQL_NW_PKT_PROJ_METADATA, prjpkt->getMarshalledBuffer(), prjpkt->getBufferSize());
-                       if (rv != OK) {
-                           printf("Error in sending the metadata to the client\n");
-                           exit(1);
-                       }
-                   }
-               }   
-               if (header.packetType == SQL_NW_PKT_SHOWTABLES) {
-                   SqlPacketShowTables *shTblPkt = new SqlPacketShowTables();
-                   shTblPkt->numOfTables = rpkt->rows;
-                   rv = shTblPkt->marshall(); 
-                   if (rv != OK) { printf("marshall failed\n"); }
-                   ListIterator tblIter = 
-                       SqlNetworkHandler::tableNameList.getIterator();
-                   while (tblIter.hasElement()) delete tblIter.nextElement();
-                   SqlNetworkHandler::tableNameList.reset();
-
-                   rv = send(SQL_NW_PKT_SHOWTABLES, shTblPkt->getMarshalledBuffer(), shTblPkt->getBufferSize());
-                   if (rv != OK) {
-                       printf("Error in sending the metadata to the client\n");
-                       exit(1);
-                   }
-               }
-               if (header.packetType == SQL_NW_PKT_DISCONNECT) { 
-                   exit(0); 
-               }
-           } //else printf("Nothing in fd %d\n", ret);
+               ResponsePacket *rpkt = (ResponsePacket *) 
+                                               handler.process(header, buffer);
+               if (rpkt != NULL) rv = handler.servePacket(header, rpkt);
+           } 
        }
-   }else {
+   } else {
         printError(ErrOS, "Unable to fork new process");
         return ErrOS;
    } 
    return OK;
-}
-
-DbRetVal TCPServer::send(NetworkPacketType type, char *buf, int len)
-{
-    DbRetVal rv = OK;
-    //void* totalBuffer = malloc(sizeof(PacketHeader)+ len);
-    PacketHeader *hdr=  new PacketHeader();
-    hdr->packetType = type;
-    hdr->packetLength = len;
-    hdr->srcNetworkID = 0;//networkid;
-    hdr->version = 1;
-    //memcpy(((char*)totalBuffer) + sizeof(PacketHeader) , buf, len);
-    int numbytes=0;
-    if ((numbytes=os::send(clientfd, hdr, sizeof(PacketHeader), 0)) == -1) {
-        printError(ErrOS, "Unable to send the packet\n");
-        return ErrOS;
-    }
-//    printf("Sent bytes %d\n", numbytes);
-    if ((numbytes=os::send(clientfd, buf, len, 0)) == -1) {
-        printError(ErrOS, "Unable to send the packet\n");
-        return ErrOS;
-    }
-//    printf("Sent bytes %d\n", numbytes);
-    //free(totalBuffer);
-    return rv;
 }

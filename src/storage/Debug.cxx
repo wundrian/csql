@@ -14,8 +14,9 @@
  *                                                                         *
   ***************************************************************************/
 #include<Debug.h>
+#include<Config.h>
 
-int DebugDM_Alloc = 1;
+int DebugDM_Alloc = 0;
 int DebugDM_VarAlloc = 0;
 int DebugDM_Lock = 0;
 int DebugDM_Transaction = 0;
@@ -28,36 +29,62 @@ int DebugDM_SystemDatabase = 0;
 int DebugDM_Database = 0;
 int DebugDM_Table = 0;
 int DebugDM_Predicate = 0;
-int DebugDM_TableIterator = 1;
+int DebugDM_TableIterator = 0;
 int DebugDM_Process=0;
 int DebugDM_Network=0;
 int DebugDM_Gateway=0;
 int DebugDM_Adapter=0;
 int DebugDM_SqlLog=0;
-
-int printError1(DbRetVal val, char* fname, int lno, char *format, ...)
+int DebugDM_CacheServer=0;
+int DebugDM_TEST=1;
+int DebugDM_Warning=0;
+int printStackTrace()
 {
-  va_list ap;
-  char mesgBuf[1024];
-
-  sprintf(mesgBuf, "%d:%lu:%s:%d:",
-           os::getpid(), os::getthrid(), fname, lno);
-  os::write(2, mesgBuf, strlen(mesgBuf));
-
-  va_start(ap, format);
-
-  int err = ::vsnprintf(mesgBuf, sizeof(mesgBuf), format,ap);
-  if(err < 0) {
-      return err;
-  }
-  os::write(2, mesgBuf, strlen(mesgBuf));
-  strcpy(mesgBuf,"\n");
-  os::write(2, mesgBuf, strlen(mesgBuf));
-   //2->stderr
+#ifdef LINUX
+  void *array[10];
+  size_t size = backtrace(array, 10);
+  backtrace_symbols_fd(array, size, 2);
+#endif
   return 0;
 }
 
+int printError1(DbRetVal val, char* fname, int lno, char *format, ...)
+{
+    va_list ap;
+    int fd = -1;
+    char tempBuffer[25];
+    struct timeval timeStamp;
+    os::gettimeofday(&timeStamp);
+    struct tm *tempTm = os::localtime(&timeStamp.tv_sec);
+    char mesgBuf[1024];
+#if defined(SOLARIS) && defined(REMOTE_SOLARIS)
+    strftime(tempBuffer, 25, "%d/%m/%Y %H:%M:%S", (struct std::tm*) tempTm);
+#else
+    strftime(tempBuffer, 25, "%d/%m/%Y %H:%M:%S", tempTm);
+#endif
 
+    if (strncasecmp(Conf::config.getStderrFile(),"stderr", 6) == 0) fd = 2;
+    else { 
+        fd = os::openFileForAppend(Conf::config.getStderrFile(), O_CREAT);
+        if (fd == -1) fd = 2;
+    }
+
+    snprintf(mesgBuf, MAX_TRACE_LOG_LENGTH, "%s.%6d:%5d:%10lu:%s:%d:",
+         tempBuffer, timeStamp.tv_usec, os::getpid(), os::getthrid(), fname, lno);
+
+    os::write(fd, mesgBuf, strlen(mesgBuf));
+  
+    va_start(ap, format);
+
+    int err = ::vsnprintf(mesgBuf, sizeof(mesgBuf), format,ap);
+    if (err < 0) { return err; } 
+       
+    os::write(fd, mesgBuf, strlen(mesgBuf));
+    strcpy(mesgBuf,"\n");
+    os::write(fd, mesgBuf, strlen(mesgBuf));
+    //2->stderr
+    return 0;
+}
 
 int printDebug1(int module, char *fname, int lno, char *format, ...)
 {
@@ -80,6 +107,9 @@ int printDebug1(int module, char *fname, int lno, char *format, ...)
      case DM_Gateway: { if (!DebugDM_Gateway) return 1; break; }
      case DM_Adapter: { if (!DebugDM_Adapter) return 1; break; }
      case DM_SqlLog: { if (!DebugDM_SqlLog) return 1; break; }
+     case DM_CacheServer: { if (!DebugDM_CacheServer) return 1; break; }
+     case DM_TEST: { if (!DebugDM_TEST) return 1; break; }
+     case DM_Warning: { if (!DebugDM_Warning) return 1; break; }
 
   }
 

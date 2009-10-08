@@ -131,13 +131,6 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
    //to acquire lock so for sure we will get it.
    printDebug(DM_Lock, "LockManager::getSharedLock Begin");
    Bucket *bucket = getLockBucket(tuple);
-   int lockRet = bucket->mutex_.getLock(systemDatabase_->procSlot);
-   if (lockRet != 0)
-   {
-       printDebug(DM_Lock, "LockManager::getSharedLock:End-Unable to get mutex");
-       printError(ErrLockTimeOut,"Unable to acquire bucket mutex");
-       return ErrLockTimeOut;
-   }
    LockHashNode *lockNode = (LockHashNode*) bucket->bucketList_;
    if (NULL == lockNode)
    {
@@ -147,14 +140,25 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
         {
             printError(rv, "Could not allocate Lock node");
             return rv;
-            }
+        }
         printDebug(DM_Lock, "Bucket list is null: Allocating new LockHashNode %x", node);
-        bucket->bucketList_ = (void*)node; //make it as head
-        bucket->mutex_.releaseLock(systemDatabase_->procSlot);
         rv = OK;
-        if (trans != NULL) 
-            rv = (*trans)->insertIntoHasList(systemDatabase_, node);
-        if (rv !=OK) linfo.noOfReaders_--;
+        if (trans != NULL) rv = (*trans)->insertIntoHasList(systemDatabase_, node);
+        if (rv !=OK) {
+            deallocLockNode(node);
+            printError(ErrLockTimeOut,"Unable to insert into hasList. Timeout.Retry...");
+            return ErrLockTimeOut;
+        }
+        
+        //bucket->bucketList_ = (void*)node; //make it as head
+        int ret = Mutex::CASL((long*)&bucket->bucketList_, 0 , (long)node);
+        if (ret != 0) {
+            if (trans != NULL) (*trans)->removeFromHasList(systemDatabase_, tuple);
+            deallocLockNode(node);
+            printError(ErrLockTimeOut, "Unable to set lock list head. Timeout. Retry...");
+            return ErrLockTimeOut;
+        }
+        //bucket->mutex_.releaseLock(systemDatabase_->procSlot);
         printDebug(DM_Lock, "LockManager::getSharedLock End");
         return rv;
    }
@@ -169,9 +173,16 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
            if (iter->lInfo_.noOfReaders_ == -1)
            {
 
-               iter->lInfo_.waitReaders_++;
-                       cachedLockNode = iter;
-               bucket->mutex_.releaseLock(systemDatabase_->procSlot);
+               //iter->lInfo_.waitReaders_++;
+               int ret = Mutex::CAS((int*)&iter->lInfo_.waitReaders_, 
+                                       iter->lInfo_.waitReaders_,
+                                       iter->lInfo_.waitReaders_+1);
+               if (ret !=0) {
+                   printError(ErrLockTimeOut, "Unable to inc waitReaders:%d : Timeout. Retry..", iter->lInfo_.waitReaders_);
+                   return ErrLockTimeOut;
+               }
+               cachedLockNode = iter;
+               //bucket->mutex_.releaseLock(systemDatabase_->procSlot);
                if (trans != NULL) (*trans)->updateWaitLock(iter);
                printDebug(DM_Lock, "lock node:%x exclusive locked",iter);
                break;
@@ -180,21 +191,38 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
            {
                if(iter->lInfo_.waitWriters_ >0)
                {
-                   iter->lInfo_.waitReaders_++;
+                   //iter->lInfo_.waitReaders_++;
+                   int ret = Mutex::CAS((int*)&iter->lInfo_.waitReaders_, 
+                                        iter->lInfo_.waitReaders_, 
+                                        iter->lInfo_.waitReaders_+1);
+                   if (ret !=0) {
+                       printError(ErrLockTimeOut, "Unable to inc waitReaders:%d : Timeout. Retry..", iter->lInfo_.waitReaders_);
+                       return ErrLockTimeOut;
+                   }
                    cachedLockNode = iter;
-                   bucket->mutex_.releaseLock(systemDatabase_->procSlot);
+                   //bucket->mutex_.releaseLock(systemDatabase_->procSlot);
                    if (trans != NULL) (*trans)->updateWaitLock(iter);
                    printDebug(DM_Lock, "lock node:%x Writers waiting.",iter);
                    break;
                }
                else
                {
-                   iter->lInfo_.noOfReaders_++;
-                   bucket->mutex_.releaseLock(systemDatabase_->procSlot);
                    DbRetVal rv = OK;
-                   if (trans != NULL) 
-                     rv = (*trans)->insertIntoHasList(systemDatabase_, iter);
-                   if (rv != OK) iter->lInfo_.noOfReaders_--;
+                   if (trans != NULL) rv = (*trans)->insertIntoHasList(systemDatabase_, iter);
+                   if (rv != OK) {
+                       printError(ErrLockTimeOut,"Unable to insert into hasList. Timeout. Retry..");
+                       return ErrLockTimeOut;
+                   }
+                   //iter->lInfo_.noOfReaders_++;
+                   int ret = Mutex::CAS((int*)&iter->lInfo_.noOfReaders_, 
+                                        iter->lInfo_.noOfReaders_, 
+                                        iter->lInfo_.noOfReaders_+1);
+                   if (ret !=0) {
+                       if (trans != NULL) (*trans)->removeFromHasList(systemDatabase_, tuple);
+                       printError(ErrLockTimeOut, "Unable to inc noOfReaders:%d : Timeout. Retry..", iter->lInfo_.noOfReaders_);
+                       return ErrLockTimeOut;
+                   }
+                   //bucket->mutex_.releaseLock(systemDatabase_->procSlot);
                    printDebug(DM_Lock, "lock node:%x First to take shared lock",
                                                                           iter);
                    printDebug(DM_Lock, "LockManager::getSharedLock End");
@@ -202,12 +230,22 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
                 }
            }else
            {
-               iter->lInfo_.noOfReaders_++;
-               bucket->mutex_.releaseLock(systemDatabase_->procSlot);
                DbRetVal rv = OK;
-               if (trans != NULL) 
-                 rv = (*trans)->insertIntoHasList(systemDatabase_, iter);
-               if (rv != OK) iter->lInfo_.noOfReaders_--;
+               if (trans != NULL) rv = (*trans)->insertIntoHasList(systemDatabase_, iter);
+               if (rv != OK) {
+                   printError(ErrLockTimeOut, "Unable to insert into hasList. Timeout : Retry..");
+                   return ErrLockTimeOut;
+               }
+               //iter->lInfo_.noOfReaders_++;
+               int ret = Mutex::CAS((int*)&iter->lInfo_.noOfReaders_, 
+                                        iter->lInfo_.noOfReaders_, 
+                                        iter->lInfo_.noOfReaders_+1);
+               if (ret !=0) {
+                   if (trans!=NULL) (*trans)->removeFromHasList(systemDatabase_, tuple);
+                   printError(ErrLockTimeOut, "Unable to take S lock. Timeout : Retry..");
+                   return ErrLockTimeOut;
+               }
+               //bucket->mutex_.releaseLock(systemDatabase_->procSlot);
                printDebug(DM_Lock, "lock node:%x incr readers",iter);
                printDebug(DM_Lock, "LockManager::getSharedLock End");
                return rv;
@@ -222,23 +260,60 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
         LockHashNode *node = allocLockNode(linfo, tuple, &rv);
         if (NULL == node)
         {
-            bucket->mutex_.releaseLock(systemDatabase_->procSlot);
+            //bucket->mutex_.releaseLock(systemDatabase_->procSlot);
             printError(rv, "Could not allocate Lock node");
             if (trans != NULL) (*trans)->removeWaitLock();
             return rv;
         }
         printDebug(DM_Lock,"Not Found.Created new lock node:%x",node);
-        LockHashNode *it = lockNode;
-        while (NULL != it->next_) it = it->next_;
-        it->next_ = node;
-        bucket->mutex_.releaseLock(systemDatabase_->procSlot);
         rv = OK;
         if (trans != NULL) 
           rv = (*trans)->insertIntoHasList(systemDatabase_, node);
-        if (rv != OK) linfo.noOfReaders_--;
+        if (rv != OK) {
+            deallocLockNode(node);
+            if (trans != NULL) (*trans)->removeWaitLock();
+            printError(ErrLockTimeOut, "Unable to add to hasList : Timeout. Retry..");
+            return ErrLockTimeOut;
+        }
+        int lockRet = bucket->mutex_.getLock(systemDatabase_->procSlot);
+        if (lockRet != 0)
+        {
+            printError(ErrLockTimeOut, "Unable to acquire bucket mutex");
+            if (trans != NULL) (*trans)->removeFromHasList(systemDatabase_, tuple);
+            deallocLockNode(node);
+            if (trans != NULL) (*trans)->removeWaitLock();
+            return ErrLockTimeOut;
+        }
+
+        LockHashNode *it = (LockHashNode*) bucket->bucketList_;
+
+        if (NULL == it) {
+           int ret = Mutex::CASL((long*)&bucket->bucketList_, 0 , (long)node);
+           if (ret != 0) {
+               bucket->mutex_.releaseLock(systemDatabase_->procSlot);
+               if (trans != NULL) (*trans)->removeFromHasList(systemDatabase_, tuple);
+               deallocLockNode(node);
+               if (trans != NULL) (*trans)->removeWaitLock();
+               printError(ErrLockTimeOut, "Unable to set Lock Bucket. Timeout: retry...");
+               return ErrLockTimeOut;
+           }
+        } else { 
+           while (NULL != it->next_) it = it->next_;
+           //it->next_ = node;
+           int ret = Mutex::CASL((long*)&it->next_, 0, (long)node);
+           if (ret !=0) {
+             bucket->mutex_.releaseLock(systemDatabase_->procSlot);
+             if (trans !=NULL) (*trans)->removeFromHasList(systemDatabase_, tuple);
+             deallocLockNode(node);
+             if (trans != NULL) (*trans)->removeWaitLock();
+             printError(ErrLockTimeOut, "Unable to add to lock table list : Retry..");
+             return ErrLockTimeOut;
+           }
+        }
+        bucket->mutex_.releaseLock(systemDatabase_->procSlot);
         if (trans != NULL) (*trans)->removeWaitLock();
         printDebug(DM_Lock, "LockManager::getSharedLock End");
-        return rv;
+        return OK;
    }
    //bucket->mutex_.releaseLock();
    int tries = 0;
@@ -250,7 +325,7 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
    //printDebug(DM_Lock, "Trying to get mutex: for bucket %x\n", bucket);
    while (tries < Conf::config.getLockRetries())
    {
-       lockRet = bucket->mutex_.getLock(systemDatabase_->procSlot);
+       /*lockRet = bucket->mutex_.getLock(systemDatabase_->procSlot);
        if (lockRet != 0)
        {
            printDebug(DM_Lock, "Mutex is waiting for long time:May be deadlock");
@@ -258,24 +333,39 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
            printError(ErrLockTimeOut, "Unable to get bucket mutex");
            if (trans != NULL) (*trans)->removeWaitLock();
            return ErrLockTimeOut;
-       }
+       }*/
+       int oldValue = cachedLockNode->lInfo_.noOfReaders_;
        if (cachedLockNode->lInfo_.noOfReaders_ == 0)
        {
            //if there are waiters allow then to take the lock
            if (cachedLockNode->lInfo_.waitWriters_ <0)
            {
-               cachedLockNode->lInfo_.noOfReaders_++;
-               cachedLockNode->lInfo_.waitReaders_--;
-               bucket->mutex_.releaseLock(systemDatabase_->procSlot);
                DbRetVal rv = OK;
-               if (trans != NULL) 
-                 rv = (*trans)->insertIntoHasList(systemDatabase_, cachedLockNode);
+               if (trans != NULL) rv=(*trans)->insertIntoHasList(systemDatabase_, cachedLockNode);
                if (rv !=OK) {
-                   cachedLockNode->lInfo_.noOfReaders_--;
-                   cachedLockNode->lInfo_.waitReaders_++;
                    if (trans != NULL) (*trans)->removeWaitLock();
-                   return rv;
+                   printError(ErrLockTimeOut, "Unable to add to hasList. TimeOut : Retry..");
+                   return ErrLockTimeOut;
+              
                }
+               //cachedLockNode->lInfo_.noOfReaders_++;
+               int ret = Mutex::CAS((int*)&cachedLockNode->lInfo_.noOfReaders_, 
+                                   0,cachedLockNode->lInfo_.noOfReaders_+1);
+               if (ret !=0) {
+                   printError(ErrLockTimeOut, "Unable to take S lock. TimeOut : Retry..");
+                   if (trans != NULL) (*trans)->removeWaitLock();
+                   if (trans != NULL) (*trans)->removeFromHasList(systemDatabase_, tuple);
+                   return ErrLockTimeOut;
+               }
+               //cachedLockNode->lInfo_.waitReaders_--;
+               ret = Mutex::CAS((int*)&cachedLockNode->lInfo_.waitReaders_, 
+                                        cachedLockNode->lInfo_.waitReaders_, 
+                                        cachedLockNode->lInfo_.waitReaders_-1);
+               if (ret !=0) {
+                   printError(ErrLockTimeOut, "Fatal:Unable to dec waitReaders. Timeout : Retry..");
+                   //return ErrLockTimeOut;
+               }
+               //bucket->mutex_.releaseLock(systemDatabase_->procSlot);
                if (trans != NULL) (*trans)->removeWaitLock();
                printDebug(DM_Lock, "LockManager::getSharedLock End");
                return OK;
@@ -284,29 +374,44 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
        {
            if (trans !=NULL && (*trans)->findInHasList(systemDatabase_, cachedLockNode))
            {
-               bucket->mutex_.releaseLock(systemDatabase_->procSlot);
+               //bucket->mutex_.releaseLock(systemDatabase_->procSlot);
                if (trans != NULL) (*trans)->removeWaitLock();
                printDebug(DM_Lock, "LockManager::getSharedLock End");
                return OK;
            }
        } else
        {
-           cachedLockNode->lInfo_.noOfReaders_++;
-           cachedLockNode->lInfo_.waitReaders_--;
-           bucket->mutex_.releaseLock(systemDatabase_->procSlot);
            DbRetVal rv =OK;
-           if (trans != NULL) 
-              rv = (*trans)->insertIntoHasList(systemDatabase_, cachedLockNode);
+           if (trans != NULL) rv = (*trans)->insertIntoHasList(systemDatabase_, cachedLockNode);
            if (rv !=OK) {
-               cachedLockNode->lInfo_.noOfReaders_--;
-               cachedLockNode->lInfo_.waitReaders_++;
+               if (trans != NULL) (*trans)->removeWaitLock();
+               printError(ErrLockTimeOut, "Unable to add to hasList. Timeout : Retry..");
+               return ErrLockTimeOut;
            }
+           //cachedLockNode->lInfo_.noOfReaders_++;
+           int ret = Mutex::CAS((int*)&cachedLockNode->lInfo_.noOfReaders_, 
+                                        oldValue, oldValue+1);
+           if (ret !=0) {
+               printError(ErrLockTimeOut, "Unable to take S lock. Timeout : Retry..");
+               if (trans != NULL) (*trans)->removeWaitLock();
+               if (trans != NULL) (*trans)->removeFromHasList(systemDatabase_, tuple);
+               return ErrLockTimeOut;
+           }
+           //cachedLockNode->lInfo_.waitReaders_--;
+           ret = Mutex::CAS((int*)&cachedLockNode->lInfo_.waitReaders_, 
+                                        cachedLockNode->lInfo_.waitReaders_, 
+                                        cachedLockNode->lInfo_.waitReaders_-1);
+           if (ret !=0) {
+               printError(ErrLockTimeOut, "Unable to dec waitReaders timeout : Retry..");
+               //return ErrLockTimeOut;
+           }
+           //bucket->mutex_.releaseLock(systemDatabase_->procSlot);
            if (trans != NULL) (*trans)->removeWaitLock();
            printDebug(DM_Lock, "LockManager::getSharedLock End");
-           return rv;
+           return OK;
        }
 
-       bucket->mutex_.releaseLock(systemDatabase_->procSlot);
+       //bucket->mutex_.releaseLock(systemDatabase_->procSlot);
        os::select(0, 0, 0, 0, &timeout);
        tries++;
        printDebug(DM_Lock, "Trying to lock the lock node:%x iteration:%d",cachedLockNode, tries);
@@ -329,32 +434,38 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
    //to acquire lock so for sure we will get it.
 
    Bucket *bucket = getLockBucket(tuple);
-   int lockRet = bucket->mutex_.getLock(systemDatabase_->procSlot);
+   /*int lockRet = bucket->mutex_.getLock(systemDatabase_->procSlot);
    if (lockRet != 0)
    {
        printDebug(DM_Lock, "Unable to acquire bucket mutex:May be deadlock");
        printError(ErrLockTimeOut, "Unable to acquire bucket mutex");
        return ErrLockTimeOut;
-   }
+   }*/
    LockHashNode *lockNode = (LockHashNode*) bucket->bucketList_;
    if (NULL == lockNode)
    {
         DbRetVal rv = OK;
         LockHashNode *node = allocLockNode(linfo, tuple, &rv);
-        if (NULL == node)
-        {
-            printError(rv, "Could not allocate Lock node");
-            return rv;
+        if (NULL == node) return rv;
+        rv =OK;
+        if (trans != NULL) rv = (*trans)->insertIntoHasList(systemDatabase_, node);
+        if (rv !=OK) {
+            printError(ErrLockTimeOut, "Unable to add to hasList. Timeout: retry...");
+            deallocLockNode(node);
+            return ErrLockTimeOut;
         }
         printDebug(DM_Lock, "No head. So new lock node allocated:%x",node);
-        bucket->bucketList_ = (void*)node; //make it as head
-        bucket->mutex_.releaseLock(systemDatabase_->procSlot);
-        rv =OK;
-        if (trans != NULL) 
-           rv = (*trans)->insertIntoHasList(systemDatabase_, node);
-        if (rv !=OK) linfo.noOfReaders_ = 0;
+        //bucket->bucketList_ = (void*)node; //make it as head
+        int ret = Mutex::CASL((long*)&bucket->bucketList_, 0 , (long)node);
+        if (ret != 0) {
+            if (trans != NULL) (*trans)->removeFromHasList(systemDatabase_, tuple);
+            deallocLockNode(node);
+            printError(ErrLockTimeOut, "Unable to set Lock Bucket. Timeout: retry...%x", tuple);
+            return ErrLockTimeOut;
+         }
+        //bucket->mutex_.releaseLock(systemDatabase_->procSlot);
         printDebug(DM_Lock, "LockManager::getExclusiveLock End");
-        return rv;
+        return OK;
 
    }
    LockHashNode *cachedLockNode = NULL;
@@ -367,8 +478,16 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
        {
            if (iter->lInfo_.noOfReaders_ != 0)
            {
-               iter->lInfo_.waitWriters_++;
-               bucket->mutex_.releaseLock(systemDatabase_->procSlot);
+               //iter->lInfo_.waitWriters_++;
+               int ret = Mutex::CAS((int*)&iter->lInfo_.waitWriters_,
+                                       iter->lInfo_.waitWriters_,
+                                       iter->lInfo_.waitWriters_+1);
+               if (ret !=0) {
+                   printError(ErrLockTimeOut, "Unable to inc waitWriters. Timeout : Retry..");
+                   return ErrLockTimeOut;
+               }
+
+               //bucket->mutex_.releaseLock(systemDatabase_->procSlot);
                if (trans != NULL) (*trans)->updateWaitLock(iter);
                cachedLockNode = iter;
                printDebug(DM_Lock, "Either some one has exclusive or shared lock:%x",iter);
@@ -376,12 +495,20 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
            }
            else
            {
-               iter->lInfo_.noOfReaders_ = -1;
-               bucket->mutex_.releaseLock(systemDatabase_->procSlot);
                DbRetVal rv =OK;
-               if (trans != NULL) 
-                 rv = (*trans)->insertIntoHasList(systemDatabase_, iter);
-               if (rv != OK) iter->lInfo_.noOfReaders_ = 0;
+               if (trans != NULL) rv = (*trans)->insertIntoHasList(systemDatabase_, iter);
+               if (rv != OK) {
+                   printError(ErrLockTimeOut, "Unable to add to hasList. Timeout : Retry..");
+                   return ErrLockTimeOut;
+               }
+               //iter->lInfo_.noOfReaders_ = -1;
+               int ret = Mutex::CAS((int*)&iter->lInfo_.noOfReaders_, 0, -1);
+               if (ret !=0) {
+                   if (trans!= NULL) (*trans)->removeFromHasList(systemDatabase_, tuple);
+                   printError(ErrLockTimeOut, "Unable to take X lock on tuple. Timeout : Retry..");
+                   return ErrLockTimeOut;
+               }
+               //bucket->mutex_.releaseLock(systemDatabase_->procSlot);
                printDebug(DM_Lock, "LockManager::getExclusiveLock End");
                return rv;
            }
@@ -395,21 +522,56 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
         LockHashNode *node = allocLockNode(linfo, tuple, &rv);
         if (NULL == node)
         {
-            bucket->mutex_.releaseLock(systemDatabase_->procSlot);
-            if (trans != NULL) (*trans)->updateWaitLock(NULL);
+            //bucket->mutex_.releaseLock(systemDatabase_->procSlot);
+            if (trans != NULL) (*trans)->removeWaitLock();
             printError(rv, "Could not allocate Lock node");
             return rv;
         }
         printDebug(DM_Lock, "Not Found:Creating new lock node:%x",node);
-        LockHashNode *it = lockNode;
-        while (NULL != it->next_) it = it->next_;
-        it->next_ = node;
-        bucket->mutex_.releaseLock(systemDatabase_->procSlot);
         rv = OK;
-        if (trans != NULL) 
-          rv = (*trans)->insertIntoHasList(systemDatabase_, node);
-        if (rv != OK) linfo.noOfReaders_ = 0;
-         if (trans != NULL) (*trans)->removeWaitLock();
+        if (trans != NULL) rv = (*trans)->insertIntoHasList(systemDatabase_, node);
+        if (rv != OK) {
+            deallocLockNode(node);
+            if (trans != NULL) (*trans)->removeWaitLock();
+            printError(ErrLockTimeOut, "Unable to add to hasList. Timeout : Retry..");
+            return ErrLockTimeOut;
+        }
+        int lockRet = bucket->mutex_.getLock(systemDatabase_->procSlot);
+        if (lockRet != 0)
+        {
+            printError(ErrLockTimeOut, "Unable to acquire bucket mutex");
+            if (trans != NULL) (*trans)->removeFromHasList(systemDatabase_, tuple);
+            deallocLockNode(node);
+            if (trans != NULL) (*trans)->removeWaitLock();
+            return ErrLockTimeOut;
+        }
+        LockHashNode *it = (LockHashNode*) bucket->bucketList_;
+        if (NULL == it) {
+           int ret = Mutex::CASL((long*)&bucket->bucketList_, 0 , (long)node);
+           if (ret != 0) {
+               if (trans != NULL) (*trans)->removeFromHasList(systemDatabase_, tuple);
+               deallocLockNode(node);
+               if (trans != NULL) (*trans)->removeWaitLock();
+               printError(ErrLockTimeOut, "Unable to set Lock Bucket. Timeout: retry...");
+               return ErrLockTimeOut;
+           }
+           
+
+        } else {
+           while (NULL != it->next_) it = it->next_;
+           //it->next_ = node;
+           int ret = Mutex::CASL((long*)&it->next_, 0, (long)node);
+           if (ret !=0) {
+              if (trans != NULL) (*trans)->removeFromHasList(systemDatabase_, tuple);
+              deallocLockNode(node);
+              if (trans != NULL) (*trans)->removeWaitLock();
+              bucket->mutex_.releaseLock(systemDatabase_->procSlot);
+              printError(ErrLockTimeOut, "Unable to add to lock list. Timeout : Retry..");
+              return ErrLockTimeOut;
+           }
+        }
+        bucket->mutex_.releaseLock(systemDatabase_->procSlot);
+        if (trans != NULL) (*trans)->removeWaitLock();
         printDebug(DM_Lock, "LockManager::getExclusiveLock End");
         return rv;
    }
@@ -422,20 +584,42 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
 
    while (tries < Conf::config.getLockRetries())
    {
-       lockRet = bucket->mutex_.getLock(systemDatabase_->procSlot);
+       /*lockRet = bucket->mutex_.getLock(systemDatabase_->procSlot);
        if (lockRet != 0)
        {
            printError(ErrLockTimeOut, "Unable to get bucket mutex");
            return ErrLockTimeOut;
-       }
+       }*/
+       int oldValue = cachedLockNode->lInfo_.noOfReaders_;
        if (cachedLockNode->lInfo_.noOfReaders_ == 0)
        {
-           cachedLockNode->lInfo_.noOfReaders_ = -1;
-           cachedLockNode->lInfo_.waitWriters_--;
-           bucket->mutex_.releaseLock(systemDatabase_->procSlot);
            DbRetVal rv ;
-           if (trans != NULL) 
-               rv = (*trans)->insertIntoHasList(systemDatabase_, cachedLockNode);
+           if (trans != NULL) rv = (*trans)->insertIntoHasList(systemDatabase_, cachedLockNode);
+           if (rv != OK) {
+               if (trans != NULL) (*trans)->removeWaitLock();
+               printError(ErrLockTimeOut, "Unable to add to hasList: Timeout: Retry..");
+               return ErrLockTimeOut;
+           }
+           //cachedLockNode->lInfo_.noOfReaders_ = -1;
+           int ret = Mutex::CAS((int*)&cachedLockNode->lInfo_.noOfReaders_,
+                                        0, -1);
+           if (ret !=0) {
+               if (trans != NULL) (*trans)->removeFromHasList(systemDatabase_, tuple);
+               if (trans != NULL) (*trans)->removeWaitLock();
+               printError(ErrLockTimeOut, "Unable to take X lock: Timeout: Retry..");
+               return ErrLockTimeOut;
+           }
+
+           //cachedLockNode->lInfo_.waitWriters_--;
+           ret = Mutex::CAS((int*)&cachedLockNode->lInfo_.waitWriters_,
+                                        cachedLockNode->lInfo_.waitWriters_,
+                                        cachedLockNode->lInfo_.waitWriters_-1);
+           if (ret !=0) {
+               printError(ErrLockTimeOut, "Fatal:Unable to dec waitWriters. TimeOut : Retry.. waitWriters:%d",cachedLockNode->lInfo_.waitWriters_);
+               //do not do error return as this is OK to continue.
+               //return ErrLockTimeOut;
+           }
+           //bucket->mutex_.releaseLock(systemDatabase_->procSlot);
            if (trans != NULL) (*trans)->removeWaitLock();
            printDebug(DM_Lock, "LockManager::getExclusiveLock End");
            return rv;
@@ -446,9 +630,25 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
                printDebug(DM_Lock, "upgrading shared to exclusive lock:%x",
                                                            cachedLockNode);
                //upgrade it to exclusive lock
-               cachedLockNode->lInfo_.noOfReaders_ = -1;
-               cachedLockNode->lInfo_.waitWriters_--;
-               bucket->mutex_.releaseLock(systemDatabase_->procSlot);
+               //cachedLockNode->lInfo_.noOfReaders_ = -1;
+               int ret = Mutex::CAS((int*)&cachedLockNode->lInfo_.noOfReaders_,
+                                        1, -1);
+               if (ret !=0) {
+                   if (trans != NULL) (*trans)->removeWaitLock();
+                   printError(ErrLockTimeOut, "Unable to upgrade lock. Timeout : Retry..");
+                   return ErrLockTimeOut;
+               }
+
+               //cachedLockNode->lInfo_.waitWriters_--;
+               ret = Mutex::CAS((int*)&cachedLockNode->lInfo_.waitWriters_,
+                                        cachedLockNode->lInfo_.waitWriters_,
+                                        cachedLockNode->lInfo_.waitWriters_-1);
+               if (ret !=0) {
+                   printError(ErrLockTimeOut, "Fatal:Unable to dec waitWriters:Timeout : Retry.. waitwriters:%d", cachedLockNode->lInfo_.waitWriters_);
+                   //do not do error return as this is OK to contine
+                   //return ErrLockTimeOut;
+               }
+               //bucket->mutex_.releaseLock(systemDatabase_->procSlot);
                if (trans != NULL) (*trans)->removeWaitLock();
                printDebug(DM_Lock, "LockManager::getExclusiveLock End");
                return OK;
@@ -458,9 +658,25 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
                printDebug(DM_Lock, "upgrading shared to exclusive lock:%x",
                                                            cachedLockNode);
                //upgrade it to exclusive lock
-               cachedLockNode->lInfo_.noOfReaders_ = -1;
-               cachedLockNode->lInfo_.waitWriters_--;
-               bucket->mutex_.releaseLock(systemDatabase_->procSlot);
+               //cachedLockNode->lInfo_.noOfReaders_ = -1;
+               int ret = Mutex::CAS((int*)&cachedLockNode->lInfo_.noOfReaders_,
+                                        1, -1);
+               if (ret !=0) {
+                   printError(ErrLockTimeOut, "Unable to upgrade lock. Timeout : Retry..");
+                   if (trans != NULL) (*trans)->removeWaitLock();
+                   return ErrLockTimeOut;
+               }
+
+               //cachedLockNode->lInfo_.waitWriters_--;
+               ret = Mutex::CAS((int*)&cachedLockNode->lInfo_.waitWriters_,
+                                        cachedLockNode->lInfo_.waitWriters_,
+                                        cachedLockNode->lInfo_.waitWriters_-1);
+               if (ret !=0) {
+                   printError(ErrLockTimeOut, "Fatal:Unable to dec waitWriters:Timeout : Retry.. waitwriters:%d", cachedLockNode->lInfo_.waitWriters_);
+                   //do not do error return as this is OK to contine
+                   //return ErrLockTimeOut;
+               }
+               //bucket->mutex_.releaseLock(systemDatabase_->procSlot);
 	       if (trans != NULL) (*trans)->removeWaitLock();
                printDebug(DM_Lock, "LockManager::getExclusiveLock End");
                return OK;
@@ -471,8 +687,16 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
            {
                printDebug(DM_Lock, "You already have exclusive lock:%x",
                                                         cachedLockNode);
-               cachedLockNode->lInfo_.waitWriters_--;
-               bucket->mutex_.releaseLock(systemDatabase_->procSlot);
+               //cachedLockNode->lInfo_.waitWriters_--;
+               ret = Mutex::CAS((int*)&cachedLockNode->lInfo_.waitWriters_,
+                                        cachedLockNode->lInfo_.waitWriters_,
+                                        cachedLockNode->lInfo_.waitWriters_-1);
+               if (ret !=0) {
+                   printError(ErrLockTimeOut, "Fatal:Unable to dec waitWriters:Timeout : Retry.. waitwriters:%d", cachedLockNode->lInfo_.waitWriters_);
+                   //do not do error return as this is OK to contine
+                   //return ErrLockTimeOut;
+               }
+               //bucket->mutex_.releaseLock(systemDatabase_->procSlot);
                if (trans != NULL) (*trans)->removeWaitLock();
                printDebug(DM_Lock, "LockManager::getExclusiveLock End");
                return OK;
@@ -481,14 +705,22 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
            {
                printDebug(DM_Lock, "You already have exclusive lock:%x",
                                                            cachedLockNode);
-               cachedLockNode->lInfo_.waitWriters_--;
-               bucket->mutex_.releaseLock(systemDatabase_->procSlot);
+               //cachedLockNode->lInfo_.waitWriters_--;
+               ret = Mutex::CAS((int*)&cachedLockNode->lInfo_.waitWriters_,
+                                        cachedLockNode->lInfo_.waitWriters_,
+                                        cachedLockNode->lInfo_.waitWriters_-1);
+               if (ret !=0) {
+                   printError(ErrLockTimeOut, "Fatal:Unable to dec waitWriters:Timeout : Retry.. waitwriters:%d", cachedLockNode->lInfo_.waitWriters_);
+                   //do not do error return as this is OK to contine
+                   //return ErrLockTimeOut;
+               }
+               //bucket->mutex_.releaseLock(systemDatabase_->procSlot);
                if (trans != NULL) (*trans)->removeWaitLock();
                printDebug(DM_Lock, "LockManager::getExclusiveLock End");
                return OK;
            }
        }
-       bucket->mutex_.releaseLock(systemDatabase_->procSlot);
+       //bucket->mutex_.releaseLock(systemDatabase_->procSlot);
        os::select(0, 0, 0, 0, &timeout);
        tries++;
        printDebug(DM_Lock, "Trying to lock the lock node:%x iteration:%d",cachedLockNode, tries);
@@ -501,53 +733,69 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
 
 DbRetVal LockManager::releaseLock(void *tuple)
 {
-   LockInfo linfo;
-   linfo.noOfReaders_ = 0;
-   //keeping it ready for the allocation, because when
-   //lock node is not present in the list, then it means we are the first
-   //to acquire lock so for sure we will get it.
    printDebug(DM_Lock, "LockManager:releaseLock Start");
    Bucket *bucket = getLockBucket(tuple);
    printDebug(DM_Lock,"Bucket is %x", bucket);
-   int lockRet = bucket->mutex_.getLock(systemDatabase_->procSlot);
+   /*int lockRet = bucket->mutex_.getLock(systemDatabase_->procSlot);
    if (lockRet != 0)
    {
        printDebug(DM_Lock, "Mutex is waiting for long time:May be deadlock");
        printDebug(DM_Lock, "LockManager:releaseLock End");
        printError(ErrLockTimeOut, "Unable to get bucket mutex");
        return ErrLockTimeOut;
-   }
+   }*/
    LockHashNode *lockNode = (LockHashNode*) bucket->bucketList_;
    if (NULL == lockNode)
    {
-       bucket->mutex_.releaseLock(systemDatabase_->procSlot);
+       //bucket->mutex_.releaseLock(systemDatabase_->procSlot);
        printDebug(DM_Lock, "LockManager:releaseLock End");
-       printError(ErrSysFatal, "Lock Element Not found: Probable Data Corruption.\n");
+       //printError(ErrSysFatal, "Fatal:Lock Bucket and Element Not found for tuple: %x:", tuple);
+       printStackTrace();
+       printError(ErrSysFatal, "Fatal:Lock Bucket and Element Not found for tuple: %x:%d", tuple, *(int*)tuple);
        return ErrSysFatal;
    }
-
+   DbRetVal rv = OK;
    LockHashNode *iter = lockNode;
    //Iterate though the list and find the element's lock info
    while(iter != NULL)
    {
        if(iter->ptrToTuple_ == tuple)
        {
-
+           int oldValue = iter->lInfo_.noOfReaders_;
            if (iter->lInfo_.noOfReaders_ == -1)
            {
-               iter->lInfo_.noOfReaders_ = 0;
+               //iter->lInfo_.noOfReaders_ = 0;
+               int ret = Mutex::CAS((int*)&iter->lInfo_.noOfReaders_,
+                                        -1, 0);
+               if (ret !=0) {
+                   printError(ErrLockTimeOut, "Unable to release X lock taken : Retry..");
+                   return ErrLockTimeOut;
+               }
+
                if (iter->lInfo_.waitWriters_ == 0 || iter->lInfo_.waitReaders_ ==0)
                {
-                   deallocLockNode(iter, bucket);
-                   bucket->mutex_.releaseLock(systemDatabase_->procSlot);
-                   printDebug(DM_Lock, "Releasing exclusive lock and dealloc node:%x",
-                                                                                iter);
-                   printDebug(DM_Lock, "LockManager:releaseLock End");
-                   return OK;
+                    //TODO::above condition is not atomic
+                    //put waitReaders_, WaitReaders in one integer
+                    int lockRet = bucket->mutex_.getLock(systemDatabase_->procSlot);
+                    if (lockRet == 0) {
+                      int tries = Conf::config.getMutexRetries();
+                      do {
+                        rv = deallocLockNode(iter, bucket);
+                        if (tries == 0) {  
+                            printError(ErrWarning, "Fatal:Leak: Unable to dealloc lock node %d tries", Conf::config.getMutexRetries());
+                            break;
+                        }
+                        tries--;
+                      }while (rv == ErrLockTimeOut);
+                      bucket->mutex_.releaseLock(systemDatabase_->procSlot);
+                    }
+                    printDebug(DM_Lock, "Releasing exclusive lock and dealloc node:%x", iter);
+                    printDebug(DM_Lock, "LockManager:releaseLock End");
+                    return OK;
                }
                else
                {
-                   bucket->mutex_.releaseLock(systemDatabase_->procSlot);
+                   //bucket->mutex_.releaseLock(systemDatabase_->procSlot);
                    printDebug(DM_Lock, "Releasing exclusive lock");
                    printDebug(DM_Lock, "LockManager:releaseLock End");
                    return OK;
@@ -555,20 +803,50 @@ DbRetVal LockManager::releaseLock(void *tuple)
            }
            else if (iter->lInfo_.noOfReaders_ == 1)
            {
-               iter->lInfo_.noOfReaders_ = 0;
+               //iter->lInfo_.noOfReaders_ = 0;
+               int ret = Mutex::CAS((int*)&iter->lInfo_.noOfReaders_,
+                                        1, 0);
+               if (ret !=0) {
+                   printError(ErrLockTimeOut, "Unable to release S lock taken. Timeout : Retry..");
+                   return ErrLockTimeOut;
+               }
                if (iter->lInfo_.waitWriters_ == 0 || iter->lInfo_.waitReaders_ ==0)
                {
-                   deallocLockNode(iter, bucket);
+                  int lockRet = bucket->mutex_.getLock(systemDatabase_->procSlot);
+                  if (lockRet == 0) {
+                    int tries = Conf::config.getMutexRetries();
+                    do {
+                        rv = deallocLockNode(iter, bucket);
+                        if (tries == 0) {  
+                            printError(ErrWarning, "Fatal:Leak:Unable to dealloc lock node");
+                        }
+                        tries--;
+                    }while (rv == ErrLockTimeOut);
                    bucket->mutex_.releaseLock(systemDatabase_->procSlot);
-                   printDebug(DM_Lock, "Releasing read lock and dealloc node:%x",iter);
+                 }
+                 printDebug(DM_Lock, "Releasing read lock and dealloc node:%x",iter);
+                 printDebug(DM_Lock, "LockManager:releaseLock End");
+                 return OK;
+               }
+               else
+               {
+                   //bucket->mutex_.releaseLock(systemDatabase_->procSlot);
+                   printDebug(DM_Lock, "Releasing read lock");
                    printDebug(DM_Lock, "LockManager:releaseLock End");
                    return OK;
                }
            }
            else
            {
-               iter->lInfo_.noOfReaders_--;
-               bucket->mutex_.releaseLock(systemDatabase_->procSlot);
+               //iter->lInfo_.noOfReaders_--;
+               int ret = Mutex::CAS((int*)&iter->lInfo_.noOfReaders_,
+                                        oldValue,
+                                        oldValue - 1);
+               if (ret !=0) {
+                   printError(ErrLockTimeOut, "Unable to release S lock taken : Retry..");
+                   return ErrLockTimeOut;
+               }
+               //bucket->mutex_.releaseLock(systemDatabase_->procSlot);
                printDebug(DM_Lock, "Decrementing read lock:%x",iter);
                printDebug(DM_Lock, "LockManager:releaseLock End");
                return OK;
@@ -578,8 +856,8 @@ DbRetVal LockManager::releaseLock(void *tuple)
        printDebug(DM_Lock, "Finding the lock node. iter:%x",iter);
        iter = iter->next_;
    }
-   bucket->mutex_.releaseLock(systemDatabase_->procSlot);
-   printError(ErrSysFatal, "Lock Element Not found: Probable Data Corruption");
+   //bucket->mutex_.releaseLock(systemDatabase_->procSlot);
+   printError(ErrSysFatal, "Fatal:Lock Element Not found for tuple:%x", tuple);
    return ErrSysFatal;
 }
 
@@ -594,14 +872,14 @@ DbRetVal LockManager::isExclusiveLocked(void *tuple, Transaction **trans, bool &
        status = false;
        return OK;
    }
-   int lockRet = bucket->mutex_.getLock(systemDatabase_->procSlot);
+   /*int lockRet = bucket->mutex_.getLock(systemDatabase_->procSlot);
    if (lockRet != 0)
    {
        printDebug(DM_Lock, "Mutex is waiting for long time:May be deadlock");
        printDebug(DM_Lock, "LockManager:releaseLock End");
        printError(ErrLockTimeOut, "Unable to get bucket mutex");
        return ErrLockTimeOut;
-   }
+   }*/
 
    LockHashNode *iter = lockNode;
    //Iterate though the list and find the element's lock info
@@ -619,14 +897,18 @@ DbRetVal LockManager::isExclusiveLocked(void *tuple, Transaction **trans, bool &
                }
                else 
                    status = true;
-               bucket->mutex_.releaseLock(systemDatabase_->procSlot);
+               //bucket->mutex_.releaseLock(systemDatabase_->procSlot);
                return OK;
            }
        }
        printDebug(DM_Lock, "Finding the lock node. iter:%x",iter);
+       if (iter == iter->next_) {
+           printError(ErrSysFatal, "Fatal:Unable to find lock node. cyclic list found");
+           return ErrSysFatal;
+       }
        iter = iter->next_;
    }
-   bucket->mutex_.releaseLock(systemDatabase_->procSlot);
+   //bucket->mutex_.releaseLock(systemDatabase_->procSlot);
    status = false;
    return OK;
 }
@@ -635,10 +917,24 @@ LockHashNode* LockManager::allocLockNode(LockInfo &info, void *tuple, DbRetVal *
 {
     //allocate lock node
     Chunk *chunk = systemDatabase_->getSystemDatabaseChunk(LockTableId);
-    LockHashNode *node = (LockHashNode*)chunk->allocate(systemDatabase_, rv);
+    LockHashNode *node = NULL; //(LockHashNode*)chunk->allocate(systemDatabase_, rv);
+    int tries=0;
+    int totalTries = Conf::config.getMutexRetries();
+    while (tries < totalTries)
+    {
+        *rv = OK;
+        node= (LockHashNode*)chunk->allocate(systemDatabase_, rv);
+        if (node !=NULL) break;
+        if (*rv != ErrLockTimeOut)
+        {
+            printError(*rv, "Unable to allocate hash index node");
+            return NULL;
+        }
+        tries++;
+    }
     if (NULL == node)
     {
-        printError(*rv, "Could not allocate Lock node");
+        printError(*rv, "Unable to allocate lock node after %d retry", tries);
         return NULL;
     }
     node->ptrToTuple_ = tuple;
@@ -646,33 +942,55 @@ LockHashNode* LockManager::allocLockNode(LockInfo &info, void *tuple, DbRetVal *
     node->next_ = NULL;
     return node;
 }
-
-void LockManager::deallocLockNode(LockHashNode *node, Bucket *bucket)
+void LockManager::deallocLockNode(LockHashNode *node)
+{
+    Chunk *chunk = systemDatabase_->getSystemDatabaseChunk(LockTableId);
+    chunk->free(systemDatabase_, node);
+    return;
+}
+DbRetVal LockManager::deallocLockNode(LockHashNode *node, Bucket *bucket)
 {
     Chunk *chunk = systemDatabase_->getSystemDatabaseChunk(LockTableId);
     LockHashNode *nodeList = (LockHashNode*) bucket->bucketList_;
     LockHashNode *iter = nodeList, *prev = nodeList;
     if (NULL == nodeList)
     {
-        printError(ErrSysFatal, "Lock Bucket corrupted");
-        return;
+        printError(ErrSysFatal, "Fatal:Lock Bucket is NULL");
+        return ErrSysFatal;
     }
     //If it is the first node, then make the bucket point to the next node 
     //in the list
     if (nodeList == node)
     {
-       bucket->bucketList_ = node->next_;
+       //bucket->bucketList_ = node->next_;
+       if ( 0 != Mutex::CASL((long*)&bucket->bucketList_, (long)node, 
+                                                        (long)node->next_)) {
+           printError(ErrLockTimeOut, "Unable to remove lock node and set lock list head\n");
+           return ErrLockTimeOut;
+       }
        chunk->free(systemDatabase_, node);
-       return;
+       return OK;
     }
+    void *val = NULL;
     while(iter != node)
     {
+        if (iter == NULL) {
+            printError(ErrSysFatal, "Fatal: Lock node not found in bucket");
+            printStackTrace();
+            return ErrSysFatal;
+        }
         prev = iter;
+        val = prev->next_;
         iter = iter->next_;
     }
     //delete the node by making previous element point to the next element 
     //of the deleted element in the list
-    prev->next_ = iter->next_;
+    //prev->next_ = iter->next_;
+    if ( 0 != Mutex::CASL((long*)&prev->next_, (long)val, 
+                                             (long)iter->next_)) {
+        printError(ErrLockTimeOut, "Unable to remove lock node \n");
+        return ErrLockTimeOut;
+    }
     chunk->free(systemDatabase_, node);
-    return ;
+    return OK;
 }

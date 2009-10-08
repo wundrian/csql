@@ -84,61 +84,45 @@ DbRetVal TableConfig::addToCacheTableFile(bool isDirect)
     FILE *fp;
     fp = fopen(Conf::config.getTableConfigFile(),"a");
     if( fp == NULL ) {
-        printError(ErrSysInit, "Invalid path/filename in TABLE_CONFIG_FILE.\nTable will not be"
-                                "recovered in case of crash");
-	return ErrSysInit;
+        printError(ErrSysInit, "Invalid path/filename in TABLE_CONFIG_FILE.\nTable will not be recovered in case of crash");
+        return ErrSysInit;
     }
-    //TODO::if already table present in the file, it means that the
-    //table is replicated. in this case change mode from
-    //2 to 3 (repl to replcache)
-    if( strcmp(fieldName,"")==0 ){ strcpy(fieldName,"NULL"); }
-    if(isDirect)
-    { 
-        if((strcmp(conditionVal,"")!=0)&&(strcmp(fieldlistVal,"")!=0))
-        {
-	    fprintf(fp,"%d:%s %s %s %s\n",6,tableName,fieldName,getConditionVal(conditionVal),fieldlistVal);
-        }
-        else if((strcmp(conditionVal,"")!=0)&&(strcmp(fieldlistVal,"")==0))
-        {
-	    strcpy(fieldlistVal,"NULL");
-	    fprintf(fp,"%d:%s %s %s %s\n",6,tableName,fieldName,getConditionVal(conditionVal),fieldlistVal);
-        }
-        else if((strcmp(conditionVal,"")==0)&&(strcmp(fieldlistVal,"")!=0))
-        {
-    	     strcpy(conditionVal,"NULL");
-	     fprintf(fp,"%d:%s %s %s %s\n",6,tableName,fieldName,conditionVal,fieldlistVal);
-        }
-        else 
-        {
-    	    strcpy(fieldlistVal,"NULL");
-	    strcpy(conditionVal,"NULL");
-	    fprintf(fp,"%d:%s %s %s %s\n",5,tableName,fieldName,conditionVal,fieldlistVal);
-        }	
-   }
-   else
-   {
-       if((strcmp(conditionVal,"")!=0)&&(strcmp(fieldlistVal,"")!=0))
-       {
-           fprintf(fp,"%d:%s %s %s %s\n",2,tableName,fieldName,getConditionVal(conditionVal),fieldlistVal);
-       }
-       else if((strcmp(conditionVal,"")!=0)&&(strcmp(fieldlistVal,"")==0))
-       {
-           strcpy(fieldlistVal,"NULL");
-           fprintf(fp,"%d:%s %s %s %s\n",2,tableName,fieldName,getConditionVal(conditionVal),fieldlistVal);
-       }
-       else if((strcmp(conditionVal,"")==0)&&(strcmp(fieldlistVal,"")!=0))
-       {
-            strcpy(conditionVal,"NULL");
-            fprintf(fp,"%d:%s %s %s %s\n",2,tableName,fieldName,conditionVal,fieldlistVal);
-       }
-       else
-       {
-           strcpy(fieldlistVal,"NULL");
-           strcpy(conditionVal,"NULL");
-           fprintf(fp,"%d:%s %s %s %s\n",1,tableName,fieldName,conditionVal,fieldlistVal);
-       }
-
-   }
+    unsigned int mode = 0;
+    bool isFldName = strcmp(fieldName,"") != 0;
+    bool isCondVal = strcmp(conditionVal,"") != 0;
+    bool isFldListVal = strcmp(fieldlistVal,"") != 0; 
+    bool isDsn = strcmp(dsnName,"") != 0;
+    
+    if (!isCondVal && !isFldListVal && !isDirect) 
+        mode |= SIMPLE_CACHE;
+    if (isCondVal) mode |= CONDNL_CACHE;
+    if (isDirect) mode |= DIRECT_CACHE;
+    if (isFldListVal) mode |= FLDLVL_CACHE; 
+    
+    if (!isFldName) strcpy(fieldName,"NULL"); 
+    bool isCached = isTableCached(mode);
+    if (!isCached) strcpy(dsnName, "NULL"); 
+    else if (!isDsn && isCached) strcpy(dsnName, Conf::config.getDSN()); 
+   
+    if (isCondVal && isFldListVal) {
+        fprintf(fp,"%d %s %s %s %s %s \n", mode, tableName, fieldName,
+                         getConditionVal(conditionVal), fieldlistVal, dsnName);
+    }
+    else if (isCondVal && !isFldListVal) {
+        strcpy(fieldlistVal,"NULL");
+        fprintf(fp,"%d %s %s %s %s %s \n", mode, tableName, fieldName,
+                         getConditionVal(conditionVal), fieldlistVal, dsnName);
+    }
+    else if (!isCondVal && isFldListVal) {
+        strcpy(conditionVal,"NULL");
+        fprintf(fp,"%d %s %s %s %s %s \n", mode, tableName, fieldName,
+                                          conditionVal, fieldlistVal, dsnName);
+    } else {
+        strcpy(fieldlistVal,"NULL");
+        strcpy(conditionVal,"NULL");
+        fprintf(fp,"%d %s %s %s %s %s \n", mode, tableName, fieldName,
+                                          conditionVal, fieldlistVal, dsnName);
+    } 
     fclose(fp);
     return OK;
 }
@@ -162,12 +146,14 @@ DbRetVal TableConfig::removeFromCacheTableFile()
     char fieldname[IDENTIFIER_LENGTH];
     char condition[IDENTIFIER_LENGTH];
     char field[IDENTIFIER_LENGTH];
-    int mode;
+    char dsnName[IDENTIFIER_LENGTH];
+
+    unsigned int mode;
     while(!feof(fp))
     {
-        fscanf(fp, "%d:%s %s %s %s\n", &mode, tablename,fieldname,condition,field);
+        fscanf(fp, "%d %s %s %s %s %s \n", &mode, tablename,fieldname,condition,field,dsnName);
         if (strcmp (tablename, tableName) == 0) continue;
-        fprintf(tmpfp, "%d:%s %s %s %s\n", mode, tablename,fieldname,condition,field);
+        fprintf(tmpfp, "%d %s %s %s %s %s \n", mode, tablename,fieldname,condition,field,dsnName);
     }
     fclose(tmpfp);
     fclose(fp);
@@ -177,8 +163,93 @@ DbRetVal TableConfig::removeFromCacheTableFile()
     if (ret != 0) 
     {
         printError(ErrSysInit, "Check csqltable.conf file permission. unable to remove %s from file", tableName);
-	return ErrSysInit;
+        return ErrSysInit;
     }
+    ret = unlink(tmpFileName);
+    return OK;
+}
+
+DbRetVal TableConfig::updateIntoCacheTableFile(bool upgrade, bool isDirect)
+{
+    FILE *fp, *tmpfp;
+    char tmpFileName[MAX_FILE_PATH_LEN];
+    sprintf(tmpFileName, "%s.tmp", Conf::config.getTableConfigFile());
+    tmpfp = fopen(tmpFileName,"w");
+    if( tmpfp == NULL ) {
+        printError(ErrSysInit, "Invalid path/filename in TABLE_CONFIG_FILE.\n");
+        return ErrSysInit;
+    }
+    fp = fopen(Conf::config.getTableConfigFile(),"r+");
+    if( fp == NULL ) {
+        printError(ErrSysInit, "csqltable.conf file does not exist");
+        return ErrSysInit;
+    }
+    
+    unsigned int mode = 0;
+    bool isFldName = strcmp(fieldName,"") != 0;
+    bool isCondVal = strcmp(conditionVal,"") != 0;
+    bool isFldListVal = strcmp(fieldlistVal,"") != 0; 
+    bool isDsn = strcmp(dsnName,"") != 0;
+    
+    char tablename[IDENTIFIER_LENGTH];
+    char fieldname[IDENTIFIER_LENGTH];
+    char condition[IDENTIFIER_LENGTH];
+    char field[IDENTIFIER_LENGTH];
+    char dsnName[IDENTIFIER_LENGTH];
+
+    char updtablename[IDENTIFIER_LENGTH];
+    char updfieldname[IDENTIFIER_LENGTH];
+    char updcondition[IDENTIFIER_LENGTH];
+    char updfield[IDENTIFIER_LENGTH];
+    char upddsnName[IDENTIFIER_LENGTH];
+    
+    unsigned int tblMode = 0;
+    unsigned int modeToUpd = 0;
+    bool found = false;
+    //if (mode == 1 && upgrade) updMode = 8;
+    //else if (mode == 8 && !upgrade) updMode = -8;
+    //else if( mode == 1 && !upgrade) updMode = -1;
+    while(!feof(fp))
+    {
+        fscanf(fp, "%d %s %s %s %s %s \n", &tblMode, tablename,fieldname,condition,field,dsnName);
+        if (strcmp (tablename, tableName) == 0) {
+            modeToUpd = tblMode;
+            strcpy(updtablename, tablename);
+            strcpy(updfieldname, fieldname);
+            strcpy(updcondition, condition);
+            strcpy(updfield, field);
+            strcpy(upddsnName, dsnName);
+            //else strcpy(upddsnName, "NULL");
+            found = true;
+            continue;
+        }
+        fprintf(tmpfp, "%d %s %s %s %s %s \n", tblMode, tablename,fieldname,condition,field,dsnName);
+    }
+    if (found) {
+        bool isCached = isTableCached(modeToUpd);
+        if (isCached) { 
+            unsetCacheMode(&modeToUpd);
+            strcpy(updfieldname, "NULL");
+            strcpy(updcondition, "NULL");
+            strcpy(updfield, "NULL"); 
+            strcpy(upddsnName, "NULL");
+        }
+        
+        fprintf(tmpfp, "%d %s %s %s %s %s\n", modeToUpd, updtablename, 
+                             updfieldname, updcondition, updfield, upddsnName);
+        fclose(tmpfp);
+        fclose(fp);
+        char sysCommand[MAX_FILE_PATH_LEN * 2];
+        sprintf(sysCommand, "mv %s %s", tmpFileName, 
+                                            Conf::config.getTableConfigFile());
+        int ret = system(sysCommand);
+        if (ret != 0)
+        {
+            printError(ErrSysInit, "Check csqltable.conf file permission. unable to remove %s from file", tableName);
+            return ErrSysInit;
+        }
+    } else { fclose (fp); fclose(tmpfp); }
+    unlink(tmpFileName);
     return OK;
 }
 
@@ -205,12 +276,13 @@ DbRetVal TableConfig :: isTablePresent()
 	char condition[IDENTIFIER_LENGTH];
 	char fieldname[IDENTIFIER_LENGTH];
 	char field[IDENTIFIER_LENGTH];
+	char dsnName[IDENTIFIER_LENGTH];
 	int mode;
 	
 	while(!feof(fp))
 	{
 		tablename[0] = '\0'; condition[0] = '\0';
-		fscanf(fp,"%d:%s %s %s %s\n",&mode,tablename,fieldname,condition,field);
+		fscanf(fp,"%d %s %s %s %s %s \n",&mode,tablename,fieldname,condition,field,dsnName);
 	
         	if(strcmp(tableName,tablename)==0)
         	{
@@ -222,614 +294,6 @@ DbRetVal TableConfig :: isTablePresent()
 	return ErrNotExists;
 }
 
-/*
-
-DbRetVal CacheTableLoader::load(bool tabDefinition)
-{
-    Connection conn;
-    DbRetVal rv = conn.open(userName, password);
-    if (rv != OK) return ErrSysInit;
-    // check for CACHE_TABLE variable
-	  
-
-    DatabaseManager *dbMgr = (DatabaseManager*) conn.getDatabaseManager();
-    if (dbMgr == NULL) { printError(ErrSysInit, "Auth failed\n"); return ErrSysInit; }
-    if (tabDefinition == false) {
-        Table *tbl = dbMgr->openTable(tableName);
-        if (tbl == NULL) {
-            conn.close();
-            return ErrNotExists;
-        }
-        if (tbl->numTuples()) {
-            printError(ErrNotEmpty, "The table '\%s\' is not empty", tableName);
-            dbMgr->closeTable(tbl);
-            conn.close();
-            return ErrNotEmpty;
-        }
-    }
-    conn.startTransaction();
-    rv = load(dbMgr, tabDefinition);
-    conn.commit();
-    conn.close();
-    return rv;
-}
-
-DbRetVal CacheTableLoader::load(DatabaseManager *dbMgr, bool tabDefinition)
-{
-    char dsn[72];
-    if( strcmp(Conf::config.getUser(),"") != 0 &&  strcmp(Conf::config.getPassword(),"") != 0 )
-    {
-       sprintf(dsn, "DSN=%s;UID=%s;PWD=%s;", Conf::config.getDSN(),Conf::config.getUser(),Conf::config.getPassword());
-    }else{
-        sprintf(dsn, "DSN=%s;", Conf::config.getDSN());
-    }
-    //printf("UID=%s;PWD=%s;\n",Conf::config.getUser(),Conf::config.getPassword());
-    SQLCHAR outstr[1024];
-    SQLSMALLINT outstrlen;
-    DbRetVal rv = OK;
-    int retValue =0;
-    SQLHENV henv; 
-    SQLHDBC hdbc;
-    SQLHSTMT hstmt;
-    retValue = SQLAllocHandle (SQL_HANDLE_ENV, SQL_NULL_HANDLE, &henv);
-    if (retValue) {printError(ErrSysInit, "Unable to allocate ODBC handle \n"); return ErrSysInit; }
-    SQLSetEnvAttr(henv, SQL_ATTR_ODBC_VERSION, (void *) SQL_OV_ODBC3, 0);
-    retValue = SQLAllocHandle (SQL_HANDLE_DBC, henv, &hdbc);
-    if (retValue) {printError(ErrSysInit, "Unable to allocate ODBC handle \n"); return ErrSysInit; }
-    retValue = SQLDriverConnect(hdbc, NULL, (SQLCHAR*)dsn, SQL_NTS,
-                         outstr, sizeof(outstr), &outstrlen,
-                         SQL_DRIVER_NOPROMPT);
-    if (SQL_SUCCEEDED(retValue)) {
-        printDebug(DM_Gateway, "Connected to target database using dsn = %s\n", dsn);
-    } else {
-        fprintf(stderr, "Failed to connect to target database\n");
-        return ErrSysInit;
-    }
-
-    retValue=SQLAllocHandle (SQL_HANDLE_STMT, hdbc, &hstmt);
-    if (retValue) {printError(ErrSysInit, "Unable to allocate ODBC handle \n"); return ErrSysInit; }
-    char stmtBuf[1024];
-    
-    if(((strcmp(conditionVal,"")==0) || (strcmp(conditionVal,"NULL")==0)) && ((strcmp(fieldlistVal,"")==0) || (strcmp(fieldlistVal,"NULL")==0)))
-    {
-       sprintf(stmtBuf, "SELECT * FROM %s;", tableName);
-    }
-    else if(((strcmp(conditionVal,"")!=0) || (strcmp(conditionVal,"NULL")!=0)) && ((strcmp(fieldlistVal,"")==0) || (strcmp(fieldlistVal,"NULL")==0)))
-    {
-       sprintf(stmtBuf,"SELECT * FROM %s where %s;",tableName,conditionVal);
-
-    }
-    else if(((strcmp(conditionVal,"")==0) || (strcmp(conditionVal,"NULL")==0)) && ((strcmp(fieldlistVal,"")!=0) || (strcmp(fieldlistVal,"NULL")!=0)))
-    {
-    	sprintf(stmtBuf,"SELECT %s FROM %s;",fieldlistVal,tableName);
-    }	
-    else
-        sprintf(stmtBuf,"SELECT %s FROM %s where %s;",fieldlistVal,tableName,conditionVal);
-
-    retValue = SQLPrepare (hstmt, (unsigned char *) stmtBuf, SQL_NTS);
-    if (retValue) {printError(ErrSysInit, "Unable to Prepare ODBC statement \n"); return ErrSysInit; }
-
-    if (tabDefinition) {
-        short totalFields=0;
-        retValue = SQLNumResultCols (hstmt, &totalFields);
-        if (retValue) {printError(ErrSysInit, "Unable to retrieve ODBC total columns\n"); return ErrSysInit; }
-        UWORD                   icol;
-        UCHAR                   colName[IDENTIFIER_LENGTH];
-        SWORD                   colNameMax;
-        SWORD                   nameLength;
-        SWORD                   colType;
-        SQLULEN                 colLength;
-        SWORD                   scale;
-        SWORD                   nullable;
-        TableDef tabDef;
-        icol = 1; colNameMax = IDENTIFIER_LENGTH;
-	char columnname[IDENTIFIER_LENGTH];
-        char indexname[IDENTIFIER_LENGTH];
-        short type; short unique;
-        SQLHSTMT hstmtmeta;
-        retValue=SQLAllocHandle (SQL_HANDLE_STMT, hdbc, &hstmtmeta);
-        if (retValue)
-        {
-            printError(ErrSysInit, "Unable to allocate ODBC handle \n");
-            return ErrSysInit;
-        }
-        retValue=SQLPrimaryKeys(hstmtmeta, NULL, SQL_NTS, NULL, SQL_NTS, (SQLCHAR*) tableName, SQL_NTS);
-        retValue = SQLBindCol(hstmtmeta, 4, SQL_C_CHAR,columnname, 129,NULL);
-        HashIndexInitInfo *inf = new HashIndexInitInfo();
-        bool isPriIndex=false;
-        char indname[IDENTIFIER_LENGTH];
-        if(SQLFetch( hstmtmeta ) == SQL_SUCCESS)
-        {
-               Util::str_tolower(columnname);
-               inf->list.append(columnname);
-               while( SQLFetch( hstmtmeta ) == SQL_SUCCESS )
-               {
-                   Util::str_tolower(columnname);
-                   inf->list.append(columnname);
-               }
-               inf->indType =  hashIndex;
-               inf->bucketSize = 10007;
-               inf->isUnique = true; inf->isPrimary = true;
-               strcpy(inf->tableName, tableName);
-               strcpy(indexname,"PRIMARY");
-               sprintf(indname, "%s_%s", tableName, indexname);
-               isPriIndex=true;
-        }
-        char *name = NULL;
-        bool iskeyfieldExist=true;
-        if(isPriIndex && (strcmp(fieldlistVal,"")!=0) && (strcmp(fieldlistVal,"NULL")!=0))
-        {
-            inf->list.resetIter();
-            while ((name=inf->list.nextFieldName())!=NULL)
-            {
-                        iskeyfieldExist=isFieldExist(name);
-                        if(!iskeyfieldExist) { break; }
-            }
-        }else if(!isPriIndex){iskeyfieldExist = false;}
-        if(((strcmp(fieldName,"")!=0) && (strcmp(fieldName,"NULL")!=0)) && !(isFieldExist(fieldName)))
-        {
-            if(Conf::config.useTwoWayCache() && (strcmp(fieldlistVal,"")!=0) && (strcmp(fieldlistVal,"NULL")!=0))
-            {
-                 printError(ErrSysInit, "Bidirectonal caching fail for no primary key in %s \n", tableName);
-                 SQLFreeHandle (SQL_HANDLE_STMT, hstmtmeta);
-                 SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
-                 SQLDisconnect (hdbc);
-                 SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
-                 SQLFreeHandle (SQL_HANDLE_ENV, henv);
-                 return ErrSysInit;
-            }
-        }
-        
-        if(!iskeyfieldExist && ((strcmp(fieldName,"")==0) || (strcmp(fieldName,"NULL")==0)))
-        {
-            if(Conf::config.useTwoWayCache())
-             {
-                 printError(ErrSysInit, "Bidirectonal caching fail for no primary key in %s \n", tableName);
-                 SQLFreeHandle (SQL_HANDLE_STMT, hstmtmeta);
-                 SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
-                 SQLDisconnect (hdbc);
-                 SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
-                 SQLFreeHandle (SQL_HANDLE_ENV, henv);
-                 return ErrSysInit;
-             }
-        } 
-        bool isKeyFld=false;
-        bool isNullfld=false;
-        while (icol <= totalFields) {
-            retValue = SQLDescribeCol(hstmt, icol, colName, colNameMax,
-                                        &nameLength, &colType, &colLength,
-                                        &scale, &nullable);
-            if (retValue) {
-                printError(ErrSysInit, "Unable to retrieve ODBC column info\n"); 
-                SQLFreeHandle (SQL_HANDLE_STMT, hstmtmeta);
-                SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
-                SQLDisconnect (hdbc);
-                SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
-                SQLFreeHandle (SQL_HANDLE_ENV, henv);
-                return ErrSysInit; 
-            }
-            Util::str_tolower((char*)colName);
-            printDebug(DM_Gateway, "Describe Column %s %d %d \n", colName, colType, colLength);
-            icol++;
-            if(strcmp((char*)colName,fieldName)== 0)
-            {
-                isKeyFld=true;
-                isNullfld=true;
-            }
-            bool isPriFld=false;
-            if (nullable) {
-                inf->list.resetIter();
-                while ((name=inf->list.nextFieldName())!=NULL)
-                {
-                        if(0==strcmp((char*)colName,name))
-                        {
-                                tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType,colLength), colLength +1, NULL, true);
-                                isPriFld=true;
-                                break;
-                        }
-                }
-                if(!isPriFld) { 
-                   if(!isNullfld)
-                       tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType,colLength), colLength +1); 
-                   else{
-                       tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType,colLength), colLength +1, NULL, true);
-                       isNullfld=false;
-                   }
-                }
-            }
-            else
-                tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType,colLength), colLength +1, NULL, true);
-        }
-        if(((strcmp(fieldName,"")!=0) && (strcmp(fieldName,"NULL")!=0))&& !isKeyFld)
-        {
-            printError(ErrSysInit, "Unable to cache Table for %s with key field %s\n", tableName,fieldName);
-            SQLFreeHandle (SQL_HANDLE_STMT, hstmtmeta);
-            SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
-            SQLDisconnect (hdbc);
-            SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
-            SQLFreeHandle (SQL_HANDLE_ENV, henv);
-            return ErrSysInit;
-        }
-        rv = dbMgr->createTable(tableName, tabDef);
-        if (rv != OK)
-        {
-             printError(ErrSysInit, "Table creation failed in csql for %s\n", tableName);
-             SQLFreeHandle (SQL_HANDLE_STMT, hstmtmeta);
-             SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
-             SQLDisconnect (hdbc);
-             SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
-             SQLFreeHandle (SQL_HANDLE_ENV, henv);
-             return ErrSysInit;
-        }
-        if(isPriIndex ){
-        rv = dbMgr->createIndex(indname, inf);
-               if (rv != OK)
-               {
-                   printError(ErrSysInit, "Index creation failed in csql for %s\n", tableName);
-                   SQLFreeHandle (SQL_HANDLE_STMT, hstmtmeta);
-                   SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
-                   SQLDisconnect (hdbc);
-                   SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
-                   SQLFreeHandle (SQL_HANDLE_ENV, henv);
-                   return ErrSysInit;
-               }
-        }
-        else
-        {
-             if(Conf::config.useTwoWayCache() && iskeyfieldExist)
-             {
-                 printError(ErrSysInit, "Bidirectonal caching fail for no primary key in %s \n", tableName);
-                 SQLFreeHandle (SQL_HANDLE_STMT, hstmtmeta);
-                 SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
-                 SQLDisconnect (hdbc);
-                 SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
-                 SQLFreeHandle (SQL_HANDLE_ENV, henv);
-                 return ErrSysInit;
-             }
-        }
-        retValue = SQLCloseCursor(hstmtmeta);
-        isKeyFld= false;
-        retValue = SQLStatistics(hstmtmeta, NULL, 0, NULL, SQL_NTS,
-                    (SQLCHAR*) tableName, SQL_NTS, SQL_INDEX_ALL, SQL_QUICK);
-        retValue = SQLBindCol(hstmtmeta, 4, SQL_C_SHORT,
-                          &unique, 2, NULL);
-        retValue = SQLBindCol(hstmtmeta, 6, SQL_C_CHAR,
-                          indexname, 129, NULL);
-        retValue = SQLBindCol(hstmtmeta, 7, SQL_C_SHORT,
-                          &type, 2, NULL);
-        retValue = SQLBindCol(hstmtmeta, 9, SQL_C_CHAR,
-                          columnname, 129,NULL);
-        while ((retValue = SQLFetch(hstmtmeta)) == SQL_SUCCESS)
-        {  //if (type != SQL_TABLE_STAT)
-            {
-                printDebug(DM_Gateway, "Column: %-18s Index Name: %-18s unique:%hd type:%hd\n",
-                  columnname, indexname, unique, type);
-            }
-            if(0 == strcmp(columnname,fieldName)){isKeyFld=true;}
-            bool isPrimary=false;
-            inf->list.resetIter();
-            while ((name=inf->list.nextFieldName())!=NULL)
-            {
-                if(0==strcmp(columnname,name))
-                {
-                        isPrimary=true;
-                        break;
-                }
-            }
-            if(isPrimary){continue;}
-            if (type == 3) {
-               HashIndexInitInfo *info = new HashIndexInitInfo();
-               info->indType =  hashIndex;
-               info->bucketSize = 10007;
-               info->list.append(columnname);
-               if (!unique) {info->isUnique = true; info->isPrimary = false;}
-               strcpy(info->tableName, tableName);
-               char indname[128];
-               sprintf(indname, "%s_%s", tableName, indexname);
-               rv = dbMgr->createIndex(indname, info);
-               if (rv != OK)
-               {
-                  printError(ErrSysInit, "Index creation failed in csql for %s\n", tableName);
-                  SQLFreeHandle (SQL_HANDLE_STMT, hstmtmeta);
-                  SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
-                  SQLDisconnect (hdbc);
-                  SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
-                  SQLFreeHandle (SQL_HANDLE_ENV, henv);
-                  return ErrSysInit;
-               }
-               delete info;
-           } else {
-               printError(ErrSysInit,"CSQL does not support this index type\n");
-               dbMgr->dropTable(tableName);
-               SQLFreeHandle (SQL_HANDLE_STMT, hstmtmeta);
-               SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
-               SQLDisconnect (hdbc);
-               SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
-               SQLFreeHandle (SQL_HANDLE_ENV, henv);
-               return ErrSysInit;
-           }
-       }// while meta data fetch for index creation
-       SQLCloseCursor (hstmtmeta);
-       SQLFreeHandle (SQL_HANDLE_STMT, hstmtmeta);
-       if( !isKeyFld && ((strcmp(fieldName,"")!=0) && (strcmp(fieldName,"NULL")!=0)))
-       {
-            if(shouldForce){
-               HashIndexInitInfo *info = new HashIndexInitInfo();
-               info->indType =  hashIndex;
-               info->bucketSize = 10007;
-               info->list.append(fieldName);
-               info->isUnique = true; 
-               info->isPrimary = false;
-               strcpy(info->tableName, tableName);
-               char indname[128];
-               sprintf(indname, "%s_%s", tableName, "keyInd");
-               rv = dbMgr->createIndex(indname, info);
-               if (rv != OK)
-               {
-                  printError(ErrSysInit, "Index creation failed in csql for %s\n", tableName);
-                  dbMgr->dropTable(tableName);
-                  SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
-                  SQLDisconnect (hdbc);
-                  SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
-                  SQLFreeHandle (SQL_HANDLE_ENV, henv);
-                  return ErrSysInit;
-               }
-               delete info;
-
-            }else{
-                printError(ErrSysInit, "Unable to cache Table for %s with key field %s\n", tableName,fieldName);
-                dbMgr->dropTable(tableName);
-                SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
-                SQLDisconnect (hdbc);
-                SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
-                SQLFreeHandle (SQL_HANDLE_ENV, henv);
-                return ErrSysInit;
-            }
-       }
-    }
-    Table *table = dbMgr->openTable(tableName);
-    if (table == NULL) {
-        printError(ErrSysInit,"unable to open table %s\n", tableName);
-        dbMgr->closeTable(table);
-        if (tabDefinition) dbMgr->dropTable(tableName);
-        SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
-        SQLDisconnect (hdbc);
-        SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
-        SQLFreeHandle (SQL_HANDLE_ENV, henv);
-        return ErrSysInit;
-    }
-    table->setUndoLogging(true);
-    //rv = table->lock(false); //no need to release this lock as it is upgrade from S to X
-    if (rv != OK)
-    {
-        dbMgr->closeTable(table);
-        if (tabDefinition) dbMgr->dropTable(tableName);
-        SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
-        SQLDisconnect (hdbc);
-        SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
-        SQLFreeHandle (SQL_HANDLE_ENV, henv);
-        return ErrSysInit;
-    }
-    List fNameList = table->getFieldNameList();
-    ListIterator fNameIter = fNameList.getIterator();
-    FieldInfo *info = new FieldInfo();
-    int fcount =1; void *valBuf; int fieldsize=0;
-    Identifier *elem = NULL;
-
-    BindBuffer *bBuf;
-    List valBufList;
-    SQLINTEGER len[IDENTIFIER_LENGTH];
-    while (fNameIter.hasElement()) {
-        elem = (Identifier*) fNameIter.nextElement();
-        table->getFieldInfo((const char*)elem->name, info);
-        valBuf = AllDataType::alloc(info->type, info->length);
-        table->bindFld(elem->name, valBuf);
-        os::memset(valBuf,0,info->length);
-        fieldsize=0;
-        switch( info->type) 
-        {
-            case typeString:
-                fieldsize = info->length;
-                break;
-            case typeDate:
-                bBuf = new BindBuffer();
-                bBuf->csql = valBuf;
-                bBuf->type = typeDate;
-                fieldsize = sizeof(DATE_STRUCT);
-                bBuf->targetdb = malloc(fieldsize);
-                valBuf = bBuf->targetdb;
-                valBufList.append(bBuf);
-                break;
-            case typeTime:
-                bBuf = new BindBuffer();
-                bBuf->csql = valBuf;
-                bBuf->type = typeTime;
-                fieldsize = sizeof(TIME_STRUCT);
-                bBuf->targetdb = malloc(fieldsize);
-                valBuf = bBuf->targetdb;
-                valBufList.append(bBuf);
-                break;
-            case typeTimeStamp:
-                bBuf = new BindBuffer();
-                bBuf->csql = valBuf;
-                bBuf->type = typeTimeStamp;
-                fieldsize = sizeof(TIMESTAMP_STRUCT);
-                bBuf->targetdb = malloc(fieldsize);
-                valBuf = bBuf->targetdb;
-                valBufList.append(bBuf);
-                break;
-        }
-        os::memset(valBuf,0,fieldsize);
-        retValue = SQLBindCol (hstmt, fcount, AllDataType::convertToSQLType(info->type),
-                               valBuf, fieldsize, &len[fcount]);
-        fcount++;
-        if (retValue) {
-            printError(ErrSysInit, "Unable to bind columns in ODBC\n"); 
-            SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
-            SQLDisconnect (hdbc);
-            SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
-            SQLFreeHandle (SQL_HANDLE_ENV, henv);
-            return ErrSysInit; 
-        }
-    }
-    delete info;
-    retValue = SQLExecute (hstmt);
-    if (retValue) {
-        printError(ErrSysInit, "Unable to execute ODBC statement\n"); 
-        SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
-        SQLDisconnect (hdbc);
-        SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
-        SQLFreeHandle (SQL_HANDLE_ENV, henv);
-        return ErrSysInit; 
-    }
-    int fldpos=0;
-    while(true)
-    {
-        retValue = SQLFetch (hstmt);
-        if (retValue) break;
-        ListIterator bindIter = valBufList.getIterator();
-        while (bindIter.hasElement()) {
-            bBuf = (BindBuffer*) bindIter.nextElement();
-            switch (bBuf->type) {
-                case typeDate: {
-                    Date *dtCSQL = (Date*) bBuf->csql;
-                    DATE_STRUCT *dtTarget = (DATE_STRUCT*) bBuf->targetdb;
-                    dtCSQL->set(dtTarget->year,dtTarget->month,dtTarget->day);
-                    break;
-                }
-                case typeTime: {
-                    Time *dtCSQL = (Time*) bBuf->csql;
-                    TIME_STRUCT *dtTarget = (TIME_STRUCT*) bBuf->targetdb;
-                    dtCSQL->set(dtTarget->hour,dtTarget->minute,dtTarget->second);
-                    break;
-                }
-                case typeTimeStamp: {
-                    TimeStamp *dtCSQL = (TimeStamp*) bBuf->csql;
-                    TIMESTAMP_STRUCT *dtTarget = (TIMESTAMP_STRUCT*) bBuf->targetdb;
-                    dtCSQL->setDate(dtTarget->year,dtTarget->month,dtTarget->day);
-                    dtCSQL->setTime(dtTarget->hour,dtTarget->minute,dtTarget->second, dtTarget->fraction);
-                    break;
-                }
-            }
-        }
-        fldpos=0;
-        table->resetNullinfo();
-        while(fldpos < fcount-1)
-        {
-            if(len[++fldpos] == SQL_NULL_DATA){ 
-                table->markFldNull(fldpos);
-            }
-        }
-        
-        table->insertTuple();
-    }
-    //TODO::leak:: valBufList and its targetdb buffer
-    valBufList.reset();
-    dbMgr->closeTable(table);
-    SQLCloseCursor (hstmt);
-    SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
-    SQLDisconnect (hdbc);
-    SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
-    SQLFreeHandle (SQL_HANDLE_ENV, henv);
-
-    //add the content to the chkpt file if durability mode is set
-    if (Conf::config.useDurability()) {
-        char dbChkptFileName[1024];
-        char cmd[1024];
-        sprintf(dbChkptFileName, "%s/csql.db.chkpt", Conf::config.getDbFile());
-        sprintf(cmd, "csqldump -T %s >> %s",tableName, dbChkptFileName); 
-        int ret = system(cmd);
-        if (ret != 0) { 
-            printError(ErrWarning, "Unable to append cache table to checkpoint file\n");
-        }
-    }
-    return OK;
-}
-
-DbRetVal CacheTableLoader::reload()
-{
-    DbRetVal rv = unload(false);
-    if (rv != OK) return rv;
-    rv = load(false);
-    return rv;
-}
-
-DbRetVal CacheTableLoader::unload(bool tabDefinition)
-{
-    Connection conn;
-    DbRetVal rv = conn.open(userName, password);
-    if (rv != OK) return ErrSysInit;
-	  
-    if (CacheTableLoader::isTableCached(tableName) != OK) {
-        printError(ErrNotCached, "The table \'%s\' is not cached", tableName);
-        return ErrNotCached;
-    }
-    DatabaseManager *dbMgr = (DatabaseManager*) conn.getDatabaseManager();
-    if (dbMgr == NULL) { printError(ErrSysInit, "Auth failed\n"); return ErrSysInit; }
-    if (!tabDefinition)
-    {
-        Table *table = dbMgr->openTable(tableName);
-        if (table == NULL) { conn.close(); return ErrBadCall; }
-        rv = conn.startTransaction();
-        if (rv != OK) { dbMgr->closeTable(table); conn.close(); return ErrBadCall; }
-        table->truncate();
-        conn.commit();
-        dbMgr->closeTable(table);
-    }
-    else
-    {
-        rv = dbMgr->dropTable(tableName);
-    }
-    conn.close();
-
-    return rv;
-}
-
-DbRetVal CacheTableLoader::refresh()
-{
-    return OK;
-}
-
-DbRetVal CacheTableLoader::recoverAllCachedTables()
-{
-    FILE *fp;
-    Connection conn;
-    DbRetVal rv = conn.open(userName, password);
-    if(rv !=OK) return ErrSysInit;
-
-    //Note: if connection is not open, configuration veriables may be incorrect
-
-    fp = fopen(Conf::config.getTableConfigFile(),"r");
-    if( fp == NULL ) {
-        printError(ErrSysInit, "cachetable.conf file does not exist");
-	return OK;
-    }
-    conn.close();
-    //TODO::take exclusive lock on database
-    char tablename[IDENTIFIER_LENGTH];
-    char fieldname[IDENTIFIER_LENGTH];
-    char condition[IDENTIFIER_LENGTH];
-    char field[IDENTIFIER_LENGTH];
-    int mode;
-    rv = OK;
-    while(!feof(fp))
-    {
-        fscanf(fp, "%d:%s %s %s %s\n", &mode, tablename,fieldname,condition,field);
-        //if (mode ==2 )  //just replicated table and not cached
-        //continue;
-        printDebug(DM_Gateway, "Recovering Table from target db: %s\n", tablename);
-        setCondition(getRealConditionFromFile(condition));
-        setTable(tablename);
-        setFieldName(fieldname);
-	setFieldListVal(field);
-        printf("Recovering table %s %s %s\n", tablename,condition,field);
-        rv = load();
-        if (rv != OK) return rv;
-    }
-    fclose(fp);
-    return OK;
-}
-*/
 
 DbRetVal TableConfig::isTableCached(char *tabName)
 {
@@ -841,24 +305,30 @@ DbRetVal TableConfig::isTableCached(char *tabName)
         printError(ErrSysInit, "csqltable.conf file does not exist");
         return ErrSysInit;
     }
-    char tablename[IDENTIFIER_LENGTH];
+    char tablename[IDENTIFIER_LENGTH]; tablename[0]='\0';
     char fieldname[IDENTIFIER_LENGTH];
     char condition[IDENTIFIER_LENGTH];
     char field[IDENTIFIER_LENGTH];
-    int mode;
+    char dsnName[IDENTIFIER_LENGTH];
+    unsigned int tabMode = 0;
+
     while(!feof(fp))
     {
-        fscanf(fp, "%d:%s %s %s %s\n", &mode, tablename,fieldname,condition,field);
+        fscanf(fp, "%d %s %s %s %s %s \n", &tabMode, tablename,fieldname,
+                                                      condition,field,dsnName);
         if (strcmp (tablename, tabName) == 0) {
             fclose(fp);
-            return OK;
+            bool isCached = isTableCached(tabMode);
+            if (isCached) return OK;
+            else return ErrNotCached;
         }
     }
     fclose(fp);
-    return ErrNotExists;
+    return ErrNotCached;
 }
 
-int TableConfig::getTableMode(char *tabname)
+
+unsigned int TableConfig::getTableMode(char *tabname)
 {
     FILE *fp;
     fp = fopen(Conf::config.getTableConfigFile(),"r");
@@ -867,21 +337,22 @@ int TableConfig::getTableMode(char *tabname)
         fclose(fp);
         return 0;
     }
-    char tablename[IDENTIFIER_LENGTH];
-    char fieldname[IDENTIFIER_LENGTH];
+    char tablename[IDENTIFIER_LENGTH]; tablename[0] = '\0';
+    char fieldname[IDENTIFIER_LENGTH]; 
     char condition[IDENTIFIER_LENGTH];
     char field[IDENTIFIER_LENGTH];
-    int mode;
-    while(!feof(fp))
-    {
-	fscanf(fp,"%d:%s %s %s %s\n",&mode,tablename,fieldname,fieldname,condition);
-        if(0==strcmp(tabname,tablename)){
-              fclose(fp);
-              return mode;
+    char dsnName[IDENTIFIER_LENGTH];
+    unsigned int tabMode=0;
+    while(!feof(fp)) {
+	    fscanf(fp,"%d %s %s %s %s %s \n",&tabMode,tablename,fieldname,
+                                                  fieldname,condition,dsnName);
+        if (0 == strcmp(tabname,tablename)) {
+            fclose(fp);
+            return tabMode;
         }
     }
-   fclose(fp);
-   return 0;
+    fclose(fp);
+    return 0;
 }
 
 
@@ -921,21 +392,26 @@ DbRetVal TableConfig::CacheInfo(bool isTabPresent)
 	 char pkfield[IDENTIFIER_LENGTH];
 	 char condition[IDENTIFIER_LENGTH];
 	 char field[IDENTIFIER_LENGTH];
-	 int mode;
+	 char dsnName[IDENTIFIER_LENGTH];
+	 unsigned int mode = 0;
+
 	 printf("\n=================================================================================================================\n");
-	 printf("|\tMode\t|\tTable Name\t|\tPrimary Key\t|\tCondition\t|\tField List\t|\n");
+	 printf("|Mode|\tTable Name\t|\tPrimary Key\t|\tCondition\t|\tField List\t|\tDSN\t|\n");
 	 printf("=================================================================================================================\n");
 	 while(!feof(fp))
-	 {
-	       fscanf(fp,"%d:%s %s %s %s\n",&mode,tablename,pkfield,condition,field);
-	       if((mode<1) || (mode >6))
-	       {return ErrNotFound;}
+	 { 
+	       fscanf(fp,"%d %s %s %s %s %s \n",&mode,tablename,pkfield,condition,field,dsnName);
+	       if(!mode) {
+               printf("|                                Cached table does not exist.                                                   |\n");
+		       printf("=================================================================================================================\n");
+               return OK;
+           }
 	                     
 	       if(isTabPresent)
 	       {
 		  if(strcmp(tableName,tablename)==0)
 		  {
-		    printf("|%8d\t|%16s\t|%16s\t|%16s\t|%16s\t|\n",mode,tablename,pkfield,getRealConditionFromFile(condition),field);
+		    printf("|%2d  |%16s\t|%16s\t|%16s\t|%16s\t|%10s\t|\n",mode,tablename,pkfield,getRealConditionFromFile(condition),field,dsnName);
 		    printf("-----------------------------------------------------------------------------------------------------------------\n\n");
 		    fclose(fp);
 		    return OK;
@@ -943,11 +419,84 @@ DbRetVal TableConfig::CacheInfo(bool isTabPresent)
 	       }
                else
 	       {
-		    printf("|%8d\t|%16s\t|%16s\t|%16s\t|%16s\t|\n",mode,tablename,pkfield,getRealConditionFromFile(condition),field);
+		    
+		    printf("|%2d  |%16s\t|%16s\t|%16s\t|%16s\t|%10s\t|\n",mode,tablename,pkfield,getRealConditionFromFile(condition),field,dsnName);
 		    printf("-----------------------------------------------------------------------------------------------------------------\n");
                }
 	 }
 	 printf("\n");
 	 fclose(fp);
 	 return OK;
+}
+
+DbRetVal TableConfig::getDsnAndTdb(char *dsn,char *newdsn, char *tdb)
+{
+    char dsnId[IDENTIFIER_LENGTH]; dsnId[0]='\0';
+    char user[IDENTIFIER_LENGTH]; user[0] = '\0';
+    char passwd[IDENTIFIER_LENGTH]; passwd[0] = '\0';
+    char tdbname[IDENTIFIER_LENGTH]; tdbname[0]='\0';
+    FILE *fp=NULL;
+    bool isDSNExist=false;
+    fp = fopen(Conf :: config.getDsConfigFile(),"r");
+    if(fp==NULL)
+    {
+        printError(ErrSysInit, "csqlds.conf file does not exist");
+        return ErrSysInit;
+    }
+    while(!feof(fp)) {
+        fscanf(fp,"%s %s %s %s\n",dsnId,user,passwd,tdbname);
+        if(strcmp(dsnId,dsn)==0) {   
+            if( strcmp(user,"NULL")!=0 && strcmp(passwd,"NULL")!=0) {
+                sprintf(newdsn,"DSN=%s;UID=%s;PWD=%s;",dsn,user,passwd);isDSNExist=true; break;
+            }
+            else
+            {
+                sprintf(newdsn,"DSN=%s;",dsn);  isDSNExist=true;break;
+            }
+        }
+    }
+
+    fclose(fp);
+    if(isDSNExist)
+    {
+        strcpy(tdb, tdbname);
+        return OK;
+    }
+    else
+    {
+        printError(ErrNotExists,"dsn is not present in the csqlds.conf file\n");
+        return ErrNotExists;
+    }
+}
+
+//get the DSN for respective cached table.
+//This function is used in "SqlGwStatement.cxx:prepare()"
+DbRetVal TableConfig::getDsnForTable(char *tab, char *dsnname)
+{
+    FILE *fp;
+    fp = fopen(Conf::config.getTableConfigFile(),"r");
+    if( fp == NULL){
+        printError(ErrSysInit, "cachetable.conf file does not exist");
+        fclose(fp);
+        return ErrOS;
+     }
+     char tablename[IDENTIFIER_LENGTH];tablename[0]='\0';
+     char pkfield[IDENTIFIER_LENGTH];pkfield[0]='\0';
+     char condition[IDENTIFIER_LENGTH];condition[0]='\0';
+     char field[IDENTIFIER_LENGTH];field[0]='\0';
+     char dsnName[IDENTIFIER_LENGTH];dsnName[0]='\0';
+     int mode;
+     char *dsn=NULL;
+     
+     while(!feof(fp)){
+         fscanf(fp,"%d %s %s %s %s %s \n",&mode,tablename,pkfield,condition,field,dsnName);
+         if(strcmp(tab,tablename)==0){
+             strcpy(dsnname, dsnName);
+             fclose(fp);
+             return OK;
+         }
+         
+      }   
+      fclose(fp);
+      return ErrNotFound;
 }

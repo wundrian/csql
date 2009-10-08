@@ -29,6 +29,8 @@
 DbRetVal SessionImpl::initSystemDatabase()
 
 {
+    long value=0;
+    
     DbRetVal rv = OK;
     rv = readConfigFile();
     if (rv != OK) 
@@ -37,11 +39,12 @@ DbRetVal SessionImpl::initSystemDatabase()
        return ErrSysInit;
     }
 
-    Conf::config.print();
+   // Conf::config.print();
 
     dbMgr = new DatabaseManagerImpl();
     rv = dbMgr->createDatabase(SYSTEMDB, Conf::config.getMaxSysDbSize());
     if (OK != rv) return rv;
+    
     dbMgr->setSysDb(dbMgr->db());
     dbMgr->setDb(NULL);
 
@@ -59,6 +62,13 @@ DbRetVal SessionImpl::initSystemDatabase()
 
     //create the default dba user
     CatalogTableUSER cUser(db);
+    rv = cUser.insert(I_USER, I_PASS);
+    if (OK != rv)
+    {
+        db->releaseDatabaseMutex();
+        return rv;
+    }
+
     rv = cUser.insert(DBAUSER, DBAPASS);
     if (OK != rv)
     {
@@ -74,9 +84,9 @@ DbRetVal SessionImpl::initSystemDatabase()
         printError(ErrSysInit, "Allocation of Lock buckets failed");
         return ErrSysInit;
     }
-
     db->releaseDatabaseMutex();
-    printf("sysdb size %ld dbsize %ld\n", Conf::config.getMaxSysDbSize(), Conf::config.getMaxDbSize());
+
+    printf("Sys_DB  [Size=%4.4ldMB] \nUser_DB [Size=%4.4ldMB]\n", Conf::config.getMaxSysDbSize()/1048576, Conf::config.getMaxDbSize()/1048576);
     //create user database
     rv = dbMgr->createDatabase("userdb", Conf::config.getMaxDbSize());
     if (OK != rv) return rv;
@@ -150,8 +160,9 @@ DbRetVal SessionImpl::authenticate(const char *username, const char *password)
     DbRetVal rv = dbMgr->sysDb()->getDatabaseMutex(false);
     if (OK != rv)
     {
-        printError(rv,"Unable to get database mutex");
-        return rv;
+        printError(ErrLockTimeOut,"System under recovery or DDL operation going on.");
+        printError(ErrLockTimeOut,"Unable to get the database mutex.Retry...");
+        return ErrLockTimeOut;
     }
     CatalogTableUSER cUser(dbMgr->sysDb());
     cUser.authenticate(username, password, isAuthenticated, isDba);
@@ -280,8 +291,14 @@ DbRetVal SessionImpl::readConfigFile()
     char *confFilename = os::getenv("CSQL_CONFIG_FILE");
     if (confFilename == NULL)
     {
-        printError(ErrSysInit, "CSQL_CONFIG_FILE environment variable should be set.");
-        return ErrSysInit;
+        if (os::fileExists(DEFAULT_CONFIG_FILE)) {
+           confFilename = DEFAULT_CONFIG_FILE;
+        }
+        else  {
+           printError(ErrSysInit, "CSQL_CONFIG_FILE environment variable "
+                                  "should be set.");
+           return ErrSysInit;
+        }
     }
 
     int  rv = Conf::config.readAllValues(confFilename);

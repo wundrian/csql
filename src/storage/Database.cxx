@@ -75,7 +75,8 @@ void Database::setCurrentSize(long size)
 }
 void Database::setCurrentPage(Page *page)
 {
-    metaData_->curPage_ = page;
+    //metaData_->curPage_ = page;
+    Mutex::CASL((long*)&metaData_->curPage_, (long)metaData_->curPage_, (long)page);
 }
 void Database::setFirstPage(Page *page)
 {
@@ -110,7 +111,20 @@ DbRetVal Database::releaseAllocDatabaseMutex(bool procAccount)
     return OK;
 }
 
-
+int Database::initPrepareStmtMutex()
+{
+    return metaData_->dbPrepareStmtMutex_.init("prepstmt");
+}
+DbRetVal Database::getPrepareStmtMutex(bool procAccount) 
+{
+    int ret= metaData_->dbPrepareStmtMutex_.getLock(procSlot, procAccount);
+    if (ret) return ErrLockTimeOut; else return OK;
+}
+DbRetVal Database::releasePrepareStmtMutex(bool procAccount)
+{
+    metaData_->dbPrepareStmtMutex_.releaseLock(procSlot, procAccount);
+    return OK;
+}
 
 int Database::initTransTableMutex()
 {
@@ -249,7 +263,6 @@ Page* Database::getFreePage(size_t size)
                 else
                    break;
             }
-
         }
         int i = 0;
         PageInfo *pInfo = pageInfo;
@@ -436,6 +449,10 @@ void Database::createMetaDataTables()
                                   sizeof(CINDEX), IndexTableId);
     createSystemDatabaseChunk(FixedSizeAllocator,
                                   sizeof(CINDEXFIELD), IndexFieldTableId);
+    createSystemDatabaseChunk(FixedSizeAllocator,
+                                  sizeof(CFK), ForeignKeyTableId);
+    createSystemDatabaseChunk(FixedSizeAllocator,
+                                  sizeof(CFKFIELD), ForeignKeyFieldTableId);
 }
 
 //used in case of system database
@@ -456,25 +473,6 @@ Transaction* Database::getSystemDatabaseTrans(int slot)
     return (Transaction*)(((char*) metaData_) +  offset);
 }
 
-//used in case of system database
-ThreadInfo* Database::getThreadInfo(int slot)
-{
-/*     size_t offset = os::alignLong(sizeof (DatabaseMetaData));
-     offset = offset + os::alignLong( MAX_CHUNKS  * sizeof (Chunk));
-     offset = offset + os::alignLong( Conf::config.getMaxProcs()   * sizeof(Transaction));
-     offset = offset + slot * sizeof (ThreadInfo);
-     return (ThreadInfo*)(((char*) metaData_) +  offset);
-*/
-
-    static size_t offset = os::alignLong(sizeof (DatabaseMetaData)) +
-                           os::alignLong( MAX_CHUNKS  * sizeof (Chunk)) +
-               os::alignLong( Conf::config.getMaxProcs()*sizeof(Transaction));
-	
-    size_t off = offset + slot * sizeof (ThreadInfo);
-    return (ThreadInfo*)(((char*) metaData_) +  off);
-
-}
-
 bool Database::isValidAddress(void* addr)
 {
     if ((char*) addr >= ((char*)getMetaDataPtr())  + getMaxSize())
@@ -487,7 +485,8 @@ bool Database::isValidAddress(void* addr)
 void* Database::allocLockHashBuckets()
 {
     Chunk *chunk = getSystemDatabaseChunk(LockTableHashBucketId);
-    void *ptr = chunk->allocate(this);
+    DbRetVal rv=OK;
+    void *ptr = chunk->allocate(this, &rv);
     if (NULL == ptr)
     {
         printError(ErrNoMemory, "Chunk Allocation failed for lock hash bucket catalog table");
@@ -515,4 +514,80 @@ DbRetVal Database::recoverMutex(Mutex *mut)
 {
     //TODO: operations need to be undone before recovering the mutex.
     mut->recoverMutex();    
+    return OK;
 }    
+
+DbRetVal Database::checkPoint()
+{
+    char dataFile[1024];
+    char cmd[1024];
+    if (!Conf::config.useMmap()) {
+       // sprintf(dataFile, "%s/db.chkpt.data1", Conf::config.getDbFile());
+        sprintf(dataFile, "%s/db.chkpt.data", Conf::config.getDbFile());
+        FILE *fp = NULL;
+        if (fp = fopen(dataFile, "r")) {
+            fclose(fp);
+            int ret = unlink(dataFile);
+            if (ret != OK) {
+                printError(ErrOS, "Unable to delete old chkpt file. Failure");
+                return ErrOS;
+            }
+        }
+        int fd = open(dataFile, O_WRONLY|O_CREAT, 0644);
+        void *buf = (void *) metaData_;
+        write(fd, buf, Conf::config.getMaxDbSize());
+        close(fd);  
+        sprintf(cmd, "cp -f %s/db.chkpt.data %s/db.chkpt.data1", Conf::config.getDbFile(), Conf::config.getDbFile());
+        int ret = system(cmd);
+        if (ret != 0) {
+            printError(ErrOS, "Unable to take checkpoint back up file");
+            return ErrOS;
+        }
+    } else {
+        int fd = getChkptfd();
+        if (!fdatasync(fd)) { printf("pages written. checkpoint taken\n"); }
+        sprintf(cmd, "cp -f %s/db.chkpt.data %s/db.chkpt.data1", Conf::config.getDbFile(), Conf::config.getDbFile());
+        int ret = system(cmd);
+        if (ret != 0) {
+            printError(ErrOS, "Unable to take checkpoint back up file");
+            return ErrOS;
+        }
+    }
+    return OK;
+}
+
+//used only by the user database not the system database
+DbRetVal Database::recoverUserDB()
+{
+    char dataFile[1024];
+    char cmd[1024];
+    sprintf(dataFile, "%s/db.chkpt.data", Conf::config.getDbFile());
+    int fd = open(dataFile, O_RDONLY);
+    if (-1 == fd) { return OK; }
+    void *buf = (void *) metaData_;
+    read(fd, buf, Conf::config.getMaxDbSize());
+    close(fd);
+    return OK;
+}
+
+//used only by the system database 
+DbRetVal Database::recoverSystemDB()
+{
+    char mapFile[1024];
+    sprintf(mapFile, "%s/db.chkpt.map", Conf::config.getDbFile());
+    int fd = open(mapFile, O_RDONLY);
+    if (-1 == fd) { return OK; }
+    CatalogTableTABLE cTable(this);
+    CatalogTableINDEX cIndex(this);
+    struct Object buf;
+    while (read(fd, &buf, sizeof(buf))) {
+        if (buf.type == Tbl) {
+            cTable.setChunkPtr(buf.name, buf.firstPage, buf.curPage);
+        }
+
+        else if (buf.type == hIdx || buf.type == tIdx) {
+            cIndex.setChunkPtr(buf.name, buf.type, buf.bucketChunk, buf.firstPage, buf.curPage);
+        }
+    }
+    return OK;
+}

@@ -31,7 +31,7 @@ int TableDef::addField(const char *name,  DataType type, size_t length,
                  const void *defaultValue, bool notNull, bool autoIn)
 {
     if (name == NULL) return (int)ErrBadArg;
-    if(strlen(name)>64)
+    if(strlen(name)>IDENTIFIER_LENGTH)
     {
         printError(ErrBadRange,"Field name should not exceed 64 character");
         return (int)ErrBadRange;
@@ -46,11 +46,16 @@ int TableDef::addField(const char *name,  DataType type, size_t length,
             return (int) ErrAlready;
         }
     }
+
+    if (!Util::isIdentifier((char*)name)) { 
+        printError(ErrBadArg, "fieldname contains invalid characters");
+        return (int) ErrBadArg;
+    }
     FieldDef fldDef;
     strcpy(fldDef.fldName_, name);
     fldDef.fldName_[IDENTIFIER_LENGTH] = '\0';
     fldDef.type_ = type;
-    fldDef.length_ = os::align(length);
+    fldDef.length_ = AllDataType::size(type, length);
     fldDef.bindVal_=NULL;
     if (defaultValue != NULL)
     {
@@ -72,11 +77,12 @@ int TableDef::addField(const char *name,  DataType type, size_t length,
         os::memset(fldDef.defaultValueBuf_,0, DEFAULT_VALUE_BUF_LENGTH);
     }
     fldDef.isNull_ = notNull;
-    fldDef.isAutoIncrement_= autoIn;
+    fldDef.isAutoIncrement_ = autoIn;
+    //os::memset(fldDef.autoVal_,0, DEFAULT_VALUE_BUF_LENGTH);
     switch(type)
     {
         case typeString :
-        case typeBinary:
+        case typeBinary :
             fldDef.length_ = os::align(length);
             break;
         default:
@@ -108,7 +114,7 @@ size_t TableDef::getTupleSize()
     while (iter.hasElement())
     {
         FieldDef *def = iter.nextElement();
-        length = length + os::align(def->length_);
+        length = length + def->length_;
     }
     return length;
 }

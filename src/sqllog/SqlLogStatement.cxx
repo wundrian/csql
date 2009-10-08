@@ -18,8 +18,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 #include <SqlLogStatement.h>
-
-GlobalUniqueID SqlLogStatement::stmtUID;
+#include <TableConfig.h>
 
 bool SqlLogStatement::isNonSelectDML(char *stmtstr)
 {
@@ -30,29 +29,69 @@ bool SqlLogStatement::isNonSelectDML(char *stmtstr)
     return false;
 }
 
+DbRetVal SqlLogStatement::executeDirect(char *stmtstr)
+{
+    DbRetVal rv = OK;
+    int rows = 0;
+    rv = prepare(stmtstr);
+    if (rv != OK)  return rv;
+    rv = execute(rows);
+    if (rv != OK) return rv;
+    return rv;
+}
+
 DbRetVal SqlLogStatement::prepare(char *stmtstr)
 {
     DbRetVal rv = OK;
     SqlLogConnection *conn = (SqlLogConnection *)con;
-    int txnId=conn->getTxnID();
-    if (innerStmt) rv = innerStmt->prepare(stmtstr);
-    if (rv != OK) { isNonSelDML = false; return rv; }
+    if (innerStmt) {
+       rv = innerStmt->prepare(stmtstr);
+       if (rv != OK) { isNonSelDML = false; return rv; }
+       if (innerStmt->getStmtType() == SelectStatement) {
+           isNonSelDML = false; return rv;
+       }
+    }
     if (Conf::config.useDurability()) {
         if (strlen(stmtstr) > 6 && ((strncasecmp(stmtstr,"CREATE", 6) == 0) ||
                                    (strncasecmp(stmtstr,"DROP", 4) == 0))) {
             sid  = SqlLogStatement::stmtUID.getID(STMT_ID);
             printDebug(DM_SqlLog, "CREATE|DROP: stmt id = %d\n", sid);
-            conn->fileLogPrepare(0, sid, strlen(stmtstr)+1, stmtstr);
+            conn->fileLogPrepare(0, sid, strlen(stmtstr)+1, stmtstr, NULL);
             isNonSelDML = false;
             return OK;
         }
     } 
     if (!isNonSelectDML(stmtstr)) { isNonSelDML = false; return rv;}
+    char *tblName = NULL;
+    if (innerStmt) {
+        tblName = innerStmt->getTableName();
+        unsigned int mode = TableConf::config.getTableMode(tblName);
+        if (TableConf::config.isTableCached(mode)) isCached = true;
+    }
+    isPrepared = true;
+    if (strncasecmp(stmtstr,"CACHE", 5) == 0 ||
+        strncasecmp(stmtstr,"UNCACHE", 7) == 0)
+    {
+        isNonSelDML = false;
+        return OK;
+    }
+    if ( (!Conf::config.useCache() || 
+        (Conf::config.useCache() && Conf::config.getCacheMode()==SYNC_MODE)) &&
+        !Conf::config.useDurability()) 
+    { 
+        isNonSelDML = false; 
+        return OK; 
+    }
+    needLog = true;
     isNonSelDML = true;
-    sid  = SqlLogStatement::stmtUID.getID(STMT_ID);
+    int txnId=conn->getTxnID();
+    sid = stmtUID.getID(STMT_ID);
     printDebug(DM_SqlLog, "stmt id = %d\n", sid);
+    if ((Conf::config.useCache() && Conf::config.getCacheMode() == ASYNC_MODE) 
+             && !conn->noMsgLog && isCached) 
+        conn->msgPrepare(txnId, sid, strlen(stmtstr) + 1, stmtstr, tblName);
     if (Conf::config.useDurability()) 
-        conn->fileLogPrepare(txnId, sid, strlen(stmtstr) + 1, stmtstr);
+        conn->fileLogPrepare(txnId, sid, strlen(stmtstr) + 1, stmtstr, NULL);
     return OK;
 }
 
@@ -69,6 +108,7 @@ DbRetVal SqlLogStatement::execute(int &rowsAffected)
     if (innerStmt) rv = innerStmt->execute(rowsAffected);
     if (!isNonSelDML) return rv;
     if ( rv != OK) return rv;
+    if (!needLog) return rv;
     ExecLogInfo *elInfo = (ExecLogInfo *) malloc (sizeof(ExecLogInfo));
     elInfo->stmtId = sid;
     printDebug(DM_SqlLog, "Execute: stmtID: %d", elInfo->stmtId);
@@ -133,6 +173,17 @@ void* SqlLogStatement::getFieldValuePtr( int pos )
     if (innerStmt) return innerStmt->getFieldValuePtr(pos);
     return NULL;
 }
+void* SqlLogStatement::getFieldValuePtr( char *name )
+{
+    if (innerStmt) return innerStmt->getFieldValuePtr(name);
+    return NULL;
+}
+
+void SqlLogStatement::getProjFieldType(int *data)
+{
+    if (innerStmt) return innerStmt->getProjFieldType(data);
+    return;
+}
 
 int SqlLogStatement::noOfProjFields()
 {
@@ -161,25 +212,26 @@ DbRetVal SqlLogStatement::getParamFldInfo (int parampos, FieldInfo *&fInfo)
 DbRetVal SqlLogStatement::free()
 {
     DbRetVal rv = OK;
+    if (!isPrepared) return OK;
     if (innerStmt) rv = innerStmt->free();
-    //TODO::DEBUG::always innsrStmt->free() returns error
     if (rv != OK)  return rv;
-    if (isNonSelDML) { 
+    if (!needLog) { isPrepared = false; return rv; }
+    if (isNonSelDML && isCached) { 
         SqlLogConnection* logConn = (SqlLogConnection*)con;
         if (sid != 0 ) logConn->freeLogs(sid);
     }
-    if (!isCached) return rv;
-    isCached= false;
     sid = 0;
     isNonSelDML = false;
+    isPrepared = false;
     return OK;
 }
 void SqlLogStatement::setShortParam(int paramPos, short value)
 {
     if (innerStmt) innerStmt->setShortParam(paramPos,value);
     if (!isNonSelDML) return; 
+    if (!needLog) return;
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(short);
+    int buffer = sizeof(ExecLogInfo) - sizeof(int) + sizeof(short);
     ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
     elInfo->stmtId = sid;
     printDebug(DM_SqlLog, "setShort: stmtID: %d", elInfo->stmtId);
@@ -203,8 +255,9 @@ void SqlLogStatement::setIntParam(int paramPos, int value)
 {
     if (innerStmt) innerStmt->setIntParam(paramPos,value);
     if (!isNonSelDML) return; 
+    if (!needLog) return;
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(int);
+    int buffer = sizeof(ExecLogInfo) - sizeof(int) + sizeof(int);
     ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
     elInfo->stmtId = sid;
     printDebug(DM_SqlLog, "setInt: stmtID: %d", elInfo->stmtId);
@@ -228,8 +281,9 @@ void SqlLogStatement::setLongParam(int paramPos, long value)
 {
     if (innerStmt) innerStmt->setLongParam(paramPos,value);
     if (!isNonSelDML) return; 
+    if (!needLog) return;
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(long);
+    int buffer = sizeof(ExecLogInfo) - sizeof(int) + sizeof(long);
     ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
     elInfo->stmtId = sid;
     elInfo->type = SETPARAM;
@@ -245,8 +299,9 @@ void SqlLogStatement::setLongLongParam(int paramPos, long long value)
 {
     if (innerStmt) innerStmt->setLongLongParam(paramPos,value);
     if (!isNonSelDML) return; 
+    if (!needLog) return;
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(long long);
+    int buffer = sizeof(ExecLogInfo) - sizeof(int) + sizeof(long long);
     ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
     elInfo->stmtId = sid;
     elInfo->type = SETPARAM;
@@ -262,8 +317,9 @@ void SqlLogStatement::setByteIntParam(int paramPos, ByteInt value)
 {
     if (innerStmt) innerStmt->setByteIntParam(paramPos,value);
     if (!isNonSelDML) return; 
+    if (!needLog) return;
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(ByteInt);
+    int buffer = sizeof(ExecLogInfo) - sizeof(int) + sizeof(ByteInt);
     ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
     elInfo->stmtId = sid;
     elInfo->type = SETPARAM;
@@ -279,8 +335,9 @@ void SqlLogStatement::setFloatParam(int paramPos, float value)
 {
     if (innerStmt) innerStmt->setFloatParam(paramPos,value);
     if (!isNonSelDML) return; 
+    if (!needLog) return;
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(float);
+    int buffer = sizeof(ExecLogInfo) - sizeof(int) + sizeof(float);
     ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
     elInfo->stmtId = sid;
     elInfo->type = SETPARAM;
@@ -296,8 +353,9 @@ void SqlLogStatement::setDoubleParam(int paramPos, double value)
 {
     if (innerStmt) innerStmt->setDoubleParam(paramPos,value);
     if (!isNonSelDML) return; 
+    if (!needLog) return;
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(double);
+    int buffer = sizeof(ExecLogInfo) - sizeof(int) + sizeof(double);
     ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
     elInfo->stmtId = sid;
     elInfo->type = SETPARAM;
@@ -313,8 +371,9 @@ void SqlLogStatement::setStringParam(int paramPos, char *value)
 {
     if (innerStmt) innerStmt->setStringParam(paramPos,value);
     if (!isNonSelDML) return; 
+    if (!needLog) return;
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + os::align(strlen(value) + 1);
+    int buffer = sizeof(ExecLogInfo) - sizeof(int) + os::align(strlen(value) + 1);
     ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
     elInfo->stmtId = sid;
     elInfo->type = SETPARAM;
@@ -330,8 +389,9 @@ void SqlLogStatement::setDateParam(int paramPos, Date value)
 {
     if (innerStmt) innerStmt->setDateParam(paramPos,value);
     if (!isNonSelDML) return; 
+    if (!needLog) return;
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(Date);
+    int buffer = sizeof(ExecLogInfo) - sizeof(int) + sizeof(Date);
     ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
     elInfo->stmtId = sid;
     elInfo->type = SETPARAM;
@@ -347,8 +407,9 @@ void SqlLogStatement::setTimeParam(int paramPos, Time value)
 {
     if (innerStmt) innerStmt->setTimeParam(paramPos,value);
     if (!isNonSelDML) return; 
+    if (!needLog) return;
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(Time);
+    int buffer = sizeof(ExecLogInfo) - sizeof(int) + sizeof(Time);
     ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
     elInfo->stmtId = sid;
     elInfo->type = SETPARAM;
@@ -364,8 +425,9 @@ void SqlLogStatement::setTimeStampParam(int paramPos, TimeStamp value)
 {
     if (innerStmt) innerStmt->setTimeStampParam(paramPos,value);
     if (!isNonSelDML) return; 
+    if (!needLog) return;
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(TimeStamp);
+    int buffer = sizeof(ExecLogInfo) - sizeof(int) + sizeof(TimeStamp);
     ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
     elInfo->stmtId = sid;
     elInfo->type = SETPARAM;
@@ -381,8 +443,9 @@ void SqlLogStatement::setBinaryParam(int paramPos, void *value, int length)
 {
     if (innerStmt) innerStmt->setBinaryParam(paramPos,value, length);
     if (!isNonSelDML) return; 
+    if (!needLog) return;
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + os::align(length);
+    int buffer = sizeof(ExecLogInfo) - sizeof(int) + os::align(length);
     ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
     elInfo->stmtId = sid;
     elInfo->type = SETPARAM;
@@ -406,5 +469,10 @@ void SqlLogStatement::setNull(int pos)
 List SqlLogStatement::getAllTableNames(DbRetVal &ret)
 {
    if(innerStmt) return innerStmt->getAllTableNames(ret); 
+}
+
+List SqlLogStatement::getAllUserNames(DbRetVal &ret)
+{
+   if(innerStmt) return innerStmt->getAllUserNames(ret);
 }
 

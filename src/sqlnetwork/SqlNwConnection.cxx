@@ -29,12 +29,14 @@ DbRetVal SqlNwConnection::connect (char *user, char * pass)
         printError(ErrAlready, "Connection is already open");
         return ErrAlready;
     }
-    nwClient = new TCPClient();
+    if (nwClient == NULL)  nwClient = new TCPClient();
     int bufsize = 2 * IDENTIFIER_LENGTH + sizeof(int);
     nwClient->setHost(hostname, port, 123);
     rv = nwClient->connect();
     if (rv != OK) {
         printError(rv, "Connection failed");
+        delete nwClient;
+        nwClient = NULL;
         return rv;
     }
     SqlPacketConnect *pkt = new SqlPacketConnect();
@@ -46,19 +48,28 @@ DbRetVal SqlNwConnection::connect (char *user, char * pass)
     rv = nwClient->send(SQL_NW_PKT_CONNECT, buffer, bufsize);
     if (rv != OK) {
         printError(rv, "Data could not be sent");
+        delete pkt;
+        delete nwClient; 
+        nwClient = NULL;
         return rv;
     }
-    int response = 0;
     rv = nwClient->receive();
+    if (rv == ErrPeerTimeOut) { 
+        delete pkt;
+        delete nwClient; 
+        nwClient = NULL;
+        return ErrNoConnection; 
+    }
     ResponsePacket *rpkt = (ResponsePacket *) ((TCPClient *)nwClient)->respPkt;
     char *ptr = (char *) &rpkt->retVal;
-    if (*ptr != 1) {
+/*    if (*ptr != 1) {
         printError(ErrPeerResponse, "%s", rpkt->errorString);
+        delete pkt;
         nwClient->disconnect();
         delete nwClient; 
-        delete pkt;
+        nwClient = NULL;
         return ErrPeerResponse;
-    }
+    }*/
     isConnOpen = true;
     delete pkt;
     return rv;
@@ -73,6 +84,7 @@ DbRetVal SqlNwConnection::disconnect()
     rv = nwClient->disconnect();
     isConnOpen=false;
     delete nwClient; 
+    nwClient = NULL;
     return rv;
 }
 
@@ -93,8 +105,16 @@ DbRetVal SqlNwConnection::commit()
     }
     DbRetVal rv = OK;
     rv = nwClient->send(SQL_NW_PKT_COMMIT);
-    int response = 0;
-    return nwClient->receive();
+    if (rv == ErrNoConnection) {
+        setConnClosed(false);
+        return rv;
+    }
+    rv = nwClient->receive();
+    if (rv == ErrNoConnection || rv == ErrPeerTimeOut) {
+        setConnClosed(false);
+        return ErrNoConnection;
+    }
+    return rv;
 }
 
 DbRetVal SqlNwConnection::rollback()
@@ -105,7 +125,15 @@ DbRetVal SqlNwConnection::rollback()
     }
     DbRetVal rv = OK;
     rv = nwClient->send(SQL_NW_PKT_ROLLBACK);
-    int response = 0;
-    return nwClient->receive();
-}
+    if (rv == ErrNoConnection) {
+        setConnClosed(false);
+        return rv;
+    }
+    rv = nwClient->receive();
+    if (rv == ErrNoConnection || rv == ErrPeerTimeOut) {
+        setConnClosed(false);
+        return ErrNoConnection;
+    }
+    return rv;
 
+}

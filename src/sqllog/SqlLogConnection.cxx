@@ -23,7 +23,6 @@
 #include <CSql.h>
 #include <Network.h>
 
-GlobalUniqueID SqlLogConnection::txnUID;
 List SqlLogConnection::cacheList;
 
 DbRetVal SqlLogConnection::addPacket(BasePacket* pkt)
@@ -58,19 +57,32 @@ DbRetVal SqlLogConnection::removePreparePacket(int stmtid)
     return OK;
 }
 
+SqlLogConnection::~SqlLogConnection() 
+{
+    if (msgQSend) { delete msgQSend; msgQSend = NULL; }
+    if (fileSend) { delete fileSend; fileSend = NULL; }
+    txnUID.close();
+    ListIterator it = cacheList.getIterator();
+    while(it.hasElement()) delete (CachedTable *) it.nextElement();
+    cacheList.reset();
+    it = execLogStore.getIterator();
+    while(it.hasElement()) ::free ((ExecLogInfo *) it.nextElement());
+    execLogStore.reset();
+} 
+
 DbRetVal SqlLogConnection::connect (char *user, char *pass)
 {
     DbRetVal rv = OK;
     //printf("LOG: connect\n");
     if (innerConn) rv = innerConn->connect(user,pass);
     if (rv != OK) return rv;
-    if (!Conf::config.useDurability()) return OK;
+    if ( (!Conf::config.useCache() && Conf::config.getCacheMode() == SYNC_MODE)
+           &&  !Conf::config.useDurability()) return OK;
+    if (rv !=OK) { innerConn->disconnect(); return rv; }
 
     //populate cacheList if not populated by another thread in same process
     //TODO::cacheList requires mutex guard
     if (0 == cacheList.size()) rv = populateCachedTableList(); 
-    rv = SqlLogStatement::stmtUID.open();
-    rv = SqlLogConnection::txnUID.open();
     return rv;
     
 }
@@ -80,8 +92,7 @@ DbRetVal SqlLogConnection::disconnect()
     //printf("LOG: disconnect\n");
     if (innerConn) rv =innerConn->disconnect();
     if (rv != OK) return rv;
-    if (!Conf::config.useDurability()) return OK;
-    SqlLogStatement::stmtUID.close();
+    if ( (!Conf::config.useCache() && Conf::config.getCacheMode() == SYNC_MODE)             && !Conf::config.useDurability()) return OK;
     return rv;
 }
 DbRetVal SqlLogConnection::beginTrans(IsolationLevel isoLevel, TransSyncMode mode)
@@ -99,7 +110,8 @@ DbRetVal SqlLogConnection::commit()
     //printf("LOG: commit %d\n", syncMode);
     //if (innerConn) rv =  innerConn->commit();
     if (innerConn) rv = innerConn->commit();
-    if (!Conf::config.useDurability()) return OK;
+    if (( !Conf::config.useCache() && Conf::config.getCacheMode() == SYNC_MODE)
+         && !Conf::config.useDurability()) return OK;
     
     if (execLogStore.size() == 0) { 
         //This means no execution for any non select statements in 
@@ -180,7 +192,10 @@ DbRetVal SqlLogConnection::commit()
         }
     }
     commitLogs(len, data);
+    ListIterator it = execLogStore.getIterator();
+    while(it.hasElement()) ::free ((ExecLogInfo *) it.nextElement());
     execLogStore.reset();
+    ::free(buffer);
     execLogStoreSize =0;
     //if (innerConn) rv = innerConn->commit();
     return rv;
@@ -191,15 +206,16 @@ DbRetVal SqlLogConnection::rollback()
     //printf("LOG: rollback \n");
     if (innerConn) rv =  innerConn->rollback();
     if (rv != OK) return rv;
-    ListIterator logStoreIter = logStore.getIterator();
-    PacketExecute *execPkt = NULL;
+    if (( !Conf::config.useCache() && Conf::config.getCacheMode() == SYNC_MODE)
+         && !Conf::config.useDurability()) return OK;
+
+    ListIterator logStoreIter = execLogStore.getIterator();
+    ExecLogInfo *elInfo = NULL;
     while (logStoreIter.hasElement())
     {
-        execPkt = (PacketExecute*)logStoreIter.nextElement();
-        delete execPkt;
+        elInfo = (ExecLogInfo *)logStoreIter.nextElement();
+        delete elInfo;
     }
-    logStore.reset();
-
     execLogStore.reset();
     execLogStoreSize =0;
     return rv;
@@ -217,11 +233,17 @@ DbRetVal SqlLogConnection::populateCachedTableList()
     char fieldname[IDENTIFIER_LENGTH];
     char condition[IDENTIFIER_LENGTH];
     char field[IDENTIFIER_LENGTH];
+    char dsnName[IDENTIFIER_LENGTH];
+    tablename[0] = '\0';
+    fieldname[0] = '\0';
+    condition[0] = '\0';
+    field[0] = '\0';
+    dsnName[0] = '\0';
     int cmode;
-    CachedTable *node;
+    CachedTable *node=NULL;
     while(!feof(fp))
     {
-        fscanf(fp, "%d:%s %s %s %s\n", &cmode, tablename,fieldname,condition,field);
+        fscanf(fp, "%d %s %s %s %s %s\n", &cmode, tablename,fieldname,condition,field,dsnName);
         node = new CachedTable();
         strcpy(node->tableName, tablename);
         cacheList.append(node);
@@ -247,4 +269,72 @@ bool SqlLogConnection::isTableCached(char *tblName)
         }
     }
     return false;
+}
+
+DbRetVal MsgQueueSend::prepare(int txnId, int stmtId, int len, char *stmt, 
+                                                                 char *tblName) 
+{
+    //strlen is not included string is the last element in the following  
+    //structure
+    int datalen = 3 * sizeof(int) + IDENTIFIER_LENGTH + os::align(len); // for len + txnId + stmtId + tblName + string
+    
+    int buffer = sizeof(Message) - 1 + datalen;
+    Message *msg = (Message *) malloc(buffer);
+    msg->mtype = 1;
+    *(int *)&msg->data =  datalen;
+    char *ptr = (char *) &msg->data + sizeof(int);
+    *(int *)ptr = txnId;
+    ptr += sizeof(int);
+    *(int *)ptr = stmtId;
+    ptr += sizeof(int);
+    strncpy(ptr, tblName, IDENTIFIER_LENGTH);
+    ptr[IDENTIFIER_LENGTH-1] ='\0';
+    ptr +=IDENTIFIER_LENGTH;
+    strncpy(ptr, stmt, len);
+    printDebug(DM_SqlLog, "stmtstr = | %s |\n", ptr);
+    printDebug(DM_SqlLog, "length of msg sent = %d\n", datalen);
+    int ret = os::msgsnd(msgQId, msg, datalen, 0666);     
+    if (ret != 0) { 
+        printError(ErrSysInternal, "message send failed\n"); 
+        ::free(msg);
+        return ErrSysInternal; 
+    }
+    ::free(msg);
+    return OK;
+};
+
+DbRetVal MsgQueueSend::commit(int len, void *data)
+{
+    Message *msg = (Message *) ((char *)data - sizeof (long));
+    msg->mtype = 2;
+    int ret = os::msgsnd(msgQId, msg, len, 0666);
+    if (ret != 0) { 
+        printError(ErrSysInternal, "message send failed\n"); 
+        return ErrSysInternal; 
+    }
+    return OK;
+}
+
+DbRetVal MsgQueueSend::free(int txnId, int stmtId)
+{
+    // data to be sent is len + txn id +  stmtId
+    int dataLen = 3 * sizeof(int);
+    int bufferSize = sizeof(Message) - 1 + dataLen; 
+    Message *msg = (Message *) malloc(bufferSize);
+    msg->mtype = 3;
+    *(int *) &msg->data = dataLen;
+    char *ptr = (char *) &msg->data;
+    ptr += sizeof(int);
+    *(int *) ptr = txnId;
+    ptr += sizeof(int);
+    *(int *) ptr = stmtId;
+    printDebug(DM_SqlLog, "stmtID sent = %d\n", *(int *) ptr);
+    int ret = os::msgsnd(msgQId, msg, dataLen, 0666);
+    if (ret != 0) { 
+        printError(ErrSysInternal, "message send failed\n"); 
+        ::free(msg);
+        return ErrSysInternal; 
+    }
+    ::free(msg);
+    return OK;
 }

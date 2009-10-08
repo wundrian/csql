@@ -27,13 +27,14 @@ int UserManagerImpl::createUser(const char *name, const char *password)
     int ret = 0;
     //add entry to USER table
     CatalogTableUSER cUser(systemDatabase_);
-    cUser.insert(name, password);
+    ret = cUser.insert(name, password);
     if (0 != ret)
     {
         printError(ErrSysInternal,
                    "Catalog table insert failed for the user %s",name);
         return ErrSysInternal;
     }
+    logFine(Conf::logger, "User Created %s" , name);
     return OK;
 }
 
@@ -54,17 +55,18 @@ int UserManagerImpl::deleteUser(const char *name)
                            "User %s not exists",name);
         return ErrNotExists;
     }
+    logFine(Conf::logger, "User Deleted %s" , name);
     return OK;
 }
 
 int UserManagerImpl::changePassword(const char *usrName, const char* newPasswd)
 {
-    if (!isDba)
+/*    if (!isDba)
     {
         printError(ErrNoPrivilege,
                    "Only DBA privileged schema can change password for other users");
         return ErrNoPrivilege;
-    }
+    }*/
     int ret = 0;
     CatalogTableUSER cUser(systemDatabase_);
     ret = cUser.changePass(usrName, newPasswd );
@@ -74,6 +76,7 @@ int UserManagerImpl::changePassword(const char *usrName, const char* newPasswd)
                    "Catalog table updation failed for user %s",usrName);
         return ErrSysInternal;
     }
+    logFine(Conf::logger, "Password changed for  %s" ,usrName);
     return OK;
 }
 
@@ -89,5 +92,18 @@ int UserManagerImpl::changePassword(const char* newPasswd)
                    "Catalog table updation failed");
         return ErrSysInternal;
     }
+    logFine(Conf::logger, "Password changed for  %s" ,userName);
     return OK;
 }
+
+List UserManagerImpl::getAllUserNames(int *retval)
+{
+    DbRetVal ret = OK;
+    //to store the tuple pointer of the table
+    void *tptr =NULL;
+    CatalogTableUSER cUser(systemDatabase_);
+    List userList = cUser.getUserList();
+    return userList;
+}
+
+

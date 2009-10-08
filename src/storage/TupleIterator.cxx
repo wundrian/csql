@@ -20,73 +20,84 @@
 #include<Debug.h>
 #include<TableImpl.h>
 #include<PredicateImpl.h>
+DbRetVal TupleIterator::setPlan()
+{
+    PredicateImpl *predImpl = (PredicateImpl*) pred_;
+    if (treeIndexScan == scanType_)
+    {
+        HashIndexInfo *hIdxInfo = (HashIndexInfo*)info;
+        FieldIterator iter = hIdxInfo->idxFldList.getIterator();
+        if(iter.hasElement())
+        {
+           FieldDef *def = iter.nextElement();
+           keyPtr = (char*)predImpl->valPtrForIndexField(def->fldName_, hIdxInfo->isUnique);
+           op = predImpl->opForIndexField(def->fldName_);
+        }
+        CINDEX *iptr = (CINDEX*) hIdxInfo->indexPtr;
+        TreeNode *fstNode=(TreeNode *)iptr->hashNodeChunk_;
+        if(fstNode!=NULL){
+            TreeNode *start = (TreeNode *)*((char**)((char*)fstNode + sizeof(TreeNode)));
+            tIter->set(start,(TreeNode*)iptr->hashNodeChunk_,procSlot);
+        }else{
+            tIter->set(NULL,(TreeNode*)iptr->hashNodeChunk_,procSlot);
+        }
+        tIter->setSearchKey(keyPtr, op);
+        if (hIdxInfo->isUnique) tIter->setUnique();
+        tIter->setFldOffset(hIdxInfo->fldOffset);
+        tIter->setTypeLength(hIdxInfo->type, hIdxInfo->compLength);
+    }
+    if(predImpl) predImpl->setIfNoLeftRight();
+    return OK;
+}
 DbRetVal TupleIterator::open()
 {
     PredicateImpl *predImpl = (PredicateImpl*) pred_;
     if (fullTableScan == scanType_)
     {
-        cIter = new ChunkIterator();
         *cIter = ((Chunk*)chunkPtr_)->getIterator();
     }else if (hashIndexScan == scanType_)
     {
         HashIndexInfo *hIdxInfo = (HashIndexInfo*)info;
         bool isPtr = false;
         FieldIterator iter = hIdxInfo->idxFldList.getIterator();
-        char *keyBuffer;
         int offset = hIdxInfo->fldOffset;
-        keyBuffer = (char*) malloc(hIdxInfo->compLength);
-        void *keyStartBuffer = (void*) keyBuffer, *keyPtr;
+        if(!keyBuffer) keyBuffer = (char*) malloc(hIdxInfo->compLength);
+        void *keyPtr = NULL;
+        char *keyBufferIter = keyBuffer;
         while(iter.hasElement())
         {
            FieldDef *def = iter.nextElement();
-           keyPtr = (void*)predImpl->valPtrForIndexField(def->fldName_);
-           AllDataType::copyVal(keyBuffer, keyPtr, def->type_, def->length_); 
-           keyBuffer = keyBuffer + def->length_;
+           //keyPtr = (void*)predImpl->valPtrForIndexField(def->fldName_,hIdxInfo->isUnique);
+           //TODO::PRABA::the below opt should be done for hash also
+           keyPtr = (void*)predImpl->valPtrForIndexField(def->fldName_,false);
+           AllDataType::copyVal(keyBufferIter, keyPtr, def->type_, def->length_); 
+           keyBufferIter = keyBufferIter + def->length_;
         }
-        int bucketNo = 0;
-        if (hIdxInfo->type == typeComposite) 
-            bucketNo = HashIndex::computeHashBucket(hIdxInfo->type,
-                      (char *)keyStartBuffer, hIdxInfo->noOfBuckets, hIdxInfo->compLength);
-        else bucketNo = HashIndex::computeHashBucket(hIdxInfo->type,
-                      keyStartBuffer, hIdxInfo->noOfBuckets, hIdxInfo->compLength);
-        free(keyStartBuffer);
+        int bucketNo = HashIndex::computeHashBucket(hIdxInfo->type,
+                      keyBuffer, hIdxInfo->noOfBuckets, hIdxInfo->compLength);
         Bucket *bucket =  &(hIdxInfo->buckets[bucketNo]);
-        int ret = bucket->mutex_.getLock(procSlot);
-        if (ret != 0)
-        {
-            printError(ErrLockTimeOut,"Unable to acquire bucket Mutex for bucket %d",bucketNo);
-            return ErrLockTimeOut;
-        }
         HashIndexNode *head = (HashIndexNode*) bucket->bucketList_;
         if (!head)
         {
-            bucket->mutex_.releaseLock(procSlot);
-            bIter = NULL ;
+            bIter->setHead(head);
             return OK;
         }
         printDebug(DM_HashIndex, "open:head for bucket %x is :%x", bucket, head);
-        bIter  = new BucketIter(head);
-        bucket->mutex_.releaseLock(procSlot);
+        bIter->setHead(head);
     }else if (treeIndexScan == scanType_)
     {
         HashIndexInfo *hIdxInfo = (HashIndexInfo*)info;
-        bool isPtr = false;
-        FieldIterator iter = hIdxInfo->idxFldList.getIterator();
-        void *keyPtr; ComparisionOp op;
-        if(iter.hasElement())
-        {
-           FieldDef *def = iter.nextElement();
-           keyPtr = (void*)predImpl->valPtrForIndexField(def->fldName_);
-           op = predImpl->opForIndexField(def->fldName_);
-           //TODO::remove this predicate term as it is pushed to tree iter
-        }
         CINDEX *iptr = (CINDEX*) hIdxInfo->indexPtr;
-        tIter = new TreeIter((TreeNode*)iptr->hashNodeChunk_);
-        tIter->setSearchKey(keyPtr, op);
-        tIter->setFldOffset(hIdxInfo->fldOffset);
-        tIter->setTypeLength(hIdxInfo->type, hIdxInfo->compLength);
+        TreeNode *fstNode=(TreeNode *)iptr->hashNodeChunk_;
+        if(fstNode!=NULL){
+            TreeNode *start = (TreeNode *)*((char**)((char*)fstNode + sizeof(TreeNode)));        
+            tIter->set(start,(TreeNode*)iptr->hashNodeChunk_,procSlot);
+        }else{
+            tIter->set(NULL,(TreeNode*)iptr->hashNodeChunk_,procSlot);
+        }
+        if (hIdxInfo->isUnique) tIter->setUnique();
     }
-    if(predImpl) predImpl->setIfNoLeftRight();
+    isClosed = false;
     return OK;
 }
 
@@ -116,7 +127,6 @@ void* TupleIterator::next()
     DbRetVal rv = OK;
     if (fullTableScan == scanType_)
     {
-
         if (NULL == pred_)
         {
             //no predicates
@@ -125,26 +135,38 @@ void* TupleIterator::next()
         else
         {
             int offset=0;
+            bool isLargeSizeAllocator = cIter->isLargeSize();
             void *val = predImpl->getValIfPointLookupOnInt(offset);
             char *tup = NULL;
             if (val != NULL) {
-              while (true)
-              {
-                tup = (char*)cIter->nextElement();
-                if(NULL == tup) return NULL;
-                if (*(int*)val == *((int*)(tup+offset))) break;
-              }
-              return tup;
+               int value = *(int*)val;
+               if (isLargeSizeAllocator) {
+                   while (true)
+                   {
+                      tup = (char*)cIter->nextElement();
+                      if(NULL == tup) return NULL;
+                      if (value == *((int*)(tup+offset))) break;
+                   }
+                   return tup;
+                }else {
+                   tup = (char*)cIter->nextElementIntMatch(value, offset);
+                   return tup;
+                }
             }
             val = predImpl->getVal1IfBetweenOnInt(offset);
             if (val != NULL) {
               void *val2 = predImpl->getVal2IfBetweenOnInt(offset);
+              int value1 = *(int*)val;
+              int value2 = *(int*)val2;
               while (true)
               {
-                tup = (char*)cIter->nextElement();
+                if(isLargeSizeAllocator) 
+                   tup = (char*)cIter->nextElement();
+                else
+                   tup = (char*)cIter->nextElementInt();
                 if(NULL == tup) return NULL;
-                if (*((int*)(tup+offset)) >= *(int*)val &&
-                    *((int*)(tup+offset)) <= *(int*)val2) break;
+                if (*((int*)(tup+offset)) >= value1 &&
+                    *((int*)(tup+offset)) <= value2) break;
               }
               return tup;
             }
@@ -153,7 +175,10 @@ void* TupleIterator::next()
             bool result = false;
             while (!result)
             {
-                tuple = cIter->nextElement();
+                if(isLargeSizeAllocator) 
+                    tuple = cIter->nextElement();
+                else
+                    tuple = cIter->nextElementInt();
                 if(NULL == tuple) return NULL;
                 //predImpl->setTuple(tuple);
                 printDebug(DM_Table, "Evaluating the predicate from fullTableScan");
@@ -162,11 +187,6 @@ void* TupleIterator::next()
         }
     }else if (hashIndexScan == scanType_)
     {
-        if (NULL == bIter)
-        {
-            //if there are no nodes in bucket bIter will be null
-            return NULL;
-        }
         //evaluate till it succeeds
         bool result = false;
         while (!result)
@@ -203,7 +223,7 @@ void* TupleIterator::next()
            }
            //predImpl->setTuple(tuple);
            predImpl->evaluateForTable(result, (char*)tuple);
-           if(!result && (isBetInvolved() || isPointLookInvolved()))  tIter->nextNode();
+           if(!result && (isBetween || isPointLook))  tIter->nextNode();
         }
     }
     return tuple;
@@ -211,28 +231,20 @@ void* TupleIterator::next()
 
 DbRetVal TupleIterator::close()
 {
-    if (scanType_ == fullTableScan)
-    {
-        delete cIter;
-        cIter = NULL;
-    } else if (scanType_ == hashIndexScan)
-    {
-            delete bIter;
-            bIter = NULL;
-    } else if (scanType_ == treeIndexScan)
-    {
-        delete tIter;
-        tIter = NULL;
-    }
-
-    scanType_ = unknownScan;
+    if (isClosed) return OK;
+    reset();
+    isClosed = true;
     return OK;
 }
 
 void TupleIterator::reset()
 {
     DbRetVal rv = OK;
-    if (scanType_ == fullTableScan) *cIter = ((Chunk*)chunkPtr_)->getIterator();
-    else if (scanType_ == hashIndexScan) if(bIter) bIter->reset();
-    else if (scanType_ == treeIndexScan) if(tIter) tIter->reset(); 
+    if (scanType_ == fullTableScan) {
+        if (cIter) *cIter = ((Chunk*)chunkPtr_)->getIterator(); 
+    }
+    else if (scanType_ == hashIndexScan) { 
+        if(bIter) bIter->reset();
+    }
+    else if (scanType_ == treeIndexScan) { if(tIter) tIter->reset(); }
 }    

@@ -1,6 +1,27 @@
 #include<Util.h>
 #include<Config.h>
 
+unsigned int Util::hashBinary(char *strVal, int length)
+{
+    unsigned int hval, g;
+    hval = 0;
+    char *str =strVal;
+    int iter = 0;
+    while (iter != length)
+    {
+        hval <<= 4;
+        hval += (unsigned int) *str++;
+        g = hval & ((unsigned int) 0xf << (32 - 4));
+        if (g != 0)
+            {
+                hval ^= g >> (32 - 8);
+                hval ^= g;
+            }
+        iter++;
+    }
+    return hval;
+}
+
 DbRetVal GlobalUniqueID::create()
 {
     int key = Conf::config.getShmIDKey();
@@ -19,6 +40,7 @@ DbRetVal GlobalUniqueID::create()
    
 DbRetVal GlobalUniqueID::open() 
 {
+    if (ptr != NULL) return OK;
     int key = Conf::config.getShmIDKey();
     int id = os::shm_open(key, MAX_UNIQUE_ID *sizeof(int), 0666);
     if (-1 == id) {
@@ -46,7 +68,8 @@ int GlobalUniqueID::getID(UniqueIDType type)
 {
     int *id = (int*)(((char*)ptr) + sizeof(int) * type);
     int oldVal = *id;
-    int ret = Mutex::CAS(id, oldVal, oldVal+1);
+    int newVal = oldVal + 1;
+    int ret = Mutex::CAS(id, oldVal, newVal);
     if (ret) return -1;
     return *id;
 }

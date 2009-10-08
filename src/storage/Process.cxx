@@ -71,7 +71,7 @@ DbRetVal ProcessManager::registerThread()
     DbRetVal rv = systemDatabase->getProcessTableMutex(false);
     if (OK != rv)
     {
-        printError(rv,"Unable to get process table mutex");
+        printError(rv,"Unable to get mutex for registering");
         printError(rv,"Recovery may be going on. Retry after some time.");
         mutex.getLock(-1, false);
         noThreads--;
@@ -144,18 +144,22 @@ DbRetVal ProcessManager::deregisterThread(int procSlot)
        {
            printError(ErrWarning, "Transaction is still running\n");
        }
+       trans->status_ = TransNotUsed;
     }
     if (pInfo->want_ != NULL) 
     {
         printError(ErrSysFatal, "Probable data corruption.wants_ is not null\n");
+        systemDatabase->releaseProcessTableMutex(false);
         return ErrSysFatal;
     }
     for (int muti = 0 ;muti < MAX_MUTEX_PER_THREAD; muti++)
     {
         if (pInfo->has_[muti] !=  NULL) 
         {
-            printError(ErrSysFatal, "Probable data corruption.some mutexes are not freed %x \n",  pInfo->has_[muti]);
+            printError(ErrSysFatal, "Probable data corruption.some mutexes are not freed %x \n",  pInfo->has_[muti] );
+            pInfo->has_[muti]->print();
             pInfo->has_[muti]->releaseLock(procSlot); 
+            systemDatabase->releaseProcessTableMutex(false);
             return ErrSysFatal;
         }
     }
@@ -197,6 +201,12 @@ DbRetVal ProcessManager::addMutex(Mutex *mut, int pslot)
         }
     }
     printError(ErrSysInternal, "All slots are full. Reached per thread mutex limit.");
+    //printStackTrace();
+    for (int i = 0 ;i < MAX_MUTEX_PER_THREAD; i++)
+    {
+       printError(ErrWarning, "mutex %d %x", i, pInfo->has_[i]);
+       pInfo->has_[i]->print();
+    }
     return ErrSysInternal;
 }
 
@@ -231,10 +241,6 @@ DbRetVal ProcessManager::removeMutex(Mutex *mut, int pslot)
         }
     }
     printError(ErrSysInternal, "Mutex could not be found in the list %s", mut->name);
-    void *array[10];
-    size_t size;
-    size = backtrace(array, 10);
-    backtrace_symbols_fd(array, size, 2);
     return ErrSysInternal;
 }
 
@@ -271,30 +277,8 @@ DbRetVal ProcessManager::setThreadTransaction(Transaction *trans, int pslot)
 
 Transaction* ProcessManager::getThreadTransaction(int pslot)
 {
-    pid_t pid = os::getpid();
-    pthread_t thrid = os::getthrid();
-    if (systemDatabase == NULL)
-    {
-        return NULL;
-    }
-
     ThreadInfo* pInfo = systemDatabase->getThreadInfo(pslot);
-    int i=0;
-
-    for (i = 0; i < MAX_THREADS_PER_PROCESS; i++)
-    {
-        if (pInfo->thrTrans_[i].pid_ == pid && pInfo->thrTrans_[i].thrid_ == thrid) break;
-    }
-    if (i == MAX_THREADS_PER_PROCESS)
-    {
-        printDebug(DM_Process, "Thread specific trans could not be found in list");
-        return NULL;
-    }
-
-    printDebug(DM_Process, "procSlot %d:  pid: %d thrid: %lu is returning trans %x\n", pslot, 
-                           pid, thrid, pInfo->thrTrans_[i].trans_);
-    //pInfo->trans_ = trans;
-    return pInfo->thrTrans_[i].trans_;
+    return pInfo->thrTrans_[0].trans_;
 }
 
 Transaction** ProcessManager::getThreadTransAddr(int pslot)

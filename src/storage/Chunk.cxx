@@ -28,7 +28,7 @@
 void Chunk::setSize(size_t size)
 {
 
-    size_t needSize = size + sizeof(int);
+    size_t needSize = size + sizeof(long);
     size_t multiple = (size_t) os::floor(needSize / sizeof(size_t));
     size_t rem = needSize % sizeof(size_t);
     if (0 == rem)
@@ -51,12 +51,14 @@ void* Chunk::allocateForLargeDataSize(Database *db)
     if (pageInfo->hasFreeSpace_ == 1)
     {
         char *data = ((char*)curPage_) + sizeof(PageInfo);
-        pageInfo->hasFreeSpace_ =0;
-        *((int*)data) = 1;
+        //pageInfo->hasFreeSpace_ =0;
+        int retVal = Mutex::CAS(&pageInfo->hasFreeSpace_, pageInfo->hasFreeSpace_, 0);
+        if (retVal !=0) printError(ErrSysFatal, "Unable to set hashFreeSpace flag");
+        *((InUse*)data) = 1;
+        //Mutex::CAS((InUse*)data , 0, 1);
         db->releaseAllocDatabaseMutex();
-        return data + sizeof(int);
+        return data + sizeof(InUse);
     }
-
 
     //no space in curpage , get new page from database 
     pageInfo = (PageInfo*)db->getFreePage(allocSize_);
@@ -68,25 +70,39 @@ void* Chunk::allocateForLargeDataSize(Database *db)
     }
     printDebug(DM_Alloc, "Chunk ID:%d Large Data Item newPage:%x",
                                        chunkID_, pageInfo);
-    int multiple = os::floor(allocSize_ / PAGE_SIZE);
+    int multiple = (int) os::floor(allocSize_ / PAGE_SIZE);
     int offset = ((multiple + 1) * PAGE_SIZE);
 
     pageInfo->setPageAsUsed(offset);
 
     //create the link
-   ((PageInfo*)curPage_)->nextPage_ = (Page*) pageInfo;
+    //((PageInfo*)curPage_)->nextPage_ = (Page*) pageInfo;
+    int retVal = Mutex::CASL((long*) &(((PageInfo*)curPage_)->nextPage_), 
+               (long)(((PageInfo*)curPage_)->nextPage_), (long)pageInfo);
+    if(retVal !=0) {
+        printError(ErrLockTimeOut, "Fatal: Unable to create page link.");
+    }
+
     //Make this as current page
-    curPage_ = (Page*) pageInfo;
+    //curPage_ = (Page*) pageInfo;
+    retVal = Mutex::CASL((long*) &curPage_, (long)curPage_, (long)pageInfo);
+    if(retVal !=0) {
+        printError(ErrLockTimeOut, "Fatal:Unable to set current page");
+    }
+
     char* data = ((char*)curPage_) + sizeof(PageInfo);
-    //TODO::check whether it is locked
-    *((int*)data) = 1;
-    pageInfo->hasFreeSpace_ =0;
+    retVal = Mutex::CAS(&pageInfo->hasFreeSpace_, pageInfo->hasFreeSpace_, 0);
+    if(retVal !=0) {
+        printError(ErrLockTimeOut, "Fatal:Unable to set hasFreeSpace");
+    }
+    *((InUse*)data) = 1;
+    //Mutex::CAS((InUse*)data , 0, 1);
     db->releaseAllocDatabaseMutex();
-    return data + sizeof(int);
+    return data + sizeof(InUse);
 
 }
 
-void* Chunk::allocateFromFirstPage(Database *db, int noOfDataNodes)
+void* Chunk::allocateFromFirstPage(Database *db, int noOfDataNodes, DbRetVal *status)
 {
     PageInfo *pageIter = ((PageInfo*)firstPage_);
     printDebug(DM_Alloc, "Chunk ID:%d. No free page in database",
@@ -101,39 +117,49 @@ void* Chunk::allocateFromFirstPage(Database *db, int noOfDataNodes)
         data = ((char*)pageIter) + sizeof(PageInfo);
         if (pageIter->hasFreeSpace_ == 1)
         {
-            for (i = 0; i< noOfDataNodes; i++)
+            for (i = 0; i< noOfDataNodes ; i++)
             {
-                if (1 == *((int*)data))
+                if (1 == *((InUse*)data))
                     data = data + allocSize_;
                 else break;
             }
-            if (i != noOfDataNodes ) break;
+            if (i != noOfDataNodes) break;
         }
         printDebug(DM_Alloc, "Chunk ID: %d Page :%x does not have free nodes",
                                                            chunkID_, pageIter);
         pageIter = (PageInfo*)((PageInfo*) pageIter)->nextPage_;
     }
-    if (NULL == pageIter) return NULL;
+    if (NULL == pageIter) { 
+        *status = ErrNoMemory;
+        return NULL;
+    }
     printDebug(DM_Alloc,"ChunkID:%d Scan for free node End:Page :%x",
                                                   chunkID_, pageIter);
-    *((int*)data) = 1;
-    return data + sizeof(int);
-
+    //*((InUse*)data) = 1;
+    int ret = Mutex::CAS((InUse*)data , 0, 1);
+    if(ret !=0) {
+        *status = ErrLockTimeOut;
+        //printError(ErrLockTimeOut, "Unable to allocate from first page. Retry...");
+        return NULL;
+    }
+    return data + sizeof(InUse);
 }
 
-void* Chunk::allocateFromNewPage(Database *db)
+void* Chunk::allocateFromNewPage(Database *db, DbRetVal *status)
 {
     DbRetVal ret = db->getAllocDatabaseMutex();
     if (ret != 0)
     {
-        printError(ErrLockTimeOut,"Unable to acquire alloc database Mutex");
+        printDebug(DM_Warning,"Unable to acquire alloc database Mutex Chunkid:%d", chunkID_);
+        *status = ErrLockTimeOut;
         return NULL;
     }
     //get a new page from db
     Page *page = db->getFreePage();
-    if (page == NULL)
-    {
+    if (page == NULL) {
+        printError(ErrNoMemory, "Unable to allocate page");
         db->releaseAllocDatabaseMutex();
+        *status = ErrNoMemory;
         return NULL;
     }
     printDebug(DM_Alloc, "ChunkID:%d Normal Data Item newPage:%x",
@@ -142,17 +168,39 @@ void* Chunk::allocateFromNewPage(Database *db)
     PageInfo *pInfo = (PageInfo*)page;
     pInfo->setPageAsUsed(0);
 
+    char* data = ((char*)page) + sizeof(PageInfo);
+    *((InUse*)data) = 1;
+    //Mutex::CAS((int*)data , 0, 1);
+
     //create the link between old page and the newly created page
     PageInfo* pageInfo = ((PageInfo*)curPage_);
-    pageInfo->nextPage_ = page;
+
+    long oldPage = (long)pageInfo->nextPage_;
+    //pageInfo->nextPage_ = page;
+    int retVal = Mutex::CASL((long*)&pageInfo->nextPage_ , (long)pageInfo->nextPage_, (long)page);
+    if(retVal !=0) {
+        *((InUse*)data) = 0;
+        pInfo->setPageAsFree();
+        printDebug(DM_Warning, "Unable to get lock to set chunk list.");
+        *status = ErrLockTimeOut;
+        return NULL;
+    }
 
     //make this new page as the current page
-    curPage_ = page;
+    //curPage_ = page;
+    retVal = Mutex::CASL((long*)&curPage_ , (long)curPage_, (long)page);
+    if(retVal !=0) {
+        *((InUse*)data) = 0;
+        pInfo->setPageAsFree();
+        retVal = Mutex::CASL((long*)&pageInfo->nextPage_ , (long)pageInfo->nextPage_, (long)oldPage);
+        if (retVal !=0) printError(ErrSysFatal, "Fatal: Unable to reset the nextPage");
+        printDebug(DM_Warning, "Unable to get lock to set curPage");
+        *status = ErrLockTimeOut;
+        return NULL;
+    }
 
-    char* data = ((char*)page) + sizeof(PageInfo);
-    *((int*)data) = 1;
     db->releaseAllocDatabaseMutex();
-    return data + sizeof(int);
+    return data + sizeof(InUse);
 }
 
 //Allocates memory to store data
@@ -165,7 +213,7 @@ void* Chunk::allocate(Database *db, DbRetVal *status)
 {
     PageInfo* pageInfo = ((PageInfo*)curPage_);
 
-    int noOfDataNodes= (int) os::floor((PAGE_SIZE - sizeof(PageInfo))/allocSize_);
+    int noOfDataNodes=(int) os::floor((PAGE_SIZE - sizeof(PageInfo))/allocSize_);
     char *data = ((char*)curPage_) + sizeof(PageInfo);
     printDebug(DM_Alloc, "Chunk::allocate id:%d curPage:%x noOfDataNodes:%d",
                          chunkID_, curPage_, noOfDataNodes);
@@ -184,19 +232,19 @@ void* Chunk::allocate(Database *db, DbRetVal *status)
         return data;
     }
 
-    int ret = getChunkMutex(db->procSlot);
+    /*int ret = getChunkMutex(db->procSlot);
     if (ret != 0)
     {
         if (status != NULL) *status = ErrLockTimeOut;
         printError(ErrLockTimeOut,"Unable to acquire chunk Mutex");
         return NULL;
-    }
+    }*/
     int i = noOfDataNodes;
     if (pageInfo->hasFreeSpace_ == 1)
     {
         for (i = 1; i< noOfDataNodes; i++)
         {
-            if (*((int*)data) == 1) data = data + allocSize_;
+            if (*((InUse*)data) == 1) data = data + allocSize_;
             else break;
         }
 
@@ -205,82 +253,95 @@ void* Chunk::allocate(Database *db, DbRetVal *status)
                                                         chunkID_, i);
     //It comes here if the pageInfo->hasFreeSpace ==0
     //or there are no free data space in this page
-    if (i == noOfDataNodes && *((int*)data) == 1)
+    if (i == noOfDataNodes && *((InUse*)data) == 1)
     {
 
         printDebug(DM_Alloc, "ChunkID:%d curPage does not have free nodes.", chunkID_);
         //there are no free data space in this page
-        pageInfo->hasFreeSpace_ = 0;
-        if (chunkID_ == LockTableId || chunkID_ == TransHasTableId) 
+        //pageInfo->hasFreeSpace_ = 0;
+        int ret = Mutex::CAS(&pageInfo->hasFreeSpace_, pageInfo->hasFreeSpace_, 0);
+        if(ret !=0) {
+            *status = ErrLockTimeOut;
+            printDebug(DM_Warning, "Unable to set hasFreespace");
+            return NULL;
+        }
+        //if (chunkID_ == LockTableId || chunkID_ == TransHasTableId) 
         {
-           data = (char*) allocateFromFirstPage(db, noOfDataNodes);
-           if (NULL == data)
+           *status = OK;
+           data = (char*) allocateFromFirstPage(db, noOfDataNodes, status);
+           if (NULL == data && *status != ErrLockTimeOut)
            {
-              data = (char*) allocateFromNewPage(db);
-              if (data == NULL)
+              *status = OK;
+              data = (char*) allocateFromNewPage(db, status);
+              if (data == NULL && *status != ErrLockTimeOut)
               {
                 printError(ErrNoMemory, "No memory in any of the pages:Increase db size");
-                if (status != NULL) *status = ErrNoMemory;
+                *status = ErrNoMemory;
               }
            }
         } 
-        else 
+        /*else 
         {
-           data = (char*) allocateFromNewPage(db);
-           if (NULL == data)
+           data = (char*) allocateFromNewPage(db, status);
+           if (NULL == data && *status != ErrLockTimeOut)
            {
               data = (char*) allocateFromFirstPage(db, noOfDataNodes);
               if (data == NULL)
               {
                 printError(ErrNoMemory, "No memory in any of the pages:Increase db size");
-                if (status != NULL) *status = ErrNoMemory;
+                *status = ErrNoMemory;
               }
            }
-        }
-        releaseChunkMutex(db->procSlot);
+        }*/
+        //releaseChunkMutex(db->procSlot);
         return data;
     }
-    *((int*)data) = 1;
-    releaseChunkMutex(db->procSlot);
-    return data + sizeof(int);
+    //*((InUse*)data) = 1;
+    int ret = Mutex::CAS((InUse*)data , 0, 1);
+    if(ret !=0) {
+        *status = ErrLockTimeOut;
+        printDebug(DM_Warning, "Unable to set isUsed : retry...");
+        return NULL;
+    }
+    //releaseChunkMutex(db->procSlot);
+    return data + sizeof(InUse);
 }
 
 
 void* Chunk::allocateForLargeDataSize(Database *db, size_t size)
 {
     //no need to take chunk mutexes for this, as we are taking alloc database mutex
-    int multiple = os::floor(size / PAGE_SIZE);
+    int multiple = (int) os::floor(size / PAGE_SIZE);
     int offset = ((multiple + 1) * PAGE_SIZE);
     PageInfo* pageInfo = ((PageInfo*)curPage_);
-    DbRetVal ret = db->getAllocDatabaseMutex();
-    if (ret != 0)
-    {
-        printError(ErrLockTimeOut,"Unable to acquire alloc database Mutex");
-        return NULL;
-    }
-    if(0==allocSize_)
+    if(0==allocSize_) 
         pageInfo = (PageInfo*)db->getFreePage(size);
     else
         pageInfo = (PageInfo*)db->getFreePage(allocSize_);
     if (NULL == pageInfo)
     {
-        db->releaseAllocDatabaseMutex();
         printError(ErrNoMemory,"No more free pages in the database:Increase db size");
         return NULL;
     }
-    printDebug(DM_VarAlloc,"Chunk::allocate Large Data Item id:%d Size:%d curPage:%x ",
+    printDebug(DM_VarAlloc,"Chunk::alnextPageAfterMerge_locate Large Data Item id:%d Size:%d curPage:%x ",
                                             chunkID_, size, curPage_);
-   if(allocSize_!=0){
+    //TODO:: logic pending
+    if(allocSize_!=0){
         //large size allocate for FixedSize data
         pageInfo->nextPageAfterMerge_ = ((char*)pageInfo + offset);
         ((PageInfo*)curPage_)->nextPage_ = (Page*) pageInfo;
         curPage_ = (Page*) pageInfo;
         char* data = ((char*)curPage_) + sizeof(PageInfo);
-        *((int*)data) = 1;
+        //*((InUse*)data) = 1;
+        int ret = Mutex::CAS((InUse*)data , 0, 1);
+        if(ret !=0) {
+             printError(ErrLockTimeOut, "Lock Timeout: retry...");
+             return NULL;
+        }
         pageInfo->isUsed_=1;
-        pageInfo->hasFreeSpace_ = 0;
-        db->releaseAllocDatabaseMutex();
-        return data + sizeof(int);
+        ret = Mutex::CAS(&pageInfo->hasFreeSpace_, pageInfo->hasFreeSpace_, 0);
+        if (ret !=0) printError(ErrSysFatal, "Unable to set hashFreeSpace");
+        return data + sizeof(InUse);
     }else{
         //large size allocate for varSize data
         VarSizeInfo *varInfo = (VarSizeInfo*)(((char*)pageInfo) + sizeof(PageInfo));
@@ -288,12 +349,14 @@ void* Chunk::allocateForLargeDataSize(Database *db, size_t size)
         ((PageInfo*)curPage_)->nextPage_ = (Page*) pageInfo;
         curPage_ = (Page*) pageInfo;
         varInfo->size_= size;
-        varInfo->isUsed_= 1;       
+        int ret = Mutex::CAS(&varInfo->isUsed_ , varInfo->isUsed_, 1);
+        if(ret !=0) {
+             printError(ErrLockTimeOut, "Unable to get lock for var alloc. Retry...");
+             return NULL;
+        }
         pageInfo->isUsed_=1;
-        db->releaseAllocDatabaseMutex();
         return (char *) varInfo + sizeof(VarSizeInfo);
     }
-
     //REDESIGN MAY BE REQUIRED:Lets us live with this for now.
     //what happens to the space lets say 10000 bytes is allocated
     //it needs 2 pages,= 16000 bytes, 6000 bytes should not be wasted
@@ -301,51 +364,76 @@ void* Chunk::allocateForLargeDataSize(Database *db, size_t size)
     //Will be coded at later stage as this is developed to support
     //undo logging and currently we shall assume that the logs generated
     //wont be greater than PAGE_SIZE.
-    db->releaseAllocDatabaseMutex();
     return NULL;
 
 }
 
 
 
-void* Chunk::allocFromNewPageForVarSize(Database *db, size_t size)
+void* Chunk::allocFromNewPageForVarSize(Database *db, size_t size, int pslot, DbRetVal *rv)
 {
     //Should be called only for data items <PAGE_SIZE
+    void *vnode = varSizeFirstFitAllocate(size, pslot, rv);
+    if (vnode != NULL)
+    {
+       return vnode;
+    }
+    printDebug(DM_Warning, "No free space in any of the pages already being used");
+    *rv =OK;
     DbRetVal ret = db->getAllocDatabaseMutex();
     if (ret != 0)
     {
         printError(ErrLockTimeOut,"Unable to acquire alloc database Mutex");
         return NULL;
     }
-
-    void *vnode = varSizeFirstFitAllocate(size);
-    if (vnode != NULL)
-    {
-       db->releaseAllocDatabaseMutex();
-       return vnode;
-    }
-
     Page *newPage = db->getFreePage();
-    db->releaseAllocDatabaseMutex();
     if (NULL == newPage)
     {
+        db->releaseAllocDatabaseMutex();
         return NULL;
     }
 
     printDebug(DM_VarAlloc, "ChunkID:%d New Page: %x ", chunkID_, newPage);
     PageInfo *pInfo = (PageInfo*) newPage;
     pInfo->setPageAsUsed(0);
-    createDataBucket(newPage, PAGE_SIZE, size);
-
-    ((PageInfo*)curPage_)->nextPage_ = newPage;
-    curPage_ = newPage;
+    if (1 == createDataBucket(newPage, PAGE_SIZE, size, pslot))
+    {
+        printError(ErrSysFatal, "Split failed in new page...Should never happen");
+        *rv = ErrSysFatal;
+        db->releaseAllocDatabaseMutex();
+        return NULL;
+    }
+    long oldPage = (long)((PageInfo*)curPage_)->nextPage_;
+    //((PageInfo*)curPage_)->nextPage_ = newPage;
+    int retVal = Mutex::CASL((long*) &(((PageInfo*)curPage_)->nextPage_), 
+               (long)(((PageInfo*)curPage_)->nextPage_), (long)newPage);
+    if(retVal !=0) {
+        printError(ErrSysFatal, "Unable to get lock to set chunk next page");
+        pInfo->setPageAsFree();
+        db->releaseAllocDatabaseMutex();
+        *rv = ErrSysFatal;
+        return NULL;
+    }
+    //curPage_ = newPage;
+    retVal = Mutex::CASL((long*) &curPage_, (long)curPage_, (long)newPage);
+    if(retVal !=0) {
+        printError(ErrSysFatal, "Unable to get lock to set curPage");
+        retVal = Mutex::CASL((long*) &(((PageInfo*)curPage_)->nextPage_), 
+               (long)(((PageInfo*)curPage_)->nextPage_), (long)oldPage);
+        if (retVal !=0 ) printError(ErrSysFatal, "Unable to reset curPage");
+        pInfo->setPageAsFree();
+        db->releaseAllocDatabaseMutex();
+        *rv = ErrSysFatal;
+        return NULL;
+    }
+    db->releaseAllocDatabaseMutex();
     char *data= ((char*)newPage) + sizeof(PageInfo) + sizeof(VarSizeInfo);
     return data;
 }
 
 //Allocates from the current page of the chunk.
 //Scans through the VarSizeInfo objects in the page and gets the free slot
-void* Chunk::allocateFromCurPageForVarSize(size_t size)
+void* Chunk::allocateFromCurPageForVarSize(size_t size, int pslot, DbRetVal *rv)
 {
     //Should be called only for data items <PAGE_SIZE
     Page *page = ((PageInfo*)curPage_);
@@ -353,19 +441,34 @@ void* Chunk::allocateFromCurPageForVarSize(size_t size)
                                                chunkID_, size, curPage_);
     VarSizeInfo *varInfo = (VarSizeInfo*)(((char*)page) +
                                                 sizeof(PageInfo));
+    if ( 0 != getChunkMutex(pslot)) { *rv = ErrLockTimeOut; return NULL; }
     while ((char*) varInfo < ((char*)page + PAGE_SIZE))
     {
         if (0 == varInfo->isUsed_)
         {
             if( size + sizeof(VarSizeInfo) < varInfo->size_)
             {
-                splitDataBucket(varInfo, size);
+                if (1 == splitDataBucket(varInfo, size, pslot, rv))
+                {
+                    printDebug(DM_Warning, "Unable to split the data bucket");
+                    releaseChunkMutex(pslot);
+                    return NULL;
+                }
                 printDebug(DM_VarAlloc, "Chunkid:%d splitDataBucket: Size: %d Item:%x ",
                                                          chunkID_, size, varInfo);
+                releaseChunkMutex(pslot);
                 return (char*)varInfo + sizeof(VarSizeInfo);
             }
             else if (size == varInfo->size_) {
-                varInfo->isUsed_ = 1;
+                //varInfo->isUsed_ = 1;
+                int ret = Mutex::CAS(&varInfo->isUsed_ , 0, 1);
+                if(ret !=0) {
+                     printDebug(DM_Warning, "Unable to get lock for var alloc size:%d ", size);
+                     *rv = ErrLockTimeOut;
+                      releaseChunkMutex(pslot);
+                     return NULL;
+                }
+                releaseChunkMutex(pslot);
                 return (char *) varInfo + sizeof(VarSizeInfo);
             }
 
@@ -373,6 +476,7 @@ void* Chunk::allocateFromCurPageForVarSize(size_t size)
         varInfo = (VarSizeInfo*)((char*)varInfo + sizeof(VarSizeInfo)
                                     +varInfo->size_);
     }
+    releaseChunkMutex(pslot);
     return NULL;
 }
 
@@ -392,29 +496,30 @@ void* Chunk::allocate(Database *db, size_t size, DbRetVal *status)
     //TODO::During the scan, merge nearby nodes if both are free
     //if not available then allocate new page
 
-    size_t alignedSize = os::align(size);
+    size_t alignedSize = os::alignLong(size);
     void *data = NULL;
-  /*  int ret = getChunkMutex(db->procSlot);
+    /*int ret = getChunkMutex(db->procSlot);
     if (ret != 0)
     {
         printError(ErrLockTimeOut,"Unable to acquire chunk Mutex");
         *status = ErrLockTimeOut;
         return NULL;
     }*/
-    if (alignedSize > PAGE_SIZE)
+    if (alignedSize > PAGE_SIZE )
     {
         data =  allocateForLargeDataSize(db, alignedSize);
     }
     else
     {
-        data = allocateFromCurPageForVarSize(alignedSize);
+        data = allocateFromCurPageForVarSize(alignedSize, db->procSlot, status);
         if (NULL == data) {
+            *status = OK;
             //No available spaces in the current page.
             //allocate new page
-            data= allocFromNewPageForVarSize(db, alignedSize);
-            if (NULL == data) {
+            data= allocFromNewPageForVarSize(db, alignedSize, db->procSlot, status);
+            if (NULL == data && *status !=ErrLockTimeOut) {
                 printError(ErrNoMemory, "No memory in any of the pages:Increase db size");
-                if (status != NULL) *status = ErrNoMemory;
+                *status = ErrNoMemory;
             }
         }
     }
@@ -423,13 +528,14 @@ void* Chunk::allocate(Database *db, size_t size, DbRetVal *status)
 }
 
 //Assumes chunk mutex is already taken, before calling this
-void* Chunk::varSizeFirstFitAllocate(size_t size)
+void* Chunk::varSizeFirstFitAllocate(size_t size, int pslot, DbRetVal *rv)
 {
     printDebug(DM_VarAlloc, "Chunk::varSizeFirstFitAllocate size:%d firstPage:%x",
                                                size, firstPage_);
 
     Page *page = ((PageInfo*)firstPage_);
-    size_t alignedSize = os::align(size);
+    size_t alignedSize = os::alignLong(size);
+    if ( 0 != getChunkMutex(pslot)) { *rv = ErrLockTimeOut; return NULL; }
     while(NULL != page)
     {
         VarSizeInfo *varInfo = (VarSizeInfo*)(((char*)page) + sizeof(PageInfo));
@@ -439,12 +545,26 @@ void* Chunk::varSizeFirstFitAllocate(size_t size)
             {
                 if( alignedSize +sizeof(VarSizeInfo) < varInfo->size_)
                 {
-                    splitDataBucket(varInfo, alignedSize);
+                    if( 1 == splitDataBucket(varInfo, alignedSize, pslot, rv))
+                    {
+                        printDebug(DM_Warning, "Unable to split the data bucket");
+                        releaseChunkMutex(pslot);
+                        return NULL;
+                    }
+                    releaseChunkMutex(pslot);
                     return ((char*)varInfo) + sizeof(VarSizeInfo);
                 }
                 else if (alignedSize == varInfo->size_) {
-                    varInfo->isUsed_ = 1;
+                    //varInfo->isUsed_ = 1;
+                    int ret = Mutex::CAS((int*)&varInfo->isUsed_, 0,  1);
+                    if(ret !=0) {
+                       printDebug(DM_Warning,"Unable to get lock to set isUsed flag.");
+                       *rv = ErrLockTimeOut;
+                       releaseChunkMutex(pslot);
+                       return NULL;
+                    }
                     printDebug(DM_VarAlloc, "VarSizeFirstFitAllocate returning %x", ((char*)varInfo) +sizeof(VarSizeInfo));
+                    releaseChunkMutex(pslot);
                     return ((char *) varInfo) + sizeof(VarSizeInfo);
                 }
             }
@@ -454,21 +574,21 @@ void* Chunk::varSizeFirstFitAllocate(size_t size)
         printDebug(DM_VarAlloc, "Chunk:This page does not have free data nodes page:%x", page);
         page = ((PageInfo*) page)->nextPage_;
     }
+    releaseChunkMutex(pslot);
     return NULL;
 }
 
 void Chunk::freeForVarSizeAllocator(void *ptr, int pslot)
 {
-    int ret = getChunkMutex(pslot);
+    /*int ret = getChunkMutex(pslot);
     if (ret != 0)
     {
         printError(ErrLockTimeOut,"Unable to acquire chunk Mutex");
         return;
-    }
+    }*/
     VarSizeInfo *varInfo = (VarSizeInfo*)((char*)ptr- sizeof(VarSizeInfo));
-    varInfo->isUsed_ = 0;
-    if(varInfo->size_ > (PAGE_SIZE - (sizeof(VarSizeInfo)+sizeof(PageInfo)))) 
-    {
+    //varInfo->isUsed_ = 0;
+    if(varInfo->size_ > (PAGE_SIZE - (sizeof(VarSizeInfo)+sizeof(PageInfo)))) {
         PageInfo *pageInfo = (PageInfo*)((char*)varInfo - sizeof(PageInfo));
         PageInfo *pInfo = (PageInfo*)firstPage_, *prev = (PageInfo*)firstPage_;
         bool found = false;
@@ -486,14 +606,18 @@ void Chunk::freeForVarSizeAllocator(void *ptr, int pslot)
         }
          if(curPage_== pageInfo) {curPage_ = prev ; }
          pageInfo->isUsed_ = 0;
-         pageInfo->nextPageAfterMerge_ = NULL;
+         pageInfo->nextPageAfterMerge_ = NULL; 
          pageInfo->hasFreeSpace_ = 1;
          prev->nextPage_ = pageInfo->nextPage_;
     }
-    varInfo->isUsed_ = 0;
+    int ret = Mutex::CAS((int*)&varInfo->isUsed_, 1, 0);
+    if(ret !=0) {
+        printError(ErrAlready, "Fatal: Varsize double free for %x", ptr);
+    }
     printDebug(DM_VarAlloc,"chunkID:%d Unset isUsed for %x", chunkID_, varInfo);
-    releaseChunkMutex(pslot);
+    //releaseChunkMutex(pslot);
     return;
+
 }
 
 void Chunk::freeForLargeAllocator(void *ptr, int pslot)
@@ -507,7 +631,7 @@ void Chunk::freeForLargeAllocator(void *ptr, int pslot)
         return;
     }
     PageInfo *pageInfo = (PageInfo*)(((char*)
-                         ptr) - (sizeof(PageInfo) + sizeof(int)));
+                         ptr) - (sizeof(PageInfo) + sizeof(long)));
     PageInfo *pInfo = (PageInfo*)firstPage_, *prev = (PageInfo*)firstPage_;
     bool found = false;
     while(!found)
@@ -524,15 +648,25 @@ void Chunk::freeForLargeAllocator(void *ptr, int pslot)
     }
     os::memset(((char*)pageInfo+sizeof(PageInfo)),  0 , allocSize_);
     if(((PageInfo*)firstPage_)->nextPage_ != NULL){
-        pageInfo->isUsed_ = 0;
-        pageInfo->nextPageAfterMerge_ = NULL;
-        pageInfo->hasFreeSpace_ = 1;
-        if(pageInfo == firstPage_ && ((PageInfo*)firstPage_)->nextPage_ != NULL)
-           firstPage_ = pageInfo->nextPage_ ;
-        else 
-           prev->nextPage_ = pageInfo->nextPage_;
+      pageInfo->nextPageAfterMerge_ = NULL;
+      //pageInfo->isUsed_ = 0;
+      ret = Mutex::CAS((int*)&pageInfo->isUsed_, pageInfo->isUsed_, 0);
+      if (ret != 0) printError(ErrSysFatal, "Unable to set isUsed flag");
+      //pageInfo->hasFreeSpace_ = 1;
+      ret = Mutex::CAS((int*)&pageInfo->hasFreeSpace_, pageInfo->hasFreeSpace_, 1);
+      if (ret != 0) printError(ErrSysFatal, "Unable to set hasFreeSpace flag");
+      if(pageInfo == firstPage_ && ((PageInfo*)firstPage_)->nextPage_ != NULL)
+        //firstPage_ = pageInfo->nextPage_ ;
+        ret = Mutex::CASL((long*)&firstPage_, (long) firstPage_, 
+                                      (long)pageInfo->nextPage_);
+        if (ret != 0) printError(ErrSysFatal, "Unable to set firstPage");
+      else { 
+        //prev->nextPage_ = pageInfo->nextPage_;
+        ret = Mutex::CASL((long*)&prev->nextPage_, (long) prev->nextPage_, 
+                                       (long)pageInfo->nextPage_);
+        if (ret != 0) printError(ErrSysFatal, "Unable to set nextPage");
+      }
     }
-
     releaseChunkMutex(pslot);
     return;
 }
@@ -545,34 +679,51 @@ void Chunk::free(Database *db, void *ptr)
         freeForVarSizeAllocator(ptr, db->procSlot);
         return;
     }
-    int noOfDataNodes =os::floor((PAGE_SIZE - sizeof(PageInfo)) / allocSize_);
+    int noOfDataNodes =(int) os::floor((PAGE_SIZE - sizeof(PageInfo)) / allocSize_);
 
     if (0 == noOfDataNodes)
     {
         freeForLargeAllocator(ptr, db->procSlot);
         return;
     }
-    int ret = getChunkMutex(db->procSlot);
+    /*int ret = getChunkMutex(db->procSlot);
     if (ret != 0)
     {
         printError(ErrLockTimeOut,"Unable to acquire chunk Mutex");
         return;
-    }
+    }*/
      //below is the code for freeing in fixed size allocator
 
      //unset the used flag
-    *((int*)ptr -1 ) = 0;
+    //*((int*)ptr -1 ) = 0;
+    if (*((InUse*)ptr -1 ) == 0) {
+        printError(ErrSysFatal, "Fatal:Data node already freed %x Chunk:%d", ptr, chunkID_);
+        //return; 
+    }
+    int ret = Mutex::CAS(((InUse*)ptr -1), 1, 0);
+    if(ret !=0) {
+        printError(ErrSysFatal, "Unable to get lock to free for %x", ptr);
+        return; 
+    }
     PageInfo *pageInfo;
     pageInfo = getPageInfo(db, ptr);
     if (NULL == pageInfo)
     {
-        printError(ErrSysFatal,"Probable Data corruption: pageInfo is NULL", pageInfo );
-        releaseChunkMutex(db->procSlot);
+        printError(ErrSysFatal,"Fatal: pageInfo is NULL", pageInfo );
+        //releaseChunkMutex(db->procSlot);
         return;
     }
     //set the pageinfo where this ptr points
-    pageInfo->hasFreeSpace_ = 1;
-    releaseChunkMutex(db->procSlot);
+    //pageInfo->hasFreeSpace_ = 1;
+    if (! (pageInfo->hasFreeSpace_ == 0 || pageInfo->hasFreeSpace_ == 1)) {
+        printError(ErrSysFatal, "Fatal: hasFreeSpace has invalid value:%d for page %x", pageInfo->hasFreeSpace_, pageInfo);
+        return;
+    }
+    ret = Mutex::CAS((int*)&pageInfo->hasFreeSpace_, pageInfo->hasFreeSpace_, 1);
+    if(ret !=0) {
+        printError(ErrSysFatal, "Unable to get lock to set hasFreeSpace");
+    }
+    //releaseChunkMutex(db->procSlot);
     return;
 }
 
@@ -637,7 +788,7 @@ long Chunk::getTotalDataNodes()
         return totalNodes;
     }    
 
-    int noOfDataNodes=os::floor((PAGE_SIZE - sizeof(PageInfo))/allocSize_);
+    int noOfDataNodes=(int) os::floor((PAGE_SIZE - sizeof(PageInfo))/allocSize_);
     PageInfo* pageInfo = ((PageInfo*)firstPage_);
     char *data = ((char*)firstPage_) + sizeof(PageInfo);
     int i=0;
@@ -646,7 +797,7 @@ long Chunk::getTotalDataNodes()
         data = ((char*)pageInfo) + sizeof(PageInfo);
         for (i = 0; i< noOfDataNodes; i++)
         {
-            if (*((int*)data) == 1) { totalNodes++;}
+            if (*((InUse*)data) == 1) { totalNodes++;}
             data = data + allocSize_;
         }
         pageInfo = (PageInfo*)(((PageInfo*)pageInfo)->nextPage_) ;
@@ -655,13 +806,19 @@ long Chunk::getTotalDataNodes()
 }
 
 //TODO::for other type of allocators
-int Chunk::compact()
+int Chunk::compact(int procSlot)
 {
     PageInfo* pageInfo = ((PageInfo*)firstPage_);
     PageInfo* prevPage = pageInfo;
     if (NULL == pageInfo) 
     {
         return 0;
+    }
+    int ret = getChunkMutex(procSlot);
+    if (ret != 0)
+    {
+        printError(ErrLockTimeOut,"Unable to acquire chunk Mutex");
+        return ret;
     }
     pageInfo = (PageInfo*)pageInfo->nextPage_;
     if (0 == allocSize_) 
@@ -691,23 +848,26 @@ int Chunk::compact()
       while( pageInfo != NULL )
       {
         bool flag = false;
-        int noOfDataNodes=os::floor((PAGE_SIZE - sizeof(PageInfo))/allocSize_);
+        int noOfDataNodes=(int) os::floor((PAGE_SIZE - sizeof(PageInfo))/allocSize_);
         char *data = ((char*)pageInfo) + sizeof(PageInfo);
-        for (int i = 0; i< noOfDataNodes -1; i++)
+        for (int i = 0; i< noOfDataNodes ; i++)
         {
-            if (1 == *((int*)data)) { flag = true; break; }
+            if (1 == *((InUse*)data)) { flag = true; break; }
             data = data +allocSize_;
         }
         if (!flag) {
             printDebug(DM_Alloc,"Freeing unused page in fixed allocator %x\n", pageInfo);
             prevPage->nextPage_ = pageInfo->nextPage_;
             pageInfo->isUsed_ = 0;
+            pageInfo = (PageInfo*)(((PageInfo*)prevPage)->nextPage_) ;
+        }else{
+            prevPage = pageInfo;
+            pageInfo = (PageInfo*)(((PageInfo*)pageInfo)->nextPage_) ;
         }
-        prevPage = pageInfo;
-        pageInfo = (PageInfo*)(((PageInfo*)pageInfo)->nextPage_) ;
         printDebug(DM_Alloc,"compact iter %x\n", pageInfo);
       }
     }
+    releaseChunkMutex(procSlot);
     return 0;
 }
 
@@ -740,27 +900,67 @@ int Chunk::destroyMutex()
 {
     return chunkMutex_.destroy();
 }
-void Chunk::splitDataBucket(VarSizeInfo *varInfo, size_t needSize)
+int Chunk::splitDataBucket(VarSizeInfo *varInfo, size_t needSize, int pSlot, DbRetVal *rv)
 {
     int remSpace = varInfo->size_ - sizeof(VarSizeInfo) - needSize;
-    varInfo->isUsed_ = 1;
-    varInfo->size_ = needSize;
-    varInfo = (VarSizeInfo*)((char*)varInfo +
+    //varInfo->isUsed_ = 1;
+    int ret = Mutex::CAS((int*)&varInfo->isUsed_ , 0, 1);
+    if(ret !=0) {
+        printDebug(DM_Warning, "Unable to set I isUsed flag");
+        *rv = ErrLockTimeOut;
+        return 1;
+    }
+    //varInfo->size_ = needSize;
+    ret = Mutex::CAS((int*)&varInfo->size_, varInfo->size_ , needSize);
+    if(ret !=0) {
+        printError(ErrSysFatal, "Unable to set I size flag");
+        ret = Mutex::CAS((int*)&varInfo->isUsed_ , varInfo->isUsed_, 0);
+        if (ret !=0) printError(ErrSysFatal, "Unable to reset isUsed flag");
+        *rv = ErrSysFatal;
+        return 1;    
+    }
+    VarSizeInfo *varInfo2 = (VarSizeInfo*)((char*)varInfo +
                sizeof(VarSizeInfo) +  varInfo->size_);
-    varInfo->isUsed_ = 0;
-    varInfo->size_  = remSpace;
+    //varInfo2->isUsed_ = 0;
+    ret = Mutex::CAS((int*)&varInfo2->isUsed_ , varInfo2->isUsed_, 0);
+    if(ret !=0) {
+        printError(ErrSysFatal, "Unable to set II isUsed flag");
+        ret = Mutex::CAS((int*)&varInfo->isUsed_ , varInfo->isUsed_, 0);
+        if (ret !=0) printError(ErrSysFatal, "Unable to reset isUsed flag");
+        *rv = ErrSysFatal;
+        return 1;
+    }
+    //varInfo2->size_  = remSpace;
+    ret = Mutex::CAS((int*)&varInfo2->size_, varInfo2->size_ , remSpace);
+    if(ret !=0) {
+        printError(ErrSysFatal, "Unable to set II size flag");
+        ret = Mutex::CAS((int*)&varInfo->isUsed_ , varInfo->isUsed_, 0);
+        if (ret !=0) printError(ErrSysFatal, "Unable to reset isUsed flag");
+        *rv = ErrSysFatal;
+        return 1;
+    }
     printDebug(DM_VarAlloc, "Remaining space is %d\n", remSpace);
-    return;
+    return 0;
 }
 
 
-void Chunk::createDataBucket(Page *page, size_t totalSize, size_t needSize)
+int Chunk::createDataBucket(Page *page, size_t totalSize, size_t needSize, int pslot)
 {
+    //already db alloc mutex is taken
     VarSizeInfo *varInfo = (VarSizeInfo*)(((char*)page) + sizeof(PageInfo));
-    varInfo->isUsed_ = 0;
-    varInfo->size_ = PAGE_SIZE - sizeof(PageInfo) - sizeof(VarSizeInfo);
-    splitDataBucket(varInfo, needSize);
-    return;
+    //varInfo->isUsed_ = 0;
+    int ret = Mutex::CAS((int*)&varInfo->isUsed_ , varInfo->isUsed_, 0);
+    if(ret !=0) {
+        printError(ErrSysFatal, "Fatal:Unable to get lock to set isUsed flag");
+    }
+    //varInfo->size_ = PAGE_SIZE - sizeof(PageInfo) - sizeof(VarSizeInfo);
+    ret = Mutex::CAS((int*)&varInfo->size_, varInfo->size_ , 
+                       PAGE_SIZE - sizeof(PageInfo) - sizeof(VarSizeInfo));
+    if(ret !=0) {
+        printError(ErrSysFatal, "Unable to get lock to set size");
+    }
+    DbRetVal rv =OK;
+    return splitDataBucket(varInfo, needSize, pslot, &rv);
 }
 void Chunk::setChunkNameForSystemDB(int id)
 {
@@ -788,6 +988,3 @@ void Chunk::print()
         }
         printf("</Allocation Type>\n");
 }
-
-
-

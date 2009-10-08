@@ -90,10 +90,6 @@ int Config::storeKeyVal(char *key, char *value)
            }
     else if(os::strcasestr(key,"SITE_ID")!=NULL)
            { cVal.siteID = atoi(value);}
-    else if(os::strcasestr(key,"REPLICATION_SITES")!=NULL)
-           { cVal.maxReplSites = atoi(value);}
-    else if (os::strcasestr(key, "REPLICATION") != NULL)
-           { cVal.isReplication = os::atobool(value); }
     else if (os::strcasestr(key, "DURABILITY") != NULL)
            { cVal.isDurable = os::atobool(value); }
     else if (os::strcasestr(key, "DURABLE_MODE") != NULL)
@@ -102,8 +98,6 @@ int Config::storeKeyVal(char *key, char *value)
            { cVal.isCsqlSqlServer = os::atobool(value); }
     else if (os::strcasestr(key, "PORT") != NULL)
            { cVal.port = atoi(value); }
-    else if (os::strcasestr(key, "NETWORK_CONFIG_FILE") != NULL)
-           { strcpy(cVal.replConfigFile , value);  }
     else if (os::strcasestr(key, "MAX_QUEUE_LOGS") != NULL)
            { cVal.maxQueueLogs = atol(value);  }
     else if (os::strcasestr(key, "MSG_KEY") != NULL)
@@ -135,20 +129,11 @@ int Config::validateValues()
         printError(ErrBadArg,  "PAGE_SIZE should be multiples of 1024");
         return 1;
     }
-#if (defined TRIAL) || (defined BASIC)
-    if (cVal.maxProcs < 1 || cVal.maxProcs > 5)
-    {
-        printf("Trial license supports only 5 connections");
-        printf("Contact sales@csqldb.com to get full license");
-        return 1;
-    }
-#else
     if (cVal.maxProcs < 10 || cVal.maxProcs > 8192) 
     {
         printError(ErrBadArg,  "MAX_PROCS should be >= 10 and <= 8192");
         return 1;
     }
-#endif
     if (cVal.maxSysSize < 1024 * 1024  || cVal.maxSysSize > 1024 *1024 *1024)
     {
         printError(ErrBadArg,  "MAX_SYS_DB_SIZE should be >= 1 MB and <= 1 GB");
@@ -160,39 +145,20 @@ int Config::validateValues()
         return 1;
     }
 
-#ifdef TRIAL
-    if (cVal.maxDbSize < 1024 * 1024  || cVal.maxDbSize > (20 * 1024*1024))
-    {
-        printf("Trial license supports only 20 MB db size");
-        printf("Contact sales@csqldb.com to get full license");
-        return 1;
-    }
-#else
-#ifdef BASIC
-    if (cVal.maxDbSize < 1024 * 1024  || cVal.maxDbSize > (100 * 1024*1024))
-    {
-        printf("Basic subscription supports only 100 MB db size");
-        printf("Contact sales@csqldb.com to upgrade");
-        return 1;
-    }
-
-#else
-  #ifdef x86_64
+    #ifdef x86_64
     if (cVal.maxDbSize < 1024 * 1024  || cVal.maxDbSize > ( 100*1024*1024*1024L))
     {
         printError(ErrBadArg,  "MAX_DB_SIZE should be >= 1 MB and <= 100 GB");
         return 1;        
     }
-  #else
+    #else
     unsigned long maxVal = 2*1024*1024*1024L;
     if (cVal.maxDbSize < 1024 * 1024  || ((unsigned long)cVal.maxDbSize) > maxVal)
     {
         printError(ErrBadArg,  "MAX_DB_SIZE should be >= 1 MB and <= 2 GB");
         return 1;        
     }
-  #endif
-#endif
-#endif
+    #endif
     if (cVal.maxDbSize % 8192 !=0)
     {
         printError(ErrBadArg,  "MAX_DB_SIZE should be multiples of 8192");
@@ -225,11 +191,13 @@ int Config::validateValues()
         printError(ErrBadArg,  "LOG_FILE is set to NULL");
         return 1;
     }
+#if (!defined __sparcv9)
     if (cVal.mapAddr < 400000000 || cVal.mapAddr > 2000000000)
     {
         printError(ErrBadArg,  "MAP_ADDRESS should be >= 400000000 and <= 2000000000");
         return 1;
     }	
+#endif
     if (cVal.mutexSecs < 0 || cVal.mutexSecs > 360)
     {
         printError(ErrBadArg,  "MUTEX_TIMEOUT_SECS should be >= 0 and <= 360");
@@ -265,20 +233,6 @@ int Config::validateValues()
         printError(ErrBadArg,  "LOG_LEVEL should be >= 0 and <= 3");
         return 1;
     }
-#ifdef NOREPL
-    if (cVal.isReplication) {
-        printf("This version does not support replication.\n");
-        printf("Please contact sales@csqldb.com to upgrade\n");
-        return 1;
-    }
-#endif
-/*    if (cVal.isCache && cVal.isReplication) {
-        printError(ErrBadArg, "Either caching or replication option should be set."
-                              " Both options are not supported together");
-        return 1;
-    }*/
-    
-    //printf("Debug:Config=%s\n",cVal.dsn);
     if (cVal.isCache) {
         if (0 == strcmp(cVal.dsn,""))
         {
@@ -286,23 +240,16 @@ int Config::validateValues()
             return 1;
         }
     }
-        
-    if (cVal.isReplication || cVal.isCache) {
-        if (0 == strcmp(cVal.replConfigFile,""))
-        {
-            //TODO::check whether file exists
-            printError(ErrBadArg,  "NETWORK_CONFIG_FILE is set to NULL");
-            return 1;
-        }
+    if (cVal.isCache) {
         if (0 == strcmp(cVal.tableConfigFile,""))
         {
             //TODO::check whether file exists
             printError(ErrBadArg,  "TABLE_CONFIG_FILE is set to NULL");
             return 1;
         }
-        /*FILE *fp = fopen(cVal.replConfigFile,"r");
+        /*FILE *fp = fopen(cVal.tableConfigFile,"r");
         if( fp == NULL ) {
-            printError(ErrSysInit, "Invalid path/filename for NETWORK_CONFIG_FILE.\n");
+            printError(ErrSysInit, "Invalid path/filename for TABLE_CONFIG_FILE.\n");
             return 1;
         }
         int count =0;
@@ -313,39 +260,9 @@ int Config::validateValues()
         while(!feof(fp)) {
             fscanf(fp, "%d:%d:%s\n", &nwid, &port, hostname);
             count++;
-        }
-        if (count >2) {
-            printError(ErrSysInit, "NETWORK_CONFIG_FILE has more than 2 entries\n");
-            return 1;
         }*/
 
     }
-    /*if (cVal.isCache)
-    {
-        
-        if (cVal.cacheNetworkID == -1)
-        {
-            printError(ErrBadArg,  "CACHE_NETWORK_ID should not be -1");
-            return 1;
-        }else {
-            FILE *fp;
-            int nwid;
-            char hostname[IDENTIFIER_LENGTH];
-            char nwmode;
-            int port;
-            fp = fopen(Conf::config.getReplConfigFile(),"r");
-            if( fp == NULL ) {
-                printError(ErrSysInit, "Invalid path/filename for NETWORK_CONFIG_FILE.\n");
-                return 1;
-            }
-            bool found = false;
-            while(!feof(fp)) {
-                fscanf(fp, "%d:%d:%s\n", &nwid, &port, hostname);
-                if (cVal.cacheNetworkID == nwid) found = true;
-            }
-            if (!found) return 1;
-        }
-    }*/
     if (cVal.nwResponseTimeout <0 || cVal.nwResponseTimeout > 60)
     {
         printError(ErrBadArg,  "NETWORK_RESPONSE_TIMEOUT should be 0 to 60");
@@ -428,16 +345,6 @@ int Config::readAllValues(char *fileName)
 }
 void Config::logConfig()
 {
-    /*
-    logFinest(Conf::logger, "Config: MAX_SYS_DB_SIZE %d", getMaxSysDbSize());
-    logFinest(Conf::logger, "Config: MAX_DB_SIZE %d", getMaxDbSize());
-    logFinest(Conf::logger, "Config: SYS_DB_KEY %d", getSysDbKey());
-    logFinest(Conf::logger, "Config: USER_DB_KEY %d", getUserDbKey());
-    logFinest(Conf::logger, "Config: MAP_ADDRESS %ld", getMapAddress());
-    logFinest(Conf::logger, "Config: DATABASE_FILE %s", getDbFile());
-    //TODO:: for cache/sql/nw section
-    */
-
     logFinest(Conf::logger, "Config: LOG_FILE %s", getLogFile());
     logFinest(Conf::logger, "Config: LOG_LEVEL %d", getLogLevel());
     logFinest(Conf::logger, "Config: DURABILITY %d", useDurability());
@@ -478,73 +385,8 @@ void Config::print()
     printf(" getCacheWaitSecs %d\n", getCacheWaitSecs());
     printf(" useCsqlSqlServer %d\n", useCsqlSqlServer());
     printf(" getPort %d\n", getPort());
-    printf(" useReplication %d\n", useReplication());
     printf(" isDurable %d\n", useDurability());
-    printf(" getReplConfigFile %s\n", getReplConfigFile());
     printf(" getSiteID %d\n", getSiteID());
     printf(" getMsgKey %d\n", getMsgKey());
     printf(" getShmIDKey %d\n", getShmIDKey());
-}
-
-DbRetVal SiteInfo::populateSiteInfoList()
-{
-    if (!Conf::config.useReplication()) return OK;  
-    FILE *fp = fopen( Conf::config.getReplConfigFile(), "r");
-    if (fp == NULL) {
-        printError(ErrSysInit, "Invalid path/filename for REPL_CONFIG_FILE.\n");
-        return ErrSysInit;
-    }
-    char line[128];
-    while(fgets(line, sizeof (line), fp) != NULL) {
-        SiteInfoData *sInfo = new SiteInfoData();   
-        char *token = strtok(line, ":");
-        sInfo->siteId = atoi(token);
-        if ((token = strtok(NULL, ":")) != NULL) 
-            strncpy(sInfo->hostName, token, IDENTIFIER_LENGTH);
-        if ((token = strtok(NULL, ":")) != NULL) sInfo->port = atoi(token); 
-        if ((token = strtok(NULL, ":")) != NULL) 
-            strncpy(sInfo->mode, token, 32);
-        siteInfoList.append(sInfo);
-        if(strncasecmp(sInfo->mode, "ASYNC", 5)==0) asyncSiteList.append(sInfo);
-        if(strncasecmp(sInfo->mode, "SYNC", 4)==0) syncSiteList.append(sInfo);
-    }
-    fclose(fp);
-    return OK;
-}
-
-bool SiteInfo::isAsyncSitePresent()
-{
-    bool async = false;
-    if (!Conf::config.useReplication()) return false;
-    ListIterator it = siteInfoList.getIterator();
-    while (it.hasElement()) {
-        SiteInfoData *data = (SiteInfoData *) it.nextElement();
-        if (strncmp(data->mode, "ASYNC", 5) == 0) { async = true; break; }
-    }
-    return async;
-}
-
-bool SiteInfo::isSyncSitePresent()
-{
-    bool sync = false;
-    if (!Conf::config.useReplication()) return false;
-    ListIterator it = siteInfoList.getIterator();
-    while (it.hasElement()) {
-        SiteInfoData *data = (SiteInfoData *) it.nextElement();
-        if (strncmp(data->mode, "SYNC", 4) == 0) { sync = true; break; }
-    }
-    return sync;
-}
-
-SiteInfo::~SiteInfo() 
-{
-//    ListIterator it = siteInfoList.getIterator();
-//    while(it.hasElement()) delete (SiteInfoData *) it.nextElement();
-//    siteInfoList.reset();
-    ListIterator it = asyncSiteList.getIterator();
-    while(it.hasElement()) delete (SiteInfoData *) it.nextElement();
-    asyncSiteList.reset();
-    it = syncSiteList.getIterator();
-    while(it.hasElement()) delete (SiteInfoData *) it.nextElement();
-    syncSiteList.reset();
 }

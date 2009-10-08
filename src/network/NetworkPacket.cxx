@@ -107,11 +107,13 @@ SqlPacketExecute::SqlPacketExecute()
 {
     buffer=NULL; bufferSize =0; pktType = NW_PKT_EXECUTE;
     paramValues = NULL; nullInfo = NULL;
+    noParams=0; stmtID=0;
+    for (int i=0; i < 10; i++) localBuf[i] =0;
 }
 SqlPacketExecute::~SqlPacketExecute()
 {
     if(noParams >= 10) delete [] paramValues;
-    nullInfo = NULL;
+    if (nullInfo) { free(nullInfo); nullInfo = NULL; }
     free(buffer); 
     bufferSize =0;
     buffer = NULL;
@@ -262,6 +264,7 @@ DbRetVal PacketCommit::unmarshall()
        stmtBuffer[i] = bufIter;
        bufIter = bufIter + stmtBufSize[i];
     }
+    return OK;
 }
 //call unmarshall  before calling this
 void PacketCommit::getExecPacketList(List stmtList, List &list)
@@ -280,23 +283,34 @@ void PacketCommit::getExecPacketList(List stmtList, List &list)
 
 DbRetVal SqlPacketConnect::marshall()
 {
+   printDebug(DM_Network, "SqlPacketConnect::marshall called");
    char *ptr = buffer; // moves over buffer
    strncpy(ptr, userName, IDENTIFIER_LENGTH);
+   printDebug(DM_Network, "Username: %s", userName);
    ptr = buffer+IDENTIFIER_LENGTH-1;
    *ptr++ = '\0';
    strncpy(ptr, passWord, IDENTIFIER_LENGTH);
+   printDebug(DM_Network, "Password: %s", passWord);
    ptr = ptr + IDENTIFIER_LENGTH-1;
    *ptr++ = '\0';
-   *ptr = sqlApiImplType;  
+   *ptr++ = sqlApiImplType;  
+   printDebug(DM_Network, "SqlPacketConnect::marshall Ended");
    return OK;
 }
 
 DbRetVal SqlPacketConnect::unmarshall()
 {
+   printDebug(DM_Network, "SqlPacketConnect::unmarshall called");
    char *ptr = buffer;
+
    strncpy(userName, ptr, IDENTIFIER_LENGTH);
-   strncpy(passWord, ptr + IDENTIFIER_LENGTH, IDENTIFIER_LENGTH);
-   sqlApiImplType = *(ptr + 2 * IDENTIFIER_LENGTH);
+   printDebug(DM_Network, "Username: %s", userName);
+   ptr += IDENTIFIER_LENGTH;
+   strncpy(passWord, ptr, IDENTIFIER_LENGTH);
+   printDebug(DM_Network, "Password: %s", passWord);
+   ptr += IDENTIFIER_LENGTH;
+   sqlApiImplType = *ptr++;
+   printDebug(DM_Network, "SqlPacketConnect::unmarshall Ended");
    return OK;
 }
 
@@ -390,7 +404,10 @@ DbRetVal SqlPacketExecute::unmarshall()
        if (stmt->stmtID == stmtID ) break;
     }
     if (noParams == 0) return OK;
-    paramValues = new char*[noParams];
+    if (noParams <10 )
+        paramValues = localBuf;
+    else 
+        paramValues = new char*[noParams];
     ListIterator paramIter = stmt->paramList.getIterator();
     BindSqlField *bindField = NULL;
     for (int i=0; i <noParams; i++)
@@ -497,6 +514,7 @@ DbRetVal SqlPacketProjMetadata::marshall()
         fldInfo->isDefault = bindField->isDefault;
         fldInfo->isUnique = bindField->isUnique;
         strcpy(fldInfo->defaultValueBuf, bindField->defaultValueBuf);
+        fldInfo->aType = bindField->aType;
         *(FieldInfo *) bufIter = *fldInfo;
         bufIter += sizeof(FieldInfo);
     }
@@ -529,6 +547,7 @@ DbRetVal SqlPacketFetch::marshall()
 DbRetVal SqlPacketFetch::unmarshall()
 {
     stmtID = *(int *)buffer;
+    return OK;
 }
 
 DbRetVal SqlPacketFree::marshall()
@@ -542,6 +561,7 @@ DbRetVal SqlPacketFree::marshall()
 DbRetVal SqlPacketFree::unmarshall()
 {
     stmtID = *(int *)buffer;
+    return OK;
 }
 
 DbRetVal SqlPacketResultSet::marshall()
@@ -607,3 +627,64 @@ DbRetVal SqlPacketShowTables::unmarshall()
     data = buffer;    
     return OK;
 }
+
+DbRetVal SqlPacketIsTablePresent::marshall()
+{
+    bufferSize = IDENTIFIER_LENGTH + sizeof(int);
+    buffer = (char*) malloc(bufferSize);
+    char *ptr = buffer;
+    strncpy(ptr, tblName, IDENTIFIER_LENGTH);
+    ptr += IDENTIFIER_LENGTH;
+    return OK;
+}
+
+DbRetVal SqlPacketIsTablePresent::unmarshall()
+{
+    char *ptr = buffer;
+    strncpy(tblName, buffer, IDENTIFIER_LENGTH);    
+    ptr += IDENTIFIER_LENGTH;
+    return OK;
+}
+
+DbRetVal SqlPacketGetRecords::marshall()
+{
+    printDebug(DM_Network, "SqlPacketGetRecords: marshall called");
+    bufferSize = IDENTIFIER_LENGTH;
+    printDebug(DM_Network, "Buffer Size = %d", bufferSize); 
+    buffer = (char *) malloc(bufferSize);
+    printDebug(DM_Network, "start of the buffer is %x", buffer);
+    strncpy(buffer, tblName, IDENTIFIER_LENGTH);
+    printDebug(DM_Network, "SqlPacketGetRecords: marshall Ended");
+    return OK;
+}
+
+DbRetVal SqlPacketGetRecords::unmarshall()
+{
+    printDebug(DM_Network, "SqlPacketGetRecords: unmarshall called");
+    strncpy(tblName, buffer, IDENTIFIER_LENGTH);
+    printDebug(DM_Network, "TableName %s", buffer);
+    printDebug(DM_Network, "SqlPacketGetRecords: unmarshall Ended");
+    return OK;
+}
+
+DbRetVal SqlPacketLoadRecords::marshall()
+{
+    printDebug(DM_Network, "SqlPacketLoadRecords:marshall called");
+    bufferSize = sizeof (int) + PAGE_SIZE * pages;
+    printDebug(DM_Network, "Buffer Size = %d", bufferSize); 
+    buffer = (char *) malloc(bufferSize);
+    printDebug(DM_Network, "start of the buffer is %x", buffer);
+    *(int *) buffer = pages;
+    printDebug(DM_Network, "SqlPacketLoadRecords: marshall Ended");
+    return OK;
+}
+
+DbRetVal SqlPacketLoadRecords::unmarshall()
+{
+    printDebug(DM_Network, "SqlPacketLoadRecords: unmarshall called");
+    pages = *(int *) buffer;
+    printDebug(DM_Network, "No of pages to be loaded: %d", pages);
+    printDebug(DM_Network, "SqlPacketLoadRecords: unmarshall Ended");
+    return OK;
+}
+

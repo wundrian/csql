@@ -27,12 +27,12 @@ UDPClient::~UDPClient()
 }
 DbRetVal UDPClient::send(NetworkPacketType type)
 {
-    send(type, NULL, 0);
+    return send(type, NULL, 0);
 }
 DbRetVal UDPClient::send(NetworkPacketType type, int stmtid)
 {
     //TODO:
-    send(type, NULL, 0);
+    return send(type, NULL, 0);
 }
 DbRetVal UDPClient::send(NetworkPacketType type, char *buf, int len)
 {

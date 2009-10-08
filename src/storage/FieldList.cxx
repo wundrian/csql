@@ -127,6 +127,22 @@ void *FieldList::getBindField(const char *fldName)
 	printError(ErrNotFound, "Field not present in the list");
     	return NULL;
 }
+void FieldList::fillFieldInfo(int fldpos, void *inp)
+{
+    int pos=0;
+    FieldNode *iter = head;
+    while (pos <fldpos) { iter = iter->next; pos++; }
+    FieldInfoValue *info = (FieldInfoValue*) inp;
+    strcpy(info->fldName , iter->fldDef.fldName_);
+    info->length = iter->fldDef.length_;
+    info->type   = iter->fldDef.type_;
+    info->offset = iter->fldDef.offset_;
+    info->isNullable = iter->fldDef.isNull_;
+    info->isPrimary = iter->fldDef.isPrimary_;
+    info->isUnique = iter->fldDef.isUnique_;
+    info->isAutoIncrement = iter->fldDef.isAutoIncrement_;
+}
+
 DbRetVal FieldList::getFieldInfo(const char *fldName, FieldInfo *&info)
 {
     
@@ -143,6 +159,7 @@ DbRetVal FieldList::getFieldInfo(const char *fldName, FieldInfo *&info)
         info->isNull = iter->fldDef.isNull_;
         info->isPrimary = iter->fldDef.isPrimary_;
         info->isUnique = iter->fldDef.isUnique_;
+        info->isAutoIncrement = iter->fldDef.isAutoIncrement_;
         return OK;
         
     }
@@ -159,6 +176,7 @@ DbRetVal FieldList::getFieldInfo(const char *fldName, FieldInfo *&info)
             info->isNull = iter->fldDef.isNull_;
             info->isPrimary = iter->fldDef.isPrimary_;
             info->isUnique = iter->fldDef.isUnique_;
+            info->isAutoIncrement = iter->fldDef.isAutoIncrement_;
             return OK;
         }
         iter = iter ->next;
@@ -176,7 +194,7 @@ int FieldList::getFieldOffset(const char *fldName)
         {
             return offset;
         }
-        offset = offset + os::align(iter->fldDef.length_);
+        offset = offset + iter->fldDef.length_;
         iter = iter ->next;
         }
         return -1;
@@ -193,7 +211,7 @@ int FieldList::getFieldOffset(int fldpos)
         {
             return offset;
         }
-        offset = offset + os::align(iter->fldDef.length_);
+        offset = offset + iter->fldDef.length_;
         iter = iter ->next;
         counter++;
     }
@@ -205,11 +223,13 @@ int FieldList::getFieldOffset(int fldpos)
 //-1 if field not found in the list
 int FieldList::getFieldPosition(const char *fldName)
 {
+    char onlyFldName[IDENTIFIER_LENGTH];
+    Table::getFieldNameAlone((char*)fldName, onlyFldName);
     int position = 1;
     FieldNode *iter = head;
     while(iter != NULL)
     {
-        if (0 == strcmp(iter->fldDef.fldName_, fldName))
+        if (0 == strcmp(iter->fldDef.fldName_, onlyFldName))
             return position;
         position++;
         iter  = iter->next;
@@ -224,7 +244,7 @@ int FieldList::getTupleSize()
     int offset = 0;
     while(iter != NULL)
     {
-        offset = offset + os::align(iter->fldDef.length_);
+        offset = offset + iter->fldDef.length_;
         iter = iter ->next;
     }
     return offset;

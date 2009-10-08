@@ -20,15 +20,30 @@
 #include<CatalogTables.h>
 #include<Debug.h>
 
+//Code assumes that only one thread can work on a transaction
 DbRetVal Transaction::insertIntoHasList(Database *sysdb, LockHashNode *node)
 {
     //allocate lock node
     Chunk *chunk = sysdb->getSystemDatabaseChunk(TransHasTableId);
     DbRetVal rv = OK;
-    TransHasNode *hasNode = (TransHasNode*)chunk->allocate(sysdb, &rv);
+    TransHasNode *hasNode = NULL; //(TransHasNode*)chunk->allocate(sysdb, &rv);
+    int tries=0;
+    int totalTries = Conf::config.getMutexRetries();
+    while (tries < totalTries)
+    {
+        rv = OK;
+        hasNode= (TransHasNode*)chunk->allocate(sysdb, &rv);
+        if (hasNode !=NULL) break;
+        if (rv != ErrLockTimeOut)
+        {
+            printError(rv, "Unable to allocate trans has node");
+            return rv;
+        }
+        tries++;
+    }
     if (NULL == hasNode)
     {
-        printError(rv, "Could not allocate Lock node");
+        printError(rv, "Could not allocate Trans has node after %d retry", tries);
         return rv;
     }
     printDebug(DM_Transaction, "insertIntoHasList new TransHasNode created:%x",
@@ -55,7 +70,7 @@ DbRetVal Transaction::removeFromHasList(Database *sysdb, void *tuple)
     TransHasNode *iter = hasLockList_, *prev = hasLockList_;
     if (NULL == iter)
     {
-        printError(ErrNotFound, "There are no tuple lock in has list.");
+        printError(ErrNotFound, "Fatal:HasList is empty");
         return ErrNotFound;
     }
     while (iter != NULL)
@@ -70,7 +85,17 @@ DbRetVal Transaction::removeFromHasList(Database *sysdb, void *tuple)
         prev = iter;
         iter = iter->next_;
     }
-    printError(ErrNotFound, "There are no tuple lock in has list.");
+    printStackTrace();
+    printError(ErrNotFound, "Fatal:There is no tuple lock in has list for tuple:%x", tuple);
+    //TEMP::for debugging
+    iter=hasLockList_; 
+    int cnt=0;
+    while (iter != NULL)
+    {
+        printError(ErrWarning, "Element in hasList: %d %x: %x:%d\n", cnt, iter->node_, iter->node_->ptrToTuple_ , *(int*)iter->node_->ptrToTuple_);
+        cnt++;
+        iter = iter->next_;
+    }
     return ErrNotFound;
 }
 
@@ -80,12 +105,13 @@ DbRetVal Transaction::releaseAllLocks(LockManager *lockManager_)
     Database *sysdb =lockManager_->systemDatabase_;
     Chunk *chunk = sysdb->getSystemDatabaseChunk(TransHasTableId);
     TransHasNode *iter  = hasLockList_, *prev;
+    DbRetVal rv = OK;
     while (NULL != iter)
     {
         prev = iter;
         iter = iter->next_;
         printDebug(DM_Transaction, "Releasing lock %x",prev->node_->ptrToTuple_);
-        lockManager_->releaseLock(prev->node_->ptrToTuple_);
+        rv = lockManager_->releaseLock(prev->node_->ptrToTuple_);
         chunk->free(sysdb, prev);
     }
     hasLockList_ = NULL;
@@ -108,7 +134,7 @@ DbRetVal Transaction::appendUndoLog(Database *sysdb, OperationType type,
     DbRetVal rv =OK;
     UndoLogInfo *logInfo = createUndoLog(sysdb, type, data, size, &rv);
     if (logInfo == NULL) return rv;
-    os::memcpy((char*)logInfo + sizeof(UndoLogInfo), data, size);
+    if (size) os::memcpy((char*)logInfo + sizeof(UndoLogInfo), data, size);
     addAtBegin(logInfo);
     printDebug(DM_Transaction, "creating undo log and append %x optype:%d",
                                                logInfo, type);
@@ -140,15 +166,42 @@ DbRetVal Transaction::appendLogicalHashUndoLog(Database *sysdb, OperationType ty
     printDebug(DM_Transaction, "creating logical undo log and append %x optype:%d", logInfo, type);
     return rv;
 }
+DbRetVal Transaction::appendLogicalTreeUndoLog(Database *sysdb, OperationType type, void *data, size_t size)
+{
+    DbRetVal rv = OK;
+    TreeUndoLogInfo *hInfo = (TreeUndoLogInfo *) data;
+    UndoLogInfo *logInfo = createUndoLog(sysdb, type, hInfo->tuple_, size, &rv);
+    if (logInfo == NULL) return rv;
+    memcpy((char*)logInfo + sizeof(UndoLogInfo), data, sizeof(TreeUndoLogInfo));
+    addAtBegin(logInfo);
+    printDebug(DM_Transaction, "creating logical undo log and append %x optype:%d", logInfo, type);
+    return rv;
+}
 
 UndoLogInfo* Transaction::createUndoLog(Database *sysdb, OperationType type, void *data,
                        size_t size, DbRetVal *rv)
 {
     Chunk *chunk = sysdb->getSystemDatabaseChunk(UndoLogTableID);
-    UndoLogInfo *logInfo = (UndoLogInfo*)chunk->allocate(sysdb,
-                                                size + sizeof(UndoLogInfo), rv);
+    int reqSize = size + sizeof(UndoLogInfo);
+    UndoLogInfo *logInfo = NULL;
+    int tries=0;
+    int totalTries = Conf::config.getMutexRetries();
+    while (tries < totalTries)
+    {
+        *rv = OK;
+        logInfo= (UndoLogInfo*)chunk->allocate(sysdb, reqSize, rv);
+        if (logInfo !=NULL) break;
+        if (*rv != ErrLockTimeOut)
+        {
+            printError(*rv, "Unable to allocate undo log");
+            return NULL;
+        }
+        //printError (ErrWarning, Undo Log Alloc: LockTimeOut Retry:%d", tries);
+        tries++;
+    }
+
     if (logInfo == NULL) {
-        printError(*rv, "Unable to allocate undo log record\n");
+        printError(*rv, "Unable to allocate undo log record after %d retries", tries);
         return NULL;
     }
     logInfo->opType_ = type;
@@ -253,7 +306,7 @@ DbRetVal Transaction::applyUndoLogs(Database *sysdb)
         {
                 case InsertOperation:
                 {
-                 int *isUsed = ((int*)(logInfo->ptrToTuple_) - 1);
+                   int *isUsed = ((int*)(logInfo->ptrToTuple_) - 1);
                    if (*isUsed == 0) {
                       printError(ErrSysFatal, "Fatal: Row is already not in use");
                    }
@@ -264,7 +317,6 @@ DbRetVal Transaction::applyUndoLogs(Database *sysdb)
                             sizeof(UndoLogInfo), logInfo->size_);
                    break;
                 }
-                break;
                 case DeleteOperation:
                 {
                    int *isUsed = ((int*)(logInfo->ptrToTuple_) - 1);
@@ -272,15 +324,15 @@ DbRetVal Transaction::applyUndoLogs(Database *sysdb)
                        printError(ErrSysFatal, "Fatal: Row is already in use");
                    }
                    *isUsed = 1;
-                   os::memcpy(logInfo->ptrToTuple_, (char*) logInfo +
-                            sizeof(UndoLogInfo), logInfo->size_);
+                   /*os::memcpy(logInfo->ptrToTuple_, (char*) logInfo +
+                            sizeof(UndoLogInfo), logInfo->size_);*/
                    break;
                 }
                 case UpdateOperation:
                 {
                    int *isUsed = ((int*)(logInfo->ptrToTuple_) - 1);
                    if (*isUsed == 0) {
-                       printError(ErrSysFatal, "Fatal: Row is not in use");
+                       printError(ErrSysFatal, "Fatal: Row is not in use during update rollback");
                    }
                    os::memcpy(logInfo->ptrToTuple_, (char*) logInfo +
                             sizeof(UndoLogInfo), logInfo->size_);
@@ -296,6 +348,14 @@ DbRetVal Transaction::applyUndoLogs(Database *sysdb)
                 //break;
                 case DeleteHashIndexOperation:
                 HashIndex::insertLogicalUndoLog(sysdb, (char *)logInfo 
+                                                    + sizeof(UndoLogInfo));
+                break;
+                case InsertTreeIndexOperation:
+                TreeIndex::deleteLogicalUndoLog(sysdb, (char *)logInfo
+                                                    + sizeof(UndoLogInfo));
+                break;
+                case DeleteTreeIndexOperation:
+                TreeIndex::insertLogicalUndoLog(sysdb, (char *)logInfo
                                                     + sizeof(UndoLogInfo));
                 break;
             }

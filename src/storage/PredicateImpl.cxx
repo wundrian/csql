@@ -23,10 +23,15 @@
 #include<TableImpl.h>
 #include<JoinTableImpl.h>
 #include<Util.h>
+static char aggNames[][10] =
+{
+    "MIN", "MAX", "SUM", "AVG", "COUNT",  ""
+};
+
 PredicateImpl::~PredicateImpl()
 {
-    if (lhs)  {delete lhs; lhs = NULL; }
-    if (rhs) { delete rhs; rhs = NULL; }
+//    if (lhs)  {delete lhs; lhs = NULL; }
+//    if (rhs) { delete rhs; rhs = NULL; }
 }
 void PredicateImpl::print(int space)
 {
@@ -35,15 +40,28 @@ void PredicateImpl::print(int space)
     spaceBuf[space] = '\0';
 
     printf("%s <PREDICATE>\n", spaceBuf);
-    printf("%s <FieldName1> %s </FieldName1>\n", spaceBuf, fldName1);
-    printf("%s <FieldName2> %s </FieldName2>\n", spaceBuf, fldName2);
-    printf("%s <CompOp> %s </CompOp>\n", spaceBuf, CompOpNames[compOp]);
-    printf("%s <LogOp> %s </LogOp>\n", spaceBuf, LogOpNames[logicalOp]);
-    printf("%s <Operand> %x </Operand>\n", spaceBuf, operand);
-    printf("%s <OperandPtr> %x </OperandPtr>\n", spaceBuf, operandPtr);
-    printf("%s <Comp2Op> %s </Comp2Op>\n", spaceBuf, CompOpNames[comp2Op]);
-    printf("%s <Operand2> %x </Operand2>\n", spaceBuf, operand2);
-    printf("%s <Operand2Ptr> %x </Operand2Ptr>\n", spaceBuf, operand2Ptr);
+    if (0 != strcmp(fldName1, "")) {
+      if (aggType ==  AGG_UNKNOWN)
+        printf("%s <FieldName1> %s </FieldName1>\n", spaceBuf, fldName1);
+      else
+        printf("%s <FieldName1> %s(%s) </FieldName1>\n", spaceBuf, 
+                                           aggNames[aggType-1], fldName1);
+    }
+    if (0 != strcmp(fldName2, ""))
+        printf("%s <FieldName2> %s </FieldName2>\n", spaceBuf, fldName2);
+    if (compOp != OpInvalidComparisionOp)
+        printf("%s <CompOp> %s </CompOp>\n", spaceBuf, CompOpNames[compOp]);
+    if (logicalOp != OpInvalidLogicalOp)
+        printf("%s <LogOp> %s </LogOp>\n", spaceBuf, LogOpNames[logicalOp]);
+    if (operand) printf("%s <Operand> VALUE </Operand>\n", spaceBuf);
+    if (operandPtr) printf("%s <OperandPtr> VALUE </OperandPtr>\n", spaceBuf);
+    if (comp2Op != OpInvalidComparisionOp)
+        printf("%s <Comp2Op> %s </Comp2Op>\n", spaceBuf, CompOpNames[comp2Op]);
+    if (operand2) printf("%s <Operand2> VALUE </Operand2>\n", spaceBuf);
+    if (operand2Ptr) printf("%s <Operand2Ptr> VALUE </Operand2Ptr>\n", spaceBuf);
+    //TEMP
+    //printf("<ISPUSHEDDOWN> %d </ISPUSHEDDOWN>\n", isPushedDown);
+
     if (lhs) {
        printf("%s <PRED-LEFT>\n", spaceBuf);
        lhs->print(space+2);
@@ -99,6 +117,19 @@ void PredicateImpl::setTerm(const char* fName1, ComparisionOp op, void *opnd)
     operand2 =NULL;
     operand2Ptr = NULL;
 }
+void PredicateImpl::setTerm(const char* fName1, ComparisionOp op,bool nullFlag)
+{
+    strcpy(fldName1, fName1);
+    compOp = op;
+    isNull = nullFlag;
+    lhs = rhs = NULL;
+    operandPtr = NULL;
+    operand = NULL;
+    logicalOp = OpInvalidLogicalOp;
+    comp2Op = OpInvalidComparisionOp;
+    operand2 =NULL;
+    operand2Ptr = NULL;
+}
 
 void PredicateImpl::setTerm(const char* fName1, ComparisionOp op, void **opnd)
 {
@@ -113,6 +144,21 @@ void PredicateImpl::setTerm(const char* fName1, ComparisionOp op, void **opnd)
     operand2 =NULL;
     operand2Ptr = NULL;
 }
+void PredicateImpl::setTerm(const char* fName1, ComparisionOp op, void **opnd, AggType aType)
+{
+    strcpy(fldName1, fName1);
+    compOp = op;
+    operand = NULL;
+    operandPtr = opnd;
+    lhs = rhs = NULL;
+    parent = NULL;
+    aggType = aType;
+    logicalOp = OpInvalidLogicalOp;
+    comp2Op = OpInvalidComparisionOp;
+    operand2 =NULL;
+    operand2Ptr = NULL;
+}
+
 void PredicateImpl::setTerm(const char* fName1, ComparisionOp op, void **opnd,
                                               ComparisionOp op2, void **opnd2)
 {
@@ -155,10 +201,10 @@ void PredicateImpl::setTerm(Predicate *p1, LogicalOp op, Predicate *p2 )
 void PredicateImpl::setTable(Table *tbl)
 {
     if (NULL != lhs)
-        lhs->setTable((TableImpl*)tbl);
+        lhs->setTable(tbl);
     if (NULL != rhs)
-        rhs->setTable((TableImpl*)tbl);
-   table = (TableImpl*)tbl;
+        rhs->setTable(tbl);
+   table = tbl;
 }
 void PredicateImpl::setIfNoLeftRight()
 {
@@ -176,7 +222,6 @@ void PredicateImpl::setTuple(void *tpl)
         tuple=tpl;
         return;
     }
-    //if (isPushedDown) return;
     if (NULL != lhs)
         lhs->setTuple(tpl);
     if (NULL != rhs)
@@ -224,7 +269,24 @@ bool PredicateImpl::appendIfSameFld(char *fName, ComparisionOp op, void *buf)
     } 
     return false;
 }
-
+bool PredicateImpl::isIsNullInvolved()
+{
+    bool lhsResult = true, rhsResult = true;
+    if (NULL != lhs)
+    {
+        lhsResult = lhs->isIsNullInvolved();
+    }
+    if (NULL != rhs)
+    {
+        rhsResult = rhs->isIsNullInvolved();
+    }
+    if (NULL != lhs)
+    {
+        if (lhsResult || rhsResult) return true; 
+        if(compOp == isNull) return true;
+    }
+    return false;
+}
 bool PredicateImpl::isNotOrInvolved()
 {
     bool lhsResult = true, rhsResult = true;
@@ -285,6 +347,78 @@ DbRetVal PredicateImpl::evaluateLogical(bool &result)
     }
     return OK;
 }
+
+DbRetVal PredicateImpl::evaluateForHaving(bool &result, AggTableImpl *aImpl, void *aggElement)
+{
+    bool rhsResult = false, lhsResult=false;
+    DbRetVal retCode =OK;
+    result = false;
+    if (NULL != lhs)
+    {
+       retCode = lhs->evaluateForHaving(lhsResult, aImpl, aggElement);
+        if (retCode != OK) return ErrInvalidExpr;
+    }else lhsResult = true;
+    if (NULL != rhs)
+    {
+        retCode = rhs->evaluateForHaving(rhsResult, aImpl, aggElement);
+        if (retCode != OK) return ErrInvalidExpr;
+    } else rhsResult = true;
+    if (NULL != lhs)
+    {
+        if (OpAnd == logicalOp) {
+            if (lhsResult && rhsResult) result = true;
+        }else if (OpOr == logicalOp) {
+            if (lhsResult || rhsResult) result = true;
+        }else if (OpNot == logicalOp){
+            if (lhsResult)  result = false; else result = true;
+        }
+        printDebug(DM_Predicate, "result is %d", result);
+        return OK;
+    }
+
+    void *val1 = NULL, *val2 =NULL;
+    int  offset = aImpl->getAggOffset(fldName1, aggType);
+    val1 = (void*)((char*)aggElement + offset);
+    if (!isBindBufSet) {
+        //sets the type and length when it is called first time
+        FieldInfo *info = new FieldInfo();
+        DbRetVal rv  = aImpl->getFieldInfo(fldName1, info);
+        if (aggType == AGG_AVG) {
+            type = typeDouble;
+            length = sizeof(double);
+        } else if (aggType == AGG_COUNT) { 
+            type = typeInt;
+            length = sizeof(int);
+        } else {
+            type = info->type;
+            length = info->length;
+        }
+        delete info;
+        isBindBufSet = true;
+    }
+    if(operand != NULL && operandPtr == NULL)
+    {
+        val2 = (char*) operand;
+    }
+    else if(operand == NULL && operandPtr != NULL)
+    {
+            val2 = *(char**)operandPtr;
+    }
+    if (aggType == AGG_AVG) { 
+        double dVal2 = 0;
+        AllDataType::convertToDouble(&dVal2, val2, type);
+        result = AllDataType::compareVal(val1, &dVal2, compOp, typeDouble, length);
+    }
+    else  if (aggType == AGG_COUNT) {
+        int dVal2 = 0;
+        AllDataType::convertToInt(&dVal2, val2, type);
+        result = AllDataType::compareVal(val1, &dVal2, compOp, typeInt, length);
+    } 
+    else
+        result = AllDataType::compareVal(val1, val2, compOp, type, length);
+    return OK;
+}
+
 DbRetVal PredicateImpl::evaluateLogicalForTable(bool &result, char *tuple)
 {
     bool rhsResult = false, lhsResult=false;
@@ -343,11 +477,23 @@ void PredicateImpl::evaluateForTable(bool &result, char *tuple)
         }
     }
     //Table null check of condition
-    table->setCurTuple(tuple);
-    if(table->isFldNull(fldName1))
-    {
-        result=false;
-        return ;
+    if (isNullable) {
+        TableImpl *tImpl =  (TableImpl*) table;
+        tImpl->setCurTuple(tuple);
+        bool isValueNull = table->isFldNull(fldPos);
+        if(compOp == OpIsNull)
+        {
+           if( (isValueNull && isNull) || (!isValueNull && !isNull) )
+           result = true;
+           else
+            result = false;
+           return;
+        }
+        if(isValueNull)
+        {
+            result=false;
+            return;
+        }
     }
     //the below code works only for single table 
     val1= tuple + offset1;
@@ -358,7 +504,14 @@ void PredicateImpl::evaluateForTable(bool &result, char *tuple)
        //Note:Perf: Do not change the order below
        if(operand == NULL && operandPtr != NULL)
        { 
-        val2 = *(char**)operandPtr;
+          val2 = *(char**)operandPtr;
+          if (compOp == OpLike) {
+             char *c = (char *)val2;
+             //OPT:If LIKE has only %, then no need to evaluate
+             if (*c == '%' && *(c+1) == '\0') {result=true; return;}
+             Util::changeWildcardChar(val2);
+          }
+
        } else if (operand == NULL && operandPtr == NULL)
        {
          if(offset2 != -1)
@@ -366,6 +519,11 @@ void PredicateImpl::evaluateForTable(bool &result, char *tuple)
        } else if(operand != NULL && operandPtr == NULL)
        { 
           val2 = (char*) operand;
+          if (compOp == OpLike) {
+             char *c = (char *)val2;
+             if (*c == '%' && *(c+1) == '\0') {result=true; return;}
+             Util::changeWildcardChar(val2);
+          }
        } 
        if(operand2 == NULL && operand2Ptr != NULL)
        { 
@@ -376,10 +534,14 @@ void PredicateImpl::evaluateForTable(bool &result, char *tuple)
        }
        isBindBufSet = true;
     }
+    result = true;
     if(val3) {
         //printf(" val1 %d val3 %d\n", *(int*)val1, *(int*)val3);
         result = AllDataType::compareVal(val1, val3, comp2Op, type,length);
         if(result==false) return;
+    }
+    if (isPushedDown) {
+        return;
     }
     //printf(" val1 %d val2 %d\n", *(int*)val1, *(int*)val2);
     result = AllDataType::compareVal(val1, val2, compOp, type,length);
@@ -438,7 +600,6 @@ void* PredicateImpl::getVal2IfBetweenOnInt(int &offset)
 }
 DbRetVal PredicateImpl::evaluate(bool &result)
 {
-    //if (isPushedDown) { result = true; return OK; }
     if (!isNoLeftRight) {
         bool rhsResult = false, lhsResult=false;
         DbRetVal retCode =OK;
@@ -446,12 +607,12 @@ DbRetVal PredicateImpl::evaluate(bool &result)
         if (NULL != lhs)
         {
             retCode = lhs->evaluate(lhsResult);
-            if (retCode != OK) return ErrInvalidExpr;
+            if (retCode < OK) return ErrInvalidExpr;
         }else lhsResult = true;
         if (NULL != rhs)
         {
             retCode = rhs->evaluate(rhsResult);
-            if (retCode != OK) return ErrInvalidExpr;
+            if (retCode < OK) return ErrInvalidExpr;
         } else rhsResult = true;
         if (NULL != lhs)
         {
@@ -462,12 +623,12 @@ DbRetVal PredicateImpl::evaluate(bool &result)
                 if (lhsResult || rhsResult) result = true;
             }else if (OpNot == logicalOp){
                 if (lhsResult)  result = false; else result = true;
+                if ( ErrNullValues == retCode) result = false;
             }
             printDebug(DM_Predicate, "result is %d", result);
             return OK;
         }
     }
-
     //Means it is relational expression
     //first operand is always field identifier
     //get the value in the tuple
@@ -530,6 +691,12 @@ DbRetVal PredicateImpl::evaluate(bool &result)
         }
         isBindBufSet = true;
       }
+      JoinTableImpl *jTable = (JoinTableImpl*) table;
+      if (jTable->isFldNullInt(fldName1) || jTable->isFldNullInt(fldName2))
+      {
+          result=false;
+          return ErrNullValues;
+      }
       result = AllDataType::compareVal(val1, val2, compOp, type,
                               length);
       return OK;
@@ -561,6 +728,48 @@ DbRetVal PredicateImpl::evaluate(bool &result)
     result = AllDataType::compareVal(val1, val2, compOp, type,length);
     return OK;
 }
+
+void PredicateImpl::solveForProjList(Table *tab)
+{
+    if (NULL != lhs)
+    {
+        lhs->solveForProjList(tab);
+    }
+    if (NULL != rhs)
+    {
+        rhs->solveForProjList(tab);
+    }
+    table = tab;
+    if (NULL != lhs) return ;
+    bool isExist1=false;
+    bool isExist2=false;
+    if (projList) 
+    {
+        ListIterator fIter = projList->getIterator();
+        JoinProjFieldInfo  *def;
+        while (fIter.hasElement())
+        {
+            def = (JoinProjFieldInfo*) fIter.nextElement();
+            if (!isExist1 && 0 == strcmp(fldName1, def->tabFieldName))
+            {
+                isExist1=true;            
+            }
+            if (!isExist2 && 0 == strcmp(fldName2, def->tabFieldName) )
+            {
+                isExist2=true;
+            }
+        }
+        if (!isExist1)
+        {
+            tab->bindFld(fldName1, NULL);
+        }
+        if (!isExist2 &&  strcmp(fldName2, "")!=0)
+        {
+            tab->bindFld(fldName2, NULL);
+        }
+     }
+}
+
 void PredicateImpl::setOffsetAndType()
 {
     if (NULL != lhs)
@@ -577,17 +786,27 @@ void PredicateImpl::setOffsetAndType()
     memset(fieldName2, 0, IDENTIFIER_LENGTH);
     Table::getFieldNameAlone(fldName1, fieldName1);
     Table::getFieldNameAlone(fldName2, fieldName2);
-   
+    //this function is called only from TableImpl
+    TableImpl *tImpl = (TableImpl*) table;
     if(fieldName1){
-        offset1 = table->getFieldOffset(fieldName1);
-        type = table->getFieldType(fieldName1);
-        length = table->getFieldLength(fieldName1);
+        FieldInfo *info = new FieldInfo();
+        tImpl->getFieldInfo(fieldName1, info);
+        offset1 = tImpl->getFieldOffset(fieldName1);
+        fldPos = tImpl->getFldPos(fieldName1);
+        type = info->type;
+        length = info->length;
+        isNullable = true;
+        if (info->isNull || info->isPrimary || 
+            info->isDefault || info->isAutoIncrement)
+             isNullable = false;
+        //printf("isNullable is set to %d\n", isNullable);
+        delete info;
     }
     
     if(fieldName2){
-        offset2 = table->getFieldOffset(fieldName2);
+        offset2 = tImpl->getFieldOffset(fieldName2);
         if(typeUnknown == type)
-            type = table->getFieldType(fieldName2);
+            type = tImpl->getFieldType(fieldName2);
     }
 
 }
@@ -610,7 +829,7 @@ bool PredicateImpl::pointLookupInvolved(const char *fname)
             {
                 case OpAnd:
                      //return lhsResult;
-                     if (lhsResult && rhsResult) return true;  else return false;
+                     if (lhsResult || rhsResult) return true;  else return false;
                      break;
                 case OpOr:
                      return false;
@@ -662,7 +881,7 @@ bool PredicateImpl::isBetweenInvolved(const char *fname)
      }
      char fieldName1[IDENTIFIER_LENGTH];
      Table::getFieldNameAlone(fldName1, fieldName1);
-     if ( OpLessThanEquals == compOp || OpGreaterThanEquals == compOp)
+     if ( OpGreaterThan == compOp || OpGreaterThanEquals == compOp)
      {
         if(0 == strcmp(fieldName1, fname))
         {
@@ -717,17 +936,17 @@ bool PredicateImpl::rangeQueryInvolved(const char *fname)
 }
 
 
-void* PredicateImpl::valPtrForIndexField(const char *fname)
+void* PredicateImpl::valPtrForIndexField(const char *fname, bool isUnique)
 {
     void *lhsRet=NULL, *rhsRet=NULL;
     if (NULL != lhs)
     {
-        lhsRet = lhs->valPtrForIndexField(fname);
+        lhsRet = lhs->valPtrForIndexField(fname, isUnique);
         if ( lhsRet !=  NULL) return lhsRet;
     }
     if (NULL != rhs)
     {
-        rhsRet = rhs->valPtrForIndexField(fname);
+        rhsRet = rhs->valPtrForIndexField(fname, isUnique);
         if ( rhsRet !=  NULL) return rhsRet;
     }
     char fieldName1[IDENTIFIER_LENGTH];
@@ -738,7 +957,8 @@ void* PredicateImpl::valPtrForIndexField(const char *fname)
     {
         if(0 == strcmp(fieldName1, fname)) 
         {
-            isPushedDown = true;
+            if (isUnique && compOp != OpLessThan && 
+                compOp != OpLessThanEquals) isPushedDown = true;
             if (operand) return operand; else return *(void**)operandPtr;
         }
     }

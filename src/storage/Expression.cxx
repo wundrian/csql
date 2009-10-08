@@ -71,7 +71,7 @@ void Expression::setExpr(Expression *exp1, ArithOperator op, Expression *exp2)
 void *Expression::evaluate(DataType type,bool &result)
 {   
     calVal=AllDataType::alloc(type,IDENTIFIER_LENGTH);
-    AllDataType::memoryset(calVal, type);
+    AllDataType::memoryset(calVal,type);
     char *rhsResult = NULL , *lhsResult = NULL;
     if (NULL != lhs)
     {

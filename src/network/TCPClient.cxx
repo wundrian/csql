@@ -21,10 +21,14 @@
 #include <CSql.h>
 #include <Network.h>
 #include <Parser.h>
+#if defined(SOLARIS)
+#define MSG_NOSIGNAL 0
+#endif
 TCPClient::TCPClient()
 {
     isConnectedFlag =false; 
     cacheClient = false; 
+    sockfd = -1;
     respPkt = new ResponsePacket(); 
     pktHdr = new PacketHeader();
 }
@@ -38,6 +42,10 @@ TCPClient::~TCPClient()
 DbRetVal TCPClient::send(NetworkPacketType type)
 {
     DbRetVal rv = OK;
+    if (sockfd == -1) {
+        printError(ErrNoConnection, "Connection lost with the peer.");
+        return ErrNoConnection;
+    }
     pktHdr->packetType = type;
     pktHdr->packetLength = 0;
     int numbytes=0;
@@ -47,14 +55,22 @@ DbRetVal TCPClient::send(NetworkPacketType type)
             isConnectedFlag = false;
             return ErrNoConnection;
         }
-        printError(ErrOS, "Unable to send the packet\n");
-        return ErrOS;
+        printError(ErrOS, "Unable to send the packet");
+        close(sockfd);
+        sockfd = -1;
+        isConnectedFlag = false;
+        return ErrNoConnection;
     }
     return rv;
 }
+
 DbRetVal TCPClient::send(NetworkPacketType type, int stmtid)
 {
     DbRetVal rv = OK;
+    if (sockfd == -1) {
+        printError(ErrNoConnection, "Connection lost with the peer.");
+        return ErrNoConnection;
+    }
     pktHdr->packetType = type;
     pktHdr->packetLength = 0;
     pktHdr->stmtID = stmtid;
@@ -65,14 +81,21 @@ DbRetVal TCPClient::send(NetworkPacketType type, int stmtid)
             isConnectedFlag = false;
             return ErrNoConnection;
         }
-        printError(ErrOS, "Unable to send the packet\n");
-        return ErrOS;
+        printError(ErrOS, "Unable to send the packet");
+        close(sockfd);
+        sockfd = -1;
+        isConnectedFlag = false;
+        return ErrNoConnection;
     }
     return rv;
 }
 DbRetVal TCPClient::send(NetworkPacketType type, char *buf, int len)
 {
     DbRetVal rv = OK;
+    if (sockfd == -1) {
+        printError(ErrNoConnection, "Connection lost with the peer.");
+        return ErrNoConnection;
+    }
 //    printf("NW:TCP Send\n");
     //void* totalBuffer = malloc(sizeof(PacketHeader)+ len);
     //PacketHeader *hdr=  new PacketHeader();
@@ -89,13 +112,11 @@ DbRetVal TCPClient::send(NetworkPacketType type, char *buf, int len)
             isConnectedFlag = false;
             return ErrNoConnection;
         }
-        printError(ErrOS, "Unable to send the packet\n");
-        return ErrOS;
-    }
-    int dummy;
-    if ((numbytes=os::recv(sockfd, &dummy, sizeof(int), 0)) == -1) {
-        printError(ErrOS, "Unable to receive the packet\n");
-        return ErrOS;
+        printError(ErrOS, "Unable to send the packet");
+        close(sockfd);
+        sockfd = -1;
+        isConnectedFlag = false;
+        return ErrNoConnection;
     }
 //    printf("Sent bytes %d\n", numbytes);
     if ((numbytes=os::send(sockfd, buf, len, MSG_NOSIGNAL)) == -1) {
@@ -104,8 +125,11 @@ DbRetVal TCPClient::send(NetworkPacketType type, char *buf, int len)
             isConnectedFlag = false;
             return ErrNoConnection;
         }
-        printError(ErrOS, "Unable to send the packet\n");
-        return ErrOS;
+        printError(ErrOS, "Unable to send the packet");
+        close(sockfd);
+        sockfd = -1;
+        isConnectedFlag = false;
+        return ErrNoConnection;
     }
 //    printf("Sent bytes %d\n", numbytes);
     //free(totalBuffer);
@@ -124,20 +148,25 @@ DbRetVal TCPClient::receive()
     timeout.tv_usec = 0;
     int ret = os::select(sockfd+1, &fdset, 0, 0, &timeout);
     if (ret <= 0) {
-        printError(ErrPeerTimeOut,"Response timeout for peer site\n");
+        printError(ErrPeerTimeOut,"Response timeout for peer site");
+        close(sockfd);
+        sockfd = -1;
+        isConnectedFlag = false;
         return ErrPeerTimeOut;
     }
     socklen_t len = sizeof(struct sockaddr);
     int numbytes = os::recv(sockfd, respPkt, sizeof(ResponsePacket), 0);
     if (numbytes == -1)
     {
-       printf("Unable to receive response from peer\n");
-       return ErrOS;
+       printError(ErrOS, "Unable to receive response from peer");
+        close(sockfd);
+        sockfd = -1;
+        isConnectedFlag = false;
+        return ErrNoConnection;
     }
-    char *response = (char *) &respPkt->retVal;
-//    if (*response != 1) rv = ErrPeerResponse;
-    return rv;
+    return respPkt->errRetVal;
 }
+
 DbRetVal TCPClient::connect()
 {
     //printf("NW:TCP connect %s %d %d\n", hostName, port, networkid);
@@ -147,11 +176,11 @@ DbRetVal TCPClient::connect()
     struct hostent *he;
     int numbytes;
     if ((he=gethostbyname(hostName)) == NULL) { // get the host info
-        printError(ErrOS,"Unable to get the peer host name\n");
+        printError(ErrOS,"Unable to get the peer host name");
         return ErrOS;
     }
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-        printError(ErrOS,"Unable to create socket to peer host name\n");
+        printError(ErrOS,"Unable to create socket to peer host name");
         return ErrOS;
     }
     srvAddr.sin_family = AF_INET; // host byte order
@@ -161,7 +190,7 @@ DbRetVal TCPClient::connect()
     if (::connect(sockfd, (struct sockaddr*) & srvAddr, sizeof(struct sockaddr))
          == -1)
     {
-        printError(ErrOS, "Unable to connect to peer site\n");
+        printError(ErrOS, "Unable to connect to peer site");
         return ErrOS;
     }
 //    printf("NW:TCP connecting\n");
@@ -173,7 +202,7 @@ DbRetVal TCPClient::connect()
     timeout.tv_usec = 0;
     int ret = os::select(sockfd+1, &fdset, 0, 0, &timeout);
     if (ret <= 0) {
-        printError(ErrPeerTimeOut,"Response timeout for peer site\n");
+        printError(ErrPeerTimeOut,"Response timeout for peer site");
         return ErrPeerTimeOut;
     }
     int response=0;
@@ -181,7 +210,7 @@ DbRetVal TCPClient::connect()
     numbytes = os::recv(sockfd, &response, 4, 0);
     if (numbytes !=4)
     {
-       printf("Unable to receive response from peer\n");
+       printError(ErrOS, "Unable to receive response from peer");
        return ErrOS;
     }
 //    printf("Response from peer site is %d\n", response);
@@ -207,14 +236,18 @@ DbRetVal TCPClient::disconnect()
                 isConnectedFlag = false;
                 return ErrNoConnection;
             }
-            printError(ErrOS, "Unable to send the packet\n");
-            return ErrOS;   
+            printError(ErrOS, "Unable to send the packet");
+            close(sockfd);
+            sockfd = -1;
+            isConnectedFlag = false;
+            return ErrNoConnection;   
         } else {
 //            printf("Sent bytes %d\n", numbytes);
             DbRetVal rv = receive();
+            isConnectedFlag = false;
             close(sockfd);
+            sockfd = -1;
         }
     }
-    isConnectedFlag = false;
     return OK;
 }

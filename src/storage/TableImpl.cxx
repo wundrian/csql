@@ -65,6 +65,9 @@ DbRetVal TableImpl::bindFld(const char *name, void *val)
 
 bool TableImpl::isFldNull(const char *name){
     if (name[0] == '*') return false;
+    if ( strncasecmp(name,"COUNT",5) == 0 || strncasecmp(name,"AVG",3) == 0 ||
+         strncasecmp(name,"MIN",3) == 0 || strncasecmp(name,"MAX",3) == 0 ||
+         strncasecmp(name,"SUM",3) == 0 ) return false;
     char fieldName[IDENTIFIER_LENGTH];
     getFieldNameAlone((char*)name, fieldName);
     int colpos = fldList_.getFieldPosition(fieldName);
@@ -81,6 +84,10 @@ int TableImpl::getFldPos(char *name)
 {
     return fldList_.getFieldPosition(name);
 }
+void TableImpl::setAliasName(char *name)
+{
+    strcpy(aliasName, name);
+}
 bool TableImpl::isFldNull(int colpos)
 {
     if (!curTuple_) return false;
@@ -90,7 +97,7 @@ bool TableImpl::isFldNull(int colpos)
         if (BITSET(nullVal, colpos)) return true;
     }
     else {
-        char *nullOffset = (char*)curTuple_ - os::align(numFlds_);
+        char *nullOffset = (char*)curTuple_ + (length_ - os::align(numFlds_));
         if (nullOffset[colpos-1]) return true;
     }
     return false;
@@ -102,7 +109,7 @@ void TableImpl::resetNullinfo()
     }
     else {
         int i=0;
-        while(i < numFlds_) { cNullInfo[0] = 0;}
+        while(i < numFlds_) { cNullInfo[i++] = 0;}
     }
 }
 DbRetVal TableImpl::markFldNull(char const* name)
@@ -133,7 +140,7 @@ DbRetVal TableImpl::markFldNull(int fldpos)
         }
     }
     else {
-        if (!BITSET(iNotNullInfo, fldpos)) cNullInfo[fldpos-1] = 1;
+        if (!cNotNullInfo[fldpos-1]) cNullInfo[fldpos-1] = 1;
         else {
             printError(ErrNullViolation, "NOT NULL constraint violation");
             return ErrNullViolation;
@@ -150,7 +157,6 @@ void TableImpl::clearFldNull(const char *name)
         printError(ErrNotExists, "Field %s does not exist", name);
         return;
     }
-
     clearFldNull(colpos);
 }
 
@@ -210,7 +216,7 @@ void TableImpl::addPredicate(char *fName, ComparisionOp op, void *buf)
     PredicateImpl *pred = (PredicateImpl*) pred_;
     PredicateImpl *newPred = new PredicateImpl();
     newPred->setTerm(fName, op, buf);
-    if (NULL == pred) { pred_ = newPred; return; }
+    if (NULL == pred) { pred_ = newPred; predList.append(newPred); return; }
     if (pred->isSingleTerm())
     {
        bool res = pred->appendIfSameFld(fName, op, buf);
@@ -221,6 +227,7 @@ void TableImpl::addPredicate(char *fName, ComparisionOp op, void *buf)
     }
     PredicateImpl *bothPred = new PredicateImpl();
     bothPred->setTerm(pred, OpAnd, newPred);
+    predList.append(bothPred);
     pred_ = bothPred;
 }
 
@@ -235,31 +242,36 @@ DbRetVal TableImpl::optimize()
         pred->setProjectionList(NULL);
         pred->setOffsetAndType();
     }
-    return createPlan();
+    DbRetVal rv = createPlan();
+    if (rv != OK) return rv;
+    if (iter) { iter->close(); delete iter; iter = NULL; }
+    if (useIndex_ >= 0)
+        iter = new TupleIterator(pred_, scanType_, idxInfo[useIndex_], chunkPtr_, sysDB_->procSlot,isBetween,isPointLook,shouldNullSearch);
+    else if (scanType_ == fullTableScan)
+        iter = new TupleIterator(pred_, scanType_, NULL, chunkPtr_, sysDB_->procSlot,isBetween,isPointLook,shouldNullSearch);
+    else
+    {
+        printError(ErrSysFatal,"Unable to create tuple iterator");
+        //should never happen
+        return ErrSysFatal;
+    }
+    iter->setPlan();
+    return OK;
 } 
 
 DbRetVal TableImpl::execute()
 {
-    if (NULL != iter)
+    if (iter && !iter->isIterClosed())
     {
          //printError(ErrAlready,"Scan already open:Close and re execute");
          return ErrAlready;
     }
     DbRetVal ret = OK;
-    ret = optimize();
+    if (!isPlanCreated) ret = optimize();
     if (OK != ret)
     {
         printError(ErrSysInternal,"Unable to create the plan");
         return ErrSysInternal;
-    }
-    if (useIndex_ >= 0) 
-        iter = new TupleIterator(pred_, scanType_, idxInfo[useIndex_], chunkPtr_, sysDB_->procSlot,isBetween,isPointLook);
-    else if (scanType_ == fullTableScan)
-        iter = new TupleIterator(pred_, scanType_, NULL, chunkPtr_, sysDB_->procSlot,isBetween,isPointLook);
-    else
-    {
-        printError(ErrSysFatal,"Unable to create tuple iterator");//should never happen
-        return ErrSysFatal;
     }
     ret = iter->open();
     if (OK != ret)
@@ -288,6 +300,7 @@ DbRetVal TableImpl::createPlan()
         if (NULL != def->bindVal_) bindList_.append(def);
     }
     numBindFlds_ = bindList_.size();
+    if (bindListArray_) { ::free(bindListArray_); bindListArray_ = NULL; }
     bindListArray_ = (void **) malloc(numBindFlds_ * sizeof (void *));
     void *elem = NULL;
     int i = 0;
@@ -302,9 +315,17 @@ DbRetVal TableImpl::createPlan()
         isPlanCreated = true;
         return OK;
     }
+    //If serching for IS NULL or IS NOT NULL then fullscan
     if (NULL != indexPtr_)
     {
        PredicateImpl *pred = (PredicateImpl*)pred_;
+       if(pred->isIsNullInvolved())
+       {
+           scanType_ = fullTableScan;
+           isPlanCreated = true;
+           shouldNullSearch=true;
+           return OK;
+       }
        printDebug(DM_Predicate, "predicate does not involve NOT , OR operator");
        if (!pred->isNotOrInvolved())
        {
@@ -389,47 +410,70 @@ void* TableImpl::fetchNoBind()
         return NULL;
     }
     DbRetVal lockRet = OK;
-    if(!loadFlag) {
-        if ((*trans)->isoLevel_ == READ_COMMITTED)
-        {
-            //if iso level is read committed, operation duration lock is sufficent so release it here itself.
-            int tries = 5;
-            struct timeval timeout;
-            timeout.tv_sec = Conf::config.getMutexSecs();
-            timeout.tv_usec = Conf::config.getMutexUSecs();
+    if (!loadFlag) {
+    if ((*trans)->isoLevel_ == READ_COMMITTED)
+    {
+        //if iso level is read committed, operation duration lock is sufficent 
+        //so release it here itself.
+        int tries = Conf::config.getMutexRetries();
+        struct timeval timeout;
+        timeout.tv_sec = Conf::config.getMutexSecs();
+        timeout.tv_usec = Conf::config.getMutexUSecs();
 
-            bool status = false;
-            while(true) { 
-                lockRet = lMgr_->isExclusiveLocked( curTuple_, trans, status);
-                if (OK != lockRet)
-                { 
-                    printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
-                    curTuple_ = prevTuple;
-                    return NULL;
-                }
-                if (!status) break; 
-                tries--;
-                if (tries == 0) break;
-                os::select(0, 0, 0, 0, &timeout);
-            }
-            if (tries == 0) 
-            { 
-                printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
-                curTuple_ = prevTuple;
-                return NULL;
-            }
-        }
-        else if ((*trans)->isoLevel_ == READ_REPEATABLE) {
-            lockRet = lMgr_->getSharedLock(curTuple_, trans);
+        bool status = false;
+        while(true) { 
+            lockRet = lMgr_->isExclusiveLocked( curTuple_, trans, status);
             if (OK != lockRet)
             { 
                 printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
                 curTuple_ = prevTuple;
                 return NULL;
             }
+            if (!status) break; 
+            tries--;
+            if (tries == 0) break;
+            os::select(0, 0, 0, 0, &timeout);
         }
-    }   
+        if (tries == 0) 
+        { 
+            printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
+            curTuple_ = prevTuple;
+            return NULL;
+        }
+    }
+    else if ((*trans)->isoLevel_ == READ_REPEATABLE) {
+        if (OK != trySharedLock(curTuple_, trans))
+        { 
+            printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
+            curTuple_ = prevTuple;
+            return NULL;
+        }
+
+    }
+    }
     return curTuple_;
+}
+DbRetVal TableImpl::trySharedLock(void *curTuple, Transaction **trans)
+{
+    DbRetVal lockRet = OK;
+    int tries = Conf::config.getMutexRetries();
+    while((lockRet = lMgr_->getSharedLock(curTuple_, trans)) == ErrLockTimeOut)
+    {
+        tries--;
+        if (tries <=0) break;
+    }
+    return lockRet;
+}
+DbRetVal TableImpl::tryExclusiveLock(void *curTuple, Transaction **trans)
+{
+    DbRetVal lockRet = OK;
+    int tries = Conf::config.getMutexRetries();
+    while((lockRet = lMgr_->getExclusiveLock(curTuple_, trans)) == ErrLockTimeOut)
+    {
+        tries--;
+        if (tries <=0) break;
+    }
+    return lockRet;
 }
 
 void* TableImpl::fetchNoBind(DbRetVal &rv)
@@ -448,52 +492,54 @@ void* TableImpl::fetchNoBind(DbRetVal &rv)
         return NULL;
     }
     DbRetVal lockRet = OK;
-    if(!loadFlag) {
-        if ((*trans)->isoLevel_ == READ_REPEATABLE) {
-            lockRet = lMgr_->getSharedLock(curTuple_, trans);
+    if (!loadFlag) {
+    if ((*trans)->isoLevel_ == READ_REPEATABLE) {
+        lockRet = lMgr_->getSharedLock(curTuple_, trans);
+        if (OK != lockRet)
+        {
+            printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
+            rv = ErrLockTimeOut;
+            curTuple_ = prevTuple;
+            return NULL;
+        }
+
+    }
+    else if ((*trans)->isoLevel_ == READ_COMMITTED)
+    {
+        //if iso level is read committed, operation duration lock is sufficent
+        //so release it here itself.
+        int tries = Conf::config.getMutexRetries();
+        //struct timeval timeout;
+        //timeout.tv_sec = Conf::config.getMutexSecs();
+        //timeout.tv_usec = Conf::config.getMutexUSecs();
+
+        bool status = false;
+        while(true) {
+            lockRet = lMgr_->isExclusiveLocked( curTuple_, trans, status);
             if (OK != lockRet)
             {
                 printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
-                rv = ErrLockTimeOut;
                 curTuple_ = prevTuple;
+                rv = ErrLockTimeOut;
                 return NULL;
             }
+            if (!status) break;
+            tries--;
+            if (tries == 0) break;
+            //os::select(0, 0, 0, 0, &timeout);
         }
-        else if ((*trans)->isoLevel_ == READ_COMMITTED)
+        if (tries == 0)
         {
-            //if iso level is read committed, operation duration lock is sufficent so release it here itself.
-            int tries = 5; 
-            struct timeval timeout;
-            timeout.tv_sec = Conf::config.getMutexSecs();
-            timeout.tv_usec = Conf::config.getMutexUSecs();
-
-            bool status = false;
-            while(true) {
-                lockRet = lMgr_->isExclusiveLocked( curTuple_, trans, status);
-                if (OK != lockRet)
-                {
-                    printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
-                    curTuple_ = prevTuple;
-                    rv = ErrLockTimeOut;
-                    return NULL;
-                }
-                if (!status) break;
-                tries--;
-                if (tries == 0) break;
-                os::select(0, 0, 0, 0, &timeout);
-            }
-            if (tries == 0)
-            {
-                printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
-                curTuple_ = prevTuple;
-                rv = ErrLockTimeOut;
-                return NULL;
-            }
+            printError(lockRet, "Unable to get the lock for the tuple %x", curTuple_);
+            curTuple_ = prevTuple;
+            rv = ErrLockTimeOut;
+            return NULL;
         }
+    }
     }
     return curTuple_;
 }
-DbRetVal TableImpl::fetchAgg(const char * fldName, AggType aType, void *buf)
+DbRetVal TableImpl::fetchAgg(const char * fldName, AggType aType, void *buf, bool &noRec)
 {
    FieldInfo *info = new FieldInfo();
    DbRetVal rv = getFieldInfo(fldName, info);
@@ -506,7 +552,14 @@ DbRetVal TableImpl::fetchAgg(const char * fldName, AggType aType, void *buf)
           if (AGG_MIN == aType) {
               HashIndexInfo* hInfo = (HashIndexInfo*) idxInfo[pos];
               CINDEX *iptr = (CINDEX*) hInfo->indexPtr;
-              TreeIter *iter = new TreeIter((TreeNode*)iptr->hashNodeChunk_);
+              TreeNode *fstNode=(TreeNode *)iptr->hashNodeChunk_;
+              TreeIter *iter=NULL;
+              if(fstNode!=NULL){
+                  TreeNode *start = (TreeNode *)*((char**)((char*)fstNode + sizeof(TreeNode)));
+                  iter = new TreeIter(start,(TreeNode*)iptr->hashNodeChunk_,sysDB_->procSlot);
+              }else{
+                  iter = new TreeIter(NULL,(TreeNode*)iptr->hashNodeChunk_,sysDB_->procSlot);
+              }
               char *tuple = (char*) iter->getFirstElement();	
               if (tuple != NULL) {
                   AllDataType::copyVal(buf,(void*)(tuple+info->offset), 
@@ -514,82 +567,143 @@ DbRetVal TableImpl::fetchAgg(const char * fldName, AggType aType, void *buf)
                   delete iter; 
                   return OK;
               }
-              delete iter;
+              delete iter; iter = NULL;
           }
           else if (AGG_MAX == aType) {
               HashIndexInfo* hInfo = (HashIndexInfo*) idxInfo[pos];
               CINDEX *iptr = (CINDEX*) hInfo->indexPtr;
-              TreeIter *iter = new TreeIter((TreeNode*)iptr->hashNodeChunk_);
+              TreeNode *fstNode=(TreeNode *)iptr->hashNodeChunk_;
+              TreeIter *iter=NULL;
+              if(fstNode!=NULL){
+                  TreeNode *start = (TreeNode *)*((char**)((char*)fstNode + sizeof(TreeNode)));
+                  iter = new TreeIter(start,(TreeNode*)iptr->hashNodeChunk_,sysDB_->procSlot);
+              }else{
+                  iter = new TreeIter(NULL,(TreeNode*)iptr->hashNodeChunk_,sysDB_->procSlot);
+              }
               char *tuple = (char*) iter->getLastElement();	
               if (tuple != NULL) { 
                   AllDataType::copyVal(buf,(void*)(tuple+info->offset), 
                                    info->type, info->length);
-                  delete iter;
+                  delete iter; iter = NULL;
                   return OK;
               }
-              delete iter;
+              delete iter; iter=NULL;
           }
       }
+   }else if (AGG_COUNT == aType) {
+       (*(int*)buf) = 0;
    }
+
 
    DataType type = info->type;
    int length = info->length;
    int offset = info->offset;
-
-   if (NULL == pred_ && typeInt == type)
+   int colPos = fldList_.getFieldPosition(fldName);
+   bool isNullable= true;
+   if (info->isNull || info->isPrimary || info->isDefault || info->isAutoIncrement) {
+       isNullable = false;
+   }
+   int nullOffset = length_-4;
+   if (aType == AGG_COUNT) {
+       length = sizeof(int);
+       type = typeInt;
+   }
+   if (NULL == pred_ && typeInt == type && aType != AGG_AVG)
    { //perf opt
      ChunkIterator cIter = ((Chunk*)chunkPtr_)->getIterator();
      char *tuple =(char*)cIter.nextElement();
-     if (NULL == tuple) return OK;
+     if (NULL == tuple) { 
+         *(int *) buf = 0;
+         noRec = true; 
+         return OK; 
+     }
      int count =1;
-     AllDataType::copyVal(buf, (void*) (tuple+offset), type, length);
-     while(1) {
-       tuple = (char*)cIter.nextElement();
-       if (NULL == tuple) break;
-       switch(aType) {
-           case AGG_MIN:
-           {
-               if (*(int*)buf >= *((int*)(tuple+offset)))
-                   *(int*)buf = *((int*)(tuple+offset));
-               break;
-           }
-           case AGG_MAX:
-           {
-               if (*(int*)buf <= *((int*)(tuple+offset)))
-                   *(int*)buf = *((int*)(tuple+offset));
-               break;
-           }
-           case AGG_SUM:
-           {
-               *(int*)buf = *(int*)buf + *((int*)(tuple+offset));
-               break;
-           }
-           case AGG_AVG:
-           {
-               *(int*)buf = *(int*)buf + *((int*)(tuple+offset));
-               count++;
-               break;
-           }
-           case AGG_COUNT:
-           {
-               count++;
-               break;
-           }
+     if (isNullable) {
+         if (isIntUsedForNULL) {
+                if (BITSET(*(int*)(tuple+nullOffset), colPos)) count =0;
          }
-       }
-       if( AGG_AVG == aType) AllDataType::divVal(buf, &count, type);
-       else if (AGG_COUNT == aType) (*(int*)buf) = count;
-       delete info;
-       return OK;
+         else {
+              curTuple_= tuple;
+              if(isFldNull(colPos)) count =0;
+         }
+     }
+     if (aType != AGG_COUNT)
+         AllDataType::copyVal(buf, (void*) (tuple+offset), type, length);
+     void *prev=NULL;
+     prev = curTuple_;
+     cIter.pageSize = PAGE_SIZE;
+     while(1) 
+     {
+         tuple = (char*)cIter.nextElementInt();
+         if (NULL == tuple) break;
+         if (isNullable) {
+             if (isIntUsedForNULL) {
+                 if (BITSET(*(int*)(tuple+nullOffset), colPos)) continue;
+             }
+             else {
+                 curTuple_= tuple;
+                 if(isFldNull(colPos)) continue;
+             }
+         }
+         if (aType == AGG_MIN)
+         {
+             if (*(int*)buf >= *((int*)(tuple+offset)))
+                 *(int*)buf = *((int*)(tuple+offset));
+         }
+         else if (aType == AGG_MAX)
+         {
+             if (*(int*)buf <= *((int*)(tuple+offset)))
+                 *(int*)buf = *((int*)(tuple+offset));
+         }
+         else if (aType == AGG_SUM)
+         {
+             *(int*)buf += *((int*)(tuple+offset));
+         }
+         else if (aType == AGG_AVG)
+         {
+             *(int*)buf = *(int*)buf + *((int*)(tuple+offset));
+             count++;
+         }
+         else if (aType == AGG_COUNT)
+         {
+             count++;
+         }
+      }
+      curTuple_= prev;
+      if( AGG_AVG == aType) AllDataType::divVal(buf, &count, type);
+      else if (AGG_COUNT == aType) (*(int*)buf) = count;
+      delete info;
+      return OK;
    }
 
    char *tuple = (char*) fetchNoBind(rv);
-   if ( NULL == tuple)  return OK; 
+   if ( NULL == tuple) { noRec = true; return OK; }
    int count =1;
-   AllDataType::copyVal(buf, (void*) (tuple+offset), type, length);
+
+   while(isFldNull(colPos)) {
+       tuple= (char*) fetchNoBind(rv);
+       if (aType == AGG_COUNT) count++;
+       if (tuple) break;
+   }
+   if ( NULL == tuple) { noRec = true; return OK; }
+
+   if (aType == AGG_AVG) {
+       AllDataType::convertToDouble(buf, (void*) (tuple+offset), type);
+   } else if (aType != AGG_COUNT) {
+       AllDataType::copyVal(buf, (void*) (tuple+offset), type, length);
+   }
    while(1) {
        tuple = (char*) fetchNoBind(rv);
        if (NULL == tuple) break;
+       if (isNullable) {
+           if (isIntUsedForNULL) {
+               if (BITSET(*(int*)(tuple+nullOffset), colPos)) continue;
+           }
+           else {
+               curTuple_= tuple;
+               if(isFldNull(colPos)) continue;
+           }
+       }
        switch(aType) {
            case AGG_MIN:
            {
@@ -617,8 +731,9 @@ DbRetVal TableImpl::fetchAgg(const char * fldName, AggType aType, void *buf)
            }
            case AGG_AVG:
            {
-               AllDataType::addVal(buf, (void*) (tuple+offset), 
-                               type);
+               double tmpBuf=0.0;
+               AllDataType::convertToDouble(&tmpBuf, (void*) (tuple+offset), type);
+               AllDataType::addVal(buf, &tmpBuf, typeDouble);
                count++;
                break;
            }
@@ -632,7 +747,7 @@ DbRetVal TableImpl::fetchAgg(const char * fldName, AggType aType, void *buf)
    switch(aType) {
        case AGG_AVG:
        {
-           AllDataType::divVal(buf, &count,type); 
+           AllDataType::divVal((double *)buf, count, type); 
            break;
        }
        case AGG_COUNT:
@@ -647,30 +762,59 @@ DbRetVal TableImpl::fetchAgg(const char * fldName, AggType aType, void *buf)
 DbRetVal TableImpl::insertTuple()
 {
     DbRetVal ret =OK;
-    void *tptr = ((Chunk*)chunkPtr_)->allocate(db_, &ret);
+    void *tptr = NULL;// ((Chunk*)chunkPtr_)->allocate(db_, &ret);
+    int tries=0;
+    int totalTries = Conf::config.getMutexRetries();
+    while (tries < totalTries)
+    {
+        ret = OK;
+        tptr = ((Chunk*)chunkPtr_)->allocate(db_, &ret);
+        if (tptr !=NULL) break;
+        if (ret != ErrLockTimeOut)
+        {
+            printError(ret, "Unable to allocate record from chunk");
+            return ret;
+        }
+        tries++;
+    }
     if (NULL == tptr)
     {
-        printError(ret, "Unable to allocate record from chunk");
+        printError(ret, "Unable to allocate record from chunk after %d retries", tries);
         return ret;
     }
-    if (!loadFlag) {
-        ret = lMgr_->getExclusiveLock(tptr, trans);
-        if (OK != ret)
-        {
-            ((Chunk*)chunkPtr_)->free(db_, tptr);
-            printError(ret, "Could not get lock for the insert tuple %x", tptr);
-            return ErrLockTimeOut;
-        }
-    }
     curTuple_ = tptr;   
- 
+    if(isFkTbl){
+        TableImpl *fkTbl =NULL; 
+        ListIterator tblIter = tblList.getIterator();
+        tblIter.reset();
+        while (tblIter.hasElement()){
+           fkTbl = (TableImpl *) tblIter.nextElement();
+           bool pkRec = isPkTableHasRecord(fkTbl->getName(),fkTbl,true);
+           if(!pkRec){
+               printError(ErrForeignKeyInsert, "Unable to insert into foreign Key table.Check PK table");
+               ((Chunk*)chunkPtr_)->free(db_, tptr);
+               return ErrForeignKeyInsert;
+           }
+        }
+        tblIter.reset();
+    }
+    if (!loadFlag) {
+      //ret = lMgr_->getExclusiveLock(tptr, trans);
+      if (OK != tryExclusiveLock(tptr, trans))
+      {
+        ((Chunk*)chunkPtr_)->free(db_, tptr);
+        printError(ret, "Could not get lock for the insert tuple %x", tptr);
+        return ErrLockTimeOut;
+      }
+    }
+
     ret = copyValuesFromBindBuffer(tptr);
     if (ret != OK)
     {
         printError(ret, "Unable to copy values from bind buffer");
-        if (!loadFlag) { 
+        if (!loadFlag) {
             (*trans)->removeFromHasList(db_, tptr);
-            lMgr_->releaseLock(tptr);
+             lMgr_->releaseLock(tptr);
         }
         ((Chunk*)chunkPtr_)->free(db_, tptr);
         return ret;
@@ -695,20 +839,19 @@ DbRetVal TableImpl::insertTuple()
         for (i = 0; i < numIndexes_ ; i++)
         {
             ret = insertIndexNode(*trans, indexPtr_[i], idxInfo[i], tptr);
-            if (ret != OK) { printError(ret, "Error in inserting to index"); break;}
+            if (ret != OK) { printError(ret, "Error in inserting to index %x", tptr); break;}
         }
-        if (i != numIndexes_ )
+        if ( ret != OK)
         {
             for (int j = 0; j < i ; j++) {
-                printError(ErrWarning, "Deleting index node");
+                printError(ErrWarning, "Undo:Deleting index node");
                 deleteIndexNode(*trans, indexPtr_[j], idxInfo[j], tptr);
             }
             if (!loadFlag) {
-                (*trans)->removeFromHasList(db_, tptr);
-                lMgr_->releaseLock(tptr);
+              (*trans)->removeFromHasList(db_, tptr);
+               lMgr_->releaseLock(tptr);
             }
             ((Chunk*)chunkPtr_)->free(db_, tptr);
-            printError(ret, "Unable to insert index node for tuple %x ", tptr);
             return ret;
         }
     }
@@ -721,8 +864,8 @@ DbRetVal TableImpl::insertTuple()
             deleteIndexNode(*trans, indexPtr_[j], idxInfo[j], tptr);
         }
         if (!loadFlag) {
-            (*trans)->removeFromHasList(db_, tptr);
-            lMgr_->releaseLock(tptr);
+          (*trans)->removeFromHasList(db_, tptr);
+           lMgr_->releaseLock(tptr);
         }
         ((Chunk*)chunkPtr_)->free(db_, tptr);
     }
@@ -736,12 +879,27 @@ DbRetVal TableImpl::deleteTuple()
         printError(ErrNotOpen, "Scan not open: No Current tuple");
         return ErrNotOpen;
     }
+    if(isPkTbl){
+        TableImpl *fkTbl =NULL;
+        ListIterator tblIter = tblFkList.getIterator();
+        tblIter.reset();
+        while (tblIter.hasElement()){
+           fkTbl = (TableImpl *) tblIter.nextElement();
+           bool pkRec = isFkTableHasRecord(fkTbl->getName(),fkTbl);
+           if(pkRec){
+                printError(ErrForeignKeyDelete, "A Relation Exists. Delete from child table first");
+                return ErrForeignKeyDelete;
+           }
+        }
+        tblIter.reset();
+    }
     DbRetVal ret = OK;
-    if (!loadFlag) {
-        ret = lMgr_->getExclusiveLock(curTuple_, trans);
-        if (OK != ret)
+    if (!loadFlag) {   
+        //ret = lMgr_->getExclusiveLock(curTuple_, trans);
+        if (OK != tryExclusiveLock(curTuple_, trans))
         {
-            printError(ret, "Could not get lock for the delete tuple %x", curTuple_);
+            printError(ret, "Could not get lock for the delete tuple %x", 
+                                                              curTuple_);
             return ErrLockTimeOut;
         }
     }
@@ -757,9 +915,10 @@ DbRetVal TableImpl::deleteTuple()
         }
         if (i != numIndexes_ )
         {
+            printError(ErrWarning, "Inserting back index node");
             for (int j = 0; j < i ; j++)
                 insertIndexNode(*trans, indexPtr_[j], idxInfo[j], curTuple_);
-            if (!loadFlag) {
+            if (!loadFlag) {   
                 lMgr_->releaseLock(curTuple_);
                 (*trans)->removeFromHasList(db_, curTuple_);
             }
@@ -767,9 +926,21 @@ DbRetVal TableImpl::deleteTuple()
             return ret;
         }
     }
-    ((Chunk*)chunkPtr_)->free(db_, curTuple_);
     if (!loadFlag)
-        ret = (*trans)->appendUndoLog(sysDB_, DeleteOperation, curTuple_, length_);
+        ret = (*trans)->appendUndoLog(sysDB_, DeleteOperation, curTuple_, 0);
+    if (ret != OK) {
+        printError(ret, "Unable to create undo log for %x ", curTuple_);
+        for (int j = 0; j < numIndexes_ ; j++) {
+            printError(ErrWarning, "Inserting back index node");
+            insertIndexNode(*trans, indexPtr_[j], idxInfo[j], curTuple_);
+        }
+        if (!loadFlag) {
+          (*trans)->removeFromHasList(db_, curTuple_);
+           lMgr_->releaseLock(curTuple_);
+        }
+    }
+    ((Chunk*)chunkPtr_)->free(db_, curTuple_);
+
     iter->prev();
     return ret;
 }
@@ -823,14 +994,29 @@ DbRetVal TableImpl::updateTuple()
         printError(ErrNotOpen, "Scan not open: No Current tuple");
         return ErrNotOpen;
     }
-    DbRetVal ret = OK;
-    if (!loadFlag) {
-        ret = lMgr_->getExclusiveLock(curTuple_, trans);
-        if (OK != ret)
-        {
-            printError(ret, "Could not get lock for the update tuple %x", curTuple_);
-            return ErrLockTimeOut;
+    if(isFkTbl){
+        TableImpl *fkTbl =NULL;
+        ListIterator tblIter = tblList.getIterator();
+        tblIter.reset();
+        while (tblIter.hasElement()){
+           fkTbl = (TableImpl *) tblIter.nextElement();
+           bool pkRec = isPkTableHasRecord(fkTbl->getName(),fkTbl,false);
+           if(!pkRec){
+               printError(ErrForeignKeyInsert, "Unable to insert into foreign Key table.Check PK table");
+               return ErrForeignKeyInsert;
+           }
         }
+        tblIter.reset();
+    }
+
+    DbRetVal ret=OK;
+    if (!loadFlag) {
+      //ret = lMgr_->getExclusiveLock(curTuple_, trans);
+      if (OK != tryExclusiveLock(curTuple_, trans))
+      {
+        printError(ret, "Could not get lock for the update tuple %x", curTuple_);
+        return ErrLockTimeOut;
+      }
     }
     if (NULL != indexPtr_)
     {
@@ -844,8 +1030,8 @@ DbRetVal TableImpl::updateTuple()
             if (ret != OK)
             {
                 if (!loadFlag) {
-                    lMgr_->releaseLock(curTuple_);
-                    (*trans)->removeFromHasList(db_, curTuple_);
+                  lMgr_->releaseLock(curTuple_);
+                  (*trans)->removeFromHasList(db_, curTuple_);
                 }
                 printError(ret, "Unable to update index node for tuple %x", curTuple_);
                 return ret;
@@ -854,7 +1040,13 @@ DbRetVal TableImpl::updateTuple()
     }
     if (!loadFlag)
         ret = (*trans)->appendUndoLog(sysDB_, UpdateOperation, curTuple_, length_);
-    if (ret != OK) return ret;
+    if (ret != OK) {
+        if (!loadFlag) {
+           lMgr_->releaseLock(curTuple_);
+           (*trans)->removeFromHasList(db_, curTuple_);
+         }
+         return ret;
+    }
     int addSize = 0;
     int iNullVal=iNullInfo;
     if (numFlds_ < 31){ 
@@ -886,7 +1078,14 @@ DbRetVal TableImpl::updateTuple()
     {
         addSize = os::align(numFlds_);
         //TODO::Do not do blind memcpy. It should OR each and every char
+        int i=0;
+        char *null=(char*)(curTuple_) + (length_-addSize);
+        while(i < numFlds_) {
+            if(cNullInfo[i]) null[i] |= cNullInfo[i];
+            i++;
+        }
         //os::memcpy(((char*)(curTuple_) + (length_-addSize)), cNullInfo, addSize);
+
 
     }
     return OK;
@@ -938,7 +1137,7 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
         }
         if (def->isNull_ && !def->isDefault_ && NULL == def->bindVal_ && isInsert) 
         {
-            printError(ErrNullViolation, "NOT NULL constraint violation for field %s\n", def->fldName_);
+            printError(ErrNullViolation, "NOT NULL constraint violation for field %s", def->fldName_);
             return ErrNullViolation;
         }
         if (def->isDefault_ && NULL == def->bindVal_ && isInsert)
@@ -957,7 +1156,7 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
                 if (NULL != def->bindVal_)
                 {
 		    if(!isInsert && isFldNull(fldpos)){clearNullBit(fldpos);}
-                    strcpy((char*)colPtr, (char*)def->bindVal_);
+                    strncpy((char*)colPtr, (char*)def->bindVal_, def->length_);
                     *(((char*)colPtr) + (def->length_-1)) = '\0';
                 }
                 else if (!def->isNull_ && !def->bindVal_ && isInsert)  setNullBit(fldpos);
@@ -1013,13 +1212,13 @@ DbRetVal TableImpl::copyValuesToBindBuffer(void *tuplePtr)
 }
 
 //-1 index not supported
-DbRetVal TableImpl::insertIndexNode(Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool loadFlag)
+DbRetVal TableImpl::insertIndexNode(Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple)
 {
     CINDEX *iptr = (CINDEX*)indexPtr;
     DbRetVal ret = OK;
     printDebug(DM_Table, "Inside insertIndexNode type %d", iptr->indexType_);
     Index* idx = Index::getIndex(iptr->indexType_);
-    ret = idx->insert(this, tr, indexPtr, info, tuple, loadFlag);
+    ret = idx->insert(this, tr, indexPtr, info, tuple,loadFlag);
     return ret;
 }
 
@@ -1031,19 +1230,41 @@ DbRetVal TableImpl::deleteIndexNode(Transaction *tr, void *indexPtr, IndexInfo *
     ret = idx->remove(this, tr, indexPtr, info, tuple, loadFlag);
     return ret;
 }
-void TableImpl::printSQLIndexString()
+void TableImpl::printSQLIndexString(FILE *fp, int fd)
 {
+    if (fp == NULL) fp = stdout;
     CatalogTableINDEXFIELD cIndexField(sysDB_);
     char fName[IDENTIFIER_LENGTH];
-    char *fldName = fName; 
     char idxName[IDENTIFIER_LENGTH];
+    char *fldName = fName; 
     DataType type;
     for (int i = 0; i < numIndexes_ ; i++)
     {
         CINDEX *iptr = (CINDEX*) indexPtr_[i];
         sprintf(idxName,"%s_idx_Auto_increment",getName());
         if(strcmp(iptr->indName_,idxName)==0){ continue; }
-        printf("CREATE INDEX %s on %s ( ", iptr->indName_, getName());
+        if (Conf::config.useDurability()) {
+            struct Object obj;
+            strcpy(obj.name, iptr->indName_);
+            if (iptr->indexType_ == hashIndex) {
+                obj.type = hIdx;
+                obj.bucketChunk = ((Chunk *)iptr->chunkPtr_)->getFirstPage();
+                obj.firstPage = ((Chunk *)iptr->hashNodeChunk_)->getFirstPage();
+                obj.curPage = ((Chunk *)iptr->hashNodeChunk_)->getCurrentPage();
+            } else if (iptr->indexType_ == treeIndex) {
+                obj.type = tIdx;
+                obj.firstPage = ((Chunk *)iptr->chunkPtr_)->getFirstPage();
+                obj.curPage = ((Chunk *)iptr->chunkPtr_)->getCurrentPage();
+                long nodes = ((Chunk *)iptr->chunkPtr_)->getTotalDataNodes();
+                if(nodes) {
+                    ChunkIterator cIter = ((Chunk *)iptr->chunkPtr_)->getIterator();
+                    obj.bucketChunk = cIter.nextElement();
+                } else obj.bucketChunk = NULL;
+            } 
+            void *buf = &obj;
+            write(fd, buf, sizeof(obj));
+        }
+        fprintf(fp, "CREATE INDEX %s on %s ( ", iptr->indName_, getName());
         FieldList fldList;
         cIndexField.getFieldInfo(iptr, fldList);
         FieldIterator fIter = fldList.getIterator();
@@ -1051,15 +1272,16 @@ void TableImpl::printSQLIndexString()
         while(fIter.hasElement())
         {
             FieldDef *def = fIter.nextElement();
-            if (firstFld) { printf(" %s ", def->fldName_); firstFld = false; }
-            else printf(" ,%s ", def->fldName_);
+            if (firstFld) { fprintf(fp, " %s ", def->fldName_); firstFld = false; }
+            else fprintf(fp, " ,%s ", def->fldName_);
         }
-        printf(" ) ");
-        if (iptr->indexType_ == hashIndex) printf(" HASH ");
-        else printf(" TREE ");
-        if (((HashIndexInfo*) idxInfo[i])->isUnique) printf(" UNIQUE");
-        if(((HashIndexInfo*) idxInfo[i])->noOfBuckets != 1009 ) printf(" SIZE %d ",((HashIndexInfo*) idxInfo[i])->noOfBuckets );
-        printf(";\n");
+        fldList.removeAll(); 
+        fprintf(fp, " ) ");
+        if (iptr->indexType_ == hashIndex) fprintf(fp, " HASH ");
+        else fprintf(fp, " TREE ");
+        if (((HashIndexInfo*) idxInfo[i])->isUnique) fprintf(fp, " UNIQUE"); 
+        if(((HashIndexInfo*) idxInfo[i])->noOfBuckets != 1009 ) fprintf(fp, " SIZE %d ",((HashIndexInfo*) idxInfo[i])->noOfBuckets ); 
+        fprintf(fp, ";\n");
     }
 }
 
@@ -1126,9 +1348,31 @@ List TableImpl::getFieldNameList()
 DbRetVal TableImpl::close()
 {
     if (iter) { iter->close(); delete iter; iter = NULL; }
+    TableImpl *fkTbl =NULL;
+    ListIterator tblIter = tblList.getIterator();
+    tblIter.reset();
+    while (tblIter.hasElement()){
+        fkTbl = (TableImpl *) tblIter.nextElement();
+        fkTbl->close();
+    }
+    tblList.reset();
+    tblIter = tblFkList.getIterator();
+    tblIter.reset();
+    while (tblIter.hasElement()){
+        fkTbl = (TableImpl *) tblIter.nextElement();
+        fkTbl->close();
+    }
+    tblFkList.reset();
     printDebug(DM_Database,"Closing table handle: %x", this);
     //table->unlock();
-    delete pred_;
+    //delete pred_;
+    ListIterator pIter = predList.getIterator();
+    while (pIter.hasElement())
+    {
+        PredicateImpl *pImpl = (PredicateImpl*) pIter.nextElement();
+        delete pImpl;
+    }
+    predList.reset();
     delete this;
     logFinest(Conf::logger, "Closing Table");
     return OK;
@@ -1139,10 +1383,7 @@ DbRetVal TableImpl::closeScan()
     //do not throw scan not open error
     //this function will be called by table handle
     if (iter) {
-        // iter->reset();
-        //PRABA::TEMP::otherwise fails.check with kishor
-        delete iter;
-        iter = NULL;
+        iter->close();
     }
     return OK;
 }
@@ -1227,9 +1468,25 @@ bool TableImpl::pushPredicate(Predicate *pred)
     }
     return ret;
 }
+
+void TableImpl::setCondition(Condition *p)
+{ 
+    isPlanCreated = false; 
+    ListIterator pIter = predList.getIterator();
+    while (pIter.hasElement())
+    {
+        PredicateImpl *pImpl = (PredicateImpl*) pIter.nextElement();
+        delete pImpl;
+    }
+    predList.reset();
+
+    if (p) pred_ = p->getPredicate(); else pred_ = NULL;
+}
+
 void TableImpl::setPredicate(Predicate *pred)
 {
     if (NULL == pred_) { pred_ = pred; return; }
+
     Predicate *curPred = pred_;
     PredicateImpl *newPred = new PredicateImpl();
     newPred->setTerm(curPred, OpAnd, pred);
@@ -1249,4 +1506,249 @@ void TableImpl::printPlan(int space)
     if (pred) pred->print(space+2);
     printf("%s </TABLE-NODE>\n", spaceBuf);
 }
+void TableImpl::printSQLForeignString()
+{
+    DbRetVal rv=OK;
+    FieldNameList pkFieldList,fkFieldList;
+    void *tPkptr =NULL;
+    void *tFkptr = NULL;
+    void *chunkPk = NULL;
+    CatalogTableTABLE cTable(sysDB_);
+    TableImpl *fkTbl =NULL;
+    ListIterator tblIter = tblList.getIterator();
+    tblIter.reset();
+    int firstFK=true;
+    while (tblIter.hasElement()){
+        fkTbl = (TableImpl *) tblIter.nextElement();
+        rv = cTable.getChunkAndTblPtr(fkTbl->getName(), chunkPk, tPkptr);
+        if ( OK != rv){return ;}
+        rv = cTable.getChunkAndTblPtr(getName(), chunkPk, tFkptr);
+        if ( OK != rv){return ;}
+        CatalogTableFK cFk(sysDB_);
+        rv = cFk.getPkFkFieldInfo(tPkptr,tFkptr,pkFieldList,fkFieldList);
+        if ( OK != rv){return;}
+        pkFieldList.resetIter();
+        fkFieldList.resetIter();
+        char *fldName = NULL;
+        bool firstField=true;
+        if(!firstFK) printf(", ");
+        printf(", FOREIGN KEY ( ");
+        while((fldName = fkFieldList.nextFieldName())!= NULL)
+        {
+            if (firstField) {
+                printf("%s",fldName);
+                firstField=false;
+            }
+            else
+                printf(",%s",fldName);
+        }
+        printf(" ) REFERENCES %s ( ",fkTbl->getName());
+        firstField=true;
+        while((fldName = pkFieldList.nextFieldName())!= NULL)
+        {
+            if (firstField) {
+                printf("%s",fldName);
+                firstField=false;
+            }
+            else
+                printf(",%s",fldName);
+        }
+        printf(" )");
+        firstFK=true;        
+        pkFieldList.removeAll(); 
+        fkFieldList.removeAll(); 
+    }
+    return;
+}
+bool TableImpl::isPkTableHasRecord(char *pkTableName, TableImpl *fkTbl,bool isInsert)
+{
+    DbRetVal rv=OK;
+    bool isRecExist=false;
+    FieldNameList pkFieldList,fkFieldList;
+    void *tPkptr =NULL;
+    void *tFkptr = NULL;
+    void *chunkPk = NULL;
+    CatalogTableTABLE cTable(sysDB_);
+    rv = cTable.getChunkAndTblPtr(pkTableName, chunkPk, tPkptr);
+    if ( OK != rv){return false;}
+    rv = cTable.getChunkAndTblPtr(getName(), chunkPk, tFkptr);
+    if ( OK != rv){return false;}
+    CatalogTableFK cFk(sysDB_);
+    rv = cFk.getPkFkFieldInfo(tPkptr,tFkptr,pkFieldList,fkFieldList);
+    if ( OK != rv){return false;}
+    int totFld = pkFieldList.size();
+    Condition *condition = new Condition[totFld];
+    char *pkFldName = NULL;    
+    char *fkFldName = NULL;
+    FieldDef *def=NULL;
+    int i=0;
+    pkFieldList.resetIter();
+    fkFieldList.resetIter();
+    void *val=NULL;
+    while((pkFldName = pkFieldList.nextFieldName())!= NULL)
+    {
+        fkFldName = fkFieldList.nextFieldName();
+        FieldIterator fIter = fldList_.getIterator(); 
+        while (fIter.hasElement())
+        {
+            def = fIter.nextElement();
+            if (strcmp(def->fldName_, fkFldName) == 0)
+            {
+                if(NULL == def->bindVal_ && isInsert) { return true; }
+                if(NULL == def->bindVal_) {
+                    val = (char*)curTuple_+ def->offset_;
+                } else {
+                    val = def->bindVal_;
+                }
+                if(def->type_==typeString)
+                    condition[i].setTerm(pkFldName,OpEquals,&val);
+                else
+                    condition[i].setTerm(pkFldName,OpEquals,val);
+                i++;
+                break;
+            }
+        }
+    }
+    pkFieldList.removeAll(); 
+    fkFieldList.removeAll(); 
+    Condition *cond = NULL;
+    if(i == 0 && !isInsert)return true;
+    if( i > 1){
+        cond = new Condition[i-1];
+        int totcon = i;
+        i=0;
+        int j=0;
+        for(j=0;j<totcon-1;j++)
+        {
+            if(j==0)
+                cond[j].setTerm(condition[i++].getPredicate(),OpAnd,condition[i++].getPredicate());
+            else
+                cond[j].setTerm(cond[j-1].getPredicate(), OpAnd, condition[i++].getPredicate());
+        }
+        fkTbl->setCondition(&cond[j-1]);
+    }
+    else{
+        fkTbl->setCondition(&condition[i-1]);
+    }
+    fkTbl->execute();
+    if(fkTbl->fetch()){
+        fkTbl->closeScan();
+        delete[] cond;
+        delete[] condition;
+        return true;
+    }
+    delete[] cond;
+    delete[] condition;
+    return false;
+}
 
+bool TableImpl::isFkTableHasRecord(char *pkTableName, TableImpl *fkTbl)
+{
+    DbRetVal rv=OK;
+    FieldNameList pkFieldList,fkFieldList;
+    void *tPkptr =NULL;
+    void *tFkptr = NULL;
+    void *chunkPk = NULL;
+    CatalogTableTABLE cTable(sysDB_);
+    rv = cTable.getChunkAndTblPtr(getName(), chunkPk, tPkptr);
+    if ( OK != rv){return false;}
+    rv = cTable.getChunkAndTblPtr(pkTableName, chunkPk, tFkptr);
+    if ( OK != rv){return false;}
+    CatalogTableFK cFk(sysDB_);
+    rv = cFk.getPkFkFieldInfo(tPkptr,tFkptr,pkFieldList,fkFieldList);
+    if ( OK != rv){return false;}
+    int totFld = pkFieldList.size();
+    Condition *condition = new Condition[totFld];
+    char *pkFldName = NULL;
+    char *fkFldName = NULL;
+    FieldDef *def=NULL;
+    int i=0;
+    pkFieldList.resetIter();
+    fkFieldList.resetIter();
+    while((pkFldName = pkFieldList.nextFieldName())!= NULL)
+    {
+        fkFldName = fkFieldList.nextFieldName();
+        FieldIterator fIter = fldList_.getIterator();
+        while (fIter.hasElement())
+        {
+            def = fIter.nextElement();
+            void *val = (char*)curTuple_+ def->offset_;
+            if (strcmp(def->fldName_, pkFldName) == 0)
+            {
+                if(def->type_==typeString)
+                    condition[i].setTerm(fkFldName,OpEquals,&val);//((char*)curTuple_+def->offset_));
+                else
+                    condition[i].setTerm(fkFldName,OpEquals,val);//((char*)curTuple_+def->offset_));
+                i++;
+                break;
+            }
+        }
+    }
+    pkFieldList.removeAll(); 
+    fkFieldList.removeAll(); 
+    if(i == 0 )return true;
+    Condition *cond = new Condition[i-1];
+    i=0;
+    int j=0;
+    for(j=0;j<totFld-1;j++)
+    {
+        if(j==0)
+            cond[j].setTerm(condition[i++].getPredicate(),OpAnd,condition[i++].getPredicate());
+        else
+            cond[j].setTerm(cond[j-1].getPredicate(), OpAnd, condition[i++].getPredicate());
+    }
+    if(totFld==1)
+        fkTbl->setCondition(&condition[totFld-1]);
+    else
+        fkTbl->setCondition(&cond[j-1]);
+    fkTbl->execute();
+    if(fkTbl->fetch()){
+        fkTbl->closeScan();
+        delete[] cond;
+        delete[] condition;
+        return true;
+    }
+    delete[] cond;
+    delete[] condition;
+    return false;
+}
+DbRetVal TableImpl::compact()
+{
+   DbRetVal rv=OK;
+   int ret =((Chunk*)chunkPtr_)->compact(db_->procSlot);
+   if(ret!=0){
+       return ErrLockTimeOut;
+   }
+   if (NULL != indexPtr_)
+   {
+        int i;
+        //it has index
+        for (i = 0; i < numIndexes_ ; i++)
+        {
+            rv = compactIndexNode(indexPtr_[i]);
+            if (rv != OK) { printError(rv, "Error in compacting index Node"); break;}
+        }
+   }  
+   return rv;
+}
+
+DbRetVal TableImpl::compactIndexNode( void *indexPtr)
+{
+    CINDEX *iptr = (CINDEX*)indexPtr;
+    int ret1=0;
+    printDebug(DM_Table, "Inside insertIndexNode type %d", iptr->indexType_);
+    if( hashIndex == (iptr->indexType_) )
+    {
+        ret1 =((Chunk*)iptr->hashNodeChunk_)->compact(db_->procSlot);
+        if(ret1!=0){
+            return ErrLockTimeOut;
+        }
+    }else
+    {
+        ret1 =((Chunk*)iptr->chunkPtr_)->compact(db_->procSlot);
+        if(ret1!=0){
+            return ErrLockTimeOut;
+        }
+    }
+    return OK;
+}

@@ -54,7 +54,7 @@ void TransactionManager::printDebugInfo(Database *sysdb)
     printf("<TransactionTable>\n");
     for (; i < Conf::config.getMaxProcs(); i++)
     {
-            if (iter->status_ == TransNotUsed) freeCount++; 
+            if (iter->status_ == TransNotUsed || iter->status_ == TransReserved) freeCount++; 
             else 
             { 
                 usedCount++;
@@ -83,12 +83,20 @@ DbRetVal TransactionManager::startTransaction(LockManager *lMgr, IsolationLevel 
     Transaction *trans = ProcessManager::getThreadTransaction(sysdb->procSlot);
     if (NULL != trans)
     {
-        if (trans->status_ != TransNotUsed) return ErrAlready; 
-        else {
+        // 
+        if (trans->status_ != TransReserved) return ErrAlready;
+        else if (trans->status_ == TransReserved) 
+        { 
             //the previous transaction shall be used again
-            trans->status_ = TransRunning;
+            //trans->status_ = TransRunning;
+            if ( 0 != Mutex::CAS((int*)&trans->status_, 
+                                    TransReserved, TransRunning)) {
+                printError(ErrLockTimeOut, "unable to get lock to reuse the transaction");
+                return ErrLockTimeOut;
+            }
             trans->isoLevel_ = level;
             printDebug(DM_Transaction, "Using the same transaction slot\n");
+            logFinest(Conf::logger, "Transaction Start:Reusing :%x", trans);
             return OK;
         }
 
@@ -118,10 +126,17 @@ DbRetVal TransactionManager::startTransaction(LockManager *lMgr, IsolationLevel 
     //Make this free slot, as the current transaction and
     //set the state
     trans = iter;
-    trans->status_ = TransRunning;
+    //trans->status_ = TransRunning;
+    if ( 0 != Mutex::CAS((int*)&trans->status_ , 
+                           TransNotUsed, TransRunning)) {
+        printError(ErrLockTimeOut, "Unable to start transaction. Timeout. Retry..");
+        sysdb->releaseTransTableMutex();
+        return ErrLockTimeOut;
+    }
     trans->isoLevel_ = level;
-    sysdb->releaseTransTableMutex();
     ProcessManager::setThreadTransaction(trans, sysdb->procSlot);
+    sysdb->releaseTransTableMutex();
+    logFinest(Conf::logger, "Transaction Start:Using :%x", trans);
     return OK;
 }
 
@@ -135,52 +150,36 @@ DbRetVal TransactionManager::commit(LockManager *lockManager)
 {
     Database *sysdb = lockManager->systemDatabase_;
     Transaction *trans = ProcessManager::getThreadTransaction(sysdb->procSlot);
+    DbRetVal rv = OK;
     if (NULL == trans)
     { 
        printError(ErrNotOpen, "No transaction started for this procSlot %d", sysdb->procSlot);
        return ErrNotOpen;
     }
-    DbRetVal rv = sysdb->getTransTableMutex();
-    if (OK != rv)
-    {
-        printError(rv, "Unable to acquire transtable mutex");
-        return rv;
+    rv = trans->releaseAllLocks(lockManager);
+    if (rv != OK) {
+        printError(ErrSysInternal, "Fatal:Unable to release all the locks\n");
     }
-
-    if (trans->status_ != TransRunning)
-    {
-        sysdb->releaseTransTableMutex(); 
-        printError(ErrBadCall, "Transaction is not in running state %d\n", trans->status_);
-        return ErrBadCall;
-    }
-    trans->status_ = TransCommitting;
-    sysdb->releaseTransTableMutex();
-
-    trans->releaseAllLocks(lockManager);
     if(NULL != trans->waitLock_)
     {
-            printError(ErrSysInternal, "Trans WaitLock is not null\n");
-            return ErrSysInternal;
+        printError(ErrSysInternal, "Fatal:Trans WaitLock is not null\n");
     }
-    //TODO::flush all redo logs to disk
-    //TODO::remove all the logs in memory
     trans->removeUndoLogs(sysdb);
-    rv = sysdb->getTransTableMutex();
-    if (OK != rv)
+    if ( 0 != Mutex::CAS((int*)&trans->status_, TransRunning, TransReserved))
     {
-        printError(rv, "Unable to acquire transtable mutex");
-        return rv;
+        printError(ErrSysFatal, "Transaction state corrupted %d\n", trans->status_);
+        return ErrSysFatal;
     }
-    trans->status_ = TransNotUsed;
-    sysdb->releaseTransTableMutex();
     printDebug(DM_Transaction, "Committed transaction:%x",trans);
+    logFinest(Conf::logger, "Transaction Committed:%x", trans);
     return OK;
 }
 
 DbRetVal TransactionManager::rollback(LockManager *lockManager, Transaction *t)
 {
     Database *sysdb = lockManager->systemDatabase_;
-    Transaction *trans;
+    Transaction *trans = NULL;
+    DbRetVal rv = OK;
     if (t == NULL)
         trans = ProcessManager::getThreadTransaction(sysdb->procSlot);
     else
@@ -189,41 +188,32 @@ DbRetVal TransactionManager::rollback(LockManager *lockManager, Transaction *t)
     { 
        return OK;
     }
-    DbRetVal rv= sysdb->getTransTableMutex();
-    if (OK != rv)
-    {
-        printError(rv, "Unable to acquire transtable mutex");
-        return rv;
-    }
 
     if (trans->status_ != TransRunning)
     {
-        sysdb->releaseTransTableMutex(); 
+        //sysdb->releaseTransTableMutex(); 
         //will be called during connection disconnect without starting transaction.
         return OK;
     }
-    trans->status_ = TransAborting;
-    sysdb->releaseTransTableMutex();
 
     trans->applyUndoLogs(sysdb);
-    //TODO::remove all the logs in memory
-    trans->releaseAllLocks(lockManager);
+    rv = trans->releaseAllLocks(lockManager);
+    if (rv != OK) {
+        printError(ErrSysInternal, "Fatal:Unable to release all the locks");
+    }
     if(NULL != trans->waitLock_)
     {
-       printError(ErrSysInternal, "Trans waitlock is not null");
-       return ErrSysInternal;
+        printError(ErrSysInternal, "Fatal:Trans waitlock is not null");
+        //return ErrSysInternal;
     }
 
-    rv = sysdb->getTransTableMutex();
-    if (OK != rv)
+    //trans->status_ = TransNotUsed;
+    if ( 0 != Mutex::CAS((int*)&trans->status_, TransRunning, TransReserved))
     {
-        //nothing can be done.. go ahead and set it. 
-        //no harm. parallel starttransaction will miss this slot. thats ok
-        //as it is not leak
+        printError(ErrSysFatal, "Fatal:Unable to abort transaction %d\n", trans->status_);
+        return ErrSysFatal;
     }
-    trans->status_ = TransNotUsed;
-    sysdb->releaseTransTableMutex();
     printDebug(DM_Transaction, "Aborted transaction:%x",trans);
-
+    logFinest(Conf::logger, "Transaction Aborted:%x", trans);
     return OK;
 }

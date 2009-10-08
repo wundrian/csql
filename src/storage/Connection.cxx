@@ -18,6 +18,7 @@
 #include<os.h>
 #include<Index.h>
 #include<Config.h>
+
 Connection::~Connection()
 { 
     if (NULL != session) {
@@ -28,7 +29,10 @@ Connection::~Connection()
     }
     Index::destroy();
 }
-
+char *Connection::getUserName() 
+{ 
+   return session->getUserName(); 
+}
 DbRetVal Connection::open(const char *username, const char *password)
 {
     if (username == NULL || password == NULL ) 
@@ -36,7 +40,7 @@ DbRetVal Connection::open(const char *username, const char *password)
         printError(ErrBadArg, "Username or password should not be NULL\n");
         return ErrBadArg;
     }
-    if (strlen(username) > 64 || strlen(password) >64) return ErrBadArg;
+    if (strlen(username) > IDENTIFIER_LENGTH || strlen(password) > IDENTIFIER_LENGTH) return ErrBadArg;
     if (session == NULL) session = new SessionImpl(); 
     else
     {
@@ -47,7 +51,7 @@ DbRetVal Connection::open(const char *username, const char *password)
     if (rv != OK) { delete session; session = NULL; return rv; }
     rv = Conf::logger.startLogger(Conf::config.getLogFile());
     if (rv != OK) { delete session; session = NULL; return rv; }
-    logFinest(Conf::logger, "User logged in %s",username);
+    logFine(Conf::logger, "User logged in %s",username);
     Index::init();
     return OK;
 }
@@ -55,7 +59,7 @@ DbRetVal Connection::open(const char *username, const char *password)
 DbRetVal Connection::close()
 {
     if (session == NULL) return ErrNoConnection;
-    logFinest(Conf::logger, "User logged out");
+    logFine(Conf::logger, "User logged out");
     Conf::logger.stopLogger();
     session->rollback();
     delete session;  // this inturn calls session->close
@@ -95,7 +99,6 @@ DbRetVal Connection::rollback()
     if (session == NULL) return ErrNoConnection;
     return session->rollback();
 }
-
 DbRetVal Connection::getExclusiveLock()
 {
     if (session == NULL) return ErrNoConnection;

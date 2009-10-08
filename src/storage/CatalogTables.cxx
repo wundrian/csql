@@ -18,7 +18,7 @@
 #include<Allocator.h>
 #include<Field.h>
 #include<Debug.h>
-char ChunkName[MAX_CHUNKS][CHUNK_NAME_LEN]={"UserChunkTableId","LockTableHashBucketId","LockTableMutexId","LockTableId","TransHasTableId","UndoLogTableId","","","","","DatabaseTableId","UserTableId","TableTableId","FieldTableId","AccessTableId","IndexTableId","IndexFieldTableId",""};
+char ChunkName[MAX_CHUNKS][CHUNK_NAME_LEN]={"UserChunkTableId","LockTableHashBucketId","LockTableMutexId","LockTableId","TransHasTableId","UndoLogTableId","","","","","DatabaseTableId","UserTableId","TableTableId","FieldTableId","AccessTableId","IndexTableId","IndexFieldTableId","ForeignKeyTableId","ForeignKeyFieldTableId"};
 
 
 DbRetVal CatalogTableTABLE::insert(const char *name, int id, size_t size,
@@ -85,6 +85,26 @@ DbRetVal CatalogTableTABLE::getChunkAndTblPtr(const char *name,
          {
              //there will be only one row for this table(Primary key)
              chunk = (Chunk*) ((CTABLE*)tptr)->chunkPtr_;
+             return OK;
+         }
+    }
+    //table not found in TABLE
+    return ErrNotFound;
+}
+
+
+DbRetVal CatalogTableTABLE::setChunkPtr(const char *name, void *firstPage, void *curPage)
+{
+    Chunk *chk = systemDatabase_->getSystemDatabaseChunk(TableTableId);
+    ChunkIterator iter = chk->getIterator();;
+    void *tptr;
+    while (NULL != (tptr = iter.nextElement()))
+    {
+         if (strcmp(((CTABLE*)tptr)->tblName_, name) == 0)
+         {
+             //there will be only one row for this table(Primary key)
+             ((Chunk*)((CTABLE*)tptr)->chunkPtr_)->setFirstPage(firstPage);
+             ((Chunk*)((CTABLE*)tptr)->chunkPtr_)->setCurPage(curPage);
              return OK;
          }
     }
@@ -177,7 +197,7 @@ void *CatalogTableFIELD::getFieldInfo(void* tptr, FieldList &list)
             strcpy(fldDef.fldName_, fTuple->fldName_);
             fldDef.fldName_[IDENTIFIER_LENGTH] = '\0';
             fldDef.type_ = fTuple->type_;
-            fldDef.length_ = os::align(fTuple->length_);
+            fldDef.length_ = fTuple->length_;
             fldDef.offset_ = fTuple->offset_;
             fldDef.isDefault_ = fTuple->isDefault_;
             os::memcpy(fldDef.defaultValueBuf_, fTuple->defaultValueBuf_,
@@ -186,8 +206,9 @@ void *CatalogTableFIELD::getFieldInfo(void* tptr, FieldList &list)
             fldDef.isUnique_ = fTuple->isUnique_;
             fldDef.isPrimary_ = fTuple->isPrimary_;
             fldDef.isAutoIncrement_= fTuple->isAutoIncrement_;
-            if(fTuple->isAutoIncrement_){
+            if(fTuple->isAutoIncrement_){ 
                 ptrToAutoVal = &fTuple->autoVal_;
+                //os::memcpy(fldDef.autoVal_, fTuple->autoVal_,);
             }
             list.append(fldDef);
         }
@@ -333,6 +354,34 @@ DbRetVal CatalogTableINDEX::get(const char *name, void *&chunk, void *&hchunk, v
     return OK;
 }
 
+DbRetVal CatalogTableINDEX::setChunkPtr(const char *name, ObjectType type, void *bChunk, void *firstPage, void *curPage) 
+{
+    Chunk *fChunk = systemDatabase_->getSystemDatabaseChunk(IndexTableId);
+    ChunkIterator iter = fChunk->getIterator();
+
+    void *data = NULL;
+    while ((data = iter.nextElement())!= NULL)
+    {
+         if (0 == strcmp(((CINDEX*)data)->indName_, name))
+         {
+             //remove this element and store the tuple ptr
+             //there will be only one row for this table(Primary key)
+             if (type == hIdx) {
+                 ((Chunk*) ((CINDEX*)data)->chunkPtr_)->setFirstPage(bChunk);
+                 ((Chunk*) ((CINDEX*)data)->chunkPtr_)->setCurPage(bChunk);
+                 ((Chunk*)((CINDEX*)data)->hashNodeChunk_)->setFirstPage(firstPage);
+                 ((Chunk*)((CINDEX*)data)->hashNodeChunk_)->setCurPage(curPage);
+             } else if (type == tIdx) {
+                 ((Chunk*) ((CINDEX*)data)->chunkPtr_)->setFirstPage(firstPage);
+                 ((Chunk*) ((CINDEX*)data)->chunkPtr_)->setCurPage(curPage);
+                 ((CINDEX*)data)->hashNodeChunk_ = bChunk;                 
+             } 
+             break;
+         }
+    }
+    return OK;
+}
+
 int CatalogTableINDEX::getNumIndexes(void *tptr)
 {
     Chunk *fChunk = systemDatabase_->getSystemDatabaseChunk(IndexTableId);
@@ -344,6 +393,29 @@ int CatalogTableINDEX::getNumIndexes(void *tptr)
          if (((CINDEX*)iptr)->tblPtr_ == tptr) numIndex++;
     }
     return numIndex;
+}
+
+ListIterator CatalogTableINDEXFIELD::getIndexListIterater(char *name)
+{
+   List indexList;
+   Chunk *chunk=systemDatabase_->getSystemDatabaseChunk(IndexFieldTableId);        
+   ChunkIterator ifIter = chunk->getIterator();
+   void *data = NULL;
+   while ((data = ifIter.nextElement())!= NULL)
+   {
+       IndexInfoForDriver *idxInfo = new IndexInfoForDriver();
+       if(strcmp( name,((CTABLE*)(((CINDEXFIELD*)data)->tablePtr))->tblName_) == 0)
+       {
+           strcpy(idxInfo->indexName ,((CINDEX*)(((CINDEXFIELD*)data)->indexPtr))->indName_);
+           strcpy(idxInfo->tableName ,((CTABLE*)(((CINDEXFIELD*)data)->tablePtr))->tblName_);
+           strcpy(idxInfo->fieldName ,((CFIELD*)(((CINDEXFIELD*)data)->fieldPtr))->fldName_);
+           idxInfo->type = ((CINDEX*)(((CINDEXFIELD*)data)->indexPtr))->indexType_ ;
+           idxInfo->isUnique = ((CINDEX*)(((CINDEXFIELD*)data)->indexPtr))->isUnique_; 
+           idxInfo->isPrimary = ((CFIELD*)(((CINDEXFIELD*)data)->fieldPtr))->isPrimary_;
+       indexList.append(idxInfo);
+       }
+    }
+    return indexList.getIterator();
 }
 
 char* CatalogTableINDEX::getIndexName(void *tptr, int position)
@@ -397,12 +469,21 @@ int CatalogTableINDEX::getUnique(void *iptr)
     CINDEX *index = (CINDEX*)iptr;
     return index->isUnique_;
 }
+IndexType CatalogTableINDEX::getType(void *iptr)
+{
+    CINDEX *index = (CINDEX*)iptr;
+    return index->indexType_;
+}
 char* CatalogTableINDEX::getName(void *iptr)
 {
     CINDEX *index = (CINDEX*)iptr;
     return index->indName_;
 }
-
+int CatalogTableINDEX::getOffsetOfFirstField(void *iptr)
+{
+    CINDEX *index = (CINDEX*)iptr;
+    return ((CFIELD*)(((CINDEXFIELD*)(index->fstIndFld_))->fieldPtr))->offset_;
+}
 DbRetVal CatalogTableINDEXFIELD::insert(FieldNameList &fldList, void *indexPtr,
                                          void *tblPtr, char **&fptr)
 
@@ -498,6 +579,7 @@ DbRetVal CatalogTableINDEXFIELD::remove(void *iptr)
         if (((CINDEXFIELD*)data)->indexPtr == iptr)
         {
             //remove this element
+            if(((CFIELD *)((CINDEXFIELD*)data)->fieldPtr)->isUnique_) ((CFIELD *)((CINDEXFIELD*)data)->fieldPtr)->isUnique_ = false;
             fChunk->free(systemDatabase_, data);
             printDebug(DM_SystemDatabase,"One Row deleted from INDEXFIELD %x", data);
         }
@@ -588,10 +670,37 @@ void CatalogTableINDEXFIELD::printAllIndex()
     }
 }
 
+List CatalogTableUSER::getUserList()
+{
+    List userList;
+    Chunk *chk = systemDatabase_->getSystemDatabaseChunk(UserTableId);
+    ChunkIterator iter = chk->getIterator();
+    void *tptr;
+    while (NULL != (tptr = iter.nextElement()))
+    {
+         Identifier *elem = new Identifier();
+         strcpy(elem->name, ((CUSER*)tptr)->userName_);
+         userList.append(elem);
+    }
+    return userList;
+
+}
+
 DbRetVal CatalogTableUSER::insert(const char *name, const char *pass)
 {
     Chunk *tChunk = systemDatabase_->getSystemDatabaseChunk(UserTableId);
     DbRetVal rv = OK;
+    ChunkIterator iter = tChunk->getIterator();
+    void *data = NULL;
+    while ((data = iter.nextElement())!= NULL)
+    {
+            if (0 == strcmp(((CUSER*)data)->userName_, name))
+            {
+                    printError(ErrAlready, "User with name \'%s\' already exists ", name);
+                    return ErrAlready;
+            }
+    }
+
     CUSER *usrInfo = (CUSER*)tChunk->allocate(systemDatabase_, &rv);
     if (NULL == usrInfo)
     {
@@ -600,7 +709,8 @@ DbRetVal CatalogTableUSER::insert(const char *name, const char *pass)
         return rv;
     }
     strcpy(usrInfo->userName_, name);
-    strcpy(usrInfo->password_, os::encrypt(pass, "A0"));
+    strcpy(usrInfo->password_, pass);
+    //strcpy(usrInfo->password_, os::encrypt(pass, "A0"));
     return OK;
 
 }
@@ -616,7 +726,8 @@ DbRetVal CatalogTableUSER::authenticate(const char *name, const char *pass,
         if (strcmp(((CUSER*)data)->userName_, name) == 0)
         {
             //verify the password
-            char * enpass = os::encrypt(pass,"A0");
+            //char * enpass = os::encrypt(pass,"A0");
+            char * enpass = (char*) pass;
             if (0 == strcmp(enpass, ((CUSER*)data)->password_))
             {
                 isAuthenticated = true;
@@ -658,10 +769,263 @@ DbRetVal CatalogTableUSER::changePass(const char *name, const char *pass)
         if (strcmp(((CUSER*)data)->userName_, name) == 0)
         {
             //change the password
-            strcpy(((CUSER*)data)->password_, os::encrypt(pass, "A0"));
+            strcpy(((CUSER*)data)->password_,pass);// os::encrypt(pass, "A0"));
             return OK;
         }
     }
     printError(ErrNotExists,"User %s not exists in catalog table", name);
     return ErrNotExists;
 }
+
+DbRetVal CatalogTableFK::insert(char *name, void *tptr, void *tPkptr)
+{
+    Chunk *tChunk = systemDatabase_->getSystemDatabaseChunk(ForeignKeyTableId);
+    ChunkIterator iter = tChunk->getIterator();
+    void *data = NULL;
+    while ((data = iter.nextElement())!= NULL)
+    {
+            if (0 == strcmp(((CFK*)data)->fkName_, name))
+            {
+                    printError(ErrAlready, "Index with name \'%s\' already exists "
+                                    "on the table \'%s\'.", name, ((CTABLE *)tptr)->tblName_);
+                    return ErrAlready;
+            }
+
+    }
+
+    DbRetVal rv =OK;
+    void *fkptr = tChunk->allocate(systemDatabase_, &rv);
+    if (NULL == fkptr)
+    {
+        printError(rv, "Could not allocate for FK catalog table");
+        return rv;
+    }
+    CFK *fkTblInfo = (CFK*)fkptr;
+    strcpy(fkTblInfo->fkName_, name);
+    fkTblInfo->fkTblPtr_= tptr;
+    fkTblInfo->pkTblPtr_= tPkptr;
+    printDebug(DM_SystemDatabase,"One Row inserted into FK %x %s",fkptr, name);
+    return OK;
+}
+
+DbRetVal CatalogTableFKFIELD::insert(char *cFKName, char **fkFldPtrs, char **pkFldPtrs,int totalFld)
+{
+    Chunk *tChunk = NULL;
+    tChunk = systemDatabase_->getSystemDatabaseChunk(ForeignKeyTableId);
+    ChunkIterator iter = tChunk->getIterator();
+    void *data = NULL;
+    while ((data = iter.nextElement())!= NULL)
+    {
+            if (0 == strcmp(((CFK*)data)->fkName_, cFKName))
+            {
+                 break;
+            }
+    }
+    tChunk = systemDatabase_->getSystemDatabaseChunk(ForeignKeyFieldTableId);
+    int i =0;
+    DbRetVal rv = OK;
+    while (i < totalFld)
+    {
+        void *fieldptr = tChunk->allocate(systemDatabase_, &rv);
+        if (NULL == fieldptr)
+        {
+            printError(rv, "Could not allocate for USER catalog table");
+            return rv;
+        }
+        CFKFIELD *fldInfo = (CFKFIELD*)fieldptr;
+        fldInfo->fkPtr_ = data;
+        fldInfo->pfFldPtr_ = (CFIELD*)pkFldPtrs[i];
+        fldInfo->fkFldPtr_ = (CFIELD*)fkFldPtrs[i++];
+        //printDebug(DM_TEST,"TYPE %d\n",((CFIELD*)fldInfo->pfFldPtr_)->type_);
+        //printDebug(DM_TEST,"FK name %s\n",((CFIELD*)fldInfo->fkFldPtr_)->fldName_);
+        if(!(((CFIELD*)fldInfo->pfFldPtr_)->isUnique_) || !(((CFIELD*)fldInfo->pfFldPtr_)->isNull_))
+        {
+             printError(ErrSysInternal,"Parent Table field should have  primary key field ");
+             tChunk->free(systemDatabase_,fieldptr);
+             return ErrSysInternal;
+        }
+        if(((CFIELD*)fldInfo->pfFldPtr_)->type_!=((CFIELD*)fldInfo->fkFldPtr_)->type_)
+        {
+           printError(ErrSysInternal,"Type Missmatch in both PK field and FK field  ");
+           tChunk->free(systemDatabase_,fieldptr);
+           return ErrSysInternal;
+        }
+        printDebug(DM_SystemDatabase,"One Row inserted into FKFIELD %x", fldInfo);
+    }
+    return OK;
+}
+DbRetVal CatalogTableFK::remove(void *ctptr)
+{
+    Chunk *tChunk = systemDatabase_->getSystemDatabaseChunk(ForeignKeyTableId);
+    ChunkIterator iter = tChunk->getIterator();
+    void *data = NULL;
+    while ((data = iter.nextElement())!= NULL)
+    {
+            if (data == ctptr)
+            {
+                   tChunk->free(systemDatabase_,data);
+                   printDebug(DM_SystemDatabase,"One Row deleted from FKFIELD %x", data);
+            }
+
+    }
+    return OK;
+}
+
+DbRetVal CatalogTableFKFIELD::remove(void *cFKfld)
+{
+    Chunk *fChunk = NULL;
+    fChunk = systemDatabase_->getSystemDatabaseChunk(ForeignKeyFieldTableId);
+    ChunkIterator iter = fChunk->getIterator();
+    void *data = NULL;
+    while ((data = iter.nextElement())!= NULL)
+    {
+            if (((CFKFIELD*)data)->fkPtr_== cFKfld )
+            {
+                 fChunk->free(systemDatabase_, data);
+                 printDebug(DM_SystemDatabase,"One Row deleted from CFKFIELD %x", data);
+            }
+    }
+    return OK;
+}
+void *CatalogTableFK::getFkCTable(void *ctptr)
+{
+    Chunk *tChunk = systemDatabase_->getSystemDatabaseChunk(ForeignKeyTableId);
+    ChunkIterator iter = tChunk->getIterator();
+    void *data = NULL;
+    while ((data = iter.nextElement())!= NULL)
+    {
+            if (((CFK*)data)->fkTblPtr_== ctptr)
+            {
+                return data;
+            }
+
+    }
+    return NULL;
+}
+int CatalogTableFK::getNumFkTable(void *ctptr)
+{
+    Chunk *tChunk = systemDatabase_->getSystemDatabaseChunk(ForeignKeyTableId);
+    ChunkIterator iter = tChunk->getIterator();
+    void *data = NULL;
+    int count=0;
+    while ((data = iter.nextElement())!= NULL)
+    {
+            if (((CFK*)data)->pkTblPtr_== ctptr)
+            {
+                count++;
+            }
+    }
+    return count;
+}
+
+bool CatalogTableFK::isFkTable(void *ctptr)
+{
+    Chunk *tChunk = systemDatabase_->getSystemDatabaseChunk(ForeignKeyTableId);
+    ChunkIterator iter = tChunk->getIterator();
+    void *data = NULL;
+    int count=0;
+    while ((data = iter.nextElement())!= NULL)
+    {
+            if (((CFK*)data)->fkTblPtr_== ctptr)
+            {
+                return true;
+            }
+    }
+    return false;
+}
+int CatalogTableFK::getNoOfFkTable(void *ctptr)
+{
+    Chunk *tChunk = systemDatabase_->getSystemDatabaseChunk(ForeignKeyTableId);
+    ChunkIterator iter = tChunk->getIterator();
+    void *data = NULL;
+    int count=0;
+    while ((data = iter.nextElement())!= NULL)
+    {
+        if (((CFK*)data)->pkTblPtr_== ctptr)
+        {
+            count++;
+        }
+    }
+    return count;
+}
+
+int CatalogTableFK::getNoOfPkTable(void *ctptr)
+{
+    Chunk *tChunk = systemDatabase_->getSystemDatabaseChunk(ForeignKeyTableId);
+    ChunkIterator iter = tChunk->getIterator();
+    void *data = NULL;
+    int count=0;
+    while ((data = iter.nextElement())!= NULL)
+    {
+        if (((CFK*)data)->fkTblPtr_== ctptr)
+        {
+            count++;   
+        }
+    }
+    return count;
+}
+
+void CatalogTableFK::getPkTableName(void *ctptr,char **&array)
+{
+    Chunk *tChunk = systemDatabase_->getSystemDatabaseChunk(ForeignKeyTableId);
+    ChunkIterator iter = tChunk->getIterator();
+    void *data = NULL;
+    int i=0;
+    while ((data = iter.nextElement())!= NULL)
+    {
+            if (((CFK*)data)->fkTblPtr_== ctptr)
+            {
+               array[i++] = ((CTABLE*)((CFK*)data)->pkTblPtr_)->tblName_;
+            }
+    }
+}
+void CatalogTableFK::getFkTableName(void *ctptr,char **&array)
+{
+    Chunk *tChunk = systemDatabase_->getSystemDatabaseChunk(ForeignKeyTableId);
+    ChunkIterator iter = tChunk->getIterator();
+    void *data = NULL;
+    int i=0;
+    while ((data = iter.nextElement())!= NULL)
+    {
+            if (((CFK*)data)->pkTblPtr_== ctptr)
+            {
+               array[i++] = ((CTABLE*)((CFK*)data)->fkTblPtr_)->tblName_;
+            }
+    }
+}
+
+
+DbRetVal CatalogTableFK::getPkFkFieldInfo(void *cpkptr, void *cfkptr, FieldNameList &pklist,FieldNameList &fklist)
+{
+    Chunk *tChunk = systemDatabase_->getSystemDatabaseChunk(ForeignKeyTableId);
+    ChunkIterator iter = tChunk->getIterator();
+    void *data = NULL;
+    while ((data = iter.nextElement())!= NULL)
+    {
+        if (((CFK*)data)->pkTblPtr_== cpkptr && ((CFK*)data)->fkTblPtr_ == cfkptr)
+        {
+           break;
+        }
+    }
+    if(data == NULL)
+    {
+        printError(ErrNotExists,"Foreign Key field CFK not found");
+        return ErrNotExists;
+    }
+    Chunk *fChunk = systemDatabase_->getSystemDatabaseChunk(ForeignKeyFieldTableId);
+    iter = fChunk->getIterator();
+    void *fdata=NULL;
+    while ((fdata = iter.nextElement())!= NULL)
+    {
+        if (((CFKFIELD*)fdata)->fkPtr_==data)
+        {
+            //printDebug(DM_TEST,"PK Field name %s\n",((CFIELD*)((CFKFIELD*)fdata)->pfFldPtr_)->fldName_);
+            //printDebug(DM_TEST,"FK Field name %s\n",((CFIELD*)((CFKFIELD*)fdata)->fkFldPtr_)->fldName_);
+            pklist.append(((CFIELD*)((CFKFIELD*)fdata)->pfFldPtr_)->fldName_);
+            fklist.append(((CFIELD*)((CFKFIELD*)fdata)->fkFldPtr_)->fldName_);
+        }
+    }
+    return OK;
+}
+
+

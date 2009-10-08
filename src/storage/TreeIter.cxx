@@ -31,6 +31,7 @@ void* TreeIter::getFirstElement()
    char **tuple = (char**)((char*)rec + (loc * sizeof(void *)));
    return *tuple;
 }
+
 void* TreeIter::getLastElement()
 {
    if (NULL == iter) return NULL;
@@ -46,6 +47,7 @@ void* TreeIter::getLastElement()
    char **tuple = (char**)((char*)rec + (loc * sizeof(void *)));
    return *tuple;
 }
+
 void* TreeIter::prev()
 {
    if (0 != nodeOffset )
@@ -65,137 +67,266 @@ void* TreeIter::prev()
 void TreeIter::nextNode()
 {
     if (recordsOver) return ;
-    if (NULL== iter) return ;
-    iter=iter->next_;
+    if (NULL == iter) return ;
+    TreeNode *tmpIter = iter;
+    iter = iter->next_;
+    if(iter){
+        int ret = iter->mutex_.getShareLock(procSlot, true);
+        if (0 != ret)
+        {
+             printError(ErrLockTimeOut,"Unable to lock the tree node. Retry...");
+             tmpIter->mutex_.releaseShareLock(procSlot);
+             return ;
+        }
+    }
+    tmpIter->mutex_.releaseShareLock(procSlot);
     nodeOffset=0;
 }
+
+void TreeIter::reset() 
+{ 
+    if(iter && !firstCall) iter->mutex_.releaseShareLock(procSlot);
+    firstCall = true; 
+    recordsOver=false; 
+    iter = head; 
+}
+
 void* TreeIter::next()
 {
     int direction=0;
-    if (recordsOver) return NULL;
+    if (recordsOver){ 
+       if(iter) iter->mutex_.releaseShareLock(procSlot);
+       iter = NULL;
+       return NULL; 
+    }
     if (NULL== iter) return NULL;
     if (firstCall)
     {
         if (OpLessThan ==op || OpLessThanEquals == op)
         {
-            while(iter->prev_)
-            {
-                iter = iter->prev_;
-            }
-            firstCall = false;
             nodeOffset = 1;
+            firstCall = false;
             char **rec = (char**)((char*) iter + sizeof(TreeNode));
+            int ret = iter->mutex_.getShareLock(procSlot,true);
+            if (0 != ret)
+            {
+               printError(ErrLockTimeOut,"Unable to lock the tree node. Retry...");
+               return NULL;
+            }
             //iter->displayAll(fldOffset);
             return *rec;
         }
-        else if (OpGreaterThan == op || OpGreaterThanEquals == op || 
-                 OpEquals == op)
+        else if (OpGreaterThan == op)
+        {
+            char *rec = (char*)locateNode();
+            firstCall = false;
+            if(rec){
+                bool result = AllDataType::compareVal(searchKey, rec+fldOffset,
+                                         OpEquals, type, length);
+            //equals comparision does not apply to float and double
+                if (result || type==typeFloat || type == typeDouble) return next();
+            }
+            return rec;
+        }else if (OpGreaterThanEquals == op)
         {
             void *rec = locateNode();
             firstCall = false;
-            //iter->displayAll(fldOffset);
+            return rec;
+        }else if (OpEquals == op)
+        {
+            void *rec = locateNode();
+            firstCall = false;
+            if(isUnique) recordsOver = true;
             return rec;
         }
-        firstCall = false;
+        //firstCall = false;
     }else
     {
         if (nodeOffset == iter->noElements_) 
         {
-            if (NULL == iter->next_) {recordsOver = true; return NULL;}
+            if (NULL == iter->next_) {
+                recordsOver = true; 
+                iter->mutex_.releaseShareLock(procSlot);
+                iter = NULL;
+                return NULL; 
+            }
             char* record = ((char*)iter->next_->min_)+ fldOffset;
             bool result = AllDataType::compareVal(searchKey, record, 
                                               OpGreaterThanEquals,
                                               type, length);
             if (!result && (OpLessThan ==op || OpLessThanEquals == op)) 
             { 
-                recordsOver= true; return NULL; 
+                //Case: search key 10 , next node first record is 20 
+                //condition is < or <=
+                recordsOver= true; 
+                iter->mutex_.releaseShareLock(procSlot);
+                iter = NULL;
+                return NULL; 
             }else if (result && (OpGreaterThan == op || 
                       OpGreaterThanEquals == op))
             {
-                recordsOver= true; return NULL; 
+                //Case: search key 20 , next node first record is 10 
+                //condition is > or >=
+                recordsOver= true; 
+                iter->mutex_.releaseShareLock(procSlot);
+                iter = NULL;
+                return NULL;
             }
-            iter=iter->next_;
-            if (NULL == iter) return NULL;
+            TreeNode *tmpIter = iter;
+            iter = iter->next_;
+            int ret = iter->mutex_.getShareLock(procSlot,true);
+            if (0 != ret) 
+            {
+               printError(ErrLockTimeOut,"Unable to lock the tree node. Retry...");
+               tmpIter->mutex_.releaseShareLock(procSlot);
+               iter = NULL;
+               return NULL;
+            }
+            tmpIter->mutex_.releaseShareLock(procSlot);
+            printDebug(DM_TreeIndex,"\n Moving Node next");
             nodeOffset=0;
         }
-        //TODO::take node mutex here
         char **rec = (char**)((char*)iter + sizeof(TreeNode));
         rec = (char**)((char *)rec + ((nodeOffset) * sizeof(void **)));
         nodeOffset++;
-        //TODO::release node mutex here
+        //TEMP::UNCOMMENT THIS if any issue 
+        /*if(NULL==(*rec))
+                iter->mutex_.releaseShareLock(procSlot);
+        */
         return *rec;
     }
     return NULL;
 }
 void* TreeIter::locateNode()
 {
-    while(iter != NULL)
+    TreeNode *tnode=NULL;
+    TreeNode *fiter= (TreeNode *)fstLTnode;
+    int ret=0;
+    ret = fiter->mutex_.getShareLock(procSlot,true);
+    if (0 != ret) 
     {
-        char *record = ((char*)iter->max_)+ fldOffset;
-        bool result = AllDataType::compareVal(searchKey, record,
-                                              OpGreaterThan,
-                                              type, length);
+        printError(ErrLockTimeOut,"Unable to lock the tree node. Retry...");
+        return NULL;
+    }
+    while( fiter!= NULL)
+    {
+        printDebug(DM_TreeIndex,"\n Search in first level start");
+        tnode = (TreeNode *)*((char**)((char*)((char*)fiter + sizeof(TreeNode))+ ((fiter->noElements_-1)*sizeof(void *))));
+        char *record = ((char*)tnode->max_)+ fldOffset;
+        bool result = AllDataType::compareVal(searchKey, record,OpLessThanEquals,type, length);
         if (result)
         {
-            //need to move right
-            iter = iter->next_;
+            break;
         }else
         {
-            record = ((char*)iter->min_)+ fldOffset;
-            result = AllDataType::compareVal(searchKey, record, 
-                                             OpGreaterThanEquals,
-                                             type, length);
-            if (result) {
-                //current node contains the key
-                void *rec = locateElement();
-                return rec;
-            }
-            else
-            {
-               //need to move left
-               if(NULL==iter->prev_) 
-               { 
-                   void *rec = locateElement();
-                   return rec;
+            printDebug(DM_TreeIndex,"\n Search in first level next");
+            TreeNode* tmpIter = fiter;
+            if(fiter->next_!= NULL){
+               fiter = fiter->next_;
+               ret = fiter->mutex_.getShareLock(procSlot,true);
+               if (0 != ret) 
+               {
+                   printError(ErrLockTimeOut,"Unable to lock the tree node. Retry...");
+                   tmpIter->mutex_.releaseShareLock(procSlot);
+                   iter = NULL;
+                   return NULL;
                }
-               iter = iter->prev_;
+               tmpIter->mutex_.releaseShareLock(procSlot);
+            }else{
+               tmpIter->mutex_.releaseShareLock(procSlot);
+               fiter = NULL;    
             }
         }
     }
-    return NULL;
-}
-void* TreeIter::locateElement()
-{
-    //do binary search and locate the element 
-    int loc=0, middle=0, start=0, end=iter->noElements_-1;
-    char **rec = (char**)((char*)iter + sizeof(TreeNode));
-    //TODO::take node mutex
-    for(middle = (start + end) / 2; start <= end ; middle = (start +end )/2)
+    if(fiter == NULL)
+    {
+        iter = NULL;
+        return NULL;
+    }
+    //Get leaf Node
+    
+   int loc=0, middle=0, start=0, end=fiter->noElements_-1;
+   char **rec = (char**)((char*)fiter + sizeof(TreeNode));
+   TreeNode *tNode;
+   if(fiter->noElements_==1)
+   {
+        tNode = ((TreeNode *)*(char**)((char*)rec + (loc * sizeof(void *))));
+        iter = tNode;
+        fiter->mutex_.releaseShareLock(procSlot);
+        void *rec1 = locateElement();
+        return rec1;
+   }
+   for(middle = (start + end) / 2; start <= end ; middle = (start +end )/2)
     {
         loc = middle;
-        char *record = ((char*)*(rec+middle)) + fldOffset;
-        bool res = AllDataType::compareVal(searchKey, record, OpEquals, 
+        tNode = (TreeNode *)*((char**)((char*)((char*)fiter + sizeof(TreeNode))+ (loc*sizeof(void *))));
+        char *record = ((char*)tNode->max_)+ fldOffset;
+
+        bool res = AllDataType::compareVal(searchKey, record, OpLessThan,
                                            type, length);
-        if(res)
-        {
-            loc = middle;
-            break;
-        }
-        res = AllDataType::compareVal(searchKey, record, OpLessThan, 
-                                          type, length);
         if(res)
         {
             end = middle - 1;
         }
         else
         {
-            start = middle + 1;
-            loc = start;
+            res = AllDataType::compareVal(searchKey, record, OpGreaterThan,
+                                          type, length);
+            if (res) {
+                start = middle + 1;
+                loc = start;
+            }else {
+                loc = middle;
+                break;
+            }
+        }
+    }
+    printDebug(DM_TreeIndex,"\n Search in fisrt level end loc =%d\n",loc);
+    tNode = ((TreeNode *)*(char**)((char*)rec + (loc * sizeof(void *))));
+    iter = tNode;
+    fiter->mutex_.releaseShareLock(procSlot);
+    void *rec1 = locateElement();
+    return rec1;
+}
+
+
+void* TreeIter::locateElement()
+{
+    //do binary search and locate the element 
+    int loc=0, middle=0, start=0, end=iter->noElements_-1;
+    char **rec = (char**)((char*)iter + sizeof(TreeNode));
+    int ret = iter->mutex_.getShareLock(procSlot,true);
+    if (0 != ret) 
+    {
+        printError(ErrLockTimeOut,"Unable to lock the tree node. Retry...");
+        return NULL;
+    }
+    for(middle = (start + end) / 2; start <= end ; middle = (start +end )/2)
+    {
+        loc = middle;
+        char *record = ((char*)*(rec+middle)) + fldOffset;
+        bool res = AllDataType::compareVal(searchKey, record, OpLessThan, 
+                                           type, length);
+        if(res)
+        {
+            end = middle - 1;
+        }
+        else
+        {
+            res = AllDataType::compareVal(searchKey, record, OpGreaterThan,
+                                             type, length);
+            if (res) {
+                start = middle + 1;
+                loc = start;
+            }else {
+                loc = middle;
+                break;
+            }
         }
     }
     nodeOffset=loc;
     char **tuple = (char**)((char*)rec + (loc * sizeof(void *)));
     nodeOffset++;
-    //TODO::release node mutex here
+    //iter->mutex_.releaseShareLock(procSlot);
     return *tuple;
 }

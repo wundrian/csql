@@ -115,43 +115,39 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     int noOfBuckets = info->noOfBuckets;
     int offset = info->fldOffset;
     DataType type = info->type;
-    char *keyBuffer = (char*) malloc(info->compLength);
-    memset(keyBuffer, 0, info->compLength);
-    void *keyStartBuffer = keyBuffer, *keyPtr;
-    FieldIterator iter = info->idxFldList.getIterator();
-    while(iter.hasElement())
-    {
-        FieldDef *def = iter.nextElement();
-        keyPtr = (char *)tuple + def->offset_;
-        AllDataType::copyVal(keyBuffer, keyPtr, def->type_, def->length_);
-        keyBuffer = keyBuffer + AllDataType::size(def->type_, def->length_);
-    }
 
     printDebug(DM_HashIndex, "Inserting hash index node for  %s", iptr->indName_);
     ChunkIterator citer = CatalogTableINDEX::getIterator(indexPtr);
     Bucket* buckets = (Bucket*)citer.nextElement();
-    keyPtr =(void*)((char*)tuple + offset);
+    void *keyPtr =(void*)((char*)tuple + offset);
     int bucketNo = 0;
-    if (type == typeComposite)
+    if (type == typeComposite) {
+        char *keyBuffer = (char*) malloc(info->compLength);
+        memset(keyBuffer, 0, info->compLength);
+        void* keyStartBuffer = keyBuffer;
+        FieldIterator iter = info->idxFldList.getIterator();
+        while(iter.hasElement())
+        {
+            FieldDef *def = iter.nextElement();
+            keyPtr = (char *)tuple + def->offset_;
+            AllDataType::copyVal(keyBuffer, keyPtr, def->type_, def->length_);
+            keyBuffer = keyBuffer + AllDataType::size(def->type_, def->length_);
+        }
         bucketNo = computeHashBucket(type, keyStartBuffer, noOfBuckets, info->compLength);
-    else 
+        ::free(keyStartBuffer);
+    }
+    else {
         bucketNo = computeHashBucket(type, keyPtr, noOfBuckets, info->compLength);
+    }
     printDebug(DM_HashIndex, "HashIndex insert bucketno %d", bucketNo);
     Bucket *bucket =  &(buckets[bucketNo]);
-    HashUndoLogInfo *hInfo = new HashUndoLogInfo();
-    hInfo->metaData_ = tbl->db_->getMetaDataPtr();
-    hInfo->bucket_ = bucket;
-    hInfo->tuple_ = tuple;
-    hInfo->hChunk_ = ((CINDEX *)indexPtr)->hashNodeChunk_;
-    hInfo->keyPtr_ = keyPtr;
-    int ret = bucket->mutex_.getLock(tbl->db_->procSlot);
-    if (ret != 0)
-    {
-        delete hInfo;
-        free(keyStartBuffer);
-        printError(ErrLockTimeOut,"Unable to acquire bucket Mutex for bucket %d",bucketNo);
-        return ErrLockTimeOut;
-    }
+    HashUndoLogInfo hInfo;
+    hInfo.metaData_ = tbl->db_->getMetaDataPtr();
+    hInfo.bucket_ = bucket;
+    hInfo.tuple_ = tuple;
+    hInfo.hChunk_ = ((CINDEX *)indexPtr)->hashNodeChunk_;
+    hInfo.keyPtr_ = keyPtr;
+
     HashIndexNode *head = (HashIndexNode*) bucket->bucketList_;
     if (head && info->isUnique)
     {
@@ -177,32 +173,48 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
             else res = AllDataType::compareVal((void*)((char*)bucketTuple +offset), (void*)((char*)tuple +offset), OpEquals,type, info->compLength); 
             if (res) 
             {
-                delete hInfo;
-                free(keyStartBuffer);
                 printError(ErrUnique, "Unique key violation");
-                bucket->mutex_.releaseLock(tbl->db_->procSlot);
+                if (type == typeLongLong) printError(ErrUnique, "Unique key violation for id:%lld",*(long long*) ((char*)tuple +offset) );
                 return ErrUnique;
             }
         }
     }
     
+    Chunk *hIdxNodeChunk = (Chunk*)iptr->hashNodeChunk_;
     printDebug(DM_HashIndex, "HashIndex insert into bucket list");
     if (!head)
     {
         printDebug(DM_HashIndex, "HashIndex insert head is empty");
         DbRetVal rv = OK;
-        HashIndexNode *firstNode= (HashIndexNode*)(((Chunk*)iptr->hashNodeChunk_)->allocate(tbl->db_, &rv));
-        if (firstNode == NULL)
+        HashIndexNode *firstNode= NULL; 
+
+        int tries=0;
+        int totalTries = Conf::config.getMutexRetries();
+        while (tries < totalTries)
         {
-            bucket->mutex_.releaseLock(tbl->db_->procSlot);
-            delete hInfo;
-            free(keyStartBuffer);
+            rv = OK;
+            firstNode= (HashIndexNode*) hIdxNodeChunk->allocate(tbl->db_, &rv);
+            if (firstNode !=NULL) break;
+            if (rv != ErrLockTimeOut)
+            {
+                printError(rv, "Unable to allocate hash index node");
+                return rv;
+            }
+            tries++;
+        }
+        if (firstNode == NULL){
+            printError(rv, "Unable to allocate hash index node after %d retry", tries);
             return rv;
         }
         firstNode->ptrToKey_ = keyPtr;
         firstNode->ptrToTuple_ = tuple;
         firstNode->next_ = NULL;
-        bucket->bucketList_ = (HashIndexNode*)firstNode;
+        if (0 != Mutex::CASL((long*)&bucket->bucketList_, 0, (long)firstNode)) {
+            printError(ErrLockTimeOut, "Hash Index bucket lock timeout.. retry");
+            hIdxNodeChunk->free(tbl->db_, firstNode);
+            return ErrLockTimeOut; 
+        }
+       
         printDebug(DM_HashIndex, "HashIndex insert new node %x in empty bucket", bucket->bucketList_);
     }
     else
@@ -210,26 +222,28 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         BucketList list(head);
         rc = list.insert((Chunk*)iptr->hashNodeChunk_, tbl->db_, keyPtr, tuple);
         if (rc !=OK) {
-            bucket->mutex_.releaseLock(tbl->db_->procSlot);
-            delete hInfo;
-            free(keyStartBuffer);
+            printError(rc, "unable to insert into bucketlist rv:%d", rc);
             return rc;
         }
         
     }
     if (!loadFlag) {
-         rc = tr->appendLogicalHashUndoLog(tbl->sysDB_, InsertHashIndexOperation, hInfo, sizeof(HashUndoLogInfo));
+         rc = tr->appendLogicalHashUndoLog(tbl->sysDB_, InsertHashIndexOperation, &hInfo, sizeof(HashUndoLogInfo));
         if (rc !=OK)
         {
+            printError(rc, "Unable to append logical log before rc:%d", rc);
             BucketList list(head);
-            rc = list.remove((Chunk*)iptr->hashNodeChunk_, tbl->db_, keyPtr);
-            if (rc !=OK) printError(ErrSysFatal, "double failure on undo log insert followed by hash bucket list remove\n");
-            bucket->bucketList_ = list.getBucketListHead();
+            DbRetVal rv = list.remove((Chunk*)iptr->hashNodeChunk_, tbl->db_, keyPtr);
+            //bucket->bucketList_ = list.getBucketListHead();
+            if (rv == SplCase) {
+              printError(ErrWarning, "SplCase occured");
+              if (0 != Mutex::CASL((long*)&bucket->bucketList_, 
+                     (long)bucket->bucketList_, (long)list.getBucketListHead())) {
+                printError(ErrSysFatal, "Double failure, may lead to hash node leak\n");
+              }
+            }else if (rv !=OK) printError(ErrSysFatal, "double failure on undo log insert followed by hash bucket list remove\n");
         }
     }
-    free(keyStartBuffer);
-    delete hInfo; hInfo = NULL;
-    bucket->mutex_.releaseLock(tbl->db_->procSlot);
     return rc;
 }
 
@@ -245,46 +259,39 @@ DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
 
     ChunkIterator citer = CatalogTableINDEX::getIterator(indexPtr);
     Bucket* buckets = (Bucket*)citer.nextElement();
-    char *keyBuffer = (char*) malloc(info->compLength);
-    memset(keyBuffer, 0, info->compLength);
-    void *keyStartBuffer = keyBuffer, *keyPtr;
-    FieldIterator iter = info->idxFldList.getIterator();
-    while(iter.hasElement())
-    {
-        FieldDef *def = iter.nextElement();
-        keyPtr = (char *)tuple + def->offset_;
-        AllDataType::copyVal(keyBuffer, keyPtr, def->type_, def->length_);
-        keyBuffer = keyBuffer + AllDataType::size(def->type_, def->length_);
-    }
 
-    keyPtr =(void*)((char*)tuple + offset);
+    void *keyPtr =(void*)((char*)tuple + offset);
     int bucket = 0;
-    if (type == typeComposite)
+    if (type == typeComposite) {
+        char *keyBuffer = (char*) malloc(info->compLength);
+        memset(keyBuffer, 0, info->compLength);
+        void *keyStartBuffer = keyBuffer; 
+        FieldIterator iter = info->idxFldList.getIterator();
+        while(iter.hasElement())
+        {
+           FieldDef *def = iter.nextElement();
+           keyPtr = (char *)tuple + def->offset_;
+           AllDataType::copyVal(keyBuffer, keyPtr, def->type_, def->length_);
+           keyBuffer = keyBuffer + AllDataType::size(def->type_, def->length_);
+        }
         bucket = HashIndex::computeHashBucket(type, keyStartBuffer, noOfBuckets, info->compLength);
-    else bucket = HashIndex::computeHashBucket(type, keyPtr, noOfBuckets, info->compLength);
+        ::free(keyStartBuffer);
+    }
+    else {
+         bucket = HashIndex::computeHashBucket(type, keyPtr, noOfBuckets, info->compLength);
+    }
 
     Bucket *bucket1 = &buckets[bucket];
-    HashUndoLogInfo *hInfo = new HashUndoLogInfo();
-    hInfo->metaData_ = tbl->db_->getMetaDataPtr();
-    hInfo->bucket_ = bucket1;
-    hInfo->tuple_ = tuple;
-    hInfo->hChunk_ = ((CINDEX *)indexPtr)->hashNodeChunk_;
-    hInfo->keyPtr_ = keyPtr;
+    HashUndoLogInfo hInfo;
+    hInfo.metaData_ = tbl->db_->getMetaDataPtr();
+    hInfo.bucket_ = bucket1;
+    hInfo.tuple_ = tuple;
+    hInfo.hChunk_ = ((CINDEX *)indexPtr)->hashNodeChunk_;
+    hInfo.keyPtr_ = keyPtr;
     
-    int ret = bucket1->mutex_.getLock(tbl->db_->procSlot);
-    if (ret != 0)
-    {
-        delete hInfo;
-        free(keyStartBuffer);
-        printError(ErrLockTimeOut,"Unable to acquire bucket Mutex for bucket %d",bucket);
-        return ErrLockTimeOut;
-    }
     HashIndexNode *head = (HashIndexNode*) bucket1->bucketList_;
 
     if (!head) { printError(ErrNotExists, "Hash index does not exist:should never happen\n"); 
-       bucket1->mutex_.releaseLock(tbl->db_->procSlot);
-       delete hInfo;
-       free(keyStartBuffer);
        return ErrNotExists; 
     }
     BucketList list(head);
@@ -294,21 +301,27 @@ DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     if (SplCase == rc) 
     { 
        printDebug(DM_HashIndex, "Removing hash index node from head "); 
-       bucket1->bucketList_ = list.getBucketListHead(); 
+       //bucket1->bucketList_ = list.getBucketListHead(); 
+       if (0 != Mutex::CASL((long*)&bucket1->bucketList_, 
+                (long)head, (long)list.getBucketListHead())) {
+           printError(ErrSysFatal, "Lock time out for hash bucket. retry\n");
+           return ErrLockTimeOut;
+       }
        rc = OK;
     }
     if (!loadFlag) {
-        rc =tr->appendLogicalHashUndoLog(tbl->sysDB_, DeleteHashIndexOperation, hInfo, sizeof(HashUndoLogInfo));
+        rc =tr->appendLogicalHashUndoLog(tbl->sysDB_, DeleteHashIndexOperation, &hInfo, sizeof(HashUndoLogInfo));
         if (rc !=OK)
         {
             rc = list.insert((Chunk*)iptr->hashNodeChunk_, tbl->db_, keyPtr, tuple);
             if (rc !=OK) printError(ErrSysFatal, "double failure on undo log remove followed by hash bucket list insert\n");
-            bucket1->bucketList_ = list.getBucketListHead();
+            //bucket1->bucketList_ = list.getBucketListHead();
+            if (0 != Mutex::CASL((long*)&bucket1->bucketList_, 
+                (long)bucket1->bucketList_, (long)list.getBucketListHead())) {
+                printError(ErrSysFatal, "Double failure on index insert");
+            }
         }
     }
-    bucket1->mutex_.releaseLock(tbl->db_->procSlot);
-    delete hInfo; 
-    free(keyStartBuffer);
     return rc;
 }
 
@@ -345,7 +358,7 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     if(type==typeBinary) {
         keyBindBuffer = (char*) malloc(2 * info->compLength);
         memset(keyBindBuffer, 0, 2 * info->compLength);
-    }else {
+    } else {
         keyBindBuffer = (char*) malloc(info->compLength);
         memset(keyBindBuffer, 0, info->compLength);
     }
@@ -380,12 +393,12 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         }
     }
     if (!keyUpdated) { 
-        //printf("PRABA::key not updated\n");
+        //printf("DEBUG::key not updated\n");
         free(keyStartBuffer); 
         free(oldKeyStartBuffer);
         return OK; 
     }
-    //printf("PRABA::it is wrong coming here\n");
+    //printf("DEBUG::it is wrong coming here\n");
     bool result = false;
     if (type == typeComposite) 
         result = AllDataType::compareVal(oldKeyStartBuffer, keyStartBuffer,
@@ -415,7 +428,7 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     hInfo1->metaData_ = tbl->db_->getMetaDataPtr();
     hInfo1->bucket_ = bucket;
     hInfo1->tuple_ = tuple; 
-    hInfo1->hChunk_ = indexPtr;
+    hInfo1->hChunk_ = ((CINDEX *)indexPtr)->hashNodeChunk_;
     hInfo1->keyPtr_ = keyPtr;
     
     //it may run into deadlock, when two threads updates tuples which falls in
@@ -555,13 +568,25 @@ DbRetVal HashIndex::insertLogicalUndoLog(Database *sysdb, void *data)
 {
     HashUndoLogInfo *info = (HashUndoLogInfo *) data;
     Chunk *hChunk = (Chunk *) info->hChunk_;
-    Database *db = new Database();
-    db->setMetaDataPtr((DatabaseMetaData *) info->metaData_);
-    db->setProcSlot(sysdb->procSlot);
+    Database db; 
+    db.setMetaDataPtr((DatabaseMetaData *) info->metaData_);
+    db.setProcSlot(sysdb->procSlot);
     HashIndexNode *head = (HashIndexNode *)((Bucket *)info->bucket_)->bucketList_; 
     BucketList list(head);
-    list.insert(hChunk, db, info->keyPtr_, info->tuple_);
-    ((Bucket *)info->bucket_)->bucketList_ = list.getBucketListHead();
+    DbRetVal rv = list.insert(hChunk, &db, info->keyPtr_, info->tuple_);
+    if (rv != OK)
+    {
+        printError(ErrLockTimeOut, "Unable to add to bucket..retry\n");
+        return ErrLockTimeOut;
+    }
+    //((Bucket *)info->bucket_)->bucketList_ = list.getBucketListHead();
+    if (0 != Mutex::CASL((long*)& (((Bucket *)info->bucket_)->bucketList_),
+            (long)(((Bucket *)info->bucket_)->bucketList_),
+            (long)list.getBucketListHead())) 
+    {
+        printError(ErrLockTimeOut, "Unable to add to bucket..retry\n");
+        return ErrLockTimeOut;
+    }
     return OK;
 }
 
@@ -569,14 +594,24 @@ DbRetVal HashIndex::deleteLogicalUndoLog(Database *sysdb, void *data)
 {
     HashUndoLogInfo *info = (HashUndoLogInfo *) data;
     Chunk *hChunk = (Chunk *) info->hChunk_;
-    Database *db = new Database();
-    db->setMetaDataPtr((DatabaseMetaData *)info->metaData_);
-    db->setProcSlot(sysdb->procSlot);
+    Database db; 
+    db.setMetaDataPtr((DatabaseMetaData *)info->metaData_);
+    db.setProcSlot(sysdb->procSlot);
     HashIndexNode *head = (HashIndexNode *)((Bucket *)info->bucket_)->bucketList_;
     BucketList list(head);
-    DbRetVal rc = list.remove(hChunk, db, info->keyPtr_);
+    DbRetVal rc = list.remove(hChunk, &db, info->keyPtr_);
+    //((Bucket *)info->bucket_)->bucketList_ = list.getBucketListHead();
     if (SplCase == rc) {
-        ((Bucket *)info->bucket_)->bucketList_ = list.getBucketListHead();
+        if (0 != Mutex::CASL((long*)& (((Bucket *)info->bucket_)->bucketList_),
+            (long)(((Bucket *)info->bucket_)->bucketList_),
+            (long)list.getBucketListHead())) 
+         {
+             printError(ErrLockTimeOut, "Unable to set the head of hash index bucket\n");
+             return ErrLockTimeOut;
+         }
+    }else if (rc != OK) {
+         printError(ErrLockTimeOut, "Unable to remove hash index node");
+         return ErrLockTimeOut;
     }
     return OK;
 }

@@ -16,8 +16,12 @@
 #include<os.h>
 #include<DataType.h>
 #include<Debug.h>
-
+//#include<Config.h>
 #define SmallestValJulDate (1721426)
+#if defined(SOLARIS)
+#undef _TIME_H
+#endif
+
 
 Date::Date(int year, int month, int day)
     { YMDToJulian(year, month, day, julianDate); }
@@ -28,16 +32,69 @@ int Date::get(int &year, int &month, int &day) const
 
 int Date::parseFrom(const char *s) {
     int month,day,year;
-    int count;
-    count = sscanf(s,"%d/%d/%d",&year,&month,&day);
-    if (count < 3) return -1;
-
-    if (year < 100) year += 1900;
-
-    if (!isValidDate(year, month, day))
-        return -1;
-    return set(year,month,day);
+    int count;char *p;
+    if(strcmp(s,"now")==0 || strcmp(s,"NOW")==0){
+       time_t cnow = ::time(NULL);
+#if defined(SOLARIS) && defined(REMOTE_SOLARIS)
+       struct std::tm *tmval =  (struct std::tm*) localtime(&cnow);
+       return set(year=tmval->tm_year+1900, month=tmval->tm_mon+1, day=tmval->tm_mday);
+#else
+       struct tm *tmval = localtime(&cnow);
+       return set(year=tmval->tm_year+1900,month=tmval->tm_mon+1,day=tmval->tm_mday);
+#endif
+    }
+    else{
+	 p=(char*)s;
+	 while(*p!='\0'){
+	   if(*p=='-'){
+	      count = sscanf(s,"%d-%d-%d",&year,&month,&day);
+	      break;
+	   }
+	   if(*p=='/'){
+	     count = sscanf(s,"%d/%d/%d",&year,&month,&day);
+	     break;
+	   }
+	   p++;
+	 }
+         if (count < 3) return -1;
+         if (year < 100) year += 1900;
+         if (!isValidDate(year, month, day))
+         return -1;
+         return set(year,month,day);
+   }
 }
+
+void Date::changeToCsqlFormat(char *src)
+{
+    char dst[10]="";
+    char *srcPtr = src;
+    char *dstPtr = dst;
+    dst[0]='\0';
+    srcPtr = src + 7;
+    strncpy(dstPtr, srcPtr, 4);
+    dst[4] = '-';
+    dstPtr = &dst[5]; 
+    srcPtr = src + 3;
+    if(strncasecmp(srcPtr,"JAN",3) == 0) strncpy(dstPtr, "01", 2);
+    else if(strncasecmp(srcPtr,"FEB",3)== 0) strncpy(dstPtr, "02", 2);
+    else if(strncasecmp(srcPtr,"MAR",3)== 0) strncpy(dstPtr, "03", 2);
+    else if(strncasecmp(srcPtr,"APR",3)== 0) strncpy(dstPtr, "04", 2);
+    else if(strncasecmp(srcPtr,"MAY",3)== 0) strncpy(dstPtr, "05", 2);
+    else if(strncasecmp(srcPtr,"JUN",3)== 0) strncpy(dstPtr, "06", 2);
+    else if(strncasecmp(srcPtr,"JUL",3)== 0) strncpy(dstPtr, "07", 2);
+    else if(strncasecmp(srcPtr,"AUG",3)== 0) strncpy(dstPtr, "08", 2);
+    else if(strncasecmp(srcPtr,"SEP",3)== 0) strncpy(dstPtr, "09", 2);
+    else if(strncasecmp(srcPtr,"OCT",3)== 0) strncpy(dstPtr, "10", 2);
+    else if(strncasecmp(srcPtr,"NOV",3)== 0) strncpy(dstPtr, "11", 2);
+    else if(strncasecmp(srcPtr,"DEC",3)== 0) strncpy(dstPtr, "12", 2);
+    dst[7]='-';   
+    dstPtr = &dst[8]; 
+    strncpy(dstPtr, src, 2);
+    dst[10] = '\0';
+    strcpy(src, dst);
+    return;
+}   
+
 
 int Date::dayOfMonth() const {
     int year, month, day;
@@ -147,7 +204,8 @@ int Date::daysInMonth(int month, int year) {
 }
 
 bool Date::isValidDate(int year, int month, int day) {
-    if (year  < 1 || year  > 10000) return false;
+   
+    if (year  < 1 || year  >= 9999) return false;
     if (month < 1 || month > 12) return false;
     return (day >= 1) && (day <= daysInMonth(month,year));
 }
@@ -280,23 +338,58 @@ int operator!=(const Time &t1 ,const Time &t2 )
 
 int Time::parseFrom(const char *s) {
     int hours,mins,secs;
-    int count;
-    count = sscanf(s,"%d:%d:%d",&hours,&mins,&secs);
-    if (count < 2) return -1;
-    if (count == 2) secs = 0;
+    int count;char *p;
+    if(strcmp(s,"now")==0 || strcmp(s,"NOW")==0){
+       time_t cnow = ::time(NULL);
+#if defined(SOLARIS) && defined(REMOTE_SOLARIS)
+       struct std::tm *tmval =  (struct std::tm*) localtime(&cnow);
+       return set(hours=tmval->tm_hour,mins=tmval->tm_min,secs=tmval->tm_sec);
+#else
+       struct tm *tmval = localtime(&cnow);
+       return set(hours=tmval->tm_hour,mins=tmval->tm_min,secs=tmval->tm_sec);
+#endif
+    }
+    else{
+       count = sscanf(s,"%d:%d:%d",&hours,&mins,&secs);
+       if (count < 2) return -1;
+       if (count == 2) secs = 0;
 
-    if (!isValidTime(hours,mins,secs))
-        return -1;
-    return set(hours,mins,secs);
+       if (!isValidTime(hours,mins,secs))
+       return -1;
+       return set(hours,mins,secs);
+   }
 }
 int TimeStamp::parseFrom(const char *s) {
     int hours,mins,secs;
     int month,day,year;
-    int count;
-    count = sscanf(s,"%d/%d/%d %d:%d:%d",&year,&month,&day, &hours, &mins, &secs);
+    int count;char *p;
+    if(strcmp(s,"now")==0 || strcmp(s,"NOW")==0){
+         time_t cnow = ::time(NULL);
+#if defined(SOLARIS) && defined(REMOTE_SOLARIS)
+         struct std::tm *tmval =  (struct std::tm*) localtime(&cnow);
+         setDate(year=tmval->tm_year+1900,month=tmval->tm_mon+1,day=tmval->tm_mday);
+	 return setTime(hours=tmval->tm_hour,mins=tmval->tm_min,secs=tmval->tm_sec);
+#else
+         struct tm *tmval = localtime(&cnow);
+         setDate(year=tmval->tm_year+1900,month=tmval->tm_mon+1,day=tmval->tm_mday);
+	 return setTime(hours=tmval->tm_hour,mins=tmval->tm_min,secs=tmval->tm_sec);
+#endif
+    }
+    else{
+    p=(char*)s;
+    while(*p!='\0'){
+      if(*p=='-'){
+       count = sscanf(s,"%d-%d-%d %d:%d:%d",&year,&month,&day, &hours, &mins, &secs);
+       break;
+      }
+      if(*p=='/'){
+        count = sscanf(s,"%d/%d/%d %d:%d:%d",&year,&month,&day, &hours, &mins, &secs);
+        break;
+      }
+      p++;
+    }
     if (count < 5) return -1;
     if (count == 5) secs = 0;
-
     if (year < 100) year += 1900;
 
     if (!date.isValidDate(year, month, day))
@@ -308,8 +401,42 @@ int TimeStamp::parseFrom(const char *s) {
     if (!time.isValidTime(hours,mins,secs))
         return -1;
     return setTime(hours,mins,secs);
+    }
 }
 
+void TimeStamp::changeToCsqlFormat(char *src)
+{
+    char dst[20];
+    char *srcPtr = src;
+    char *dstPtr = dst;
+    dst[0]='\0';
+    srcPtr = src + 7;
+    strncpy(dstPtr, srcPtr, 4);
+    dst[4] = '-';
+    dstPtr = &dst[5]; 
+    srcPtr = src + 3;
+    if(strncasecmp(srcPtr,"JAN",3) == 0) strncpy(dstPtr, "01", 2);
+    else if(strncasecmp(srcPtr,"FEB",3)== 0) strncpy(dstPtr, "02", 2);
+    else if(strncasecmp(srcPtr,"MAR",3)== 0) strncpy(dstPtr, "03", 2);
+    else if(strncasecmp(srcPtr,"APR",3)== 0) strncpy(dstPtr, "04", 2);
+    else if(strncasecmp(srcPtr,"MAY",3)== 0) strncpy(dstPtr, "05", 2);
+    else if(strncasecmp(srcPtr,"JUN",3)== 0) strncpy(dstPtr, "06", 2);
+    else if(strncasecmp(srcPtr,"JUL",3)== 0) strncpy(dstPtr, "07", 2);
+    else if(strncasecmp(srcPtr,"AUG",3)== 0) strncpy(dstPtr, "08", 2);
+    else if(strncasecmp(srcPtr,"SEP",3)== 0) strncpy(dstPtr, "09", 2);
+    else if(strncasecmp(srcPtr,"OCT",3)== 0) strncpy(dstPtr, "10", 2);
+    else if(strncasecmp(srcPtr,"NOV",3)== 0) strncpy(dstPtr, "11", 2);
+    else if(strncasecmp(srcPtr,"DEC",3)== 0) strncpy(dstPtr, "12", 2);
+    dst[7]='-';   
+    dstPtr = &dst[8]; 
+    strncpy(dstPtr, src, 2);
+    dstPtr = &dst[10];
+    srcPtr = src + 11;
+    strncpy(dstPtr, srcPtr, 9);
+    dst[19]='\0';
+    strcpy(src, dst);
+    return;
+}   
 int operator< (const TimeStamp &d1,  const TimeStamp &d2)
     { return (d1.date != d2.date) ? d1.date < d2.date : d1.time < d2.time; }
 int operator> (const TimeStamp &d1,  const TimeStamp &d2)
@@ -321,63 +448,9 @@ int operator>=(const TimeStamp &d1, const TimeStamp &d2)
 int operator==(const TimeStamp &d1, const TimeStamp &d2)
     { return d1.date == d2.date && d1.time == d2.time; }
 int operator!=(const TimeStamp &d1, const TimeStamp &d2)
-    { return d1.date != d2.date && d1.time != d2.time; }
+    { return d1.date != d2.date || d1.time != d2.time; }
 
 
-/*long AllDataType::size(DataType type, int length )
-{
-    if (type == typeInt) return sizeof(int);
-    else if (type == typeString) return length;
-
-    long size = 0;
-    switch(type)
-    {
-        case typeInt:
-            size = sizeof(int);
-            break;
-        case typeLong:
-            size = sizeof(long);
-            break;
-        case typeLongLong:
-            size = sizeof(long long);
-            break;
-        case typeShort:
-            size = sizeof(short);
-            break;
-        case typeByteInt:
-            size = sizeof(char);
-            break;
-        case typeDouble:
-            size = sizeof(double);
-            break;
-        case typeFloat:
-            size = sizeof(float);
-            break;
-        case typeDecimal:
-            //TODO::for porting
-            //fldDef.length_ = sizeof(long double);
-            break;
-        case typeDate:
-            size = sizeof(Date);
-            break;
-        case typeTime:
-            size = sizeof(Time);
-            break;
-        case typeTimeStamp:
-            size = sizeof(TimeStamp);
-            break;
-        case typeString:
-        case typeBinary:
-        case typeComposite:
-            size = length;
-            break;
-        default:
-            size  = 0;
-            break;
-    }
-    return size;
-}
-*/
 char* AllDataType::getSQLString(DataType type)
 {
     switch(type)
@@ -409,7 +482,7 @@ SQLSMALLINT AllDataType::convertToSQLType(DataType type)
             return SQL_INTEGER;
         case typeLongLong:
             //TODO
-            return SQL_INTEGER;
+            return SQL_BIGINT;
         case typeShort:
             return SQL_SMALLINT;
         case typeByteInt:
@@ -435,7 +508,44 @@ SQLSMALLINT AllDataType::convertToSQLType(DataType type)
     }
     return SQL_INTEGER;
 }
-SQLSMALLINT AllDataType::convertToSQL_C_Type(DataType type)
+SQLSMALLINT AllDataType::convertToCSQLSQLType(DataType type)
+{
+    switch(type)
+    {
+        case typeInt:
+            return SQL_INTEGER;
+        case typeLong:
+            return SQL_INTEGER;
+        case typeLongLong:
+            //TODO
+            return SQL_BIGINT;
+        case typeShort:
+            return SQL_SMALLINT;
+        case typeByteInt:
+            //TODO
+            return SQL_TINYINT;
+        case typeDouble:
+            return SQL_DOUBLE;
+        case typeFloat:
+            return SQL_REAL;
+        case typeDecimal:
+            //TODO
+            return SQL_INTEGER;
+        case typeDate:
+            return SQL_TYPE_DATE;
+        case typeTime:
+           return SQL_TYPE_TIME;
+        case typeTimeStamp:
+           return SQL_TYPE_TIMESTAMP;
+        case typeString:
+            return SQL_CHAR;
+        case typeBinary:
+            return SQL_BINARY;
+    }
+    return SQL_INTEGER;
+}
+
+SQLSMALLINT AllDataType::convertToSQL_C_Type(DataType type,TDBInfo tdbname)
 {
     switch(type)
     {
@@ -444,7 +554,12 @@ SQLSMALLINT AllDataType::convertToSQL_C_Type(DataType type)
         case typeLong:
             return SQL_C_SLONG;
         case typeLongLong:
-            return SQL_C_SBIGINT;
+        {
+            if(tdbname == postgres)
+                return SQL_C_CHAR;
+            else
+                return SQL_C_SBIGINT;
+        }
         case typeShort:
             return SQL_C_SSHORT;
         case typeByteInt:
@@ -470,14 +585,50 @@ SQLSMALLINT AllDataType::convertToSQL_C_Type(DataType type)
     return SQL_C_SLONG;
 }
 
-DataType  AllDataType::convertFromSQLType(SQLSMALLINT type)
+DataType  AllDataType::convertFromSQLType(SQLSMALLINT type,int length,int scale,TDBInfo tdbname)
 {
+    if(tdbname==postgres)
+    {
+       switch(type)
+       {
+            case SQL_INTEGER :
+                return typeInt;
+            case  SQL_SMALLINT:
+                return typeShort;
+            case  SQL_BIGINT:
+                return typeLongLong;
+            case  SQL_FLOAT:
+            case  SQL_DOUBLE:
+                return typeDouble;
+            case  SQL_REAL:
+                return typeFloat;
+            case SQL_TYPE_DATE:
+                return typeDate;
+            case SQL_TYPE_TIME :
+               return typeTime;
+            case SQL_TYPE_TIMESTAMP :
+               return typeTimeStamp;
+            case SQL_CHAR:
+               return typeString;
+            case SQL_LONGVARCHAR:
+               return typeString;
+            case SQL_VARCHAR:
+               return typeString;
+            case SQL_BINARY:
+               return typeBinary;
+       }
+       return typeInt;
+    } 
     switch(type)
     {
+        case  SQL_TINYINT:
+            return typeByteInt;
         case SQL_INTEGER :
             return typeInt;
         case  SQL_SMALLINT:
             return typeShort;
+        case  SQL_BIGINT:
+            return typeLongLong;
         case  SQL_DOUBLE:
             return typeDouble;
         case  SQL_FLOAT:
@@ -491,6 +642,8 @@ DataType  AllDataType::convertFromSQLType(SQLSMALLINT type)
            return typeTimeStamp;
         case SQL_CHAR:
             return typeString;
+        case SQL_LONGVARCHAR:
+            return typeString;
         case SQL_VARCHAR:
             return typeString;
         case SQL_BINARY:
@@ -498,91 +651,6 @@ DataType  AllDataType::convertFromSQLType(SQLSMALLINT type)
     }
     return typeInt;
 }
-/*
-void AllDataType::copyVal(void* dest, void *src, DataType type, int length)
-{
-    //Performance optimization. putting likely case first
-    if (typeInt == type ) 
-    {
-        *(int*)dest = *(int*)src;
-        return;
-    }else if (typeString == type)
-    {
-        //null is always put at the last byte by insert
-        //so using strcpy is safe
-        strcpy((char*)dest, (char*)src);
-        //strncpy((char*)dest, (char*)src, length);
-        //char *d =(char*)dest;
-        //d[length-1] = '\0';
-        return;
-    }else if (typeShort == type) {
-        *(short*)dest = *(short*)src;
-    }else if (typeDouble == type) {
-        *(double*)dest = *(double*)src;
-    }else if (typeTimeStamp == type) {
-        *(TimeStamp*)dest = *(TimeStamp*)src;
-    }else if (typeDate == type) {
-        *(Date*)dest = *(Date*)src;
-    }else if (typeFloat == type) {
-        *(float*)dest = *(float*)src;
-    }else if (typeTime == type) {
-        *(Time*)dest = *(Time*)src;
-    }else if (typeLong == type) {
-        *(long*)dest = *(long*)src;
-    }else if (typeLongLong == type) {
-        *(long long*)dest = *(long long*)src;
-    }else if (typeByteInt == type) {
-        *(char*)dest = *(char*)src;
-    }else if (typeBinary == type) {
-        os::memcpy(dest, src, length);
-    }else if (typeComposite == type) {
-        os::memcpy(dest, src, length);
-    }
-    return;
-}
-
-void AllDataType::addVal(void* dest, void *src, DataType type)
-{
-    if (type == typeInt)
-    {
-        *(int*)dest = *(int*)dest + *(int*)src;
-        return;
-    }
-    switch(type)
-    {
-        case typeInt:
-            *(int*)dest = *(int*)dest + *(int*)src;
-            break;
-        case typeLong:
-            *(long*)dest = *(long*)dest + *(long*)src;
-            break;
-        case typeLongLong:
-            *(long long*)dest = *(long long*)dest + *(long long*)src;
-            break;
-        case typeShort:
-            *(short*)dest = *(short*)dest + *(short*)src;
-            break;
-        case typeByteInt:
-            *(char*)dest = *(char*)dest + *(char*)src;
-            break;
-        case typeDouble:
-            *(double*)dest = *(double*)dest + *(double*)src;
-            break;
-        case typeFloat:
-            *(float*)dest = *(float*)dest + *(float*)src;
-            break;
-        case typeDecimal:
-            //TODO::for porting
-        case typeDate:
-        case typeTime:
-        case typeTimeStamp:
-	case typeBinary:
-        default:
-             break;
-     }
-     return;
-}
-*/
 void AllDataType::subVal(void* dest, void *src, DataType type)
 {
     switch(type)
@@ -733,37 +801,20 @@ void AllDataType::divVal(void* dest, void *src, DataType type)
     }
     return;
 }
-void AllDataType::divVal(void* dest, int src, DataType type)
+void AllDataType::divVal(double* dest, int src, DataType type)
 {
-    if(type == typeInt)
-    {
-        *(int*)dest = *(int*)dest / src;
-        return;
-    }
     switch(type)
     {
-        case typeInt:
-            *(int*)dest = *(int*)dest / src;
-            break;
-        case typeLong:
-            *(long*)dest = *(long*)dest / src;
-            break;
-        case typeLongLong:
-            *(long long*)dest = *(long long*)dest / src;
-            break;
-        case typeShort:
-            *(short*)dest = *(short*)dest / src;
-            break;
-        case typeByteInt:
-            *(char*)dest = *(char*)dest / src;
-            break;
-        case typeDouble:
-            *(double*)dest = *(double*)dest / src;
-            break;
+        case typeInt:     
+        case typeLong:     
+        case typeLongLong: 
+        case typeShort: 
+        case typeByteInt: 
+        case typeDouble: 
         case typeFloat:
-            *(float*)dest = *(float*)dest / src;
-            break;
         case typeDecimal:
+            *dest = *dest / src;
+            break;
             //TODO::for porting
         case typeDate:
         case typeTime:
@@ -774,6 +825,7 @@ void AllDataType::divVal(void* dest, int src, DataType type)
      }
      return;
 }
+
 void AllDataType::increment(void* dest, void *src, DataType type)
 {
     switch(type)
@@ -786,6 +838,9 @@ void AllDataType::increment(void* dest, void *src, DataType type)
             break;
         case typeLongLong:
             *(long long*)dest = *(long long*)src + 1;
+            break;
+        case typeByteInt:
+            *(char*)dest = *(char*)src + 1;
             break;
         case typeShort:
             *(short*)dest = *(short*)src + 1;
@@ -800,6 +855,7 @@ void AllDataType::increment(void* dest, void *src, DataType type)
              break;
      }
 }
+
 bool AllDataType::isValueZero(void *src, DataType type)
 {
     switch(type)
@@ -828,66 +884,9 @@ bool AllDataType::isValueZero(void *src, DataType type)
      return false;
 }
 
-/*
-bool AllDataType::compareVal(void *val1, void *val2, ComparisionOp op,
-                             DataType type, long length)
-{
-    //Performance optimization.
-    //do not convert compareXXXVal to virtual functions. it takes more time
-    if (typeInt == type) 
-    {
-        //as int is the heavily used type, hardcoding the compare here itself
-        if (OpEquals == op) {
-            if (*(int*)val1 == *(int*)val2) return true;
-            else return false;
-        }else if (OpLessThanEquals == op) {
-            if (*(int*)val1 <= *(int*)val2) return true;
-            else return false;
-        }else if (OpGreaterThanEquals == op) {
-            if (*(int*)val1 >= *(int*)val2) return true;
-            else return false;
-        }else if (OpGreaterThan == op) {
-            if (*(int*)val1 > *(int*)val2) return true;
-            else return false;
-        }else if (OpLessThan == op) {
-            if (*(int*)val1 < *(int*)val2) return true;
-            else return false;
-        }else if (OpNotEquals == op) {
-            if (*(int*)val1 != *(int*)val2) return true;
-            else return false;
-        }
-       
-    }else if(typeString == type) {
-        return AllDataType::compareStringVal(val1, val2, op);
-    } else if (typeShort == type) {
-        return AllDataType::compareShortVal(val1, val2, op);
-    } else if (typeDouble == type) {
-        return AllDataType::compareDoubleVal(val1, val2, op);
-    } else if (typeFloat == type) {
-        return AllDataType::compareFloatVal(val1, val2, op);
-    } else if (typeLong == type) {
-        return AllDataType::compareLongVal(val1, val2, op);
-    } else if (typeLongLong == type) {
-        return AllDataType::compareLongLongVal(val1, val2, op);
-    } else if (typeByteInt == type) {
-        return AllDataType::compareByteIntVal(val1, val2, op);
-    } else if (typeTimeStamp == type) {
-        return AllDataType::compareTimeStampVal(val1, val2, op);
-    } else if (typeDate == type) {
-        return AllDataType::compareDateVal(val1, val2, op);
-    } else if (typeTime == type) {
-        return AllDataType::compareTimeVal(val1, val2, op);
-    } else if (typeBinary == type) {
-        return AllDataType::compareBinaryVal(val1, val2, op, length);
-    } else if (typeComposite == type) {
-        return AllDataType::compareBinaryVal(val1, val2, op, length);
-    }
-}
-*/
-
 bool AllDataType::compareIntVal(void* src1, void *src2, ComparisionOp op)
 {
-    printf("This function should never be called by anyone");
+    printf("This function should never be called by anyone\n");
     if (OpEquals == op) {
         if (*(int*)src1 == *(int*)src2) return true;
         else return false;
@@ -1267,29 +1266,6 @@ bool AllDataType::compareBinaryVal(void* src1, void *src2,
    }
    return result;
 }
-/*
-ComparisionOp AllDataType::getComparisionOperator(char *str)
-{
-    ComparisionOp op;
-    if (strcmp(str, "<=") == 0)
-        op = OpLessThanEquals;
-    else if (strcmp(str, ">=") == 0)
-        op = OpGreaterThanEquals;
-    else if (strcmp(str, "<") == 0)
-        op = OpLessThan;
-    else if (strcmp(str, ">") == 0)
-        op = OpGreaterThan;
-    else if (strcmp(str, "=") == 0)
-        op = OpEquals;
-    else if (strcmp(str, "!=") == 0 || strcmp(str, "<>") == 0 )
-        op = OpNotEquals;
-    else if (strcasecmp(str, "LIKE") == 0 )
-        op = OpLike;
-    else
-        op = OpInvalidComparisionOp;
-    return op;
-}
-*/
 
 void* AllDataType::alloc(DataType type, int length)
 {
@@ -1420,8 +1396,8 @@ DbRetVal AllDataType::strToValue(void* dest, char *src, DataType type, int lengt
             *(short*)dest = val;
             break; }
         case typeByteInt: {
-            int val;
-            sscanf( src, "%d",  &val);
+            char val;
+            sscanf( src, "%hhd",  &val);
             *(char*)dest = *(char *)&val;
             break; }
         case typeDouble: {
@@ -1443,12 +1419,22 @@ DbRetVal AllDataType::strToValue(void* dest, char *src, DataType type, int lengt
                 break;}
         case typeDate: {
             int d,m,y,res=0;
-            res = sscanf( src, "%d-%d-%d", &y, &m, &d );
+            if (strlen(src) == 11) {
+                if ( src[6] == '-' || src[6] == '/' ) {
+                    Date::changeToCsqlFormat(src);
+                }
+            }
+	        res = sscanf( src, "%d-%d-%d", &y, &m, &d );
             if( res != 3 )
-                 res = sscanf( src, "%d/%d/%d", &y, &m, &d );
-            if( res != 3 )
+                res = sscanf( src, "%d/%d/%d", &y, &m, &d );
+            if (strcmp(src,"now")==0 || strcmp(src,"NOW")==0){
+	            Date *dt = (Date*) dest;
+	            dt->parseFrom((char*)src);
+	            break;
+	        }
+	        if( res != 3 )
             {
-           fprintf(stderr,"Error reading date. yyyy{-/}mm{-/}dd is the valid format.");
+                fprintf(stderr,"Error reading date. yyyy{-/}mm{-/}dd is the valid format.");
                 d=m=y=0;
             }
             Date dateObj(y,m,d);
@@ -1456,25 +1442,40 @@ DbRetVal AllDataType::strToValue(void* dest, char *src, DataType type, int lengt
             break; }
         case typeTime: {
             int h,m,s,res=0;
-            res = sscanf( src, "%d:%d:%d", &h, &m, &s );
-            if( res != 3 )
+	    res = sscanf( src, "%d:%d:%d", &h, &m, &s );
+            if(strcmp(src,"now")==0 || strcmp(src,"NOW")==0){
+	         Time *dt = (Time*) dest;
+	         dt->parseFrom((char*)src);
+	         break;
+	    }
+	    if( res != 3 )
             {
                 fprintf(stderr, "Error reading time, hh:mm:ss is the valid format.");
                 h=m=s=0;
             }
-            Time timeObj(h,m,s);
+	    Time timeObj(h,m,s);
             *(Time*)dest = timeObj;
             break; }
         case typeTimeStamp: {
             int d,m,y, h,mn,s, res=0;
-            res = sscanf( src, "%d-%d-%d %d:%d:%d", &y, &m, &d, &h, &mn, &s );
+            bool isNow = ( strcasecmp(src,"now")==0 );
+            if(!isNow && isalpha(int(src[5]))) {
+                TimeStamp::changeToCsqlFormat(src);
+            }
+	        res = sscanf( src, "%d-%d-%d %d:%d:%d", &y, &m, &d, &h, &mn, &s );
             if( res != 6 )
                 res = sscanf( src, "%d-%d-%d, %d:%d:%d", &y, &m, &d, &h, &mn, &s );
             if( res != 6 )
                 res = sscanf( src, "%d/%d/%d %d:%d:%d", &y, &m, &d, &h, &mn, &s );
             if( res != 6 )
                 res = sscanf( src, "%d/%d/%d, %d:%d:%d", &y, &m, &d, &h, &mn, &s );
-            if( res != 6 )
+            
+	    if(isNow){
+	    	    TimeStamp *dt = (TimeStamp*) dest;
+		        dt->parseFrom((char*)src);
+		        break;
+            }	    
+	        if ( res != 6 )
             {
                 fprintf(stderr, "Error reading timestamp, yyyy{-/}mm{-/}dd[,] hh:mm:ss is the valid format.");
                 d=m=y=h=mn=s=0;
@@ -1652,7 +1653,7 @@ void AllDataType::convertToByteInt( void* dest, void* src, DataType srcType )
         case typeFloat:      *(char*)dest = (char) *(float *)src; break;
         case typeDouble:     *(char*)dest =(char) *(double *)src; break;
 
-        case typeString:     sscanf((const char*)src, "%c", (char*) dest); break;
+        case typeString:     sscanf((const char*)src, "%hhd", (char*) dest); break;
 
         case typeDate:
         case typeTime:
@@ -1708,13 +1709,13 @@ void AllDataType::convertToDouble( void* dest, void* src, DataType srcType )
     }
 }
 
-void AllDataType::convertToString( void* dest, void* src, DataType srcType, int length )
+void AllDataType::convertToString( void* dest, void* src, DataType srcType, int length,TDBInfo tdbname )
 {
     switch(srcType)
     {
         case typeInt:
         {
-            sprintf ((char *)dest, "%d", *(int *)src); 
+            Util::itoa(*(int*)src, (char*)dest);
             break;
         }
         case typeLong:
@@ -1734,7 +1735,7 @@ void AllDataType::convertToString( void* dest, void* src, DataType srcType, int 
         }
         case typeByteInt:
         {
-            sprintf ((char *)dest, "%hd", *(char *)src); 
+            sprintf ((char *)dest, "%hhd", *(char *)src); 
             break;
         }
 
@@ -1757,8 +1758,7 @@ void AllDataType::convertToString( void* dest, void* src, DataType srcType, int 
         case typeDate:
         {
             Date* dt = (Date*)src;
-            sprintf((char*) dest, "%d/%d/%d", dt->year(),
-                                  dt->month(), dt->dayOfMonth());
+            sprintf((char*) dest, "%d/%d/%d", dt->year(),dt->month(), dt->dayOfMonth());
             break;
         }
         case typeTime:
@@ -1770,9 +1770,7 @@ void AllDataType::convertToString( void* dest, void* src, DataType srcType, int 
         case typeTimeStamp:
         {
             TimeStamp* tm = (TimeStamp*)src;
-            sprintf((char*)dest, "%d/%d/%d %d:%d:%d.%d", tm->year(),
-                                tm->month(), tm->dayOfMonth(), tm->hours(),
-                                tm->minutes(), tm->seconds(), 0 );
+            sprintf((char*)dest, "%d/%d/%d %d:%d:%d.%d", tm->year(),tm->month(), tm->dayOfMonth(), tm->hours(),tm->minutes(), tm->seconds(), 0 );
             break;
         }
         case typeBinary:
@@ -1903,8 +1901,9 @@ void AllDataType::convertToBinary(void *dest, void *src, DataType srcType, int l
         }
     }
 }
-int AllDataType::printVal(void* src, DataType srcType, int length )
+int AllDataType::printVal(void* src, DataType srcType, int length,int dbFlag )
 { 
+    //dbFlag is the database flag 0:mysql (default), 1:postgres
     int count = 0;
     switch(srcType)
     {
@@ -1920,7 +1919,12 @@ int AllDataType::printVal(void* src, DataType srcType, int length )
         }
         case typeLongLong:
         {
-            count = printf ("%lld", *(long long *)src); 
+            if(1 == dbFlag){  
+                long long temp = 0; 
+                convertToLongLong((void*)&temp, src,typeString); 
+                count = printf ("%lld", temp );
+            }
+            else count = printf ("%lld", *(long long *)src); 
             break;
         }
         case typeShort:
@@ -1930,7 +1934,7 @@ int AllDataType::printVal(void* src, DataType srcType, int length )
         }
         case typeByteInt:
         {
-            count = printf("%hd", *(char *)src); 
+            count = printf("%hhd", *(char *)src); 
             break;
         }
 
@@ -1941,7 +1945,10 @@ int AllDataType::printVal(void* src, DataType srcType, int length )
         }
         case typeDouble:
         {
-            count = printf("%lf", *(double *)src); 
+            if (*(double*)src > 9999999999999999.0F)
+                count = printf("%g", *(double *)src); 
+            else
+                count = printf("%lf", *(double *)src); 
             break;
         }
 
@@ -1999,6 +2006,3 @@ int AllDataType::printVal(void* src, DataType srcType, int length )
     }
     return count;
 }
-
-
-
