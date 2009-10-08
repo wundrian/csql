@@ -40,18 +40,6 @@ ln -s libcsql.so libcsql
 ln -s libcacheload.so libcacheload
 ln -s libcsqlsqlnw.so libcsqlsqlnw
 
-
-cp ${root_dir}/src/sql/Statement.h ${install_dir}/include
-cp ${root_dir}/src/sql/Parser.h ${install_dir}/include
-cd ${install_dir}/include
-
-#rm Allocator.h CatalogTables.h Database.h 
-#rm DatabaseManagerImpl.h
-#rm Globals.h Index.h Lock.h PredicateImpl.h
-#rm Process.h SessionImpl.h TableImpl.h Transaction.h UserManagerImpl.h 
-cd ${install_dir}/bin
-rm csqlreplserver  repltable
-
 cp ${root_dir}/README ${install_dir}/README
 cp ${root_dir}/COPYING ${install_dir}
 cp ${root_dir}/AUTHORS ${install_dir}
