@@ -65,6 +65,7 @@ int main(int argc, char **argv)
     }
     os::signal(SIGINT, sigTermHandler);
     os::signal(SIGTERM, sigTermHandler);
+    os::signal(SIGCHLD, SIG_IGN);
 
     bool end = false;
     SqlNetworkHandler::stmtID = 0;
@@ -112,9 +113,10 @@ int main(int argc, char **argv)
     rv = nwServer->start();
     if (rv != OK) {
         printf("Unable to start the server\n");
+        delete nwServer;
         return 1;
     }
-    printf("Csql Network Daemon started\n");
+   // printf("Network Server Started");
     fd_set fdset;
     int ret = 0;
     struct timeval timeout, tval;
@@ -135,5 +137,6 @@ int main(int argc, char **argv)
     }
     printf("Csql Network Daemon Exiting\n");
     nwServer->stop();
+    delete nwServer;
     return 0;
 }

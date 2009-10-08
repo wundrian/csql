@@ -15,7 +15,7 @@
  ***************************************************************************/
 #include <os.h>
 #include<CSql.h>
-#include<DatabaseManagerImpl.h>
+#include <DatabaseManagerImpl.h>
 #include <Statement.h>
 #include <SqlFactory.h>
 #include <SqlStatement.h>
@@ -23,14 +23,18 @@
 #include <SqlNwStatement.h>
 #include <readline/readline.h>
 #include <readline/history.h>
-#define SQL_STMT_LEN 1024
-enum STMT_TYPE
+#include <NanoTimer.h>
+#define SQL_STMT_LEN 8192
+void printVariables();
+
+enum STATEMENT_TYPE
 {
     SELECT =0,
+    EXPLAIN,
     DDL ,
     OTHER
 };
-STMT_TYPE stmtType = SELECT;
+STATEMENT_TYPE stmtType = SELECT;
 FILE *fp;
 AbsSqlConnection *conn;
 AbsSqlStatement *stmt;
@@ -39,6 +43,7 @@ List sqlStmtList;
 SqlApiImplType type = CSqlUnknown;
 bool gateway=false, silent=false;
 bool autocommitmode = true;
+bool isTimer = false;
 bool network = false;
 bool firstPrepare = false;
 IsolationLevel isoLevel = READ_COMMITTED;
@@ -56,7 +61,8 @@ void printUsage()
    return;
   
 }
-
+bool noUndolog=false;
+bool exclusive=false;
 int getConnType(int opt);
 
 int main(int argc, char **argv)
@@ -72,9 +78,8 @@ int main(int argc, char **argv)
     char filename[512];
     filename [0] ='\0';
     int c = 0, opt=0;
-    bool exclusive=false;
     int connOpt = 0;
-    while ((c = getopt(argc, argv, "u:p:s:o:H:P:gXS?")) != EOF) 
+    while ((c = getopt(argc, argv, "u:p:s:o:H:P:gXUS?")) != EOF) 
     {
         switch (c)
         {
@@ -86,6 +91,7 @@ int main(int argc, char **argv)
             case 'S' : { silent = true; break; } //silent 
             case 'X' : { silent = true; exclusive = true; break; } //silent 
             case 'g' : { gateway = true; break; } //print help 
+            case 'U' : { noUndolog = true; break; } //print help 
             case 'H' : { strcpy (hostname, argv[optind - 1]); 
                          network = true; break; }
             case 'P' : { strcpy (port,     argv[optind - 1]); 
@@ -102,8 +108,8 @@ int main(int argc, char **argv)
     }
     if (username[0] == '\0' )
     {
-        strcpy(username, "root");
-        strcpy(password, "manager");
+        strcpy(username, I_USER);
+        strcpy(password, I_PASS);
     }
     if (network) {
         if (hostname[0] == '\0') { printUsage(); return 0; }
@@ -123,6 +129,7 @@ int main(int argc, char **argv)
     
     DbRetVal rv = OK;
     if (connOpt) {
+        noUndolog =false;
         type = (SqlApiImplType) getConnType(connOpt);
         conn = SqlFactory::createConnection((SqlApiImplType)type);
         if(connOpt == 4 || connOpt == 5 || connOpt == 6) {
@@ -142,8 +149,7 @@ int main(int argc, char **argv)
         else {
             if (gateway) type = CSqlGateway;
             else {
-               if (exclusive) type=CSqlDirect; 
-               else type = CSql;  
+                if (exclusive) type=CSqlDirect; else type = CSql;  
             }
             conn = SqlFactory::createConnection(type);
         }
@@ -160,10 +166,10 @@ int main(int argc, char **argv)
         }
     }
     aconStmt = SqlFactory::createStatement(type);
-    if (exclusive) {
+/*    if (exclusive) {
        SqlStatement *sqlStmt = (SqlStatement*)aconStmt;
        sqlStmt->setLoading(true);
-    }
+    }*/
     aconStmt->setConnection(conn);
     //rv = conn->beginTrans(READ_COMMITTED, TSYNC);
     rv = conn->beginTrans();
@@ -245,6 +251,10 @@ bool handleTransaction(char *st)
         printf("Isolation Level is set to READ_REPEATABLE\n");
         return true;
     }
+    else if (strcasecmp(st, "SET TIMER ON;") == 0) 
+    { isTimer=true; return true; }
+    else if (strcasecmp(st, "SET TIMER OFF;") == 0) 
+    {  isTimer=false; return true; }
     return false;
 }
 bool handleEchoAndComment(char *st)
@@ -261,6 +271,10 @@ bool handleEchoAndComment(char *st)
     {
         printHelp();
         return true;
+    }else if(strcasecmp(st,"show variables;")==0){
+        
+         printVariables();
+         return true;
     }else if (strcasecmp(st, "show tables;") == 0) {
       DbRetVal rv = OK;
       List tableList = aconStmt->getAllTableNames(rv);
@@ -277,8 +291,23 @@ bool handleEchoAndComment(char *st)
       }
       if (count ==0) printf("  No tables exist\n");
       printf("==========================================\n");
-
-        return true;
+      return true;
+    }else if( strcasecmp(st, "show users;" )==0){
+      DbRetVal rv = OK;
+      List userList = aconStmt->getAllUserNames(rv);
+      ListIterator iter = userList.getIterator();
+      Identifier *elem = NULL;
+      int ret =0;
+      printf("=============UserNames===================\n");
+      while (iter.hasElement())
+      {
+          elem = (Identifier*) iter.nextElement();
+          if(0==strcmp( elem->name ,I_USER))
+              continue;
+          printf("   %s \n", elem->name);
+      }
+      printf("=========================================\n");
+      return true;
     }
     return false;
 }
@@ -299,9 +328,102 @@ void printHelp()
     printf("QUIT\n");
     printf("======================================================\n");
 }
+void printVariables()
+{
+  //SERVER Section Info.
+  printf("=======================================================\n");
+  printf("|             SERVER SECTION INFORMATION              |\n");
+  printf("=======================================================\n");
+  printf(" SITE_ID\t\t\t= %d\n",Conf::config.getSiteID());
+  printf(" PAGE_SIZE\t\t\t= %d Byte\n",Conf::config.getPageSize());
+  printf(" MAX_PROCS\t\t\t= %d\n",Conf::config.getMaxProcs());
+  printf(" MAX_SYS_DB_SIZE\t\t= %d MB\n",(Conf::config.getMaxSysDbSize()/1048576));
+  printf(" MAX_DB_SIZE\t\t\t= %d MB\n",(Conf::config.getMaxDbSize()/1048576));
+  printf(" SYS_DB_KEY\t\t\t= %d\n",Conf::config.getSysDbKey());
+  printf(" USER_DB_KEY\t\t\t= %d\n",Conf::config.getUserDbKey());
+  printf(" LOG_LEVEL\t\t\t= %d\n",Conf::config.getLogLevel());
+  printf(" MAP_ADDRESS\t\t\t= %ld\n",Conf::config.getMapAddress());
+
+  if(Conf::config.useDurability())
+     printf(" DURABILITY\t\t\t= True\n");
+  else
+     printf(" DURABILITY\t\t\t= False\n");
+
+  if(Conf::config.useMmap())
+     printf(" MMAP\t\t\t\t= True\n");
+  else
+     printf(" MMAP\t\t\t\t= False\n");
+
+  printf(" DURABLE_MODE\t\t\t= %d\n",Conf::config.getDurableMode());
+  printf(" DATABASE_FILE\t\t\t= %s\n",Conf::config.getDbFile());
+  printf(" LOG_FILE_PATH\t\t\t= %s\n",Conf::config.getLogFile());
+  printf(" STDERR_FILE\t\t\t= %s\n",Conf::config.getStderrFile());
+
+  //Network Section Information
+  printf("=======================================================\n");
+  printf("|             NETWORK SECTION INFORMATION             |\n");
+  printf("=======================================================\n");
+
+  if(Conf::config.useCsqlSqlServer())
+      printf(" CSQL_SQL_SERVER\t\t= True\n");
+  else
+      printf(" CSQL_SQL_SERVER\t\t= False\n");
+
+  printf(" PORT\t\t\t\t= %d\n",Conf::config. getPort());
+  printf(" NETWORK_RESPONSE_TIMEOUT\t= %d\n",Conf::config.getNetworkResponseTimeout());
+  printf(" NETWORK_CONNECT_TIMEOUT\t= %d\n",Conf::config.getNetworkConnectTimeout());
+  printf(" ID_SHM_KEY\t\t\t= %d\n",Conf::config.getShmIDKey());
+
+  //Client section variables
+  printf("=======================================================\n");
+  printf("|             CLIENT SECTION INFORMATION              |\n");
+  printf("=======================================================\n");
+  printf(" MUTEX_TIMEOUT_SECS\t\t= %d\n",Conf::config.getMutexSecs());
+  printf(" MUTEX_TIMEOUT_USECS\t\t= %d\n",Conf::config.getMutexUSecs());
+  printf(" MUTEX_TIMEOUT_RETRIES\t\t= %d\n",Conf::config.getMutexRetries());
+  printf(" LOCK_TIMEOUT_SECS\t\t= %d\n",Conf::config.getLockSecs());
+  printf(" LOCK_TIMEOUT_USECS\t\t= %d\n",Conf::config.getLockUSecs());
+  printf(" LOCK_TIMEOUT_RETRIES\t\t= %d\n",Conf::config.getLockRetries());
+
+  //CACHE Section variables
+  printf("=======================================================\n");
+  printf("|             CACHE SECTION INFORMATION               |\n");
+  printf("=======================================================\n");
+  
+  if(Conf::config.useCache())
+  printf(" CACHE_TABLE\t\t\t= True\n");
+  else
+  printf(" CACHE_TABLE\t\t\t= False\n");
+  
+  printf(" DSN\t\t\t\t= %s\n",Conf::config.getDSN());
+  
+  if(Conf::config.useTwoWayCache()) 
+      printf(" ENABLE_BIDIRECTIONAL_CACHE\t= True\n");
+  else
+      printf(" ENABLE_BIDIRECTIONAL_CACHE\t= False\n");
+
+  printf(" CACHE_RECEIVER_WAIT_SECS\t= %d\n",Conf::config.getCacheWaitSecs());
+
+  if(Conf::config.getCacheMode()==0)
+      printf(" CACHE_MODE\t\t\t= SYNC\n");
+  else if (Conf::config.getCacheMode()==1)
+      printf(" CACHE_MODE\t\t\t= ASYNC\n");
+  else
+      printf(" CACHE_MODE\t\t\t= Unknown\n");
+
+  printf(" DS_CONFIG_FILE\t\t\t= %s\n",Conf::config.getDsConfigFile());
+  printf(" TABLE_CONFIG_FILE\t\t= %s\n",Conf::config.getTableConfigFile());
+  printf(" MSG_KEY\t\t\t= %d\n",Conf::config.getMsgKey() );
+  printf(" ASYNC_MSGMAX\t\t\t= %d\n",Conf::config.getAsyncMsgMax());
+  printf(" MAX_QUEUE_LOGS\t\t\t= %d\n",Conf::config.getLogLevel());
+  printf(" CONFL_RESOL_FILE\t\t= %s\n",Conf::config.getConflResoFile());
+  printf(" \nNOTE: To modify above variables, You will be following 'csql.conf' file.\n\n");
+}
+
 void setStmtType(char *st)
 {
    if (strncasecmp (st, "SELECT", 6) == 0)  {stmtType=SELECT; return; }
+   else if (strncasecmp (st, "EXPLAIN", 6) == 0)  {stmtType=EXPLAIN; return; }
    else if (strncasecmp (st, "CREATE", 6) == 0) {stmtType=DDL; return; }
    else if (strncasecmp (st, "DROP", 4) == 0) { stmtType=DDL; return; }
    stmtType = OTHER;
@@ -334,7 +456,8 @@ char getQueryFromStdIn(char *buf)
     strcpy(buf, "");
     char *line = readline("CSQL>");
     if (line) {strcpy(buf, line); add_history(line); }
-    else return EOF;
+    else { free(line); return EOF; }
+    free(line);
     return 0;
 }
 char getQueryFromFile(char *buf)
@@ -376,7 +499,7 @@ bool getInput(bool fromFile)
     if ( *buf == ';' ) return true; // Null statement.
     
     setStmtType(buf);
-
+    NanoTimer timer;
     DbRetVal rv;
     if (autocommitmode) {
         if (firstPrepare) aconStmt->free(); 
@@ -398,7 +521,12 @@ bool getInput(bool fromFile)
         }
         sqlStmtList.append(stmt);
     }
+    if (noUndolog || exclusive ){
+       SqlStatement *sqlStmt = (SqlStatement*)stmt;
+       sqlStmt->setLoading(true);
+    }
     int rows =0;
+    timer.start();
     rv = stmt->execute(rows);
     if (rv != OK) 
     {
@@ -416,9 +544,15 @@ bool getInput(bool fromFile)
         }
         return true; 
     }
-    if (stmtType == OTHER)
+    timer.stop();
+    if (stmtType == OTHER && stmt->isSelect()) stmtType = SELECT;
+    if (stmtType == OTHER )
     {
         if (!silent) printf("Statement Executed: Rows Affected = %d\n", rows);
+    }
+    else if (stmtType == EXPLAIN)
+    {
+        stmt->close();
     }
     else if (stmtType == DDL)
     {
@@ -437,6 +571,7 @@ bool getInput(bool fromFile)
         printf("\n---------------------------------------------------------\n");
         delete info;
         void *tuple = NULL;
+        timer.start();
         while(true)
         {
             printf("\t");
@@ -445,7 +580,9 @@ bool getInput(bool fromFile)
             if (tuple == NULL) { break; }
         }
         stmt->close();
+        timer.stop();
     }
+    if (isTimer) printf("Time taken: %lld microsecs\n", timer.sum()/1000);
     if (autocommitmode)
     {
         conn->commit();
@@ -466,6 +603,8 @@ int getConnType(int opt)
 		case 3: { printf("Local Gateway\n"); return (int) CSqlGateway; }
 		case 4: { printf("Network CSql\n");  return (int) CSqlNetwork; }
 		case 5: { printf("Network Adapter\n"); return (int) CSqlNetworkAdapter;}
-		case 6: { printf("Netwrok Gateway\n"); return (int) CSqlNetworkGateway;}
+		case 6: { printf("Network Gateway\n"); return (int) CSqlNetworkGateway;}
+		case 7: { printf("Log\n"); return (int) CSqlLog; }
+		case 8: { printf("Log\n"); return (int) CSqlLog; }
     }
 }

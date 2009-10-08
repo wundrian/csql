@@ -13,12 +13,17 @@
  *   GNU General Public License for more details.                          *
  *                                                                         *
  ***************************************************************************/
+#include <os.h>
 #include <CSql.h>
-#include <list>
 #include <SqlFactory.h>
+#include <SqlStatement.h>
 #include <SqlOdbcConnection.h>
 #include <SqlOdbcStatement.h>
 
+AbsSqlConnection *conn=NULL;
+AbsSqlStatement *stmt=NULL;
+DataType pkFldType = typeUnknown;
+int pkFldLen = 0;
 void printUsage()
 {
    printf("Usage: cacheverify [-U username] [-P passwd] -t tablename [-p] [-f]\n");
@@ -32,523 +37,577 @@ void printUsage()
 }
 
 typedef struct PrimaryKeyField {
-    int val;
     bool inCsql;
     bool inTrgtDb;
+    char val[1];
 } PrimKeyFldVal;
-
 
 typedef struct FldVal {
     void *value;
     DataType type;
     int length;
+    int pos;
 }FldVal;
 
 typedef struct Rec {
-    int val;
-    List fldValList;
+    List csqlFldValList;
+    List tdbFldValList;
+    char val[1];
 }Record;
 
-using namespace std;
-
-// functions to sort the list for STL list
-bool cmp(const PrimKeyFldVal *a, const PrimKeyFldVal *b)
+int cmpIntPkFldVal (const void *pkfv1, const void *pkfv2)
 {
-    return a->val < b->val;
+    PrimKeyFldVal *p1 = (PrimKeyFldVal *)pkfv1;
+    PrimKeyFldVal *p2 = (PrimKeyFldVal *)pkfv2;
+    bool result = false;
+    result=AllDataType::compareVal(&p1->val,&p2->val,OpLessThan,pkFldType);
+    if (result) return -1; 
+    else return 1;
 }
 
-bool cmpRec(const Record *a, const Record *b)
+int cmpStringPkFldVal (const void *pkfv1, const void *pkfv2)
 {
-    return a->val < b->val;
+    PrimKeyFldVal *p1 = (PrimKeyFldVal *)pkfv1;
+    PrimKeyFldVal *p2 = (PrimKeyFldVal *)pkfv2;
+    char *val1 = (char *) &p1->val;
+    char *val2 = (char *) &p2->val;
+    if (strcmp(val1, val2) < 0) return -1;
+    else return 1;
 }
 
-DbRetVal verifyCount(const char *tblName, long numTuples) 
+int cmpIntRecord (const void *pkfv1, const void *pkfv2)
+{
+    Record *p1 = (Record *)pkfv1;
+    Record *p2 = (Record *)pkfv2;
+    if (AllDataType::compareVal(&p1->val, &p2->val, OpLessThan, pkFldType))
+        return -1;
+    else return 1;
+}
+
+int cmpStringRecord (const void *pkfv1, const void *pkfv2)
+{
+    Record *p1 = (Record *)pkfv1;
+    Record *p2 = (Record *)pkfv2;
+    char *val1 = (char *) &p1->val;
+    char *val2 = (char *) &p2->val;
+    if (strcmp(val1, val2) < 0) return -1;
+    else return 1;
+}
+
+void setParamValues(AbsSqlStatement *stmt, int parampos, DataType type, int length, void *value);
+
+DbRetVal verifyCount(const char *tblName, long numTuples)
 {
     char statement[200];
-    AbsSqlConnection *con = SqlFactory::createConnection(CSqlAdapter);
-    DbRetVal rv = con->connect("root", "manager");
-    if (rv != OK) { delete con; return ErrSysInit; }
-    AbsSqlStatement *stmt = SqlFactory::createStatement(CSqlAdapter);
-    stmt->setConnection(con);
-    int count = 0;
+    AbsSqlConnection *adConn = SqlFactory::createConnection(CSqlAdapter);
+    DbRetVal rv = adConn->connect(I_USER,I_PASS);
+    if (rv != OK) { delete adConn; return ErrSysInit; }
+    AbsSqlStatement *adStmt = SqlFactory::createStatement(CSqlAdapter);
+    adStmt->setConnection(adConn);
+    float count = 0;
+    int count1=0;
     int rows = 0;
     sprintf(statement, "select count(*) from %s;", tblName);
-    rv = con->beginTrans();
-    rv = stmt->prepare(statement);
-    if(rv != OK) { 
-        delete stmt; delete con;
-        printf("Prepare failed\n"); 
-        return rv; 
+    rv = adConn->beginTrans();
+    rv = adStmt->prepare(statement);
+    if(rv != OK) {
+        delete adStmt; delete adConn;
+        printf("Prepare failed\n");
+        return rv;
     }
-    stmt->bindField(1, &count);
-    rv  = stmt->execute(rows); 
-    if(rv != OK) { 
-        delete stmt; delete con; 
-        printf("Execute failed\n"); 
-        return rv; 
+    SqlOdbcConnection *adcon= (SqlOdbcConnection *)adConn;
+    adStmt->bindField(1, &count1);
+    rv  = adStmt->execute(rows);
+    if(rv != OK) {
+        delete adStmt; delete adConn;
+        printf("Execute failed\n");
+        return rv;
     }
-    if (stmt->fetch()== NULL) { 
-        delete stmt; delete con; 
-        printf("Fetch failed\n"); 
-        return ErrSysInternal; 
+    if (adStmt->fetch()== NULL) {
+        delete adStmt; delete adConn;
+        printf("Fetch failed\n");
+        return ErrSysInternal;
     }
-    con->commit();
-    stmt->free();
+    adConn->commit();
+    adStmt->free();
     printf("\nNumber of Records:\n");
     printf("-------------------+-------------------+-------------------+\n");
     printf("  Data             |  In CSQL          |  In TargetDB      |\n");
     printf("-------------------+-------------------+-------------------+\n");
-    printf("  No. Of Records   |  %-6ld           |  %-6d           |\n", numTuples, count);
+    printf("  No. Of Records   |  %-6ld           |  %-6d           |\n", numTuples, count1);
     printf("-------------------+-------------------+-------------------+\n");
-    delete stmt; delete con; 
+    delete adStmt; delete adConn;
     return OK;
 }
 
 DbRetVal verifyMismatchingRecords(const char *tblName, int option)
 {
-    Connection conn;
-    DbRetVal rv = conn.open("root", "manager");
-    if (rv != OK) return ErrSysInit;
-    DatabaseManager *dbMgr = (DatabaseManager *) conn.getDatabaseManager();
-    if (dbMgr == NULL) {
-        conn.close();
-        printf("Auth failed\n");
-        return ErrSysInit;
-    }
-    Table *table = dbMgr->openTable(tblName);
-    if(table == NULL) {
-        conn.close();
-        printf("Table \'%s\' does not exist", tblName);
-        return ErrNotExists;
-    }
-    
-    char statement[200];
+    char csqlstatement[256];
+    char tdbstatement[256];
     AbsSqlConnection *trgtDbCon = SqlFactory::createConnection(CSqlAdapter);
-    rv = trgtDbCon->connect("root", "manager");
-    if (rv != OK) { 
-        dbMgr->closeTable(table); conn.close();
-        delete trgtDbCon; return ErrSysInit; 
+    DbRetVal rv = trgtDbCon->connect(I_USER,I_PASS);
+    if (rv != OK) {
+        delete trgtDbCon; return ErrSysInit;
     }
     AbsSqlStatement *trgtDbStmt =  SqlFactory::createStatement(CSqlAdapter);
     trgtDbStmt->setConnection(trgtDbCon);
- 
+
     char fieldName[IDENTIFIER_LENGTH];
     fieldName[0] = '\0';
     SqlOdbcStatement *ostmt = (SqlOdbcStatement*) trgtDbStmt;
     ostmt->getPrimaryKeyFieldName((char*)tblName, fieldName);
     if (fieldName[0] == '\0') {
-        dbMgr->closeTable(table); conn.close();
-        delete trgtDbStmt; delete trgtDbCon;  
+        delete trgtDbStmt; delete trgtDbCon;
         printf("Primary key does not exist on table %s\n", tblName);
         return ErrNotExists;
     }
     printf("\nPrimary key field name is \'%s\'\n", fieldName);
-    //FieldInfo *fldInfo = new FieldInfo();
-    //table->getFieldInfo(fieldName, fldInfo);
-    //if(! fldInfo->isPrimary) { printError(ErrBadArg, "\'%s\' is not a primary key field", fldName); return ErrBadArg; }
-    int csqlVal = 0;
-
-    //List for primary key field values present in csql server
-    List valListInCsql;
-    table->bindFld(fieldName, &csqlVal);
-    conn.startTransaction();
-    table->setCondition(NULL);
-    rv = table->execute();
-    if(rv != OK) { 
-        dbMgr->closeTable(table); conn.close();
-        delete trgtDbStmt; delete trgtDbCon;
-        printf("Execute failed\n"); 
-        return rv; 
-    }
-    while(true) {
-        void* tuple = table->fetch(rv);
-        if (tuple == NULL) break;
-        PrimKeyFldVal *pkFldVal = new PrimKeyFldVal(); 
-        pkFldVal->val = csqlVal;  
-        pkFldVal->inCsql = true; 
-        pkFldVal->inTrgtDb = true;
-        valListInCsql.append(pkFldVal);
-    }    
-    table->closeScan();
-    conn.commit();
-    int trgtDbVal = 0;
     int rows = 0;
 
-    // List for primary key field values present in target DB
+    //will work for single field primary keys
+    //composite need to be worked out
+    FieldInfo *fInfo = new FieldInfo();
+    ((SqlStatement *)stmt)->getFieldInfo(tblName, fieldName, fInfo);
+    pkFldType = fInfo->type;
+    if (pkFldType == typeString) pkFldLen = os::align(fInfo->length + 1);
+    else pkFldLen = fInfo->length;
+    void *pkval = AllDataType::alloc(pkFldType, pkFldLen);
+    memset(pkval, 0, pkFldLen);
+    //List for primary key field values present in csql server
+    List valListInCsql;
     List valListInTrgtDb;
-    sprintf(statement, "select %s from %s;", fieldName, tblName);
+    List sameInBothDb;
+    List missingList;
+
+    sprintf(csqlstatement, "select %s from %s;", fieldName, tblName);
+    sprintf(tdbstatement, "select %s from %s where %s=?;", fieldName, tblName, fieldName);
+    rv = stmt->prepare(csqlstatement);
+    if (rv != OK) {
+        delete trgtDbStmt; delete trgtDbCon;
+        printError(rv, "Prepare failed");
+        return rv;
+    }
+    rv = trgtDbStmt->prepare(tdbstatement);
+    if (rv != OK) {
+        delete trgtDbStmt; delete trgtDbCon;
+        printError(rv, "Prepare failed");
+        return rv;
+    }
+    stmt->bindField(1, pkval);
+    trgtDbStmt->bindField(1, pkval);
+    rv = conn->beginTrans();
+    if (rv != OK) {
+        stmt->free();
+        delete trgtDbStmt; delete trgtDbCon;
+        printError(rv, "BeginTrans failed");
+        return rv;
+    }
+    rv = stmt->execute(rows);
+    if(rv != OK) {
+        stmt->free();
+        delete trgtDbStmt; delete trgtDbCon;
+        printf("Execute failed\n");
+        return rv;
+    }
     rv = trgtDbCon->beginTrans();
-    rv = trgtDbStmt->prepare(statement);
-    if(rv != OK) { 
-        dbMgr->closeTable(table); conn.close();
-        delete trgtDbStmt; delete trgtDbCon;
-        printf("Prepare failed\n"); 
-        return rv; 
-    }
-    trgtDbStmt->bindField(1, &trgtDbVal);
-    rv  = trgtDbStmt->execute(rows);
-    if(rv != OK) { 
-        dbMgr->closeTable(table); conn.close();
-        delete trgtDbStmt; delete trgtDbCon;
-        printf("Execute failed\n"); 
-        return rv; 
-    }
-    while (trgtDbStmt->fetch() != NULL) {
-        PrimKeyFldVal *pkFldVal = new PrimKeyFldVal(); 
-        pkFldVal->val = trgtDbVal; 
-        pkFldVal->inCsql = true; 
+    int pkFldValSize = sizeof(PrimKeyFldVal) - 1 + pkFldLen;
+    while(stmt->fetch(rv) != NULL && rv == OK) {
+        PrimKeyFldVal *pkFldVal = (PrimKeyFldVal *) malloc (pkFldValSize);
+        memset(pkFldVal, 0, pkFldValSize);
+        AllDataType::copyVal(&pkFldVal->val, pkval, pkFldType, pkFldLen);
+        pkFldVal->inCsql = true;
         pkFldVal->inTrgtDb = true;
-        valListInTrgtDb.append(pkFldVal);
+        setParamValues(trgtDbStmt, 1, pkFldType, pkFldLen, pkval);
+        trgtDbStmt->execute(rows);
+        if (trgtDbStmt->fetch(rv) != NULL) {
+            sameInBothDb.append(pkFldVal);  
+        } else {
+            pkFldVal->inTrgtDb = false; 
+            missingList.append(pkFldVal);
+        }
+        trgtDbStmt->close();
     }
     trgtDbCon->commit();
+    stmt->close();
+    conn->commit();
+    stmt->free();
     trgtDbStmt->free();
-
-    // List for primary key field values present in either of the databases
-    List diffInValList;
-
-    // List for primary key field values present in both the databases
-    List sameInBothDbList;
-    ListIterator csqlValIter = valListInCsql.getIterator();
-    ListIterator trgtDbValIter = valListInTrgtDb.getIterator();    
-    PrimKeyFldVal *csqlelem, *trgtdbelem;
-    while( (csqlelem = (PrimKeyFldVal *) csqlValIter.nextElement()) != NULL) {
-        while ( (trgtdbelem = (PrimKeyFldVal *) trgtDbValIter.nextElement()) != NULL)   {
-            if (csqlelem->val == trgtdbelem->val) { 
-                PrimKeyFldVal *elm = new PrimKeyFldVal();
-                *elm = *csqlelem;
-                sameInBothDbList.append(elm);
-                trgtDbValIter.reset(); 
-                break; 
-            }
-        }
-        if (trgtdbelem == NULL) {    
-            csqlelem->inTrgtDb = false;
-            PrimKeyFldVal *elm = new PrimKeyFldVal();
-            *elm = * csqlelem;
-            diffInValList.append(elm);
-            trgtDbValIter.reset();
+     
+    // List for primary key field values present in target DB
+    sprintf(tdbstatement, "select %s from %s;", fieldName, tblName);
+    sprintf(csqlstatement, "select %s from %s where %s=?;", fieldName, tblName, fieldName);
+    rv = trgtDbCon->beginTrans();
+    rv = trgtDbStmt->prepare(tdbstatement);
+    if(rv != OK) {
+        delete trgtDbStmt; delete trgtDbCon;
+        printf("Prepare failed\n");
+        return rv;
+    }
+    stmt->prepare(csqlstatement);
+    stmt->bindField(1, pkval);
+    trgtDbStmt->bindField(1, pkval);
+    rv  = trgtDbStmt->execute(rows);
+    if(rv != OK) {
+        delete trgtDbStmt; delete trgtDbCon;
+        printf("Execute failed\n");
+        return rv;
+    }
+    conn->beginTrans();
+    while (trgtDbStmt->fetch() != NULL) {
+        PrimKeyFldVal *pkFldVal = (PrimKeyFldVal *) malloc (pkFldValSize);
+        memset(pkFldVal, 0, pkFldValSize);
+        AllDataType::copyVal(&pkFldVal->val, pkval, pkFldType, pkFldLen);
+        pkFldVal->inCsql = true;
+        pkFldVal->inTrgtDb = true;
+        setParamValues(stmt, 1, pkFldType, pkFldLen, pkval);
+        stmt->execute(rows);
+        if (stmt->fetch(rv) == NULL && rv ==OK) {
+            pkFldVal->inCsql = false;
+            missingList.append(pkFldVal);
         }
     }
-    csqlValIter.reset();
-    while((trgtdbelem = (PrimKeyFldVal *)trgtDbValIter.nextElement()) != NULL) {
-        while((csqlelem = (PrimKeyFldVal *)csqlValIter.nextElement()) != NULL) {
-            if (trgtdbelem->val == csqlelem->val) { 
-                csqlValIter.reset(); 
-                break; 
-            }
+    stmt->close();
+    trgtDbStmt->close();
+    conn->commit();
+    trgtDbCon->commit();
+    stmt->free();
+    trgtDbStmt->free();
+/*    
+    PrimKeyFldVal *pkArr = NULL;
+    ListIterator missIter = missingList.getIterator();
+    int nEitherDb = missingList.size();
+    if (nEitherDb) {
+        pkArr = (PrimKeyFldVal *) malloc(nEitherDb * pkFldValSize);
+        int i = 0;
+        char *ptr = (char *)pkArr;
+        while (missIter.hasElement()) {
+            PrimKeyFldVal *elm = (PrimKeyFldVal *)missIter.nextElement();
+            memcpy(ptr, elm, pkFldValSize);
+            ptr += pkFldValSize; 
         }
-        if (csqlelem == NULL) {    
-            trgtdbelem->inCsql = false;
-            PrimKeyFldVal *elm = new PrimKeyFldVal();
-            *elm = *trgtdbelem;
-            diffInValList.append(elm);
-            csqlValIter.reset();
-        }
+        if (pkFldType == typeByteInt || pkFldType == typeShort ||
+                       pkFldType == typeInt || pkFldType == typeLong || 
+                                                     pkFldType == typeLongLong) 
+            qsort (pkArr, nEitherDb, pkFldValSize, cmpIntPkFldVal);
+        else if (pkFldType == typeString) 
+            qsort (pkArr, nEitherDb, pkFldValSize, cmpStringPkFldVal);
     }
-    
+*/
     // Sorting the primary key field values present in either of the databases
-    list <PrimKeyFldVal *> li;
-    ListIterator diffValIter = diffInValList.getIterator();
     bool missingRecords = false;
     printf("\nMissing Records: Marked by \'X\'\n");
         printf("-------------------+-------------------+-------------------+\n");
         printf("  Primary Key      |  In CSQL          |  In Target DB     |\n");
-        printf("-------------------+-------------------+-------------------+\n");  
-    if (diffInValList.size()) {
+        printf("-------------------+-------------------+-------------------+\n");
+/*    if (missingList.size()) {
+        char *ptr = (char *) pkArr;
         missingRecords = true;
-        PrimKeyFldVal *elem = NULL;
-        while ((elem = (PrimKeyFldVal *) diffValIter.nextElement()) != NULL )  
-            li.push_back(elem);
-
-        list<PrimKeyFldVal *>::iterator it;
-        li.sort(cmp);
-        for (it = li.begin(); it != li.end(); it++) {
-            if ((*it)->inCsql == false) 
-                printf("  %-6d           |  X                |                   |\n", (*it)->val);
-            else if ((*it)->inTrgtDb == false)
-                printf("  %-6d           |                   |  X                |\n", (*it)->val);
+        for (int i = 0; i < nEitherDb; i++) {
+            PrimKeyFldVal *pkFldVal = (PrimKeyFldVal *) ptr;
+            printf("  ");
+            int nChrs = AllDataType::printVal(&pkFldVal->val, pkFldType, 
+                                                                     pkFldLen);
+            nChrs = 17 - nChrs;
+            while (nChrs-- != 0) printf(" ");
+            if (pkFldVal->inCsql == false) { 
+                printf("|  X                |                   |\n");
+            }
+            else if (pkFldVal->inTrgtDb == false) {
+                printf("|                   |  X                |\n");
+            }
+            ptr += pkFldValSize;
         }
-        printf("-------------------+-------------------+-------------------+\n");  
+        printf("-------------------+-------------------+-------------------+\n");
     }
     else {
         printf("  No missing Records in either of the databases            |\n");
-        printf("-------------------+-------------------+-------------------+\n");  
+        printf("-------------------+-------------------+-------------------+\n");
+    }
+*/
+    
+
+
+
+
+
+
+    ListIterator missIter = missingList.getIterator();
+    if (missingList.size()) {
+        missingRecords = true;
+        while (missIter.hasElement()) {
+            PrimKeyFldVal *pkFldVal = (PrimKeyFldVal *) missIter.nextElement();
+            printf("  ");
+            int nChrs = AllDataType::printVal(&pkFldVal->val, pkFldType, 
+                                                                     pkFldLen);
+            nChrs = 17 - nChrs;
+            while (nChrs-- != 0) printf(" ");
+            if (pkFldVal->inCsql == false) { 
+                printf("|  X                |                   |\n");
+            }
+            else if (pkFldVal->inTrgtDb == false) {
+                printf("|                   |  X                |\n");
+            }
+        }
+        printf("-------------------+-------------------+-------------------+\n");
+    }
+    else {
+        printf("  No missing Records in either of the databases            |\n");
+        printf("-------------------+-------------------+-------------------+\n");
     }
 
     // Need to clean up the mess that is no more required 
+    //free (pkArr);
+    missIter.reset();
     PrimKeyFldVal *pkFldVal = NULL;
-    while ((pkFldVal = (PrimKeyFldVal *) csqlValIter.nextElement()) != NULL)
-        delete pkFldVal;
-    valListInCsql.reset();
-    while ((pkFldVal = (PrimKeyFldVal *) trgtDbValIter.nextElement()) != NULL)
-        delete pkFldVal;
-    valListInTrgtDb.reset();
-    while ((pkFldVal = (PrimKeyFldVal *) diffValIter.nextElement()) != NULL)
-        delete pkFldVal;
-    diffInValList.reset();
-
- 
+    while ((pkFldVal = (PrimKeyFldVal *) missIter.nextElement()) != NULL)
+        free (pkFldVal);
+    missingList.reset();
+    
     if (option == 4) {
-        AbsSqlConnection *csqlCon = SqlFactory::createConnection(CSql);
-        rv = csqlCon->connect("root", "manager");
-        if (rv != OK) { 
-            dbMgr->closeTable(table); conn.close();
-            delete trgtDbStmt; delete trgtDbCon;
-            delete csqlCon; return ErrSysInit; 
-        }
-        AbsSqlStatement *csqlStmt =  SqlFactory::createStatement(CSql);
-        csqlStmt->setConnection(csqlCon);
-
         //statement to fetch the values from the database
-        sprintf(statement, "select * from %s where %s = ?;", tblName, fieldName);
-        rv = csqlStmt->prepare(statement);
+        sprintf(csqlstatement, "select * from %s where %s = ?;", tblName, fieldName);
+        rv = stmt->prepare(csqlstatement);
+        rv = trgtDbStmt->prepare(csqlstatement);
         if(rv != OK) {
-            dbMgr->closeTable(table); conn.close();
             delete trgtDbStmt; delete trgtDbCon;
-            delete csqlStmt; delete csqlCon;
             printf("Prepare failed\n");
             return rv;
         }
-   
+
         // need to bind each field with buffer which is list of field values
-        List fldNameList = table->getFieldNameList();
+        SqlStatement *sqlStmt = (SqlStatement *) stmt;
+        List fldNameList = sqlStmt->getFieldNameList(tblName);
         ListIterator iter = fldNameList.getIterator();
         Identifier *fname = NULL;
         FieldInfo *fldInfo = new FieldInfo();
-        List fieldValueList;
+        List cfieldValueList;
+        List tfieldValueList;
 
         // List to hold all the records that are present in both the databases
-        List csqlRecordList;
+        List recordList;
         int paramPos = 1;
         while (iter.hasElement()) {
             fname = (Identifier *) iter.nextElement();
             if (NULL == fname) {
-                dbMgr->closeTable(table); conn.close();
                 delete trgtDbStmt; delete trgtDbCon;
-                delete csqlStmt; delete csqlCon;
-                table = NULL;
                 delete fldInfo;
                 printf("Should never happen. Field Name list has NULL\n");
                 return ErrSysFatal;
             }
-            rv = table->getFieldInfo(fname->name, fldInfo);
+            rv = sqlStmt->getFieldInfo(tblName, fname->name, fldInfo);
             if (ErrNotFound == rv) {
-                dbMgr->closeTable(table); conn.close();
                 delete trgtDbStmt; delete trgtDbCon;
-                delete csqlStmt; delete csqlCon;
-                table = NULL;
                 delete fldInfo;
-                printf("Field %s does not exist in table\n",
-                                                                 fname->name);
+                printf("Field %s does not exist in table\n", fname->name);
                 return ErrSyntaxError;
             }
-            FldVal *fldVal = new FldVal();
-            fldVal->type = fldInfo->type;
-            fldVal->length = fldInfo->length;
-            fldVal->value = AllDataType::alloc(fldInfo->type, fldInfo->length);
-            fieldValueList.append(fldVal);
-            csqlStmt->bindField(paramPos++, fldVal->value);
+            FldVal *cfldVal = new FldVal();
+            FldVal *tfldVal = new FldVal();
+            cfldVal->type = fldInfo->type;
+            tfldVal->type = fldInfo->type;
+            if(cfldVal->type == typeString) 
+                cfldVal->length = os::align(fldInfo->length + 1);
+            else cfldVal->length = fldInfo->length;
+            cfldVal->value = AllDataType::alloc(fldInfo->type, cfldVal->length);
+            tfldVal->value = AllDataType::alloc(fldInfo->type, cfldVal->length);
+            memset(cfldVal->value, 0, cfldVal->length);
+            memset(tfldVal->value, 0, cfldVal->length);
+            cfieldValueList.append(cfldVal);
+            tfieldValueList.append(tfldVal);
+            stmt->bindField(paramPos, cfldVal->value);
+            trgtDbStmt->bindField(paramPos, tfldVal->value);
+            paramPos++;
         }
         delete fldInfo;
-        
+        iter.reset();
+        while ((fname=(Identifier *)iter.nextElement())!= NULL) delete fname;
+        fldNameList.reset();
+
         // WHERE parameter should be binded with the primary key field value of the list that is present in both the databases
-        ListIterator sameValIter = sameInBothDbList.getIterator();
+        int recSize = 2 * sizeof(List) + pkFldLen; 
+        ListIterator sameValIter = sameInBothDb.getIterator();
         PrimKeyFldVal *sameElem = NULL;
         while((sameElem = (PrimKeyFldVal *)sameValIter.nextElement()) != NULL) {
-            csqlCon->beginTrans();
-            csqlStmt->setIntParam(1, sameElem->val);
-            rv  = csqlStmt->execute(rows);
-            if(rv != OK) {
-                dbMgr->closeTable(table); conn.close();
-                delete trgtDbStmt; delete trgtDbCon;
-                delete csqlStmt; delete csqlCon;
-                printf("Execute failed\n");
-                return rv;
-            }
-            while (csqlStmt->fetch() != NULL) {
-                Record *rec = new Record();
-                rec->val = sameElem->val;
-                ListIterator fldValIter = fieldValueList.getIterator();
-                while (fldValIter.hasElement()) {
-                    FldVal *fldVal = (FldVal *) fldValIter.nextElement();
-                    FldVal *fldValue = new FldVal();
-                    fldValue->type = fldVal->type;
-                    fldValue->length = fldVal->length;
-                    fldValue->value = AllDataType::alloc(fldValue->type, fldValue->length);
-                    AllDataType::copyVal(fldValue->value, fldVal->value, fldVal->type, fldVal->length);
-                    rec->fldValList.append(fldValue);
-                }
-                csqlRecordList.append(rec);
-            }    
-            csqlStmt->close();
-            csqlCon->commit();
-        }
-        csqlStmt->free();   
-
-        //statement to fetch the values from the database
-        sprintf(statement, "select * from %s where %s = ?;", tblName, fieldName);
-        rv = trgtDbStmt->prepare(statement);
-        if(rv != OK) {
-            dbMgr->closeTable(table); conn.close();
-            delete csqlStmt; delete csqlCon;
-            delete trgtDbStmt; delete trgtDbCon;
-            printf("Prepare failed\n");
-            return rv;
-        }
-        
-        // need to bind each field with buffer which is list of field values
-        ListIterator fldValIter = fieldValueList.getIterator();
-        fldValIter.reset();
-        List trgtDbRecordList;
-        paramPos = 1;
-        while (fldValIter.hasElement()) {
-            FldVal *fldVal = (FldVal *) fldValIter.nextElement();
-            trgtDbStmt->bindField(paramPos++, fldVal->value);
-        }
-    
-        // WHERE parameter should be binded
-        sameValIter.reset();
-        while((sameElem = (PrimKeyFldVal *)sameValIter.nextElement()) != NULL) {
+            conn->beginTrans();
             trgtDbCon->beginTrans();
-            trgtDbStmt->setIntParam(1, sameElem->val);
+            setParamValues(stmt, 1, pkFldType, pkFldLen, sameElem->val);
+            setParamValues(trgtDbStmt, 1, pkFldType, pkFldLen, sameElem->val);
+            rv  = stmt->execute(rows);
             rv  = trgtDbStmt->execute(rows);
             if(rv != OK) {
-                dbMgr->closeTable(table); conn.close();
-                delete csqlStmt; delete csqlCon;
                 delete trgtDbStmt; delete trgtDbCon;
                 printf("Execute failed\n");
                 return rv;
             }
-            while (trgtDbStmt->fetch() != NULL) {
-                Record *rec = new Record();
-                rec->val = sameElem->val;
-                fldValIter.reset();
-                while (fldValIter.hasElement()) {
-                    FldVal *fldVal = (FldVal *) fldValIter.nextElement();
-                    FldVal *fldValue = new FldVal();
-                    fldValue->type = fldVal->type;
-                    fldValue->length = fldVal->length;
-                    fldValue->value = AllDataType::alloc(fldValue->type, fldValue->length);
-                    AllDataType::copyVal(fldValue->value, fldVal->value, fldVal->type, fldVal->length);
-                    rec->fldValList.append(fldValue);
+            if (stmt->fetch() != NULL && trgtDbStmt->fetch() != NULL) {
+                Record *rec = (Record *) malloc(recSize);
+                memset(rec, 0, recSize);
+                AllDataType::copyVal(&rec->val, &sameElem->val, 
+                                                          pkFldType, pkFldLen);
+                ListIterator cfldValIter = cfieldValueList.getIterator();
+                ListIterator tfldValIter = tfieldValueList.getIterator();
+                int pos = 1;
+                while (cfldValIter.hasElement() && tfldValIter.hasElement()) {
+                    FldVal *cfldVal = (FldVal *) cfldValIter.nextElement();
+                    FldVal *tfldVal = (FldVal *) tfldValIter.nextElement();
+                    if (AllDataType::compareVal(cfldVal->value, tfldVal->value, OpEquals, cfldVal->type, cfldVal->length) == false) {
+                        FldVal *cfldValue = new FldVal();
+                        FldVal *tfldValue = new FldVal();
+                        cfldValue->type = cfldVal->type;
+                        tfldValue->type = cfldVal->type;
+                        cfldValue->length = cfldVal->length;
+                        tfldValue->length = cfldVal->length;
+                        cfldValue->value = AllDataType::alloc(cfldValue->type, cfldValue->length);
+                        tfldValue->value = AllDataType::alloc(cfldValue->type, cfldValue->length);
+                        cfldValue->pos = pos; tfldValue->pos = pos;
+                        memset(cfldValue->value, 0, cfldValue->length);
+                        memset(tfldValue->value, 0, cfldValue->length);
+                        AllDataType::cachecopyVal(cfldValue->value, cfldVal->value, cfldVal->type, cfldVal->length);
+                        AllDataType::cachecopyVal(tfldValue->value, tfldVal->value, cfldVal->type, cfldVal->length);
+                        rec->csqlFldValList.append(cfldValue);
+                        rec->tdbFldValList.append(tfldValue);
+                    }
+                    pos++;
                 }
-                trgtDbRecordList.append(rec);
-            }        
+                if (rec->csqlFldValList.size()) recordList.append(rec);
+            }
+            stmt->close();
             trgtDbStmt->close();
+            conn->commit();
             trgtDbCon->commit();
         }
+        // stmt->free(); // dont free it just yet needed further up
         trgtDbStmt->free();
-
-        // freeing the fieldValue buffer list which is not required any more
-        FldVal *fldVal = NULL;
-        while ((fldVal =(FldVal *) fldValIter.nextElement()) != NULL) {
-            free(fldVal->value);
-            delete fldVal;
-        }
-        fieldValueList.reset();
-        
+       
         // freeing the field value list that is present in both the databases  
         PrimKeyFldVal *pkFldVal = NULL;
         while ((pkFldVal = (PrimKeyFldVal *) sameValIter.nextElement()) != NULL)
             delete pkFldVal;
-        sameInBothDbList.reset();
-    
+        sameInBothDb.reset();
+/*        
         // sort the records based on Primary key that is present in both the databases
-        list <Record *> csqlRecList;
-        ListIterator csqlRecListIter = csqlRecordList.getIterator();
-        Record *elem;
-        while ((elem = (Record *) csqlRecListIter.nextElement()) != NULL )
-            csqlRecList.push_back(elem);
-        csqlRecList.sort(cmpRec);
+        int size = recordList.size();
+        char *arr = (char *) malloc(size * recSize);
+        memset(arr, 0, size * recSize);
+        char *ptr = arr;
+        int i = 0;
+        ListIterator recIter = recordList.getIterator();
+        while (recIter.hasElement()) {
+            Record *rec = (Record *) recIter.nextElement();
+            memcpy(ptr, rec, recSize);
+            ptr += recSize;
+        }
+        if (pkFldType == typeByteInt || pkFldType == typeShort ||
+                        pkFldType == typeInt || pkFldType == typeLong ||
+                                                     pkFldType == typeLongLong)
+            qsort(arr, size, recSize, cmpIntRecord);
+        else if (pkFldType == typeString) 
+            qsort(arr, size, recSize, cmpStringRecord);
+*/
 
-        list <Record *> trgtDbRecList;
-        ListIterator trgtDbRecListIter = trgtDbRecordList.getIterator();
-        while ((elem = (Record *) trgtDbRecListIter.nextElement()) != NULL )
-            trgtDbRecList.push_back(elem);
-        trgtDbRecList.sort(cmpRec);
-    
         int flag = 0;
         bool isConsistent = true;
-        list<Record *>::iterator itCsql;
-        list<Record *>::iterator itTrgtDb;
-        iter.reset();
         printf("\nInconsistent Records for the same key:\n");
         printf("-------------------+-------------------+-------------------+-------------------+\n");
-        printf("  %-16s |  %-16s |  %-16s |  %-16s |\n", "Primary Key", "Field Name", "In CSQL", "In Trgt DB");    
+        printf("  %-16s |  %-16s |  %-16s |  %-16s |\n", "Primary Key", "Field Name", "In CSQL", "In Trgt DB");
         printf("-------------------+-------------------+-------------------+-------------------+\n");
-        for (itCsql = csqlRecList.begin(), itTrgtDb = trgtDbRecList.begin(); 
-             itCsql != csqlRecList.end() && itTrgtDb != trgtDbRecList.end();
-                 itCsql++, itTrgtDb++) {
-            ListIterator csqlIt = (ListIterator)((*itCsql)->fldValList).getIterator();    
-            ListIterator trgtDbIt = (ListIterator)((*itTrgtDb)->fldValList).getIterator();    
-            iter.reset();
+/*        ptr = arr;
+        char *fldname = NULL;
+        for (int i = 0; i < size; i++) {
+            Record *recd = (Record *) ptr;
+            ListIterator csqlIt = recd->csqlFldValList.getIterator();
+            ListIterator trgtDbIt = recd->tdbFldValList.getIterator();
             flag = 0;
             while (csqlIt.hasElement() && trgtDbIt.hasElement()) {
                 FldVal *csqlElem = (FldVal *) csqlIt.nextElement();
                 FldVal *trgtDbElem = (FldVal *) trgtDbIt.nextElement();
-                fname = (Identifier *) iter.nextElement();
+                fldname = ((SqlStatement *) stmt)->getFieldName(csqlElem->pos);
                 if (AllDataType::compareVal(csqlElem->value, trgtDbElem->value, OpEquals, csqlElem->type, csqlElem->length) == false) {
                     isConsistent = false;
-                    if (! flag) { 
-                        printf("  %-16d |  %-16s |  ", (*itCsql)->val, fname); 
+                    if (! flag) {
+                        printf("  ");
+                        int cnt = AllDataType::printVal(&recd->val, 
+                                                          pkFldType, pkFldLen);
+                        cnt = 17 - cnt;
+                        while (cnt-- != 0) printf(" ");
+                        printf("|  %-16s |  ", fldname);
                         flag = 1;
                     }
-                    else printf("                   |  %-16s |  ", fname);
+                    else printf("                   |  %-16s |  ", fldname);
                     int cnt =  AllDataType::printVal(csqlElem->value, csqlElem->type, csqlElem->length);
                     cnt = 17 - cnt;
-                    while (cnt-- != 0) 
+                    while (cnt-- != 0)
                         printf(" ");
                     printf("|  ");
                     cnt = AllDataType::printVal(trgtDbElem->value, trgtDbElem->type, trgtDbElem->length);
                     cnt = 17 - cnt;
-                    while (cnt-- != 0) 
+                    while (cnt-- != 0)
                         printf(" ");
                     printf("|\n");
-                }  
+                }
+            }
+            ptr += recSize;
+        }
+*/
+        ListIterator recIter = recordList.getIterator();
+       
+        char *fldname = NULL;
+        if (recordList.size()) {
+            isConsistent = false;
+            while(recIter.hasElement()) {
+                Record *recd = (Record *) recIter.nextElement();
+                ListIterator csqlIt = recd->csqlFldValList.getIterator();
+                ListIterator trgtDbIt = recd->tdbFldValList.getIterator();
+                flag = 0;
+                while (csqlIt.hasElement()) {
+                    FldVal *csqlElem = (FldVal *) csqlIt.nextElement();
+                    FldVal *trgtDbElem = (FldVal *) trgtDbIt.nextElement();
+                    fldname = ((SqlStatement *) stmt)->getFieldName(csqlElem->pos);
+                    if (! flag) {
+                        printf("  ");
+                        int cnt = AllDataType::printVal(&recd->val, 
+                                                          pkFldType, pkFldLen);
+                        cnt = 17 - cnt;
+                        while (cnt-- != 0) printf(" ");
+                        printf("|  %-16s |  ", fldname);
+                        flag = 1;
+                    }
+                    else printf("                   |  %-16s |  ", fldname);
+                    int cnt =  AllDataType::printVal(csqlElem->value, csqlElem->type, csqlElem->length);
+                    cnt = 17 - cnt;
+                    while (cnt-- != 0) printf(" ");
+                    printf("|  ");
+                    cnt = AllDataType::printVal(trgtDbElem->value, trgtDbElem->type, trgtDbElem->length);
+                    cnt = 17 - cnt;
+                    while (cnt-- != 0) printf(" ");
+                    printf("|\n");
+                }
             }
         }
-        if (isConsistent == true && missingRecords == false) 
+
+        if (isConsistent == true && missingRecords == false)
             printf("                  The data is consistent in both the databases                 |\n");
-        else if (isConsistent == true && missingRecords == true) 
+        else if (isConsistent == true && missingRecords == true)
             printf("           The data is consistent for the records with the same key            |\n");
         printf("-------------------+-------------------+-------------------+-------------------+\n");
 
         // clean up all the mess before leaving
-        csqlRecList.clear();
-        trgtDbRecList.clear();
-       
-        iter.reset();
-        while ((fname = (Identifier *) iter.nextElement()) != NULL)
-            delete fname;
-        fldNameList.reset();     
-
-        Record *item = NULL;
-        while((item = (Record *) csqlRecListIter.nextElement()) != NULL) {
-            ListIterator it = (ListIterator) item->fldValList.getIterator();
-            FldVal *fldVal = NULL;
-            while((fldVal = (FldVal *) it.nextElement()) != NULL) {
-                free (fldVal->value);
-                delete fldVal;
+        stmt->free();
+        //free(arr);
+        Record *itm = NULL;
+        while((itm = (Record *) recIter.nextElement()) != NULL) {
+            ListIterator cit = (ListIterator) itm->csqlFldValList.getIterator();
+            ListIterator tit = (ListIterator) itm->tdbFldValList.getIterator();
+            FldVal *cfldVal = NULL; FldVal *tfldVal = NULL;
+            while( (cfldVal = (FldVal *) cit.nextElement()) != NULL && 
+                   (tfldVal = (FldVal *) tit.nextElement()) != NULL ) {
+                free (cfldVal->value); free (tfldVal->value);
+                delete cfldVal; delete tfldVal;
             }
-            it.reset();
+            cit.reset(); tit.reset();
         }
-        csqlRecordList.reset();
-        
-        while((item = (Record *) trgtDbRecListIter.nextElement()) != NULL) {
-            ListIterator it = (ListIterator) item->fldValList.getIterator();
-            FldVal *fldVal = NULL;
-            while((fldVal = (FldVal *) it.nextElement()) != NULL) {
-                free (fldVal->value);
-                delete fldVal;
-            }
-            it.reset();
-        } 
-        trgtDbRecordList.reset();
-        delete csqlStmt; delete csqlCon;
-    } 
-
-    dbMgr->closeTable(table);
-    conn.close();
+        recordList.reset();
+    }
     delete trgtDbStmt; delete trgtDbCon;
     return OK;
 }
@@ -595,74 +654,154 @@ int main(int argc, char **argv)
     //printf("%s %s \n", username, password);
     if (username[0] == '\0' )
     {
-        strcpy(username, "root");
-        strcpy(password, "manager");
+        strcpy(username, I_USER);
+        strcpy(password, I_PASS);
     }
    
-    Connection conn;
-    DbRetVal rv = conn.open(username, password);
+    conn = SqlFactory::createConnection(CSqlDirect);
+    DbRetVal rv = conn->connect(username, password);
     if (rv != OK) {
         printf("Authentication failed\n"); 
+        delete conn;
         return 1;
     }
- 
-    DatabaseManager *dbMgr = (DatabaseManager *) conn.getDatabaseManager();
-    if (dbMgr == NULL) { 
-        conn.close();
-        printf("could not connect to the database\n"); 
-        return 2; 
+    stmt = SqlFactory::createStatement(CSqlDirect);
+    stmt->setConnection(conn);
+    bool found = false;
+    List tableNameList = stmt->getAllTableNames(rv);
+    ListIterator it = tableNameList.getIterator();
+    while (it.hasElement()) {
+        Identifier *elem = (Identifier *) it.nextElement();
+        if (strcmp(elem->name, tableName) == 0) {
+            found = true;
+            break;
+        }
     }
-
-
-    Table *table = dbMgr->openTable(tableName);
-    if(table == NULL) {
-        conn.close(); 
-        printf("Table \'%s\' does not exist\n", tableName); 
-        return 3; 
-    }
-
     FILE *fp;
     fp = fopen(Conf::config.getTableConfigFile(),"r");
     if( fp == NULL ) {
-        dbMgr->closeTable(table);
-        conn.close();
+        conn->disconnect();
+        delete stmt; delete conn;
         printf("cachetable.conf file does not exist\n");
-        return 4;
+        return 2;
     }
     char tablename[IDENTIFIER_LENGTH];
     char fieldname[IDENTIFIER_LENGTH];
     char condition[IDENTIFIER_LENGTH];
     char field[IDENTIFIER_LENGTH];
+    char dsnName[IDENTIFIER_LENGTH];
+
     int mode;
-    bool filePresent = false;
+    bool isCached = false;
     while(!feof(fp)) {
-        fscanf(fp, "%d:%s %s %s %s\n", &mode, tablename,fieldname,condition,field);
-        if (mode ==2 )  //just replicated table and not cached
-            continue;
+        fscanf(fp, "%d %s %s %s %s %s\n", &mode, tablename,fieldname,condition,field,dsnName);
         if (strcmp(tableName, tablename) == 0) {
-            filePresent = true;
+            isCached = true;
             break;
         }
     }
     fclose(fp);
-    long numTuples = table->numTuples();
-    dbMgr->closeTable(table);
-    conn.close();
+    long numTuples = 0;
+    int rows;
     
-    if (filePresent == false) { printf("The table \'%s\' is not cached\n", tableName);
+    char statement[200];
+    sprintf(statement, "select count(*) from %s;", tableName);
+    rv = stmt->prepare(statement);
+    if (rv != OK) {
+        conn->disconnect();
+        delete stmt; delete conn;
+        return 3;
+    }
+    rv = conn->beginTrans();
+    if (rv != OK) {
+        conn->disconnect();
+        delete stmt; delete conn;
+        return 4;
+    }
+    stmt->bindField(1, &numTuples);
+    stmt->execute(rows);
+    if (rv != OK) {
+        conn->disconnect();
+        delete stmt; delete conn;
         return 5;
+    }
+    void *tuple = stmt->fetch(rv);
+    stmt->close();
+    conn->commit();
+    stmt->free();
+    
+    if (isCached == false) { 
+        conn->disconnect();
+        printf("The table \'%s\' is not cached\n", tableName);
+        delete stmt; delete conn; return 5;
     }
 
     if (opt == 2) { 
         rv = verifyCount(tableName, numTuples); 
-        if (rv != OK) return 6;
+        if (rv != OK) { 
+            conn->disconnect(); delete stmt; delete conn; return 7; 
+        }
     }
  
     if (opt == 3 || opt == 4) { 
         rv = verifyCount(tableName, numTuples); 
-        if (rv != OK) return 7;
+        if (rv != OK) { 
+            conn->disconnect(); delete stmt; delete conn; return 8; 
+        }
         rv = verifyMismatchingRecords(tableName, opt);
-        if (rv != OK) return 8;
+        if (rv != OK) { 
+            conn->disconnect(); delete stmt; delete conn; return 9; 
+        }
     }
+    conn->disconnect(); delete stmt; delete conn;
     return 0;
 }
+
+void setParamValues(AbsSqlStatement *stmt, int parampos, DataType type, int length, void *value)
+{
+    switch(type)
+    {
+        case typeInt:
+            stmt->setIntParam(parampos, *(int*)value);
+            break;
+        case typeLong:
+            stmt->setLongParam(parampos, *(long*)value);
+            break;
+        case typeLongLong:
+            stmt->setLongLongParam(parampos, *(long long*)value);
+            break;
+        case typeShort:
+            stmt->setShortParam(parampos, *(short*)value);
+            break;
+        case typeByteInt:
+            stmt->setByteIntParam(parampos, *(char*)value);
+            break;
+        case typeDouble:
+            stmt->setDoubleParam(parampos, *(double*)value);
+            break;
+        case typeFloat:
+            stmt->setFloatParam(parampos, *(float*)value);
+            break;
+        case typeDate:
+            stmt->setDateParam(parampos, *(Date*)value);
+            break;
+        case typeTime:
+            stmt->setTimeParam(parampos, *(Time*)value);
+            break;
+        case typeTimeStamp:
+            stmt->setTimeStampParam(parampos, *(TimeStamp*)value);
+            break;
+        case typeString:
+            {
+                char *d =(char*)value;
+                d[length-1] = '\0';
+                stmt->setStringParam(parampos, (char*)value);
+                break;
+            }
+        case typeBinary:
+            stmt->setBinaryParam(parampos, (char *) value, length);
+            break;
+    }
+    return;
+}
+

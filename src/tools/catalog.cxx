@@ -13,11 +13,14 @@
  *   GNU General Public License for more details.                          *
  *                                                                         *
  ***************************************************************************/
+#include <os.h>
 #include <CSql.h>
 #include <DatabaseManagerImpl.h>
 #include <Database.h>
 #include <TableImpl.h>
 #include <CacheTableLoader.h>
+#include <TableConfig.h>
+
 void printUsage()
 {
    printf("Usage: catalog [-u username] [-p passwd] [-l] [-i] [-d] [-T table] [-I index] [-D <lock|trans|proc|chunk>]\n");
@@ -41,7 +44,7 @@ int main(int argc, char **argv)
     password [0] = '\0';
     int c = 0, opt = 0;
     char name[IDENTIFIER_LENGTH];
-    while ((c = getopt(argc, argv, "u:p:T:I:D:licd?")) != EOF) 
+    while ((c = getopt(argc, argv, "u:p:T:I:D:licdsS?")) != EOF) 
     {
         switch (c)
         {
@@ -53,6 +56,12 @@ int main(int argc, char **argv)
             case 'l' : { opt = 2; break; } //list all the table with field info
             case 'i' : { opt = 3; break;  }//reinitialize the catalog table
             case 'd' : { opt = 4; break;  }//print db usage statistics
+            case 's' : { if(opt == 6) opt=11;
+                         else printf("Use -I IndexName -s\n"); 
+                         break;  }//print db usage statistics
+            case 'S' : { if(opt == 6) opt=12;
+                         else printf("Use -I IndexName -S\n"); 
+                         break;  }//print db usage statistics
             case '?' : { opt = 10; break; } //print help 
             default: opt=1; //list all the tables
 
@@ -66,8 +75,8 @@ int main(int argc, char **argv)
     //printf("%s %s \n", username, password);
     if (username[0] == '\0' )
     {
-        strcpy(username, "root");
-        strcpy(password, "manager");
+        strcpy(username, I_USER);
+        strcpy(password, I_PASS);
         opt=1;//if username is not specified, just list all table names
     }
     
@@ -143,7 +152,7 @@ int main(int argc, char **argv)
             {
                 elem = (Identifier*) iter.nextElement();
 #ifndef MMDB
-                rv=CacheTableLoader::isTableCached(elem->name);
+                rv=TableConf::config.isTableCached(elem->name);
                 if(rv!=OK){
                     printf("  <TableName> %s </TableName>\n", elem->name);
                     dbMgr->dropTable(elem->name);
@@ -154,6 +163,7 @@ int main(int argc, char **argv)
 #endif
                 count++;
             }
+            //TODO::If durability is on, remove chkpt and redo log file
             if (count ==0) printf("  <No tables exist></No tables exist>\n");
             printf("</DropTable>\n");
 
@@ -258,6 +268,10 @@ int main(int argc, char **argv)
            printUsage();
            ret =1;
         }
+    } else if (opt == 11){
+        dbMgr->printTreeIndexNodeInfo(name, true);
+    } else if (opt == 12){
+        dbMgr->printTreeIndexNodeInfo(name,false);
     }
     iter.reset();
     while (iter.hasElement()) delete iter.nextElement();

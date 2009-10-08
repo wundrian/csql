@@ -1,4 +1,5 @@
 /***************************************************************************
+ *
  *   Copyright (C) 2007 by www.databasecache.com                           *
  *   Contact: praba_tuty@databasecache.com                                 *
  *                                                                         *
@@ -13,42 +14,54 @@
  *   GNU General Public License for more details.                          *
  *                                                                         *
  ***************************************************************************/
+#include <os.h>
 #include <CSql.h>
 #include <CacheTableLoader.h>
+#include <TableConfig.h>
 
 void printUsage()
 {
-   printf("Usage: cachetable [-U username] [-P passwd] -t tablename[-D] -c \"condition\" -f \"selected field names\" -p fieldname -S\n"
-          "       [-R] [-s] [-r]\n");
-   printf("       username -> username to connect with csql.\n");
-   printf("       passwd -> password for the above username to connect with csql.\n");
-   printf("       tablename -> table name to be cached in csql from target db.\n");
-   printf("       fieldname -> field name to be specified for the bidirectional caching on which trigger to be run .\n");
-   printf("       R -> recover all cached tables from the target database.\n");
-   printf("       s -> load only the records from target db. Assumes table is already created in csql\n");
-   printf("       r -> reload the table. get the latest image of table from target db\n");
-   printf("       u -> unload the table. if used with -s option, removes only records and preserves the schema\n");
-   printf("       no option -> get table definition and records from target db and create in csql.\n");
-   printf("       D -> Enable direct access option to target database\n");
-   printf("	  S -> Cache Description\n");
+   printf("Usage: cachetable [ -U <username> ] [ -P <password> ]\n");
+   printf("                  [ -t <tblName> [-D] [ -c \"condition\" ]\n");
+   printf("                                 [-f \"fieldListToCache\"]\n");
+   printf("                                 [ -p <fieldName> [-F] ]\n");
+   printf("                                 [ -u [-s] ]\n");
+   printf("                                 [ -s | -r ] ]\n");
+   printf("                  [ -S | -R ]\n\n");
+   printf("       U -> Username to connect with csql.\n");
+   printf("       P -> Password for above username.\n");
+   printf("       t -> Table name to be cached in csql from target db.\n");
+   printf("       D -> Enable direct access option to target database.\n");
+   printf("       c -> Conditional expression used in std SQL WHERE clause.\n");
+   printf("       f -> List of field names to be cached. Comma separated.\n");
+   printf("       p -> Not Null unique index field name for Bidirectional\n");
+   printf("            caching on which trigger needs to be run.\n");
+   printf("       F -> Forceful caching.\n");
+   printf("       s -> Load only the records from target db.\n"); 
+   printf("            Assumes table is already created in csql.\n");
+   printf("       u -> Unload the table. If used with -s option,\n");
+   printf("            removes only records and preserves the schema.\n");
+   printf("       r -> Reload the table. Get the latest image of table from target db.\n");
+   printf("       S -> Cache Description for cached tables.\n");
+   printf("       R -> Recover all cached tables from the target database.\n");
    return;
 }
 
 int main(int argc, char **argv)
 {
-    DbRetVal rv = OK;
-    Connection conn;
-    rv = conn.open("root","manager");
-    if(rv != OK) return 1;
-	
-    if(!Conf::config.useCache())
-    {
-    	printf("CACHE_TABLE is set to FALSE in csql.conf file.\n");
-	conn.close();
-	return 1;
-    }
-    else{ conn.close(); }
-
+     DbRetVal rv = OK;   
+     Connection conn;
+     rv = conn.open(I_USER, I_PASS);
+     if (rv != OK) return 1;
+     
+     if (!Conf::config.useCache())
+     {
+        printf("CACHE_TABLE is set to FALSE in csql.conf file.\n");
+        conn.close();
+        return 2;
+     }
+     else{ conn.close(); }
+    
     char username[IDENTIFIER_LENGTH];
     username [0] = '\0';
     char password[IDENTIFIER_LENGTH];
@@ -60,12 +73,17 @@ int main(int argc, char **argv)
     char condition[IDENTIFIER_LENGTH];
     char fieldlist[IDENTIFIER_LENGTH];
     char syncModeStr[IDENTIFIER_LENGTH];
+    char dsnName[IDENTIFIER_LENGTH];
+    bool Isuid=false;
+    bool Ispid=false;
     bool conditionval = false;
     bool fieldlistval = false;
     bool tableDefinition = true;
     bool tableNameSpecified = false;
     bool fieldNameSpecified = false;
-    while ((c = getopt(argc, argv, "U:P:t:f:c:p:RDSsru?")) != EOF) 
+    bool forceEnable=false;
+    bool isDsn=false;
+    while ((c = getopt(argc, argv, "U:P:t:d:f:c:p:FRDSsru?")) != EOF) 
     {
         switch (c)
         {
@@ -76,6 +94,7 @@ int main(int argc, char **argv)
                          tableNameSpecified = true; 
                          break; 
                        }
+            case 'd' : { strcpy(dsnName,argv[optind - 1]);isDsn=true;break;}
             case 'p' : { strcpy(fieldname, argv[optind - 1]);
                          if(opt==2){fieldNameSpecified = true;break;}
                        }
@@ -83,15 +102,16 @@ int main(int argc, char **argv)
             case 'D' : {
                          if(opt==2) {isDirect=true;break;}
                        }
-            case 'c' : {strcpy(condition,argv[optind - 1]); conditionval = true; break; }// condition for selelcted records by :Jitendra
+            case 'c' : {strcpy(condition,argv[optind - 1]); conditionval = true; break; }
 	    case 'f' : {strcpy(fieldlist,argv[optind - 1]);fieldlistval = true ;break; }
+            case 'F' : { if(opt==2 && fieldNameSpecified ) forceEnable=true; break;}
             case '?' : { opt = 10; break; } //print help 
             case 'R' : { opt = 3; break; } //recover all the tables
             case 's' : { tableDefinition=false; break; } //do not get the schema information from target db
             case 'r' : { opt = 4; break; } //reload the table
             case 'u' : { opt = 5; break; } //unload the table
-	    case 'S' : { opt = 6; break; }
-            default: opt=10; 
+            case 'S' : {opt=6;break;}
+	    default: opt=10; 
 
         }
     }//while options
@@ -99,73 +119,92 @@ int main(int argc, char **argv)
         printUsage();
         return 0;
     }
-
-    //printf("%s %s \n", username, password);
+  
     if (username[0] == '\0' )
     {
-        strcpy(username, "root");
-        strcpy(password, "manager");
+        strcpy(username, I_USER);
+        strcpy(password, I_PASS);
     }
     CacheTableLoader cacheLoader;
     cacheLoader.setConnParam(username, password);
-    
+    TableConf::config.setConnParam(username, password);
     if(conditionval){
-    cacheLoader.setCondition(condition);}// new one
-    if(fieldlistval){
-    cacheLoader.setFieldListVal(fieldlist);}
+        cacheLoader.setCondition(condition);// new one
+        TableConf::config.setCondition(condition); 
+    }
+    
+    if(isDsn){
+        cacheLoader.setDsnName(dsnName);
+        TableConf::config.setDsnName(dsnName); 
+    }   
+    
+    if(fieldlistval) {
+        cacheLoader.setFieldListVal(fieldlist);
+        TableConf::config.setFieldListVal(fieldlist); 
+    }
+    if(forceEnable) {
+        cacheLoader.setForceFlag(forceEnable);
+        TableConf::config.setForceFlag(forceEnable);
+    }
+    bool isCached = false;
+    unsigned int mode = TableConf::config.getTableMode(tablename);
+
     if (opt==2) {
         cacheLoader.setTable(tablename);
-        if(fieldNameSpecified){ cacheLoader.setFieldName(fieldname); }
-        rv = CacheTableLoader::isTableCached(tablename);
-        if(rv!=OK){
-            rv = cacheLoader.load(tableDefinition);
-            if(rv == OK){
-               cacheLoader.addToCacheTableFile(isDirect);
-            }else exit(2);
-        } else
-        {
-            printf("Table is already cached, unload table by \" cachetable -t <tablename> -u\" and then try \n");
-            exit(3);
+        TableConf::config.setTable(tablename);
+	    if(fieldNameSpecified){ 
+            cacheLoader.setFieldName(fieldname); 
+            TableConf::config.setFieldName(fieldname);
         }
-    }else if (opt==3) //recover
-    {
+
+        isCached = TableConf::config.isTableCached(mode);
+        if (isCached) {
+             printf("Table is already cached, unload table by\n"); 
+             printf("\"cachetable -t <tablename> -u\" and then try \n");
+            return 3;
+        }
+        rv = cacheLoader.load(tableDefinition);
+        if(rv != OK) return 4;
+        TableConf::config.addToCacheTableFile(isDirect);
+    } else if (opt==3) {//recover
         rv = cacheLoader.recoverAllCachedTables();
-        if (rv != OK) exit (1);
-    }else if (opt==4) //reload
-    {
+        if (rv != OK) return 5;
+    } else if (opt==4) {//reload
         if (!tableNameSpecified) 
         {
             printf("Table name is not specified. Check usage with ? \n");
-            return 1;
+            return 6;
         }
         cacheLoader.setTable(tablename);
+        TableConf::config.setTable(tablename);
         rv = cacheLoader.reload();
-        if (rv != OK) exit (1);
-    }else if (opt==5) //unload
-    {
+        if (rv != OK) return 7;
+	
+    } else if (opt==5) {//unload
         if (!tableNameSpecified) 
         {
             printf("Table name is not specified. Check usage with ? option\n");
-            return 1;
+            return 8;
         }
         cacheLoader.setTable(tablename);
-        rv = cacheLoader.unload(tableDefinition);
-        if (rv != OK) exit (1);
-        rv = cacheLoader.removeFromCacheTableFile();
-        if (rv != OK) exit (2);
-
-    }else if(opt==6)
-     {
-         if(tableNameSpecified)
-         {
-              cacheLoader.setTable(tablename);
-         }
-         rv = cacheLoader.CacheInfo(tableNameSpecified);
-         if(rv !=OK)
-         {
-             printf("\nError (%d): None of the table found in Cache,You need to cache the table from Target DB.\n\n",rv);
-             exit(2);
-         }
-     }
-     return 0;
+        TableConf::config.setTable(tablename);
+        isCached = TableConf::config.isTableCached(mode);
+        if (!mode) {
+            printError(ErrNotCached, "Table is not Cached");
+            return 9;
+        }
+        TableConf::config.removeFromCacheTableFile();
+    } else if(opt==6) {
+        if(tableNameSpecified) {
+	        cacheLoader.setTable(tablename);
+	        TableConf::config.setTable(tablename);
+	    }
+        rv = TableConf::config.CacheInfo(tableNameSpecified);
+	    if (rv !=OK) {
+	        printf("\nError (%d): None of the table found in Cache,You need to cache the table from Target DB.\n\n",rv);
+	        exit(2);
+	    }
+    }
+    return 0;
 }
+

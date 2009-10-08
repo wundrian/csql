@@ -118,11 +118,13 @@ int main(int argc, char **argv)
 {
     struct stat st;
     char fileName[1024];
-    int c = 0, opt=0;
-    while ((c = getopt(argc, argv, "a?")) != EOF) {
+    int c = 0, opt=0; 
+    bool interactive=0;
+    while ((c = getopt(argc, argv, "ai?")) != EOF) {
         switch (c) {
             case '?' : { opt = 1; break; } //print help 
             case 'a' : { opt = 2; break; } 
+            case 'i' : { interactive = 1; break; }
             default: printf("Wrong args\n"); exit(1);
 
         }
@@ -133,7 +135,7 @@ int main(int argc, char **argv)
     }
     Conf::config.readAllValues(os::getenv("CSQL_CONFIG_FILE"));
     sprintf(fileName, "%s/csql.db.cur", Conf::config.getDbFile());
-    printf("Filename Redo log is :%s\n", fileName);
+    printf("Redo log filename is :%s\n", fileName);
     int fd = open(fileName, O_RDONLY);
     if (-1 == fd) { return OK; }
     if (fstat(fd, &st) == -1) {
@@ -147,7 +149,7 @@ int main(int argc, char **argv)
         return 0;
     }
     conn = SqlFactory::createConnection(CSqlDirect);
-    DbRetVal rv = conn->connect("root","manager");
+    DbRetVal rv = conn->connect(I_USER, I_PASS);
     SqlConnection *sCon = (SqlConnection*) conn;
     rv = sCon->getExclusiveLock();
     if (rv != OK) {
@@ -192,6 +194,7 @@ int main(int argc, char **argv)
             //printf("PREPARE:%d %d %s\n", stmtID, len, stmtString);
             AbsSqlStatement *stmt = SqlFactory::createStatement(CSqlDirect);
             stmt->setConnection(conn);
+            if (interactive) printf("PREPARE %d : %s\n", stmtID, stmtString);
             rv = stmt->prepare(stmtString);
             if (rv != OK) { 
                 printf("unable to prepare\n"); 
@@ -217,13 +220,14 @@ int main(int argc, char **argv)
                     conn->commit();
                     freeAllStmtHandles();
                     conn->disconnect();
-                    munmap(startAddr, st.st_size);
+                    munmap((char*)startAddr, st.st_size);
                     close(fd);
                     delete conn;
                     return 0;
                 }
                 stmtID = *(int*)iter;
                 //printf("stmtid %d\n", stmtID);
+                if (interactive) printf("EXEC %d :\n", stmtID);
                 iter = iter + sizeof(int);
                 eType = *(int*)iter;
                 //printf("eType is %d\n", eType);
@@ -266,7 +270,7 @@ int main(int argc, char **argv)
             loglen = *(int*) iter; iter += sizeof(int);
             stmtID = *(int*)iter;
             iter = iter + sizeof(int);
-            //printf("FREE: %d\n", stmtID);
+            if (interactive) printf("FREE %d:\n", stmtID);
             AbsSqlStatement *stmt = getStmtFromHashTable(stmtID);
             if (stmt) {
                 stmt->free();
@@ -292,6 +296,7 @@ int main(int argc, char **argv)
                 return ErrSysFatal;
             }
             stmt->setConnection(conn);
+            if (interactive) printf("EXECDIRECT %d : %s\n", stmtID, stmtString);
             rv = stmt->prepare(stmtString);
             if (rv != OK) {
                 printf("unable to prepare\n"); 
@@ -300,6 +305,13 @@ int main(int argc, char **argv)
             }
             rv = stmt->execute(ret);
             if (rv != OK) {
+                if (strlen(stmtString) > 6 && 
+                    ( (strncasecmp(stmtString,"CREATE", 6) == 0) ||
+                      (strncasecmp(stmtString,"DROP", 4) == 0)) ) {
+            //        conn->disconnect();
+              //      return OK;
+                    continue;
+                }
                 printf("unable to execute\n"); 
                 conn->disconnect();
                 return ErrSysFatal;
@@ -307,7 +319,7 @@ int main(int argc, char **argv)
             stmt->free();
         }
     }
-    munmap(startAddr, st.st_size);
+    munmap((char*)startAddr, st.st_size);
     close(fd);
     freeAllStmtHandles();
     conn->disconnect();
