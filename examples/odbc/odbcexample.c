@@ -177,7 +177,7 @@ int main()
     checkrc(ret,__LINE__);
     printf("%d Rows deleted\n",count);
 
-/*	
+	
     // drop the table 'T1'
     SQLCHAR drop[50]="DROP TABLE T1";
     ret = SQLPrepare(stmt,drop,SQL_NTS);
@@ -186,7 +186,7 @@ int main()
     ret = SQLExecute(stmt);
     checkrc(ret,__LINE__);
     printf("Table T1 dropped\n");
-*/
+
     //Free the statement handle
     ret = SQLFreeHandle(SQL_HANDLE_STMT,stmt);
     checkrc(ret,__LINE__);
