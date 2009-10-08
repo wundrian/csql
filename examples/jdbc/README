@@ -44,18 +44,3 @@ Tuple value is 7 107
 Tuple value is 8 208
 Total Rows selected 6
 Dropped table T1
-
-Note: 
-1.For running gateway example , make sure that you set CACHE_TABLE to true and DSN name in  csql.conf. 
-
-2.Create table t1 in MySQL using isql tool as follows
-$isql myodbc3
-SQL>CREATE TABLE t1 (f1 integer, f2 char (196), primary key(f1));
-
-3.Cache the table using cachetable tool as follows
-$cachetable -u root -p manager -t t1
-
-4.Run the example
-$java gwexample
-
-Refer usermanual for more information on how to configure caching for MySQL.
