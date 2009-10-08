@@ -13,7 +13,8 @@
  *   GNU General Public License for more details.                          *
  *                                                                         *
   ***************************************************************************/
-#include "Parser.h"
+#include<os.h>
+#include <Parser.h>
 #include <CSql.h>
 #include<PredicateImpl.h>
 
@@ -50,7 +51,7 @@ void ParsedData::insertInValue(char *val)
     inValueList.append(newVal);
 }
 
-void** ParsedData::insertCondValueAndGetPtr(char *fldName, char *val, bool opLike)
+void** ParsedData::insertCondValueAndGetPtr(char *fldName, char *val, bool opLike, AggType aType, bool isInHaving)
 {
     ConditionValue *newVal = new ConditionValue();
     if (val == NULL) 
@@ -60,13 +61,21 @@ void** ParsedData::insertCondValueAndGetPtr(char *fldName, char *val, bool opLik
     newVal->value = NULL;
     newVal->paramNo = 0;
     newVal->type = typeUnknown;
+    newVal->aType = aType;
     newVal->length = 0;
     strcpy(newVal->fName, fldName);
 	newVal->opLike = opLike;
     conditionValueList.append(newVal);
+    if (isInHaving) {
+        FieldName *fName = new FieldName();
+        strcpy(fName->fldName, fldName);
+        fName->aType = aType;
+        havingFieldNameList.append(fName);
+    }
     return &(newVal->value);
 
 }
+
 void ParsedData::insertCondValue(char *fldName)
 {
     ConditionValue *newVal = new ConditionValue();
@@ -74,6 +83,7 @@ void ParsedData::insertCondValue(char *fldName)
     newVal->value = NULL;
     newVal->paramNo = 1;//To solve parsedString Null problem
     newVal->type = typeUnknown;
+    newVal->aType = AGG_UNKNOWN;
     newVal->length = 0;
     strcpy(newVal->fName, fldName);
     newVal->opLike = false;
@@ -86,10 +96,70 @@ void ParsedData::insertField(char *fName, AggType type)
     newVal->aType = type;
     fieldNameList.append(newVal);
 }
+void ParsedData::insertFieldAlias(char *name)
+{
+    FieldName *newVal=NULL;
+    newVal = (FieldName *)fieldNameList.get(fieldNameList.size());
+    strcpy(newVal->aliasFldName, name);
+}
+
+void ParsedData::insertFKField(char *fkName)
+{
+    FieldName *newVal = new FieldName();
+    strcpy(newVal->fldName , fkName);
+    fkFieldNameList.append(newVal);
+}
+void ParsedData::insertPKField(char *pkName)
+{
+    FieldName *newVal = new FieldName();
+    strcpy(newVal->fldName , pkName);
+    pkFieldNameList.append(newVal);
+}
+void ParsedData::insertForeignKeyList()
+{
+    FieldName *name=NULL;
+    ForeignKeyInfo *fkInfo = new ForeignKeyInfo();
+   // strcpy(fkInfo->fkTableName,tblName);
+    strcpy(fkInfo->pkTableName,pkTblName);
+    ListIterator fNameIter = getFkFieldNameList().getIterator();
+    fNameIter.reset();
+    while (fNameIter.hasElement())
+    {
+        name = (FieldName *)fNameIter.nextElement();
+        fkInfo->fkFldList.append(name->fldName);
+        delete name;
+    }
+    fkFieldNameList.reset();
+    fNameIter = getPkFieldNameList().getIterator();
+    fNameIter.reset();
+    while (fNameIter.hasElement())
+    {
+        name = (FieldName *)fNameIter.nextElement();
+        fkInfo->pkFldList.append(name->fldName);
+        delete name;
+    }
+    pkFieldNameList.reset();
+    foreignKeyList.append(fkInfo);
+}
 void ParsedData::insertTableName(char *tName)
 {
     TableName *newVal = new TableName();
     strcpy(newVal->tblName , tName);
+    tableNameList.append(newVal);
+}
+void ParsedData::insertJoinType(JoinType joinType)
+{
+    JoinTypeNode *newVal = new JoinTypeNode();
+    newVal->jType = joinType;
+    joinTypeList.append(newVal);
+}
+
+
+void ParsedData::insertTableName(char *tName, char *aName)
+{
+    TableName *newVal = new TableName();
+    strcpy(newVal->tblName , tName);
+    strcpy(newVal->aliasName , aName);
     tableNameList.append(newVal);
 }
 void ParsedData::insertGroupField(char *fName)
@@ -97,6 +167,13 @@ void ParsedData::insertGroupField(char *fName)
     FieldName *newVal = new FieldName();
     strcpy(newVal->fldName , fName);
     groupFieldNameList.append(newVal);
+}
+void ParsedData::insertOrderByField(char *fName, bool isDesc)
+{
+    FieldName *newVal = new FieldName();
+    strcpy(newVal->fldName , fName);
+    if (isDesc) newVal->aType = AGG_MIN; //using MIN to denote descending order
+    orderFieldNameList.append(newVal);
 }
 
 void ParsedData::insertUpdateValue(char *fName, char *val)
@@ -113,10 +190,11 @@ void ParsedData::insertUpdateValue(char *fName, char *val)
     updFldValList.append(newVal);
 }
 
-Predicate* ParsedData::insertPredicate(char *fName, ComparisionOp op, void **val)
+Predicate* ParsedData::insertPredicate(char *fName, ComparisionOp op, void **val, AggType aggType)
 {
     PredicateImpl *pImpl = new PredicateImpl();
-    pImpl->setTerm(fName, op, val);
+    pImpl->setTerm(fName, op, val, aggType);
+    predList.append(pImpl);
     return (Predicate*) pImpl;
 }
 Predicate* ParsedData::insertBetPredicate(char *fName, ComparisionOp op1, 
@@ -124,12 +202,22 @@ Predicate* ParsedData::insertBetPredicate(char *fName, ComparisionOp op1,
 {
     PredicateImpl *pImpl = new PredicateImpl();
     pImpl->setTerm(fName, op1, val1, op2, val2);
+    predList.append(pImpl);
     return (Predicate*) pImpl;
 }
+Predicate* ParsedData::insertNullPredicate(char *fName, ComparisionOp op,bool nullFlag)
+{
+    PredicateImpl *pImpl = new PredicateImpl();
+    pImpl->setTerm(fName, op, nullFlag);
+    predList.append(pImpl);
+    return (Predicate*) pImpl;
+}
+
 Predicate* ParsedData::insertPredicate(char *fName1, ComparisionOp op, char *fName2)
 {
     PredicateImpl *pImpl = new PredicateImpl();
     pImpl->setTerm(fName1, op, fName2);
+    predList.append(pImpl);
     return (Predicate*) pImpl;
 }
 
@@ -137,9 +225,40 @@ Predicate* ParsedData::insertPredicate(Predicate *p1, LogicalOp op, Predicate *p
 {
     PredicateImpl *pImpl = new PredicateImpl();
     pImpl->setTerm(p1, op, p2);
+    predList.append(pImpl);
     return (Predicate*) pImpl;
 }
+void ParsedData::init()
+{
+    tableNameList.init();
+    fieldNameList.init();
+    fieldValueList.init();
+    inValueList.init();
+    setCondition(NULL);
+    setHavingCondition(NULL);
+    predList.init();
+    conditionValueList.init();
+    updFldValList.init();
+    groupFieldNameList.init();
+    havingFieldNameList.init();
+    orderFieldNameList.init();
+    isDistinct = false;
+    joinTypeList.init();
+    isUnique = false;
+    isPrimary = false;
+    isAutoIncrement =false;
+    isForeign=false;
+    indexType = hashIndex;
+    hCondFld=false; vCondFld=false;
+    shouldCreateTbl=false;
+    limit =0;
+    offset =0;
+    paramCounter = 0; stmtType = UnknownStatement;
+    isExplain=false;
+    plan = Normal;
+}
 
+//NOTE::when you add members to reset() check whether it needs to be added in init() as it is used for statement caching when it contains parameters
 void ParsedData::reset()
 {
     ListIterator fNameIter = fieldNameList.getIterator();
@@ -152,12 +271,33 @@ void ParsedData::reset()
     while (fNameIter.hasElement())
         delete ((FieldName *) fNameIter.nextElement());
     secondaryIndexFieldList.reset();
+    
+    fNameIter =pkFieldNameList.getIterator();
+    fNameIter.reset();
+    while (fNameIter.hasElement())
+        delete ((FieldName *) fNameIter.nextElement());
+    pkFieldNameList.reset();
+    fNameIter = fkFieldNameList.getIterator();
+    fNameIter.reset();
+    while (fNameIter.hasElement())
+        delete ((FieldName *) fNameIter.nextElement());
+    fkFieldNameList.reset();
+    ForeignKeyInfo *info=NULL; 
+    fNameIter = foreignKeyList.getIterator();
+    while (fNameIter.hasElement())
+    {
+        info=(ForeignKeyInfo *) fNameIter.nextElement();
+        info->fkFldList.removeAll();
+        info->pkFldList.removeAll();
+        delete info;
+    }  
+    foreignKeyList.reset();
     ListIterator iter = fieldValueList.getIterator();
     FieldValue *value;
     while (iter.hasElement())
     {
         value = (FieldValue*)iter.nextElement();
-        free(value->parsedString);
+        if (value->parsedString) free(value->parsedString);
         if (value->isAllocVal) free(value->value);
         delete value;
     }
@@ -171,6 +311,13 @@ void ParsedData::reset()
     inValueList.reset();
 
     predicate.reset();
+    havingPredicate.reset();
+    ListIterator pIter = predList.getIterator();
+    while (pIter.hasElement()) {
+        PredicateImpl *pImpl= (PredicateImpl *) pIter.nextElement();    
+        delete pImpl;
+    }
+    predList.reset();
 
     iter = conditionValueList.getIterator();
     ConditionValue *condVal;
@@ -204,6 +351,21 @@ void ParsedData::reset()
         delete iter.nextElement();
     }
     groupFieldNameList.reset();
+    iter = orderFieldNameList.getIterator();
+    while(iter.hasElement())
+    {
+        delete iter.nextElement();
+    }
+
+    iter = havingFieldNameList.getIterator();
+     while(iter.hasElement())
+    {
+        delete iter.nextElement();
+    }
+    havingFieldNameList.reset();
+
+    orderFieldNameList.reset();
+    isDistinct = false;
 
     iter = tableNameList.getIterator();
     TableName *tname;  
@@ -213,13 +375,29 @@ void ParsedData::reset()
         delete tname;
     }
     tableNameList.reset(); 
+
+    iter = joinTypeList.getIterator();
+    JoinTypeNode *jNode;
+    while (iter.hasElement())
+    {
+        jNode = (JoinTypeNode*)iter.nextElement();
+        delete jNode;
+    }
+    joinTypeList.reset();
+
+    if(userNode) { delete userNode; userNode =NULL;}
     
     creFldList.removeAll();
     isUnique = false; 
     isPrimary = false; 
     isAutoIncrement =false;
+    isForeign=false;
     indexType = hashIndex;
+    hCondFld=false; vCondFld=false;pkFld=false;forceOption=false; direct=false; uncache=false; noschema=false; dsn=false;
     bucketSize = 0;
+    shouldCreateTbl=false;
+    limit =0;
+    offset =0;
 }
 void ParsedData::clearFieldNameList()
 {
@@ -233,10 +411,35 @@ void ParsedData::setFldName(char *name)
     strcpy(fldDef.fldName_, name);
     fldDef.fldName_[IDENTIFIER_LENGTH] = '\0';
 }
-
+char *ParsedData::getFldName()
+{
+    return fldDef.fldName_;
+}
+void ParsedData::setAutoFldName(char *fldName)
+{
+    FieldInfo *newVal = new FieldInfo();
+    strcpy(newVal->fldName , fldName);
+    newVal->isAutoIncrement = true;
+    secondaryIndexFieldList.append(newVal);
+}
 void ParsedData::setFldType(DataType type)
 {
     fldDef.type_ = type;
+}
+DataType ParsedData::getFldType()
+{
+   return fldDef.type_;
+}
+DbRetVal ParsedData::setAutoIncreament(bool flag)
+{
+    if(isAutoIncrement){return ErrAlready;}
+    fldDef.isAutoIncrement_=flag;
+    isAutoIncrement=true;
+    return OK;
+}
+bool ParsedData::getAutoIncreament()
+{
+    return fldDef.isAutoIncrement_;
 }
 
 DbRetVal ParsedData::setFldLength(size_t length)
@@ -257,12 +460,15 @@ void ParsedData::setFldNotNull(bool notNull)
 void ParsedData::setDefaultValue(char *value)
 {
     fldDef.isDefault_ = true;
+    if (value == NULL) {
+        fldDef.defaultValueBuf_[0]='\0';
+        return;
+    }
     if (strlen(value) > DEFAULT_VALUE_BUF_LENGTH -1) 
     {
         strncpy(fldDef.defaultValueBuf_, value, DEFAULT_VALUE_BUF_LENGTH -1);
         fldDef.defaultValueBuf_[DEFAULT_VALUE_BUF_LENGTH] ='\0';
-    } else
-        strcpy(fldDef.defaultValueBuf_, value);
+    } else strcpy(fldDef.defaultValueBuf_, value);
     return;
 }
 
@@ -301,30 +507,23 @@ void ParsedData::insertUpdateExpression(char *fName, Expression *exp)
     newVal->paramNo = 0;
     updFldValList.append(newVal);
 }
-DbRetVal ParsedData::setAutoIncreament(bool flag)
+void ParsedData::createUserNode(char *name, char *password)
 {
-    if(isAutoIncrement){return ErrAlready;}
-    fldDef.isAutoIncrement_=flag;
-    isAutoIncrement=true;
-    return OK;
+    userNode = new UserNode();
+    strcpy(userNode->userName, name);
+    strcpy(userNode->passName, password);
+    userNode->type = CREATEUSER;
 }
-bool ParsedData::getAutoIncreament()
+void ParsedData::dropUserNode(char *name)
 {
-    return fldDef.isAutoIncrement_;
+    userNode = new UserNode();
+    strcpy(userNode->userName, name);
+    userNode->type = DROPUSER;
 }
-DataType ParsedData::getFldType()
+void ParsedData::alterUserNode(char *name, char *password)
 {
-   return fldDef.type_;
+    userNode = new UserNode();
+    strcpy(userNode->userName, name);
+    strcpy(userNode->passName, password);
+    userNode->type = ALTERUSER;
 }
-void ParsedData::setAutoFldName(char *fldName)
-{
-    FieldInfo *newVal = new FieldInfo();
-    strcpy(newVal->fldName , fldName);
-    newVal->isAutoIncrement = true;
-    secondaryIndexFieldList.append(newVal);
-}
-char *ParsedData::getFldName()
-{
-    return fldDef.fldName_;
-}
-

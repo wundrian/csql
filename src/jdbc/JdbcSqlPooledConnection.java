@@ -58,24 +58,18 @@ public class JdbcSqlPooledConnection implements javax.sql.PooledConnection
    //Pooled connection method.
    public synchronized Connection getConnection() throws SQLException 
    {
-       try{
            if (physicalConn == null) {
                System.out.println("Connection not Exit");
                isclose = true;  
            }
 
-           if(isclose != true ||  logicalConn != null){
+          /* if(isclose != true ||  logicalConn != null){
                isclose  = true;
                logicalConn.rollback();
                eventListentionMethod(true,null);
-           } 
-           logicalConn = (Connection)physicalConn;
-           isclose = false;
-       } catch (SQLException exception){
-            eventListentionMethod(false,exception);       
-            throw exception;
-       }
-       
+           }*/ 
+       logicalConn = JdbcSqlConnectionWrapper.getInstance(this,physicalConn);
+       isclose = false;
        return logicalConn; 
    }
    
@@ -92,7 +86,7 @@ public class JdbcSqlPooledConnection implements javax.sql.PooledConnection
    }
    
 
-   synchronized void eventListentionMethod(boolean isclose,SQLException sqlException) {
+   public synchronized void eventListentionMethod(boolean isclose,SQLException sqlException) {
        if(connectionEventListeners == null){ return; }
        Iterator iterater = connectionEventListeners.entrySet().iterator();
 

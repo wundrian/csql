@@ -23,16 +23,19 @@ void yyerror(const char* Msg);
 %left '+' '-'
 %left '*' '/' '%'
 %nonassoc UMINUS
-%token <stringval> STRING FIELD NUMBER_STRING BINARY_STRING DOUBLE OPERATOR PARAMETER AUTO_INCREMENT
-%token <stringval> SELECT FROM WHERE BETWEEN IN AND OR NOT
-%token <stringval> INSERT INTO VALUES
+%token <stringval> STRING FIELD NUMBER_STRING BINARY_STRING DOUBLE OPERATOR PARAMETER ALLTABLE DESCRIBE PRIMARYINFO AUTO_INCREMENT GETCATALOGS GETDATATYPES GETTABLETYPES IMPORTEDKEY EXPORTEDKEY
+%token <stringval> SELECT FROM WHERE BETWEEN IN AND OR NOT AS LIMIT OFFSET INNER OUTER CROSS JOIN LEFT IS
+%token <stringval> INSERT INTO VALUES EXPLAIN PLAN
 %token <stringval> DELETE UPDATE SET NULL_VALUE
-%token <stringval> CREATE TABLE PRIMARY KEY DEFAULT INDEX ON HASH TREE UNIQUE DROP SIZE
+%token <stringval> CREATE TABLE PRIMARY KEY DEFAULT INDEX ON HASH TREE UNIQUE DROP SIZE FOREIGN REFERENCES COMPACT 
+%token <stringval> CACHE CONDITION FIELDLIST PK DIRECT DSN UNCACHE NOSCHEMA
 %token <stringval> INT_TYPE LONG_TYPE SHORT_TYPE DOUBLE_TYPE TIMESTAMP_TYPE DATE_TYPE CHAR_TYPE TIME_TYPE BIGINT_TYPE FLOAT_TYPE TINYINT_TYPE BINARY_TYPE
-%token <stringval> MIN MAX AVG SUM COUNT GROUP BY
+%token <stringval> USER PASSWORD ALTER
+%token <stringval> MIN MAX AVG SUM COUNT GROUP BY HAVING ORDER ASC DESC DISTINCT
 %token ';' ',' '(' ')'
-%type <stringval> ident field value not_opt doub_value num_value auto_increment_key
-%type <predicate> conditions condition 
+%type <stringval> ident field value not_opt doub_value num_value 
+/*%type <stringval> foreign_key_constraint foreign_key_create foreign_key_constraint_L*/
+%type <predicate> conditions condition hconditions hcondition 
 %type <Expression> stmt_exp atom
 %%
 command:  select_statement { YYACCEPT; }
@@ -40,25 +43,176 @@ command:  select_statement { YYACCEPT; }
         | delete_statement { YYACCEPT; }
         | update_statement { YYACCEPT; }
         | ddl_statement { YYACCEPT; }
+        | internal_statement { YYACCEPT; }
+        | cache_statement { YYACCEPT; }
+        | copy_table_statement { YYACCEPT; }
+        | user_manager_statement { YYACCEPT; }
+        | other {YYACCEPT;}
         ;
-        
-select_statement: SELECT field_list FROM table_list where_clause_opt group_by_opt semicolon_opt
+user_manager_statement: CREATE USER ident PASSWORD STRING semicolon_opt
 	{
-            parsedData->setStmtType(SelectStatement);
-            //parsedData->setTableName($4); 
-            //free($4);
+            parsedData->setStmtType(UserStatement);
+            parsedData->createUserNode((char*)$3,(char*)$5);
+            free($3);
+            free($5);
+	}
+        |DROP USER ident semicolon_opt
+        {
+            parsedData->setStmtType(UserStatement);
+            parsedData->dropUserNode((char*)$3);
+            free($3);
+        }
+        | ALTER USER ident SET PASSWORD STRING semicolon_opt
+	{
+            parsedData->setStmtType(UserStatement);
+            parsedData->alterUserNode((char*)$3,(char*)$6);
+            free($3);
+            free($6);
+	}
+        ;
+copy_table_statement: CREATE TABLE ident AS SELECT opt_distinct field_list FROM table_list where_clause_opt group_by_opt having_opt order_by_opt limit_opt semicolon_opt
+        {
+            parsedData->setStmtType(CopyTableStatement);
+            parsedData->setPKTableName($3);
+            parsedData->setCreateTbl();
+            free($3);
+        }
+        | INSERT  INTO ident AS SELECT opt_distinct field_list FROM table_list where_clause_opt group_by_opt having_opt order_by_opt limit_opt semicolon_opt
+        {
+            parsedData->setStmtType(CopyTableStatement);
+            parsedData->setPKTableName($3);
+            free($3);
         }
         ;
-
+internal_statement: COMPACT TABLE ident
+        {
+            parsedData->setStmtType(CompactTableStatement);
+            parsedData->setTableName($3);
+            free($3);
+        }
+        ;
+other: ALLTABLE
+	{
+            parsedData->setStmtType(MetaStatement);
+            parsedData->setResultSetPlan(GetTables);
+	}
+        | DESCRIBE table 
+        {
+            parsedData->setStmtType(MetaStatement);
+            parsedData->setResultSetPlan(GetColumns);
+        }
+        | DESCRIBE INDEX table
+        {
+            parsedData->setStmtType(MetaStatement);
+            parsedData->setResultSetPlan(GetIndexes);
+                   
+        }
+        | PRIMARYINFO table
+        {
+            parsedData->setStmtType(MetaStatement);
+            parsedData->setResultSetPlan(GetPriIndex);
+        }
+        | GETCATALOGS
+        {
+            parsedData->setStmtType(MetaStatement);
+            parsedData->setResultSetPlan(GetCatalogs);
+        }
+        | GETTABLETYPES
+        {
+            parsedData->setStmtType(MetaStatement);
+            parsedData->setResultSetPlan(GetTableType);
+        }
+        | GETDATATYPES 
+        {
+            parsedData->setStmtType(MetaStatement);
+            parsedData->setResultSetPlan(GetDataType);
+        }
+	| IMPORTEDKEY table
+        {
+            parsedData->setStmtType(MetaStatement);
+            parsedData->setResultSetPlan(GetImportKey);
+        }
+        | EXPORTEDKEY table
+        {
+            parsedData->setStmtType(MetaStatement);
+            parsedData->setResultSetPlan(GetExportKey);
+        }
+        ;
+select_statement: opt_explain SELECT opt_distinct field_list FROM table_list where_clause_opt group_by_opt having_opt order_by_opt limit_opt semicolon_opt
+	{
+            parsedData->setStmtType(SelectStatement);
+        }
+        ;
+opt_explain: EXPLAIN PLAN
+	{
+           parsedData->setExplain();
+	}
+	|
+	;
+opt_distinct: DISTINCT 
+        { 
+            parsedData->setDistinct();
+        }
+        |
+        ;
 field_list: field_list field_list_L
-        | field 
+        | field_with_as
         ;
-field_list_L: ',' field
+field_list_L: ',' field_with_as 
         ;
+field_with_as: field
+	| field AS ident
+        {
+            parsedData->insertFieldAlias((char*)$3);
+            free((char*)$3);
+        }
+	;
 table_list: table_list table_list_L
         | table 
+        | table join_exp
         ;
+join_exp: INNER opt_join table ON conditions join_exp
+        {
+           parsedData->insertJoinType(INNER_JOIN);
+
+           Condition *cond = parsedData->getCondition();
+           Predicate *pred = cond->getPredicate();
+           if (pred == NULL) parsedData->setCondition((Predicate*)$5);
+           else {
+                Predicate *newPred;
+                newPred = parsedData->insertPredicate(pred, OpAnd, (Predicate*)$5);
+                parsedData->setCondition(newPred);
+           }
+
+        }
+        | LEFT opt_outer opt_join table ON conditions join_exp
+        {
+           parsedData->insertJoinType(LEFT_JOIN);
+           Condition *cond = parsedData->getCondition();
+           Predicate *pred = cond->getPredicate();
+           if (pred == NULL) parsedData->setCondition((Predicate*)$6);
+           else {
+                Predicate *newPred;
+                newPred = parsedData->insertPredicate(pred, OpAnd, (Predicate*)$6);
+                parsedData->setCondition(newPred);
+           }
+        }
+        | CROSS opt_join table join_exp
+        {
+            parsedData->insertJoinType(INNER_JOIN);
+        }
+        |
+        ;
+opt_outer: 
+       |OUTER
+       ;
+opt_join: 
+       |JOIN
+       ;
 table_list_L: ',' table
+        {
+            parsedData->insertJoinType(INNER_JOIN);
+        }
         ;
         
 insert_statement: INSERT INTO ident field_list_opt VALUES '(' value_list ')' semicolon_opt
@@ -212,9 +366,28 @@ atom    :  ident
         ;
      
 where_clause_opt:  WHERE conditions
+        {
+           parsedData->setCondition((Predicate*)$2);
+        }
         |
         ;
 group_by_opt:  GROUP BY group_field_list
+        |
+        ;
+order_by_opt:  ORDER BY order_field_list
+        |
+        ;
+limit_opt:  LIMIT NUMBER_STRING
+        {
+            parsedData->setLimit(atoi($2), 0);
+        }
+        | LIMIT NUMBER_STRING OFFSET NUMBER_STRING
+        {
+            parsedData->setLimit(atoi($2), atoi($4));
+        }
+        |
+        ;
+having_opt:  HAVING hconditions
         |
         ;
 group_field_list: group_field_list group_field_list_L
@@ -228,11 +401,32 @@ group_field:   ident
             free( $1 );
         }
         ;
+order_field_list: order_field_list order_field_list_L
+        | order_field
+        ;
+order_field_list_L: ',' order_field
+        ;
+order_field:   ident
+        {
+            parsedData->insertOrderByField((char*)$1);
+            free( $1 );
+        }
+        | ident ASC
+        {
+            parsedData->insertOrderByField((char*)$1);
+            free( $1 );
+        }
+        | ident DESC
+        {
+            parsedData->insertOrderByField((char*)$1, true);
+            free( $1 );
+        }
+        ;
 conditions: conditions OR conditions
 	{
             Predicate *pred;
             pred = parsedData->insertPredicate((Predicate*) $1, OpOr, (Predicate*) $3);
-            parsedData->setCondition((Predicate*)pred);
+            //parsedData->setCondition((Predicate*)pred);
             $$= pred;
 
         }
@@ -240,7 +434,7 @@ conditions: conditions OR conditions
         {
             Predicate *pred;
             pred = parsedData->insertPredicate((Predicate*) $1, OpAnd, (Predicate*) $3);
-            parsedData->setCondition((Predicate*)pred);
+            //parsedData->setCondition((Predicate*)pred);
             $$= pred;
         }
         | '(' conditions ')' { $$=$2; }
@@ -248,7 +442,7 @@ conditions: conditions OR conditions
         {
             Predicate *pred;
             pred = parsedData->insertPredicate((Predicate*) $3, OpNot, NULL);
-            parsedData->setCondition((Predicate*)pred);
+            //parsedData->setCondition((Predicate*)pred);
             $$= pred;
 
         }
@@ -258,28 +452,112 @@ conditions: conditions OR conditions
             {
                 Predicate *pred;
                 pred = parsedData->insertPredicate((Predicate*) $2, OpNot, NULL);
-                parsedData->setCondition((Predicate*)pred);
+                //parsedData->setCondition((Predicate*)pred);
                 $$= pred;
             }
             else
             {
-                parsedData->setCondition((Predicate*)$2);
+                //parsedData->setCondition((Predicate*)$2);
                 $$=$2;
             }
         }
         ;
+hconditions: hconditions OR hconditions
+        {
+            Predicate *pred;
+            pred = parsedData->insertPredicate((Predicate*) $1, OpOr, (Predicate*) $3);
+            parsedData->setHavingCondition((Predicate*)pred);
+            $$= pred;
+
+        }
+        | hconditions AND hconditions
+        {
+            Predicate *pred;
+            pred = parsedData->insertPredicate((Predicate*) $1, OpAnd, (Predicate*) $3);
+            parsedData->setHavingCondition((Predicate*)pred);
+            $$= pred;
+        }
+        | '(' hconditions ')' { $$=$2; }
+        | NOT '(' hconditions ')'
+        {
+            Predicate *pred;
+            pred = parsedData->insertPredicate((Predicate*) $3, OpNot, NULL);
+            parsedData->setHavingCondition((Predicate*)pred);
+            $$= pred;
+
+        }
+        | not_opt hcondition
+        {
+            if( $1 == (char*) 1 )
+            {
+                Predicate *pred;
+                pred = parsedData->insertPredicate((Predicate*) $2, OpNot, NULL);
+                parsedData->setHavingCondition((Predicate*)pred);
+                $$= pred;
+            }
+            else
+            {
+                parsedData->setHavingCondition((Predicate*)$2);
+                $$=$2;
+            }
+        }
+        ;
+hcondition: MIN  '(' ident ')' OPERATOR value
+        {
+            ComparisionOp  op = AllDataType::getComparisionOperator((char*)$5);
+            Predicate *pred;
+            void **ptr = parsedData->insertCondValueAndGetPtr((char*)$3, (char*)$6, false, AGG_MIN, true);
+            pred = parsedData->insertPredicate((char*) $3, op, ptr, AGG_MIN);
+            free( $1 ); free ($3); free ($5); free ($6);
+            $$=pred;
+        }
+        | MAX  '(' ident ')' OPERATOR value
+        {
+            ComparisionOp  op = AllDataType::getComparisionOperator((char*)$5);
+            Predicate *pred;
+            void **ptr = parsedData->insertCondValueAndGetPtr((char*)$3, (char*)$6, false, AGG_MAX, true);
+            pred = parsedData->insertPredicate((char*) $3, op, ptr, AGG_MAX);
+            free( $1 ); free ($3); free ($5); free ($6);
+            $$=pred;
+        }
+        | SUM  '(' ident ')' OPERATOR value
+        {
+            ComparisionOp  op = AllDataType::getComparisionOperator((char*)$5);
+            Predicate *pred;
+            void **ptr = parsedData->insertCondValueAndGetPtr((char*)$3, (char*)$6, false, AGG_SUM, true);
+            pred = parsedData->insertPredicate((char*) $3, op, ptr, AGG_SUM);
+            free( $1 ); free ($3); free ($5); free ($6);
+            $$=pred;
+        }
+        | AVG  '(' ident ')' OPERATOR value
+        {
+            ComparisionOp  op = AllDataType::getComparisionOperator((char*)$5);
+            Predicate *pred;
+            void **ptr = parsedData->insertCondValueAndGetPtr((char*)$3, (char*)$6, false, AGG_AVG, true);
+            pred = parsedData->insertPredicate((char*) $3, op, ptr, AGG_AVG);
+            free( $1 ); free ($3); free ($5); free ($6);
+            $$=pred;
+        }
+        | COUNT  '(' ident ')' OPERATOR value
+        {
+            ComparisionOp  op = AllDataType::getComparisionOperator((char*)$5);
+            Predicate *pred;
+            void **ptr = parsedData->insertCondValueAndGetPtr((char*)$3, (char*)$6, false, AGG_COUNT, true);
+            pred = parsedData->insertPredicate((char*) $3, op, ptr, AGG_COUNT);
+            free( $1 ); free ($3); free ($5); free ($6);
+            $$=pred;
+        }
+        ;
+
 condition: ident OPERATOR value 
 	{
             ComparisionOp  op = AllDataType::getComparisionOperator((char*)$2);
 			bool opLike = false;
             if (op == OpLike) {
                 char *c = (char *)$3;
-                while (*c != '\0') {
-                    if (*c == '_') *c = '?';
-                    else if(*c == '%') *c = '*';
-                    c++;
-			    }
-				opLike = true;
+                //if (*c == '%' && *(c+1) == '\0')  
+                Util::changeWildcardChar(c);
+		opLike = true;
             }
             Predicate *pred;
             void **ptr = parsedData->insertCondValueAndGetPtr((char*)$1, (char*)$3, opLike);
@@ -339,6 +617,22 @@ condition: ident OPERATOR value
             free( $1 );  
             $$= finalPred;
         }
+        | ident IS NOT NULL_VALUE
+        {
+            Predicate *pred;
+            parsedData->insertCondValue((char*) $1);
+            pred = parsedData->insertNullPredicate((char*) $1, OpIsNull, false);
+            free( $1 ); free($2); free( $3 );
+            $$=pred;  
+        }
+        | ident IS NULL_VALUE
+        {
+            Predicate *pred;
+            parsedData->insertCondValue((char*) $1);
+            pred = parsedData->insertNullPredicate((char*) $1, OpIsNull, true);
+            free( $1 ); free($2); free( $3 );
+            $$=pred;  
+        }
         ;
 not_opt: NOT
 	{ $$=(char*) 1;
@@ -350,6 +644,16 @@ table:   ident
         {
             parsedData->insertTableName((char*)$1);
             free( $1 );
+        }
+        | ident AS ident
+        {
+            parsedData->insertTableName((char*)$1, (char*)$3);
+            free( $1 ); free($3);
+        }
+	| ident ident
+	{
+            parsedData->insertTableName((char*)$1, (char*)$2);
+            free( $1 ); free($2);
         }
         ;
 field:   ident
@@ -392,8 +696,13 @@ field:   ident
         { 
             parsedData->insertField("*");
         }
+        |ident'*'
+        {
+            parsedData->insertField("*");
+        }
         ;
 ident:    FIELD { $$ = $1; }
+	| '`'FIELD'`' { $$ = $2; }
         ;
 value:    STRING { $$ = $1; }
         | num_value
@@ -426,14 +735,75 @@ doub_value : DOUBLE { $$ = $1; }
         }
         | '+' DOUBLE %prec UMINUS{ $$ = $2; }
         ;
-
+cache_statement: CACHE TABLE ident cache_opt semicolon_opt
+        {
+            if (!Conf::config.useCache())
+            {
+              printf("CACHE_TABLE is set to FALSE in csql.conf file.\n");
+              free($3);
+              YYABORT;
+            }
+            parsedData->setStmtType(CacheTableStatement);
+            parsedData->setTableName($3); 
+        }
+        | UNCACHE TABLE ident semicolon_opt
+        {
+            parsedData->setStmtType(CacheTableStatement);
+            parsedData->setUnCache(true);
+            parsedData->setTableName($3); 
+        }
+        ; 
+cache_opt: hcond_cache vcond_cache pk_cache direct_opt dsn_opt no_schema
+         ;
+hcond_cache: 
+         | CONDITION value 
+         {
+            parsedData->setHCondFld(true);
+            parsedData->setHCondition((char*)$2);
+         }
+         ;
+vcond_cache:
+         | FIELDLIST value
+         {
+            parsedData->setVCondFld(true);
+            parsedData->setVCondition((char*)$2);
+            free($2);
+         }
+         ;
+pk_cache:
+         | PK ident
+         {
+            parsedData->setPkFld(true);
+            parsedData->setIndexName((char*)$2);
+            free($2);
+         }
+         ;
+direct_opt:
+         | DIRECT
+         {
+            parsedData->setDirect(true);
+         }
+         ;
+dsn_opt:
+         | DSN value
+         {
+             parsedData->setDSN(true);
+             parsedData->setPKTableName((char*)$2);
+             free($2);
+         }
+no_schema:
+         | NOSCHEMA
+         {
+             parsedData->setNoSchema(true);
+         }
+         ;
 ddl_statement: CREATE TABLE ident '(' create_defn_list_con ')' semicolon_opt
         {
             parsedData->setStmtType(CreateTableStatement);
             parsedData->setTableName($3); 
             free($3);
         }
-        | CREATE INDEX ident ON ident '(' field_list ')' opt_constr_type opt_ind_type  opt_bucket semicolon_opt
+        | CREATE INDEX ident ON ident '(' field_list ')' opt_constr_type opt_ind_type opt_bucket semicolon_opt
         {
             parsedData->setStmtType(CreateIndexStatement);
             parsedData->setIndexName($3); 
@@ -485,7 +855,7 @@ opt_constr_type:
         }
         ;
 opt_bucket:
-        | SIZE NUMBER_STRING
+	| SIZE NUMBER_STRING
         {
             parsedData->setBucketSize(atoi($2));
             free($2);
@@ -507,7 +877,7 @@ create_defn: field_defn
         }
         ;
 
-field_defn: field_name field_type size_opt null_expr_opt default_expr_opt auto_increment_key
+field_defn: field_name field_type size_opt null_expr_opt default_expr_opt auto_increment_key 
         ;
 
 field_name: ident
@@ -542,7 +912,43 @@ null_expr_opt:
             parsedData->setFldNotNull(true);
         }
         ;
-constraint_defn: primary_key_constraint
+constraint_defn : primary_key_constraint
+        | foreign_key_constraint
+        | primary_key_constraint ',' foreign_key_constraint
+        ;
+foreign_key_constraint: foreign_key_constraint foreign_key_constraint_L
+        | foreign_key_create
+        ;
+foreign_key_constraint_L: ',' foreign_key_create
+        ;
+foreign_key_create: FOREIGN KEY '(' fkField_list ')' REFERENCES ident'(' pkField_list ')'
+        {
+            parsedData->setForeign(true);
+            parsedData->setPKTableName((char*)$7);
+            parsedData->insertForeignKeyList();
+        }
+        ;
+fkField_list: fkField_list fkField_list_L
+        | fkField
+        ;
+fkField_list_L: ',' fkField
+	;
+fkField: ident
+        {
+           parsedData->insertFKField((char*)$1);
+           free($1);
+        }
+        ;
+pkField_list: pkField_list pkField_list_L
+        | pkField
+        ;
+pkField_list_L: ',' pkField
+        ;
+pkField: ident
+        {
+           parsedData->insertPKField((char*)$1);
+           free($1);
+        }
         ;
 
 primary_key_constraint: PRIMARY KEY '(' field_list ')' opt_bucket
@@ -562,7 +968,7 @@ auto_increment_key:
            }
            DbRetVal ret = parsedData->setAutoIncreament(true);
            if(ret != OK){
-               yyerror("A table should have only one AUTO_INCREMENT KEY ");
+               yyerror("A table should have ony one AUTO_INCREMENT KEY ");
                free($1);
                YYABORT;
            }
@@ -571,6 +977,7 @@ auto_increment_key:
            parsedData->setPrimary(true);
         }
         ;
+
 field_type: INT_TYPE
         {
             parsedData->setFldType(typeInt);

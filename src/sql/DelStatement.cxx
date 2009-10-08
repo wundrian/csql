@@ -13,7 +13,8 @@
  *   GNU General Public License for more details.                          *
  *                                                                         *
   ***************************************************************************/
-#include "Statement.h"
+#include <os.h>
+#include <Statement.h>
 #include <Info.h>
 DelStatement::DelStatement()
 {
@@ -300,6 +301,7 @@ DbRetVal DelStatement::resolveForCondition()
         value->isNullable = fInfo->isNull;
         // for binary datatype input buffer size should be 2 times the length 
         value->value = AllDataType::alloc(fInfo->type, fInfo->length);
+        if(value->paramNo ==1) continue; //FOR Is Null support
         if (value->parsedString == NULL)
         {
             delete fInfo;
@@ -309,13 +311,23 @@ DbRetVal DelStatement::resolveForCondition()
 
         if (value->parsedString[0] == '?')
         {
-		    if (! value->opLike) // checks if 'LIKE' operator is used
-                value->paramNo = paramPos++;
+	    //if (! value->opLike) // checks if 'LIKE' operator is used
+            value->paramNo = paramPos++;
         }
         if (!value->paramNo) { 
-		    // Here for binary dataType it is not strcpy'd bcos internally memcmp is done for predicates like f2 = 'abcd' where f2 is binary
+	    //Checking for valid integer type
+	    if((value->type == typeInt) || (value->type==typeShort) || (value->type==typeByteInt) || (value->type==typeLongLong) || (value->type==typeLong)){
+	           int len=strlen(value->parsedString);
+	           for(int n=0;n<len;n++){
+	               int p=value->parsedString[n];
+	               if(!(p>=48 && p<=57 || p==45))
+	                   return ErrBadArg;
+	           }
+	    }
+	    
+	    // Here for binary dataType it is not strcpy'd bcos internally memcmp is done for predicates like f2 = 'abcd' where f2 is binary
             AllDataType::strToValue(value->value, value->parsedString, fInfo->type, fInfo->length);
-		}	
+       }	
     }
     delete fInfo;
     totalParams = paramPos -1;

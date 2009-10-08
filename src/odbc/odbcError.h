@@ -8,7 +8,8 @@ class CSqlOdbcError
     public:
         // This object belongs to.
         int    hdlType; 
-
+        //Record Count
+        int count;
 	// SQLAPI specific err code.
         SQLINTEGER    csqlErrCode;
 

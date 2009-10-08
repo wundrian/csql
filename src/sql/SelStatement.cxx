@@ -13,8 +13,10 @@
  *   GNU General Public License for more details.                          *
  *                                                                         *
   ***************************************************************************/
-#include "Statement.h"
+#include <os.h>
+#include <Statement.h>
 #include <TableImpl.h>
+#include <OrderTableImpl.h>
 
 SelStatement::SelStatement()
 {
@@ -29,6 +31,11 @@ SelStatement::SelStatement()
     totalFields = 0;
     isPointReturned = false;
     handleAggWithTbl=false;
+    numRecords = 0;
+    isOffsetReached = false;
+    isRecLimitReached = false;
+    isExplain=false;
+    isJoin=false;
 }
 
 SelStatement::~SelStatement()
@@ -81,9 +88,14 @@ DbRetVal SelStatement::execute(int &rowsAffected)
         }
         AllDataType::copyVal(value->value, paramValues[i], value->type, value->length);
     }
-
-    rv = table->execute();
     //table->printPlan(0);
+    //printf("Execute Called\n");
+    rv = table->execute();
+    numRecords = 0;
+    isOffsetReached = false;
+    isRecLimitReached = false;
+
+    if (isExplain) table->printPlan(0);
     return rv;
 }
 
@@ -252,35 +264,68 @@ DbRetVal SelStatement::setBindField(int colNo, void *value)
     bindFieldValues[colNo -1] = (char*) value; 
     return OK;
 }
+bool SelStatement::isTableAlreadyPresent(char *tblName, char *aliasName)
+{
+    ListIterator titer = parsedData->getTableNameList().getIterator();
+    int count =0;
+    while (titer.hasElement())
+    {
+        TableName *t  = (TableName*)titer.nextElement();
+        if (strcmp(t->tblName, tblName) ==0 && 
+            strcmp(t->aliasName, aliasName) ==0) count++;
+    }
+    if (count == 1) return false; 
+    return true;
+}
 DbRetVal SelStatement::openTables()
 {
     if (dbMgr == NULL) return ErrNoConnection;
     JoinTableImpl *jHdl = NULL;
     Table *tHdl = NULL, *prevHdl = NULL;
-    bool joinInvolved = false;
+    isJoin = false;
     //check whether all the table exists
     ListIterator titer = parsedData->getTableNameList().getIterator();
+    ListIterator jiter = parsedData->getJoinTypeList().getIterator();
     while (titer.hasElement())
     {
         TableName *t  = (TableName*)titer.nextElement();
+        parsedData->setTableName(t->tblName);        
+        if (isTableAlreadyPresent(t->tblName, t->aliasName)) {
+            printError(ErrSyntaxError, 
+                       "Referencing same table again %s", t->tblName);
+            if (prevHdl) delete prevHdl;
+            return ErrSyntaxError;
+        }
         tHdl = dbMgr->openTable(t->tblName);
         if ( NULL == tHdl ) 
         {
             printError(ErrNotExists, 
                        "Unable to open the table:Table not exists");
+            if (prevHdl) delete prevHdl;
             return ErrNotExists;
         }
+        TableImpl *tImpl=  (TableImpl*) tHdl;
+        tImpl->setAliasName(t->aliasName);
         if (NULL != prevHdl) 
         { 
-            joinInvolved = true;
+            isJoin = true;
             jHdl = new JoinTableImpl();
             jHdl->setTable(prevHdl, tHdl);
+            JoinTypeNode *node = (JoinTypeNode*) jiter.nextElement();
+            if (node == NULL) {
+                printError(ErrSyntaxError, 
+                           "Join Type and number of tables do not match");
+                delete jHdl;
+                return ErrSyntaxError;
+            }
+            jHdl->setJoinType(node->jType);
             prevHdl = jHdl;
             continue;
         }
         prevHdl = tHdl;
     }
-    if (joinInvolved) table = jHdl; else table = tHdl;
+
+    if (isJoin) table = jHdl; else table = tHdl;
     return OK;
 }
 DbRetVal SelStatement::resolve()
@@ -336,7 +381,8 @@ DbRetVal SelStatement::resolve()
             rv = table->getFieldInfo(name->fldName, fInfo);
             if (ErrNotFound == rv || ErrNotExists == rv)
             {
-                dbMgr->closeTable(table);
+                if (aggTable) { delete aggTable; aggTable = NULL; }
+                else dbMgr->closeTable(table);
                 table = NULL;
                 delete fInfo;
                 printError(ErrSyntaxError, "Field %s does not exist in table",
@@ -347,8 +393,34 @@ DbRetVal SelStatement::resolve()
             strcpy(newVal->fldName,name->fldName);
             newVal->parsedString = NULL;
             newVal->paramNo = 0;
-            newVal->type = fInfo->type;
-            newVal->length = fInfo->length;
+            newVal->aType = name->aType;
+            newVal->isInResSet = true;
+            newVal->offset = fInfo->offset;
+            newVal->isPrimary = fInfo->isPrimary;
+            newVal->isUnique = fInfo->isUnique;
+            newVal->isAutoIncrement = fInfo->isAutoIncrement;
+
+            if (name->aType == AGG_COUNT) {
+                newVal->type = typeInt;
+                newVal->length = sizeof(int);
+            }
+            else if (name->aType == AGG_AVG) {
+                newVal->type = typeDouble;
+                newVal->length = sizeof(double);
+                if (!AllDataType::isValidFieldForAvg(fInfo->type)) {
+                    printError(ErrBadArg, "Illegal operation for field %s", 
+                                                               fInfo->fldName);
+                    dbMgr->closeTable(table);
+                    if (aggTable) { delete aggTable; aggTable = NULL; }
+                    table = NULL;
+                    delete fInfo;
+                    return ErrBadArg;
+                }
+            }
+            else {
+                newVal->type = fInfo->type;
+                newVal->length = fInfo->length;
+            }
             newVal->isNullable = fInfo->isNull;
             FieldName *bFldName=NULL;
             ListIterator it = bindFldList.getIterator();
@@ -365,23 +437,42 @@ DbRetVal SelStatement::resolve()
                 }
             }
             if (!isBindFld) {
-                if(newVal->type == typeBinary)
-                    newVal->value = AllDataType::alloc(fInfo->type, 
-                                                       2 * fInfo->length);
-                else newVal->value = AllDataType::alloc(fInfo->type, 
-                                                        fInfo->length);
+                if ( name->aType == AGG_UNKNOWN || 
+                                    (name->aType != AGG_COUNT &&
+                                                   name->aType != AGG_AVG) ) { 
+                    if(newVal->type == typeBinary) 
+                        newVal->value = AllDataType::alloc(fInfo->type, 
+                                                           2 * fInfo->length);
+                    else newVal->value = AllDataType::alloc(fInfo->type, 
+                                                            fInfo->length);
+                } else { 
+                    if (name->aType == AGG_AVG) {
+                        newVal->value = AllDataType::alloc(typeDouble,
+                                                            sizeof(double));
+                        memset(newVal->value, 0, sizeof(double));
+                    }
+                    else if (name->aType == AGG_COUNT) {
+                        newVal->value = AllDataType::alloc(typeInt,
+                                                               sizeof(int));
+                        memset(newVal->value, 0, sizeof(int));
+                    }
+                        
+                }
                 newVal->isAllocVal=true;
             }
             if (name->aType ==AGG_UNKNOWN && 
-                            parsedData->getGroupFieldNameList().size()== 0)
-                table->bindFld(name->fldName, newVal->value);
+                            parsedData->getGroupFieldNameList().size()== 0) {
+                rv = table->bindFld(name->fldName, newVal->value);
+                if (OK !=rv) return rv;
+            }
             else if (!isSingleTableNoGrp) 
             {
                 if (!aggTable) {
                     aggTable = new AggTableImpl();
                     aggTable->setTable(table);
                 }
-                aggTable->bindFld(name->fldName, name->aType, newVal->value);
+                rv = aggTable->bindFld(name->fldName, name->aType, newVal->value);
+                if (OK !=rv) return rv;
             }
             if (name->aType !=AGG_UNKNOWN && isSingleTableNoGrp) 
                 handleAggWithTbl= true;
@@ -390,11 +481,47 @@ DbRetVal SelStatement::resolve()
         if (!isBindFld) bindFldList.append(name);
     }
     bindFldList.reset();
+ 
+    //Check if the having list is present in projection list or not.
+    //If not present bind here not to be printed in fetchAndPrint later.
+    ListIterator hiter = parsedData->getHavingFieldNameList().getIterator();
+    while (hiter.hasElement()) {
+        FieldName *fnm = (FieldName *) hiter.nextElement();
+        rv = table->getFieldInfo(fnm->fldName, fInfo);
+        if (!isInProjectionList(fnm->fldName, fnm->aType)) {
+            FieldValue *newVal = new FieldValue();
+            strcpy(newVal->fldName,fnm->fldName);
+            newVal->parsedString = NULL;
+            newVal->paramNo = 0;
+            newVal->aType = fnm->aType;
+            newVal->isInResSet = false;
+            newVal->isNullable = fInfo->isNull;
+            newVal->offset = fInfo->offset;
+            newVal->isPrimary = fInfo->isPrimary;
+            newVal->isUnique = fInfo->isUnique;
+            newVal->isAutoIncrement = fInfo->isAutoIncrement;
+            if (fnm->aType == AGG_AVG) {
+                newVal->value = AllDataType::alloc(typeDouble, sizeof(double));
+                memset(newVal->value, 0, sizeof(double));
+            } else if (fnm->aType == AGG_COUNT) {
+                newVal->value = AllDataType::alloc(typeInt, sizeof(int));
+                memset(newVal->value, 0, sizeof(int));
+            } else {
+                newVal->value = AllDataType::alloc(fInfo->type, fInfo->length);
+                memset(newVal->value, 0, fInfo->length);
+            }
+            newVal->isAllocVal = true;
+            parsedData->insertFieldValue(newVal);
+            aggTable->bindFld(fnm->fldName, fnm->aType, newVal->value);
+        }
+    }
+
     rv = setBindFieldAndValues();
     if (rv != OK) 
     {
         delete fInfo;
-        dbMgr->closeTable(table);
+        if (aggTable) { delete aggTable; aggTable = NULL; }
+        else dbMgr->closeTable(table);
         table = NULL;
         return rv;
     }
@@ -406,8 +533,11 @@ DbRetVal SelStatement::resolve()
     {
         delete fInfo;
         //TODO::free memory allocated for params
-        table->setCondition(NULL);
-        dbMgr->closeTable(table);
+        if (aggTable) { delete aggTable; aggTable = NULL; }
+        else { 
+            table->setCondition(NULL);
+            dbMgr->closeTable(table);
+        }
         table = NULL;
         return rv;
     }
@@ -416,7 +546,8 @@ DbRetVal SelStatement::resolve()
     {
         delete fInfo;
         //TODO::free memory allocated for params
-        if (table) 
+        if (aggTable) { delete aggTable; aggTable = NULL; }
+        else if (table)
         {
             table->setCondition(NULL);
             dbMgr->closeTable(table);
@@ -424,33 +555,60 @@ DbRetVal SelStatement::resolve()
         table = NULL;
         return rv;
     }
+    
+    rv = resolveOrderByFld();
+    if (rv != OK) 
+    {
+        delete fInfo;
+        delete table;
+        table = NULL;
+        return rv;
+    }
+    rv = resolveDistinct();
     delete fInfo;
+    if(parsedData->getExplain())  isExplain = true;
     return rv;
 }
-DbRetVal SelStatement::resolveGroupFld(AggTableImpl *aggTable)
-{
-    if (!aggTable) {
+DbRetVal SelStatement::resolveDistinct()
+{   
+    if (!parsedData->getDistinct()) {
          return OK;
     }
-    ListIterator giter = parsedData->getGroupFieldNameList().getIterator();
+    OrderTableImpl *orderTable = new OrderTableImpl();
+    orderTable->setTable(table);
+    orderTable->setProjList(parsedData->getFieldValueList());
+    orderTable->setOrderByList(parsedData->getFieldValueList());
+    orderTable->setDistinct();
+    table = orderTable;
+    handleAggWithTbl= false;
+    return OK;
+}
+
+
+DbRetVal SelStatement::resolveOrderByFld()
+{
+    if (0 == parsedData->getOrderFieldNameList().size()) {
+         return OK;
+    }
+    OrderTableImpl *orderTable = new OrderTableImpl();
+    orderTable->setTable(table);
+    orderTable->setProjList(parsedData->getFieldValueList());
+    ListIterator giter = parsedData->getOrderFieldNameList().getIterator();
     FieldName *name = NULL;
     DbRetVal rv = OK;
     FieldInfo *fInfo = new FieldInfo();
-    if (giter.hasElement())
+    while (giter.hasElement())
     {
         name = (FieldName*)giter.nextElement();
         rv = table->getFieldInfo(name->fldName, fInfo);
         if (ErrNotFound == rv || ErrNotExists == rv)
         {
-            dbMgr->closeTable(table);
-            table = NULL;
             delete fInfo;
-            delete aggTable;
             printError(ErrSyntaxError, "Field %s does not exist in table",
                                         name->fldName);
             return ErrSyntaxError;
         }
-        FieldValue *newVal = new FieldValue();
+        /*FieldValue *newVal = new FieldValue();
         strcpy(newVal->fldName,name->fldName);
         newVal->parsedString = NULL;
         newVal->paramNo = 0;
@@ -462,26 +620,82 @@ DbRetVal SelStatement::resolveGroupFld(AggTableImpl *aggTable)
         else newVal->value = AllDataType::alloc(fInfo->type, fInfo->length);
         newVal->isAllocVal=true;
         parsedData->insertFieldValue(newVal);
+        */
+        if (name->aType == AGG_UNKNOWN) orderTable->setOrderBy(name->fldName);
+        else orderTable->setOrderBy(name->fldName, true); //descending
+    }
+    delete fInfo;
+    table = orderTable;
+    handleAggWithTbl= false;
+    return OK;
+}
+
+DbRetVal SelStatement::resolveGroupFld(AggTableImpl *aggTable)
+{
+    if (!aggTable) return OK;
+    
+    //check whether all non aggregate projections are from group list
+    ListIterator iter = parsedData->getFieldNameList().getIterator();
+    ListIterator giter = parsedData->getGroupFieldNameList().getIterator();
+    FieldName *name = NULL;
+    while (iter.hasElement())
+    {
+        name = (FieldName*) iter.nextElement();
+        if (name->aType == AGG_UNKNOWN && !isGroupFld(name->fldName) ) {
+            printError(ErrSyntaxError, "Non aggregate projection contains non group field: %s", name->fldName);
+            return ErrSyntaxError;
+        } 
+    }
+    
+    DbRetVal rv = OK;
+    FieldInfo *fInfo = new FieldInfo();
+    while (giter.hasElement())
+    {
+        name = (FieldName*)giter.nextElement();
+        rv = table->getFieldInfo(name->fldName, fInfo);
+        if (ErrNotFound == rv || ErrNotExists == rv)
+        {
+            delete fInfo;
+            printError(ErrSyntaxError, "Field %s does not exist in table",
+                                        name->fldName);
+            return ErrSyntaxError;
+        }
+        FieldValue *newVal = new FieldValue();
+        strcpy(newVal->fldName,name->fldName);
+        newVal->parsedString = NULL;
+        newVal->paramNo = 0;
+        newVal->type = fInfo->type;
+        newVal->isNullable = fInfo->isNull;
+        newVal->length = fInfo->length;
+        newVal->offset = fInfo->offset;
+        newVal->isPrimary = fInfo->isPrimary;
+        newVal->isUnique = fInfo->isUnique;
+        newVal->isAutoIncrement = fInfo->isAutoIncrement;
+        if (newVal->type == typeBinary)
+            newVal->value = AllDataType::alloc(fInfo->type, 2 * fInfo->length);
+        else newVal->value = AllDataType::alloc(fInfo->type, fInfo->length);
+        newVal->isAllocVal=true;
+        parsedData->insertFieldValue(newVal);
         aggTable->setGroup(name->fldName, newVal->value);
     }
     delete fInfo;
-    if (giter.hasElement()) 
+    aggTable->setCondition(parsedData->getHavingCondition());
+    /*if (giter.hasElement()) 
     { 
-       table= aggTable; 
        printError(ErrSyntaxError, "Only one field allowed in group\n");
        return ErrSyntaxError; 
-    }
+    }*/
     table = aggTable;
     return OK; 
 }
+
 DbRetVal SelStatement::resolveStar()
 {
     DbRetVal rv = OK;
     parsedData->clearFieldNameList();
-
+    FieldValue *newVal = NULL;
     List fNameList = table->getFieldNameList();
     ListIterator fNameIter = fNameList.getIterator();
-    FieldValue *newVal = NULL;
     //fNameList.resetIter(); //do not remove this.
     FieldInfo *fInfo = new FieldInfo();
     for (int i = 0; i < fNameList.size() ; i++)
@@ -501,14 +715,24 @@ DbRetVal SelStatement::resolveStar()
         newVal->paramNo = 0;
         newVal->type = fInfo->type;
         newVal->length = fInfo->length;
+        newVal->offset = fInfo->offset;
+        newVal->isPrimary = fInfo->isPrimary;
+        newVal->isUnique = fInfo->isUnique;
+        newVal->isAutoIncrement = fInfo->isAutoIncrement;
+
         // for binary datatype input buffer size should be 2 times the length 
         if(newVal->type == typeBinary) 
             newVal->value = AllDataType::alloc(fInfo->type, 2 * fInfo->length);
         else newVal->value = AllDataType::alloc(fInfo->type, fInfo->length);
-	newVal->isAllocVal=true;
+        newVal->isAllocVal=true;
+        newVal->isInResSet = true;
         parsedData->insertFieldValue(newVal);
         parsedData->insertField(fName);
-        table->bindFld(fName, newVal->value);
+        rv = table->bindFld(fName, newVal->value);
+        if (rv != OK) { 
+            delete fInfo;
+            return rv;
+        }
     }
     fNameIter.reset();
     while (fNameIter.hasElement())
@@ -571,10 +795,18 @@ DbRetVal SelStatement::resolveForCondition()
                                         value->fName);
             return ErrSyntaxError;
         }
-        value->type = fInfo->type;
-        value->length = fInfo->length;
+        if (value->aType == AGG_AVG) {
+            value->type = typeDouble;
+            value->length = sizeof(double);
+        } else if (value->aType == AGG_COUNT) {
+            value->type = typeInt;
+            value->length = sizeof(int);
+        } else {
+            value->type = fInfo->type;
+            value->length = fInfo->length;
+        }
         value->isNullable = fInfo->isNull;
-        value->value = AllDataType::alloc(fInfo->type, fInfo->length);
+        value->value = AllDataType::alloc(value->type, value->length);
         //table->bindFld(name->fldName, value->value);
         if(value->paramNo ==1) continue;//For Predecate t1.f1=t2.f1
         if (value->parsedString == NULL)
@@ -585,12 +817,22 @@ DbRetVal SelStatement::resolveForCondition()
         }
         if (value->parsedString[0] == '?')
         {
-		if(!value->opLike) // checks if 'LIKE' operator is used
+		//if(!value->opLike) // checks if 'LIKE' operator is used
                 value->paramNo = paramPos++;
         }
         if (!value->paramNo) {
-		    // Here for binary dataType it is not strcpy'd bcos internally memcmp is done for predicates like f2 = 'abcd' where f2 is binary
-            AllDataType::strToValue(value->value, value->parsedString, fInfo->type, fInfo->length);
+	     // for valid Integer 
+	     if((value->type == typeInt) || (value->type==typeShort) || (value->type==typeByteInt) || (value->type==typeLongLong) || (value->type==typeLong)){
+	            int len=strlen(value->parsedString);
+	            for(int n=0;n<len;n++){
+	                 int p=value->parsedString[n];
+	                 if(!(p>=48 && p<=57 || p==45))
+	                     return ErrBadArg;
+	            }
+	     }
+		     		    
+	    // Here for binary dataType it is not strcpy'd bcos internally memcmp is done for predicates like f2 = 'abcd' where f2 is binary
+            AllDataType::strToValue(value->value, value->parsedString, value->type, value->length);
 	}	
     }
     delete fInfo;
@@ -615,6 +857,18 @@ DbRetVal SelStatement::resolveForCondition()
     }
     return OK;
 }
+bool SelStatement::isGroupFld(char *fieldName)
+{
+    ListIterator giter = parsedData->getGroupFieldNameList().getIterator();
+    FieldName *name = NULL;
+    while (giter.hasElement())
+    {
+        name = (FieldName*) giter.nextElement();
+        if (0 == strcmp(name->fldName, fieldName)) return true;
+    }
+    return false;
+}
+
 void* SelStatement::handleSingleTableAggWithoutGroup()
 {
     if (isPointReturned) return NULL;
@@ -624,29 +878,51 @@ void* SelStatement::handleSingleTableAggWithoutGroup()
     DbRetVal rv = OK;
     FieldName *name;
     FieldValue *fVal = NULL;
+    bool noRec = false;
     while (iter.hasElement())
     {
         name = (FieldName*) iter.nextElement();
         fVal = bindFields[i];
         
-        //rv = tblImpl->fetchAgg(name, (int) name->aType, fVal->value);
-        rv = tblImpl->fetchAgg(name->fldName, name->aType, fVal->value);
+        rv = tblImpl->fetchAgg(name->fldName, name->aType, fVal->value, noRec);
         if (OK != rv) return NULL;
         i++;
         tblImpl->closeScan();
         tblImpl->execute();
     }
     isPointReturned = true;
+    if(noRec && name->aType != AGG_COUNT) return NULL;
     return fVal;
 }
 void* SelStatement::fetch()
 {
+    void *tuple = NULL;
     if(handleAggWithTbl)
     {
-       return handleSingleTableAggWithoutGroup();
+       tuple = handleSingleTableAggWithoutGroup();
+       if (NULL == tuple) return NULL;
+    }else {
+        if (isOffsetReached) {
+            if (!isRecLimitReached) {
+                tuple = table->fetch();
+                if (NULL != tuple) numRecords++;
+                if (numRecords == parsedData->getLimit()) isRecLimitReached=true;
+            }
+        }
+        else {
+          int recordOffset =0;
+          while(recordOffset <= parsedData->getOffset()) {
+            tuple = table->fetch();
+            if (NULL == tuple) break;
+            recordOffset++;
+          }
+          isOffsetReached = true;
+          if (NULL != tuple) numRecords++;
+          if (numRecords == parsedData->getLimit()) isRecLimitReached=true;
+        }
     }
-    void *tuple = table->fetch();
     if (NULL == tuple) return NULL;
+
     //copy values to binded buffer
     FieldValue *value;
     for (int i = 0; i < totalFields; i++)
@@ -664,11 +940,30 @@ void* SelStatement::fetch()
 
 void* SelStatement::fetch(DbRetVal &rv)
 {
+    void *tuple = NULL;
     if(handleAggWithTbl)
     {
-       return handleSingleTableAggWithoutGroup();
+        tuple = handleSingleTableAggWithoutGroup();
+        if (NULL == tuple) return NULL;
+    }else {
+        if (isOffsetReached) {
+            if (!isRecLimitReached) {
+                tuple = table->fetch(rv);
+                if (NULL != tuple) numRecords++;
+                if (numRecords == parsedData->getLimit()) isRecLimitReached=true;
+            }
+        } else {
+            int recordOffset =0;
+            while(recordOffset <= parsedData->getOffset()) {
+                tuple = table->fetch(rv);
+                if (NULL == tuple) break;
+                recordOffset++;
+            }
+            isOffsetReached = true;
+            if (NULL != tuple) numRecords++;
+            if (numRecords == parsedData->getLimit()) isRecLimitReached=true;
+        }
     }
-    void *tuple = table->fetch(rv);
     if (NULL == tuple) return NULL;
     //copy values to binded buffer
     FieldValue *value;
@@ -703,18 +998,18 @@ char* SelStatement::getFieldName ( int pos )
     //TODO::if not yet prepared return error
     //TODO::check the upper limit for projpos
     ListIterator iter = parsedData->getFieldNameList().getIterator();
-    int position =0;
+    int position = 1;
     while (iter.hasElement())
     {
+        FieldName *name = (FieldName*) iter.nextElement();
         if (position == pos) {
-              FieldName *name = (FieldName*) iter.nextElement();
               if (NULL == name)
               {
                   printError(ErrSysFatal, "Should never happen. Field Name list has NULL");
                   return (char*) 0;
               }
               return name->fldName;
-      }
+        }
         position++;
     }
     return (char*) 0;
@@ -739,7 +1034,24 @@ void* SelStatement::fetchAndPrint(bool SQL)
     {
        tuple = handleSingleTableAggWithoutGroup();
     }else {
-        tuple = table->fetch(); 
+        if (isOffsetReached) {
+            if (!isRecLimitReached) {
+                tuple = table->fetch(); 
+                if (NULL != tuple) numRecords++;
+                if (numRecords == parsedData->getLimit()) isRecLimitReached=true;
+            }
+        }
+        else {
+          int recordOffset =0;
+          while(recordOffset <= parsedData->getOffset()) {
+            tuple = table->fetch(); 
+            if (NULL == tuple) break;
+            recordOffset++;
+          }
+          isOffsetReached = true;
+          if (NULL != tuple) numRecords++;
+          if (numRecords == parsedData->getLimit()) isRecLimitReached=true;
+        }
     }
     if (NULL == tuple) return NULL;
     FieldValue *value;
@@ -752,15 +1064,18 @@ void* SelStatement::fetchAndPrint(bool SQL)
     for (int i = 0; i < totalFields; i++)
     {
         value = bindFields[i];
+        if (!value->isInResSet) continue;
         nullValueSet = table->isFldNull(value->fldName);
-        if (nullValueSet) 
+        if (nullValueSet) {
             if (SQL) { 
                 if (i==0) 
                     printf("NULL"); 
                 else
                     printf(", NULL"); 
             }
-            else printf("NULL\t");
+            else if (value->aType != AGG_COUNT) printf("NULL\t");
+            else printf("0\t");
+        }
         else  {
             if (SQL) {
                 switch(value->type)
@@ -818,6 +1133,32 @@ void* SelStatement::getFieldValuePtr( int pos )
     return ( (void*) v->value );
 }
 
+void* SelStatement::getFieldValuePtr( char *name )
+{
+    FieldValue *value;
+    char fName[IDENTIFIER_LENGTH];
+    for (int i = 0; i < totalFields; i++)
+    {
+        value = bindFields[i];
+        table->getFieldNameAlone(value->fldName,fName);
+        if (strcmp(fName,name)==0)
+        {
+            return ( (void*) value->value );
+        }
+        
+    }
+    return NULL;
+}
+void SelStatement::getProjFieldType(int *data)
+{
+    FieldValue *value;
+    for (int i = 0; i < totalFields; i++)
+    {
+        value = bindFields[i];
+        data[i+1] = value->type; 
+    }
+}
+
 int SelStatement::noOfProjFields()
 {
     return totalFields;
@@ -825,52 +1166,48 @@ int SelStatement::noOfProjFields()
 
 DbRetVal SelStatement::getProjFldInfo (int projpos, FieldInfo *&fInfo)
 {
+
+    DbRetVal rv = OK;
     //TODO::if not yet prepared return error
     //TODO::check the upper limit for projpos
-    //TODO::validate if projpos is less than size of the list
-    ListIterator iter = parsedData->getFieldNameList().getIterator();
-    FieldName *name = NULL;
-    DbRetVal rv = OK;
-    int position =0;
-    while (iter.hasElement())
-    {
-        name = (FieldName*)iter.nextElement();
-        if (NULL == name) 
-        {
-            printError(ErrSysFatal, "Should never happen. Field Name list has NULL");
-            return ErrSysFatal;
-        }
-        if (position == (projpos-1)) break;
-        position++;
+    if (projpos < 0 || projpos >totalFields) return ErrBadArg;
+    FieldValue *value = bindFields[projpos-1];
+    fInfo->type = value->type;
+    fInfo->length= value->length;
+    fInfo->isNull = value->isNullable;
+    fInfo->aType = value->aType;
+    fInfo->offset = value->offset;
+    fInfo->isPrimary = value->isPrimary;
+    fInfo->isUnique = value->isUnique;
+    fInfo->isAutoIncrement= value->isAutoIncrement;
+    if (!fInfo->aType) {
+        strcpy(fInfo->fldName, value->fldName);
+        return OK;
     }
-
-    rv = table->getFieldInfo(name->fldName, fInfo);
-    if (OK == rv)
+    switch(fInfo->aType)
     {
-       //get back the qualified name(tablename.fldname)
-       char qualName[IDENTIFIER_LENGTH];
-       strcpy(qualName, name->fldName);
-       switch(name->aType)
-       {
-           case AGG_COUNT:
-               sprintf(fInfo->fldName, "COUNT(%s)", qualName);
-               break;
-           case AGG_MIN:
-               sprintf(fInfo->fldName, "MIN(%s)", qualName);
-               break;
-           case AGG_MAX:
-               sprintf(fInfo->fldName, "MAX(%s)", qualName);
-               break;
-           case AGG_SUM:
-               sprintf(fInfo->fldName, "SUM(%s)", qualName);
-               break;
-           case AGG_AVG:
-               sprintf(fInfo->fldName, "AVG(%s)", qualName);
-               break;
-           default:
-               strcpy(fInfo->fldName, qualName);
-               break;
-       }
+       case AGG_COUNT:
+           sprintf(fInfo->fldName, "COUNT(%s)",  value->fldName);
+           fInfo->type = typeInt;
+           fInfo->length = sizeof(int);
+           break;
+       case AGG_MIN:
+           sprintf(fInfo->fldName, "MIN(%s)",  value->fldName);
+           break;
+       case AGG_MAX:
+           sprintf(fInfo->fldName, "MAX(%s)",  value->fldName);
+           break;
+       case AGG_SUM:
+           sprintf(fInfo->fldName, "SUM(%s)",  value->fldName);
+           break;
+       case AGG_AVG:
+           sprintf(fInfo->fldName, "AVG(%s)",  value->fldName);
+           fInfo->type = typeDouble;
+           fInfo->length = sizeof(double);
+           break;
+       default:
+           strcpy(fInfo->fldName, value->fldName);
+           break;
     }
     return rv;
 }
@@ -879,4 +1216,16 @@ int SelStatement::getFldPos(char *name)
     return table->getFldPos(name);
 }
 
+bool SelStatement::isInProjectionList(char *name, AggType aType) 
+{
+    ListIterator iter = parsedData->getFieldNameList().getIterator();
+    FieldName *fldName = NULL;
+    while (iter.hasElement()) {
+        fldName = (FieldName*) iter.nextElement();
+        if ((strcmp(fldName->fldName, name)==0) && fldName->aType == aType) {
+            return true;
+        }
+    }
+    return false;
+}
 

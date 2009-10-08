@@ -37,11 +37,12 @@ class CSqlOdbcDesc
         CSqlOdbcDesc( void );
 };
 
-class CSqlOdbcDescList : public std::vector<CSqlOdbcDesc*>
+class CSqlOdbcDescList 
 {
     public:
         int type_;
     public:
+        List descList_;
         CSqlOdbcDescList ( int descType);
         SQLRETURN delDesc( CSqlOdbcDesc *node );   
         void freeAllDesc( void );

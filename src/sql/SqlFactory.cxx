@@ -30,8 +30,9 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
 {
     AbsSqlConnection *conn = NULL ;
     Conf::config.readAllValues(os::getenv("CSQL_CONFIG_FILE"));
-    bool isSqlLogNeeded = Conf::config.useDurability();
-
+    bool isSqlLogNeeded = ( Conf::config.useDurability() ||
+                          ( Conf::config.useCache() &&
+                            Conf::config.getCacheMode() == ASYNC_MODE) );
     switch(implFlag)
     {
         case CSql:
@@ -40,6 +41,8 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
             }else {
                AbsSqlConnection *sqlCon = new SqlConnection();
                conn = new SqlLogConnection();
+               SqlLogConnection *logCon = (SqlLogConnection *)conn;
+               logCon->setNoMsgLog(true);
                conn->setInnerConnection(sqlCon);
             }
             break;
@@ -64,11 +67,11 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
             SqlGwConnection *gwconn = new SqlGwConnection();
             if (isSqlLogNeeded) {
                 AbsSqlConnection *sqllogconn = new SqlLogConnection();
-                sqllogconn->setInnerConnection(sqlCon);
-                gwconn->setInnerConnection(sqllogconn);
+                gwconn->setInnerConnection(sqlCon);
             } else gwconn->setInnerConnection(sqlCon);
-            AbsSqlConnection *adapterCon = new SqlOdbcConnection();
-            gwconn->setAdapter(adapterCon);
+            
+            //createAdapters for MultiDSN
+            gwconn->createAdapters(gwconn);
             conn = gwconn;
             break;
             }
@@ -107,7 +110,9 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
 AbsSqlStatement* SqlFactory::createStatement(SqlApiImplType implFlag)
 {
     AbsSqlStatement *stmt = NULL;
-    bool isSqlLogNeeded = Conf::config.useDurability();
+    bool isSqlLogNeeded = ( Conf::config.useDurability() ||
+                          ( Conf::config.useCache() &&
+                            Conf::config.getCacheMode() == ASYNC_MODE )); 
     switch(implFlag)
     {
         case CSql:
@@ -138,6 +143,7 @@ AbsSqlStatement* SqlFactory::createStatement(SqlApiImplType implFlag)
             {
             SqlGwStatement *gwstmt = new SqlGwStatement();
             AbsSqlStatement *sqlstmt = new SqlStatement();
+
             if (isSqlLogNeeded) {
                 AbsSqlStatement *sqllogstmt = new SqlLogStatement();
                 sqllogstmt->setInnerStatement(sqlstmt);

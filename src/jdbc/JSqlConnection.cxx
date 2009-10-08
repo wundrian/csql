@@ -62,8 +62,8 @@ JNIEXPORT void JNICALL Java_csql_jdbc_JSqlConnection_alloc
         SqlNwConnection *conn = (SqlNwConnection*)con;
         jboolean isCopy = JNI_TRUE;
         hName=(char*) env->GetStringUTFChars( hostname, &isCopy );
-        printf("Hostname : %s\n",hName);
         conn->setHost(hName,port);
+        env->ReleaseStringUTFChars(hostname, hName);
     }
     cls = env->GetObjectClass( obj );
     fid = env->GetFieldID( cls, "sqlConPtr", "J");
@@ -126,6 +126,8 @@ JNIEXPORT jint JNICALL Java_csql_jdbc_JSqlConnection_connect
     username = (char*) env->GetStringUTFChars( user, &isCopy );
     password = (char*) env->GetStringUTFChars( pass, &isCopy );
     jint rv = (jint) con->connect(username, password);
+    env->ReleaseStringUTFChars(user, username);
+    env->ReleaseStringUTFChars(pass, password);
     return rv;
 }
 

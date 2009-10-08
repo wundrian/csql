@@ -13,7 +13,8 @@
  *   GNU General Public License for more details.                          *
  *                                                                         *
   ***************************************************************************/
-#include "Statement.h"
+#include <os.h>
+#include <Statement.h>
 #include <Info.h>
 
 UpdStatement::UpdStatement()
@@ -173,6 +174,7 @@ DbRetVal UpdStatement::setShortParam(int paramNo, short value)
     return OK;
 }
 
+
 DbRetVal UpdStatement::setIntParam(int paramNo, int value)
 {
     if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
@@ -192,7 +194,6 @@ DbRetVal UpdStatement::setIntParam(int paramNo, int value)
     }
     return OK;
 }
-
 DbRetVal UpdStatement::setNull(int paramNo)
 {
     if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
@@ -206,11 +207,10 @@ DbRetVal UpdStatement::setNull(int paramNo)
     if (paramNo <= totalAssignParams) {
         uValue = (UpdateFieldValue*) params[paramNo-1];
         table->markFldNull(uValue->fldName);
-    } else {
+    } else { 
         printf("paramerise for predicate nullset not supported\n");
     }
 }
-
 DbRetVal UpdStatement::setLongParam(int paramNo, long value)
 {
     if (paramNo <=0 || paramNo > totalParams) return ErrBadArg;
@@ -483,8 +483,8 @@ DbRetVal UpdStatement::resolveForAssignment()
             delete fInfo;
             printError(ErrAutoIncUpdate, "Auto_increment key field '%s' cannot be updated \n", value->fldName);
             return ErrAutoIncUpdate;
-        }
- 
+
+        } 
         value->type = fInfo->type;
         value->length = fInfo->length;
         value->isNullable = fInfo->isNull;
@@ -509,15 +509,22 @@ DbRetVal UpdStatement::resolveForAssignment()
             value->paramNo = paramPos++;
         }
         if (!value->paramNo) {
-            // for binary datatype buffer is just strcpy'd. It will be converted into binary datatype in copyValuesToBindBuffer in DBAPI
+            // checking for Integer value
+	     if((value->type == typeInt) || (value->type==typeShort) || (value->type==typeByteInt) || (value->type==typeLongLong) || (value->type==typeLong)){
+	           int len=strlen(value->parsedString);
+	           for(int n=0;n<len;n++){
+	               int p=value->parsedString[n];
+	               if(!(p>=48 && p<=57 || p==45))
+	                  return ErrBadArg;
+	           }
+	     }
+	    // for binary datatype buffer is just strcpy'd. It will be converted into binary datatype in copyValuesToBindBuffer in DBAPI
             if (value->type == typeBinary)
                 strncpy((char *)value->value, value->parsedString, 2 * fInfo->length);
             else AllDataType::strToValue(value->value, value->parsedString, fInfo->type, value->length);
-		}	
+       }	
     }
     totalAssignParams = paramPos -1;
-
-
     //get the fieldname list and validate field names
     ListIterator cIter = parsedData->getConditionValueList().getIterator();
     ConditionValue *cValue = NULL;
@@ -560,15 +567,23 @@ DbRetVal UpdStatement::resolveForAssignment()
 
         if (cValue->parsedString[0] == '?')
         {
-		    if(! cValue->opLike) // checks if 'LIKE' operator is used
-                cValue->paramNo = paramPos++;
+  	    //if(! cValue->opLike) // checks if 'LIKE' operator is used
+            cValue->paramNo = paramPos++;
         }
         if (!cValue->paramNo) {
-		    // Here for binary dataType it is not strcpy'd bcos internally memcmp is done for predicates like f2 = 'abcd' where f2 is binary
-			AllDataType::strToValue(cValue->value, cValue->parsedString, fInfo->type, fInfo->length);
-        }
-	}
-
+           //Checking for integer value
+	   if((cValue->type == typeInt) || (cValue->type==typeShort) || (cValue->type==typeByteInt) || (cValue->type==typeLongLong) || (cValue->type==typeLong)){
+	        int len = strlen(cValue->parsedString);
+	        for(int n=0;n<len;n++){
+	             int p=cValue->parsedString[n];
+	             if(!(p>=48 && p<=57 || p==45))
+	                return ErrBadArg;
+	        }
+	   }
+           // Here for binary dataType it is not strcpy'd bcos internally memcmp is done for predicates like f2 = 'abcd' where f2 is binary
+           AllDataType::strToValue(cValue->value, cValue->parsedString, fInfo->type, fInfo->length);
+       }
+    }
     delete fInfo;
     totalParams = paramPos -1;
     if (0 == totalParams) return OK;

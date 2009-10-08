@@ -27,8 +27,8 @@ class CSqlOdbcDbc
 
         DbcState_t  state_;         // Environment State.
         CSqlOdbcEnv        *parentEnv_;    // Parent Environment Handle.
-        std::vector<CSqlOdbcStmt*>   stmtList_;      // Statement handle list.
-        std::vector<CSqlOdbcDesc*>   descList_;      // Descriptor handle list.
+        List stmtList_; // Statement handle list.
+        List descList_; // Descriptor handle list.
         AbsSqlConnection  *fsqlConn_;      // CSQL connection object 
         int mode_; //1->csql , 2->gateway
         SQLUINTEGER curAccessMode_;
@@ -88,6 +88,12 @@ class CSqlOdbcDbc
             SQLPOINTER value,           // OUT
             SQLINTEGER bufferLength,    // IN
             SQLINTEGER *stringLength);  // OUT
+
+        SQLRETURN SQLGetFunctions(
+            SQLUSMALLINT     FunctionId,
+            SQLUSMALLINT *     SupportedPtr
+        );
+
             
         SQLRETURN SQLGetInfo(
             SQLUSMALLINT     InfoType,

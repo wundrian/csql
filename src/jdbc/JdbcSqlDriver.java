@@ -118,6 +118,7 @@ public static String removeChar(String s, char c)
         uName = info.getProperty("user");
         pword = info.getProperty("password");
         JdbcSqlConnection con = new JdbcSqlConnection(mode,hostname,portno,uName, pword);
+        con.setUrl(connectString);
         return((Connection) con);
     }
     public DriverPropertyInfo[] getPropertyInfo (String connectString,

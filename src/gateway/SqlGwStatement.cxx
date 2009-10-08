@@ -17,22 +17,58 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
+#include <SqlGwConnection.h>
+#include <SqlOdbcStatement.h>
 #include <SqlGwStatement.h>
 #include <SqlLogStatement.h>
 #include <CacheTableLoader.h>
 #include <TableConfig.h>
 
+DbRetVal SqlGwStatement::executeDirect(char *stmtstr)
+{
+    DbRetVal rv = OK;
+    int rows = 0;
+    rv = prepare(stmtstr);
+    if (rv != OK)  return rv;
+    rv = execute(rows);
+    if (rv != OK) return rv;
+    return rv;
+}
+ 
 DbRetVal SqlGwStatement::prepare(char *stmtstr)
 {
+    char dsnname[IDENTIFIER_LENGTH];
+    char *dsn = dsnname;
+    char tab[IDENTIFIER_LENGTH]; 
+
+    bool connClose=false; 
+    bool SyntaxError=false;
     DbRetVal rv = OK,ret=OK;
+    char *stmtTblName = NULL;
+    
     SqlGwConnection *conn = (SqlGwConnection*) con;
-    //conn->connectCSqlIfNotConnected();
-    //conn->connectAdapterIfNotConnected();
+    if (!conn->isAdptConnected() && !conn->isCsqlConnected()) return ErrNoConnection; 
+    SqlOdbcStatement *ada=(SqlOdbcStatement*) adapter;
+    struct MultiDSN *node = conn->multi_adapter_head; //
+    
     stmtHdlr = NoHandler;
     if (innerStmt) rv = innerStmt->prepare(stmtstr);
-//    SqlLogStatement *stmt = (SqlLogStatement*) innerStmt;
+    if (rv == OK) isPrepared = true;
+    if (rv == ErrNotOpen) connClose=true;//new line addded for MultiDsn
+    if (rv == ErrSyntaxError) SyntaxError=true;//new line addded for MultiDsn
+    stmtTblName = innerStmt->getTableName();
+
     bool isAllcachedTableForJoin = true;
     int noOfTable = 0;
+    
+    StatementType stype = innerStmt->getStmtType();
+    printDebug(DM_Gateway,"Table Name %s\t Stmt Type %d\n",stmtTblName, stype);
+    if (stype == CacheTableStatement || stype == CompactTableStatement)
+    {
+        stmtHdlr = CSqlHandler;
+        return OK;
+    }
+  
     ListIterator titer =innerStmt->getTableNameList().getIterator();
     while (titer.hasElement())
     {
@@ -41,47 +77,100 @@ DbRetVal SqlGwStatement::prepare(char *stmtstr)
         if(ret!=OK) isAllcachedTableForJoin=false;
         noOfTable++;
     }
-    if(noOfTable == 1){ isAllcachedTableForJoin = true;}
-    mode = TableConf::config.getTableMode(innerStmt->getTableName());
+    if(noOfTable == 1) { isAllcachedTableForJoin = true; }
+    mode = TableConf::config.getTableMode(stmtTblName);
+    bool isCached = TableConf::config.isTableCached(mode);
+    bool isSelStmt = innerStmt->isSelect();
+    bool localTable = false;
+    if (rv == OK && mode == 0) localTable = true;
+    bool isDirect = mode & DIRECT_CACHE;
 /*    if((mode==2||mode==6) && !innerStmt->isSelect())
     {
        printError(ErrReadOnlyCache, "Partial Cache Condition Violation for Non select Dml statement\n");
        return ErrReadOnlyCache;
-    }*/
-    if ((rv == OK)&& ((mode!=5 && mode!=6)||innerStmt->isSelect()) && isAllcachedTableForJoin)
+    } */
+    
+    if ((rv == OK) && (!isDirect || isSelStmt) && isAllcachedTableForJoin)
     {
         stmtHdlr = CSqlHandler;
-        if(mode !=1) return rv;
+        if (localTable || isSelStmt || (( isCached) && Conf::config.getCacheMode()==ASYNC_MODE))
+            return rv;  
     }
-
     //TODO::add procedures also in the below checking
     if (!strncasecmp(stmtstr,"INSERT", 6) == 0 &&
         !strncasecmp(stmtstr, "UPDATE", 6) ==0 &&
         !strncasecmp(stmtstr, "SELECT", 6) ==0 &&
-        !strncasecmp(stmtstr, "DELETE", 6) ==0) return rv;
+        !strncasecmp(stmtstr, "DELETE", 6) ==0 && 
+        (NULL==strstr(stmtstr,"call ") && NULL == strstr(stmtstr,"CALL ")) )return rv;
 
     printDebug(DM_Gateway, "Handled by csql %d\n", shouldCSqlHandle());
 
     if (!shouldCSqlHandle()) stmtHdlr = AdapterHandler;
-    if ( shouldCSqlHandle() && !innerStmt->isSelect() ) 
-        stmtHdlr = CSqlAndAdapterHandler;
+    if ( shouldCSqlHandle() && Conf::config.getCacheMode() == SYNC_MODE && 
+         !isSelStmt && isCached) stmtHdlr = CSqlAndAdapterHandler;
+
     printDebug(DM_Gateway, "Handled  %d\n", stmtHdlr);
-    //prepare failed. means table not there in csql->uncached table
-    //or sql statement is complex and csql parser failed
-    if (adapter && shouldAdapterHandle()) rv = adapter->prepare(stmtstr);
-    if (rv != OK)
+    strcpy(tab, stmtTblName);
+
+    /*********The below code is for MultiDsn.***********/
+              
+    //If Prepared by CSQL and if the table is cached.
+    if(isPrepared && (ret = TableConf::config.getDsnForTable(tab,dsn)) == OK) {   
+        if (adapter && shouldAdapterHandle()) {
+            adapter->setConnection(conn->getAdapterConnection(dsnname));
+            rv = adapter->prepare(stmtstr);
+            if (rv == OK) setToCommit(dsnname);
+        }
+    }
+    //Default adapter should prepare when table name is not found by csql's prepare(),
+    //This happens only when csql connection is down or there is a complex query.
+     if((stmtHdlr == AdapterHandler && connClose) || SyntaxError){   
+       adapter->setConnection(conn->getAdapterConnection(Conf::config.getDSN()));
+           if(adapter && shouldAdapterHandle()){
+               rv = adapter->prepare(stmtstr);
+               setToCommit(Conf::config.getDSN());
+           }
+    }
+    //For non-cached TDB tables, where the table name is found in csql prepare.
+    if(!isPrepared && !SyntaxError && !connClose) {
+        if(conn->noOfCon == 1){
+            adapter->setConnection(conn->getAdapterConnection(node->dsn));
+            if(adapter && shouldAdapterHandle()) {
+                rv = adapter->prepare(stmtstr);
+                if(rv == OK) node->toCommit=true;
+            }
+         }else{
+            while(node != NULL) {
+                if(adapter)
+                adapter->setConnection(conn->getAdapterConnection(node->dsn));
+                if(ada->isTableExists(tab)){
+                    if(adapter && shouldAdapterHandle()){
+                        rv = adapter->prepare(stmtstr);
+                        if(rv == OK) node->toCommit=true;
+                        break; 
+                    }
+                }
+                node=node->next;
+            }//while Ends here....
+        }                  
+    } 
+    if(rv != OK) {
         printError(ErrBadCall, "Both adapter and csql could not prepare");
+        isPrepared = false;
+    }else isPrepared = true;
     return rv;
 }
+
 bool SqlGwStatement::shouldAdapterHandle()
 {
-    if (stmtHdlr == AdapterHandler || stmtHdlr == CSqlAndAdapterHandler) return true;
+    if (stmtHdlr == AdapterHandler  || (stmtHdlr == CSqlAndAdapterHandler)) return true;
     return false;
 }
 bool SqlGwStatement::shouldCSqlHandle()
 {
     SqlGwConnection *conn = (SqlGwConnection*) con;
-    if (stmtHdlr == CSqlHandler || stmtHdlr == CSqlAndAdapterHandler) return true;
+    if (stmtHdlr == CSqlHandler || 
+        stmtHdlr == CSqlAndAdapterHandler) return true;
     return false;
 }
 bool SqlGwStatement::isSelect()
@@ -96,7 +185,11 @@ DbRetVal SqlGwStatement::execute(int &rowsAffected)
 {
     DbRetVal rv = OK;
     SqlGwConnection *conn = (SqlGwConnection*) con;
-    if (adapter && shouldAdapterHandle()) rv = adapter->execute(rowsAffected);
+    if (!conn->isAdptConnected() && !conn->isCsqlConnected()) return ErrNoConnection; 
+    if (!isPrepared) { return ErrNotPrepared; }
+    if (adapter && shouldAdapterHandle()) {
+        rv = adapter->execute(rowsAffected);
+    }
     if (rv != OK) return rv;
     if (shouldAdapterHandle()) 
     {
@@ -142,6 +235,7 @@ void* SqlGwStatement::fetch()
 void* SqlGwStatement::fetch(DbRetVal &rv)
 {
     //TODO::this will never be handled by both. check the flag for this
+    if (!isPrepared) { rv = ErrNotPrepared; return NULL; }
     if (adapter && shouldAdapterHandle()) return adapter->fetch(rv);
     if (innerStmt && shouldCSqlHandle()) return innerStmt->fetch(rv);
     return NULL;
@@ -178,7 +272,18 @@ void* SqlGwStatement::getFieldValuePtr( int pos )
     if (innerStmt && shouldCSqlHandle()) return innerStmt->getFieldValuePtr(pos);
     return NULL;
 }
+void SqlGwStatement::getProjFieldType(int *data)
+{
+   if (innerStmt && shouldCSqlHandle()) return innerStmt->getProjFieldType(data);
+   if (adapter && shouldAdapterHandle()) return adapter->getProjFieldType(data);
+}
 
+void* SqlGwStatement::getFieldValuePtr( char *name )
+{
+   if (adapter && shouldAdapterHandle()) return adapter->getFieldValuePtr(name);
+   if (innerStmt && shouldCSqlHandle()) return innerStmt->getFieldValuePtr(name);
+   return NULL;
+}
 int SqlGwStatement::noOfProjFields()
 {
     //TODO::this will never be handled by both. check the flag for this
@@ -211,8 +316,11 @@ DbRetVal SqlGwStatement::getParamFldInfo (int parampos, FieldInfo *&fInfo)
 DbRetVal SqlGwStatement::free()
 {
     DbRetVal rv = OK;
+    if (!isPrepared) return OK;
     if (adapter && shouldAdapterHandle()) rv = adapter->free(); 
     if (innerStmt && shouldCSqlHandle()) rv = innerStmt->free();
+    stmtHdlr = NoHandler;
+    isPrepared = false;
     return rv;
 }
 void SqlGwStatement::setShortParam(int paramPos, short value)
@@ -311,4 +419,31 @@ List SqlGwStatement::getAllTableNames(DbRetVal &ret)
     printf("in csql\n"); if (innerStmt) return innerStmt->getAllTableNames(ret);
     printf("in Target Db\n"); if (adapter) adapter->getAllTableNames(ret);
 }
+List SqlGwStatement::getAllUserNames(DbRetVal &ret)
+{
+    if (innerStmt) return innerStmt->getAllTableNames(ret);
+    if (adapter) adapter->getAllTableNames(ret);
+}
+
+ResultSetPlan SqlGwStatement::getResultSetPlan()
+{
+   if (adapter && shouldAdapterHandle()) return adapter->getResultSetPlan();
+   if (innerStmt && shouldCSqlHandle())  return innerStmt->getResultSetPlan();
+   return Normal;
+}
+//Function for COMMIT according to its name DSN 
+void SqlGwStatement::setToCommit(char *dsName)
+{
+   SqlGwConnection *conn = (SqlGwConnection*) con;
+   struct MultiDSN *node = conn->multi_adapter_head; 
+   while(node != NULL){
+       if(strcmp(dsName,node->dsn)==0){
+           node->toCommit=true;
+           break;
+       }
+       node=node->next;
+   }
+}
+
+ 
 

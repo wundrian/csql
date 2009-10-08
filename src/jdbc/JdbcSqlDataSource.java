@@ -11,16 +11,28 @@ import java.lang.Class;
 
 public class JdbcSqlDataSource implements javax.sql.DataSource, javax.naming.Referenceable, java.io.Serializable
 {
-    private String databaseName;
+    static
+    {
+        try
+        {
+            DriverManager.registerDriver(new JdbcSqlDriver());
+        }
+        catch (Exception e)
+        {
+            System.out.println ("CSql JDBC Driver: " + e);
+        }
+    }
+
+    private String databaseName="csql";
     private String dataSourceName;
-    private String serverName; 
+    private String serverName="localhost";
     private String password="manager";
     private String userName="root";
     transient JdbcSqlDriver driver;
     transient private PrintWriter printer;
     private int loginTimeout;
     private String jdbcurl="jdbc:csql";
-    private int portno;//need to set default port
+    private int portno = 5678;
 
     public JdbcSqlDataSource()
     {
@@ -33,30 +45,33 @@ public class JdbcSqlDataSource implements javax.sql.DataSource, javax.naming.Ref
     {
         return this.getConnection(getUserName(),getPassword());
     }
-    public Connection getConnection(String username, String password) throws SQLException
+    public synchronized Connection getConnection(String username, String password) throws SQLException
     {
+        String url = jdbcurl +"://" + serverName + ":" + portno +"/" + databaseName;
         Properties info = new Properties();
         if (username != null)
             info.put("user", username);
         if (password != null)
             info.put("password", password);
-        Connection conn =  findDriver().connect(jdbcurl, info);
+        Connection conn =  findDriver().connect(url, info);
       /*  if (conn == null)
            throw ;*/
         return conn;
       
     }
+    public void setPort(int port)
+    {
+         this.portno = port;
+    }
+
     
     JdbcSqlDriver findDriver() throws SQLException
     {
         String url = jdbcurl;
         if (driver == null || !driver.acceptsURL(url))
         {
-            synchronized(this)
-            {
-                new JdbcSqlDriver();
-		driver=(JdbcSqlDriver) DriverManager.getDriver(url);
-            }
+            //new JdbcSqlDriver();
+            driver=(JdbcSqlDriver) DriverManager.getDriver(url);
 	}
         return driver;
     }

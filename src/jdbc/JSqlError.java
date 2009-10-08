@@ -25,6 +25,7 @@ interface JSqlErrorType
 }
 public class JSqlError implements JSqlErrorType
 {
+    public static boolean isDebug = false;
     public static Hashtable hashTable;
     static
     {

@@ -16,66 +16,55 @@
 // Delete descriptor from list
 SQLRETURN CSqlOdbcDescList::delDesc( CSqlOdbcDesc *node )
 {
-    CSqlOdbcDescList::iterator iter;
-    iter = this->begin();
-    while( iter != this->end() )
-    {
-        if( *iter == node )
-        {
-            delete node;
-            this->erase( iter );
+    ListIterator iter = descList_.getIterator();
+    CSqlOdbcDesc *descElem = NULL;
+    while (iter.hasElement()) {
+        descElem = (CSqlOdbcDesc *) iter.nextElement();
+        if (descElem == node) {
+            iter.reset();
+            delete node;    
+            descList_.remove(descElem);
             return( SQL_SUCCESS );
         }
-        iter++;
     }
-
     return(SQL_ERROR);
 }
 
 void CSqlOdbcDescList::freeAllDesc( void )
 {
-    int size=(int)this->size();
-    if(size  > 0)
-    {
-	    CSqlOdbcDescList::iterator iter;
-	    iter = this->begin();
-	    while( iter != this->end() )
-	    {
-		    if(type_ == SQL_DESC_IMP)
-		    {
-			    if((*iter)->dataPtr_!= NULL)
-			    {
-				    if((*iter)->cType_ == SQL_C_CHAR || (*iter)->cType_ == SQL_C_BINARY)
-					    delete []  (*iter)->dataPtr_;
-				    else
-					    delete (*iter)->dataPtr_;
-				    (*iter)->dataPtr_=NULL;
-			    }
-		    }
-		    delete *iter;
-		    *iter=NULL;
-		    iter++;
-	    }
-	    this->clear();
+    ListIterator iter = descList_.getIterator();
+    CSqlOdbcDesc *descElem = NULL;
+    while (iter.hasElement()) {
+        descElem = (CSqlOdbcDesc *) iter.nextElement();
+        if (type_ == SQL_DESC_IMP) {
+            if (descElem->dataPtr_ != NULL) { 
+                if(descElem->csqlType_ == typeString || 
+                                            descElem->csqlType_ == typeBinary) 
+                    delete [] (char*)descElem->dataPtr_;
+                else 
+                    delete descElem->dataPtr_;
+                descElem->dataPtr_=NULL;               
+            }
+        }
+        delete descElem; 
+        descElem = NULL;
     }
+    descList_.reset();
 }
-
+         
 SQLRETURN CSqlOdbcDescList::getDescWithColNum( int colNum, CSqlOdbcDesc **out )
 {
-    CSqlOdbcDescList::iterator iter;
-    iter = this->begin();
-    while( iter != this->end() )
-    {
-        if( colNum == (*iter)->col_ )
-        {
-            *out = *iter;
-            return( SQL_SUCCESS );
+    ListIterator iter = descList_.getIterator();
+    CSqlOdbcDesc *descElem = NULL;
+    while (iter.hasElement()) {
+        descElem = (CSqlOdbcDesc *) iter.nextElement();
+        if (colNum == descElem->col_) {
+            *out = descElem;
+            return (SQL_SUCCESS);
         }
-        iter++;
     }
-
-    return( SQL_ERROR );
-}
+    return (SQL_ERROR);
+} 
 
 CSqlOdbcDescList::CSqlOdbcDescList( int descType )
 {

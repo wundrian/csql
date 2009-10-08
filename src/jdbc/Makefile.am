@@ -1,10 +1,10 @@
 INCLUDES = -I$(top_srcdir)/include $(all_includes) -I$(top_srcdir)/src/sql
 METASOURCES = AUTO
 lib_LTLIBRARIES = libcsqljdbc.la
-libcsqljdbc_la_LDFLAGS = -avoid-version -module $(top_srcdir)/src/sql/.libs/libcsqlsql  $(top_srcdir)/src/storage/.libs/libcsql $(top_srcdir)/src/sqllog/.libs/libcsqlsqllog $(top_srcdir)/src/network/.libs/libcsqlnw $(top_builddir)/src/cache/.libs/libcacheload  $(top_srcdir)/src/sqlnetwork/.libs/libcsqlsqlnw -lcrypt 
+libcsqljdbc_la_LDFLAGS = -version-info 2:4:0 -module -L$(top_srcdir)/src/sql -lcsqlsql -L$(top_srcdir)/src/storage -lcsql -L$(top_srcdir)/src/sqllog -lcsqlsqllog -L$(top_srcdir)/src/network -lcsqlnw -L$(top_builddir)/src/cache -lcacheload  -L$(top_srcdir)/src/sqlnetwork -lcsqlsqlnw -L$(top_srcdir)/src/adapter -lcsqlodbcadapter -L$(top_srcdir)/src/gateway -lcsqlgw -lcrypt 
 libcsqljdbc_la_SOURCES = JSqlConnection.cxx JSqlStatement.cxx
 
 noinst_HEADERS = JSqlConnection.h JSqlStatement.h
-libcsqljdbc_a_LIBADD = 
+libcsqljdbc_a_LIBADD = $(top_builddir)/src/storage/libcsql.la
 libcsqljdbc_la_DEPENDENCIES = 
 

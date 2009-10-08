@@ -46,22 +46,35 @@ public class JSqlStatement
     public native boolean isNull(int pos);
      
     // To retrieve Field values
-    public native short getShort( int pos );
-    public native int getInt( int pos );
-    public native long getLong( int pos );
-    public native byte getByte( int pos );  // TINYINT   
-    public native float getFloat( int pos );
-    public native double getDouble( int pos );
-    public native String getString( int pos );
-    public native Date getDate( int pos );
-    public native Time getTime( int pos );
-    public native Timestamp getTimestamp( int pos );
-    public native boolean getBoolean( int pos );
+    public native short getShort( int pos , int type);
+    public native int getInt( int pos,int type );
+    public native long getLong( int pos,int type );
+    public native byte getByte( int pos,int type );  // TINYINT   
+    public native float getFloat( int pos, int type );
+    public native double getDouble( int pos, int type );
+    public native String getString( int pos, int type );
+    public native Date getDate( int pos, int type );
+    public native Time getTime( int pos, int type );
+    public native Timestamp getTimestamp( int pos, int type );
+    public native boolean getBoolean( int pos, int type );
+   //get value with field name
+    public native short getShortS( String fldName );
+    public native int getIntS( String fldName  );
+    public native long getLongS( String fldName  );
+    public native byte getByteS( String fldName  );  // TINYINT   
+    public native float getFloatS( String fldName  );
+    public native double getDoubleS( String fldName  );
+    public native String getStringS( String fldName  );
+    public native Date getDateS( String fldName  );
+    public native Time getTimeS( String fldName  );
+    public native Timestamp getTimestampS( String fldName  );
+    public native boolean getBooleanS( String fldName  );
 
     // ResultSet
     public native int findColumn( String str );
     public native int getNoOfFields();
     public native String getFieldName( int pos );
+    public native int[] getProjFldTypeArray();
 
     // ResultSetMetaData
     public native int getTotalProjFld();

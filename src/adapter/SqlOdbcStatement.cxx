@@ -23,6 +23,19 @@
 //as varchar of length 255. To avoid this, this class converts every data type
 //to varchar by using appropriate conversion functions.
 
+DbRetVal SqlOdbcStatement::executeDirect(char *stmtstr)
+{
+    DbRetVal rv = OK;
+    int retValue = 0;
+    SqlOdbcConnection *conn = (SqlOdbcConnection*)con;
+    retValue=SQLAllocHandle (SQL_HANDLE_STMT, conn->dbHdl, &hstmt);
+    if (retValue) return ErrBadCall;
+    SQLCHAR* sstr= (SQLCHAR*)stmtstr;
+    retValue=(*SqlOdbcConnection::ODBCFuncPtrs.SQLExecDirectPtr) (hstmt, sstr, SQL_NTS);
+    if (retValue) return ErrBadCall;
+    return rv;
+}     
+
 DbRetVal SqlOdbcStatement::prepare(char *stmtstr)
 {
     DbRetVal rv = OK;
@@ -30,98 +43,62 @@ DbRetVal SqlOdbcStatement::prepare(char *stmtstr)
     if (rv != OK) return rv;
     int retValue =0;
     isPrepared = false;
+    isProcedureCallStmt = false;
     SqlOdbcConnection *conn = (SqlOdbcConnection*)con;
-    retValue=SQLAllocHandle (SQL_HANDLE_STMT, conn->dbHdl, &hstmt);
+    //retValue=SQLAllocHandle (SQL_HANDLE_STMT, conn->dbHdl, &hstmt);
+    retValue=(*SqlOdbcConnection::ODBCFuncPtrs.SQLAllocHandlePtr) (SQL_HANDLE_STMT, conn->dbHdl, &hstmt);
     if (retValue) return ErrBadCall;
     SQLCHAR* sstr= (SQLCHAR*)stmtstr;
-    retValue = SQLPrepare (hstmt, sstr, SQL_NTS);
-    if (retValue) return ErrBadCall;
+    //retValue = SQLPrepare (hstmt, sstr, SQL_NTS);
+    retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLPreparePtr) (hstmt, sstr, SQL_NTS);
+    if (retValue) { 
+    //    setErrorState(hstmt); 
+        return ErrBadCall; 
+    }
     isSelStmt=chechStmtType(stmtstr);
     isPrepared = true;
+    if(strstr(stmtstr,"call ")!=NULL || strstr(stmtstr,"CALL ")!=NULL)
+    {
+        isProcedureCallStmt=true;
+    }
     short totalFields=0;
-    retValue = SQLNumResultCols (hstmt, &totalFields);
-    if (retValue) return ErrBadCall;
-    BindSqlProjectField *bindProjField = NULL;
+    tdbname = conn->getTrDbName();
+    rv = resolveForBindField(hstmt);
+    if(rv!=OK) return rv; 
     UWORD                   icol;
-    UCHAR                   colName[IDENTIFIER_LENGTH];
     SWORD                   colNameMax;
-    SWORD                   nameLength;
-    SWORD                   colType;
-    SQLULEN                 colLength;
     SWORD                   scale;
     SWORD                   nullable;
-    icol = 1; colNameMax = IDENTIFIER_LENGTH;
-    while (icol <= totalFields)
-    {
-        retValue = SQLDescribeCol(hstmt, icol, colName, colNameMax,
-                   &nameLength, &colType, &colLength,
-                   &scale, &nullable);
-        if (retValue) return ErrBadCall;
-        
-        bindProjField = new BindSqlProjectField();
-        strncpy(bindProjField->fName, (char*)colName, IDENTIFIER_LENGTH);
-        bindProjField->fName[IDENTIFIER_LENGTH] = '\0';
-        bindProjField->type = AllDataType::convertFromSQLType(colType);
-        bindProjField->length = colLength +1;
-        bindProjField->value = NULL;
-        bindProjField->targetvalue = NULL;
-        int fieldsize =0;
-        switch(bindProjField->type)
-        {
-            case typeString:
-                fieldsize = colLength+1;
-                bindProjField->targetvalue = malloc(fieldsize); 
-                break;
-            case typeDate:
-                fieldsize = sizeof(DATE_STRUCT);
-                bindProjField->targetvalue = malloc(sizeof(DATE_STRUCT));
-                break;
-            case typeTime:
-                fieldsize = sizeof(TIME_STRUCT);
-                bindProjField->targetvalue = malloc(sizeof(TIME_STRUCT));
-                break;
-            case typeTimeStamp:
-                fieldsize = sizeof(TIMESTAMP_STRUCT);
-                bindProjField->targetvalue = malloc(sizeof(TIMESTAMP_STRUCT));
-                break;
-            default:
-                bindProjField->targetvalue = AllDataType::alloc(bindProjField->type, bindProjField->length);
-        }
-        retValue = SQLBindCol(hstmt, icol, 
-                              AllDataType::convertToSQLType(bindProjField->type),
-                              bindProjField->targetvalue, fieldsize, &len[icol]);
-        if (retValue) return ErrBadCall;
-        bindList.append(bindProjField);
-        icol++;
-       
-    }
-    totalFld = totalFields;
-    totalFields =0;
     BindSqlField *bindField;
-    retValue = SQLNumParams (hstmt, &totalFields);
+    //retValue = SQLNumParams (hstmt, &totalFields);
+    retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLNumParamsPtr) (hstmt, &totalFields);
     if (retValue) return ErrBadCall;
     icol = 1; colNameMax = IDENTIFIER_LENGTH;
     SWORD                   cType=0;
     SQLULEN                 cLength=0;
+    scale=0;
+    if(totalFields != 0)
+    {
+        paramlen =(SQLINTEGER *) malloc((totalFields+1)*sizeof(SQLINTEGER));
+        for(int i=0;i<=totalFields;i++) { paramlen[i] = SQL_NTS; }
+    }
+
     while (icol <= totalFields)
     {
-        retValue = SQLDescribeParam(hstmt, icol, &cType, &cLength,
-                   &scale, &nullable);
+        //retValue = SQLDescribeParam(hstmt, icol, &cType, &cLength,
         //Note: MySQL Bug
         //Bug #1382  	SQLDescribeParam returns the same type information
 
-        if (retValue) return ErrBadCall;
-        
         bindField = new BindSqlField();
-        bindField->type = AllDataType::convertFromSQLType(cType);
-        bindField->length = cLength;
-        bindField->value =  AllDataType::alloc(bindField->type, cLength);
+        bindField->type = typeString; 
+        bindField->length = 512;
+        bindField->value =  AllDataType::alloc(bindField->type, bindField->length);
         bindField->targetvalue = NULL;
         int fieldsize =0;
         switch(bindField->type)
         {
             case typeString:
-                fieldsize = cLength;
+                fieldsize = bindField->length;
                 bindField->targetvalue = malloc(fieldsize);
                 break;
             case typeDate:
@@ -141,10 +118,11 @@ DbRetVal SqlOdbcStatement::prepare(char *stmtstr)
                 break;
 
         }
-        retValue = SQLBindParameter(hstmt, icol, SQL_PARAM_INPUT, 
-                      AllDataType::convertToSQL_C_Type(bindField->type), 
-                      cType, fieldsize, scale, bindField->targetvalue, 
-                      fieldsize, NULL);
+        //retValue = SQLBindParameter(hstmt, icol, SQL_PARAM_INPUT, 
+        retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLBindParameterPtr)(hstmt, icol, SQL_PARAM_INPUT, 
+                      AllDataType::convertToSQL_C_Type(bindField->type,tdbname), 
+                       AllDataType::convertToSQLType(bindField->type), fieldsize, scale, bindField->targetvalue, 
+                      fieldsize, &paramlen[icol]);
         if (retValue) return ErrBadCall;
         paramList.append(bindField);
         icol++;
@@ -164,11 +142,18 @@ DbRetVal SqlOdbcStatement::execute(int &rowsAffected)
 {
     DbRetVal rv = OK;
     if (!isPrepared) return ErrNotPrepared;
+    int retValue=0;
     ListIterator iter = paramList.getIterator();
     BindSqlField *bindField = NULL;
+    int col = 0;
     while (iter.hasElement())
     {
         bindField = (BindSqlField*)iter.nextElement();
+        if(paramlen[++col] == SQL_NULL_DATA){
+           ::free(bindField->targetvalue);
+           bindField->targetvalue = NULL;
+           continue;
+        }
         switch(bindField->type)
         {
             case typeDate: {
@@ -199,15 +184,30 @@ DbRetVal SqlOdbcStatement::execute(int &rowsAffected)
                 break;
             }
             default: {
-                AllDataType::copyVal(bindField->targetvalue, bindField->value,
+                AllDataType::cachecopyVal(bindField->targetvalue, bindField->value,
                                      bindField->type, bindField->length);
                 break;
             }
         }
     }
-    int retValue = SQLExecute (hstmt);
-    if (retValue) return ErrBadCall;
-    retValue=SQLRowCount(hstmt,(SQLINTEGER*)&rowsAffected);
+    //int retValue = SQLExecute (hstmt);
+    if(isProcedureCallStmt)
+    {
+        retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLExecutePtr) (hstmt);
+        if ((retValue != SQL_SUCCESS) && (retValue != SQL_SUCCESS_WITH_INFO )) {
+            return ErrBadCall;
+        }
+        rv = resolveForBindField(hstmt);
+        if(rv!=OK) return rv;
+    }else{
+        retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLExecutePtr) (hstmt);
+        if ((retValue != SQL_SUCCESS) && (retValue != SQL_SUCCESS_WITH_INFO )) { 
+        //    setErrorState(hstmt); 
+           return ErrBadCall;
+         }
+    }
+    //retValue=SQLRowCount(hstmt,(SQLINTEGER*)&rowsAffected);
+    retValue= (*SqlOdbcConnection::ODBCFuncPtrs.SQLRowCountPtr)(hstmt,(SQLINTEGER*)&rowsAffected);
     if(isSelStmt) rowsAffected = 0;
     return rv;
 }
@@ -232,15 +232,15 @@ DbRetVal SqlOdbcStatement::bindField(int pos, void* value)
     return OK;
 }
 
-void SqlOdbcStatement::setNullInfo(Table *table)
+//void SqlOdbcStatement::setNullInfo(Table *table)
+void SqlOdbcStatement::setNullInfo(AbsSqlStatement *stmt)
 {
     int fldpos=0;
-    table->resetNullinfo();
     while(fldpos < totalFld)
     {
         if(len[++fldpos] == SQL_NULL_DATA)
         {
-            table->markFldNull(fldpos);
+            stmt->setNull(fldpos);
         }
     }
 }
@@ -248,7 +248,8 @@ void SqlOdbcStatement::setNullInfo(Table *table)
 void* SqlOdbcStatement::fetch()
 {
     if (!isPrepared) return NULL;
-    int retValue = SQLFetch (hstmt);
+    //int retValue = SQLFetch (hstmt);
+    int retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLFetchPtr) (hstmt);
     if (retValue) return NULL;
     ListIterator iter = bindList.getIterator();
     BindSqlProjectField *bindField = NULL;
@@ -287,12 +288,12 @@ void* SqlOdbcStatement::fetch()
                 TIMESTAMP_STRUCT *dtTarget = (TIMESTAMP_STRUCT*) bindField->targetvalue;
                 dtCSQL->setDate(dtTarget->year,dtTarget->month,dtTarget->day);
                 dtCSQL->setTime(dtTarget->hour,dtTarget->minute,
-                                dtTarget->second, dtTarget->fraction);
+                                dtTarget->second, 0);//dtTarget->fraction);
                 break;
             }
             default: {
-                AllDataType::copyVal(bindField->value, bindField->targetvalue,
-                                     bindField->type, bindField->length);
+                AllDataType::cachecopyVal(bindField->value, bindField->targetvalue,
+                                     bindField->type, bindField->length,tdbname);
                 break;
             }
         } 
@@ -303,7 +304,8 @@ void* SqlOdbcStatement::fetch()
 void* SqlOdbcStatement::fetch(DbRetVal &rv)
 {
     if (!isPrepared) return NULL;
-    int retValue = SQLFetch (hstmt);
+    //int retValue = SQLFetch (hstmt);
+    int retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLFetchPtr) (hstmt);
     if (retValue) { rv = OK; return NULL; }
     ListIterator iter = bindList.getIterator();
     BindSqlProjectField *bindField = NULL;
@@ -342,12 +344,11 @@ void* SqlOdbcStatement::fetch(DbRetVal &rv)
                 TIMESTAMP_STRUCT *dtTarget = (TIMESTAMP_STRUCT*) bindField->targetvalue;
                 dtCSQL->setDate(dtTarget->year,dtTarget->month,dtTarget->day);
                 dtCSQL->setTime(dtTarget->hour,dtTarget->minute,
-                                dtTarget->second, dtTarget->fraction);
+                                dtTarget->second, 0);// dtTarget->fraction);
                 break;
             }
             default: {
-                AllDataType::copyVal(bindField->value, bindField->targetvalue,
-                                     bindField->type, bindField->length);
+                AllDataType::cachecopyVal(bindField->value, bindField->targetvalue, bindField->type, bindField->length, tdbname);
                 break;
             }
         } 
@@ -358,7 +359,8 @@ void* SqlOdbcStatement::fetch(DbRetVal &rv)
 void* SqlOdbcStatement::fetchAndPrint(bool SQL)
 {
     if (!isPrepared) return NULL;
-    int retValue = SQLFetch (hstmt);
+    //int retValue = SQLFetch (hstmt);
+    int retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLFetchPtr) (hstmt);
     if (retValue) return NULL;
     ListIterator iter = bindList.getIterator();
     BindSqlProjectField *bindField = NULL;
@@ -395,13 +397,13 @@ void* SqlOdbcStatement::fetchAndPrint(bool SQL)
                 TIMESTAMP_STRUCT *dtTarget = (TIMESTAMP_STRUCT*) bindField->targetvalue;
                 dtCSQL.setDate(dtTarget->year,dtTarget->month,dtTarget->day);
                 dtCSQL.setTime(dtTarget->hour,dtTarget->minute,
-                                dtTarget->second, dtTarget->fraction);
+                                dtTarget->second, 0);//dtTarget->fraction);
                 AllDataType::printVal(&dtCSQL, bindField->type, bindField->length);
                 break;
             }
             default: {
                 AllDataType::printVal(bindField->targetvalue,
-                                     bindField->type, bindField->length);
+                                     bindField->type, bindField->length,tdbname);
                 break;
             }
         }
@@ -418,7 +420,7 @@ void* SqlOdbcStatement::next()
 DbRetVal SqlOdbcStatement::close()
 {
     if (!isPrepared) return OK;
-    SQLCloseCursor(hstmt);
+    (*SqlOdbcConnection::ODBCFuncPtrs.SQLCloseCursorPtr)(hstmt);
     return OK;
 }
 bool SqlOdbcStatement::chechStmtType(char *buf)
@@ -451,7 +453,37 @@ void* SqlOdbcStatement::getFieldValuePtr( int pos )
     return NULL;
 
 }
+void SqlOdbcStatement::getProjFieldType(int *data)
+{
+    ListIterator biter = bindList.getIterator();
+    BindSqlProjectField *elem = NULL;
+    int i = 1;
+    while (biter.hasElement())
+    {
+        elem = (BindSqlProjectField*) biter.nextElement();
+        if((tdbname == postgres) && typeLongLong == elem->type)
+            data[i++] = typeString;
+        else 
+            data[i++] = elem->type;
+    }
+}
 
+void* SqlOdbcStatement::getFieldValuePtr( char *name )
+{
+    ListIterator biter = bindList.getIterator();
+    BindSqlProjectField *elem = NULL;
+    int count =0;
+    while (biter.hasElement())
+    {
+        elem = (BindSqlProjectField*) biter.nextElement();
+        if ( strcpy(elem->fName,name) == 0 )
+        {
+            return elem->targetvalue;
+        }
+    }
+    return NULL;
+
+}
 int SqlOdbcStatement::noOfProjFields()
 {
     if (!isPrepared) return 0;
@@ -492,7 +524,7 @@ DbRetVal SqlOdbcStatement::getParamFldInfo (int parampos, FieldInfo *&fInfo)
     while (biter.hasElement())
     {
         elem = (BindSqlField*) biter.nextElement();
-        if (count == parampos) 
+        if (count == parampos-1) 
         {
             fInfo->length = elem->length;
             fInfo->type =elem->type;
@@ -505,13 +537,14 @@ DbRetVal SqlOdbcStatement::getParamFldInfo (int parampos, FieldInfo *&fInfo)
 
 DbRetVal SqlOdbcStatement::free()
 {
-    isPrepared = false;
+    if(!isPrepared) return OK;
     ListIterator biter = bindList.getIterator();
     BindSqlProjectField *elem = NULL;
     while (biter.hasElement())
     {
         elem = (BindSqlProjectField*) biter.nextElement();
-        ::free(elem->targetvalue); 
+        if(elem->targetvalue)
+            ::free(elem->targetvalue); 
         delete elem;
     }
     bindList.reset();
@@ -525,30 +558,27 @@ DbRetVal SqlOdbcStatement::free()
         delete bindField; 
     }
     paramList.reset();
-
-    SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
+    if(len){ ::free(len); len = NULL;}
+    if(paramlen) {::free(paramlen); paramlen = NULL;}
+    (*SqlOdbcConnection::ODBCFuncPtrs.SQLFreeHandlePtr)(SQL_HANDLE_STMT, hstmt);
+    isPrepared = false;
+    isProcedureCallStmt = false;
     return OK;
 }
 void SqlOdbcStatement::setShortParam(int paramPos, short value)
 {
     if (!isPrepared) return ;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
-    //if (bindField->type != typeShort) return;
-    //*(short*)(bindField->value) = value;
-    AllDataType::convertToString(bindField->value, &value, typeShort);
+    AllDataType::convertToString(bindField->value, &value, typeShort, 0,tdbname);
     return;
 }
 void SqlOdbcStatement::setIntParam(int paramPos, int value)
 {
     if (!isPrepared) return ;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
-    /*if (bindField->type != typeInt) return;
-    *(int*)(bindField->value) = value;
-    */
-
      //Note: MySQL Bug
      //Bug #1382     SQLDescribeParam returns the same type information, varchar
-    AllDataType::convertToString(bindField->value, &value, typeInt);
+    AllDataType::convertToString(bindField->value, &value, typeInt,0,tdbname);
     return;
 
 }
@@ -556,11 +586,9 @@ void SqlOdbcStatement::setLongParam(int paramPos, long value)
 {
     if (!isPrepared) return ;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
-    //if (bindField->type != typeLong) return;
-    //*(long*)(bindField->value) = value;
      //Note: MySQL Bug
      //Bug #1382     SQLDescribeParam returns the same type information, varchar
-    AllDataType::convertToString(bindField->value, &value, typeLong);
+    AllDataType::convertToString(bindField->value, &value, typeLong,0,tdbname);
     return;
 
 }
@@ -568,36 +596,29 @@ void SqlOdbcStatement::setLongLongParam(int paramPos, long long value)
 {
     if (!isPrepared) return ;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
-    //if (bindField->type != typeLongLong) return;
-    //*(long long*)(bindField->value) = value;
-    AllDataType::convertToString(bindField->value, &value, typeLongLong);
+    AllDataType::convertToString(bindField->value, &value, typeLongLong,0,tdbname);
     return;
 }
 void SqlOdbcStatement::setByteIntParam(int paramPos, ByteInt value)
 {
     if (!isPrepared) return ;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
-    //if (bindField->type != typeByteInt) return;
-    //*(char*)(bindField->value) = value;
-    AllDataType::convertToString(bindField->value, &value, typeByteInt);
-
+    AllDataType::convertToString(bindField->value, &value, typeByteInt,0,tdbname);
+    return;
 }
 void SqlOdbcStatement::setFloatParam(int paramPos, float value)
 {
     if (!isPrepared) return ;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
-    //if (bindField->type != typeFloat) return;
-    //*(float*)(bindField->value) = value;
-    AllDataType::convertToString(bindField->value, &value, typeFloat);
+    AllDataType::convertToString(bindField->value, &value, typeFloat,0, tdbname);
+    return;
 }
 void SqlOdbcStatement::setDoubleParam(int paramPos, double value)
 {
     if (!isPrepared) return ;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
-    //if (bindField->type != typeDouble) return;
-    //*(double*)(bindField->value) = value;
-    AllDataType::convertToString(bindField->value, &value, typeDouble);
-
+    AllDataType::convertToString(bindField->value, &value, typeDouble,0,tdbname);
+    return;
 }
 void SqlOdbcStatement::setStringParam(int paramPos, char *value)
 {
@@ -613,51 +634,75 @@ void SqlOdbcStatement::setDateParam(int paramPos, Date value)
 {
     if (!isPrepared) return ;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
-    //if (bindField->type != typeDate) return;
-    //*(Date*)(bindField->value) = value;
-    AllDataType::convertToString(bindField->value, &value, typeDate);
-
+    AllDataType::convertToString(bindField->value, &value, typeDate,0,tdbname);
+    return;
 }
 void SqlOdbcStatement::setTimeParam(int paramPos, Time value)
 {
     if (!isPrepared) return ;
     BindSqlField *bindField = (BindSqlField*)paramList.get(paramPos);
-    //if (bindField->type != typeTime) return;
-    //*(Time*)(bindField->value) = value;
-    AllDataType::convertToString(bindField->value, &value, typeTime);
-
+    AllDataType::convertToString(bindField->value, &value, typeTime,0,tdbname);
+    return;
 }
 void SqlOdbcStatement::setTimeStampParam(int paramPos, TimeStamp value)
 {
     if (!isPrepared) return ;
     BindSqlField *bindField = (BindSqlField*) paramList.get(paramPos);
-    //if (bindField->type != typeTimeStamp) return;
-    //*(TimeStamp*)(bindField->value) = value;
-    AllDataType::convertToString(bindField->value, &value, typeTimeStamp);
+    AllDataType::convertToString(bindField->value, &value, typeTimeStamp,0, tdbname);
+    return;
 }
 void SqlOdbcStatement::setBinaryParam(int paramPos, void *value, int length)
 {
     if (!isPrepared) return;
-	BindSqlField *bindField = (BindSqlField*) paramList.get(paramPos);
-	//if (bindField->type != typeTimeStamp) return;
-	// *(TimeStamp*)(bindField->value) = value;
-	AllDataType::convertToString(bindField->value, value, typeBinary, bindField->length);
+    BindSqlField *bindField = (BindSqlField*) paramList.get(paramPos);
+    AllDataType::convertToString(bindField->value, value, typeBinary, bindField->length,tdbname);
+    return;
 }
 
 void SqlOdbcStatement::getPrimaryKeyFieldName(char *tablename, char *pkfieldname)
 {
     if (pkfieldname == NULL) return;
+    SQLCHAR outstr[1024];
+    SQLSMALLINT outstrlen;
+    int retValue =0;
+    SQLHENV henv;
+    SQLHDBC hdbc;
+    SQLHSTMT hstmt;
     SqlOdbcConnection *conn = (SqlOdbcConnection*)con;
-    int retValue=SQLAllocHandle (SQL_HANDLE_STMT, conn->dbHdl, &hstmt);
-    if (retValue) return ;
-    char columnName[128];
-    columnName[0] = '\0';
-    SQLINTEGER cbData;     // Output length of data
-    SQLPrimaryKeys(hstmt, NULL, 0, NULL, 0, (SQLCHAR*) tablename, SQL_NTS);
-    SQLFetch(hstmt);
-    SQLGetData(hstmt, 4, SQL_C_CHAR, (SQLCHAR*) columnName, sizeof(columnName),&cbData);
-    strcpy(pkfieldname, columnName);
-    SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
+    retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLAllocHandlePtr) (SQL_HANDLE_ENV, SQL_NULL_HANDLE, &henv);
+    if (retValue) {
+        printError(ErrSysInit, "Unable to allocate ODBC handle \n");
+    }
+    (*SqlOdbcConnection::ODBCFuncPtrs.SQLSetEnvAttrPtr)(henv, SQL_ATTR_ODBC_VERSION,(void *) SQL_OV_ODBC3, 0);
+    retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLAllocHandlePtr) (SQL_HANDLE_DBC, henv, &hdbc);
+    if (retValue) {
+        printError(ErrSysInit, "Unable to allocate ODBC handle \n");
+    }
+    retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLDriverConnectPtr)(hdbc, NULL, (SQLCHAR*)conn->dsn, SQL_NTS, outstr, sizeof(outstr), &outstrlen,SQL_DRIVER_NOPROMPT);
+    if (SQL_SUCCEEDED(retValue)) {
+        printDebug(DM_Gateway, "Connected to target database using dsn = %s\n", conn->dsn);
+    } else {
+        printError(ErrSysInit, "Failed to connect to target database\n");
+    }
+    retValue=(*SqlOdbcConnection::ODBCFuncPtrs.SQLAllocHandlePtr) (SQL_HANDLE_STMT, hdbc, &hstmt);
+    if (retValue) {
+        printError(ErrSysInit, "Unable to allocate ODBC handle \n");
+    }
+    char columnname[IDENTIFIER_LENGTH];
+    retValue=(*SqlOdbcConnection::ODBCFuncPtrs.SQLPrimaryKeysPtr)(hstmt, NULL, SQL_NTS, NULL, SQL_NTS, (SQLCHAR*) tablename, SQL_NTS);
+    retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLBindColPtr)(hstmt, 4, SQL_C_CHAR,columnname, 129,NULL);
+    bool isPkExists=false;
+    if((*SqlOdbcConnection::ODBCFuncPtrs.SQLFetchPtr)( hstmt ) == SQL_SUCCESS)
+    {
+        Util::str_tolower(columnname);
+        strcpy(pkfieldname, columnname);
+        isPkExists = true;
+    }
+    tdbname = conn->getTrDbName();
+    (*SqlOdbcConnection::ODBCFuncPtrs.SQLFreeHandlePtr)(SQL_HANDLE_STMT, hstmt);
+    (*SqlOdbcConnection::ODBCFuncPtrs.SQLDisconnectPtr)(hdbc);
+    (*SqlOdbcConnection::ODBCFuncPtrs.SQLFreeHandlePtr)(SQL_HANDLE_DBC, hdbc);
+    (*SqlOdbcConnection::ODBCFuncPtrs.SQLFreeHandlePtr)(SQL_HANDLE_ENV, henv);
     return;
 }
 
@@ -668,7 +713,6 @@ bool SqlOdbcStatement::isFldNull(int pos)
     else
         return false;
 }
-
 bool SqlOdbcStatement::isFldNull(char *name)
 {
     ListIterator iter = bindList.getIterator();
@@ -691,5 +735,149 @@ bool SqlOdbcStatement::isFldNull(char *name)
 
 void SqlOdbcStatement::setNull(int pos)
 {
-    len[pos] = SQL_NULL_DATA ;
+    paramlen[pos] = SQL_NULL_DATA ;
 }
+
+bool SqlOdbcStatement::isTableExists( char *name)
+{
+
+    SQLCHAR outstr[1024];
+    SQLSMALLINT outstrlen;
+    int retValue =0;
+    SQLHENV henv;
+    SQLHDBC hdbc;
+    SQLHSTMT hstmt;
+    SqlOdbcConnection *conn = (SqlOdbcConnection*)con;
+    retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLAllocHandlePtr) (SQL_HANDLE_ENV, SQL_NULL_HANDLE, &henv);
+    if (retValue) {
+        printError(ErrSysInit, "Unable to allocate ODBC handle \n");
+    }
+
+    (*SqlOdbcConnection::ODBCFuncPtrs.SQLSetEnvAttrPtr)(henv, SQL_ATTR_ODBC_VERSION,(void *) SQL_OV_ODBC3, 0);
+    retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLAllocHandlePtr) (SQL_HANDLE_DBC, henv, &hdbc);
+    if (retValue) {
+        printError(ErrSysInit, "Unable to allocate ODBC handle \n");
+    }
+    retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLDriverConnectPtr)(hdbc, NULL, (SQLCHAR*)conn->dsn, SQL_NTS, outstr, sizeof(outstr), &outstrlen,SQL_DRIVER_NOPROMPT);
+    if (SQL_SUCCEEDED(retValue)) {
+        printDebug(DM_Gateway, "Connected to target database using dsn = %s\n", conn->dsn);
+    } else {
+        printError(ErrSysInit, "Failed to connect to target database\n");
+    }
+
+    retValue=(*SqlOdbcConnection::ODBCFuncPtrs.SQLAllocHandlePtr) (SQL_HANDLE_STMT, hdbc, &hstmt);
+    if (retValue) {
+        printError(ErrSysInit, "Unable to allocate ODBC handle \n");
+    }
+    char tablename[IDENTIFIER_LENGTH];
+    //retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLTablesPtr)(hstmt, (SQLCHAR*)"test", SQL_NTS, (SQLCHAR*)"", SQL_NTS, (SQLCHAR*)"", SQL_NTS, (SQLCHAR*)"TABLE", SQL_NTS );
+    retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLTablesPtr)(hstmt, NULL, SQL_NTS, NULL, SQL_NTS, NULL, SQL_NTS, NULL, SQL_NTS );
+    retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLBindColPtr)(hstmt,3,SQL_C_CHAR,tablename,sizeof(tablename),NULL);
+    while(SQL_SUCCEEDED(retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLFetchPtr)(hstmt)))
+    {
+        if(strcmp(tablename,name)==0){  
+            (*SqlOdbcConnection::ODBCFuncPtrs.SQLFreeHandlePtr)(SQL_HANDLE_STMT, hstmt);
+            (*SqlOdbcConnection::ODBCFuncPtrs.SQLDisconnectPtr)(hdbc);
+            (*SqlOdbcConnection::ODBCFuncPtrs.SQLFreeHandlePtr)(SQL_HANDLE_DBC, hdbc);
+            (*SqlOdbcConnection::ODBCFuncPtrs.SQLFreeHandlePtr)(SQL_HANDLE_ENV, henv);
+            return true; 
+        }
+    }
+    
+    (*SqlOdbcConnection::ODBCFuncPtrs.SQLFreeHandlePtr)(SQL_HANDLE_STMT, hstmt);
+    (*SqlOdbcConnection::ODBCFuncPtrs.SQLDisconnectPtr)(hdbc);
+    (*SqlOdbcConnection::ODBCFuncPtrs.SQLFreeHandlePtr)(SQL_HANDLE_DBC, hdbc);
+    (*SqlOdbcConnection::ODBCFuncPtrs.SQLFreeHandlePtr)(SQL_HANDLE_ENV, henv);
+    return false;
+}
+void SqlOdbcStatement::setErrorState(SQLHSTMT hStmt)
+{
+    SQLINTEGER   i = 0;
+    SQLINTEGER   native;
+    SQLCHAR      state[ 7 ];
+    SQLCHAR      text[256];
+    SQLSMALLINT  len;
+    SQLRETURN    ret;
+    ret = (*SqlOdbcConnection::ODBCFuncPtrs.SQLGetDiagRecPtr)(SQL_HANDLE_STMT, hStmt, ++i,
+                                   state, &native, text, sizeof(text), &len );
+
+    if (SQL_SUCCEEDED(ret)){
+        printf("%s:%ld:%ld:%s\n", state, i, native, text);
+        strcpy(errState,(char*)state);
+    }
+}
+
+DbRetVal SqlOdbcStatement::resolveForBindField(SQLHSTMT hstmt)
+{
+    short totalFields=0;
+    int retValue = 0;
+    retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLNumResultColsPtr) (hstmt, &totalFields);
+    if (retValue){   return ErrBadCall;  }
+    BindSqlProjectField *bindProjField = NULL;
+    UWORD                   icol;
+    UCHAR                   colName[IDENTIFIER_LENGTH];
+    SWORD                   colNameMax;
+    SWORD                   nameLength;
+    SWORD                   colType;
+    SQLULEN                 colLength;
+    SWORD                   scale;
+    SWORD                   nullable;
+    icol = 1; colNameMax = IDENTIFIER_LENGTH;
+    if(totalFields != 0)
+    {
+        if(isProcedureCallStmt) isSelStmt = true;
+        len = (SQLINTEGER *)malloc((totalFields+1)*sizeof(SQLINTEGER));
+        for(int i=0;i<=totalFields;i++) { len[i] = SQL_NTS ;}
+    }
+    while (icol <= totalFields)
+    {
+        retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLDescribeColPtr)(hstmt, icol, colName, colNameMax,
+                   &nameLength, &colType, &colLength,
+                   &scale, &nullable);
+        if (retValue) return ErrBadCall;
+        bindProjField = new BindSqlProjectField();
+        strcpy(bindProjField->fName, (char*)colName);
+        bindProjField->type = AllDataType::convertFromSQLType(colType,colLength,scale,tdbname);
+        bindProjField->length = AllDataType::size(bindProjField->type, colLength+1);
+        bindProjField->value = NULL;
+        bindProjField->targetvalue = NULL;
+        int fieldsize =0;
+        if(tdbname==postgres && -5 == colType) {
+            bindProjField->targetvalue = AllDataType::alloc(typeString, 128);
+            retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLBindColPtr)(hstmt, icol,
+                              AllDataType::convertToSQLType(typeString),
+                              bindProjField->targetvalue, 128, &len[icol]);
+        }else{
+             switch(bindProjField->type)
+             {
+                case typeString:
+                    fieldsize = colLength+1;
+                    bindProjField->targetvalue = malloc(fieldsize);
+                    break;
+                case typeDate:
+                    fieldsize = sizeof(DATE_STRUCT);
+                    bindProjField->targetvalue = malloc(sizeof(DATE_STRUCT));
+                    break;
+                case typeTime:
+                    fieldsize = sizeof(TIME_STRUCT);
+                    bindProjField->targetvalue = malloc(sizeof(TIME_STRUCT));
+                    break;
+                case typeTimeStamp:
+                    fieldsize = sizeof(TIMESTAMP_STRUCT);
+                    bindProjField->targetvalue = malloc(sizeof(TIMESTAMP_STRUCT));
+                    break;
+                default:
+                    bindProjField->targetvalue = AllDataType::alloc(bindProjField->type, bindProjField->length);
+            }
+        retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLBindColPtr)(hstmt, icol,
+                              AllDataType::convertToSQL_C_Type(bindProjField->type,tdbname),
+                              bindProjField->targetvalue, fieldsize, &len[icol]);
+        }
+        if (retValue) return ErrBadCall;
+        bindList.append(bindProjField);
+        icol++;
+    }
+    totalFld = totalFields;
+    return OK;
+}
+

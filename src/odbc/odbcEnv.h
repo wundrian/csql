@@ -22,7 +22,7 @@ class CSqlOdbcEnv
         CSqlOdbcError      err_;       // Last error info.
 
         EnvState_t  state_;           // Environment State.
-        std::vector<CSqlOdbcDbc*>  dbcList_;   // Connection handle list.
+        List dbcList_; // Connection handle list.
 
         // Environment Attributes
         SQLUINTEGER odbcVersion_;

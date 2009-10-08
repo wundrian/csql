@@ -43,6 +43,10 @@ public class JdbcSqlPreparedStatement extends JdbcSqlStatement
             throw getException(CSQL_NOT_QUERY);
         //Praba changed this
         rs.setStmt( this );
+        if( isFirstExecute) { 
+            rs.setProjField();
+            isFirstExecute = false;
+        }
         return( rs );
         //return null;
     }
@@ -153,176 +157,209 @@ public class JdbcSqlPreparedStatement extends JdbcSqlStatement
     //Unsupported APIs
     public void addBatch() throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::addBatch called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setArray (int i, Array value) throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setArray called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setAsciiStream(int parameterIndex, InputStream value, int length) 
                                            throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setAsciiStream called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void	setBigDecimal(int parameterIndex, BigDecimal value) throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setBigDecimal called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setBinaryStream(int parameterIndex, InputStream value, int length) 
                                            throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setBinaryStream called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setBlob(int i, Blob value) throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setBlob called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setBoolean (int param, boolean value) throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setBoolean called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setBytes(int param, byte value[]) throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setBytes called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setCharacterStream(int param, Reader reader, int length) 
                                             throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setCharacterStream called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setClob (int i, Clob value) throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setClob called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setDate(int param, java.sql.Date value, Calendar cal) 
                                     throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setDate called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setNull (int param, int sqlType, String typeName)
         throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setNull called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setObject (int param, Object value, int targetSqlType)
         throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setObject(int, Object, int) called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
-    public void setObject (int param, Object value,
-        int targetSqlType, int scale) throws SQLException
+    public void setObject (int param, Object value, int targetSqlType, int scale) throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setObject(int, Object, int, int) called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setRef(int i, Ref value)  throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setRef called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setTime(int param, java.sql.Time value, Calendar cal) 
                                              throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setTime called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setTimestamp(int param, java.sql.Timestamp value, 
                                Calendar cal) throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setTimeStamp called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setUnicodeStream (int param, InputStream value, int length) 
                                                        throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setUnicodeStream called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setURL(int parameterName, URL value) throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setURL called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     //java 1.6 methods
     public void setBlob(int  paramIndex, InputStream value ) throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setBlob(int, InputStream) called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setBlob(int  paramIndex, InputStream value, long length ) throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setBlob(int, InputStream, long) called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setClob(int  paramIndex, Reader value ) throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setClob(int, Reader) called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setClob(int  paramIndex, Reader value, long length ) throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setClob(int, Reader, long) called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setNCharacterStream(int  paramIndex, Reader value) 
                                                      throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setNCharacterStream(int, Reader) called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setNCharacterStream(int  paramIndex,Reader value,long length)
                                                            throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setNCharacterStream(int, Reader, long) called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setNClob(int  paramIndex, NClob value) 
                                                   throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setNClob(int, NClob) called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setNClob(int  paramIndex, Reader value) 
                                                   throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setNClob(int, Reader) called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setNClob(int  paramIndex, Reader value, long length) 
                                                   throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setNClob(int, Reader, long) called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setNString(int  paramIndex, String value) 
                                                   throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setNString called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setCharacterStream(int param, Reader reader) 
                                             throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setCharacterStream(int, Reader) called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setCharacterStream(int param, Reader reader, long length) 
                                             throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setCharacterStream(int, Reader, long) called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setBinaryStream(int parameterIndex, InputStream value) 
                                            throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setBinaryStream(int, InputStream) called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setBinaryStream(int parameterIndex, InputStream value, long length) 
                                            throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setBinaryStream(int, InputStream, long) called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setAsciiStream(int parameterIndex, InputStream value) 
                                            throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setAsciiStream(int, InputStream) called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setAsciiStream(int parameterIndex, InputStream value, long length) 
                                            throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setAsciiStream(int, InputStream, long) called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setSQLXML(int paramIndex, SQLXML xmlObj) throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setSQLXML called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public void setRowId(int paramIndex, RowId x) throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlPreparedStatement::setRowId called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
-
-    
-
 }

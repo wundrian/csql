@@ -73,37 +73,41 @@ public class JdbcSqlParameterMetaData extends JSqlError implements ParameterMeta
     
     public int getPrecision(int param) throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlParameterMetaData::getPrecision called");
         throw getException( CSQL_NOT_SUPPORTED );
     }
     
-     public int getScale(int param) throws SQLException
-     {
+    public int getScale(int param) throws SQLException
+    {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlParameterMetaData::getScale called");
          throw getException( CSQL_NOT_SUPPORTED );
-     }
+    }
      
     
-     public int isNullable(int param) throws SQLException
-     {
-        // String name = stmt.jniStmt.getParamFldName(param);
-         //int pos =stmt.jniStmt.findColumn(name);
-         if(this.stmt.jniStmt.isNullable(param))
-             return JdbcSqlParameterMetaData.parameterNoNulls;
-         else
-             return JdbcSqlParameterMetaData.parameterNullable ;
-     }
-     
-     public boolean isSigned(int param) throws SQLException
-     {
-         throw getException( CSQL_NOT_SUPPORTED );
-     }
-     
-     public boolean isWrapperFor(Class ifact) throws SQLException
+    public int isNullable(int param) throws SQLException
     {
+        // String name = stmt.jniStmt.getParamFldName(param);
+        //int pos =stmt.jniStmt.findColumn(name);
+        if(this.stmt.jniStmt.isNullable(param))
+            return JdbcSqlParameterMetaData.parameterNoNulls;
+        else
+            return JdbcSqlParameterMetaData.parameterNullable ;
+    }
+     
+    public boolean isSigned(int param) throws SQLException
+    {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlParameterMetaData::isSigned called");
+        throw getException( CSQL_NOT_SUPPORTED );
+    }
+     
+    public boolean isWrapperFor(Class ifact) throws SQLException
+    {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlParameterMetaData::isWrapperFor called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
     public Class unwrap(Class iface) throws SQLException
     {
+        if (JSqlError.isDebug) System.out.println("JdbcSqlParameterMetaData::unwrap called");
         throw getException(CSQL_NOT_SUPPORTED);
     }
-     
 }

@@ -54,6 +54,7 @@ class CSqlOdbcStmt
                                   // populated during SQLPrepare()
 
         AbsSqlStatement *fsqlStmt_; // CSQL
+        FieldInfo *fInfo; // used by all methods when retrieving field info
 
         // Statement Attributes
         
@@ -172,8 +173,47 @@ class CSqlOdbcStmt
                 SQLSMALLINT *     decimalDigits,  //OUT
                 SQLSMALLINT *     isNullable);    //OUT
 
+        SQLRETURN SQLTables(
+               SQLCHAR *     CatalogName,
+               SQLCHAR *     SchemaName,
+               SQLCHAR *     TableName,
+               SQLCHAR *     TableType);
+
+        SQLRETURN SQLColumns(
+               SQLCHAR *     CatalogName,
+               SQLCHAR *     SchemaName,
+               SQLCHAR *     TableName,
+               SQLCHAR *     ColumnName );
+
+        SQLRETURN SQLPrimaryKeys(
+               SQLCHAR *     CatalogName,
+               SQLCHAR *     SchemaName,
+               SQLCHAR *     TableName);
+
+        SQLRETURN SQLGetData(
+               SQLUSMALLINT     ColumnNumber,
+               SQLSMALLINT     TargetType,
+               SQLPOINTER     TargetValuePtr,
+               SQLLEN     BufferLength,
+               SQLLEN *     StrLen_or_IndPtr);
+
+        SQLRETURN SQLGetTypeInfo(
+               SQLSMALLINT     DataType);
+
+        SQLRETURN SQLStatistics(
+               SQLCHAR *     CatalogName,
+               SQLCHAR *     SchemaName,
+               SQLCHAR *     TableName,
+               SQLUSMALLINT     Unique,
+               SQLUSMALLINT     Reserved);
+       
+         SQLRETURN SQLForeignKeys(
+               SQLCHAR *     PKTableName,
+               SQLCHAR *     FKTableName);
+                     
     // Other Methods
         void resetStmt( void );
+        int getNumResultset(ResultSetPlan plan);
 };
 
 #endif // _ODBC_STMT_H_

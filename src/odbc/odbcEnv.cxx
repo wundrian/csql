@@ -109,18 +109,16 @@ SQLRETURN CSqlOdbcEnv::SQLEndTran(
         return( SQL_SUCCESS );
 
     // For each connect obj, call SQLEndTran
-    std::vector<CSqlOdbcDbc*>::iterator iter;
-    iter = dbcList_.begin();
-    while( iter != dbcList_.end() )
-    {
-        if( (*iter)->chkStateForSQLEndTran() == SQL_SUCCESS ) {
-            if( (*iter)->SQLEndTran( completionType ) == SQL_ERROR )
+    ListIterator iter = dbcList_.getIterator();
+    CSqlOdbcDbc *dbcElem = NULL;
+    while(iter.hasElement()) {
+        dbcElem = (CSqlOdbcDbc *) iter.nextElement(); 
+        if( dbcElem->chkStateForSQLEndTran() == SQL_SUCCESS ) {
+            if( dbcElem->SQLEndTran( completionType ) == SQL_ERROR )
                 return( SQL_ERROR ); 
         } 
         else return ( SQL_ERROR );
-        iter++;
     }
-
     return( SQL_SUCCESS );
 }
 

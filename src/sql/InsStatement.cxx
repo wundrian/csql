@@ -13,7 +13,8 @@
  *   GNU General Public License for more details.                          *
  *                                                                         *
   ***************************************************************************/
-#include "Statement.h"
+#include <os.h>
+#include <Statement.h>
 #include <Info.h>
 
 InsStatement::InsStatement()
@@ -264,7 +265,7 @@ DbRetVal InsStatement::resolve()
         printError(ErrNotExists, "Unable to open the table:Table not exists");
         return ErrNotExists;
     }
-
+ 
     List fieldNameList;
     //check whether filed list is specified
     if( 0 == parsedData->getFieldNameList().size() )
@@ -317,7 +318,7 @@ DbRetVal InsStatement::resolve()
         value->length = fInfo->length;
         value->isNullable = fInfo->isNull;
 		// for binary datatype input buffer size should be 2 times the length 
-        if (fInfo->type == typeBinary) 
+	if (fInfo->type == typeBinary) 
             value->value = AllDataType::alloc(fInfo->type, 2 * fInfo->length);
         else value->value = AllDataType::alloc(fInfo->type, fInfo->length);
         value->isAllocVal = true;
@@ -328,11 +329,20 @@ DbRetVal InsStatement::resolve()
             value->paramNo = paramPos++;
         }
         if (!value->paramNo) {
-            // for binary datatype buffer is just strcpy'd. It will be converted into binary datatype in copyValuesToBindBuffer in DBAPI
-		    if (value->type == typeBinary)
-                strncpy((char *)value->value, value->parsedString, 2 * fInfo->length);   
-            else AllDataType::strToValue(value->value, value->parsedString, fInfo->type, fInfo->length);
-		}
+             // Checking Integer value
+	     if((value->type == typeInt) || (value->type==typeShort) || (value->type==typeByteInt) || (value->type==typeLongLong) || (value->type==typeLong)){
+	         int len=strlen(value->parsedString);
+	         for(int n=0;n<len;n++){
+	            int p=value->parsedString[n];
+	            if(!(p>=48 && p<=57 || p==45) )
+	                return ErrBadArg;
+	         }
+	     }
+	    // for binary datatype buffer is just strcpy'd. It will be converted into binary datatype in copyValuesToBindBuffer in DBAPI
+                if (value->type == typeBinary)
+                   strncpy((char *)value->value, value->parsedString, 2 * fInfo->length);   
+                else AllDataType::strToValue(value->value, value->parsedString, fInfo->type, fInfo->length);
+       }
     }
     delete fInfo;
     totalParams = paramPos -1;

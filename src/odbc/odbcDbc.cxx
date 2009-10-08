@@ -59,8 +59,7 @@ SQLRETURN CSqlOdbcDbc::SQLAllocHandle(
         return( SQL_ERROR );
     }
 
-    // Initialize relation b/w Env and Dbc
-    inputEnv->dbcList_.insert( inputEnv->dbcList_.begin(), (CSqlOdbcDbc*) *outputHandle );
+    inputEnv->dbcList_.append(*outputHandle);
     inputEnv->state_ = E2;
     ((CSqlOdbcDbc*) *outputHandle)->parentEnv_ = inputEnv;
     ((CSqlOdbcDbc*) *outputHandle)->state_ = C2;
@@ -88,16 +87,16 @@ SQLRETURN CSqlOdbcDbc::SQLFreeHandle(
         return( SQL_ERROR );
 
     // Remove Dbc from Parent Env.
-    std::vector<CSqlOdbcDbc*>::iterator iter;
-    iter = inputDbc->parentEnv_->dbcList_.begin();
-    while( iter != inputDbc->parentEnv_->dbcList_.end() )
+    ListIterator iter = inputDbc->parentEnv_->dbcList_.getIterator();
+    CSqlOdbcDbc *dbcElem = NULL;
+    while(iter.hasElement())
     {
-        if( *iter == inputDbc )
-        {
-            inputDbc->parentEnv_->dbcList_.erase( iter );
+        dbcElem = (CSqlOdbcDbc *) iter.nextElement();
+        if (dbcElem == inputDbc) {
+            iter.reset();
+            inputDbc->parentEnv_->dbcList_.remove(dbcElem);
             break;
         }
-        iter++;
     }
     if( inputDbc->parentEnv_->dbcList_.size() == 0 )
         inputDbc->parentEnv_->state_ = E1;
@@ -209,8 +208,7 @@ SQLRETURN CSqlOdbcDbc::SQLConnect(           // All param's are IN
     portNo = getFromUrl(str,"PORT");
     //printf("Mode=%s , hostName=%s port=%s\n",connMode,hostName,portNo);
     if(NULL != connMode){ 
-        if (hostName == NULL || portNo == NULL) return ( SQL_ERROR );
-        if (strcasecmp((char*)hostName, "localhost") == 0 ){
+        if (hostName == NULL || strcasecmp((char*)hostName, "localhost") == 0 ){
              if (strcasecmp((char*)connMode, "Gateway") == 0){
                  fsqlConn_ = SqlFactory::createConnection(CSqlGateway);
                  mode_ = 3;
@@ -222,6 +220,10 @@ SQLRETURN CSqlOdbcDbc::SQLConnect(           // All param's are IN
                  mode_ = 1;
              }else return ( SQL_ERROR );
         } else {
+             if (portNo == NULL) {
+                  err_.set(ERROR_INVARGVAL);
+                  return (SQL_ERROR);
+             }
              if (strcasecmp((char*)connMode, "Gateway") == 0){
                  fsqlConn_ = SqlFactory::createConnection(CSqlNetworkGateway);
                  SqlNwConnection *con = (SqlNwConnection *)fsqlConn_;
@@ -237,7 +239,10 @@ SQLRETURN CSqlOdbcDbc::SQLConnect(           // All param's are IN
                  SqlNwConnection *con = (SqlNwConnection *)fsqlConn_;
                  con->setHost(hostName, atoi(portNo));
                  mode_ = 4;
-             }else return ( SQL_ERROR );
+             }else {
+                 err_.set( ERROR_INVARGVAL );
+                 return ( SQL_ERROR );
+             }
 
         }
     }else{
@@ -287,17 +292,15 @@ SQLRETURN CSqlOdbcDbc::SQLDisconnect( void )
     if( chkStateForSQLDisconnect() != SQL_SUCCESS )
         return( SQL_ERROR );
 
-    // Free all stmts
-    while( stmtList_.size() != 0 )
-    {
-        rc = CSqlOdbcStmt::SQLFreeHandle( stmtList_[0] );
-        // This free's the stmt and removes element from stmtList_.
-        if( rc != OK )
+    ListIterator iter=stmtList_.getIterator();
+    while (iter.hasElement()) {
+        rc = CSqlOdbcStmt::SQLFreeHandle(iter.nextElement());
+         if( rc != OK )
             return( SQL_ERROR );
     }
 
-    // Commit the transaction
-    if( fsqlConn_->commit() != OK )
+    // Rollback the transaction
+    if( fsqlConn_->rollback() != OK )
         return( SQL_ERROR );
         
     // Disconnect
@@ -329,14 +332,12 @@ SQLRETURN CSqlOdbcDbc::SQLEndTran(
         return( SQL_SUCCESS );
 
     // Close cursors of all the statements
-    std::vector<CSqlOdbcStmt*>::iterator iter;
-    iter = stmtList_.begin();
-    while( iter != stmtList_.end() )
-    {
-        (*iter)->SQLFreeHandle( SQL_CLOSE );
-        iter++;
+    ListIterator iter = stmtList_.getIterator();
+    CSqlOdbcStmt *stmtElem = NULL;
+    while (iter.hasElement()) {
+        stmtElem = (CSqlOdbcStmt *) iter.nextElement();
+        stmtElem->SQLFreeHandle( SQL_CLOSE );
     }
-
     // Finish transaction
     switch( completionType )
     {
@@ -507,6 +508,29 @@ SQLRETURN CSqlOdbcDbc::SQLGetConnectAttr(
 
     return( SQL_SUCCESS );
 }
+
+/*SQLRETURN SQLGetFunctions(
+     SQLHDBC     ConnectionHandle,
+     SQLUSMALLINT     FunctionId,
+     SQLUSMALLINT *     SupportedPtr)
+{
+    if( isValidHandle( ConnectionHandle, SQL_HANDLE_DBC ) != SQL_SUCCESS )
+        return( SQL_INVALID_HANDLE );
+    return( ((CSqlOdbcDbc*)ConnectionHandle)->SQLGetFunctions(FunctionId,SupportedPtr) );
+}
+*/
+SQLRETURN CSqlOdbcDbc::SQLGetFunctions(
+     SQLUSMALLINT     FunctionId,
+     SQLUSMALLINT *     SupportedPtr)
+{
+     if(isFunctionSupports(FunctionId))
+         *SupportedPtr = SQL_TRUE ;
+     else
+         *SupportedPtr = SQL_FALSE;
+     return (SQL_SUCCESS);
+}
+
+
 
 SQLRETURN SQLGetInfo(
      SQLHDBC     ConnectionHandle,

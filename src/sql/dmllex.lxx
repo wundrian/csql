@@ -90,6 +90,7 @@ operator        "<"|">"|">="|"<="|"="|"\!="|"<>"|"LIKE"|"like"
 
                 if(strcasecmp(yytext,"SELECT") == 0) token = SELECT;
                 if(strcasecmp(yytext,"FROM") == 0) token = FROM;
+                if(strcasecmp(yytext,"AS") == 0) token = AS;
                 if(strcasecmp(yytext,"WHERE") == 0) token = WHERE;
                 if(strcasecmp(yytext,"BETWEEN") == 0) token = BETWEEN;
                 if(strcasecmp(yytext,"IN") == 0) token = IN;
@@ -112,7 +113,6 @@ operator        "<"|">"|">="|"<="|"="|"\!="|"<>"|"LIKE"|"like"
                 if(strcasecmp(yytext,"ON") == 0) token = ON;
                 if(strcasecmp(yytext,"HASH") == 0) token = HASH;
                 if(strcasecmp(yytext,"TREE") == 0) token = TREE;
-                if(strcasecmp(yytext,"UNIQUE") == 0) token = UNIQUE;
 
                 if(strcasecmp(yytext,"KEY") == 0) token = KEY;
                 if(strcasecmp(yytext,"DEFAULT") == 0) token = DEFAULT;
@@ -137,9 +137,46 @@ operator        "<"|">"|">="|"<="|"="|"\!="|"<>"|"LIKE"|"like"
                 if(strcasecmp(yytext,"AVG") ==0) token = AVG;
                 if(strcasecmp(yytext,"COUNT") ==0) token = COUNT;
                 if(strcasecmp(yytext,"GROUP") ==0) token = GROUP;
+                if(strcasecmp(yytext,"ORDER") ==0) token = ORDER;
+                if(strcasecmp(yytext,"ASC") ==0) token = ASC;
+                if(strcasecmp(yytext,"DESC") ==0) token = DESC;
+                if(strcasecmp(yytext,"DISTINCT") ==0) token = DISTINCT;
                 if(strcasecmp(yytext,"BY") ==0) token = BY;
-                if(strcasecmp(yytext,"SIZE") ==0) token = SIZE;
+                if(strcasecmp(yytext,"HAVING") ==0) token = HAVING;
+                if(strcasecmp(yytext,"LIMIT") ==0) token = LIMIT;
+                if(strcasecmp(yytext,"OFFSET") ==0) token = OFFSET;
+                if(strcasecmp(yytext,"INNER") ==0) token = INNER;
+                if(strcasecmp(yytext,"OUTER") ==0) token = OUTER;
+                if(strcasecmp(yytext,"CROSS") ==0) token = CROSS;
+                if(strcasecmp(yytext,"LEFT") ==0) token = LEFT;
+                if(strcasecmp(yytext,"JOIN") ==0) token = JOIN;
+                if(strcasecmp(yytext,"GETALLTABLES") ==0) token = ALLTABLE;
+                if(strcasecmp(yytext,"DESCRIBE") ==0) token = DESCRIBE;
+                if(strcasecmp(yytext,"GETPRIMARYKEY") ==0) token = PRIMARYINFO;
                 if(strcasecmp(yytext,"AUTO_INCREMENT") ==0) token = AUTO_INCREMENT;
+                if(strcasecmp(yytext,"GETDATATYPES") == 0) token = GETDATATYPES;
+                if(strcasecmp(yytext,"GETTABLETYPES") == 0) token = GETTABLETYPES;
+                if(strcasecmp(yytext,"IMPORTEDKEY") == 0) token = IMPORTEDKEY;
+                if(strcasecmp(yytext,"EXPORTEDKEY") == 0) token = EXPORTEDKEY;
+                if(strcasecmp(yytext,"SIZE") ==0) token = SIZE;
+                if(strcasecmp(yytext,"FOREIGN") ==0) token = FOREIGN;
+                if(strcasecmp(yytext,"REFERENCES") ==0) token = REFERENCES;
+                if(strcasecmp(yytext,"CACHE") ==0) token = CACHE;
+                if(strcasecmp(yytext,"UNCACHE") ==0) token = UNCACHE;
+                if(strcasecmp(yytext,"CONDITION") ==0) token = CONDITION;
+                if(strcasecmp(yytext,"FIELDLIST") ==0) token = FIELDLIST;
+                if(strcasecmp(yytext,"PK") ==0) token = PK;
+                if(strcasecmp(yytext,"DIRECT") ==0) token = DIRECT;
+                if(strcasecmp(yytext,"DSN") ==0) token = DSN;
+                if(strcasecmp(yytext,"NOSCHEMA") ==0) token = NOSCHEMA;
+                if(strcasecmp(yytext,"COMPACT") ==0) token = COMPACT;
+                if(strcasecmp(yytext,"IS") ==0) token = IS;
+                if(strcasecmp(yytext,"EXPLAIN") ==0) token = EXPLAIN;
+                if(strcasecmp(yytext,"PLAN") ==0) token = PLAN;
+                if(strcasecmp(yytext,"GETCATALOGS") ==0) token = GETCATALOGS;
+                if(strcasecmp(yytext,"USER") ==0) token = USER;
+                if(strcasecmp(yytext,"PASSWORD") ==0) token = PASSWORD;
+                if(strcasecmp(yytext,"ALTER") ==0) token = ALTER;
                 if( token == FIELD )
                     yylval.stringval = strdup((const char*)yytext);
                 else

@@ -13,7 +13,8 @@
  *   GNU General Public License for more details.                          *
  *                                                                         *
   ***************************************************************************/
-#include "Statement.h"
+#include <os.h>
+#include <Statement.h>
 Statement* StatementFactory::getStatement(ParsedData *data)
 {
     Statement *stmt;
@@ -42,6 +43,21 @@ Statement* StatementFactory::getStatement(ParsedData *data)
             break;
         case DropIndexStatement:
             stmt = new DropIdxStatement();
+            break;
+        case CacheTableStatement:
+            stmt = new CacheTblStatement();
+            break;
+        case CompactTableStatement:
+            stmt = new CompactTblStatement();
+            break;
+        case CopyTableStatement:
+            stmt = new CopyTblStatement();
+            break;
+        case MetaStatement:
+            stmt = new MetadataStatement();
+            break;
+        case UserStatement:
+            stmt = new UserTblStatement();
             break;
     }
     stmt->setParsedData(data);

@@ -10,14 +10,14 @@ CSqlOdbcError::CSqlOdbcError( void )
 }
 
 CSqlOdbcError::CSqlOdbcError( long handleType ) : 
-    csqlErrCode ( OK ), 
+    csqlErrCode ( OK ), count(0), 
     hdlType( handleType ) 
 {}
 
 void CSqlOdbcError::set( long err ) 
 { 
     csqlErrCode = err; 
-    
+    count = 0;
     if( err != OK );
         printStr( SQL_OV_ODBC3 ); 
 }
@@ -129,9 +129,9 @@ SQLRETURN CSqlOdbcError::SQLGetDiagRec(
         errorInfoTbl = errorInfoTable_3x;
     else
         errorInfoTbl = errorInfoTable_2x;
-
     // Search in table
     while( errorInfoTbl[i].csqlErrCode != csqlErrCode ) i++;
+    count++;
     if( errorInfoTbl[i].csqlErrCode == csqlErrCode )
     {
         // Fill error info to user space
@@ -141,9 +141,11 @@ SQLRETURN CSqlOdbcError::SQLGetDiagRec(
         if( bufLen > *textLen )
             bufLen = *textLen + 1;
         strncpy( (char*) Msg, (char*) errorInfoTbl[i].sqlMessage, (int) bufLen );
-        return( SQL_ERROR );
+        if(count < 2)
+            return( SQL_SUCCESS );
+        else
+            return( SQL_ERROR );
     }
-
     return( SQL_SUCCESS );
 }
 

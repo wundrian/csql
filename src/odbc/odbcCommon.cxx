@@ -139,8 +139,9 @@ DataType getCSqlType( SQLSMALLINT type )
             return typeString;
         case SQL_C_LONG:
         case SQL_C_SLONG:
-        case SQL_C_ULONG:
             return typeInt;
+        case SQL_C_ULONG:
+            return typeLong;
         case SQL_C_FLOAT:
             return typeFloat;
         case SQL_C_DOUBLE:
@@ -426,11 +427,16 @@ void copyFromOdbc(AbsSqlStatement *stmt, int paramNo, SQLUINTEGER destLen,void *
 //Called from SQLFetch
 //Destination here can be the actual application buffer or
 //it may be ipd_
-SQLINTEGER copyToOdbc(void *odbcData,SQLUINTEGER odbcLen,void *sourceData,SQLUINTEGER sourceLen,SQLSMALLINT type)
+SQLINTEGER copyToOdbc(void *odbcData,SQLUINTEGER odbcLen,void *sourceData,SQLUINTEGER sourceLen,SQLSMALLINT type, SQLSMALLINT apptype)
 {
     SQLINTEGER ind;
     if(odbcData == NULL || sourceData == NULL)
         return -1;
+    if( apptype == typeString && type != apptype){
+        AllDataType::convertToString(odbcData , sourceData,(DataType) type);
+        if(sourceLen < odbcLen) return sourceLen;
+        else return odbcLen;
+    }
     switch( type )
     {
         case typeShort:
@@ -519,4 +525,249 @@ SQLINTEGER copyToOdbc(void *odbcData,SQLUINTEGER odbcLen,void *sourceData,SQLUIN
             break;
     }
     return ind;
+}
+bool isFunctionSupports(SQLUSMALLINT type)
+{
+    switch(type)
+    {
+        case SQL_API_SQLALLOCHANDLE:
+        {
+            return true;
+        }
+        case SQL_API_SQLGETDESCFIELD:
+        {
+            return false;
+        }
+        case SQL_API_SQLBINDCOL:
+        {
+            return true;
+        }
+        case SQL_API_SQLGETDESCREC:
+        {
+            return false;
+        }
+        case SQL_API_SQLCANCEL:
+        {
+            return false;
+        }
+        case SQL_API_SQLGETDIAGFIELD:
+        {
+            return false;
+        }
+        case SQL_API_SQLCLOSECURSOR:
+        {
+            return true;
+        }
+        case SQL_API_SQLGETDIAGREC:
+        {
+            return true;
+        }
+        case SQL_API_SQLCOLATTRIBUTE:
+        {
+            return true;
+        }
+        case SQL_API_SQLGETENVATTR:
+        {
+            return false;
+        }
+        case SQL_API_SQLCONNECT:
+        {
+            return true;
+        }
+        case SQL_API_SQLGETFUNCTIONS:
+        {
+            return true;
+        }
+        case SQL_API_SQLCOPYDESC:
+        {
+            return false;
+        }
+        case SQL_API_SQLGETINFO:
+        {
+            return true;
+        }
+        case SQL_API_SQLDATASOURCES:
+        {
+            return false;
+        }
+        case SQL_API_SQLGETSTMTATTR:
+        {
+            return true;
+        }
+        case SQL_API_SQLDESCRIBECOL:
+        {
+            return true;
+        }
+        case SQL_API_SQLGETTYPEINFO:
+        {
+            return true;
+        }
+        case SQL_API_SQLDISCONNECT:
+        {
+            return true;
+        }
+        case SQL_API_SQLNUMRESULTCOLS:
+        {
+            return true;
+        }
+        case SQL_API_SQLDRIVERS:
+        {
+            return false;
+        }
+        case SQL_API_SQLPARAMDATA:
+        {
+            return false;
+        }
+        case SQL_API_SQLENDTRAN:
+        {
+            return true;
+        }
+        case SQL_API_SQLPREPARE:
+        {
+            return true;
+        }
+        case SQL_API_SQLEXECDIRECT:
+        {
+            return true;
+        }
+        case SQL_API_SQLPUTDATA:
+        {
+            return false;
+        }
+        case SQL_API_SQLEXECUTE:
+        {
+            return true;
+        }
+        case SQL_API_SQLROWCOUNT:
+        {
+            return true;
+        }
+        case SQL_API_SQLFETCH:
+        {
+            return true;
+        }
+        case SQL_API_SQLSETCONNECTATTR:
+        {
+            return true;
+        }
+        case SQL_API_SQLFETCHSCROLL:
+        {
+            return false;
+        }
+        case SQL_API_SQLSETCURSORNAME:
+        {
+            return false;
+        }
+        case SQL_API_SQLFREEHANDLE:
+        {
+            return true;
+        }
+        case SQL_API_SQLSETDESCFIELD:
+        {
+            return false;
+        }
+        case SQL_API_SQLFREESTMT:
+        {
+            return true;
+        }
+        case SQL_API_SQLSETDESCREC:
+        {
+            return false;
+        }
+        case SQL_API_SQLGETCONNECTATTR:
+        {
+            return true;
+        }
+        case SQL_API_SQLSETENVATTR:
+        {
+            return true;
+        }
+        case SQL_API_SQLGETCURSORNAME:
+        {
+            return false;
+        }
+        case SQL_API_SQLSETSTMTATTR:
+        {
+            return true;
+        }
+        case SQL_API_SQLGETDATA:
+        {
+            return true;
+        }
+        case SQL_API_SQLCOLUMNS:
+        {
+            return true;
+        }
+        case SQL_API_SQLSTATISTICS:
+        {
+            return true;
+        }
+        case SQL_API_SQLSPECIALCOLUMNS:
+        {
+            return false;
+        }
+        case SQL_API_SQLTABLES:
+        {
+            return true;
+        }
+        case SQL_API_SQLBINDPARAMETER:
+        {
+            return true;
+        }
+        case SQL_API_SQLNATIVESQL:
+        {
+            return false;
+        }
+        case SQL_API_SQLBROWSECONNECT:
+        {
+            return false;
+        }
+        case SQL_API_SQLNUMPARAMS:
+        {
+            return true;
+        }
+        case SQL_API_SQLPRIMARYKEYS:
+        {
+            return true;
+        }
+        case SQL_API_SQLCOLUMNPRIVILEGES:
+        {
+            return false;
+        }
+        case SQL_API_SQLPROCEDURECOLUMNS:
+        {
+            return false; 
+        }
+        case SQL_API_SQLDESCRIBEPARAM:
+        {
+            return true;
+        }
+        case SQL_API_SQLPROCEDURES:
+        {
+            return false;
+        }
+        case SQL_API_SQLDRIVERCONNECT:
+        {
+            return true;
+        }
+        case SQL_API_SQLSETPOS:
+        {
+            return false;
+        }
+        case SQL_API_SQLFOREIGNKEYS:
+        {
+            return true;
+        }
+        case SQL_API_SQLTABLEPRIVILEGES:
+        {
+            return false;
+        }
+        case SQL_API_SQLMORERESULTS:
+        {
+            return false;
+        }
+        default :
+            return false;
+    }
+
 }

@@ -1,6 +1,6 @@
 #include<AbsSqlStatement.h>
-#include<SqlNwStatement.h>
 #include<SqlFactory.h>
+#include<SqlNwStatement.h>
 //sqlStmtPtr
 
 
@@ -155,6 +155,7 @@ JNIEXPORT jint JNICALL Java_csql_jdbc_JSqlStatement_prepare
     jboolean isCopy = JNI_TRUE;
     char *stmtString = (char*) env->GetStringUTFChars(stmt, &isCopy );
     int rv = s->prepare(stmtString);
+    env->ReleaseStringUTFChars(stmt, stmtString);
     return rv;
 }
 
@@ -432,6 +433,7 @@ JNIEXPORT void JNICALL Java_csql_jdbc_JSqlStatement_setString
 
     AbsSqlStatement *stmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
     stmt->setStringParam(position, valueStr);
+    env->ReleaseStringUTFChars(value, valueStr);
     return;
 }
 
@@ -566,7 +568,7 @@ JNIEXPORT void JNICALL Java_csql_jdbc_JSqlStatement_setTimestamp
  * Signature: (I)S
  */
 JNIEXPORT jshort JNICALL Java_csql_jdbc_JSqlStatement_getShort
-  (JNIEnv *env, jobject obj, jint pos)
+  (JNIEnv *env, jobject obj, jint pos, jint type)
 {
     jclass cls;
     jfieldID fid;
@@ -586,7 +588,13 @@ JNIEXPORT jshort JNICALL Java_csql_jdbc_JSqlStatement_getShort
 
     // Read data at column
     void *fvp = sqlStmt->getFieldValuePtr( pos );
-    return( * ((short*)fvp) );
+    if(type == typeShort)
+        return( * ((short*)fvp) );
+    else {
+        short val;
+        AllDataType::convertToShort(&val, fvp, (DataType)type); 
+        return val;
+    }
 }
 
 /*
@@ -663,7 +671,9 @@ JNIEXPORT jint JNICALL Java_csql_jdbc_JSqlStatement_findColumn
     char *valueStr = (char*) env->GetStringUTFChars( value, &isCopy );
  
     AbsSqlStatement *s = (AbsSqlStatement*) env->GetLongField( obj, fid );
-    return s->getFldPos(valueStr); 
+    int val = s->getFldPos(valueStr); 
+    env->ReleaseStringUTFChars(value, valueStr);
+    return val;
 }
 
 /*
@@ -690,6 +700,7 @@ JNIEXPORT jstring JNICALL Java_csql_jdbc_JSqlStatement_getParamFldName
     DbRetVal rv = s->getParamFldInfo(pos,field);
     if(rv!=OK)return NULL;
     _jstring *name = env->NewStringUTF( (char*) field->fldName );
+    //For free above line is written
     delete field;
     return name;
 }
@@ -741,10 +752,11 @@ JNIEXPORT jint JNICALL Java_csql_jdbc_JSqlStatement_getType
 
     FieldInfo *field = new FieldInfo();
     DbRetVal rv = s->getParamFldInfo(pos,field);
-    if(rv!=OK)return 100;
+    if(rv!=OK) { delete field; return 100; }
     int type = field->type;
     delete field;
     return type;
+
 }
 
 /*
@@ -770,7 +782,7 @@ JNIEXPORT jboolean JNICALL Java_csql_jdbc_JSqlStatement_isNullable
 
     FieldInfo *field = new FieldInfo();
     DbRetVal rv = s->getParamFldInfo(pos,field);
-    if(rv!=OK)return (-1);
+    if(rv!=OK) { delete field; return (-1); }
     if(field->isNull){
         delete field;
         return true;
@@ -832,10 +844,40 @@ JNIEXPORT jint JNICALL Java_csql_jdbc_JSqlStatement_getProjFldType
     s->getProjFldInfo(pos,field);
     int type = field->type;
     delete field;
-
     return type;
 }
 
+/*
+ * Class:     csql_jdbc_JSqlStatement
+ * Method:    getProjFldTypeArray
+ * Signature: ()[I
+ */
+JNIEXPORT jintArray JNICALL Java_csql_jdbc_JSqlStatement_getProjFldTypeArray__
+  (JNIEnv *env, jobject obj)
+ {
+    jclass cls;
+    jfieldID fid;
+
+    cls = env->GetObjectClass(obj);
+    fid = env->GetFieldID( cls, "sqlStmtPtr", "J");
+    if (fid == 0)
+    {
+        jclass Exception = env->FindClass("java/lang/Exception");
+        env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
+        return 0;
+    }
+    AbsSqlStatement *s = (AbsSqlStatement*) env->GetLongField( obj, fid );
+
+    int noOfFld = s->noOfProjFields();
+    jintArray result = env->NewIntArray(noOfFld+1);
+    jint *resultInt = env->GetIntArrayElements(result, NULL);
+    s->getProjFieldType(resultInt);
+    //for(int i=1; i< noOfFld+1; i++)
+    //    printf("TYpe In ARRAY  %d \n",resultInt[i]);
+    //printf("\n");
+    env->ReleaseIntArrayElements(result, resultInt, 0);
+    return result;
+}
 
 /*
  * Class:     csql_jdbc_JSqlStatement
@@ -861,7 +903,6 @@ JNIEXPORT jboolean JNICALL Java_csql_jdbc_JSqlStatement_isFldNullable
     s->getProjFldInfo(pos,field);
     bool nul = field->isNull;
     delete field;
-
     return nul;
 }
 
@@ -927,7 +968,7 @@ JNIEXPORT jstring JNICALL Java_csql_jdbc_JSqlStatement_getTableName
  * Signature: (I)I
  */
 JNIEXPORT jint JNICALL Java_csql_jdbc_JSqlStatement_getInt
-  (JNIEnv *env, jobject obj, jint pos)
+  (JNIEnv *env, jobject obj, jint pos,jint type)
 {
     jclass cls;
     jfieldID fid;
@@ -944,10 +985,349 @@ JNIEXPORT jint JNICALL Java_csql_jdbc_JSqlStatement_getInt
 
     // Validate pos
     // Handle conversion
-
     // Read data at column
     void *fvp = sqlStmt->getFieldValuePtr( pos );
+    if(type == typeInt)
+        return( * ((int*)fvp) );
+    else {
+        int val;
+        AllDataType::convertToInt(&val, fvp, (DataType)type);
+        return val;
+    }
+
+}
+/*
+ * Class:     csql_jdbc_JSqlStatement
+ * Method:    getIntS
+ * Signature: (Ljava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_csql_jdbc_JSqlStatement_getIntS
+  (JNIEnv *env, jobject obj, jstring name)
+{
+    jclass cls;
+    jfieldID fid;
+
+    cls = env->GetObjectClass( obj );
+    fid = env->GetFieldID( cls, "sqlStmtPtr", "J");
+    if (fid == 0)
+    {
+        jclass Exception = env->FindClass("java/lang/Exception");
+        env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
+        return(-1);
+    }
+    AbsSqlStatement *sqlStmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
+    jboolean isCopy = JNI_TRUE;
+    char *valueStr = (char*) env->GetStringUTFChars( name, &isCopy );
+    void *fvp = sqlStmt->getFieldValuePtr( valueStr );
+    env->ReleaseStringUTFChars(name, valueStr);
     return( * ((int*)fvp) );
+}
+
+/*
+ * Class:     csql_jdbc_JSqlStatement
+ * Method:    getShortS
+ * Signature: (Ljava/lang/String;)S
+ */
+JNIEXPORT jshort JNICALL Java_csql_jdbc_JSqlStatement_getShortS
+  (JNIEnv *env, jobject obj, jstring name)
+{
+    jclass cls;
+    jfieldID fid;
+
+    cls = env->GetObjectClass( obj );
+    fid = env->GetFieldID( cls, "sqlStmtPtr", "J");
+    if (fid == 0)
+    {
+        jclass Exception = env->FindClass("java/lang/Exception");
+        env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
+        return(-1);
+    }
+    AbsSqlStatement *sqlStmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
+    jboolean isCopy = JNI_TRUE;
+    char *valueStr = (char*) env->GetStringUTFChars( name, &isCopy );
+    void *fvp = sqlStmt->getFieldValuePtr( valueStr );
+    env->ReleaseStringUTFChars(name, valueStr);
+    return( * ((short*)fvp) );
+
+}
+
+/*
+ * Class:     csql_jdbc_JSqlStatement
+ * Method:    getLongS
+ * Signature: (Ljava/lang/String;)J
+ */
+JNIEXPORT jlong JNICALL Java_csql_jdbc_JSqlStatement_getLongS
+  (JNIEnv *env, jobject obj, jstring name)
+{
+  jclass cls;
+    jfieldID fid;
+
+    cls = env->GetObjectClass( obj );
+    fid = env->GetFieldID( cls, "sqlStmtPtr", "J");
+    if (fid == 0)
+    {
+        jclass Exception = env->FindClass("java/lang/Exception");
+        env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
+        return(-1);
+    }
+    AbsSqlStatement *sqlStmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
+    jboolean isCopy = JNI_TRUE;
+    char *valueStr = (char*) env->GetStringUTFChars( name, &isCopy );
+    void *fvp = sqlStmt->getFieldValuePtr( valueStr );
+    env->ReleaseStringUTFChars(name, valueStr);
+    return( * ((long*)fvp) );
+
+}
+/*
+ * Class:     csql_jdbc_JSqlStatement
+ * Method:    getByteS
+ * Signature: (Ljava/lang/String;)B
+ */
+JNIEXPORT jbyte JNICALL Java_csql_jdbc_JSqlStatement_getByteS
+  (JNIEnv *env, jobject obj, jstring name)
+{
+    jclass cls;
+    jfieldID fid;
+
+    cls = env->GetObjectClass( obj );
+    fid = env->GetFieldID( cls, "sqlStmtPtr", "J");
+    if (fid == 0)
+    {
+        jclass Exception = env->FindClass("java/lang/Exception");
+        env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
+        return(-1);
+    }
+    AbsSqlStatement *sqlStmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
+    jboolean isCopy = JNI_TRUE;
+    char *valueStr = (char*) env->GetStringUTFChars( name, &isCopy );
+    void *fvp = sqlStmt->getFieldValuePtr( valueStr );
+    env->ReleaseStringUTFChars(name, valueStr);
+    return( * ((char*)fvp) );
+
+}
+/*
+ * Class:     csql_jdbc_JSqlStatement
+ * Method:    getFloatS
+ * Signature: (Ljava/lang/String;)F
+ */
+JNIEXPORT jfloat JNICALL Java_csql_jdbc_JSqlStatement_getFloatS
+  (JNIEnv *env, jobject obj, jstring name)
+{
+    jclass cls;
+    jfieldID fid;
+
+    cls = env->GetObjectClass( obj );
+    fid = env->GetFieldID( cls, "sqlStmtPtr", "J");
+    if (fid == 0)
+    {
+        jclass Exception = env->FindClass("java/lang/Exception");
+        env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
+        return(-1);
+    }
+    AbsSqlStatement *sqlStmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
+    jboolean isCopy = JNI_TRUE;
+    char *valueStr = (char*) env->GetStringUTFChars( name, &isCopy );
+    void *fvp = sqlStmt->getFieldValuePtr( valueStr );
+    env->ReleaseStringUTFChars(name, valueStr);
+    return( * ((float*)fvp) );
+
+}
+
+/*
+ * Class:     csql_jdbc_JSqlStatement
+ * Method:    getDoubleS
+ * Signature: (Ljava/lang/String;)D
+ */
+JNIEXPORT jdouble JNICALL Java_csql_jdbc_JSqlStatement_getDoubleS
+  (JNIEnv *env, jobject obj, jstring name)
+{
+    jclass cls;
+    jfieldID fid;
+
+    cls = env->GetObjectClass( obj );
+    fid = env->GetFieldID( cls, "sqlStmtPtr", "J");
+    if (fid == 0)
+    {
+        jclass Exception = env->FindClass("java/lang/Exception");
+        env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
+        return(-1);
+    }
+    AbsSqlStatement *sqlStmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
+    jboolean isCopy = JNI_TRUE;
+    char *valueStr = (char*) env->GetStringUTFChars( name, &isCopy );
+    void *fvp = sqlStmt->getFieldValuePtr( valueStr );
+    env->ReleaseStringUTFChars(name, valueStr);
+    return( * ((double*)fvp) );
+
+}
+/*
+ * Class:     csql_jdbc_JSqlStatement
+ * Method:    getStringS
+ * Signature: (Ljava/lang/String;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_csql_jdbc_JSqlStatement_getStringS
+  (JNIEnv *env, jobject obj, jstring name)
+{
+    jclass cls;
+    jfieldID fid;
+
+    cls = env->GetObjectClass( obj );
+    fid = env->GetFieldID( cls, "sqlStmtPtr", "J");
+    if (fid == 0)
+    {
+        jclass Exception = env->FindClass("java/lang/Exception");
+        env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
+        return( (jstring) 0 );
+    }
+    AbsSqlStatement *sqlStmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
+    jboolean isCopy = JNI_TRUE;
+    char *valueStr = (char*) env->GetStringUTFChars( name, &isCopy );
+    void *fvp = sqlStmt->getFieldValuePtr( valueStr );
+    env->ReleaseStringUTFChars(name, valueStr);
+    return( env->NewStringUTF( (char*) fvp ) );
+
+
+}
+
+/*
+ * Class:     csql_jdbc_JSqlStatement
+ * Method:    getDateS
+ * Signature: (Ljava/lang/String;)Ljava/sql/Date;
+ */
+JNIEXPORT jobject JNICALL Java_csql_jdbc_JSqlStatement_getDateS
+  (JNIEnv *env, jobject obj, jstring name)
+{
+    jclass cls;
+    jfieldID fid;
+
+    cls = env->GetObjectClass( obj );
+    fid = env->GetFieldID( cls, "sqlStmtPtr", "J");
+    if (fid == 0)
+    {
+        jclass Exception = env->FindClass("java/lang/Exception");
+        env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
+        return((jobject) 0);
+    }
+    AbsSqlStatement *sqlStmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
+    jboolean isCopy = JNI_TRUE;
+    char *valueStr = (char*) env->GetStringUTFChars( name, &isCopy );
+    void *fvp = sqlStmt->getFieldValuePtr( valueStr );
+    env->ReleaseStringUTFChars(name, valueStr);
+
+    jclass cDate = env->FindClass("java/sql/Date");
+    jmethodID methodID = env->GetMethodID( cDate, "<init>", "(III)V" );
+    jobject dateObj;
+
+    Date *dt = (Date*) fvp;
+    dateObj = env->NewObject( cDate, methodID,
+        (jint) dt->year()-1900, (jint) dt->month() - 1,
+        (jint) dt->dayOfMonth() );
+
+    return( dateObj );
+
+
+}
+
+/*
+ * Class:     csql_jdbc_JSqlStatement
+ * Method:    getTimeS
+ * Signature: (Ljava/lang/String;)Ljava/sql/Time;
+ */
+JNIEXPORT jobject JNICALL Java_csql_jdbc_JSqlStatement_getTimeS
+  (JNIEnv *env, jobject obj, jstring name)
+{
+    jclass cls;
+    jfieldID fid;
+
+    cls = env->GetObjectClass( obj );
+    fid = env->GetFieldID( cls, "sqlStmtPtr", "J");
+    if (fid == 0)
+    {
+        jclass Exception = env->FindClass("java/lang/Exception");
+        env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
+        return((jobject) 0);
+    }
+    AbsSqlStatement *sqlStmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
+    jboolean isCopy = JNI_TRUE;
+    char *valueStr = (char*) env->GetStringUTFChars( name, &isCopy );
+    void *fvp = sqlStmt->getFieldValuePtr( valueStr );
+    env->ReleaseStringUTFChars(name, valueStr);
+    jclass cTime = env->FindClass("java/sql/Time");
+    jmethodID methodID = env->GetMethodID( cTime, "<init>", "(III)V" );
+    jobject timeObj;
+
+    Time *tm = (Time*) fvp;
+    timeObj = env->NewObject( cTime, methodID,
+        (jint) tm->hours(), (jint) tm->minutes(),
+        (jint) tm->seconds() );
+
+    return( timeObj );
+
+}
+
+/*
+ * Class:     csql_jdbc_JSqlStatement
+ * Method:    getTimestampS
+ * Signature: (Ljava/lang/String;)Ljava/sql/Timestamp;
+ */
+JNIEXPORT jobject JNICALL Java_csql_jdbc_JSqlStatement_getTimestampS
+  (JNIEnv *env, jobject obj, jstring name)
+{
+    jclass cls;
+    jfieldID fid;
+
+    cls = env->GetObjectClass( obj );
+    fid = env->GetFieldID( cls, "sqlStmtPtr", "J");
+    if (fid == 0)
+    {
+        jclass Exception = env->FindClass("java/lang/Exception");
+        env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
+        return(((jobject) 0));
+    }
+    AbsSqlStatement *sqlStmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
+    jboolean isCopy = JNI_TRUE;
+    char *valueStr = (char*) env->GetStringUTFChars( name, &isCopy );
+    void *fvp = sqlStmt->getFieldValuePtr( valueStr );
+    env->ReleaseStringUTFChars(name, valueStr);
+    jclass cTimestamp = env->FindClass("java/sql/Timestamp");
+    jmethodID methodID = env->GetMethodID( cTimestamp, "<init>", "(IIIIIII)V" );
+    jobject timeObj;
+
+    TimeStamp *ts = (TimeStamp*) fvp;
+    timeObj = env->NewObject( cTimestamp, methodID, \
+        (jint) ts->year()-1900, (jint) ts->month() - 1, (jint) ts->dayOfMonth(), \
+        (jint) ts->hours(), (jint) ts->minutes(), (jint) ts->seconds(), (jint) 0 );
+
+    return( timeObj );
+
+}
+
+/*
+ * Class:     csql_jdbc_JSqlStatement
+ * Method:    getBooleanS
+ * Signature: (Ljava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_csql_jdbc_JSqlStatement_getBooleanS
+  (JNIEnv *env, jobject obj, jstring name)
+{
+    jclass cls;
+    jfieldID fid;
+
+    cls = env->GetObjectClass( obj );
+    fid = env->GetFieldID( cls, "sqlStmtPtr", "J");
+    if (fid == 0)
+    {
+        jclass Exception = env->FindClass("java/lang/Exception");
+        env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
+        return( false );
+    }
+    AbsSqlStatement *sqlStmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
+    jboolean isCopy = JNI_TRUE;
+    char *valueStr = (char*) env->GetStringUTFChars( name, &isCopy );
+    void *fvp = sqlStmt->getFieldValuePtr( valueStr );
+    env->ReleaseStringUTFChars(name, valueStr);
+    if(*(int*)fvp) return true;
+    else return false;
 }
 
 /*
@@ -956,7 +1336,7 @@ JNIEXPORT jint JNICALL Java_csql_jdbc_JSqlStatement_getInt
  * Signature: (I)J
  */
 JNIEXPORT jlong JNICALL Java_csql_jdbc_JSqlStatement_getLong
-  (JNIEnv *env, jobject obj, jint pos)
+  (JNIEnv *env, jobject obj, jint pos, jint type)
 {
     jclass cls;
     jfieldID fid;
@@ -976,7 +1356,13 @@ JNIEXPORT jlong JNICALL Java_csql_jdbc_JSqlStatement_getLong
 
     // Read data at column
     void *fvp = sqlStmt->getFieldValuePtr( pos );
-    return( * ((long*)fvp) );
+    if(type == typeLong || type == typeLongLong)
+        return( * ((long*)fvp) );
+    else {
+        long val;
+        AllDataType::convertToLong(&val, fvp, (DataType)type);
+        return val;
+    }
 }
 
 /*
@@ -985,7 +1371,7 @@ JNIEXPORT jlong JNICALL Java_csql_jdbc_JSqlStatement_getLong
  * Signature: (I)B
  */
 JNIEXPORT jbyte JNICALL Java_csql_jdbc_JSqlStatement_getByte
-  (JNIEnv *env, jobject obj, jint pos)
+  (JNIEnv *env, jobject obj, jint pos, jint type)
 {
     jclass cls;
     jfieldID fid;
@@ -1005,7 +1391,13 @@ JNIEXPORT jbyte JNICALL Java_csql_jdbc_JSqlStatement_getByte
 
     // Read data at column
     void *fvp = sqlStmt->getFieldValuePtr( pos );
-    return( * ((char*)fvp) );
+    if(type == typeByteInt)
+        return( * ((char*)fvp) );
+    else {
+        char val;
+        AllDataType::convertToByteInt(&val, fvp, (DataType)type);
+        return val;
+    }
 }
 
 /*
@@ -1014,7 +1406,7 @@ JNIEXPORT jbyte JNICALL Java_csql_jdbc_JSqlStatement_getByte
  * Signature: (I)F
  */
 JNIEXPORT jfloat JNICALL Java_csql_jdbc_JSqlStatement_getFloat
-  (JNIEnv *env, jobject obj, jint pos)
+  (JNIEnv *env, jobject obj, jint pos, jint type)
 {
     jclass cls;
     jfieldID fid;
@@ -1034,7 +1426,14 @@ JNIEXPORT jfloat JNICALL Java_csql_jdbc_JSqlStatement_getFloat
 
     // Read data at column
     void *fvp = sqlStmt->getFieldValuePtr( pos );
-    return( * ((float*)fvp) );
+    if(type == typeFloat)
+        return( * ((float*)fvp) );
+    else {
+        float val;
+        AllDataType::convertToFloat(&val, fvp, (DataType)type);
+        return val;
+    }
+
 }
 
 /*
@@ -1043,7 +1442,7 @@ JNIEXPORT jfloat JNICALL Java_csql_jdbc_JSqlStatement_getFloat
  * Signature: (I)D
  */
 JNIEXPORT jdouble JNICALL Java_csql_jdbc_JSqlStatement_getDouble
-  (JNIEnv *env, jobject obj, jint pos)
+  (JNIEnv *env, jobject obj, jint pos, jint type)
 {
     jclass cls;
     jfieldID fid;
@@ -1063,7 +1462,14 @@ JNIEXPORT jdouble JNICALL Java_csql_jdbc_JSqlStatement_getDouble
 
     // Read data at column
     void *fvp = sqlStmt->getFieldValuePtr( pos );
-    return( * ((double*)fvp) );
+    if(type == typeDouble)
+        return( * ((double*)fvp) );
+    else {
+        double val;
+        AllDataType::convertToDouble(&val, fvp, (DataType)type);
+        return val;
+    }
+
 }
 
 /*
@@ -1072,7 +1478,7 @@ JNIEXPORT jdouble JNICALL Java_csql_jdbc_JSqlStatement_getDouble
  * Signature: (I)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_csql_jdbc_JSqlStatement_getString
-  (JNIEnv *env, jobject obj, jint pos)
+  (JNIEnv *env, jobject obj, jint pos, jint type)
 {
     jclass cls;
     jfieldID fid;
@@ -1092,7 +1498,13 @@ JNIEXPORT jstring JNICALL Java_csql_jdbc_JSqlStatement_getString
 
     // Read data at column
     void *fvp = sqlStmt->getFieldValuePtr( pos );
-    return( env->NewStringUTF( (char*) fvp ) );
+    if(type == typeString)
+       return( env->NewStringUTF( (char*) fvp ) );
+    else{
+       char value[IDENTIFIER_LENGTH];
+       AllDataType::convertToString(value, fvp, (DataType) type);
+       return( env->NewStringUTF( value ));
+    }
 }
 
 /*
@@ -1109,7 +1521,7 @@ JNIEXPORT jbyteArray JNICALL Java_csql_jdbc_JSqlStatement_getBytes
  * Signature: (I)Ljava/sql/Date;
  */
 JNIEXPORT jobject JNICALL Java_csql_jdbc_JSqlStatement_getDate
-  (JNIEnv *env, jobject obj, jint pos)
+  (JNIEnv *env, jobject obj, jint pos ,jint type)
 {
     jclass cls;
     jfieldID fid;
@@ -1130,17 +1542,24 @@ JNIEXPORT jobject JNICALL Java_csql_jdbc_JSqlStatement_getDate
     // Read data at column
     void *fvp = sqlStmt->getFieldValuePtr( pos );
 
-    // Create Java Object
     jclass cDate = env->FindClass("java/sql/Date"); 
     jmethodID methodID = env->GetMethodID( cDate, "<init>", "(III)V" );
     jobject dateObj;
+    if(type == typeDate){
+        Date *dt = (Date*) fvp;
+        dateObj = env->NewObject( cDate, methodID, 
+            (jint) dt->year()-1900, (jint) dt->month() - 1, 
+            (jint) dt->dayOfMonth() );
+        return( dateObj );
+    } else {
+        Date value;
+        AllDataType::convertToDate(&value, fvp, (DataType) type);
+        dateObj = env->NewObject( cDate, methodID,
+            (jint) value.year()-1900, (jint) value.month() - 1,
+            (jint) value.dayOfMonth() );
+        return( dateObj );
+    }
 
-    Date *dt = (Date*) fvp;
-    dateObj = env->NewObject( cDate, methodID, 
-        (jint) dt->year()-1900, (jint) dt->month() - 1, 
-        (jint) dt->dayOfMonth() );
-
-    return( dateObj );
 }
 
 /*
@@ -1149,7 +1568,7 @@ JNIEXPORT jobject JNICALL Java_csql_jdbc_JSqlStatement_getDate
  * Signature: (I)Ljava/sql/Time;
  */
 JNIEXPORT jobject JNICALL Java_csql_jdbc_JSqlStatement_getTime
-  (JNIEnv *env, jobject obj, jint pos)
+  (JNIEnv *env, jobject obj, jint pos, jint type)
 {
     jclass cls;
     jfieldID fid;
@@ -1174,13 +1593,21 @@ JNIEXPORT jobject JNICALL Java_csql_jdbc_JSqlStatement_getTime
     jclass cTime = env->FindClass("java/sql/Time"); 
     jmethodID methodID = env->GetMethodID( cTime, "<init>", "(III)V" );
     jobject timeObj;
+    if(type == typeTime){
+        Time *tm = (Time*) fvp;
+        timeObj = env->NewObject( cTime, methodID, 
+            (jint) tm->hours(), (jint) tm->minutes(), 
+            (jint) tm->seconds() );
+        return( timeObj );
+    } else {
+        Time value;
+        AllDataType::convertToDate(&value, fvp, (DataType) type);
+        timeObj = env->NewObject( cTime, methodID, 
+            (jint) value.hours(), (jint) value.minutes(), 
+            (jint) value.seconds() );
+        return( timeObj );
+    }
 
-    Time *tm = (Time*) fvp;
-    timeObj = env->NewObject( cTime, methodID, 
-        (jint) tm->hours(), (jint) tm->minutes(), 
-        (jint) tm->seconds() );
-
-    return( timeObj );
 }
 
 /*
@@ -1189,7 +1616,7 @@ JNIEXPORT jobject JNICALL Java_csql_jdbc_JSqlStatement_getTime
  * Signature: (I)Ljava/sql/Timestamp;
  */
 JNIEXPORT jobject JNICALL Java_csql_jdbc_JSqlStatement_getTimestamp
-  (JNIEnv *env, jobject obj, jint pos)
+  (JNIEnv *env, jobject obj, jint pos, jint type)
 {
     jclass cls;
     jfieldID fid;
@@ -1214,13 +1641,21 @@ JNIEXPORT jobject JNICALL Java_csql_jdbc_JSqlStatement_getTimestamp
     jclass cTimestamp = env->FindClass("java/sql/Timestamp"); 
     jmethodID methodID = env->GetMethodID( cTimestamp, "<init>", "(IIIIIII)V" );
     jobject timeObj;
+    if(type == typeTimeStamp){
+        TimeStamp *ts = (TimeStamp*) fvp;
+        timeObj = env->NewObject( cTimestamp, methodID, \
+            (jint) ts->year()-1900, (jint) ts->month() - 1, (jint) ts->dayOfMonth(), \
+            (jint) ts->hours(), (jint) ts->minutes(), (jint) ts->seconds(), (jint) 0 );
+        return( timeObj );
+    } else {
+        TimeStamp value;
+        AllDataType::convertToDate(&value, fvp, (DataType) type);
+        timeObj = env->NewObject( cTimestamp, methodID, \
+            (jint) value.year()-1900, (jint) value.month() - 1, (jint) value.dayOfMonth(), \
+            (jint) value.hours(), (jint) value.minutes(), (jint) value.seconds(), (jint) 0 );
+        return( timeObj );
+    }
 
-    TimeStamp *ts = (TimeStamp*) fvp;
-    timeObj = env->NewObject( cTimestamp, methodID, \
-        (jint) ts->year()-1900, (jint) ts->month() - 1, (jint) ts->dayOfMonth(), \
-        (jint) ts->hours(), (jint) ts->minutes(), (jint) ts->seconds(), (jint) 0 );
-
-    return( timeObj );
 }
 
 /*
@@ -1229,7 +1664,24 @@ JNIEXPORT jobject JNICALL Java_csql_jdbc_JSqlStatement_getTimestamp
  * Signature: (I)Z
  */
 JNIEXPORT jboolean JNICALL Java_csql_jdbc_JSqlStatement_getBoolean
-  (JNIEnv *, jobject, jint);
+  (JNIEnv *env, jobject obj, jint pos, jint type)
+{
+    jclass cls;
+    jfieldID fid;
+
+    cls = env->GetObjectClass( obj );
+    fid = env->GetFieldID( cls, "sqlStmtPtr", "J");
+    if (fid == 0)
+    {
+        jclass Exception = env->FindClass("java/lang/Exception");
+        env->ThrowNew(Exception,"JNI: GetFieldID failed.\n");
+        return( false );
+    }
+    AbsSqlStatement *sqlStmt = (AbsSqlStatement*) env->GetLongField( obj, fid );
+    void *fvp = sqlStmt->getFieldValuePtr( pos );
+    if(*(int*)fvp) return true;
+    else return false;
+}
 
 #ifdef __cplusplus
 }
