@@ -167,6 +167,7 @@ extern "C" {
 #define SQL_SMALLINT        5
 #define SQL_FLOAT           6
 #define SQL_REAL            7
+//#define SQL_BIGINT          -5
 #define SQL_DOUBLE          8
 #if (ODBCVER >= 0x0300)
 #define SQL_DATETIME        9

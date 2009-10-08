@@ -25,6 +25,8 @@
 #include<Debug.h>
 #include<DatabaseManagerImpl.h>
 #include<Predicate.h>
+#include<HeapAllocator.h>
+#ifndef AGGTYPE
 enum AggType
 {
     AGG_MIN = 1,
@@ -34,6 +36,9 @@ enum AggType
     AGG_COUNT,
     AGG_UNKNOWN
 };
+
+#define AGGTYPE
+#endif
 #include<TableImpl.h>
 class AggFldDef
 {
@@ -43,8 +48,9 @@ class AggFldDef
     int length;
     void *bindBuf;
     void *appBuf;
-    AggType atype;
+    AggType aType;
     bool alreadyBinded;
+    bool isNullable;
     AggFldDef()
     {
         strcpy(fldName, "");
@@ -52,31 +58,10 @@ class AggFldDef
         length=0;
         bindBuf=NULL;
         appBuf=NULL;
-        atype=AGG_UNKNOWN;
+        aType=AGG_UNKNOWN;
         alreadyBinded=false;
+        isNullable=false;
     }
-};
-class HashMapNode
-{
-   public:
-   void *elem;
-   HashMapNode *next;
-   HashMapNode() { elem = NULL; next = NULL; }
-};
-class HashMap
-{
-    void **bucket;
-    int keySize;
-    int bucketSize;
-    public:
-    HashMap(){ keySize = 0; bucketSize = 1009;
-               bucket = (void**) malloc(bucketSize * sizeof(void*));
-               memset(bucket, 0, bucketSize * sizeof(void*));
-             }
-    void setKeySize(int size);
-    DbRetVal insert(void *elem);
-    void* find(void *elem);
-    void removeAll();
 };
 
 class AggTableImpl:public Table
@@ -85,24 +70,28 @@ class AggTableImpl:public Table
     char tblName_[IDENTIFIER_LENGTH];
     void *curTuple; //holds the current tuple ptr. moved during fetch() calls
     List fldList;
-    AggFldDef groupFld;
+    List fldGroupList;
     Table *tableHdl;
     List aggNodes; //change this list to some other data structure
     ListIterator aggNodeIter;
     HashMap aggNodeMap; //for faster lookup
-
+    Predicate *havingPred;
+    int grpNullInfo;
+    long long prjNullInfo;
     int aggNodeSize;
+    int groupSize;
+    char *grpFldBuffer;
+
+    bool optGrpIntNoNull;
+    void *grpBindBuf;
+
     DbRetVal copyValuesToBindBuffer(void *tuple);
     public:
     AggTableImpl();
     virtual ~AggTableImpl();
     DbRetVal getFieldInfo(const char *fieldName,  FieldInfo *&info)
         { return tableHdl->getFieldInfo(fieldName, info); }
-    bool isGroupSet()
-        {
-        if (groupFld.type == typeUnknown) return false; else return true;
-        }
-    void* insertOrGet();
+    void* insertOrGetAggNode();
     void setTable(Table *impl){ tableHdl = impl;}
     Table* getTableHdl(){ return tableHdl; }
     DbRetVal closeScan();
@@ -110,14 +99,30 @@ class AggTableImpl:public Table
     DbRetVal bindFld(const char *name, void *val);
     DbRetVal bindFld(const char *name, AggType aggType, void *val);
     DbRetVal setGroup(const char *name, void *val);
-    void setCondition(Condition *p){}
-    DbRetVal markFldNull(const char *name){}
-    DbRetVal markFldNull(int colpos){}
-    bool isFldNull(const char *name){return false;}
-    bool isFldNull(int colpos){return false;}
+    bool isFldPresentInGrp(char *fname);
+    int computeGrpNodeSize();
+    void* getGroupValueBuffer();
+    int getAggOffset(char *fname, AggType aggType);
+    DbRetVal copyValuesFromGrpBindBuf(char *grpFldBuf, char *fldName);
+    void setCondition(Condition *p){ havingPred = p->getPredicate();}
+    DbRetVal markFldNull(const char *name){ return OK;}
+    inline DbRetVal markFldNull(int colpos){
+        SETBIT(grpNullInfo, colpos);
+        return OK;
+    }
+    bool isFldNull(const char *name);
+    inline bool isFldNull(int colpos) {
+       if (colpos <= 32) { if (BITSET(prjNullInfo, colpos)) return true; }
+       else if (BITSET(*(int *)((char *)&prjNullInfo + 4), colpos)) return true;
+       return false;
+    }
     void clearFldNull(const char *name){}
-    void clearFldNull(int colpos){}
-    int getFldPos(char *name){}
+    inline void clearFldNull(int colpos){
+       if (colpos <= 32) CLEARBIT(prjNullInfo, colpos);
+       else CLEARBIT(*(int *)((char*)&prjNullInfo + 4), colpos);
+    }
+    DbRetVal compact(){ return OK;}
+    int getFldPos(char *name){ return 0;}
     void resetNullinfo(){}
     DbRetVal insertTuple() { return ErrBadCall; }
     DbRetVal updateTuple() { return ErrBadCall; }
@@ -129,7 +134,8 @@ class AggTableImpl:public Table
     DbRetVal lock(bool shared) { return ErrBadCall; }
     DbRetVal unlock(){ return ErrBadCall; }
     DbRetVal setUndoLogging(bool flag) { return ErrBadCall; }
-    void printSQLIndexString(){ };
+    void printSQLIndexString(FILE *fp, int fd){ };
+    void printSQLForeignString(){}
     char* getName() { return tableHdl->getName(); }
     List getFieldNameList(){ List list; return list;}
     DbRetVal execute();
@@ -146,11 +152,12 @@ class AggTableImpl:public Table
         { printf("Wrong call\n"); }
     bool isTableInvolved(char *tableName)
         { printf("Wrong call\n"); return false; }
-    void printPlan(int space){printf("AGG-PLAN-TODO\n");}
-    DbRetVal optimize()
-        { printf("Wrong call\n"); return OK; }
+    void printPlan(int space);
+    DbRetVal optimize();
+    bool isFKTable(){return false;}
     ScanType getScanType(){ return unknownScan;}
     bool hasIndex(char *fName){ return false;}
+    AggType getAggType(const char *aggName, char *fldName);
 };
 
 #endif

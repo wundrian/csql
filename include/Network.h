@@ -31,6 +31,7 @@
     ASYNC=2
 };
 */
+
 enum NetworkPacketType
 {
     NW_PKT_PREPARE =1,
@@ -39,6 +40,7 @@ enum NetworkPacketType
     NW_PKT_FREE =4,
     NW_PKT_CONNECT =5,
     NW_PKT_DISCONNECT =6,
+    SQL_NW_PKT_EXECDIRECT=100,
     SQL_NW_PKT_CONNECT=101,
     SQL_NW_PKT_PREPARE=102,
     SQL_NW_PKT_PARAM_METADATA=103,
@@ -51,13 +53,19 @@ enum NetworkPacketType
     SQL_NW_PKT_FREE=110,
     SQL_NW_PKT_DISCONNECT=111,
     SQL_NW_PKT_SHOWTABLES=112,
+    SQL_NW_PKT_ISTABLEPRESENT=113,
+    SQL_NW_PKT_GETRECORDS=114,
+    SQL_NW_PKT_LOADRECORDS=115,
 };
 
 class ResponsePacket
 {
     public:
     ResponsePacket()
-    { stmtID = 0; retVal = 0; isSelect = false; rows=0; }
+    { 
+        stmtID = 0; retVal = 0; errRetVal = OK; isSelect = false; rows=0; 
+        errorString[0] = '\0';
+    }
     ~ResponsePacket() { }
     int retVal; // will include for fetch end flag, params flag, proj flag
     DbRetVal errRetVal;
@@ -101,6 +109,7 @@ class NetworkClient {
     void setEntryption(bool encr) { encrypt=encr;}
     void setConnectFlag(bool flag) { isConnectedFlag=flag;}
     bool isConnected() { return isConnectedFlag; }
+    void setIsConnectedFlag(bool fl) { isConnectedFlag = fl; }
     void setCacheClient() { cacheClient = true; }
     bool isCacheClient() { return cacheClient; }
 };
@@ -145,6 +154,7 @@ class NetworkTable
 {
     NetworkClient* nwClient;
     public:
+    NetworkTable() { nwClient = NULL; }
     ~NetworkTable();
     DbRetVal initialize();
     void destroy(){}
@@ -207,8 +217,9 @@ class BasePacket{
 class PacketPrepare:public BasePacket
 {
     public:
-    PacketPrepare() { buffer=NULL; bufferSize =0; noParams = 0;
-                      type = NULL; length = NULL; pktType = NW_PKT_PREPARE;}
+    PacketPrepare() { buffer=NULL; bufferSize =0; noParams = 0; stmtString = NULL;
+                      stmtID = 0; stmtLength = 0; type = NULL; length = NULL; 
+                      pktType = NW_PKT_PREPARE;}
     ~PacketPrepare() { free(buffer); bufferSize = 0; buffer = NULL; }
     int stmtID;
     int syncMode;
@@ -223,7 +234,7 @@ class PacketPrepare:public BasePacket
 class PacketFree : public BasePacket
 {
     public:
-    PacketFree() { buffer=NULL; bufferSize =0; pktType = NW_PKT_FREE;}
+    PacketFree() { buffer=NULL; bufferSize =0; stmtID = 0; pktType = NW_PKT_FREE;}
     ~PacketFree() { free(buffer); bufferSize = 0; buffer = NULL; }
     int stmtID;
     DbRetVal marshall();
@@ -233,7 +244,9 @@ class PacketFree : public BasePacket
 class PacketExecute : public BasePacket
 {
     public:
-    PacketExecute() { buffer=NULL; bufferSize =0; pktType = NW_PKT_EXECUTE;}
+    PacketExecute() { buffer=NULL; bufferSize =0; 
+                      stmtID= 0; noParams= 0; paramValues = NULL;
+                      pktType = NW_PKT_EXECUTE;}
     ~PacketExecute() { free(buffer); bufferSize = 0; buffer = NULL; }
     //TODO::need to free paramvalues based on marshall or unmarshall
 
@@ -277,12 +290,17 @@ class SqlPacketConnect : public BasePacket
         bufferSize = 0;
         pktType = SQL_NW_PKT_CONNECT;
    }
-   ~SqlPacketConnect() { free(buffer); bufferSize = 0; buffer = NULL; }
+   ~SqlPacketConnect() { free(buffer); bufferSize = 0; buffer = NULL; 
+                       }
    char userName[IDENTIFIER_LENGTH];
    char passWord[IDENTIFIER_LENGTH];
    char sqlApiImplType;
    void setConnParam(char *user, char *pass, char tp)
-   { strcpy(userName, user); strcpy(passWord, pass); sqlApiImplType = tp; }
+   { 
+       strcpy(userName, user); 
+       strcpy(passWord, pass); 
+       sqlApiImplType = tp; 
+   }
    DbRetVal marshall();
    DbRetVal unmarshall();
 };
@@ -291,7 +309,8 @@ class SqlPacketPrepare : public BasePacket
 {
     public:
     SqlPacketPrepare()
-    { buffer=NULL; bufferSize =0; pktType = SQL_NW_PKT_PREPARE;}
+    { buffer=NULL; bufferSize =0; 
+      stmtString = NULL; stmtLength = 0; pktType = SQL_NW_PKT_PREPARE; }
     ~SqlPacketPrepare() { free(buffer); bufferSize = 0; buffer = NULL; }
     int stmtLength;
     char *stmtString;
@@ -302,8 +321,8 @@ class SqlPacketPrepare : public BasePacket
 class SqlPacketExecute : public BasePacket
 {
     public:
-    SqlPacketExecute();// { buffer=NULL; bufferSize =0; pktType = SQL_NW_PKT_EXECUTE;}
-    ~SqlPacketExecute();// { free(buffer); bufferSize = 0; buffer = NULL; paramValues = NULL; noParams = 0; }
+    SqlPacketExecute();
+    ~SqlPacketExecute(); 
     //TODO::need to free paramvalues based on marshall or unmarshall
 
     int stmtID;
@@ -328,7 +347,7 @@ class SqlPacketParamMetadata : public BasePacket
     public:
     SqlPacketParamMetadata()
     { buffer=NULL; bufferSize =0; noParams = 0; 
-      data = NULL; pktType = SQL_NW_PKT_PARAM_METADATA;}
+      stmtID= 0; data = NULL; pktType = SQL_NW_PKT_PARAM_METADATA;}
     ~SqlPacketParamMetadata() { free(buffer); bufferSize = 0; buffer = NULL; }
     int stmtID;
     int noParams;
@@ -341,7 +360,7 @@ class SqlPacketProjMetadata : public BasePacket
 {
     public:
     SqlPacketProjMetadata() { buffer=NULL; bufferSize =0; noProjs = 0;
-      data = NULL; pktType = SQL_NW_PKT_PROJ_METADATA; }
+      data = NULL; stmtID= 0; pktType = SQL_NW_PKT_PROJ_METADATA; }
     ~SqlPacketProjMetadata() { free(buffer); bufferSize = 0; buffer = NULL; }
     int stmtID;
     int noProjs;
@@ -354,7 +373,7 @@ class SqlPacketFetch : public BasePacket
 {
     public:
     SqlPacketFetch() { buffer=NULL; bufferSize = 0;
-                       pktType = SQL_NW_PKT_FETCH; }
+                       stmtID= 0; pktType = SQL_NW_PKT_FETCH; }
     ~SqlPacketFetch() { free(buffer); bufferSize = 0; buffer = NULL; }
     int stmtID;
     DbRetVal marshall();
@@ -364,7 +383,7 @@ class SqlPacketFetch : public BasePacket
 class SqlPacketFree : public BasePacket
 {
     public:
-    SqlPacketFree() { buffer=NULL; bufferSize = 0;
+    SqlPacketFree() { buffer=NULL; stmtID=0;bufferSize = 0;
                        pktType = SQL_NW_PKT_FREE; }
     ~SqlPacketFree() { free(buffer); bufferSize = 0; buffer = NULL; }
     int stmtID;
@@ -377,9 +396,12 @@ class SqlPacketResultSet : public BasePacket
     public:
     SqlPacketResultSet() { buffer=NULL; bufferSize = 0; noProjs = 0; 
                            nullInfo = NULL; projValues=NULL; 
-                                           pktType = SQL_NW_PKT_RESULT_SET; }
-    ~SqlPacketResultSet() { free(buffer); bufferSize = 0; buffer = NULL; 
-                                                           nullInfo = NULL; }
+                           hasData=0; nullInfoLen=0;
+                           pktType = SQL_NW_PKT_RESULT_SET; }
+    ~SqlPacketResultSet() { free(buffer); 
+                            bufferSize = 0; buffer = NULL; 
+                            if (projValues) delete[]  projValues; 
+                            nullInfo = NULL; }
     int hasData;
     int noProjs;
     int nullInfoLen;
@@ -396,10 +418,48 @@ class SqlPacketShowTables : public BasePacket
 {
     public:
     SqlPacketShowTables() { buffer = NULL; bufferSize = 0; data = NULL;
-                            pktType= SQL_NW_PKT_SHOWTABLES; }
+                            numOfTables=0; pktType= SQL_NW_PKT_SHOWTABLES; }
     ~SqlPacketShowTables() { free(buffer); bufferSize = 0; buffer = NULL; }
     int numOfTables;
     void *data;
+    DbRetVal marshall();
+    DbRetVal unmarshall();
+};
+
+class SqlPacketIsTablePresent : public BasePacket
+{
+    public:
+    SqlPacketIsTablePresent() { buffer = NULL; bufferSize = 0; 
+                      tblName[0] = '\0'; pktType = SQL_NW_PKT_ISTABLEPRESENT; }
+    ~SqlPacketIsTablePresent() { free(buffer); bufferSize = 0; buffer = NULL; }
+    char tblName[IDENTIFIER_LENGTH];
+    void setTableName(char *tName) { strcpy(tblName, tName); }
+    DbRetVal marshall();
+    DbRetVal unmarshall();
+};
+
+class SqlPacketGetRecords : public BasePacket
+{
+    public:
+    SqlPacketGetRecords() { buffer = NULL; bufferSize = 0; pages=0;
+                      tblName[0] = '\0'; pktType = SQL_NW_PKT_GETRECORDS; }
+    ~SqlPacketGetRecords() { free(buffer); bufferSize = 0; buffer = NULL; }
+    char tblName[IDENTIFIER_LENGTH];
+    int pages;
+    void setTableName(char *tName) { strcpy(tblName, tName); }
+    void setPages(int pgs) { pages = pgs; }
+    DbRetVal marshall();
+    DbRetVal unmarshall();
+};
+
+class SqlPacketLoadRecords : public BasePacket
+{
+    public:
+    SqlPacketLoadRecords() { buffer = NULL; bufferSize = 0; pages = 0;
+                                         pktType = SQL_NW_PKT_LOADRECORDS; }
+    ~SqlPacketLoadRecords() { free(buffer); bufferSize = 0; buffer = NULL; }
+    int pages;
+    void setPages(int pgs) { pages = pgs; }
     DbRetVal marshall();
     DbRetVal unmarshall();
 };
@@ -414,6 +474,7 @@ class NetworkStmt
     List paramList;
     List projList;
     List tableNamesList; // will be populated only for show tables query
+    NetworkStmt() { srcNetworkID=0; stmtID=0; stmt=NULL; type = UnknownStatement; }
 };
 
 class NetworkServer
@@ -422,14 +483,14 @@ class NetworkServer
    int sockfd;
    int port;
    public:
+   NetworkServer() { port =0; sockfd= -1;}
    void setServerPort(int p) { port = p; }
    int getSocket(){ return sockfd; }
    virtual DbRetVal start()=0;
    virtual DbRetVal stop()=0;
    virtual DbRetVal handleClient()=0;
-   virtual DbRetVal send(NetworkPacketType type, char *buf, int len)=0;
- 
 };
+
 class UDPServer : public NetworkServer
 {
    struct sockaddr_in clientAddress;
@@ -438,7 +499,6 @@ class UDPServer : public NetworkServer
    DbRetVal start();
    DbRetVal stop();
    DbRetVal handleClient();
-   DbRetVal send(NetworkPacketType type, char *buf, int len) { }//dont know what to write
 };
 
 class TCPServer : public NetworkServer
@@ -450,7 +510,6 @@ class TCPServer : public NetworkServer
    DbRetVal start();
    DbRetVal stop();
    DbRetVal handleClient();
-   DbRetVal send(NetworkPacketType type, char *buf, int len);
 };
 
 #endif

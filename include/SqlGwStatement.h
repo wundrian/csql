@@ -19,6 +19,7 @@
  ***************************************************************************/
 #ifndef SQLGWSTATEMENT_H
 #define SQLGWSTATEMENT_H
+#include<SqlGwConnection.h>
 #include <AbsSqlStatement.h>
 #include <SqlGwConnection.h>
 #include <SqlFactory.h>
@@ -28,17 +29,26 @@ class SqlGwStatement: public AbsSqlStatement
     AbsSqlStatement *adapter;
     GwHandler stmtHdlr;
     public:
-    SqlGwStatement(){innerStmt = NULL; adapter = NULL; con = NULL;}
+    SqlGwStatement()
+    {
+        innerStmt = NULL; adapter = NULL; con = NULL; 
+        stmtHdlr = NoHandler; isPrepared = false; mode = 0;
+    }
+    ~SqlGwStatement() 
+    { 
+        if (adapter) { adapter->free(); delete adapter; adapter = NULL; }
+    }
     void setAdapter(AbsSqlStatement *stmt) { adapter = stmt; }
-    int mode;
+    unsigned int mode;
     void setConnection(AbsSqlConnection *conn)
     {
         if (innerStmt) innerStmt->setConnection(conn->getInnerConnection());
         SqlGwConnection *cn = (SqlGwConnection*) conn;
-        if (adapter) adapter->setConnection(cn->getAdapterConnection());
+       // if (adapter) adapter->setConnection(cn->getAdapterConnection());
         con = conn;
     }
 
+    DbRetVal executeDirect(char *stmt);
     DbRetVal prepare(char *stmt);
 
     DbRetVal execute(int &rowsAffect);
@@ -54,6 +64,7 @@ class SqlGwStatement: public AbsSqlStatement
     int noOfProjFields();
 
     void* getFieldValuePtr( int pos );
+    void* getFieldValuePtr( char *name );
     AbsSqlStatement *getInnerStatement(){ return innerStmt;}
     DbRetVal free();
 
@@ -79,11 +90,20 @@ class SqlGwStatement: public AbsSqlStatement
     bool isFldNull(int pos);
     bool isFldNull(char *name);
     void setNull(int pos);
-    int getFldPos(char *name){}
+    ResultSetPlan getResultSetPlan();
+    int getFldPos(char *name){ return -1;}
     List getAllTableNames(DbRetVal &ret);
+    List getAllUserNames(DbRetVal &ret);
+    char *getTableName(){ return "";}
+    StatementType getStmtType() { return UnknownStatement; }
+    int getNoOfPagesForTable(char *tbl){ return -1;}
+    DbRetVal loadRecords(char *tbl, void *buf){ return ErrBadCall;}
+    void setToCommit(char *dsName);
+    void getProjFieldType(int *data);
     private:
     bool shouldAdapterHandle();
     bool shouldCSqlHandle();
+    bool isPrepared;
     friend class SqlFactory;
 };
 

@@ -21,8 +21,19 @@
 #define SQLGWCONNECTION_H
 #include<CSql.h>
 #include<AbsSqlConnection.h>
+#include<AbsSqlConnection.h>
 #include<SqlFactory.h>
 #include<Network.h>
+
+//List Contains MultiDsn Elements
+struct MultiDSN
+{
+   char dsn[IDENTIFIER_LENGTH];
+   AbsSqlConnection *adapter;
+   struct MultiDSN *next;
+   bool isConnected;
+   bool toCommit;
+};
 
 enum GwHandler
 {
@@ -31,19 +42,28 @@ enum GwHandler
     AdapterHandler =2,
     CSqlAndAdapterHandler =3
 };
+
 class SqlGwConnection : public AbsSqlConnection
 {
     Connection dummyConn;
     AbsSqlConnection *adapter;
+   // struct MultiDSN *multiAdapter;
     bool isCSqlConnected;
     bool isAdapterConnected;
     char username[IDENTIFIER_LENGTH];
     char password[IDENTIFIER_LENGTH];
 
     public:
+    static List cacheList;
+    //Head of MultiDsn List
+    struct MultiDSN *multi_adapter_head;
+    int noOfCon;
     GwHandler txnHdlr;
     TransSyncMode mode;
-    SqlGwConnection(){innerConn = NULL; mode = OSYNC; }
+    SqlGwConnection(){innerConn = NULL; mode = OSYNC; multi_adapter_head = NULL; noOfCon = 0; }
+    ~SqlGwConnection();
+    
+    bool isTableCached(char *name);
     void setTxnHandler(GwHandler hdlr) { txnHdlr = hdlr; }
     GwHandler getTxnHandler() { return txnHdlr; }
 
@@ -58,13 +78,15 @@ class SqlGwConnection : public AbsSqlConnection
     DbRetVal beginTrans (IsolationLevel isoLevel, TransSyncMode mode = OSYNC);
 
     friend class SqlFactory;
-
-    void setAdapter(AbsSqlConnection *conn) { adapter =  conn; }
-    AbsSqlConnection* getAdapterConnection() { return adapter; }
+    bool isCsqlConnected(){ return isCSqlConnected;} 
+    bool isAdptConnected(){ return isAdapterConnected;} 
+    void createAdapters(SqlGwConnection *gateway);
+    void setAdapter(AbsSqlConnection *conn, char *dsn);
+    AbsSqlConnection* getAdapterConnection(char *dsn);
 
     DbRetVal connectCSqlIfNotConnected();
     DbRetVal connectAdapterIfNotConnected();
-
+    DbRetVal populateCachedTableList();
     //Note::forced to implement this as it is pure virtual in base class
     Connection& getConnObject(){  return dummyConn; }
 };

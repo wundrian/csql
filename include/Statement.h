@@ -20,7 +20,7 @@
 #ifndef STATEMENT_H
 #define STATEMENT_H
 #include "Parser.h"
-
+#include "CacheTableLoader.h"
 class Statement
 {
     protected:
@@ -53,6 +53,7 @@ class Statement
     virtual bool isFldNull(char *name)=0;
     virtual int getFldPos(char *name)=0;
     virtual DbRetVal setNull(int pos)=0;
+    virtual ResultSetPlan getResultSetPlan()=0;
     virtual ~Statement(){}
 };
 
@@ -93,6 +94,7 @@ class DmlStatement : public Statement
     virtual void* getParamValuePtr( int pos )=0;
     virtual int getFldPos(char *name)=0;
     virtual ~DmlStatement(){}
+    virtual ResultSetPlan getResultSetPlan()=0;
     void setLoading(bool flag) { table->setLoading(flag); }
 };
 
@@ -122,6 +124,7 @@ class InsStatement : public DmlStatement
     int getFldPos(char *name);
     DbRetVal setNull(int pos);
     DbRetVal resolve();
+    ResultSetPlan getResultSetPlan(){return Normal;}
     InsStatement();
     ~InsStatement();
 };
@@ -132,6 +135,8 @@ class SelStatement : public DmlStatement
     DbRetVal resolveStar();
     DbRetVal setBindFieldAndValues();
     DbRetVal resolveForCondition();
+    DbRetVal resolveDistinct();
+
 
     public:
     FieldValue **bindFields;
@@ -140,6 +145,11 @@ class SelStatement : public DmlStatement
 
     bool isPointReturned;
     bool handleAggWithTbl;
+    bool isRecLimitReached;
+    bool isOffsetReached;
+    int numRecords;
+    bool isExplain;
+    bool isJoin;
 
     DbRetVal execute(int &rowsAffected);
     DbRetVal setParam(int paramNo, void *value);
@@ -159,18 +169,23 @@ class SelStatement : public DmlStatement
     
     DbRetVal replaceStarWithFirstFldName(FieldName *name);
     DbRetVal resolveGroupFld(AggTableImpl *impl);
+    DbRetVal resolveOrderByFld();
+    bool isInProjectionList(char *name, AggType aType);
     bool isFldNull(int pos){return table->isFldNull(pos);}
-    bool isFldNull(char *fldName) { return table->isFldNull(fldName); }
+    bool isFldNull(char *fldName){ return table->isFldNull(fldName); }
     int getFldPos(char *name);
-    DbRetVal setNull(int pos){}
+    DbRetVal setNull(int pos){ return ErrBadCall;}
     DbRetVal close();
     DbRetVal resolve();
 
     void* handleSingleTableAggWithoutGroup();
+    bool isGroupFld(char *fName);
+    bool isJoinStmt() { return isJoin; }
 
     SelStatement();
     ~SelStatement();
 
+    bool isTableAlreadyPresent(char* tblName, char* aliasName);
     DbRetVal openTables();
 //    DbRetVal resolveGroupFld(AggTableImpl *impl);
 
@@ -190,6 +205,9 @@ class SelStatement : public DmlStatement
     void *fetchAndPrint(bool SQL);
     void *next();
     void *getFieldValuePtr( int );
+    void *getFieldValuePtr( char *name );
+    void getProjFieldType(int *data);
+    ResultSetPlan getResultSetPlan(){ return Normal; }
 };
 
 class UpdStatement : public DmlStatement
@@ -219,8 +237,10 @@ class UpdStatement : public DmlStatement
     DbRetVal resolve();
     UpdStatement();
     ~UpdStatement();
+    ResultSetPlan getResultSetPlan() {return Normal;}
     int totalAssignParams;
     DbRetVal resolveForAssignment();
+    ResultSetPlan plan;
 };
 
 class DelStatement : public DmlStatement
@@ -245,13 +265,119 @@ class DelStatement : public DmlStatement
     bool isFldNull(char *fldName){return table->isFldNull(fldName);}
     DbRetVal getParamFldInfo(int paramPos, FieldInfo *&info);
     void* getParamValuePtr(int);
-    DbRetVal setNull(int pos){}
+    DbRetVal setNull(int pos){ return ErrBadCall;}
     DbRetVal resolve();
     DelStatement();
     ~DelStatement();
     int getFldPos(char *name);
     DbRetVal resolveForCondition(); //TODO::put this is Statement class, duplicated from SelStatement.
+    ResultSetPlan getResultSetPlan(){return Normal;}
 };
+
+class MetadataStatement : public DmlStatement
+{
+    public:
+    FieldValue **bindFields;
+    char **bindFieldValues;
+    int totalFields;
+    ListIterator  dataListIter;
+
+    int numRecords;
+    bool isPlanFreed;
+    bool isSecondFetch;
+    ResultSetPlan plan;
+    DbRetVal execute(int &rowsAffected);
+    DbRetVal setParam(int paramNo, void *value){return OK;};
+
+    DbRetVal setShortParam(int paramNo, short value){ return OK;};
+    DbRetVal setIntParam(int paramNo, int value){ return OK;};
+    DbRetVal setLongParam(int paramNo, long value){ return OK;};
+    DbRetVal setLongLongParam(int paramNo, long long value){ return OK;};
+    DbRetVal setByteIntParam(int paramNo, ByteInt value){ return OK;};
+    DbRetVal setFloatParam(int paramNo, float value){ return OK;};
+    DbRetVal setDoubleParam(int paramNo, double value){ return OK;};
+    DbRetVal setStringParam(int paramNo, char *value){ return OK;};
+    DbRetVal setDateParam(int paramNo, Date value){ return OK;};
+    DbRetVal setTimeParam(int paramNo, Time value){ return OK;};
+    DbRetVal setTimeStampParam(int paramNo, TimeStamp value){ return OK;};
+    DbRetVal setBinaryParam(int paramNo, void *value, int length){ return OK;};
+
+    DbRetVal replaceStarWithFirstFldName(FieldName *name){ return OK;};
+    DbRetVal resolveGroupFld(AggTableImpl *impl){ return OK;};
+    DbRetVal resolveOrderByFld(){ return OK;};
+    bool isFldNull(int pos){return table->isFldNull(pos);}
+    bool isFldNull(char *fldName){
+        if(plan != Normal) return false;
+        return table->isFldNull(fldName); }
+    int getFldPos(char *name);
+    DbRetVal setNull(int pos){ return ErrBadCall;}
+    DbRetVal close();
+    DbRetVal resolve();
+
+    MetadataStatement();
+    ~MetadataStatement();
+
+    void *getParamValuePtr( int ){ return NULL;}
+    DbRetVal openTables();
+    DbRetVal setBindField(int pos, void* value);
+    int noOfProjFields();
+    DbRetVal getProjFldInfo (int projpos, FieldInfo *&fInfo);
+    DbRetVal getParamFldInfo(int paramPos, FieldInfo *&info);
+    DataType getFieldType( int );
+    int getFieldLength( int );
+    char* getFieldName( int );
+    
+    void *fetch();
+    void *fetch(DbRetVal &rv);
+    void *fetchAndPrint(bool SQL);
+    void *next();
+    void *getFieldValuePtr( int );
+    void *getFieldValuePtr( char *name );
+    void getProjFieldType(int *data);
+    void *fetchMetaData();
+    void freeMetadata();
+    ResultSetPlan getResultSetPlan(){return plan;}
+    ListIterator getExportKeyIterator();
+    ListIterator getImportKeyIterator();
+    ListIterator getDataTypeInfoIterator();
+};
+class CopyTblStatement : public DmlStatement
+{
+    public:
+    DbRetVal execute(int &rowsAffected);
+    DbRetVal resolve();
+    DbRetVal setParam(int paramNo, void *value);
+    DbRetVal setShortParam(int paramNo, short value);
+    DbRetVal setIntParam(int paramNo, int value);
+    DbRetVal setLongParam(int paramNo, long value);
+    DbRetVal setLongLongParam(int paramNo, long long value);
+    DbRetVal setByteIntParam(int paramNo, ByteInt value);
+    DbRetVal setFloatParam(int paramNo, float value);
+    DbRetVal setDoubleParam(int paramNo, double value);
+    DbRetVal setStringParam(int paramNo, char *value);
+    DbRetVal setDateParam(int paramNo, Date value);
+    DbRetVal setTimeParam(int paramNo, Time value);
+    DbRetVal setTimeStampParam(int paramNo, TimeStamp value);
+    DbRetVal setBinaryParam(int paramNo, void *value, int length);
+    bool isFldNull(int pos){return table->isFldNull(pos);}
+    bool isFldNull(char *fldName){return table->isFldNull(fldName);}
+    DbRetVal getParamFldInfo(int paramPos, FieldInfo *&info);
+    void* getParamValuePtr(int);
+    DbRetVal setNull(int pos){ return ErrBadCall;}
+    int getFldPos(char *name);
+    ResultSetPlan getResultSetPlan(){return Normal;}
+    DbRetVal resolveForInsert();
+    DbRetVal resolveForCreate();
+    CopyTblStatement();
+    ~CopyTblStatement();
+    private:
+    void **bindFieldValues;
+    int totalFields;
+    Statement *innerSelStmt;
+    char tblName[IDENTIFIER_LENGTH];
+};
+
+
 
 class DdlStatement : public Statement
 {
@@ -260,23 +386,24 @@ class DdlStatement : public Statement
     //TODO: i think rowsAffected is not part of ddl - gopal said its design decision
     DbRetVal resolve()=0;
 
-    DbRetVal setParam(int paramNo, void *value) { }
-    DbRetVal setShortParam(int paramNo, short value) { }
-    DbRetVal setIntParam(int paramNo, int value) { }
-    DbRetVal setLongParam(int paramNo, long value) { }
-    DbRetVal setLongLongParam(int paramNo, long long value) { }
-    DbRetVal setByteIntParam(int paramNo, ByteInt value) { }
-    DbRetVal setFloatParam(int paramNo, float value) { }
-    DbRetVal setDoubleParam(int paramNo, double value) { }
-    DbRetVal setStringParam(int paramNo, char *value) { }
-    DbRetVal setDateParam(int paramNo, Date value) { }
-    DbRetVal setTimeParam(int paramNo, Time value) { }
-    DbRetVal setTimeStampParam(int paramNo, TimeStamp value) { }
-    DbRetVal setBinaryParam(int paramNo, void *value, int length) { }
-    bool isFldNull(int pos){ }
-    bool isFldNull(char *fldName ){ }
-    int getFldPos(char *name){}
-    DbRetVal setNull(int pos){}
+    DbRetVal setParam(int paramNo, void *value) { return ErrBadCall; }
+    DbRetVal setShortParam(int paramNo, short value) { return ErrBadCall; }
+    DbRetVal setIntParam(int paramNo, int value) { return ErrBadCall; }
+    DbRetVal setLongParam(int paramNo, long value) { return ErrBadCall; }
+    DbRetVal setLongLongParam(int paramNo, long long value) { return ErrBadCall; }
+    DbRetVal setByteIntParam(int paramNo, ByteInt value) { return ErrBadCall; }
+    DbRetVal setFloatParam(int paramNo, float value) { return ErrBadCall; }
+    DbRetVal setDoubleParam(int paramNo, double value) { return ErrBadCall; }
+    DbRetVal setStringParam(int paramNo, char *value) { return ErrBadCall; }
+    DbRetVal setDateParam(int paramNo, Date value) { return ErrBadCall; }
+    DbRetVal setTimeParam(int paramNo, Time value) { return ErrBadCall; }
+    DbRetVal setTimeStampParam(int paramNo, TimeStamp value) {  return ErrBadCall;}
+    DbRetVal setBinaryParam(int paramNo, void *value, int length) {  return ErrBadCall;}
+    bool isFldNull(int pos){  return false;}
+    bool isFldNull(char *fldName ){ return false;}
+    int getFldPos(char *name){ return -1;}
+    DbRetVal setNull(int pos){ return ErrBadCall;}
+    ResultSetPlan getResultSetPlan(){ ResultSetPlan dummy; return dummy;}
 };
 
 class CreateTblStatement : public DdlStatement
@@ -313,14 +440,46 @@ class DropTblStatement : public DdlStatement
     DropTblStatement(){}
     ~DropTblStatement(){}
 };
+class CacheTblStatement : public DdlStatement
+{
+    public:
+    DbRetVal execute(int &rowsAffected);
+    DbRetVal resolve();
+    CacheTableLoader cacheLoader;
+    CacheTblStatement(){}
+
+};
+
+class UserTblStatement : public DdlStatement
+{
+    public:
+    char userName[IDENTIFIER_LENGTH];
+    UserManager *usrMgr;
+    UserNodeType uType;
+    DbRetVal execute(int &rowsAffected);
+    DbRetVal resolve();
+    void setUserManager(UserManager *mgr,char *user){ usrMgr = mgr; strcpy(userName,user);}
+    UserTblStatement(){ usrMgr = NULL;}
+    //~UserTblStatement(){ delete usrMgr;}
+
+};
+
 class DropIdxStatement : public DdlStatement
 {
     public:
     DbRetVal execute(int &rowsAffected);
     DbRetVal resolve() {return OK; }
-
     DropIdxStatement(){}
     ~DropIdxStatement(){}
+};
+class CompactTblStatement : public DdlStatement
+{
+    Table *table;
+    public:
+    DbRetVal execute(int &rowsAffected);
+    DbRetVal resolve();
+    CompactTblStatement(){ table=NULL;}
+    ~CompactTblStatement(){}
 };
 
 class StatementFactory

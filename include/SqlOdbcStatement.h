@@ -26,7 +26,7 @@
 class SqlOdbcStatement: public AbsSqlStatement
 {
     public:
-    SqlOdbcStatement(){innerStmt = NULL; con = NULL; len[0]=0;isSelStmt=NULL; }
+    SqlOdbcStatement() { innerStmt = NULL; con = NULL;  isSelStmt = false; len=NULL; paramlen=NULL; isPrepared = false; strcpy(errState,"00000");}
 
     void setConnection(AbsSqlConnection *conn)
     {
@@ -34,6 +34,7 @@ class SqlOdbcStatement: public AbsSqlStatement
         con = conn;
     }
 
+    DbRetVal executeDirect(char *stmt);    
     DbRetVal prepare(char *stmt);
 
     DbRetVal execute(int &rowsAffect);
@@ -49,6 +50,7 @@ class SqlOdbcStatement: public AbsSqlStatement
     int noOfProjFields();
 
     void* getFieldValuePtr( int pos );
+    void* getFieldValuePtr( char *name );
 
     DbRetVal free();
 
@@ -72,21 +74,36 @@ class SqlOdbcStatement: public AbsSqlStatement
     void setBinaryParam(int paramPos, void *value, int length);
 	bool isSelect();
     void getPrimaryKeyFieldName(char *tablename, char *pkfieldname);
-    void setNullInfo(Table *table);
+    void setNullInfo(AbsSqlStatement *stmt);
+//    void setNullInfo(Table *stmt);
     bool isFldNull(int pos);
     bool isFldNull(char *name);
     bool chechStmtType(char *stmtstr);
     void setNull(int pos);
-    int getFldPos(char *name){} 
-    List getAllTableNames(DbRetVal &ret){}
+    int getFldPos(char *name){ return 0;} 
+    List getAllTableNames(DbRetVal &ret){ List dummy; return dummy;}
+    List getAllUserNames(DbRetVal &ret){ List dummy; return dummy;}
+    bool isTableExists(char *tblname);
+    int getNoOfPagesForTable(char *tbl){ return 0;}
+    DbRetVal loadRecords(char *tbl, void *buf){ return ErrBadCall;}
+    ResultSetPlan getResultSetPlan(){ return Normal;}
+    char *getTableName(){ return "";}
+    StatementType getStmtType() { return UnknownStatement; }
+    void setErrorState(SQLHSTMT hStmt);
+    DbRetVal resolveForBindField(SQLHSTMT hstmt);
+    void getProjFieldType(int *data);
     private:
+    char errState[STATE_LENGTH];
+    TDBInfo tdbname;
     bool isSelStmt;
     bool isPrepared;
     List paramList;
     List bindList;
     SQLHSTMT hstmt;
-    SQLINTEGER len[IDENTIFIER_LENGTH];
+    SQLINTEGER *len;
+    SQLINTEGER *paramlen;
     int totalFld;
+    bool isProcedureCallStmt; 
     friend class SqlFactory;
 };
 

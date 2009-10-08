@@ -35,7 +35,8 @@ class SessionImpl : public Session
     public:
     SessionImpl()
     {
-        dbMgr = NULL; uMgr = NULL; isXTaken = false;
+        dbMgr = NULL; uMgr = NULL; 
+        isXTaken = false;
     }
     ~SessionImpl()
     {
@@ -49,14 +50,14 @@ class SessionImpl : public Session
 
     DbRetVal open(const char*username, const char*password);
     DbRetVal close();
-
+    
     DatabaseManager* getDatabaseManager();
     UserManager* getUserManager();
 
     DbRetVal startTransaction(IsolationLevel level);
     DbRetVal commit();
     DbRetVal rollback();
-
+    char * getUserName() { return userName;}
     DbRetVal readConfigFile();
     Database* getSystemDatabase();
     DbRetVal getExclusiveLock();

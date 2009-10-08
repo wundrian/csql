@@ -22,13 +22,21 @@
 #include<CSql.h>
 #include<AbsSqlConnection.h>
 #include<SqlFactory.h>
+class SqlStatement;
 
+struct CachedStmtNode{
+    SqlStatement *sqlStmt;
+    int stmtLength;
+    char *sqlString;
+};
 class SqlConnection : public AbsSqlConnection
 {
     Connection conn;
     bool isConnOpen;
     public:
-    SqlConnection(){innerConn = NULL; isConnOpen = false; }
+    List cachedStmts;
+    SqlConnection(){ innerConn = NULL; isConnOpen = false; }
+    ~SqlConnection();
 
     /** opens connection to the sql engine
     *   @param user username for authentication
@@ -83,6 +91,9 @@ class SqlConnection : public AbsSqlConnection
     Connection& getConnObject(){  return conn; }
     bool isConnectionOpen() { if (isConnOpen) return true; return false; };
     DbRetVal getExclusiveLock(){ return conn.getExclusiveLock(); }
+
+    SqlStatement* findInCache(char *stmtStr);
+    void addToCache(SqlStatement *stmt, char *stmtStr);
 
     friend class SqlFactory;
 };

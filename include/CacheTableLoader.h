@@ -13,10 +13,19 @@
  *   GNU General Public License for more details.                          *
  *                                                                         *
   ***************************************************************************/
+#ifndef CACHETABLELOADER_H
+#define CACHETABLELOADER_H
 #include <CSql.h>
 #include <sql.h>
 #include <sqlext.h>
 #include <Network.h>
+
+class CacheIndexInfo
+{
+    public:
+    char indexName[IDENTIFIER_LENGTH];
+    FieldNameList fieldList;
+};
 
 class CacheTableLoader
 {
@@ -26,6 +35,10 @@ class CacheTableLoader
     char password[IDENTIFIER_LENGTH];
     char conditionVal[IDENTIFIER_LENGTH]; //added newly
     char fieldlistVal[IDENTIFIER_LENGTH];
+    char dsnName[IDENTIFIER_LENGTH];
+   // char dsnId[IDENTIFIER_LENGTH];
+   // char dsnPwd[IDENTIFIER_LENGTH];
+    bool shouldForce;
     public:
     CacheTableLoader()
     {
@@ -33,13 +46,23 @@ class CacheTableLoader
         strcpy(conditionVal,"");
         strcpy(fieldName,"");
 	strcpy(fieldlistVal,"");
+        strcpy(dsnName,"");
+	//strcpy(dsnId,"");
+	//strcpy(dsnPwd,"");
+	shouldForce = false;
     }
+    DbRetVal checkSecondTimeSqlPrimaryKeys(SQLHSTMT hstmtmeta,char *tableName,char *ptr, HashIndexInitInfo *inf,bool &isPriIndex);
+    DbRetVal createIndex(SQLHSTMT hstmtmeta, char *tableName, HashIndexInitInfo *inf,AbsSqlStatement *stmt,bool isPKFieldSpecified);
+    void setForceFlag(bool flag){ shouldForce = flag;}
     void setConnParam(char *user, char *pass){ strcpy(userName, user); strcpy(password, pass); }
     void setTable(char *tablename) { strcpy(tableName,tablename); }
     void setCondition(char *condition){strcpy(conditionVal,condition);} //new one
+    void setDsnName(char *dname) {strcpy(dsnName,dname);}
+    
+    //void setDsnId(char *dsnid) { strcpy(dsnId,dsnid); }
+    //void setDsnPwd(char *dsnpwd){ strcpy(dsnPwd,dsnpwd);}
     void setFieldName(char *fldname){ strcpy(fieldName,fldname);}
     DbRetVal addToCacheTableFile(bool isDirect);
-    static int getTableMode(char  *tabname);
     void setFieldListVal(char *field) {strcpy(fieldlistVal,field);}
 
     DbRetVal addToCacheTableFile();
@@ -49,14 +72,11 @@ class CacheTableLoader
     DbRetVal unload(bool tabDefinition = true);
     DbRetVal refresh();
     DbRetVal recoverAllCachedTables();
-    DbRetVal load(Connection *conn, bool tabDef);
-    static DbRetVal isTableCached(char *tablename);
+    DbRetVal load(AbsSqlConnection *conn, AbsSqlStatement *stmt, bool tabDef);
     DbRetVal isTablePresent();// new one by :Jitendra
-    bool isFieldExist(char *fieldname);
     DbRetVal CacheInfo(bool isTabPresent);
-    char *getRealConditionFromFile(char *condition);
     char *getConditionVal(char *condition);
-
+    void setParamValues(AbsSqlStatement *stmt, int parampos, DataType type, int length, char *value);
 };
 
 class BindBuffer
@@ -65,6 +85,9 @@ class BindBuffer
     void *csql;
     void *targetdb;
     DataType type;
+    int length;
+    BindBuffer(){ csql = NULL; targetdb = NULL; type = typeUnknown; length =0; }
+    ~BindBuffer() { ::free(csql); ::free(targetdb); }
 };
 class CacheTableInfo
 {
@@ -73,8 +96,16 @@ class CacheTableInfo
     char fieldName[IDENTIFIER_LENGTH];
     char projFieldlist[IDENTIFIER_LENGTH];
     char condition[IDENTIFIER_LENGTH];
-
+    char dsnName[IDENTIFIER_LENGTH];
+     
+    //char dsnId[IDENTIFIER_LENGTH];
+    //char dsnPwd[IDENTIFIER_LENGTH];
+    
     void setTableName(char *tblName){strcpy(tableName,tblName);}
+    void setDsnName(char *dsnname) { strcpy(dsnName,dsnname); }
+   // void setDsnId(char *dsnid) { strcpy(dsnId,dsnid); }
+    //void setDsnPwd(char *dsnpwd){ strcpy(dsnPwd,dsnpwd);}
+    
     void setFieldName(char *fldName){strcpy(fieldName,fldName);}
     void setProjFieldList(char *fieldlist){ strcpy(projFieldlist,fieldlist);}
     void setCondition(char *cond){ strcpy(condition,cond);}
@@ -83,3 +114,4 @@ class CacheTableInfo
     char *getCondition(){ return condition;}
     char *getProjFieldList(){return projFieldlist;}
 };
+#endif

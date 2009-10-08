@@ -1,24 +1,74 @@
 /***************************************************************************
- *   Copyright (C) 2007 by www.databasecache.com                           *
- *   Contact: praba_tuty@databasecache.com                                 *
  *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
+ *    Copyright (C) Lakshya Solutions Ltd. All rights reserved.            *
  *                                                                         *
- *   This program is distributed in the hope that it will be useful,       *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
- *   GNU General Public License for more details.                          *
- *                                                                         *
-  ***************************************************************************/
+ ***************************************************************************/
+
 #ifndef INFO_H
 #define INFO_H
 #include<ErrorType.h>
 #include<DataType.h>
 #include<Field.h>
 
+#ifndef AGGTYPE
+enum AggType
+{
+    AGG_MIN = 1,
+    AGG_MAX,
+    AGG_SUM,
+    AGG_AVG,
+    AGG_COUNT,
+    AGG_UNKNOWN
+};
+#define AGGTYPE
+#endif
+
+struct IndexInfoForDriver
+{
+    char tableName[IDENTIFIER_LENGTH];
+    char fieldName[IDENTIFIER_LENGTH];
+    char indexName[IDENTIFIER_LENGTH];
+    int type;
+    int position;
+    int pageUsed;
+    bool isUnique;
+    bool isPrimary;
+};
+
+class DataTypeInfo
+{
+    public:
+    char name[IDENTIFIER_LENGTH];
+    int type;
+    int precision;
+    bool autoIncrement;
+};
+
+class ForeignKeyMetadata
+{
+    public:
+    char pkTableName[IDENTIFIER_LENGTH];
+    char pkColName[IDENTIFIER_LENGTH];
+    char fkTableName[IDENTIFIER_LENGTH];
+    char fkColName[IDENTIFIER_LENGTH];
+    short keySeq;
+    short updateRule;
+    short deleteRule;
+};
+
+enum ResultSetPlan
+{
+    Normal = 0,
+    GetTables,
+    GetColumns,
+    GetIndexes,
+    GetPriIndex,
+    GetCatalogs,
+    GetTableType,
+    GetDataType,
+    GetImportKey,
+    GetExportKey
+};
 
 class FieldNameNode;
 
@@ -87,7 +137,7 @@ class TableDef
     */
     int addField(const char *name,  DataType type = typeUnknown, size_t
                  length = 0, const void *defaultValue = 0,
-                 bool notNull = false,bool autoIn = false);
+                 bool notNull = false, bool autoIn = false);
 
     /** removes a field from the schema definition
     *   @param name field name 
@@ -119,11 +169,18 @@ class FieldInfo
     size_t length;
     size_t offset;
     char defaultValueBuf[DEFAULT_VALUE_BUF_LENGTH];
+    AggType aType;
     bool isNull;
     bool isPrimary;
     bool isDefault;
     bool isUnique;
     bool isAutoIncrement;
+    FieldInfo() 
+    { 
+        fldName[0] = '\0'; type = typeUnknown; length = 0; offset = 0;
+        defaultValueBuf[0]='\0'; aType = AGG_UNKNOWN; isNull = false;
+        isPrimary = isDefault = isUnique = isAutoIncrement = false;
+    }
 };
 
 
@@ -168,5 +225,15 @@ class HashIndexInitInfo : public IndexInitInfo
     public:
     int bucketSize; /**<bucket size*/
     HashIndexInitInfo() { bucketSize = 1009; }
+};
+
+class ForeignKeyInfo
+{
+    public:
+    ForeignKeyInfo(){}
+    char pkTableName[IDENTIFIER_LENGTH];
+    char fkTableName[IDENTIFIER_LENGTH];
+    FieldNameList fkFldList;
+    FieldNameList pkFldList;
 };
 #endif

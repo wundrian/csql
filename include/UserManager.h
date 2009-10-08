@@ -15,6 +15,7 @@
   ***************************************************************************/
 #ifndef USER_MANAGER_H
 #define USER_MANAGER_H
+#include<Util.h>
 /**
 * @class UserManager
 *
@@ -63,6 +64,8 @@ class UserManager
     *   @return int return code
     */
     virtual int changePassword(const char *userName, const char* newPasswd)=0;
+
+    virtual List getAllUserNames(int *rv=0)=0;
     virtual ~UserManager(){};
 };
 #endif

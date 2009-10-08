@@ -1,22 +1,9 @@
 /***************************************************************************
- *   Copyright (C) 2007 by Prabakaran Thirumalai   *
- *   praba_tuty@yahoo.com   *
  *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
+ *    Copyright (C) Lakshya Solutions Ltd. All rights reserved.            *
  *                                                                         *
- *   This program is distributed in the hope that it will be useful,       *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
- *   GNU General Public License for more details.                          *
- *                                                                         *
- *   You should have received a copy of the GNU General Public License     *
- *   along with this program; if not, write to the                         *
- *   Free Software Foundation, Inc.,                                       *
- *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
+
 #ifndef UTIL_H
 #define UTIL_H
 #include<ErrorType.h>
@@ -24,6 +11,83 @@
 enum UniqueIDType {
     STMT_ID=0,
     TXN_ID
+};
+class Util 
+{
+    public:
+    static unsigned int hashBinary(char *strVal, int length);
+    static void trimEnd(char *name)
+    {
+        while(*name!='\0')
+        {
+            if(*name == ' ') { *name='\0'; break;}
+            name++;
+        }
+    }
+    static void trimRight(char *name)
+    {
+        int len = strlen(name);
+        while(name[len-1] == ' ' && len != 0 )
+        {
+             len--;
+        }
+        name[len]='\0';
+    }
+    static void str_tolower(char *s)
+    {
+        while(*s)
+        {
+           *s=tolower(*s);
+           s++;
+        }
+    } 
+    static void str_toupper(char *s)
+    {
+        while(*s)
+        {
+           *s=toupper(*s);
+           s++;
+        }
+    } 
+    static bool isIdentifier(char *name)
+    {
+        char *p = name;
+        if (!isalpha(*p)) return false;
+        while (*p != '\0') {
+           if (*p == '_') { p++; continue; }
+           if (!isalnum(*p)) return false;
+           p++;
+        }
+        return true;
+    }
+    inline static void changeWildcardChar(char *src)
+    {
+        char *c = (char *)src;
+        while (*c != '\0') {
+            if (*c == '_') *c = '?';
+            else if(*c == '%') *c = '*';
+            c++;
+        }
+        return;
+    }
+    inline static void itoa(int n, char s[])
+    {
+       int i, sign, j, k ;
+       if ((sign = n) < 0)  n = -n;          
+       i = 0;
+       do {       
+          s[i++] = n % 10 + '0';   
+       } while ((n /= 10) > 0);     
+       if (sign < 0)
+          s[i++] = '-';
+       s[i] = '\0';
+       char c;
+       for (k = 0, j = i-1; k<j; k++, j--) {
+          c = s[k];
+          s[k] = s[j];
+          s[j] = c;
+       }
+    } 
 };
 
 class ListNode
@@ -60,6 +124,15 @@ class ListIterator
         iter = iter ->next;
         return node->element;
     }
+    void* nextElementInQueue() 
+    {
+        ListNode *node = iter;
+        if(iter->next) {
+            iter = iter ->next;
+            return node->element;
+        } else return NULL;
+    }
+    void *getCurrentListNode(){ return iter; }
     //index start with one, such that 1->first element in list
     void* getElement(int index)
     {
@@ -85,7 +158,7 @@ class List
     int totalElements;
     public:
     List() { head = NULL; totalElements = 0;}
-
+    List(ListNode *hd) { head = hd; } //Use only for free in metadata 
     DbRetVal append(void *elem)
     {
         ListNode *newNode = new ListNode();
@@ -115,7 +188,12 @@ class List
         {
             if (elem == iter->element)
             {
-                if (iter == head) { head = iter->next; delete iter; return OK;}
+                if (iter == head) { 
+                    head = iter->next; 
+                    delete iter; 
+                    totalElements--;
+                    return OK;
+                }
                 prev->next = iter->next;
                 delete iter;
                 totalElements--;
@@ -177,6 +255,26 @@ class List
         totalElements = 0;
         return;
     }
+    void init() { head = NULL; totalElements=0;}
+    
+    DbRetVal addAtMiddle(void *elem, void *prevIter)
+    {
+        ListNode *newNode = new ListNode();
+        newNode->element = elem;
+        totalElements++;
+        newNode->next =((ListNode *)prevIter)->next;
+        ((ListNode *)prevIter)->next = newNode;
+        return OK;
+    }
+    DbRetVal addAtBegin(void *elem)
+    {
+        ListNode *newNode = new ListNode();
+        newNode->element = elem;
+        totalElements++;
+        newNode->next = head;
+        head = newNode;
+        return OK;
+    }
     int size()
     {
         return totalElements;
@@ -191,7 +289,7 @@ class GlobalUniqueID
    GlobalUniqueID() { ptr = NULL; }
    DbRetVal create();
    DbRetVal open();
-   DbRetVal close() { os::shm_detach(ptr); return OK; }
+   DbRetVal close() { os::shm_detach(ptr); ptr = NULL; return OK; }
    DbRetVal destroy();
    int getID(UniqueIDType type);
 };

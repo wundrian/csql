@@ -19,9 +19,8 @@
 #include<Debug.h>
 #include<Info.h>
 
-
-class Chunk;
 class Database;
+class Chunk;
 class Transaction;
 class TableImpl;
 class CINDEX;
@@ -48,16 +47,19 @@ class TreeNode
     void *min_;
     void *max_;
     int noElements_;
-    int balance_;
     TreeNode *next_;
     TreeNode *prev_;
+    int balance_;
     //Note::after this array of pointer to tuples are stored
-
+    long long getTotalElements();
+    TreeNode* locateNode(Database *db,TreeNode *iter, void *tuple, IndexInfo *indInfo,DbRetVal &rv);
+    TreeNode *locateNodeFromFirstLevel(TreeNode *ftnode,IndexInfo *indInfo,void *tuple,int *nodepos);
+    DbRetVal insertNodeIntoFirstLevel(Database * db, IndexInfo * indInfo, void* indexPtr, TreeNode * newNode,int nodepos);
     DbRetVal insert(Database *db, IndexInfo *info, void *indexPtr, void *tuple);
-    DbRetVal insert(int position, Database *db, IndexInfo *indInfo, CINDEX *iptr, void *tuple, TreeNode *iter);
+    DbRetVal insertRecordIntoNodeAndArrangeFirstLevel(Database * db, IndexInfo * indInfo, void* iptr, void * tuple, TreeNode * fstLevel,int nodepos);
     DbRetVal remove(Database *db, IndexInfo *info, void *indexPtr, void *tuple);
     DbRetVal update(Database *db, IndexInfo *info, void *indexPtr, void *tuple);
-    void displayAll(IndexInfo *indInfo, void *indexPtr);
+    void displayAll();
     void displayAll(int offset);
 };
 
@@ -65,11 +67,18 @@ class BucketIter
 {
     HashIndexNode *iter;
     HashIndexNode *head;
+    bool isUnique;
+    bool recordsOver;
     public:
-    BucketIter(){}
-    BucketIter(HashIndexNode *head) { iter = head = head;}
+    BucketIter(){iter = head = NULL;
+                 isUnique=false; recordsOver = false;}
+    void setHead(HashIndexNode *hd) { iter = head = hd; recordsOver=false;}
+    BucketIter(HashIndexNode *head) { iter = head = head;
+                 isUnique=false; recordsOver = false;}
+    void setUnique() { isUnique = true; }
+    bool getUnique() { return isUnique; }
     HashIndexNode* next();
-    void reset() { iter = head; }
+    void reset() { iter = head; recordsOver=false;}
     friend class BucketList;
 };
 class BucketList
@@ -87,7 +96,6 @@ class BucketList
         it.iter = head;
         return it;
     }
-
 };
 class HashIndex;
 class IndexInfo;
@@ -111,7 +119,7 @@ class Index
 };
 class HashIndex : public Index
 {
-
+    //No members as it will be called by multiple threads 
     public:
     DbRetVal insert(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool undoFlag);
     DbRetVal remove(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool undoFlag);
@@ -123,14 +131,15 @@ class HashIndex : public Index
 
 class TreeIndex : public Index
 {
-
-    TreeNode* locateNode(TreeNode *iter, void *tuple, IndexInfo *indInfo);
+    //No members as it will be called by multiple threads 
     DbRetVal removeElement(Database *db, TreeNode *iter, void *tuple, HashIndexInfo *info);
+    void removeNode(Database *db,void *indexPtr,TreeNode *fltnode, TreeNode *node,int pos);
     public:
     DbRetVal insert(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool undoFlag);
     DbRetVal remove(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool undoFlag);
     DbRetVal update(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool undoFlag);
-
+    static DbRetVal insertLogicalUndoLog(Database *sysdb, void *info);
+    static DbRetVal deleteLogicalUndoLog(Database *sysdb, void *info);
 };
 class TreeIter
 {
@@ -145,17 +154,22 @@ class TreeIter
     bool firstCall;
     int nodeOffset;
     bool recordsOver;
-
+    void *fstLTnode;
     void* locateNode();
     void* locateElement();
+    int procSlot;
+    bool isUnique; 
 
     public:
-    TreeIter(){}
-    TreeIter(TreeNode *hd) { iter = head = hd; firstCall = true; recordsOver=false;}
+    TreeIter(){ iter=head=NULL; searchKey=fstLTnode=NULL;isUnique = false;}
+    TreeIter(TreeNode *hd,void *fTnode, int slot ) { fstLTnode = fTnode; iter = head = hd; firstCall = true; recordsOver=false; procSlot=slot; isUnique=false;}
+    void set(TreeNode *hd,void *fTnode, int slot ) { fstLTnode = fTnode; iter = head = hd; firstCall = true; recordsOver=false; procSlot=slot; isUnique=false;}
     void setSearchKey(void *key, ComparisionOp cop, bool ascending = true)
     {
         searchKey = key; op = cop; asc =ascending;
     }
+    void setUnique() { isUnique = true; }
+    bool getUnique() { return isUnique; }
     void setFldOffset(int off) { fldOffset = off; }
     void setTypeLength(DataType t, int l) { type =t ; length =l; }
     void* prev();
@@ -163,7 +177,7 @@ class TreeIter
     void nextNode();
     void* getFirstElement();
     void* getLastElement();
-    void reset() { iter = head; firstCall = true; recordsOver=false; }
+    void reset();// { iter = head; firstCall = true; recordsOver=false; }
 };
 
 enum IndexIntType

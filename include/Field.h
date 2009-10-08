@@ -1,18 +1,9 @@
 /***************************************************************************
- *   Copyright (C) 2007 by www.databasecache.com                           *
- *   Contact: praba_tuty@databasecache.com                                 *
  *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
+ *    Copyright (C) Lakshya Solutions Ltd. All rights reserved.            *
  *                                                                         *
- *   This program is distributed in the hope that it will be useful,       *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
- *   GNU General Public License for more details.                          *
- *                                                                         *
-  ***************************************************************************/
+ ***************************************************************************/
+
 #ifndef FIELD_H
 #define FIELD_H
 #include<os.h>
@@ -63,6 +54,7 @@ class FieldDef
     bool isDefault_;
     bool isUnique_;
     bool isAutoIncrement_;
+    long long autoVal_;//[DEFAULT_VALUE_BUF_LENGTH];
     //TODO::width and scale
 };
 
@@ -122,6 +114,7 @@ class FieldList
     size_t getFieldLength(const char *fldName);
 
     DbRetVal getFieldInfo(const char *fldName, FieldInfo *&info);
+    void fillFieldInfo(int fldpos, void *info);
 
     int getTupleSize();
 
@@ -131,4 +124,27 @@ class FieldList
         return iter;
     }
 };
+
+//The below struct should be same as Parser.h:FieldValue
+//For performance reason and it is
+//done such that storage does not have dependency on SQL 
+struct FieldInfoValue
+{
+    char fldName[IDENTIFIER_LENGTH];
+    char *parsedString;
+    void *value;
+    int paramNo; // 0 ->not a param. It stores the param position
+    DataType type;
+    int aType; //assumes enum is always int
+    int length;
+    bool isNullable;
+    bool isAllocVal;
+    bool isInResSet;
+
+    size_t offset;
+    bool isPrimary;
+    bool isUnique;
+    bool isAutoIncrement;
+};
+
 #endif

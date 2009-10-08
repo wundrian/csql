@@ -59,8 +59,6 @@ class ThreadInfo
     void print();
 
 };
-class Database;
-
 class ProcessManager
 {
     public:
@@ -80,6 +78,7 @@ class ProcessManager
 
     static DbRetVal setThreadTransaction(Transaction *trans, int pslot);
     static Transaction* getThreadTransaction(int pslot);
+
     static Transaction** getThreadTransAddr(int pslot);
     
     void printUsageStatistics();

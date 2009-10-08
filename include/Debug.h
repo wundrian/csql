@@ -27,8 +27,6 @@ extern int DebugDM_Network;
 extern int DebugDM_Gateway;
 extern int DebugDM_Adapter;
 extern int DebugDM_SqlLog;
-extern int DebugDM_ReplServer;
-extern int DebugDM_ReplTool;
 extern int DebugDM_CacheServer;
 extern int DebugDM_TEST;
 extern int DebugDM_Warning;
@@ -59,8 +57,6 @@ enum DebugModule
     DM_Gateway,
     DM_Adapter,
     DM_SqlLog,
-    DM_ReplServer,
-    DM_ReplTool,
     DM_CacheServer,
     DM_TEST,
     DM_Warning
@@ -69,8 +65,8 @@ static char moduleNames[][20] =
 {
     "Alloc", "VariableAlloc", "Lock", "Trans", "UndoLog", "RedoLog", "Index",
     "HashIndex", "TreeIndex", "SysDb", "Db", "Table", "Predicate", "Iter", 
-    "Procmgmt", "Network", "Gateway", "Adapter", "SqlLog", "ReplServer", 
-    "ReplTool", "CacheServer", "TEST", "Warning"
+    "Procmgmt", "Network", "Gateway", "Adapter", "SqlLog",
+    "CacheServer", "TEST", "Warning"
 };
 
 extern int printDebug1(int module, char *fname, int lineno, char *format, ...);

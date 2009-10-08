@@ -1,31 +1,37 @@
 /***************************************************************************
- *   Copyright (C) 2007 by Prabakaran Thirumalai   *
- *   praba_tuty@yahoo.com   *
  *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
+ *    Copyright (C) Lakshya Solutions Ltd. All rights reserved.            *
  *                                                                         *
- *   This program is distributed in the hope that it will be useful,       *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
- *   GNU General Public License for more details.                          *
- *                                                                         *
- *   You should have received a copy of the GNU General Public License     *
- *   along with this program; if not, write to the                         *
- *   Free Software Foundation, Inc.,                                       *
- *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
+
 #ifndef ABSSQLSTATEMENT_H
 #define ABSSQLSTATEMENT_H
-//#include <SqlConnection.h>
-//#include "Statement.h"
-//#include<CSql.h>
 #include<AbsSqlConnection.h>
-//#include <SqlStatement.h>
+#include<Info.h>
+#include<DataType.h>
 class Statement;
 class ParsedData;
+#ifndef STMT_TYPE
+#define STMT_TYPE
+enum StatementType
+{
+    UnknownStatement,
+    SelectStatement,
+    InsertStatement,
+    UpdateStatement,
+    DeleteStatement,
+    CreateTableStatement,
+    DropTableStatement,
+    CreateIndexStatement,
+    DropIndexStatement,
+    CacheTableStatement,
+    CompactTableStatement,
+    CopyTableStatement,
+    MetaStatement,
+    UserStatement
+};
+#endif
+
 
 /**
 * @class AbsSqlStatement
@@ -48,6 +54,7 @@ class AbsSqlStatement
     AbsSqlConnection *con;
     public:
     void setInnerStatement(AbsSqlStatement *stmt) { innerStmt = stmt; }
+    AbsSqlStatement *getInnerStatement() { return innerStmt; }
     /** sets connection handle to be used for subsequent operations
     *   @param con SqlConnection*
     */
@@ -61,12 +68,15 @@ class AbsSqlStatement
     * @returns DbRetVal
     */
     virtual DbRetVal prepare(char *stmt) = 0;
+    
+    /** Executes directly for non parameterized statements **/
+    virtual DbRetVal executeDirect(char *stmt) = 0;
 
     /** Retrieves the tablename of the prepared statement
     * Used internally to get the tablename of the non select DML stmts
     * @returns char* tablename
     */
-    virtual char* getTableName(){ return NULL; }
+    virtual char* getTableName()=0;
 
     /** executes the sql statement. For insert, update, delete queries execute performs the
     * required operation on the table. 
@@ -75,7 +85,7 @@ class AbsSqlStatement
     * @param rowsAffect number of rows affected by the sql statement
     * @returns DbRetVal
     */
-    virtual DbRetVal execute(int &rowsAffect) =0;
+    virtual DbRetVal execute(int &rowsAffect)=0;
 
     /**fetches the next tuple from the result of the execution of sql select query.
     * execute should be called before calling this method. Application buffer should be 
@@ -133,6 +143,7 @@ class AbsSqlStatement
     * @returns address void*
     */
     virtual void* getFieldValuePtr( int pos )  = 0;
+    virtual void* getFieldValuePtr( char *name )  = 0;
 
     /**Frees all the resources held for the sql statement. Needs to be called before calling prepare again on the same statement handle.
     * @returns DbRetVal
@@ -227,14 +238,23 @@ class AbsSqlStatement
     /**Returns whether the statement prepared is select statement
     * @return bool true if it is select stmt, false otherwise
     */
-    virtual List getTableNameList(){}
+    virtual List getTableNameList(){ List dummy; return dummy;}
+    virtual int getNoOfPagesForTable(char *tblName)=0;
+    virtual DbRetVal loadRecords(char *tblName, void *buf)=0;
+    virtual ResultSetPlan getResultSetPlan()=0;
     virtual bool isSelect() = 0;
     virtual bool isFldNull(int pos)=0;
     virtual bool isFldNull(char *name)=0;
     virtual void setNull(int pos)=0;
     virtual int getFldPos(char *name)=0;
     virtual List getAllTableNames(DbRetVal &ret)=0;
-    virtual ~AbsSqlStatement(){}
+    virtual List getAllUserNames(DbRetVal &ret)=0;
+    virtual StatementType getStmtType()=0;
+    virtual void getProjFieldType( int *data )=0;
+    virtual ~AbsSqlStatement()
+    {
+        if (innerStmt) { delete innerStmt; innerStmt = NULL; }
+    }
 };
 
 //used to store the binded field values and parameters from derived clases of
@@ -264,13 +284,18 @@ class BindSqlProjectField
     int length;
     int offset;
     char defaultValueBuf[DEFAULT_VALUE_BUF_LENGTH];
+    AggType aType;
     bool isNull;
     bool isPrimary;
     bool isDefault;
     bool isUnique;
+    bool isFreed;
     void *value;
     void *targetvalue;
-    BindSqlProjectField(){ value = NULL; targetvalue = NULL; }
+    BindSqlProjectField()
+    { 
+        value = NULL; targetvalue = NULL; isFreed = false; aType = AGG_UNKNOWN;
+    }
 };
 
 class StmtBucket
@@ -286,5 +311,4 @@ class StmtNode
     AbsSqlStatement *stmt;
     char stmtstr[1024];
 };
-
 #endif

@@ -205,8 +205,9 @@ class Table
     virtual DbRetVal getFieldInfo(const char *fieldName, FieldInfo *&info)=0;
     virtual List getFieldNameList()=0;
     virtual char* getName()=0;
-    virtual void printSQLIndexString()=0;
-
+    virtual void printSQLIndexString(FILE *fp=NULL, int fd=-1)=0;
+    virtual void printSQLForeignString()=0;
+    virtual DbRetVal compact()=0;
     //optimizer
     virtual DbRetVal optimize()=0;
     virtual ScanType getScanType()=0;
@@ -217,7 +218,7 @@ class Table
     virtual void printPlan(int space)=0;
     virtual void addPredicate(char *fname, ComparisionOp op, void *buf)
                  { return; }
-
+    virtual bool isFKTable()=0;
     virtual void resetNullinfo()=0;
     virtual int getFldPos(char *name)=0;
     virtual ~Table() { }

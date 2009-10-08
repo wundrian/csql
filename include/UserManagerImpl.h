@@ -17,7 +17,6 @@
 #define USER_MANAGER_IMPL_H
 #include<UserManager.h>
 #include<os.h>
-
 class Database;
 class UserManagerImpl: public UserManager
 {
@@ -41,6 +40,7 @@ class UserManagerImpl: public UserManager
     int changePassword(const char* newPasswd);
 
     int changePassword(const char *userName, const char* newPasswd);
+    List getAllUserNames(int *rv=NULL);
 
 };
 

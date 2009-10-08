@@ -30,6 +30,22 @@ class FieldNameList;
 class FieldIterator;
 class ChunkIterator;
 
+enum ObjectType
+{
+    Tbl	 = 0,
+    hIdx = 1,
+    tIdx = 2,
+};
+
+struct Object
+{
+    char name[64];
+    ObjectType type;
+    void *bucketChunk;
+    void *firstPage;
+    void *curPage;
+};
+
 enum CatalogTableID
 {
     // chunk id 0 ->userChunkTable
@@ -56,8 +72,9 @@ enum CatalogTableID
     FieldTableId     = 13,
     AccessTableId    = 14,
     IndexTableId     = 15,
-    IndexFieldTableId= 16
-
+    IndexFieldTableId= 16,
+    ForeignKeyTableId= 17,
+    ForeignKeyFieldTableId= 18
 };
 
 
@@ -91,7 +108,7 @@ class CatalogTableTABLE
     DbRetVal remove(const char *name, void *&chunk, void *&tptr);
 
     DbRetVal getChunkAndTblPtr(const char *name, void *&chunk, void *&tptr);
-
+    DbRetVal setChunkPtr(const char *name, void *firstPage, void *curPage);
     List getTableList();
 };
 
@@ -108,14 +125,14 @@ class CFIELD
     //currently default value is supported for string and binary
     //less than length 32 bytes
     char defaultValueBuf_[DEFAULT_VALUE_BUF_LENGTH];
+    long long autoVal_;//[DEFAULT_VALUE_BUF_LENGTH];
+    int width_;
+    int scale_;
     bool isNull_;
     bool isPrimary_;
     bool isUnique_;
     bool isDefault_;
     bool isAutoIncrement_;
-    long long autoVal_;
-    int width_;
-    int scale_;
 };
 
 class CatalogTableFIELD
@@ -159,7 +176,7 @@ class CatalogTableUSER
                      bool &isAuthenticated, bool &isDba);
     DbRetVal remove(const char *name);
     DbRetVal changePass(const char *name, const char *pass);
-
+    List getUserList();
 };
 
 class CACCESS
@@ -213,6 +230,7 @@ class CatalogTableINDEX
     //pointer to the removed tuple
     DbRetVal remove(const char *name, void *&chunk, void *&hchunk, void *&iptr);
     DbRetVal get(const char *name, void *&chunk, void *&hchunk, void *&iptr);
+    DbRetVal setChunkPtr(const char *name, ObjectType tp, void *chunk, void *firstPage, void *curPage);
 
     //get the number of indexes on table pointed by tblPtr
     int getNumIndexes(void *tblPtr);
@@ -226,6 +244,8 @@ class CatalogTableINDEX
     static int getNoOfBuckets(void *iptr);
     static int getUnique(void *iptr);
     static char* getName(void *iptr);
+    static int getOffsetOfFirstField(void *iptr);
+    static IndexType getType(void *iptr);
 };
 
 
@@ -252,6 +272,50 @@ class CatalogTableINDEXFIELD
     DbRetVal getFieldNameAndType(void *iptr, char *&name, DataType &type);
     DbRetVal getFieldInfo(void *index, FieldList &list);
     void printAllIndex();
+    ListIterator getIndexListIterater(char *name);
 
 };
+
+class CFK
+{
+    public:
+    char fkName_[IDENTIFIER_LENGTH];
+    void* pkTblPtr_;
+    void* fkTblPtr_;
+};
+
+class CatalogTableFK
+{
+    Database *systemDatabase_;
+    public:
+    CatalogTableFK(Database *db) { systemDatabase_  = db; }
+    DbRetVal insert(char *name, void *tFkPtr,void *tPkPtr);
+    DbRetVal remove(void *tptr);
+    void *getFkCTable(void* tptr);
+    int getNumFkTable(void *ctptr);
+    bool isFkTable(void *ctptr);
+    void getPkTableName(void *ctptr, char **&array);
+    void getFkTableName(void *ctptr, char **&array);
+    int getNoOfPkTable(void *ctptr);
+    int getNoOfFkTable(void *ctptr);
+    DbRetVal getPkFkFieldInfo(void *cpkptr, void *cfkptr, FieldNameList &pklist,FieldNameList &pklist1);
+};
+
+class CFKFIELD
+{
+   public:
+   void* fkPtr_;//pointer to tuple in catalog table CFK
+   void* pfFldPtr_;
+   void* fkFldPtr_;    
+};
+
+class CatalogTableFKFIELD
+{
+    Database *systemDatabase_;
+    public:
+    CatalogTableFKFIELD(Database *db) { systemDatabase_  = db; }
+    DbRetVal insert(char *cFKName, char **fkFldPtrs, char **pkFldPtrs,int totalFld);
+    DbRetVal remove(void *fptr);
+};
+
 #endif

@@ -78,7 +78,7 @@ class DatabaseManagerImpl : public DatabaseManager
     Chunk* createUserChunk(size_t size = 0);
     DbRetVal deleteUserChunk(Chunk *chunk);
 
-
+    
     DbRetVal createHashIndex(const char *indName, const char *tableName,
                         FieldNameList &fldList, int bucketSize, bool isUnique, bool isPrimary = false);
     DbRetVal createTreeIndex(const char *indName, const char *tableName,
@@ -86,7 +86,7 @@ class DatabaseManagerImpl : public DatabaseManager
     void initHashBuckets(Bucket *buck, int bucketSize);
 
     DbRetVal dropIndexInt(const char *name, bool takeLock);
-
+    DbRetVal writeSchemaFile();
     public:
 
     Database* db() { return db_; }
@@ -107,14 +107,15 @@ class DatabaseManagerImpl : public DatabaseManager
     DbRetVal closeDatabase();
 
 
-
     DbRetVal createTable(const char *name, TableDef &def);
     DbRetVal dropTable(const char *name);
-    Table* openTable(const char *name);
+    Table* openTable(const char *name, bool checkpkfk=true);
     void closeTable(Table *table);
     DbRetVal createIndex(const char *indName, IndexInitInfo *info);
     DbRetVal dropIndex(const char *name);
-    List getAllTableNames();
+    DbRetVal createForeignKey(char *kfName,ForeignKeyInfo *info);
+    DbRetVal dropForeignKey(void *ctptr,bool trylock);
+    List getAllTableNames(int *rv=NULL);
 
     DbRetVal registerThread();
     DbRetVal deregisterThread();
@@ -124,7 +125,13 @@ class DatabaseManagerImpl : public DatabaseManager
     void printDebugTransInfo();
     void printDebugChunkInfo();
     void printDebugProcInfo();
+    int getNoOfPagesForTable(char *tblName);
+    DbRetVal loadRecords(char *tblName, char *buffer);
+    DbRetVal pasteRecords(char *tblName, void *buffer);
+    DbRetVal checkPoint();
+    DbRetVal recover();
     DbRetVal printIndexInfo(char *name);
+    void printTreeIndexNodeInfo(char *name,bool flag);
     friend class SessionImpl;
 };
 #endif

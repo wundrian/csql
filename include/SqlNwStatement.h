@@ -33,6 +33,8 @@ class SqlNwStatement: public AbsSqlStatement
         con = conn;
     }
     ~SqlNwStatement() { if (isPrepared) free(); }
+
+    DbRetVal executeDirect(char *stmt);
     DbRetVal prepare(char *stmt);
 
     DbRetVal execute(int &rowsAffect);
@@ -48,7 +50,7 @@ class SqlNwStatement: public AbsSqlStatement
     int noOfProjFields();
 
     void* getFieldValuePtr( int pos );
-    void* getFieldValuePtr( char *name ){}
+    void* getFieldValuePtr( char *name ){ return NULL;}
 
     DbRetVal free();
 
@@ -77,9 +79,20 @@ class SqlNwStatement: public AbsSqlStatement
     bool isFldNull(char *name);
     void setNull(int pos);
     void setStmtID(int id) { stmtID = id; }
-    int getFldPos(char *name){} 
+    int getFldPos(char *name){ return -1;} 
     List getAllTableNames(DbRetVal &ret);
+    List getAllUserNames(DbRetVal &ret){ List dummy; return dummy;}
+    char *getTableName(){ return "";}
+    StatementType getStmtType() { return UnknownStatement; }
+    int getNoOfPagesForTable(char *tbl){ return -1;}
+    bool isTablePresent(char *tbName, DbRetVal &rv);
+    void *getLoadedRecords(char *tbName, DbRetVal &rv);
+    DbRetVal loadRecords(char *tbName, void *buf){ return ErrBadCall;}
+    ResultSetPlan getResultSetPlan() { return plan;}
+    bool isPrepd() { return isPrepared; }
+    void getProjFieldType(int *data);
     private:
+    ResultSetPlan plan;
     bool isPrepared;
     bool isSel;
     int stmtID;

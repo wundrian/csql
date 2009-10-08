@@ -52,25 +52,36 @@ class TupleIterator
     BucketIter *bIter;
     TreeIter *tIter;
     IndexInfo *info;
+    char *keyBuffer;
+    char *keyPtr;
+    ComparisionOp op;
     void *chunkPtr_;
     int procSlot;
     bool isBetween;
     bool isPointLook;
-    
+    bool shouldNullCheck; 
+    bool isClosed;
     TupleIterator() { }
     public:
-    TupleIterator(Predicate *p, ScanType t, IndexInfo *i, void *cptr, int pslot,bool between , bool isPtLook)
-    { bIter = NULL; cIter = NULL; tIter = NULL; 
+    TupleIterator(Predicate *p, ScanType t, IndexInfo *i, void *cptr, int pslot,bool between , bool isPtLook,bool nullflag)
+    { bIter = new BucketIter(); 
+      cIter = new ChunkIterator();; 
+      tIter = new TreeIter(); 
+      keyBuffer = NULL;
       pred_ = p ; scanType_ = t; info = i; chunkPtr_ = cptr; 
-      procSlot =pslot; isBetween=between; isPointLook=isPtLook; 
+      isClosed =true;
+      procSlot =pslot; isBetween=between; isPointLook=isPtLook; shouldNullCheck=nullflag;
     }
+    DbRetVal setPlan();
     
     ~TupleIterator() 
 	{ 
         if (bIter) { delete bIter; bIter = NULL; }
         if (cIter) { delete cIter; cIter = NULL; }
         if (tIter) { delete tIter; tIter = NULL; }
+        if (keyBuffer) { ::free(keyBuffer); keyBuffer = NULL; }
     }
+    bool isIterClosed() { return isClosed; }
     bool isBetInvolved(){ return isBetween;}
     void setBetInvolved(bool between){ isBetween=between;}
     bool isPointLookInvolved(){return isPointLook;}
@@ -79,13 +90,10 @@ class TupleIterator
     void* prev();//used only for tree iter during deleteTuple
     void reset();
     DbRetVal close();
-
 };
 class TableImpl:public Table
 {
     private:
-
-
     LockManager *lMgr_;
     Transaction **trans;
     //This is pointer to the pointer stored in the
@@ -101,6 +109,7 @@ class TableImpl:public Table
     void *curTuple_; //holds the current tuple ptr. moved during fetch() calls
 
     Predicate *pred_;
+    List predList;
     ScanType scanType_;
     //ChunkIterator *iter;
     //BucketIter *bIter;
@@ -108,6 +117,7 @@ class TableImpl:public Table
     TupleIterator *iter;
 
     bool loadFlag;
+    char aliasName[IDENTIFIER_LENGTH];
 
     public:
     FieldList fldList_;
@@ -115,6 +125,7 @@ class TableImpl:public Table
     void **bindListArray_;
     int numBindFlds_;
     int numIndexes_;
+    int numFkRelation_;
     char** indexPtr_; // array of index ptrs to the catalog table for the indexes of this table.
     IndexInfo **idxInfo;
     int useIndex_;//offet in the above array indexPtr_ for scan
@@ -131,7 +142,12 @@ class TableImpl:public Table
     char *cNullInfo;
     int iNotNullInfo;
     char *cNotNullInfo;
- 
+    //Table *fkTbl;
+    List tblList;
+    List tblFkList;
+    bool isFkTbl;
+    bool isPkTbl; 
+    bool shouldNullSearch;
     private:
 
     //copy Values from binded buffer to tuple pointed by arg
@@ -139,15 +155,18 @@ class TableImpl:public Table
     DbRetVal copyValuesToBindBuffer(void *tuple);
     void setNullBit(int fldpos);
     void clearNullBit(int fldpos);
-    DbRetVal insertIndexNode(Transaction *trans, void *indexPtr, IndexInfo *info, void *tuple, bool loadFlag=0);
+    DbRetVal insertIndexNode(Transaction *trans, void *indexPtr, IndexInfo *info, void *tuple);
     DbRetVal updateIndexNode(Transaction *trans, void *indexPtr, IndexInfo *info, void *tuple);
     DbRetVal deleteIndexNode(Transaction *trans, void *indexPtr, IndexInfo *info, void *tuple);
-
+    bool isFKTable(){return isFkTbl;};
     DbRetVal createPlan();
     Chunk* getSystemTableChunk(CatalogTableID id)
     {
         return sysDB_->getSystemDatabaseChunk(id);
     }
+    DbRetVal trySharedLock(void *curTuple, Transaction **trans);
+    DbRetVal tryExclusiveLock(void *curTuple, Transaction **trans);
+
 
     public:
     TableImpl() { db_ = NULL; chunkPtr_ = NULL; iter = NULL;
@@ -155,7 +174,7 @@ class TableImpl:public Table
         pred_ = NULL; useIndex_ = -1; numFlds_ = 0; bindListArray_ = NULL;
         iNullInfo = 0; cNullInfo = NULL; isIntUsedForNULL = true; 
         iNotNullInfo = 0; cNotNullInfo = NULL; curTuple_ = NULL;
-        isPlanCreated = false; loadFlag = false; ptrToAuto=NULL;}
+        isPlanCreated = false; loadFlag = false;isFkTbl=false;isPkTbl=false;numFkRelation_=0; shouldNullSearch = false;}
     ~TableImpl();
 
     void setDB(Database *db) { db_ = db; }
@@ -170,6 +189,9 @@ class TableImpl:public Table
         { return fldList_.getFieldOffset(name); }
     size_t getFieldLength(const char *name)
         { return fldList_.getFieldLength(name); }
+    int getNumFields() { return numFlds_; }
+    void fillFieldInfo(int pos, void* val)
+        { return fldList_.fillFieldInfo(pos,val); }
 
     DbRetVal getFieldInfo(const char *fieldName,  FieldInfo *&info)
     { 
@@ -177,7 +199,8 @@ class TableImpl:public Table
         char fldName[IDENTIFIER_LENGTH];
         getTableNameAlone((char*)fieldName, tblName);
         getFieldNameAlone((char*)fieldName, fldName);
-        if (0 == strcmp(tblName, "") || 0 ==strcmp(tblName, getName()))
+        if (0 == strcmp(tblName, "") || 0 ==strcmp(tblName, getName()) ||
+            0 == strcmp(tblName, getAliasName()))
             return fldList_.getFieldInfo(fldName, info); 
         else
             return ErrNotExists;
@@ -186,8 +209,8 @@ class TableImpl:public Table
     List getFieldNameList();
 
     // search predicate
-     void setCondition(Condition *p) 
-     { isPlanCreated = false; if (p) pred_ = p->getPredicate(); else pred_ = NULL;}
+     void setCondition(Condition *p); 
+     //{ isPlanCreated = false; if (p) pred_ = p->getPredicate(); else pred_ = NULL;}
 
     //binding
     DbRetVal bindFld(const char *name, void *val);
@@ -209,12 +232,13 @@ class TableImpl:public Table
     int truncate();
 
     DbRetVal execute();
-
+    bool isPkTableHasRecord(char *name,TableImpl *fkTbl,bool isInsert);
+    bool isFkTableHasRecord(char *name,TableImpl *fkTbl);
     void* fetch();
     void* fetch(DbRetVal &rv);
     void* fetchNoBind();
     void* fetchNoBind(DbRetVal &rv);
-    DbRetVal fetchAgg(const char *fldName, AggType aType, void *buf);
+    DbRetVal fetchAgg(const char *fldName, AggType aType, void *buf, bool &noRec);
 
     DbRetVal close();
     DbRetVal closeScan();
@@ -229,10 +253,10 @@ class TableImpl:public Table
     DbRetVal lock(bool shared);
     DbRetVal unlock();
    
-    DbRetVal setUndoLogging(bool flag) { loadFlag = flag; }
+    DbRetVal setUndoLogging(bool flag) { loadFlag = flag; return OK;}
 
-    void printSQLIndexString();
-
+    void printSQLIndexString(FILE *fp, int fd);
+    void printSQLForeignString();
     DbRetVal optimize();
     bool isTableInvolved(char *tblName);
     bool pushPredicate(Predicate *pred);
@@ -241,8 +265,11 @@ class TableImpl:public Table
     bool hasIndex(char *fldName);
     IndexType getIndexType(char *fldName, int* pos);
     void addPredicate(char *fName, ComparisionOp op, void *buf);
-
+    DbRetVal compact();
+    DbRetVal compactIndexNode( void *indexPtr);
     char* getName() { return tblName_; }
+    char* getAliasName() { return aliasName; }
+    void setAliasName(char *name);
     void setTableInfo(char *name, int tblid, size_t  length,
                        int numFld, int numIdx, void *chunk);
     void setLoading(bool flag) { loadFlag = flag; }

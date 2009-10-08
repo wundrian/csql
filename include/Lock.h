@@ -24,11 +24,11 @@ class Transaction;
 class LockInfo
 {
     public:
-    signed int noOfReaders_;
+    int noOfReaders_;
     //-1 indicates write lock is taken
 
-    unsigned char waitReaders_;
-    unsigned char waitWriters_;
+    int waitReaders_;
+    int waitWriters_;
     LockInfo() { noOfReaders_ = 0; waitReaders_ = 0; waitWriters_ = 0; }
 
 };
@@ -80,7 +80,8 @@ class LockManager
 
     private:
     LockHashNode* allocLockNode(LockInfo &info, void *tuple, DbRetVal *rv);
-    void deallocLockNode(LockHashNode *head, Bucket *bucket);
+    DbRetVal deallocLockNode(LockHashNode *head, Bucket *bucket);
+    void deallocLockNode(LockHashNode *head);
     Bucket* getLockBucket(void *tuple);
 
     public:

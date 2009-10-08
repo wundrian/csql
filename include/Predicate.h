@@ -19,6 +19,20 @@
 #include<DataType.h>
 class PredicateImpl;
 class Predicate;
+#ifndef AGGTYPE
+enum AggType
+{
+    AGG_MIN = 1,
+    AGG_MAX,
+    AGG_SUM,
+    AGG_AVG,
+    AGG_COUNT,
+    AGG_UNKNOWN
+};
+#define AGGTYPE
+#endif
+
+
 /**
 * @class Condition
 *
@@ -77,7 +91,8 @@ class Condition
     *   @param op comparision operator(=,!=, >,<,>=,<=)
     *   @param opnd** pointer to pointer to the  value
     */ 
-    void setTerm(const char* fName1, ComparisionOp op, void **opnd);
+    void setTerm(const char* fName1, ComparisionOp op, void **opnd );
+    void setTerm(const char* fName1, ComparisionOp op, void **opnd, AggType aggType);
 
 
     /** sets the predicate term of form f1 = f2 && f1 = 100.
@@ -111,7 +126,7 @@ class Predicate
     virtual void setTerm(const char* fName1, ComparisionOp op, void **opnd)=0;
 
     virtual void setTerm(Predicate *p1, LogicalOp op, Predicate *p2 = NULL)=0;
-
+    virtual void setTerm(const char* fName1, ComparisionOp op,bool nullFlag)=0;
     virtual void print(int space)=0;
     virtual ~Predicate(){}
 };

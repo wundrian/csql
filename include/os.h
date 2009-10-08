@@ -95,6 +95,8 @@ enum MapMode
 #define SYSTEMDB "SYSTEMDB"
 #define DBAUSER "root"
 #define DBAPASS "manager"
+#define I_USER "i@1r4D_f$_a"
+#define I_PASS "a_$f_D4r1@i"
 #define DEFAULT_CONFIG_FILE "/etc/csql/csql.conf"
 #define LOCK_BUCKET_SIZE 2048
 #define STMT_BUCKET_SIZE 1023
@@ -116,6 +118,11 @@ enum MapMode
 
 typedef key_t shared_memory_key;
 typedef int   shared_memory_id;
+#if defined(__sparcv9)
+    typedef long InUse;
+#else
+    typedef int InUse;
+#endif
 
 #endif
 

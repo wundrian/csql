@@ -18,6 +18,7 @@
 #include<os.h>
 #include<Mutex.h>
 #include<ErrorType.h>
+#include<Config.h>
 
 typedef void Page;
 
@@ -32,7 +33,7 @@ enum AllocType
 class VarSizeInfo
 {
     public:
-    size_t size_;
+    int size_;
     int isUsed_;
 };
 
@@ -57,7 +58,7 @@ class PageInfo
      Page *nextPage_; //next page in the same chunk
      void setPageAsUsed(size_t offset);
      void setFirstPageAsUsed();
-
+     void setPageAsFree();
 
 };
 class Chunk;
@@ -86,10 +87,47 @@ class ChunkIterator
     //and it is cached for performance
     int noOfNodes_;
 
+
     public:
-    ChunkIterator() { allocSize_ =0; iterPage_ = NULL; nodeOffset_ =0; 
+    int pageSize;
+    ChunkIterator() { pageSize = PAGE_SIZE; allocSize_ =0; iterPage_ = NULL; nodeOffset_ =0; 
                       chunkID_ = -1; noOfNodes_  =0; }
+    int isLargeSize() { if (noOfNodes_ == 0) return true; else return false; }
     void* nextElement();
+    void* nextElementIntMatch(int value, int offset);
+    inline void* nextElementInt() {
+        if (!data) {
+            pageSize = PAGE_SIZE;
+            data = ((char*)iterPage_) + sizeof(PageInfo);
+            if ((*(int*)data) == 1) return data + sizeof(int);
+        }
+
+        if(0 == noOfNodes_) return nextElement();
+        data += allocSize_;
+        while(data < iterPageEnd)
+        {
+            if (*((int*)data)) {
+                return data + sizeof(int);
+            } else {
+               data += allocSize_;
+            }
+        }
+        while(iterPage_->nextPage_ != NULL)
+        {
+            iterPage_ = (PageInfo*)iterPage_->nextPage_;
+            data = ((char*)iterPage_) + sizeof(PageInfo);
+            iterPageEnd = ((char*)iterPage_) + pageSize;
+            while(data < iterPageEnd)
+            {
+                if (*((int*)data) == 0) {
+                   data = data + allocSize_;
+                   nodeOffset_++;
+                } else 
+                    return data +sizeof(int);
+            }
+        }
+        return NULL;
+    }
     friend class Chunk;
 };
 
@@ -130,11 +168,13 @@ class Chunk
     void setAllocType(AllocType type) { allocType_ = type; }
     AllocType getAllocType()          { return allocType_; }
     Page* getFirstPage(){ return firstPage_; }
-
+    Page* getCurrentPage(){ return curPage_; }
+    void setFirstPage(void *fp) { firstPage_ = fp;}
+    void setCurPage(void *cp) { curPage_ = cp;}
     PageInfo* getPageInfo(Database *db, void *ptr);
-    void* allocate(Database *db, DbRetVal *status = NULL);
+    void* allocate(Database *db, DbRetVal *status);
 
-    void* allocate(Database *db, size_t size, DbRetVal *status = NULL);
+    void* allocate(Database *db, size_t size, DbRetVal *status);
 
     void  free(Database *db, void* ptr);
     ChunkIterator getIterator();
@@ -142,7 +182,7 @@ class Chunk
 
     long getTotalDataNodes();
     int totalPages();
-    int compact();
+    int compact(int procSlot);
 
     private:
 
@@ -150,19 +190,20 @@ class Chunk
     int getChunkMutex(int procSlot);
     int releaseChunkMutex(int procSlot);
     int destroyMutex();
-    void createDataBucket(Page *page, size_t totalSize, size_t needSize);
-    void splitDataBucket(VarSizeInfo *varInfo, size_t needSize);
-    void* varSizeFirstFitAllocate(size_t size);
+    int createDataBucket(Page *page, size_t totalSize, size_t needSize, int pslot);
+    int splitDataBucket(VarSizeInfo *varInfo, size_t needSize, int pslot, DbRetVal *status);
+    void* varSizeFirstFitAllocate(size_t size, int pslot, DbRetVal *status);
     void freeForLargeAllocator(void *ptr, int pslot);
     void freeForVarSizeAllocator(void *ptr, int pslot);
 
     void* allocateForLargeDataSize(Database *db);
-    void* allocateFromFirstPage(Database *db, int noOfDataNodes);
-    void* allocateFromNewPage(Database *db);
+    void* allocateFromFirstPage(Database *db, int noOfDataNodes, DbRetVal *status);
+    void* allocateFromNewPage(Database *db, DbRetVal *status);
 
     void* allocateForLargeDataSize(Database *db, size_t size);
-    void* allocFromNewPageForVarSize(Database *db, size_t size);
-    void* allocateFromCurPageForVarSize(size_t size);
+    void* allocFromNewPageForVarSize(Database *db, size_t size, int pslot,
+                                     DbRetVal *status);
+    void* allocateFromCurPageForVarSize(size_t size, int pslot, DbRetVal *status);
 
 
     friend class Database;

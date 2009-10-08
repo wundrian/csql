@@ -38,7 +38,12 @@ class SqlNwConnection : public AbsSqlConnection
     public:
     NetworkClient *nwClient;
     IsolationLevel prevIsoLevel;
-    SqlNwConnection(SqlApiImplType tp){nwClient = NULL; innerConn = NULL; isConnOpen = false; sqlApiImplType = tp; }
+    SqlNwConnection(SqlApiImplType tp) {
+        nwClient = NULL; 
+        innerConn = NULL; 
+        isConnOpen = false; 
+        sqlApiImplType = tp; 
+    }
 
     //Note::forced to implement this as it is pure virtual in base class
     Connection& getConnObject(){  return dummyConn; }
@@ -63,7 +68,9 @@ class SqlNwConnection : public AbsSqlConnection
     DbRetVal send(NetworkPacketType type)
     { return  nwClient->send(type); }
     DbRetVal receive() { return nwClient->receive(); }
+    void setIsConnectedFlag(bool fl) { nwClient->setIsConnectedFlag(fl); }
     bool isConOpen() { return isConnOpen; }
+    void setConnClosed(bool status) { isConnOpen = status; }
     void * getResponsePacket() { return nwClient->getResponsePacket(); }
     ~SqlNwConnection() { if (isConnOpen) disconnect(); }
     friend class SqlFactory;

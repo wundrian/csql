@@ -29,12 +29,28 @@
 *
 */
 
+typedef struct my_msgbuffer {
+    long mtype;
+    char data[1];
+} Message;
+
 class AbsSqlLogSend
 {
     public:
-    virtual DbRetVal prepare(int txnId, int stmtId, int len, char *stmt)=0;
+    virtual DbRetVal prepare(int tId, int sId, int len, char *st, 
+                                                              char *tn)=0;
     virtual DbRetVal commit(int len, void *data)=0;
     virtual DbRetVal free(int txnId, int stmtId)=0;
+};
+
+class MsgQueueSend : public AbsSqlLogSend
+{
+    int msgQId;
+    public:
+    MsgQueueSend() { msgQId = os::msgget(Conf::config.getMsgKey(), 0666); }
+    DbRetVal prepare(int tId, int sId, int len, char *stmt, char *tn);
+    DbRetVal commit(int len, void *data);
+    DbRetVal free(int txnId, int stmtId);
 };
 
 class FileSend : public AbsSqlLogSend
@@ -42,7 +58,8 @@ class FileSend : public AbsSqlLogSend
     int fdRedoLog;
     public:
     FileSend();
-    DbRetVal prepare(int txnId, int stmtId, int len, char *stmt);
+    ~FileSend();
+    DbRetVal prepare(int txnId, int stmtId, int len, char *stmt, char*tn);
     DbRetVal commit(int len, void *data);
     DbRetVal free(int txnId, int stmtId);
 };
@@ -62,7 +79,7 @@ class ExecLogInfo
     int pos;
     DataType dataType;
     int len;
-    char value[1];
+    int value; //Extendible value as per parameter type size
 };
 
 class SqlLogConnection : public AbsSqlConnection
@@ -89,20 +106,29 @@ class SqlLogConnection : public AbsSqlConnection
 
     //stores client objects in it for peer
     NetworkTable nwTable;
+    AbsSqlLogSend *msgQSend;
     AbsSqlLogSend *fileSend;
 
-    static GlobalUniqueID txnUID;
+    GlobalUniqueID txnUID;
     static List cacheList;
     int txnID;
     DbRetVal populateCachedTableList();
     public:
     SqlLogConnection() {
         innerConn = NULL; syncMode = ASYNC; 
+        if (Conf::config.useCache() && 
+            Conf::config.getCacheMode()==ASYNC_MODE) 
+               msgQSend = new MsgQueueSend();
+        else msgQSend = NULL;
         if (Conf::config.useDurability()) { fileSend = new FileSend(); } 
+        else fileSend = NULL;
+        txnUID.open();
         execLogStoreSize =0;
+        noMsgLog = false;
     }
+    ~SqlLogConnection();
     bool isTableCached(char *name);
-
+    bool noMsgLog;
     //Note::forced to implement this as it is pure virtual in base class
     Connection& getConnObject(){  return dummyConn; }
 
@@ -116,19 +142,29 @@ class SqlLogConnection : public AbsSqlConnection
 
     DbRetVal beginTrans (IsolationLevel isoLevel, TransSyncMode mode);
 
-    DbRetVal fileLogPrepare(int txnId, int stmtId, int len, char *stmt) 
+    DbRetVal msgPrepare(int tId, int sId, int len, char *stmt, char *tname)
     {
-        return fileSend->prepare(txnId, stmtId, len, stmt);
+        return msgQSend->prepare(tId, sId, len, stmt, tname);
+    }
+    DbRetVal fileLogPrepare(int tId, int sId, int len, char *stmt, char *tname)
+    {
+        return fileSend->prepare(tId, sId, len, stmt, tname);
     }
     DbRetVal commitLogs(int logSize, void *data) 
     {  
         int txnId = getTxnID();
+        if (((Conf::config.useCache() && 
+             Conf::config.getCacheMode() == ASYNC_MODE)) && !noMsgLog) 
+            msgQSend->commit(logSize, data); 
         if (Conf::config.useDurability()) fileSend->commit(logSize, data);
         return OK;
     }
     DbRetVal freeLogs(int stmtId)
     {
         int txnId = getTxnID(); 
+        if ( ((Conf::config.useCache() &&
+             Conf::config.getCacheMode() == ASYNC_MODE)) && !noMsgLog)
+            msgQSend->free(txnId, stmtId);
         if (Conf::config.useDurability()) fileSend->free(txnId, stmtId);
         return OK;
     }
@@ -141,6 +177,7 @@ class SqlLogConnection : public AbsSqlConnection
     DbRetVal removePreparePacket(int stmtid);
 
     DbRetVal setSyncMode(TransSyncMode mode);
+    void setNoMsgLog(bool nmlog) { noMsgLog = nmlog; }
     TransSyncMode getSyncMode() { return syncMode; }
     int getTxnID() { return txnID; }
     DbRetVal connectIfNotConnected() { return nwTable.connectIfNotConnected(); }

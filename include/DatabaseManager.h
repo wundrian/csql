@@ -51,7 +51,7 @@ class DatabaseManager
     *   @param name name of the table
     *   @return DbRetVal
     */
-    virtual Table* openTable(const char *name)=0;
+    virtual Table* openTable(const char *name, bool checkpkfk=true)=0;
  
     /** closes the table handle passed
     *   @param table handle to the table
@@ -61,7 +61,7 @@ class DatabaseManager
     /** Returns all the tables as list
     *   @return List of table names
     */
-    virtual List getAllTableNames()=0;
+    virtual List getAllTableNames(int *rv=0)=0;
 
     /** creates an index on the specified table. <br/>
     *   Create appropriate derived class object of IndexInitInfo based on the type of <br/>
@@ -75,6 +75,10 @@ class DatabaseManager
     *   @param name index name
     */
     virtual DbRetVal dropIndex(const char *name)=0;
+    virtual DbRetVal checkPoint()=0;
+    virtual DbRetVal recover()=0;
+    virtual DbRetVal createForeignKey(char *fkName,ForeignKeyInfo *info)=0;
+    virtual DbRetVal dropForeignKey(void *ctpr,bool trylock)=0;
     virtual ~DatabaseManager(){ }
 };
 

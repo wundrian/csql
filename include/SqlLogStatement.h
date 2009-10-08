@@ -29,8 +29,14 @@ class SqlLogStatement: public AbsSqlStatement
     public:
     SqlLogStatement() {
         innerStmt = NULL; con = NULL; needLog= false; 
-        sid=0; isNonSelDML = false; }
-
+        sid=0; isNonSelDML = false; isPrepared = false;
+        isCached = false; 
+        stmtUID.open();
+    }
+    ~SqlLogStatement() 
+    { 
+        if(isPrepared) free(); stmtUID.close();
+    }
     void setConnection(AbsSqlConnection *conn)
     {
         if (innerStmt) innerStmt->setConnection(conn->getInnerConnection());
@@ -40,6 +46,8 @@ class SqlLogStatement: public AbsSqlStatement
     List getTableNameList() { return innerStmt->getTableNameList(); }
     char *getTableName() { return innerStmt->getTableName(); }
     bool isNonSelectDML(char *stmtstr);
+
+    DbRetVal executeDirect(char *stmt);
     DbRetVal prepare(char *stmt);
 
     DbRetVal execute(int &rowsAffect);
@@ -79,18 +87,23 @@ class SqlLogStatement: public AbsSqlStatement
     void setBinaryParam(int paramPos, void *value, int length);
 	bool isSelect();
     bool isFldNull(int pos);
-    bool isFldNull(char *name){}
+    bool isFldNull(char *name){ return false;}
     void setNull(int pos);
-    int getFldPos(char *name){}
+    int getFldPos(char *name){ return -1;}
     List getAllTableNames(DbRetVal &ret);
-    int getNoOfPagesForTable(char *tbl){}
-    DbRetVal loadRecords(char *tbl, void *buf){}
-    bool isCached;
+    List getAllUserNames(DbRetVal &ret);
+    StatementType getStmtType() { return innerStmt->getStmtType(); }
+    int getNoOfPagesForTable(char *tbl){ return -1;}
+    DbRetVal loadRecords(char *tbl, void *buf){ return ErrBadCall;}
+    ResultSetPlan getResultSetPlan(){ return innerStmt->getResultSetPlan();}
+    void getProjFieldType(int *data);
     TableSyncMode mode;
     bool isNonSelDML;
-    static GlobalUniqueID stmtUID;
+    GlobalUniqueID stmtUID;
     private:
+    bool isPrepared;
     bool needLog;
+    bool isCached;
     int sid; //statement id
     //static UniqueID stmtUID;
     friend class SqlFactory;

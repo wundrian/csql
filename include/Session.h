@@ -1,23 +1,15 @@
 /***************************************************************************
- *   Copyright (C) 2007 by www.databasecache.com                           *
- *   Contact: praba_tuty@databasecache.com                                 *
  *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
+ *    Copyright (C) Lakshya Solutions Ltd. All rights reserved.            *
  *                                                                         *
- *   This program is distributed in the hope that it will be useful,       *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
- *   GNU General Public License for more details.                          *
- *                                                                         *
-  ***************************************************************************/
+ ***************************************************************************/
+
 #ifndef SESSION_H
 #define SESSION_H
-#include<DatabaseManager.h>
-#include<UserManager.h>
+#include<os.h>
 #include<ErrorType.h>
+class DatabaseManager;
+class UserManager;
 class Session;
 /**
 * @enum IsolationLevel
@@ -110,7 +102,9 @@ class Connection
     *   @return DbRetVal 
     */
     DbRetVal rollback();
+
     DbRetVal getExclusiveLock();
+    char *getUserName();// { return session->getUserName(); }
 };
 
 
@@ -127,6 +121,7 @@ class Session
     virtual DbRetVal commit()=0;
     virtual DbRetVal rollback()=0;
     virtual DbRetVal getExclusiveLock()=0;
+    virtual char * getUserName()=0;
     //TODO:: virtual int setAutoCommit(bool flag)=0;
     //TODO::support for save points
     virtual ~Session() { }

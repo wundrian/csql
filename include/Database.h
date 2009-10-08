@@ -19,9 +19,11 @@
 #include<Allocator.h>
 #include<Debug.h>
 #include<Util.h>
+#include<Process.h>
 
 class Bucket;
 class Transaction;
+
 class DatabaseMetaData
 {
     public:
@@ -53,6 +55,10 @@ class DatabaseMetaData
     Mutex dbTransTableMutex_;
 
     Mutex dbProcTableMutex_;
+
+    // This mutex is taken for prepare in SqlStatement
+    Mutex dbPrepareStmtMutex_;
+
     //To generate unique id
     UniqueID chunkUniqueID_;
 
@@ -68,6 +74,7 @@ class DatabaseManagerImpl;
 class Table;
 class ProcInfo;
 class ThreadInfo;
+class Transaction;
 
 class Database
 {
@@ -75,8 +82,10 @@ class Database
     //Only DatabaseManager creates this object
     //initialization is done only in DatabaseManager during
     //create, delete, open, close database methods
-    Database() { metaData_ = NULL; procSlot = -1; }
+    Database() { metaData_ = NULL; procSlot = -1; fdChkpt = -1; thrInfoOffset=0;}
     DatabaseMetaData *metaData_;
+    int fdChkpt;
+    int thrInfoOffset;
 
 
     public:
@@ -87,8 +96,17 @@ class Database
 
     Chunk* getSystemDatabaseChunk(int id);
     Transaction* getSystemDatabaseTrans(int slot);
+    inline void setThrInfoOffset() {
+        thrInfoOffset = os::alignLong(sizeof (DatabaseMetaData)) +
+                        os::alignLong( MAX_CHUNKS  * sizeof (Chunk)) +
+               os::alignLong( Conf::config.getMaxProcs()*sizeof(Transaction));
+    }
+    inline ThreadInfo* getThreadInfo(int slot){
+        if (!thrInfoOffset) setThrInfoOffset();
+        size_t off = thrInfoOffset + slot * sizeof (ThreadInfo);
+        return (ThreadInfo*)(((char*) metaData_) +  off);
+    }
 
-    ThreadInfo* getThreadInfo(int slot);
     //ThreadInfo* getThreadInfo(int pidSlot, int thrSlot);
     bool isLastThread();
 
@@ -113,6 +131,7 @@ class Database
     DatabaseMetaData* getMetaDataPtr() { return metaData_; }
     Page* getFirstPage();
     Chunk* getHashIndexChunk();
+    int getChkptfd() { return fdChkpt; }
 
     void setDatabaseID(int id);
     void setName(const char *name);
@@ -124,6 +143,7 @@ class Database
     void setFirstPage(Page *ptr);
     void setHashIndexChunk(Chunk* chunk);
     void setUniqueChunkID(int id);
+    void setChkptfd(int fd) { fdChkpt = fd; }
 
     // Gets the free page
     // Each page is segmented by PAGE_SIZE, so it checks the pageInfo
@@ -149,14 +169,22 @@ class Database
     DbRetVal getProcessTableMutex(bool procAccount = true);
     DbRetVal releaseProcessTableMutex(bool procAccount = true);
 
+    int initPrepareStmtMutex();
+    DbRetVal getPrepareStmtMutex(bool procAccount = true);
+    DbRetVal releasePrepareStmtMutex(bool procAccount = true);
+
     DbRetVal recoverMutex(Mutex *mut);  
     
     int procSlot;
     void setProcSlot(int slot) { procSlot =slot;}
     //checks whether the ptr falls in the range of the database file size
     bool isValidAddress(void *ptr);
+    DbRetVal checkPoint();
+    DbRetVal recoverUserDB();
+    DbRetVal recoverSystemDB();
     friend class DatabaseManagerImpl;
     friend class Table;
+    friend class TreeIndex;
     friend class HashIndex;
 
 };

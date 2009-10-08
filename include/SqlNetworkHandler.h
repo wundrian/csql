@@ -25,20 +25,20 @@
 #include<SqlConnection.h>
 class SqlNetworkHandler
 {
-
-
     DbRetVal applyExecPackets(List sList, List pList);
     public:
-    static void setParamValues(AbsSqlStatement *stmt, int parampos, DataType type, int length, char *value);
     static List stmtList;
     static List tableNameList;
     static AbsSqlConnection *conn;
     static SqlApiImplType type;
     static int stmtID;
     static int sockfd;
-    void fillErrorString(ResponsePacket *rpkt);
-    void *process(PacketHeader &header, char *buffer);
+    void * process(PacketHeader &header, char *buffer);
+    DbRetVal servePacket(PacketHeader &header, void *rpkt);
+    DbRetVal sendResponse(void *rpkt);
     void * processSqlConnect(PacketHeader &header, char *buffer);
+    void * processSqlDisconnect(PacketHeader &header);
+    void * processSqlExecuteDirect(PacketHeader &header, char *buffer);
     void * processSqlPrepare(PacketHeader &header, char *buffer);
     void * processSqlExecute(PacketHeader &header, char *buffer);
     void * processSqlFetch(PacketHeader &header);
@@ -51,9 +51,12 @@ class SqlNetworkHandler
     void * processSqlShowTables(PacketHeader &header, char *buffer);
     void * processSqlIsTablePresent(PacketHeader &header, char *buffer);
     void * processSqlLoadRecords(PacketHeader &header, char *buffer);
+    DbRetVal closeConnection();
     static AbsSqlConnection *createConnection(SqlApiImplType type);   
     static AbsSqlStatement *createStatement(SqlApiImplType type);   
-    
+    static void setParamValues(AbsSqlStatement *stmt, int parampos, DataType type, int length, char *value);
+    void fillErrorString(ResponsePacket *rpkt);
+    DbRetVal send(NetworkPacketType type, char *buf, int len);
 };
 
 #endif

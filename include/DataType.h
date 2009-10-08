@@ -1,23 +1,15 @@
 /***************************************************************************
- *   Copyright (C) 2007 by www.databasecache.com                           *
- *   Contact: praba_tuty@databasecache.com                                 *
  *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
+ *    Copyright (C) Lakshya Solutions Ltd. All rights reserved.            *
  *                                                                         *
- *   This program is distributed in the hope that it will be useful,       *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
- *   GNU General Public License for more details.                          *
- *                                                                         *
-  ***************************************************************************/
+ ***************************************************************************/
+
 #ifndef DATATYPE_H
 #define DATATYPE_H
 #include<sqlext.h>
 #include<sqltypes.h>
 #include<ErrorType.h>
+#include<Config.h>
 //#include<os.h>
 typedef int JulianRep;
 
@@ -65,12 +57,13 @@ enum ComparisionOp {
     OpGreaterThan,
     OpGreaterThanEquals,
     OpLike, // for Like operator
+    OpIsNull,
     OpInvalidComparisionOp
 };
 static char CompOpNames[][20] =
 {
     "Equals", "NotEquals", "LessThan", "LessThanEquals", "GreaterThan", 
-    "GreaterThanEquals", "Like", "Invalid"
+    "GreaterThanEquals", "Like", "isNULL", "Invalid"
 };
 
 
@@ -98,19 +91,21 @@ class AllDataType
     inline static long size(DataType type, int length =0);
     static char* getSQLString(DataType type);
     static SQLSMALLINT convertToSQLType(DataType type);
-    static SQLSMALLINT convertToSQL_C_Type(DataType type);
-    static DataType convertFromSQLType(SQLSMALLINT type);
+    static SQLSMALLINT convertToCSQLSQLType(DataType type);
+    static SQLSMALLINT convertToSQL_C_Type(DataType type,TDBInfo tdbname=mysql);
+    static DataType convertFromSQLType(SQLSMALLINT type,int length=0, int scale=0, TDBInfo tdbname=mysql);
 
-    inline static void copyVal(void* dest, void *src, DataType type, int length = 0);
+    inline static void copyVal(void* dest, void *src, DataType type, int length = 0,int dbFlag=0);
+    inline static void copyZeroVal(void* dest, DataType type, int length = 0);
+    inline static void cachecopyVal(void* dest, void *src, DataType type, int length = 0,int dbFlag=0);
     inline static void addVal(void* dest, void *src, DataType type);
-    static void divVal(void* dest, int src, DataType type);
+    static void divVal(double* dest, int src, DataType type);
     static void subVal(void* dest, void *src, DataType type);
     static void mulVal(void* dest, void *src, DataType type);
     static void mudVal(void* dest, void *src, DataType type);
     static void divVal(void* dest, void *src, DataType type);
     static void increment(void* dest, void *src, DataType type);
     static bool isValueZero(void* dest, DataType type);
-
 
     inline static bool compareVal(void *src1, void *src2, ComparisionOp op,
                            DataType type, long length = 0);
@@ -137,7 +132,7 @@ class AllDataType
     static void convertToByteInt(void* dest, void* src, DataType srcType);
     static void convertToFloat(void* dest, void* src, DataType srcType);
     static void convertToDouble(void* dest, void* src, DataType srcType);
-    static void convertToString(void* dest, void* src, DataType srcType, int length=0);
+    static void convertToString(void* dest, void* src, DataType srcType, int length=0,TDBInfo tdbname=mysql);
     static void convertToDate(void* dest, void* src, DataType srcType);
     static void convertToTime(void* dest, void* src, DataType srcType);
     static void convertToTimeStamp(void* dest, void* src, DataType srcType);
@@ -148,9 +143,8 @@ class AllDataType
 
     static void* alloc(DataType type, int length =0);
     static DbRetVal strToValue(void *dest, char *src, DataType type, int length=0);
-    static int printVal(void *src, DataType type, int length);
-
-
+    static int printVal(void *src, DataType type, int length,int dbFlag=0);
+    inline static bool isValidFieldForAvg(DataType type);
 };
 
 
@@ -317,6 +311,9 @@ class Date {  // The class a user would declare to hold date
     *It should of the format "mm/dd/yyyy"
     */
     int parseFrom(const char *s);
+
+    static void changeToCsqlFormat(char *src);
+
 
     Date &operator++() { julianDate++; return *this; }
     Date &operator--() { julianDate--; return *this; }
@@ -636,6 +633,8 @@ day".
     */
 
     int parseTimeFrom(const char *s) { return time.parseFrom(s); }
+    
+    static void changeToCsqlFormat(char *src);
 
     int parseFrom(const char *s);
     friend int  operator<(const TimeStamp &d1, const TimeStamp &d2);

@@ -7,10 +7,10 @@
 #ifndef MUTEX_H
 #define MUTEX_H
 #include<os.h>
-typedef unsigned int Lock;
+typedef int Lock;
 class Mutex
 {
-    int noOfRead;
+
     #if defined(sparc) || defined(i686) || defined (x86_64)
     Lock lock;
     #else
@@ -21,13 +21,21 @@ class Mutex
     Mutex();
     int init();
     int init(char *name);
-    int tryLock(int tries=0, int waitmsecs=0,bool share=false);
-    int getLock(int procSlot, bool procAccount=true,bool share=false);
-    int releaseLock(int procSlot, bool procAccount=true,bool share=false);
+    int tryLock(int tries=0, int waitmsecs=0);
+    int getLock(int procSlot, bool procAccount=true);
+    int releaseLock(int procSlot, bool procAccount=true);
+    int tryShareLock(int tries=0, int waitmsecs=0,bool share=false,bool isDelete=false);
+    int getShareLock(int procSlot, bool procAccount=true);
+    int getExclusiveLock(int procSlot, bool procAccount=true,bool isDelete=false);
+    int releaseShareLock(int procSlot, bool procAccount=true);
     int destroy();
     int recoverMutex();
     static int CASL(long *ptr, long oldVal, long newVal);
     static int CAS(int *ptr, int oldVal, int newVal);
+    int getLockVal(){ return lock; }
+    void print() {
+        printf("Mutex: %d %s\n", lock, name);
+    }
 };
 
 #endif

@@ -1,18 +1,9 @@
 /***************************************************************************
- *   Copyright (C) 2007 by www.databasecache.com                           *
- *   Contact: praba_tuty@databasecache.com                                 *
  *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
+ *    Copyright (C) Lakshya Solutions Ltd. All rights reserved.            *
  *                                                                         *
- *   This program is distributed in the hope that it will be useful,       *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
- *   GNU General Public License for more details.                          *
- *                                                                         *
-  ***************************************************************************/
+ ***************************************************************************/
+
 #ifndef ERROR_TYPE_H
 #define ERROR_TYPE_H
 /**
@@ -25,6 +16,7 @@
 
 enum DbRetVal
 {
+    ErrNullValues    =  1, //used in evaluate on null values 
     OK               =  0, /**< OK. No error. Operation succeded. */
     ErrSysFatal      = -1, 
     ErrSysInit       = -2,
@@ -56,8 +48,11 @@ enum DbRetVal
     ErrSyntax        = -28,
     ErrNotPrepared   = -29,
     ErrNotEmpty      = -30,
-
+    ErrReadOnlyCache = -31,
+    ErrNoPeer        = -32,
     ErrAutoIncUpdate = -33,
+    ErrForeignKeyInsert=-34,
+    ErrForeignKeyDelete=-35,
 //  add new error type here
     ErrUnknown       = -98,
     ErrWarning       = -99,

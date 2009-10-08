@@ -25,14 +25,19 @@
 #include<Debug.h>
 #include<DatabaseManagerImpl.h>
 #include<Predicate.h>
+
+#ifndef JOINTYPE
+#define JOINTYPE
 enum JoinType
 {
     INNER_JOIN = 1,
-    RIGHT_JOIN,
     LEFT_JOIN,
+    RIGHT_JOIN,
     FULL_JOIN,
     UNKNOWN_JOIN
 };
+#endif
+
 class JoinProjFieldInfo
 {
     public:
@@ -83,6 +88,12 @@ class JoinTableImpl:public Table
     Table *leftTableHdl;
     Table *rightTableHdl;
     bool availableLeft;
+    bool isFirstFetch;
+    bool isReturnNull;
+    bool isOuterJoin;
+    bool isLeftRecOver;
+    bool isFirstCall;
+    bool leftSideFail;
 
     JoinType jType;
     ListIterator rsIter;
@@ -91,6 +102,7 @@ class JoinTableImpl:public Table
     DbRetVal copyValuesToBindBuffer(void *tuple);
     JoinCondition jCondition;
     Predicate *pred;
+    List predList;
 
     public:
     JoinTableImpl();
@@ -100,7 +112,7 @@ class JoinTableImpl:public Table
 
     void setTable(Table *left, Table *right)
     { leftTableHdl = left; rightTableHdl = right; }
-    int getFldPos(char *name){}
+    int getFldPos(char *name){ return 0;}
     DbRetVal closeScan();
     void setJoinType(JoinType type) { jType = type; }
     //binding
@@ -111,9 +123,10 @@ class JoinTableImpl:public Table
      void setCondition(Condition *p)
      { if (p) pred = p->getPredicate(); else pred = NULL;}
 
-    DbRetVal markFldNull(const char *name){}
-    DbRetVal markFldNull(int colpos){}
+    DbRetVal markFldNull(const char *name){ return ErrBadCall;}
+    DbRetVal markFldNull(int colpos){ return ErrBadCall;}
     bool isFldNull(const char *name);
+    bool isFldNullInt(const char *name);
     bool isFldNull(int colpos){return false;}
     void clearFldNull(const char *name){}
     void clearFldNull(int colpos){}
@@ -128,13 +141,16 @@ class JoinTableImpl:public Table
     DbRetVal lock(bool shared) { return ErrBadCall; }
     DbRetVal unlock(){ return ErrBadCall; }
     DbRetVal setUndoLogging(bool flag) { return ErrBadCall; }
-    void printSQLIndexString(){ };
+    void printSQLIndexString(FILE *fp, int fd){ };
+    void printSQLForeignString(){}
     List getFieldNameList();
     char* getName() { return NULL; }
-
+    void *fetchRightFail();
+    DbRetVal compact(){ return OK;}
     //bool evaluate();
     DbRetVal execute();
     void* fetch();
+    void* fetchInt();
     void* fetch(DbRetVal &rv);
     void* fetchNoBind();
     void* fetchNoBind(DbRetVal &rv);
@@ -143,7 +159,7 @@ class JoinTableImpl:public Table
     long numTuples();
     void printInfo();
     void *getBindFldAddr(const char *name);
-
+    bool isFKTable(){return false;}
     bool isTableInvolved(char *tblName);
     bool pushPredicate(Predicate *pred);
     void setPredicate(Predicate *pred);

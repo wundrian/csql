@@ -26,7 +26,8 @@ enum TransStatus
     TransCommitting       =  1,
     TransAborting         =  2,
     TransRunning          =  3,
-    TransUnknown          =  4
+    TransUnknown          =  4,
+    TransReserved         =  5
 };
 class TransHasNode;
 class LockManager;
@@ -39,7 +40,10 @@ enum OperationType
     UpdateOperation = 2,
     InsertHashIndexOperation = 3,
     UpdateHashIndexOperation = 4,
-    DeleteHashIndexOperation = 5
+    DeleteHashIndexOperation = 5,
+    InsertTreeIndexOperation = 6,
+    UpdateTreeIndexOperation = 7,
+    DeleteTreeIndexOperation = 8
 };
 class UndoLogInfo
 {
@@ -70,6 +74,17 @@ class HashUndoLogInfo
     { metaData_ = tuple_ = keyPtr_ = hChunk_ = bucket_ = NULL; }
 };
 
+class TreeUndoLogInfo
+{
+    public:
+    void *metaData_;
+    void *tuple_;
+    //void *keyPtr_;
+    void *cIndex_;//CINDEX ptr
+    TreeUndoLogInfo()
+    { metaData_ = tuple_ = cIndex_ = NULL; }
+};
+
 class Transaction
 {
     public:
@@ -94,6 +109,7 @@ class Transaction
     DbRetVal appendUndoLog(Database *sysdb, OperationType type, void *data, size_t size);
     DbRetVal appendLogicalUndoLog(Database *sysdb, OperationType type, void *data, size_t size, void *indexPtr);
     DbRetVal appendLogicalHashUndoLog(Database *sysdb, OperationType type, void *data, size_t size);
+    DbRetVal appendLogicalTreeUndoLog(Database *sysdb, OperationType type, void *data, size_t size);
     UndoLogInfo* createUndoLog(Database *sysdb, OperationType type, void *data,
                        size_t size, DbRetVal *rv);
     void addAtBegin(UndoLogInfo* logInfo);
@@ -113,7 +129,9 @@ class TransactionManager
     //Transaction *trans;
 
     Transaction *firstTrans;
-
+    IsolationLevel getIsoLevel() {
+        if(firstTrans) return firstTrans->isoLevel_; 
+        else return READ_COMMITTED;}
     void setFirstTrans(Transaction *trans);
     void printUsageStatistics();
     void printDebugInfo(Database *sysdb);

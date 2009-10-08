@@ -31,6 +31,7 @@ class SqlStatement: public AbsSqlStatement
 {
     public:
     SqlStatement();
+    ~SqlStatement();
     /** sets connection handle to be used for subsequent operations
     *   @param con SqlConnection*
     */
@@ -45,6 +46,9 @@ class SqlStatement: public AbsSqlStatement
     * @returns DbRetVal
     */
     DbRetVal prepare(char *stmt);
+
+    /** Executes directly for the non parameterized statements **/
+    DbRetVal executeDirect(char *stmt);
 
     char* getTableName();
 
@@ -114,6 +118,7 @@ class SqlStatement: public AbsSqlStatement
     * @returns address void*
     */
     void* getFieldValuePtr( int pos );
+    void* getFieldValuePtr( char *name );
 
     /**Frees all the resources held for the sql statement. Needs to be called before calling prepare again on the same statement handle.
     * @returns DbRetVal
@@ -234,19 +239,29 @@ class SqlStatement: public AbsSqlStatement
     * @return bool true if it is prepared, false otherwise
     */
     List getTableNameList();
+    List getFieldNameList(const char *tblName);
+    DbRetVal getFieldInfo(const char *tblName, const char *fldName, FieldInfo *&info);
     bool isPrepared();
     StatementType getStmtType() { return pData.getStmtType(); }
     bool isFldNull(int pos); 
     bool isFldNull(char *name); 
     void setNull(int pos);
     int getFldPos(char *name);
+    ResultSetPlan getResultSetPlan(){ return stmt->getResultSetPlan();}
     List getAllTableNames(DbRetVal &ret);
+    List getAllUserNames(DbRetVal &ret);
+    int getNoOfPagesForTable(char *tblName);
+    DbRetVal loadRecords(char *tblName, void *buffer);
+    DbRetVal pasteRecords(char *tblName, void *buffer);
     void setLoading(bool flag);
+    void getProjFieldType(int *data);
+    void setCachedStmt(bool flag){ isCachedStmt= flag; }
     private:
     SqlConnection *sqlCon;
     Statement *stmt;
     ParsedData pData;
     bool isPrepd;
+    bool isCachedStmt;
     friend class SqlFactory;
 };
 

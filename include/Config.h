@@ -17,11 +17,7 @@ enum CacheMode {
 enum TDBInfo
 {
     mysql=0,
-    postgres,
-    oracle,
-    sybase,
-    db2,
-    sqlserver,
+    postgres
 };
 
 class ConfigValues
@@ -33,7 +29,6 @@ class ConfigValues
     char tableConfigFile[MAX_FILE_PATH_LEN];
     char dsConfigFile[MAX_FILE_PATH_LEN];// DSN Config file
     char stderrFile[MAX_FILE_PATH_LEN];
-    char replConfigFile[MAX_FILE_PATH_LEN];
     char conflResoFile[MAX_FILE_PATH_LEN];
     
     bool isDurable;
@@ -41,7 +36,6 @@ class ConfigValues
     bool isCsqlSqlServer;
     bool isCache;
     bool isTwoWay;
-    bool isReplication;
     
     int siteID;
     int sysDbKey;
@@ -69,7 +63,6 @@ class ConfigValues
     int port;
     int nwResponseTimeout;
     int nwConnectTimeout;
-    int maxReplSites;
 
     int msgKey;
     int asyncMsgMax;
@@ -84,7 +77,6 @@ class ConfigValues
         strcpy(tableConfigFile, "/tmp/csql/csqltable.conf");
         strcpy(dsConfigFile,"/tmp/csql/csqlds.conf"); // DSN Config file
         strcpy(stderrFile, "stderr");
-        strcpy(replConfigFile, "/tmp/csql/csqlnw.conf");
         strcpy(conflResoFile, "/tmp/csql/ConflResoFile.txt");
         
         isDurable = false;        
@@ -92,7 +84,6 @@ class ConfigValues
         isCsqlSqlServer = false;
         isCache = false;
         isTwoWay=false;
-        isReplication = false;        
        
         siteID=1;
         sysDbKey = 2222;
@@ -120,7 +111,6 @@ class ConfigValues
         port = 5678;
         nwResponseTimeout=3;
         nwConnectTimeout=5;
-        maxReplSites=1;
         msgKey=-1;
         asyncMsgMax = 8192; //default for linux 
         shmKeyForId = -1;
@@ -165,15 +155,12 @@ class Config
     inline char* getDsConfigFile() { return cVal.dsConfigFile; } 
     inline char* getTableConfigFile() { return cVal.tableConfigFile; }
     inline char* getStderrFile() { return cVal.stderrFile; }
-    inline bool useReplication() { return cVal.isReplication; }
     inline bool useDurability() { return cVal.isDurable; }
     inline int getDurableMode() { return cVal.durableMode; }
     inline bool useCsqlSqlServer() { return cVal.isCsqlSqlServer; }
     inline int getPort() { return cVal.port; }
-    inline char* getReplConfigFile() { return cVal.replConfigFile; }
     inline char* getConflResoFile() { return cVal.conflResoFile; }
     inline long getMaxQueueLogs() { return cVal.maxQueueLogs; }
-    inline int getNoOfReplSites() { return cVal.maxReplSites; }
     inline int getMsgKey() { return cVal.msgKey; }
     inline int getAsyncMsgMax() { return cVal.asyncMsgMax; }
     inline int getShmIDKey() { return cVal.shmKeyForId; }
@@ -191,32 +178,5 @@ class Conf
     static Config config;
     static Logger logger;
 };
-
-class SiteInfoData
-{
-    public:
-    int siteId;
-    char hostName[IDENTIFIER_LENGTH];
-    int port;
-    char mode[32];
-    SiteInfoData() { siteId = -1; port = 0; hostName[0]='\0'; mode[0]='\0';};
-};
-
-
-class SiteInfo
-{
-    DbRetVal populateSiteInfoList();
-    public:
-    List siteInfoList;
-    List asyncSiteList;
-    List syncSiteList;
-    bool isAsyncSitePresent();
-    bool isSyncSitePresent();
-    SiteInfo() { populateSiteInfoList(); }
-    ~SiteInfo();
-    List & getSiteInfoList() { return siteInfoList; }
-    List & getSyncSiteInfoList() { return syncSiteList; }
-    List & getAsyncSiteInfoList() { return asyncSiteList; }
-};    
 
 #endif
