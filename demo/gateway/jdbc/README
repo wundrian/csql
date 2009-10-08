@@ -4,7 +4,7 @@ This contains an example program that demonstrates usage of jdbc interface throu
 
 What it does?
 -------------
-It inserts 10 rows in cached table T1.
+It inserts 10 rows in cached table t1.
 Select rows with f1 value 0 to 9 and displays
 Update rows where f1 value is 0,2,4,6,8
 Select rows with f1 value 0 to 9 and displays
@@ -35,9 +35,9 @@ How to run
     $ csqlserver
 Note# tdb->target database
 
-5. Create table T1 with two fields f1 integer(primary key) and f2 of length 10 string in mysql and cache the table.
+5. Create table t1 with two fields f1 integer(primary key) and f2 of length 10 string in mysql and cache the table.
 
-        $ cachetable -t T1
+        $ cachetable -t t1
 
 6.  Run the class file created by make
 
