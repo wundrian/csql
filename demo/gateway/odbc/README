@@ -23,11 +23,21 @@ How to run
 
         $ . ./setupenv.ksh
 
-3. Create table T1 with two fields f1 integer(primary key) and f2 char(10) in mysql and cache the table.
+3. Add an entry into csqlds.conf using csqlds tool mentioned as below.
+
+    $ csqlds -U <tdbusername> -P <password> -D <dsnname> -N <tdbname> -a
+
+Note# tdb->target database
+
+4. Start the server
+
+    $  csqlserver
+
+5. Create table T1 with two fields f1 integer(primary key) and f2 char(10) in mysql and cache the table.
 
         $ cachetable -t T1
 
-4.  Run the class file created by make
+6.  Run the class file created by make
         $ ./GwStmt
 
 Output of example:

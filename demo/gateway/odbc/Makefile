@@ -2,8 +2,8 @@ OSNAME = $(shell  uname -s)
 PlatForm=supported
 
 ifeq ($(OSNAME), SunOS)
-CPlus = CC
-CPlusFlags = -O2 -w -mt -xarch=v8
+CPlus = g++
+CPlusFlags = -O2 -w 
 SYSLIBS=-ldl -lnsl -lsocket  -lposix4
 else
 ifeq ($(OSNAME), Linux)
