@@ -29,7 +29,7 @@ int  InsertTest(SQLHANDLE env,SQLHANDLE dbc,SQLHANDLE stmt)
       int f1=50; // f1 field
       char f2[50]= "Praba";
       SQLINTEGER slen = SQL_NTS;
-      ret = SQLPrepare(stmt,(unsigned char*)"INSERT INTO T1 VALUES(?,?)",SQL_NTS);
+      ret = SQLPrepare(stmt,(unsigned char*)"INSERT INTO t1 VALUES(?,?)",SQL_NTS);
       checkrc(ret,__LINE__);
 
       // BIND PARAMETER FOR ALL THE FIELD
@@ -54,7 +54,7 @@ int  InsertTest(SQLHANDLE env,SQLHANDLE dbc,SQLHANDLE stmt)
       printf("Total row inserted=%d\n",count);
   }
 //***********************************************************************
-// FETCH ROWS FROM THE TABLE "T1"......select * from T1;
+// FETCH ROWS FROM THE TABLE "t1"......select * from T1;
 int FetchTest(SQLHANDLE env, SQLHANDLE dbc, SQLHANDLE stmt)
 {
     
@@ -62,7 +62,7 @@ int FetchTest(SQLHANDLE env, SQLHANDLE dbc, SQLHANDLE stmt)
       int f1=10; // f1 field
       char f2[50]= "jitendra";
 
-     ret = SQLPrepare(stmt,(unsigned char*)"SELECT * FROM T1",SQL_NTS);
+     ret = SQLPrepare(stmt,(unsigned char*)"SELECT * FROM t1",SQL_NTS);
      checkrc(ret,__LINE__);
 
     ret = SQLBindCol(stmt,1,SQL_C_SLONG,&f1,0,NULL);
@@ -75,7 +75,7 @@ int FetchTest(SQLHANDLE env, SQLHANDLE dbc, SQLHANDLE stmt)
     int j, count=0;
     ret = SQLExecute(stmt);
     checkrc(ret,__LINE__);
-    printf("Fetching starts on table  T1 :\n");
+    printf("Fetching starts on table  t1 :\n");
     
     while(SQL_SUCCEEDED(ret = SQLFetch(stmt)))
     {

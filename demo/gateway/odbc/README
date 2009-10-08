@@ -4,7 +4,7 @@ This contains an example program that demonstrates usage of odbc interface throu
 
 What it does?
 -------------
-It inserts 10 rows in cached table T1.
+It inserts 10 rows in cached table t1.
 Select rows with f1 value 51 to 60 and displays
 
 
@@ -33,9 +33,9 @@ Note# tdb->target database
 
     $  csqlserver
 
-5. Create table T1 with two fields f1 integer(primary key) and f2 char(10) in mysql and cache the table.
+5. Create table t1 with two fields f1 integer(primary key) and f2 char(10) in mysql and cache the table.
 
-        $ cachetable -t T1
+        $ cachetable -t t1
 
 6.  Run the class file created by make
         $ ./GwStmt
@@ -44,7 +44,7 @@ Output of example:
 ------------------
 Connected to the Data Source SUCCESSFULLY..
 Total row inserted=10
-Fetching starts on table  T1 :
+Fetching starts on table  t1 :
  F1=51  F2=Praba
  F1=52  F2=Praba
  F1=53  F2=Praba
