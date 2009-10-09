@@ -67,7 +67,8 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
             SqlGwConnection *gwconn = new SqlGwConnection();
             if (isSqlLogNeeded) {
                 AbsSqlConnection *sqllogconn = new SqlLogConnection();
-                gwconn->setInnerConnection(sqlCon);
+                sqllogconn->setInnerConnection(sqlCon);
+                gwconn->setInnerConnection(sqllogconn);
             } else gwconn->setInnerConnection(sqlCon);
             
             //createAdapters for MultiDSN
