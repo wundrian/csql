@@ -104,8 +104,7 @@ DbRetVal verifyCount(const char *tblName, long numTuples)
     if (rv != OK) { delete adConn; return ErrSysInit; }
     AbsSqlStatement *adStmt = SqlFactory::createStatement(CSqlAdapter);
     adStmt->setConnection(adConn);
-    float count = 0;
-    int count1=0;
+    long long count1=0;
     int rows = 0;
     sprintf(statement, "select count(*) from %s;", tblName);
     rv = adConn->beginTrans();
@@ -134,7 +133,7 @@ DbRetVal verifyCount(const char *tblName, long numTuples)
     printf("-------------------+-------------------+-------------------+\n");
     printf("  Data             |  In CSQL          |  In TargetDB      |\n");
     printf("-------------------+-------------------+-------------------+\n");
-    printf("  No. Of Records   |  %-6ld           |  %-6d           |\n", numTuples, count1);
+    printf("  No. Of Records   |  %-6ld           |  %-6ld          |\n", numTuples, count1);
     printf("-------------------+-------------------+-------------------+\n");
     delete adStmt; delete adConn;
     return OK;
