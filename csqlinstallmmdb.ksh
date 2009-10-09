@@ -4,6 +4,12 @@
 #TODO:validate it is project root by checking some files
 root_dir=`pwd`
 install_dir=`grep "prefix =" Makefile|tail -1|awk '{ print $3 }'`
+if [ -z "$install_dir" ]
+then
+    echo "install_dir is not set properly."
+    exit 1
+fi
+
 echo "installdir is ${install_dir}"
 #cd src/sql
 #sed -e "s/getc([ ]*yyin[ ]*)/(*lexInput++)/1" dmllex.cxx >tmp.c
