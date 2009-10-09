@@ -827,7 +827,7 @@ void MetadataStatement::freeMetadata()
    if(isPlanFreed) return;
    dataListIter.reset();
    ListNode *head= (ListNode *)dataListIter.getCurrentListNode();
-   if(head && (plan != GetTableType )){
+   if(head && (plan != GetTableType && plan != GetCatalogs)){
        List *list = new List(head);
        list->reset();
        delete list;
