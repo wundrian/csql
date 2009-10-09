@@ -391,6 +391,7 @@ DbRetVal SelStatement::resolve()
             }
             FieldValue *newVal = new FieldValue();
             strcpy(newVal->fldName,name->fldName);
+            strcpy(newVal->defValBuf, fInfo->defaultValueBuf);
             newVal->parsedString = NULL;
             newVal->paramNo = 0;
             newVal->aType = name->aType;
@@ -399,6 +400,7 @@ DbRetVal SelStatement::resolve()
             newVal->isPrimary = fInfo->isPrimary;
             newVal->isUnique = fInfo->isUnique;
             newVal->isAutoIncrement = fInfo->isAutoIncrement;
+            newVal->isDefault = fInfo->isDefault;
 
             if (name->aType == AGG_COUNT) {
                 newVal->type = typeInt;
@@ -1180,8 +1182,10 @@ DbRetVal SelStatement::getProjFldInfo (int projpos, FieldInfo *&fInfo)
     fInfo->isPrimary = value->isPrimary;
     fInfo->isUnique = value->isUnique;
     fInfo->isAutoIncrement= value->isAutoIncrement;
-    if (!fInfo->aType) {
+    fInfo->isDefault = value->isDefault;
+    if (fInfo->aType == AGG_UNKNOWN) {
         strcpy(fInfo->fldName, value->fldName);
+        if (fInfo->isDefault) strcpy(fInfo->defaultValueBuf, value->defValBuf);
         return OK;
     }
     switch(fInfo->aType)

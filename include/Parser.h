@@ -49,19 +49,21 @@ enum StatementType
 struct FieldValue
 {
     char fldName[IDENTIFIER_LENGTH];
+    char defValBuf[DEFAULT_VALUE_BUF_LENGTH]; 
     char *parsedString;
     void *value;
     int paramNo; // 0 ->not a param. It stores the param position
     DataType type;
     AggType aType;
     int length;
+    size_t offset;
     bool isNullable;
     bool isAllocVal;
     bool isInResSet;
-    size_t offset;
     bool isPrimary;
     bool isUnique;
     bool isAutoIncrement;
+    bool isDefault;
 };
 
 
