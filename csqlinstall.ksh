@@ -23,7 +23,6 @@ rm ${install_dir}/lib/*.a
 cd ${install_dir}/include
 
 cd ${install_dir}/bin
-rm genkey
 
 mkdir -p ${install_dir}/sample
 cp  ${root_dir}/setupenv.ksh.install ${install_dir}/setupenv.ksh
@@ -34,7 +33,7 @@ cp  ${root_dir}/trigger.sql ${install_dir}/sample
 cp  ${root_dir}/trigger.psql ${install_dir}/sample
 
 cp -R ${root_dir}/README ${install_dir}
-cp -R ${root_dir}/LICENSE ${install_dir}
+cp -R ${root_dir}/COPYING ${install_dir}
 cp -R ${root_dir}/ChangeLog ${install_dir}
 
 
