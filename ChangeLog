@@ -73,3 +73,24 @@ CSQL- Version 2.5 - Beta
 3.Separate MMDB and Cache package
 4.Bug Fixes
 5.Documentation Updates
+
+CSQL- Version 2.7 - Beta
+------------------------
+1.Logical Undo logging for Tree Index
+2.JDBC/ODBC 3.0 Support 
+3.Command history for CSQL tool
+4.cachetable tool option to display cached table information
+5.Equi Join
+6.Support for ORDER BY clause
+7.Support for DISTINCT clause
+8.Support for LEFT OUTER JOIN
+9.Multiple Data source caching
+10.Foreign Key
+11.Support for default value NOW for system date and time 
+12.LIMIT and OFFSET Support
+13.INSERT INTO and CREATE TABLE AS SELECT support
+14.CREATE/DROP USER
+15.Statement Caching
+16.Durable Tables
+17.Bug Fixes
+18.Documentation updates

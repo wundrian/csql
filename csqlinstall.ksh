@@ -34,6 +34,7 @@ cp  ${root_dir}/trigger.psql ${install_dir}/sample
 
 cp -R ${root_dir}/README ${install_dir}
 cp -R ${root_dir}/COPYING ${install_dir}
+cp -R ${root_dir}/AUTHORS ${install_dir}
 cp -R ${root_dir}/ChangeLog ${install_dir}
 
 
