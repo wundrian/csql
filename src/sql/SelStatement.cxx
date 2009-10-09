@@ -391,7 +391,6 @@ DbRetVal SelStatement::resolve()
             }
             FieldValue *newVal = new FieldValue();
             strcpy(newVal->fldName,name->fldName);
-            strcpy(newVal->defValBuf, fInfo->defaultValueBuf);
             newVal->parsedString = NULL;
             newVal->paramNo = 0;
             newVal->aType = name->aType;
@@ -401,7 +400,9 @@ DbRetVal SelStatement::resolve()
             newVal->isUnique = fInfo->isUnique;
             newVal->isAutoIncrement = fInfo->isAutoIncrement;
             newVal->isDefault = fInfo->isDefault;
-
+            if (newVal->isDefault) 
+                strcpy(newVal->defValBuf, fInfo->defaultValueBuf);
+            else newVal->defValBuf[0] ='\0';
             if (name->aType == AGG_COUNT) {
                 newVal->type = typeInt;
                 newVal->length = sizeof(int);

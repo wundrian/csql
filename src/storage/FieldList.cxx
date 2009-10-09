@@ -155,7 +155,8 @@ DbRetVal FieldList::getFieldInfo(const char *fldName, FieldInfo *&info)
         info->type   = iter->fldDef.type_;
         info->offset = iter->fldDef.offset_;
         info->isDefault = iter->fldDef.isDefault_;
-        strcpy(info->defaultValueBuf, iter->fldDef.defaultValueBuf_);
+        if (info->isDefault)
+            strcpy(info->defaultValueBuf, iter->fldDef.defaultValueBuf_);
         info->isNull = iter->fldDef.isNull_;
         info->isPrimary = iter->fldDef.isPrimary_;
         info->isUnique = iter->fldDef.isUnique_;
