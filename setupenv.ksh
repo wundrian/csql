@@ -11,5 +11,3 @@ mkdir -p /tmp/csql/log
 mkdir -p /tmp/csql/db
 touch /tmp/csql/csqlds.conf
 touch /tmp/csql/csqltable.conf
-touch /tmp/csql/csqlnw.conf
-
