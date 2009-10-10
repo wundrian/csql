@@ -42,5 +42,9 @@ find ${install_dir}/demo -name "CVS" -exec rm -rf {} \; 2>/dev/null
 
 cp -R ${root_dir}/docs ${install_dir}
 find ${install_dir}/docs -name "CVS" -exec rm -rf {} \; 2>/dev/null
+
+cp -R ${root_dir}/scripts ${install_dir}
+find ${install_dir}/scripts -name "CVS" -exec rm -rf {} \; 2>/dev/null
+
 cd ${root_dir}
 echo "Build completed Successfully"
