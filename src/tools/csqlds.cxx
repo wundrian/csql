@@ -32,7 +32,7 @@ void printUsage()
 DbRetVal removeEntryFromCsqlds(char *dsn);
 DbRetVal addEntryToCsqlds(char *dsn, char *uname, char *pwd, char *tbdname);
 Config Conf::config;
-bool shouldadd=false;
+int shouldadd=0;
 int main(int argc, char **argv)
 {
     Conf::config.readAllValues(os::getenv("CSQL_CONFIG_FILE"));
@@ -68,8 +68,8 @@ int main(int argc, char **argv)
                          break; 
                        }
             case '?' : {showmsg=true; break; } //print help 
-            case 'r' : { shouldadd=false; break;} 
-            case 'a' : { shouldadd=true; break; } 
+            case 'a' : { shouldadd=1; break; } 
+            case 'r' : { shouldadd=2; break;} 
             default: opt=10; 
         }
     }//while options
@@ -84,7 +84,7 @@ int main(int argc, char **argv)
         strcpy(password, "NULL");
     }
     
-    if(shouldadd)
+    if(shouldadd == 1)
     {
         if(opt==3){
             addEntryToCsqlds( dsn,username,password,tdbname);
@@ -94,9 +94,13 @@ int main(int argc, char **argv)
             return 0;
         }
            
-    }else
+    }else if (shouldadd == 2)
     {
         removeEntryFromCsqlds(dsn);
+    }else
+    {
+        printf("Invalid option passed\n");
+        printUsage();
     }
     return 0;
 }
