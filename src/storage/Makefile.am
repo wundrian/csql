@@ -1,7 +1,7 @@
 INCLUDES = -I$(top_srcdir)/include $(all_includes)
 METASOURCES = AUTO
 lib_LTLIBRARIES = libcsql.la
-libcsql_la_LDFLAGS = -version-info 2:4:0 -module
+libcsql_la_LDFLAGS = -avoid-version -module
 libcsql_la_SOURCES = Util.cxx FixedHeapAllocator.cxx VarHeapAllocator.cxx Config.cxx HashMap.cxx \
 	BucketIter.cxx TreeIter.cxx BucketList.cxx CatalogTables.cxx Chunk.cxx TableConfig.cxx\
 	ChunkIterator.cxx Condition.cxx Connection.cxx Database.cxx DatabaseManagerImpl.cxx DataType.cxx \
