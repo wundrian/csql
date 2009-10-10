@@ -20,10 +20,6 @@ cd ${root_dir}
 rm ${install_dir}/lib/*.la
 rm ${install_dir}/lib/*.a
 
-cd ${install_dir}/include
-
-cd ${install_dir}/bin
-
 mkdir -p ${install_dir}/sample
 cp  ${root_dir}/setupenv.ksh.install ${install_dir}/setupenv.ksh
 cp  ${root_dir}/csql.conf ${install_dir}/sample
