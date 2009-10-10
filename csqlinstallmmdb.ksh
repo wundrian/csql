@@ -22,14 +22,14 @@ rm ${install_dir}/lib/*.a
 
 mkdir -p ${install_dir}/sample
 cp  ${root_dir}/setupenv.ksh.install ${install_dir}/setupenv.ksh
-cp  ${root_dir}/csql.conf ${install_dir}/sample
 
 cp ${root_dir}/README ${install_dir}/README
 cp ${root_dir}/COPYING ${install_dir}
 cp ${root_dir}/AUTHORS ${install_dir}
 cp ${root_dir}/ChangeLog ${install_dir}
-cp ${root_dir}/csql.conf.mmdb ${install_dir}/csql.conf
+cp ${root_dir}/csql.conf.mmdb ${install_dir}/sample/csql.conf
 cp ${root_dir}/setupenv.ksh.install ${install_dir}/setupenv.ksh
+
 cp -R ${root_dir}/examples ${install_dir}
 find ${install_dir}/examples -name "CVS" -exec rm -rf {} \; 2>/dev/null
 rm -rf ${install_dir}/examples/dbapi
@@ -37,6 +37,7 @@ rm -rf ${install_dir}/examples/dbapi
 cp -R ${root_dir}/docs ${install_dir}
 find ${install_dir}/docs -name "CVS" -exec rm -rf {} \; 2>/dev/null
 
+rm -rf ${install_dir}/demo
 mkdir ${install_dir}/demo
 cp -R ${root_dir}/demo/wisc ${install_dir}/demo
 find ${install_dir}/demo -name "CVS" -exec rm -rf {} \; 2>/dev/null
