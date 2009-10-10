@@ -1,5 +1,4 @@
-
-if [ "$JDK_HOME" == "" ]
+if [ -z "$JDK_HOME" ]
 then
 	echo "Please set JDK_HOME"
 	exit 1
@@ -13,6 +12,15 @@ cp src/Makefile.am.mmdb src/Makefile.am
 make -f Makefile.cvs
 
 ./configure --prefix=`pwd`/install CXXFLAGS="-g  -DMMDB -I$JDK_HOME/include -I$JDK_HOME/include/linux"
+libtoolavailable=`which libtool`
+if [ -z "$libtoolavailable" ]
+then
+    echo "libtool not available. Build may fail"
+else
+    mv libtool libtool.bk
+    ln -s $libtoolavailable libtool
+fi
+
 make
 make install
 ./csqlinstallmmdb.ksh

@@ -1,5 +1,4 @@
 #!/bin/sh
-#if [ "$JDK_HOME" == "" ]
 if [ -z "$JDK_HOME" ]
 then
 	echo "Please set JDK_HOME"
@@ -10,7 +9,7 @@ make -f Makefile.cvs
 #./configure --prefix=`pwd`/install CXXFLAGS="-g  -I$JDK_HOME/include -I$JDK_HOME/include/linux -Wno-write-strings"
 #./configure --prefix=`pwd`/install CXXFLAGS=-g
 libtoolavailable=`which libtool`
-if [ -z "$libtoolavailable" == "" ]
+if [ -z "$libtoolavailable" ]
 then
     echo "libtool not available. Build may fail"
 else
