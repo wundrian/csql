@@ -300,7 +300,7 @@ DbRetVal DropTblStatement::execute(int &rowsAffected)
     IsolationLevel iso = dmgr->txnMgr()->getIsoLevel();
     rv = dmgr->txnMgr()->rollback(dmgr->lockMgr());
     rv = dmgr->txnMgr()->startTransaction(dmgr->lockMgr(),iso);    
-    
+#ifndef MMDB    
     int mode = TableConf::config.getTableMode(tab);
 //    rv = isTableCached(tab);
     if (mode != 0 && mode < 8) {
@@ -322,6 +322,7 @@ DbRetVal DropTblStatement::execute(int &rowsAffected)
         printError(ErrNoPrivilege, "Table %s is cached and replicated. Cannot be dropped.", tab);
         return ErrNoPrivilege;
     }
+#endif
     rv = dbMgr->dropTable(parsedData->getTableName());
     return rv;
 }
