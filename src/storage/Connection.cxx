@@ -35,6 +35,7 @@ char *Connection::getUserName()
 }
 DbRetVal Connection::open(const char *username, const char *password)
 {
+    os::umask(002);
     if (username == NULL || password == NULL ) 
     {
         printError(ErrBadArg, "Username or password should not be NULL\n");

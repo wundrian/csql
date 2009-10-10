@@ -188,6 +188,7 @@ class os
     static bool fileExists(char *fileName);
     static char* strcasestr(char *s1, const char *s2);
     static int getNoOfProcessors();
+    static mode_t umask(mode_t mask);
 };
 
 #endif

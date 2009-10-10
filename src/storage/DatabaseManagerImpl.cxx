@@ -118,12 +118,12 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
         key = Conf::config.getUserDbKey();
     }
     if (!isMmapNeeded || isMmapNeeded && 0 == strcmp(name, SYSTEMDB)) {
-        shm_id = os::shm_create(key, size, 0666);  
+        shm_id = os::shm_create(key, size, 0660);  
         if (-1 == shm_id) {
             if (errno == EEXIST) 
                 printError(ErrOS, "Shared Memory already exists");
             printError(ErrOS, "Shared memory create failed");
-            shm_id = os::shm_open(Conf::config.getSysDbKey(), 100, 0666);
+            shm_id = os::shm_open(Conf::config.getSysDbKey(), 100, 0660);
             os::shmctl(shm_id, IPC_RMID);
             delete systemDatabase_;
             systemDatabase_ = NULL;
@@ -141,7 +141,7 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
             }
         }
         sprintf(dbMapFile, "%s/db.chkpt.data", Conf::config.getDbFile());
-        fd = open(dbMapFile, O_CREAT | O_RDWR, 0666);
+        fd = open(dbMapFile, O_CREAT | O_RDWR, 0660);
         if (-1 == fd) { 
             printError(ErrOS, "Mmap file could not be opened");
             return ErrOS;
@@ -227,12 +227,12 @@ DbRetVal DatabaseManagerImpl::deleteDatabase(const char *name)
     shared_memory_id shm_id = 0;
     if (0 == strcmp(name, SYSTEMDB))
     {
-        shm_id = os::shm_open(Conf::config.getSysDbKey(), 100, 0666);
+        shm_id = os::shm_open(Conf::config.getSysDbKey(), 100, 0660);
         os::shmctl(shm_id, IPC_RMID);
 		delete systemDatabase_;
 		systemDatabase_ = NULL;
     } else {
-        shm_id = os::shm_open(Conf::config.getUserDbKey(), 100, 0666);
+        shm_id = os::shm_open(Conf::config.getUserDbKey(), 100, 0660);
         os::shmctl(shm_id, IPC_RMID);
 		delete db_;
 		db_ = NULL;
@@ -299,7 +299,7 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
     if ( ( ProcessManager::noThreads == 0 && 0 == strcmp(name, SYSTEMDB) || 
           ProcessManager::noThreads == 1 && 0 != strcmp(name, SYSTEMDB) ) &&
           ( !isMmapNeeded || isMmapNeeded && 0 == strcmp(name, SYSTEMDB) ) ) {
-        shm_id = os::shm_open(key, size, 0666);
+        shm_id = os::shm_open(key, size, 0660);
         if (shm_id == -1 )
         {
             printError(ErrOS, "Shared memory open failed");
@@ -320,7 +320,7 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
                 0 != strcmp(name, SYSTEMDB) && isMmapNeeded) {
         //dbFile to be mmapped
         sprintf(dbMapFile, "%s/db.chkpt.data", Conf::config.getDbFile());
-        fd = open(dbMapFile, O_RDWR, 0666);
+        fd = open(dbMapFile, O_RDWR, 0660);
         if (-1 == fd) {
             printError(ErrOS, "Mmap file could not be opened");
             ProcessManager::mutex.releaseLock(-1, false);

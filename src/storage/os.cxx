@@ -347,4 +347,8 @@ int os::getNoOfProcessors()
 {
     return ::sysconf(_SC_NPROCESSORS_ONLN);
 }
+mode_t os::umask(mode_t mask)
+{
+    return::umask(mask);
+}
 
