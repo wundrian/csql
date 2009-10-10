@@ -46,8 +46,7 @@ AggTableImpl::~AggTableImpl()
     while (iter.hasElement())
     {
         elem = (AggFldDef*) iter.nextElement();
-        if(!elem->alreadyBinded) free(elem->bindBuf);
-        //if(elem->bindBuf) { free(elem->bindBuf); elem->bindBuf =NULL; }
+        if(!elem->alreadyBinded) free(elem->bindBuf); 
         delete elem;
     }
     fldList.reset();
@@ -57,7 +56,6 @@ AggTableImpl::~AggTableImpl()
     {
         elem = (AggFldDef*) giter.nextElement();
         if(!elem->alreadyBinded) free(elem->bindBuf);
-        //if(elem->bindBuf) { free(elem->bindBuf); elem->bindBuf =NULL; }
         delete elem;
     }
     fldGroupList.reset();
@@ -122,7 +120,6 @@ DbRetVal AggTableImpl::bindFld(const char *fldname, AggType aggType, void *val)
            delete def;  
            return rv; 
         }
-        def->alreadyBinded = true;
     }
     fldList.append(def);
     delete info;

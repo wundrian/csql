@@ -37,7 +37,7 @@ JoinTableImpl::JoinTableImpl()
     isNestedLoop = true;
     rightExhausted = false;
 }
-JoinTableImpl::~JoinTableImpl() {}
+JoinTableImpl::~JoinTableImpl() {} 
 
 DbRetVal JoinTableImpl::bindFld(const char *fldname, void *val)
 {
@@ -67,6 +67,7 @@ DbRetVal JoinTableImpl::bindFld(const char *fldname, void *val)
     DbRetVal rv = getFieldInfo(fldname, info);
     if ( OK != rv) {
         printError(ErrBadCall, "Field not found or unqualified field name %s", fldname);
+        delete def;
         delete info;
         return ErrSyntaxError;
     }

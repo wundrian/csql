@@ -466,7 +466,12 @@ DbRetVal SelStatement::resolve()
             if (name->aType ==AGG_UNKNOWN && 
                             parsedData->getGroupFieldNameList().size()== 0) {
                 rv = table->bindFld(name->fldName, newVal->value);
-                if (OK !=rv) return rv;
+                if (OK !=rv) { 
+                    if (newVal->isAllocVal) free(newVal->value); 
+                    delete newVal; 
+                    delete fInfo; 
+                    return rv; 
+                }
             }
             else if (!isSingleTableNoGrp) 
             {
@@ -475,7 +480,12 @@ DbRetVal SelStatement::resolve()
                     aggTable->setTable(table);
                 }
                 rv = aggTable->bindFld(name->fldName, name->aType, newVal->value);
-                if (OK !=rv) return rv;
+                if (OK !=rv) {
+                    if (newVal->isAllocVal) free(newVal->value);
+                    delete newVal; delete fInfo; delete aggTable; 
+                    aggTable = NULL; table = NULL;
+                    return rv;
+                }
             }
             if (name->aType !=AGG_UNKNOWN && isSingleTableNoGrp) 
                 handleAggWithTbl= true;
@@ -755,8 +765,9 @@ DbRetVal SelStatement::setBindFieldAndValues()
     ListIterator valIter = parsedData->getFieldValueList().getIterator();
     int colNo =0;
     FieldValue *value = NULL;
-    valIter.reset();
-    while(valIter.hasElement())
+    //The second condition colNo < totalFields is important for projection list
+    //might not contain the binded having field. 
+    while(valIter.hasElement() && colNo < totalFields)
     {
         value = (FieldValue*) valIter.nextElement();
         if (value == NULL)
@@ -766,7 +777,7 @@ DbRetVal SelStatement::setBindFieldAndValues()
             printError(ErrSysFatal, "Should never happen. value NULL after iteration");
             return ErrSysFatal;
         }
-        bindFields[colNo++ ] = value;
+        bindFields[colNo++] = value;
     }
     return OK;
 }
