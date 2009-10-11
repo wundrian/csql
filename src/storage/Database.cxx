@@ -545,7 +545,7 @@ DbRetVal Database::checkPoint()
         }
     } else {
         int fd = getChkptfd();
-        if (!fdatasync(fd)) { printf("pages written. checkpoint taken\n"); }
+        if (!os::fdatasync(fd)) { printf("pages written. checkpoint taken\n"); }
         sprintf(cmd, "cp -f %s/db.chkpt.data %s/db.chkpt.data1", Conf::config.getDbFile(), Conf::config.getDbFile());
         int ret = system(cmd);
         if (ret != 0) {

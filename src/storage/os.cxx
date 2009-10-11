@@ -351,4 +351,12 @@ mode_t os::umask(mode_t mask)
 {
     return::umask(mask);
 }
+int os::fdatasync(int fd)
+{
+#ifdef FreeBSD
+    return ::fsync(fd);
+#else
+    return ::fdatasync(fd);
+#endif
+}
 

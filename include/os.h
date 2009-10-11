@@ -8,13 +8,12 @@
 #define OS_H
 #include<build.h>
 
-#if defined(SOLARIS) || defined(LINUX)
+#if defined(SOLARIS) || defined(LINUX) || defined(FreeBSD)
 
 #include <stdio.h>
 #include <sys/mman.h>
 #include <sys/msg.h>
 #include <sys/shm.h>
-#include <crypt.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
@@ -37,6 +36,7 @@
 #include <sys/file.h>
 #if defined(SOLARIS)
     #include <sys/varargs.h>
+    #include <crypt.h>
     #include <errno.h>
     #include <sys/atomic.h>
     #include <timecsql.h>
@@ -47,7 +47,12 @@
     #include <execinfo.h>
     #include <ifaddrs.h>
     #include <sys/errno.h>
+    #include <crypt.h>
 #endif
+#if defined(FreeBSD)
+    #include <sys/errno.h>
+#endif
+
 typedef void (*sighandler_t)(int);
 
 enum FileOpenMode
@@ -189,6 +194,8 @@ class os
     static char* strcasestr(char *s1, const char *s2);
     static int getNoOfProcessors();
     static mode_t umask(mode_t mask);
+    static int fdatasync(int fd);
+
 };
 
 #endif

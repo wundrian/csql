@@ -80,7 +80,7 @@ int TSL(Lock *lock)
 
         return oldval > 0;
 */
-#if defined(LINUX) 
+#if defined(LINUX) || defined (FreeBSD)
     int*  lw;
     int   res;
     lw = (int*)lock;
@@ -382,7 +382,7 @@ int Mutex::CASL(long *ptr, long oldVal, long newVal)
     return CAS((int*)ptr, (int)oldVal, (int)newVal);
 #endif
 #endif
-#ifdef LINUX
+#if defined (LINUX) || defined(FreeBSD)
 #ifdef x86_64
         long result;
         __asm__ __volatile__ ("lock; cmpxchgq %q2, %1"
@@ -408,7 +408,7 @@ int Mutex::CASL(long *ptr, long oldVal, long newVal)
 }
 int Mutex::CAS(int *ptr, int oldVal, int newVal)
 {
-#ifdef LINUX
+#if defined(LINUX) || defined(FreeBSD)
         unsigned char ret;
         __asm__ __volatile__ (
                 "  lock\n"

@@ -24,6 +24,12 @@ case "${host_cpu}" in
   x86_64 )
     CPUTYPE=x86_64
     ;;
+  sparc )
+    CPUTYPE=sparc
+    ;;
+  amd64 )
+    CPUTYPE=x86_64
+    ;;
 esac
 echo "#ifndef BUILD_H" >build.h
 echo "#define BUILD_H" >>build.h
