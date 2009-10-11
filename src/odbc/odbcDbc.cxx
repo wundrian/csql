@@ -49,6 +49,11 @@ SQLRETURN CSqlOdbcDbc::SQLAllocHandle(
         inputEnv->err_.set( ERROR_FUNCSEQ );
         return( SQL_ERROR );
     }
+    if (NULL == outputHandle)
+    {
+       globalError.set(ERROR_INVARGVAL);
+       return (SQL_ERROR);
+    }
 
     // Allocate Connection object.
     *outputHandle = (SQLHANDLE*) new CSqlOdbcDbc;
@@ -203,6 +208,16 @@ SQLRETURN CSqlOdbcDbc::SQLConnect(           // All param's are IN
     {
         err_.set( ERROR_CONNINUSE);
         return ( SQL_ERROR );
+    }
+    if (NULL == serverName)
+    {
+       err_.set(ERROR_INVARGVAL);
+       return (SQL_ERROR);
+    }
+    if (NULL == user || NULL == pass)
+    {
+       err_.set(ERROR_INVARGVAL);
+       return (SQL_ERROR);
     }
     
     strncpy(str,(char *) serverName, IDENTIFIER_LENGTH);
@@ -537,11 +552,16 @@ SQLRETURN CSqlOdbcDbc::SQLGetFunctions(
      SQLUSMALLINT     FunctionId,
      SQLUSMALLINT *     SupportedPtr)
 {
-     if(isFunctionSupports(FunctionId))
+    if (NULL == SupportedPtr)
+    {
+       err_.set(ERROR_INVARGVAL);
+       return (SQL_ERROR);
+    }
+    if(isFunctionSupports(FunctionId))
          *SupportedPtr = SQL_TRUE ;
-     else
+    else
          *SupportedPtr = SQL_FALSE;
-     return (SQL_SUCCESS);
+    return (SQL_SUCCESS);
 }
 
 

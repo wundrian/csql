@@ -48,6 +48,12 @@ SQLRETURN CSqlOdbcStmt::SQLAllocHandle(
         globalError.printStr( SQL_OV_ODBC3 );
         return( SQL_ERROR );
     }
+    if (NULL == outputHandle)
+    {
+       globalError.set(ERROR_INVARGVAL);
+       return (SQL_ERROR);
+    }
+
 
     // Allocate Statement object.
     *outputHandle = (SQLHANDLE*) new CSqlOdbcStmt;
@@ -523,6 +529,11 @@ SQLRETURN CSqlOdbcStmt::SQLExecDirect(
         err_.set( ERROR_BUFLEN );
         return( SQL_ERROR );
     }
+    if (NULL == statementText)
+    {
+       err_.set(ERROR_INVARGVAL);
+       return (SQL_ERROR);
+    }
 
     // If Stmt is already prepared.
     if( state_ >= S2 ) {
@@ -573,8 +584,23 @@ SQLRETURN CSqlOdbcStmt::SQLExecDirect(
         }
         return( SQL_ERROR );
     }
+    // Set Stmt State
+    if( fsqlStmt_->isSelect() )
+    {
+         rowsAffected_ = -1;
+         state_ = S5;
+    }
+    else
+    {
+         rowsAffected_ = 1; //TODO::It should get this from SqlStatement
+         state_ = S4;
+    }
+    // Set Dbc State to Transaction Mode.
+    parentDbc_->state_ = C6;
+    // AutoCommit Mode
+    if( parentDbc_->autoCommit_ == SQL_AUTOCOMMIT_ON )
+          parentDbc_->SQLEndTran( SQL_COMMIT );
 
-    //parentDbc_->state_ = C6;
     isPrepared_ = true;
     return( SQL_SUCCESS );
 }
@@ -613,6 +639,12 @@ SQLRETURN CSqlOdbcStmt::SQLPrepare(
         err_.set( ERROR_BUFLEN );
         return( SQL_ERROR );
     }
+    if (NULL == statementText)
+    {
+       err_.set(ERROR_INVARGVAL);
+       return (SQL_ERROR);
+    }
+
 
     // If Stmt is already prepared.
     if( state_ >= S2 ) {
@@ -1127,6 +1159,11 @@ SQLRETURN CSqlOdbcStmt::SQLGetCursorName(
     // Can we proceed ?
     if( chkStateForSQLGetCursorName() != SQL_SUCCESS )
         return( SQL_ERROR );
+    if (NULL == cursorName || NULL == nameLength)
+    {
+       err_.set(ERROR_INVARGVAL);
+       return (SQL_ERROR);
+    }
 
     if( cursorName_[0] == '\0' )
     {
@@ -1173,6 +1210,11 @@ SQLRETURN CSqlOdbcStmt::SQLNumResultCols(
     // Can we proceed ?
     if( chkStateForSQLNumResultCols() != SQL_SUCCESS )
         return( SQL_ERROR );
+    if (NULL == columnCount)
+    {
+       err_.set(ERROR_INVARGVAL);
+       return (SQL_ERROR);
+    }
 
     // If DML
     if( fsqlStmt_->isSelect() == false )
@@ -1287,7 +1329,6 @@ SQLRETURN  CSqlOdbcStmt::SQLDescribeCol(
     
     // Start with NO_ERR
     err_.set( NO_ERR );
-
     // Can we proceed ?
     if( chkStateForSQLDescribeCol() != SQL_SUCCESS )
         return( SQL_ERROR );
@@ -1299,20 +1340,22 @@ SQLRETURN  CSqlOdbcStmt::SQLDescribeCol(
     }
 
     if(columnName == NULL) {
-        err_.set( ERROR_COLNUM );
+        err_.set( ERROR_INVARGVAL );
         return( SQL_ERROR );
     }
+
     DbRetVal rv = fsqlStmt_->getProjFldInfo(columnNumber, fInfo);
     if (rv != OK) {
         err_.set( ERROR_COLNUM );
         return( SQL_ERROR );
     }
-    Table::getFieldNameAlone((char*)fInfo->fldName, (char*)columnName);
     if (bufferLength <IDENTIFIER_LENGTH) {
-       strncpy( (char*)columnName, (char*)fInfo->fldName, bufferLength );
-       columnName[bufferLength-1] ='\0';
+       //strncpy( (char*)columnName, (char*)fInfo->fldName, bufferLength );
+       //columnName[bufferLength-1] ='\0';
+       err_.set (ERROR_BUFLEN);
+       return (SQL_ERROR);
     }else {
-       strcpy( (char*)columnName, (char*)fInfo->fldName);
+       Table::getFieldNameAlone((char*)fInfo->fldName, (char*)columnName);
     }
 
     if(nameLength != NULL)
@@ -1329,15 +1372,13 @@ SQLRETURN  CSqlOdbcStmt::SQLDescribeCol(
     
     /*if(decimalDigits != NULL) // CSQL TODO
         *decimalDigits = (SQLSMALLINT) fsqlStmt_->getPrecision( columnNumber-1 );*/ 
-    *decimalDigits = 0; 
-    if(fInfo->isNull)
-        *nullable = SQL_NO_NULLS ;
-    else 
-        *nullable = SQL_NULLABLE ;
-    if(strlen((char*)fInfo->fldName) > bufferLength)
+    if (decimalDigits !=NULL) *decimalDigits = 0; 
+    if(nullable != NULL)
     {
-        err_.set( ERROR_DATATRUNC );
-        return( SQL_SUCCESS_WITH_INFO );
+        if (fInfo->isNull) 
+            *nullable = SQL_NO_NULLS ;
+        else 
+            *nullable = SQL_NULLABLE ;
     }
     return( SQL_SUCCESS );
 }
@@ -1639,11 +1680,13 @@ SQLRETURN CSqlOdbcStmt::SQLDescribeParam(
     }
     /*if(decimalDigits != NULL) // CSQL TODO
         *decimalDigits = (SQLSMALLINT) paramMetaData->getPrecision( paramNumber-1 );*/
-    *decimalDigits = 0;
-    if(fInfo->isNull)
-        *isNullable = SQL_NO_NULLS ;
-    else
-        *isNullable = SQL_NULLABLE ;
+    if (NULL != decimalDigits) *decimalDigits = 0;
+    if(isNullable) {
+        if (fInfo->isNull) 
+            *isNullable = SQL_NO_NULLS ;
+        else
+            *isNullable = SQL_NULLABLE ;
+    }
 
     return( SQL_SUCCESS );
 }
@@ -1726,6 +1769,11 @@ SQLRETURN CSqlOdbcStmt::SQLColumns(
      SQLCHAR *     ColumnName )
 {
     SQLRETURN ret = SQL_SUCCESS;
+    if (NULL == TableName)
+    {
+       err_.set(ERROR_INVARGVAL);
+       return (SQL_ERROR);
+    }
     char str[256]="describe ";
     strcat(str,(char*)TableName); 
     ret = SQLPrepare((SQLCHAR *)str,  strlen(str));
@@ -1761,6 +1809,11 @@ SQLRETURN CSqlOdbcStmt::SQLPrimaryKeys(
 {
     SQLRETURN ret = SQL_SUCCESS;
     char str[256]="getprimarykey  ";
+    if (NULL == TableName)
+    {
+       err_.set(ERROR_INVARGVAL);
+       return (SQL_ERROR);
+    }
     strcat(str,(char*)TableName);
     ret = SQLPrepare((SQLCHAR *)str,  strlen(str));
     if( ret != SQL_SUCCESS )  return (ret);
@@ -1802,8 +1855,14 @@ SQLRETURN SQLGetData(SQLHSTMT     StatementHandle,  SQLUSMALLINT  ColumnNumber, 
 SQLRETURN CSqlOdbcStmt::SQLGetData(SQLUSMALLINT     ColumnNumber, SQLSMALLINT     TargetType, SQLPOINTER     TargetValuePtr,SQLLEN     BufferLength, SQLLEN *     StrLen_or_IndPtr)
 {
      if(fsqlStmt_->isFldNull(ColumnNumber)){
-          *((SQLINTEGER *)StrLen_or_IndPtr ) = SQL_NULL_DATA;
+          if(NULL != StrLen_or_IndPtr)
+              *((SQLINTEGER *)StrLen_or_IndPtr ) = SQL_NULL_DATA;
          return (SQL_SUCCESS);
+     }
+     if (NULL == TargetValuePtr)
+     {
+        err_.set(ERROR_INVARGVAL);
+        return (SQL_ERROR);
      }
      void* sourceData = NULL;
      DataType sourceType = typeUnknown, destType = typeUnknown;
@@ -1818,7 +1877,9 @@ SQLRETURN CSqlOdbcStmt::SQLGetData(SQLUSMALLINT     ColumnNumber, SQLSMALLINT   
      if(sourceType == typeString)
      {
          sourceLength=strlen((char *)sourceData);
-         *((SQLINTEGER *)StrLen_or_IndPtr) = copyToOdbc(TargetValuePtr,BufferLength,sourceData,sourceLength,sourceType,destType);
+         if (NULL != StrLen_or_IndPtr)
+             *((SQLINTEGER *)StrLen_or_IndPtr) = copyToOdbc(TargetValuePtr,
+                      BufferLength,sourceData,sourceLength,sourceType,destType);
      } else
      {
          copyToOdbc(TargetValuePtr,BufferLength,sourceData,sourceLength,sourceType,destType);
@@ -1877,6 +1938,12 @@ SQLRETURN CSqlOdbcStmt::SQLStatistics(
 {
     SQLRETURN ret = SQL_SUCCESS;
     if(Unique != SQL_INDEX_ALL ) { printf("NOT SUPPORTED "); return (SQL_ERROR);}
+    if (NULL == TableName)
+    {
+       err_.set(ERROR_INVARGVAL);
+       return (SQL_ERROR);
+    }
+
     char str[256]="describe index ";
     strcat(str,(char*)TableName);
     ret = SQLPrepare((SQLCHAR *)str,  strlen(str));
@@ -1921,7 +1988,10 @@ SQLRETURN CSqlOdbcStmt::SQLForeignKeys(
      SQLCHAR *     FKTableName)
 {
     SQLRETURN ret = SQL_SUCCESS;
-    if(PKTableName!=NULL && FKTableName!=NULL) { printf("NOT SUPPORTED "); return (SQL_ERROR);}
+    if(PKTableName!=NULL && FKTableName!=NULL) { 
+        printf("NOT SUPPORTED "); 
+        return (SQL_ERROR);
+    }
     char str[256];
     if(PKTableName!=NULL && FKTableName==NULL){
         sprintf(str,"ExportedKey %s;",(char*)PKTableName);
