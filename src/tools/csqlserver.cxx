@@ -47,7 +47,13 @@ static void sigChildHandler(int sig)
 bool checkDead(pid_t  pid)
 {
     int ret = os::kill(pid, 0);
-    if (ret == -1) return true; else return false;
+    if (ret == -1) {
+       if (errno == EPERM) 
+          printError(ErrWarning, "No permission to check process %d is alive.");
+       else 
+          return true;
+    }
+    return false;
 }
 
 DbRetVal releaseAllResources(Database *sysdb, ThreadInfo *info )

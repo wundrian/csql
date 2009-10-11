@@ -495,7 +495,7 @@ SQLRETURN SQLExecDirect(
     SQLINTEGER TextLength)      // IN
 {
 #ifdef DEBUG
-    printError(ErrWarning, "SQLExecDirect");
+    printError(ErrWarning, "SQLExecDirect: %s", StatementText);
 #endif
 
     // Is Stmt valid ?
@@ -585,7 +585,7 @@ SQLRETURN SQLPrepare(
     SQLINTEGER TextLength)      // IN
 {
 #ifdef DEBUG
-    printError(ErrWarning, "SQLPrepare");
+    printError(ErrWarning, "SQLPrepare: %s", StatementText);
 #endif
 
     // Is Stmt valid ?

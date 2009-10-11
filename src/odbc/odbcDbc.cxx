@@ -63,7 +63,6 @@ SQLRETURN CSqlOdbcDbc::SQLAllocHandle(
     inputEnv->state_ = E2;
     ((CSqlOdbcDbc*) *outputHandle)->parentEnv_ = inputEnv;
     ((CSqlOdbcDbc*) *outputHandle)->state_ = C2;
-
     return( SQL_SUCCESS );
 }
 
@@ -117,6 +116,10 @@ SQLRETURN SQLDriverConnect(
      SQLSMALLINT *     StringLength2Ptr,
      SQLUSMALLINT     DriverCompletion)
 {
+#ifdef DEBUG
+    printError(ErrWarning, "SQLDriverConnect");
+#endif
+
     // Validate handle
     if( isValidHandle( ConnectionHandle, SQL_HANDLE_DBC ) != SQL_SUCCESS )
                  return( SQL_INVALID_HANDLE );
@@ -158,6 +161,10 @@ SQLRETURN SQLConnect(           // All param's are IN
     SQLCHAR *Authentication, 
     SQLSMALLINT NameLength3)
 {
+#ifdef DEBUG
+    printError(ErrWarning, "SQLConnect");
+#endif
+
     // Validate handle
     if( isValidHandle( ConnectionHandle, SQL_HANDLE_DBC ) != SQL_SUCCESS )
         return( SQL_INVALID_HANDLE );
@@ -274,6 +281,9 @@ SQLRETURN CSqlOdbcDbc::SQLConnect(           // All param's are IN
 SQLRETURN SQLDisconnect(
     SQLHDBC ConnectionHandle)   // IN
 {
+#ifdef DEBUG
+    printError(ErrWarning, "SQLDisConnect");
+#endif
     // Validate Handle
     if( isValidHandle( ConnectionHandle, SQL_HANDLE_DBC ) != SQL_SUCCESS )
         return( SQL_INVALID_HANDLE );
@@ -318,6 +328,10 @@ SQLRETURN CSqlOdbcDbc::SQLDisconnect( void )
 SQLRETURN CSqlOdbcDbc::SQLEndTran(
     SQLSMALLINT completionType) // IN
 {
+#ifdef DEBUG
+    printError(ErrWarning, "SQLEndTran: %hd", completionType);
+#endif
+
     SQLRETURN rc;
 
     // Start with NO_ERR

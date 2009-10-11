@@ -1,7 +1,9 @@
 #!/bin/sh
 # Start CSQL Server
 VERBOSE=$1
-LOGDIR=/tmp
+LOGFILE=`grep LOG_FILE $CSQL_CONFIG_FILE| tail -1 | awk -F"=" '{ print $2 }'`
+LOGDIR=`dirname $LOGFILE`
+
 echo "CSQL Server Start: " + `date` >>$LOGDIR/csqlserver.log
 if [ -z "$VERBOSE" ]
 then
