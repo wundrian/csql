@@ -101,6 +101,9 @@ void createHashIndex(SQLHANDLE hstmt,bool flag)
     checkrc (rc, __LINE__);
     rc = SQLExecDirect(hstmt, (SQLCHAR*) "CREATE INDEX idx4 ON big1(stringu1) HASH", SQL_NTS );
     checkrc (rc, __LINE__);
+    rc = SQLExecDirect(hstmt, (SQLCHAR*) "FLUSH CACHE", SQL_NTS );
+      checkrc (rc, __LINE__);
+
     return;
 }
 void createTreeIndex(SQLHANDLE hstmt,bool flag)
@@ -113,6 +116,8 @@ void createTreeIndex(SQLHANDLE hstmt,bool flag)
     rc = SQLExecDirect(hstmt, (SQLCHAR*) "CREATE INDEX idx7 ON small(unique1) TREE;", SQL_NTS );
     checkrc (rc, __LINE__);
     rc = SQLExecDirect(hstmt, (SQLCHAR*) "CREATE INDEX idx8 ON big1(stringu1) TREE;", SQL_NTS );
+    checkrc (rc, __LINE__);
+    rc = SQLExecDirect(hstmt, (SQLCHAR*) "FLUSH CACHE", SQL_NTS );
     checkrc (rc, __LINE__);
     return;
 }
@@ -127,6 +132,8 @@ void dropHashIndex(SQLHANDLE hstmt,bool flag)
     checkrc (rc, __LINE__);
     rc = SQLExecDirect(hstmt, (SQLCHAR*) "DROP INDEX idx4 ;", SQL_NTS );
     checkrc (rc, __LINE__);
+    rc = SQLExecDirect(hstmt, (SQLCHAR*) "FLUSH CACHE", SQL_NTS );
+    checkrc (rc, __LINE__);
     return;
 }
 void dropTreeIndex(SQLHANDLE hstmt,bool flag)
@@ -139,6 +146,8 @@ void dropTreeIndex(SQLHANDLE hstmt,bool flag)
     rc = SQLExecDirect(hstmt, (SQLCHAR*) "DROP INDEX idx7 ;", SQL_NTS );
     checkrc (rc, __LINE__);
     rc = SQLExecDirect(hstmt, (SQLCHAR*) "DROP INDEX idx8 ;", SQL_NTS );
+    checkrc (rc, __LINE__);
+    rc = SQLExecDirect(hstmt, (SQLCHAR*) "FLUSH CACHE", SQL_NTS );
     checkrc (rc, __LINE__);
     return;
 }

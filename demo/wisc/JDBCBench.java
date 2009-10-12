@@ -282,6 +282,8 @@ public static void main(String[] args)
 	      cStmt.close();
 	      cStmt.execute("CREATE INDEX idx4 ON big1(stringu1) HASH");
 	      cStmt.close();
+              cStmt.execute("FLUSH CACHE");
+	      cStmt.close();
               con.commit();
           }catch(Exception e ){e.printStackTrace(); System.out.println("Error creating index");}
 	  timeTaken[0][1] = singleTuple(con, true);
@@ -309,6 +311,8 @@ public static void main(String[] args)
 	      cStmt.execute("CREATE INDEX idx6 ON big2(unique1) TREE");
 	      cStmt.execute("CREATE INDEX idx7 ON small(unique1) TREE");
 	      cStmt.execute("CREATE INDEX idx8 ON big1(stringu1) TREE");
+              cStmt.execute("FLUSH CACHE");
+	      cStmt.close();
               con.commit();
           }catch(Exception e ){e.printStackTrace(); System.out.println("Error creating index");}
 
@@ -334,6 +338,8 @@ public static void main(String[] args)
 	      cStmt.execute("DROP INDEX idx7;");
 	      cStmt.close();
 	      cStmt.execute("DROP INDEX idx8;");
+	      cStmt.close();
+              cStmt.execute("FLUSH CACHE");
 	      cStmt.close();
               con.commit();
           }catch(Exception e ){System.out.println("Error dropping indexes");}
