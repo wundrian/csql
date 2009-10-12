@@ -28,7 +28,7 @@
 void Chunk::setSize(size_t size)
 {
 
-    size_t needSize = size + sizeof(long);
+    size_t needSize = size + sizeof(int);
     size_t multiple = (size_t) os::floor(needSize / sizeof(size_t));
     size_t rem = needSize % sizeof(size_t);
     if (0 == rem)
@@ -631,7 +631,7 @@ void Chunk::freeForLargeAllocator(void *ptr, int pslot)
         return;
     }
     PageInfo *pageInfo = (PageInfo*)(((char*)
-                         ptr) - (sizeof(PageInfo) + sizeof(long)));
+                         ptr) - (sizeof(PageInfo) + sizeof(int)));
     PageInfo *pInfo = (PageInfo*)firstPage_, *prev = (PageInfo*)firstPage_;
     bool found = false;
     while(!found)

@@ -899,7 +899,7 @@ DbRetVal LockManager::isExclusiveLocked(void *tuple, Transaction **trans, bool &
                    status = true;
                //bucket->mutex_.releaseLock(systemDatabase_->procSlot);
                return OK;
-           }
+           }else break;
        }
        printDebug(DM_Lock, "Finding the lock node. iter:%x",iter);
        if (iter == iter->next_) {
