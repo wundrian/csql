@@ -556,11 +556,13 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
     while (fNameIter.hasElement()) {
         elem = (Identifier*) fNameIter.nextElement();
         sqlStmt->getFieldInfo(tableName, (const char*)elem->name, info);
-        if( info->type == typeString)
+        if (info->type == typeString) {
             valBuf = AllDataType::alloc(info->type, info->length+1);
-        else
-            valBuf = AllDataType::alloc(info->type, info->length);
-        os::memset(valBuf,0,info->length);
+            os::memset(valBuf,0,info->length+1);
+        } else {
+            valBuf = AllDataType::alloc(info->type);
+            os::memset(valBuf,0,AllDataType::size(info->type));
+        }
         switch(info->type) 
         {
             case typeDate:
