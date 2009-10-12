@@ -293,9 +293,10 @@ class BindSqlProjectField
     bool isFreed;
     void *value;
     void *targetvalue;
+    void *jdbcBindValue; //For DATE ,TIME, TIMESTAMP
     BindSqlProjectField()
     { 
-        value = NULL; targetvalue = NULL; isFreed = false; aType = AGG_UNKNOWN;
+        value = NULL; targetvalue = NULL; jdbcBindValue = NULL; isFreed = false; aType = AGG_UNKNOWN;
     }
 };
 

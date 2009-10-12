@@ -44,6 +44,8 @@ SQLRETURN isValidSQLType( SQLSMALLINT type );
 // Type conversion functions
 void copyFromOdbc(AbsSqlStatement *stmt, int paramNo, SQLUINTEGER destLen, 
 		  void *odbcData, SQLUINTEGER odbcLen, SQLSMALLINT type);
+void convertFromOdbc(DataType srcType, void *src, DataType destType, void *dest,int length=0, TDBInfo tdbname=mysql);
+void convertToStringFromOdbc(void* dest, void* src, DataType srcType, int length=0, TDBInfo tdbname=mysql );
 SQLINTEGER copyToOdbc(void *odbcData, SQLUINTEGER odbcLen, 
 		      void *sourceData, SQLUINTEGER sourceLen,SQLSMALLINT type,SQLSMALLINT apptype);
 

@@ -261,7 +261,7 @@ void* SqlOdbcStatement::fetch()
         if (ptrToFirstField == NULL) ptrToFirstField=bindField->value;
         if(len[++icol] == SQL_NULL_DATA) 
         { 
-            AllDataType::memoryset(bindField->value,bindField->type);
+            if(bindField->value) AllDataType::memoryset(bindField->value,bindField->type);
             continue; 
         }
         if( isSelStmt && NULL == bindField->value )
@@ -317,7 +317,7 @@ void* SqlOdbcStatement::fetch(DbRetVal &rv)
         if (ptrToFirstField == NULL) ptrToFirstField=bindField->value;
         if(len[++icol] == SQL_NULL_DATA) 
         { 
-            AllDataType::memoryset(bindField->value,bindField->type);
+            if(bindField->value) AllDataType::memoryset(bindField->value,bindField->type);
             continue; 
         }
         if( isSelStmt && NULL == bindField->value )
@@ -446,7 +446,32 @@ void* SqlOdbcStatement::getFieldValuePtr( int pos )
         elem = (BindSqlProjectField*) biter.nextElement();
         if (count == pos)
         {
-            return elem->targetvalue;
+            if(elem->value == NULL)
+             {
+                 switch(elem->type)
+                 {
+                      case typeDate: {
+                          Date *dtCSQL=(Date *) elem->jdbcBindValue;
+                          DATE_STRUCT *dtTarget = (DATE_STRUCT*) elem->targetvalue;
+                          dtCSQL->set(dtTarget->year,dtTarget->month,dtTarget->day);
+                          return dtCSQL;
+                      }
+                      case typeTime: {
+                         Time *dtCSQL = (Time *) elem->jdbcBindValue;
+                          TIME_STRUCT *dtTarget = (TIME_STRUCT*) elem->targetvalue;
+                          dtCSQL->set(dtTarget->hour,dtTarget->minute,dtTarget->second);
+                          return dtCSQL;
+                      }
+                      case typeTimeStamp: {
+                          TimeStamp *dtCSQL= (TimeStamp *) elem->jdbcBindValue;
+                          TIMESTAMP_STRUCT *dtTarget = (TIMESTAMP_STRUCT*) elem->targetvalue;
+                          dtCSQL->setDate(dtTarget->year,dtTarget->month,dtTarget->day);
+                          dtCSQL->setTime(dtTarget->hour,dtTarget->minute,dtTarget->second, 0);//dtTarget->fraction);
+                          return dtCSQL;
+                      }
+                }
+             }
+             return elem->targetvalue;
         }
         count++;
     }
@@ -545,6 +570,8 @@ DbRetVal SqlOdbcStatement::free()
         elem = (BindSqlProjectField*) biter.nextElement();
         if(elem->targetvalue)
             ::free(elem->targetvalue); 
+        if(elem->jdbcBindValue)
+            ::free(elem->jdbcBindValue);
         delete elem;
     }
     bindList.reset();
@@ -857,14 +884,17 @@ DbRetVal SqlOdbcStatement::resolveForBindField(SQLHSTMT hstmt)
                 case typeDate:
                     fieldsize = sizeof(DATE_STRUCT);
                     bindProjField->targetvalue = malloc(sizeof(DATE_STRUCT));
+                    bindProjField->jdbcBindValue = AllDataType::alloc(typeDate);
                     break;
                 case typeTime:
                     fieldsize = sizeof(TIME_STRUCT);
                     bindProjField->targetvalue = malloc(sizeof(TIME_STRUCT));
+                    bindProjField->jdbcBindValue = AllDataType::alloc(typeTime);
                     break;
                 case typeTimeStamp:
                     fieldsize = sizeof(TIMESTAMP_STRUCT);
                     bindProjField->targetvalue = malloc(sizeof(TIMESTAMP_STRUCT));
+                    bindProjField->jdbcBindValue = AllDataType::alloc(typeTimeStamp);
                     break;
                 default:
                     bindProjField->targetvalue = AllDataType::alloc(bindProjField->type, bindProjField->length);

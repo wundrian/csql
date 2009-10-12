@@ -786,7 +786,7 @@ SQLRETURN CSqlOdbcStmt::SQLExecute() // TODO
                         } else 
                         {
                             getInputBuffer(&csqlParamDesc->dataPtr_ ,destType,destLength);
-                            AllDataType::convert(sourceType,appParamDesc->dataPtr_,destType,csqlParamDesc->dataPtr_, destLength); 
+                            convertFromOdbc(sourceType,appParamDesc->dataPtr_,destType,csqlParamDesc->dataPtr_, destLength); 
                             copyFromOdbc(fsqlStmt_, paramNum, destLength, csqlParamDesc->dataPtr_, destLength, destType);
                         }
                     }

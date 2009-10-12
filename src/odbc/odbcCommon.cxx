@@ -423,6 +423,129 @@ void copyFromOdbc(AbsSqlStatement *stmt, int paramNo, SQLUINTEGER destLen,void *
     
 }
 
+void convertFromOdbc(DataType srcType, void *src, DataType destType, void *dest,int length, TDBInfo tdbname)
+{
+    switch ((DataType) destType )
+    {
+        case typeInt:       AllDataType::convertToInt(dest, src, srcType); break;
+        case typeLong:      AllDataType::convertToLong(dest, src, srcType); break;
+        case typeLongLong:  AllDataType::convertToLongLong(dest, src, srcType); break;
+        case typeShort:     AllDataType::convertToShort(dest, src, srcType); break;
+        case typeByteInt:   AllDataType::convertToByteInt(dest, src, srcType); break;
+
+        case typeFloat:     AllDataType::convertToFloat(dest, src, srcType); break;
+        case typeDouble:    AllDataType::convertToDouble(dest, src, srcType); break;
+
+        //TODO 
+        case typeDecimal:   AllDataType::convertToDouble(dest, src, srcType); break;
+
+        case typeString:    convertToStringFromOdbc(dest, src, srcType); break;
+        case typeBinary:    AllDataType::convertToBinary(dest, src, srcType,length); break;
+        case typeDate:      AllDataType::convertToDate(dest, src, srcType); break;
+        case typeTime:      AllDataType::convertToTime(dest, src, srcType); break;
+        case typeTimeStamp: AllDataType::convertToTimeStamp(dest, src, srcType); break;
+        default: return;
+    }
+}
+void convertToStringFromOdbc(void *dest,void*src,DataType srcType,int length,TDBInfo tdbname )
+{
+    switch(srcType)
+    {
+        case typeInt:
+        {
+            //sprintf ((char *)dest, "%d", *(int *)src); 
+            Util::itoa(*(int*)src, (char*)dest);
+            break;
+        }
+        case typeLong:
+        {
+            sprintf ((char *)dest, "%ld", *(long *)src);
+            break;
+        }
+        case typeLongLong:
+        {
+            sprintf ((char *)dest, "%lld", *(long long *)src);
+            break;
+        }
+        case typeShort:
+        {
+            sprintf ((char *)dest, "%hd", *(short *)src);
+            break;
+        }
+        case typeByteInt:
+        {
+            sprintf ((char *)dest, "%hhd", *(char *)src);
+            break;
+        }
+
+        case typeFloat:
+        {
+            sprintf ((char *)dest, "%f", *(float *)src);
+            break;
+        }
+        case typeDouble:
+        {
+            sprintf ((char *) dest, "%lf", *(double *)src);
+            break;
+        }
+        case typeString:
+        {
+            strcpy((char*)dest, (char*)src);
+            break;
+        }
+        case typeDate:
+        {
+            Date dt;
+            dt.set((*(SQL_DATE_STRUCT *)src).year,
+                   (*(SQL_DATE_STRUCT *)src).month,
+                   (*(SQL_DATE_STRUCT *)src).day);
+            sprintf((char*) dest, "%d/%d/%d", dt.year(),dt.month(), dt.dayOfMonth());
+            break;
+        }
+        case typeTime:
+        {
+            Time tm;
+            tm.set((*(SQL_TIME_STRUCT *)src).hour,
+                   (*(SQL_TIME_STRUCT *)src).minute,
+                   (*(SQL_TIME_STRUCT *)src).second);
+            sprintf((char*)dest,"%d:%d:%d.%d", tm.hours(), tm.minutes(), tm.seconds(), 0);
+            break;
+        }
+        case typeTimeStamp:
+        {
+            TimeStamp ts;
+            ts.setDate((*(SQL_TIMESTAMP_STRUCT *)src).year,
+                       (*(SQL_TIMESTAMP_STRUCT *)src).month,
+                       (*(SQL_TIMESTAMP_STRUCT *)src).day);
+            ts.setTime((*(SQL_TIMESTAMP_STRUCT*)src).hour,
+                       (*(SQL_TIMESTAMP_STRUCT *)src).minute,
+                       (*(SQL_TIMESTAMP_STRUCT *)src).second);
+            sprintf((char*)dest, "%d/%d/%d %d:%d:%d.%d", ts.year(),ts.month(), ts.dayOfMonth(), ts.hours(),ts.minutes(), ts.seconds(), 0 );
+            break;
+        }
+        case typeBinary:
+        {
+            unsigned char *c = (unsigned char *) src;
+            unsigned char *str = (unsigned char *) dest;
+            unsigned char p = 0;
+            int i = 0;
+            while (i < length) {
+                p = *c >> 4;
+                if (p < 10) sprintf ((char *)str++, "%c", '0' + p);
+                else sprintf((char *)str++, "%c", 'A' + p - 10);
+                p = *c & 0xF;
+                if (p < 10) sprintf ((char *)str++, "%c", '0' + p);
+                else sprintf((char *)str++, "%c", 'A' + p - 10);
+                i++; c++;
+            }
+            break;
+        }
+
+        default: ((char*)dest)[0] = '\0';
+    }
+ 
+}
+
 //Copies data from the database onto the application buffer 
 //Called from SQLFetch
 //Destination here can be the actual application buffer or
