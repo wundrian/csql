@@ -1,0 +1,71 @@
+----------------------------------README---------------------------------------
+This contains an example program that demonstates usage of php interface.
+
+What it does?
+-------------
+It creates table T1 with two fields f1 integer and f2 string.
+Inserts 2 rows into the table t1.
+Updates 1 row 
+Deletes 1 row
+Select rows 
+Drop the table
+
+Setting Unix ODBC Configuration
+-------------------------------
+Put the following configuration in ~/.odbc.ini file
+
+[mycsql]
+Driver       = /home/nihar/csql/install/lib/libcsqlodbc.so
+Description  = Connector/ODBC Driver DSN
+SERVER       = localhost
+PORT         = 5678
+USER         =
+Password     =
+Database     =
+OPTION       = 16
+SOCKET       =
+
+
+After Setting the above Execute following
+$ cd /home/nihar/csql
+$ . ./setupenv.ksh
+$ isql mycsql root manager
+
+The above isql command should work properly before running php program
+
+How to run
+----------
+
+1. Set the necessary enviroment variables using the setup script
+   under the csql root directory
+        $. ./setupenv.ksh
+
+2. Run the class file created by make
+	$ php phpexample.php
+
+
+Output of example:
+------------------
+<html>
+<body>
+/*Create table and test all DML Operation on the table */
+Table Created
+Record Inserted
+Record Inserted
+select executed
+<table><tr><th>ROLL</th><th>NAME</th></tr>
+fetch started
+<tr><td>12</td><td>Lakshye</td></tr>
+<tr><td>13</td><td>CSQL</td></tr>
+</table>
+Record Updated
+<tr><td>12</td><td>TWELVE</td></tr>
+<tr><td>13</td><td>CSQL</td></tr>
+</table>
+Record Deleted
+<tr><td>12</td><td>TWELVE</td></tr>
+</table>
+Table Dropped 
+Test Passed</body>
+</html>
+
