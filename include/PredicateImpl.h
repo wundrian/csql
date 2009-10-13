@@ -99,7 +99,7 @@ class PredicateImpl:public Predicate
     void setTerm(const char* fName1, ComparisionOp op,bool nullFlag);
     void* valPtrForIndexField(const char *name, bool isUnique);
     ComparisionOp opForIndexField(const char *name);
-
+    void* opAndValPtrForIndexField(const char *name, bool isUnique,ComparisionOp &op);
     DbRetVal evaluate(bool &result);
     void evaluateForTable(bool &result, char*tuple);
     DbRetVal evaluateForHaving(bool &result, AggTableImpl *aImpl, void* elem);

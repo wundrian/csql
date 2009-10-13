@@ -30,8 +30,9 @@ DbRetVal TupleIterator::setPlan()
         if(iter.hasElement())
         {
            FieldDef *def = iter.nextElement();
-           keyPtr = (char*)predImpl->valPtrForIndexField(def->fldName_, hIdxInfo->isUnique);
-           op = predImpl->opForIndexField(def->fldName_);
+//           keyPtr = (char*)predImpl->valPtrForIndexField(def->fldName_, hIdxInfo->isUnique);
+  //         op = predImpl->opForIndexField(def->fldName_);
+          keyPtr = (char*)predImpl->opAndValPtrForIndexField(def->fldName_, hIdxInfo->isUnique,op);
         }
         CINDEX *iptr = (CINDEX*) hIdxInfo->indexPtr;
         TreeNode *fstNode=(TreeNode *)iptr->hashNodeChunk_;
@@ -69,7 +70,8 @@ DbRetVal TupleIterator::open()
            FieldDef *def = iter.nextElement();
            //keyPtr = (void*)predImpl->valPtrForIndexField(def->fldName_,hIdxInfo->isUnique);
            //TODO::PRABA::the below opt should be done for hash also
-           keyPtr = (void*)predImpl->valPtrForIndexField(def->fldName_,false);
+           //keyPtr = (void*)predImpl->valPtrForIndexField(def->fldName_,false);
+           keyPtr=(char*)predImpl->opAndValPtrForIndexField(def->fldName_,false,op);          
            AllDataType::copyVal(keyBufferIter, keyPtr, def->type_, def->length_); 
            keyBufferIter = keyBufferIter + def->length_;
         }

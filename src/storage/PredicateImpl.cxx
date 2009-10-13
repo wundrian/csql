@@ -934,7 +934,40 @@ bool PredicateImpl::rangeQueryInvolved(const char *fname)
     }
     return false;
 }
-
+void* PredicateImpl::opAndValPtrForIndexField(const char *fname, bool isUnique,ComparisionOp &op)
+{
+    ComparisionOp lhsOp= OpInvalidComparisionOp, rhsOp= OpInvalidComparisionOp;
+    void *lhsRet=NULL, *rhsRet=NULL;
+    if (NULL != lhs)
+    {
+        lhsRet = lhs->opAndValPtrForIndexField(fname, isUnique, lhsOp);
+    }
+    if (NULL != rhs)
+    {
+        rhsRet = rhs->opAndValPtrForIndexField(fname, isUnique,rhsOp);
+    }
+    if (lhsRet && lhsOp == OpEquals) { op = lhsOp;  return lhsRet;}
+    if (rhsRet && rhsOp == OpEquals) { op = rhsOp; return rhsRet;}
+    if (NULL != lhs)
+    {
+         if( lhsRet) { op = lhsOp;  return lhsRet; }
+         if( rhsRet) { op = rhsOp;  return rhsRet; }
+    }
+    char fieldName1[IDENTIFIER_LENGTH];
+    Table::getFieldNameAlone(fldName1, fieldName1);
+    //Means it is relational expression
+    //first operand is always field identifier
+    if(0 == strcmp(fieldName1, fname))
+    {
+        op = compOp;
+        if (isUnique && compOp != OpLessThan && 
+              compOp != OpLessThanEquals) isPushedDown = true;
+        if (operand) return operand; else return *(void**)operandPtr;
+    }
+    op = OpInvalidComparisionOp; 
+    return NULL;
+ 
+}
 
 void* PredicateImpl::valPtrForIndexField(const char *fname, bool isUnique)
 {
