@@ -114,6 +114,11 @@ int Config::storeKeyVal(char *key, char *value)
            { cVal.isTwoWay = os::atobool(value);  }
     else if (os::strcasestr(key, "CACHE_RECEIVER_WAIT_SECS") != NULL)
            { cVal.cacheWaitSecs = atoi(value);  }
+    else if (os::strcasestr(key, "STMT_CACHE_SIZE") != NULL)
+           { cVal.stmtCacheSize = atoi(value);  }
+    else if (os::strcasestr(key, "STMT_CACHE_NOPARAM") != NULL)
+           { cVal.isCacheNoParam = os::atobool(value);  }
+
     else  return 1;
     return 0;
 }
@@ -292,6 +297,12 @@ int Config::validateValues()
         }
         return 1;
     }
+    if (cVal.stmtCacheSize < 0 || cVal.stmtCacheSize > 1024)
+    {
+        printError(ErrBadArg, "STMT_CACHE_SIZE should be >=0 and <1024");
+        return 1;
+    }
+
     return 0;
 }
 

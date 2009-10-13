@@ -147,10 +147,21 @@ DbRetVal SqlStatement::prepare(char *stmtstr)
     //yyrestart(yyin);
     sysdb->releasePrepareStmtMutex();    
     isPrepd = true;
-    if (stmt->noOfParamFields()>0) { 
+    if (Conf::config.getStmtCacheSize()) {
+      if (stmt->noOfParamFields() > 0) { 
         isCachedStmt = true; 
         sqlCon->addToCache(this, stmtstr); 
         return OK;
+      }
+      if (Conf::config.useCacheNoParam())
+      {
+        if (parsedData->getCacheWorthy())
+        {
+           isCachedStmt = true; 
+           sqlCon->addToCache(this, stmtstr); 
+           return OK;
+        }
+      }
     }
     return OK;
 }
@@ -621,6 +632,7 @@ SqlStatement* SqlConnection::findInCache(char *stmtstr)
            {
                logFiner(Conf::logger, "Statement Retrieved From Cache %x\n", 
                                       node->sqlStmt);
+               node->hits++;
                return node->sqlStmt;
            }
         }
@@ -636,9 +648,35 @@ void SqlConnection::addToCache(SqlStatement *sqlStmt, char* stmtString)
     node->stmtLength  = strlen(stmtString);
     node->sqlString = (char*)malloc(node->stmtLength+1);
     strcpy(node->sqlString, stmtString);
+    if (cachedStmts.size() >= Conf::config.getStmtCacheSize())
+    {
+        removeLeastUsed();
+    }
     cachedStmts.append(node);
     logFiner(Conf::logger, "Statement added To Cache %x\n", node->sqlStmt);
+    logFinest(Conf::logger, "Statement added To Cache %s\n", node->sqlString);
     return ;
+}
+void SqlConnection::removeLeastUsed()
+{
+    ListIterator iter = cachedStmts.getIterator();
+    CachedStmtNode *node = NULL, *toRemove =NULL;
+    int lowHits = 0;
+    bool firstCall = true;
+    while((node = (CachedStmtNode*) iter.nextElement()) != NULL)
+    {
+        if (firstCall) { 
+            firstCall = false; 
+            lowHits = node->hits; 
+            toRemove = node; //if cache size is 1
+            continue; 
+        }
+        if (lowHits >= node->hits) toRemove = node;
+    }
+    cachedStmts.remove(toRemove);
+    logFiner(Conf::logger, "Statement removed from Cache %x\n", toRemove->sqlStmt);
+    logFinest(Conf::logger, "Statement removed from Cache %s\n", toRemove->sqlString);
+    return;
 }
 SqlConnection::~SqlConnection()
 {

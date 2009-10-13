@@ -402,7 +402,8 @@ DbRetVal SelStatement::resolve()
             newVal->isDefault = fInfo->isDefault;
             if (newVal->isDefault) 
                 strcpy(newVal->defValBuf, fInfo->defaultValueBuf);
-            else newVal->defValBuf[0] ='\0';
+            else newVal->defValBuf[0]='\0';
+
             if (name->aType == AGG_COUNT) {
                 newVal->type = typeInt;
                 newVal->length = sizeof(int);
@@ -466,12 +467,12 @@ DbRetVal SelStatement::resolve()
             if (name->aType ==AGG_UNKNOWN && 
                             parsedData->getGroupFieldNameList().size()== 0) {
                 rv = table->bindFld(name->fldName, newVal->value);
-                if (OK !=rv) { 
-                    if (newVal->isAllocVal) free(newVal->value); 
-                    delete newVal; 
-                    delete fInfo; 
-                    return rv; 
-                }
+                if (OK !=rv) {
+                   if (newVal->isAllocVal) free(newVal->value);
+                   delete newVal; 
+                   delete fInfo; 
+                   return rv; 
+               }
             }
             else if (!isSingleTableNoGrp) 
             {
@@ -482,7 +483,7 @@ DbRetVal SelStatement::resolve()
                 rv = aggTable->bindFld(name->fldName, name->aType, newVal->value);
                 if (OK !=rv) {
                     if (newVal->isAllocVal) free(newVal->value);
-                    delete newVal; delete fInfo; delete aggTable; 
+                    delete newVal; delete fInfo; delete aggTable;
                     aggTable = NULL; table = NULL;
                     return rv;
                 }
@@ -554,6 +555,7 @@ DbRetVal SelStatement::resolve()
         table = NULL;
         return rv;
     }
+    if (NULL == parsedData->getCondition()) parsedData->setCacheWorthy(false);
     rv = resolveGroupFld(aggTable);
     if (rv != OK) 
     {
@@ -836,6 +838,10 @@ DbRetVal SelStatement::resolveForCondition()
         }
         if (!value->paramNo) {
 	     // for valid Integer 
+             if (value->type  == typeDate || value->type == typeTime ||
+                 value->type == typeTimeStamp)
+                 parsedData->setCacheWorthy(false);
+
 	     if((value->type == typeInt) || (value->type==typeShort) || (value->type==typeByteInt) || (value->type==typeLongLong) || (value->type==typeLong)){
 	            int len=strlen(value->parsedString);
 	            for(int n=0;n<len;n++){
@@ -1197,7 +1203,7 @@ DbRetVal SelStatement::getProjFldInfo (int projpos, FieldInfo *&fInfo)
     fInfo->isDefault = value->isDefault;
     if (fInfo->aType == AGG_UNKNOWN) {
         strcpy(fInfo->fldName, value->fldName);
-        if (fInfo->isDefault) strcpy(fInfo->defaultValueBuf, value->defValBuf);
+        if (fInfo->isDefault) strcpy(fInfo->defaultValueBuf, value->defValBuf); 
         return OK;
     }
     switch(fInfo->aType)

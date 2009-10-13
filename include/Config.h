@@ -69,6 +69,9 @@ class ConfigValues
     int shmKeyForId;
     long maxQueueLogs;
     int noOfProcessors;
+    int stmtCacheSize;
+    bool isCacheNoParam;
+
 
     ConfigValues()
     {
@@ -116,6 +119,9 @@ class ConfigValues
         shmKeyForId = -1;
         maxQueueLogs = 100;
         noOfProcessors = 1;
+        stmtCacheSize = 10;
+        isCacheNoParam = false;
+
     }
 };
 
@@ -170,6 +176,9 @@ class Config
     inline int getCacheWaitSecs() { return cVal.cacheWaitSecs; }
     inline int getLogLevel() { return cVal.logLevel; }
     inline int getNoOfProcessors() { return cVal.noOfProcessors; }
+    inline int getStmtCacheSize() { return cVal.stmtCacheSize; }
+    inline bool useCacheNoParam() { return cVal.isCacheNoParam; }
+
 };
 
 class Conf

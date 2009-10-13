@@ -147,6 +147,7 @@ other: ALLTABLE
 select_statement: opt_explain SELECT opt_distinct field_list FROM table_list where_clause_opt group_by_opt having_opt order_by_opt limit_opt semicolon_opt
 	{
             parsedData->setStmtType(SelectStatement);
+            parsedData->setCacheWorthy(true);
         }
         ;
 opt_explain: EXPLAIN PLAN

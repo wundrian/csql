@@ -28,6 +28,9 @@ struct CachedStmtNode{
     SqlStatement *sqlStmt;
     int stmtLength;
     char *sqlString;
+    int hits;
+    CachedStmtNode() { sqlStmt = NULL; sqlString=NULL; stmtLength=0; hits=0;}
+    
 };
 class SqlConnection : public AbsSqlConnection
 {
@@ -95,6 +98,7 @@ class SqlConnection : public AbsSqlConnection
     SqlStatement* findInCache(char *stmtStr);
     void flushCacheStmt();
     void addToCache(SqlStatement *stmt, char *stmtStr);
+    void removeLeastUsed();
 
     friend class SqlFactory;
 };

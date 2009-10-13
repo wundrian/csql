@@ -49,7 +49,7 @@ enum StatementType
 struct FieldValue
 {
     char fldName[IDENTIFIER_LENGTH];
-    char defValBuf[DEFAULT_VALUE_BUF_LENGTH]; 
+    char defValBuf[DEFAULT_VALUE_BUF_LENGTH];
     char *parsedString;
     void *value;
     int paramNo; // 0 ->not a param. It stores the param position
@@ -227,10 +227,11 @@ class ParsedData
     bool dsn;
     int limit;
     int offset;
+    bool isWorthyToCache;
     public:
     ParsedData() { limit = 0;  offset= 0; paramCounter = 0; stmtType = UnknownStatement;  isDistinct = false; isExplain=false;
                  isUnique = false; isPrimary = false; isAutoIncrement=false ;indexType = hashIndex; plan = Normal; bucketSize=0; isForeign=false; hCondFld=false; vCondFld=false;pkFld=false;forceOption=false; direct=false; uncache=false; noschema=false; dsn=false; 
-    shouldCreateTbl=false; userNode = NULL;
+    shouldCreateTbl=false; userNode = NULL; isWorthyToCache=false;
     } 
     void createUserNode(char *name, char *password);
     char *getUserName() { return userNode->userName; }
@@ -335,6 +336,8 @@ class ParsedData
     bool getDistinct() { return isDistinct; }
     void setExplain() { isExplain=true; }
     bool getExplain() { return isExplain; }
+    bool getCacheWorthy() { return isWorthyToCache; }
+    void setCacheWorthy(bool flag) { isWorthyToCache = flag;}
 
 
     void setFldName(char *name);
