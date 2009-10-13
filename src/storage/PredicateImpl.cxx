@@ -934,6 +934,7 @@ bool PredicateImpl::rangeQueryInvolved(const char *fname)
     }
     return false;
 }
+
 void* PredicateImpl::opAndValPtrForIndexField(const char *fname, bool isUnique,ComparisionOp &op)
 {
     ComparisionOp lhsOp= OpInvalidComparisionOp, rhsOp= OpInvalidComparisionOp;
@@ -969,6 +970,7 @@ void* PredicateImpl::opAndValPtrForIndexField(const char *fname, bool isUnique,C
  
 }
 
+//called only in case of hash index scan
 void* PredicateImpl::valPtrForIndexField(const char *fname, bool isUnique)
 {
     void *lhsRet=NULL, *rhsRet=NULL;
@@ -986,12 +988,11 @@ void* PredicateImpl::valPtrForIndexField(const char *fname, bool isUnique)
     Table::getFieldNameAlone(fldName1, fieldName1);
     //Means it is relational expression
     //first operand is always field identifier
-    //if (OpEquals == compOp)
+    if (OpEquals == compOp)
     {
         if(0 == strcmp(fieldName1, fname)) 
         {
-            if (isUnique && compOp != OpLessThan && 
-                compOp != OpLessThanEquals) isPushedDown = true;
+            if (isUnique) isPushedDown = true;
             if (operand) return operand; else return *(void**)operandPtr;
         }
     }

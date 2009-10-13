@@ -306,23 +306,22 @@ DbRetVal TableImpl::createPlan()
     int i = 0;
     ListIterator it = bindList_.getIterator();
     while ((elem = it.nextElement()) != NULL) bindListArray_[i++] = elem;
+    scanType_ = fullTableScan;
+    isPlanCreated = true;
 
     //if there are no predicates then go for full scan
     //if there are no indexes then go for full scan
     if (NULL == pred_ || NULL == indexPtr_)
     {
-        scanType_ = fullTableScan;
-        isPlanCreated = true;
         return OK;
     }
-    //If serching for IS NULL or IS NOT NULL then fullscan
     if (NULL != indexPtr_)
     {
        PredicateImpl *pred = (PredicateImpl*)pred_;
+       //If searching for IS NULL or IS NOT NULL then fullscan
        if(pred->isIsNullInvolved())
        {
            scanType_ = fullTableScan;
-           isPlanCreated = true;
            shouldNullSearch=true;
            return OK;
        }
@@ -330,6 +329,7 @@ DbRetVal TableImpl::createPlan()
        if (!pred->isNotOrInvolved())
        {
            printDebug(DM_Predicate, "predicate does not involve NOT , OR operator");
+          bool isAllFldPointLookup = true;
           for (int i =0; i < numIndexes_; i++)
           {
               HashIndexInfo* info = (HashIndexInfo*) idxInfo[i];
@@ -339,10 +339,10 @@ DbRetVal TableImpl::createPlan()
                 FieldDef *def = iter.nextElement();
                 if (pred->pointLookupInvolved(def->fldName_))
                 {
+                  if (!isAllFldPointLookup) break;
                   printDebug(DM_Predicate, "point lookup involved for field %s",def->fldName_);
                   if(hashIndex == info->indType) scanType_ = hashIndexScan;
                   else scanType_ = treeIndexScan;
-                  isPlanCreated = true;
                   isPointLook = true;
                   useIndex_ = i;
                 }
@@ -351,11 +351,10 @@ DbRetVal TableImpl::createPlan()
                     if (treeIndex == info->indType)
                     {
                      scanType_ = treeIndexScan;
-                     isPlanCreated = true;
                      useIndex_ = i;
                      isBetween=true;
                      break; //no composite index for tree index
-                    }
+                    } else isAllFldPointLookup= false;
                 }
                 else if (pred->rangeQueryInvolved(def->fldName_))
                 {
@@ -363,21 +362,20 @@ DbRetVal TableImpl::createPlan()
                   if (treeIndex == info->indType)
                   {
                      scanType_ = treeIndexScan;
-                     isPlanCreated = true;
                      useIndex_ = i;
                      break; //no composite index for tree index
-                  }
+                  } else isAllFldPointLookup=false;
                 }else {
                     useIndex_ = -1;
+                    isAllFldPointLookup = false;
                     break;
                 }
              }//while iter.hasElement()
-             if (useIndex_ != -1) return OK;
+             if (!isAllFldPointLookup && useIndex_ != -1) return OK;
            }//for
         }
     }
     scanType_ = fullTableScan;
-    isPlanCreated = true;
     return OK;
 }
 

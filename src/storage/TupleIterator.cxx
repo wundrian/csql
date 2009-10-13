@@ -70,8 +70,11 @@ DbRetVal TupleIterator::open()
            FieldDef *def = iter.nextElement();
            //keyPtr = (void*)predImpl->valPtrForIndexField(def->fldName_,hIdxInfo->isUnique);
            //TODO::PRABA::the below opt should be done for hash also
-           //keyPtr = (void*)predImpl->valPtrForIndexField(def->fldName_,false);
-           keyPtr=(char*)predImpl->opAndValPtrForIndexField(def->fldName_,false,op);          
+           keyPtr = (void*)predImpl->valPtrForIndexField(def->fldName_,false);
+           if (NULL == keyPtr) {
+               printError(ErrSysFatal, "Fatal: Should not come here");
+               continue;
+           }
            AllDataType::copyVal(keyBufferIter, keyPtr, def->type_, def->length_); 
            keyBufferIter = keyBufferIter + def->length_;
         }
