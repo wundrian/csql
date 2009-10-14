@@ -12,10 +12,12 @@ Platforms Supported
 -------------------
 Linux    - x86, x86_64
 Solaris  - x86, sparc32, sparc64
+FreeBSD	 - x86, x86_64
 
 Compilers Supported
 -------------------
 g++ in Linux
+g++ in FreeBSD
 CC in Solaris
 
 Available Documentation
