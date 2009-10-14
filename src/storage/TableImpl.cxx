@@ -329,13 +329,15 @@ DbRetVal TableImpl::createPlan()
        if (!pred->isNotOrInvolved())
        {
            printDebug(DM_Predicate, "predicate does not involve NOT , OR operator");
-          bool isAllFldPointLookup = true;
           for (int i =0; i < numIndexes_; i++)
           {
+              bool isAllFldPointLookup = true;
               HashIndexInfo* info = (HashIndexInfo*) idxInfo[i];
               FieldIterator iter = info->idxFldList.getIterator();
+              int noOfIfld =0;
               while(iter.hasElement())
               {
+                noOfIfld++;
                 FieldDef *def = iter.nextElement();
                 if (pred->pointLookupInvolved(def->fldName_))
                 {
@@ -371,6 +373,7 @@ DbRetVal TableImpl::createPlan()
                     break;
                 }
              }//while iter.hasElement()
+             if( noOfIfld == 1 && useIndex_ != -1)return OK;
              if (!isAllFldPointLookup && useIndex_ != -1) return OK;
            }//for
         }
