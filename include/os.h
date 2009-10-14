@@ -195,7 +195,6 @@ class os
     static int getNoOfProcessors();
     static mode_t umask(mode_t mask);
     static int fdatasync(int fd);
-
 };
 
 #endif
