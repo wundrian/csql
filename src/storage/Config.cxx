@@ -310,7 +310,7 @@ int Config::readAllValues(char *fileName)
 {
     if (isLoaded) return 0;
     FILE *fp;
-    if (fileName == NULL) fileName = DEFAULT_CONFIG_FILE;
+    if (fileName == NULL || 0 == strcmp(fileName, "")) fileName = DEFAULT_CONFIG_FILE;
     fp = fopen(fileName,"r");
     if( fp == NULL ) {
         printError(ErrSysInit, "Invalid path/filename in CSQL_CONFIG_FILE.");
