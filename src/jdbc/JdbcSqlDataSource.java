@@ -28,12 +28,14 @@ public class JdbcSqlDataSource implements javax.sql.DataSource, javax.naming.Ref
     private String serverName="localhost";
     private String password="manager";
     private String userName="root";
+    private String mode="";
     transient JdbcSqlDriver driver;
     transient private PrintWriter printer;
     private int loginTimeout;
-    private String jdbcurl="jdbc:csql";
+    private String jdbcurl="jdbc:";
     private int portno = 5678;
-
+    boolean explicityUrlUsed=false;
+    private String explicityUrl="";
     public JdbcSqlDataSource()
     {
         
@@ -47,7 +49,12 @@ public class JdbcSqlDataSource implements javax.sql.DataSource, javax.naming.Ref
     }
     public synchronized Connection getConnection(String username, String password) throws SQLException
     {
-        String url = jdbcurl +"://" + serverName + ":" + portno +"/" + databaseName;
+        String url="";
+        if(!explicityUrlUsed){
+            url = jdbcurl+ mode +"://" + serverName + ":" + portno +"/" + databaseName;
+        } else {
+            url = explicityUrl;
+        }
         Properties info = new Properties();
         if (username != null)
             info.put("user", username);
@@ -59,15 +66,44 @@ public class JdbcSqlDataSource implements javax.sql.DataSource, javax.naming.Ref
         return conn;
       
     }
+    public void setUrl(String url)
+    {
+         if(explicityUrlUsed) {
+            explicityUrl = url;
+         }
+    }
+    public String getUrl()
+    {
+        String url="";
+        if(!explicityUrlUsed){
+            url = jdbcurl+ mode +"://" + serverName + ":" + portno +"/" + databaseName;
+        } else {
+            url = explicityUrl;
+        }
+        return url;
+    }
+
     public void setPort(int port)
     {
          this.portno = port;
     }
+    public int getPort()
+    {
+         return this.portno ;
+    }
 
-    
+    public void setMode(String mode)
+    {
+         this.mode = mode;
+    }
+    public String getMode()
+    {
+         return this.mode ;
+    }
+ 
     JdbcSqlDriver findDriver() throws SQLException
     {
-        String url = jdbcurl;
+        String url = getUrl();
         if (driver == null || !driver.acceptsURL(url))
         {
             //new JdbcSqlDriver();
@@ -101,6 +137,11 @@ public class JdbcSqlDataSource implements javax.sql.DataSource, javax.naming.Ref
         Reference ref = new Reference(this.getClass().getName(),"csql.jdbc.JdbcSqlObjectFactory", null);
         ref.add( new StringRefAddr("serverName", getServerName()) );
         ref.add( new StringRefAddr("databaseName",getDatabaseName()));
+        ref.add( new StringRefAddr("mode",getMode()));
+        ref.add( new StringRefAddr("port",""+getPort()));
+        ref.add( new StringRefAddr("user",getUserName()));
+        ref.add( new StringRefAddr("password",getPassword()));
+        ref.add( new StringRefAddr("url",getUrl()));
         return ref;
     }
     
