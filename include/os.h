@@ -149,7 +149,7 @@ class os
     inline static size_t alignLong(size_t size)
         { return ((size - 1) | (sizeof(long) - 1)) + 1;}
     inline static size_t align(size_t size)
-        { return ((size - 1) | (sizeof(int) - 1)) + 1;}
+        { return ((size - 1) | (sizeof(InUse) - 1)) + 1;}
     static char*  encrypt(const char * key, const char *salt);
     static void* memset(void *src, int c, size_t size);
     static void* memcpy(void *src, const void *dest, size_t size);

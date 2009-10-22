@@ -109,13 +109,13 @@ void* ChunkIterator::nextElementIntMatch(int value, int offset)
     //check whether there are any nodes in the current page
     if (!data) {
         data = ((char*)iterPage_) + sizeof(PageInfo);
-        if ((*(InUse*)data) == 1 && *(int*)(data+sizeof(int)+offset) == value) 
+        if ((*(InUse*)data) == 1 && *(int*)(data+sizeof(InUse)+offset) == value) 
             return data + sizeof(InUse);
     } 
     data += allocSize_;
     while(data < iterPageEnd)
     {
-        if (*(int*)(data+sizeof(int)+offset) == value && *((InUse*)data))
+        if (*(int*)(data+sizeof(InUse)+offset) == value && *((InUse*)data))
         {
             printDebug(DM_Iterator,"ChunkID:%d Returning %x nodeOffset:%d",
                                   chunkID_, data + sizeof(InUse), nodeOffset_);
@@ -133,11 +133,11 @@ void* ChunkIterator::nextElementIntMatch(int value, int offset)
         iterPageEnd = ((char*)iterPage_) + PAGE_SIZE;
         while(data < iterPageEnd)
         {
-            if (*(int*)(data+sizeof(int)+offset) == value && *((InUse*)data))
+            if (*(int*)(data+sizeof(InUse)+offset) == value && *((InUse*)data))
             {
                 printDebug(DM_Iterator,"ChunkID:%d Returning %x",
                                  chunkID_, data + sizeof(InUse));
-                return data +sizeof(int);
+                return data +sizeof(InUse);
             }
             data = data + allocSize_;
         }

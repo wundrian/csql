@@ -1,5 +1,6 @@
 #!/bin/sh
 # Stop CSQL Server
+OS=`uname`
 AWK=awk
 FORCE=$1
 LOGFILE=`grep LOG_FILE $CSQL_CONFIG_FILE| tail -1 | awk -F"=" '{ print $2 }'`
@@ -8,33 +9,66 @@ LOGDIR=`dirname $LOGFILE`
 echo "CSQL Server Stopped: " + `date` >>$LOGDIR/csqlserver.log
 while true
 do
-   SQLPID=`ps -e | grep csqlsqlserver |tail -1| awk -F" " '{ print $1 }'`
+   if [ "$OS" = "SunOS" ]
+   then
+      SQLPID=`ps -ef | grep csqlsqlserver |head -1| awk -F" " '{ print $2 }'`
+   else
+      SQLPID=`ps -e | grep csqlsqlserver |tail -1| awk -F" " '{ print $1 }'`
+   fi
+
    if [ "$SQLPID" != "" ]
    then
+       echo Killing $SQLPID
        kill -2 $SQLPID
+       if [ $? -ne 0 ]
+       then
+          break;
+       fi
        sleep 1
    else break;
    fi
 done
-REPLPID=`ps -e | grep csqlreplserver |tail -1| awk -F" " '{ print $1 }'`
+if [ "$OS" = "SunOS" ]
+then
+    REPLPID=`ps -ef | grep csqlreplserver |head -1| awk -F" " '{ print $2 }'`
+else
+    REPLPID=`ps -e | grep csqlreplserver |tail -1| awk -F" " '{ print $1 }'`
+fi
 if [ "$REPLPID" != "" ]
 then
     kill -2 $REPLPID
 fi
-CACHEPID=`ps -e | grep csqlcacheserver |tail -1| awk -F" " '{ print $1 }'`
+if [ "$OS" = "SunOS" ]
+then
+   CACHEPID=`ps -ef | grep csqlcacheserver |head -1| awk -F" " '{ print $2 }'`
+else
+   CACHEPID=`ps -e | grep csqlcacheserver |tail -1| awk -F" " '{ print $1 }'`
+fi
 if [ "$CACHEPID" != "" ]
 then
     kill -2 $CACHEPID
 fi
-CSQLPID=`ps -e | grep csqlserver |tail -1| awk -F" " '{ print $1 }'`
-if [ "$CSQLPID" == "" ]
+if [ "$OS" = "SunOS" ]
+then
+   CSQLPID=`ps -ef | grep csqlserver |head -1| awk -F" " '{ print $2 }'`
+else
+   CSQLPID=`ps -e | grep csqlserver |tail -1| awk -F" " '{ print $1 }'`
+fi
+
+if [ "$CSQLPID" = "" ]
 then
     echo "returning early"
-    return;
+    exit 0;
 fi
 kill -2 $CSQLPID
-CSQLPID=`ps -e | grep csqlserver |tail -1| awk -F" " '{ print $1 }'`
-if [ "$CSQLPID" == "" ]
+if [ "$OS" = "SunOS" ]
+then
+   CSQLPID=`ps -ef | grep csqlserver |head -1| awk -F" " '{ print $2 }'`
+else
+   CSQLPID=`ps -e | grep csqlserver |tail -1| awk -F" " '{ print $1 }'`
+fi
+
+if [ "$CSQLPID" = "" ]
 then
     FORCE=
 fi

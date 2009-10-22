@@ -99,15 +99,15 @@ class ChunkIterator
         if (!data) {
             pageSize = PAGE_SIZE;
             data = ((char*)iterPage_) + sizeof(PageInfo);
-            if ((*(int*)data) == 1) return data + sizeof(int);
+            if ((*(InUse*)data) == 1) return data + sizeof(InUse);
         }
 
         if(0 == noOfNodes_) return nextElement();
         data += allocSize_;
         while(data < iterPageEnd)
         {
-            if (*((int*)data)) {
-                return data + sizeof(int);
+            if (*((InUse*)data)) {
+                return data + sizeof(InUse);
             } else {
                data += allocSize_;
             }
@@ -119,11 +119,11 @@ class ChunkIterator
             iterPageEnd = ((char*)iterPage_) + pageSize;
             while(data < iterPageEnd)
             {
-                if (*((int*)data) == 0) {
+                if (*((InUse*)data) == 0) {
                    data = data + allocSize_;
                    nodeOffset_++;
                 } else 
-                    return data +sizeof(int);
+                    return data +sizeof(InUse);
             }
         }
         return NULL;

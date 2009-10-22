@@ -425,7 +425,7 @@ Chunk* DatabaseManagerImpl::createUserChunk(size_t size)
     {
         firstPageInfo->setPageAsUsed(chunkInfo->allocSize_);
         char *data = ((char*)firstPageInfo) + sizeof(PageInfo);
-        *(int*)data =0;
+        *(InUse*)data =0;
     }
     if (0 == size)
     {

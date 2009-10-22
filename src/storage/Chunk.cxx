@@ -28,7 +28,7 @@
 void Chunk::setSize(size_t size)
 {
 
-    size_t needSize = size + sizeof(int);
+    size_t needSize = size + sizeof(InUse);
     size_t multiple = (size_t) os::floor(needSize / sizeof(size_t));
     size_t rem = needSize % sizeof(size_t);
     if (0 == rem)
@@ -96,7 +96,7 @@ void* Chunk::allocateForLargeDataSize(Database *db)
         printError(ErrLockTimeOut, "Fatal:Unable to set hasFreeSpace");
     }
     *((InUse*)data) = 1;
-    //Mutex::CAS((InUse*)data , 0, 1);
+    //Mutex::CASL((InUse*)data , 0, 1);
     db->releaseAllocDatabaseMutex();
     return data + sizeof(InUse);
 
@@ -136,7 +136,11 @@ void* Chunk::allocateFromFirstPage(Database *db, int noOfDataNodes, DbRetVal *st
     printDebug(DM_Alloc,"ChunkID:%d Scan for free node End:Page :%x",
                                                   chunkID_, pageIter);
     //*((InUse*)data) = 1;
+#if defined(__sparcv9)
+    int ret = Mutex::CASL((InUse*)data , 0, 1);
+#else
     int ret = Mutex::CAS((InUse*)data , 0, 1);
+#endif
     if(ret !=0) {
         *status = ErrLockTimeOut;
         //printError(ErrLockTimeOut, "Unable to allocate from first page. Retry...");
@@ -297,7 +301,11 @@ void* Chunk::allocate(Database *db, DbRetVal *status)
         return data;
     }
     //*((InUse*)data) = 1;
+#if defined(__sparcv9)
+    int ret = Mutex::CASL((InUse*)data , 0, 1);
+#else
     int ret = Mutex::CAS((InUse*)data , 0, 1);
+#endif
     if(ret !=0) {
         *status = ErrLockTimeOut;
         printDebug(DM_Warning, "Unable to set isUsed : retry...");
@@ -333,7 +341,11 @@ void* Chunk::allocateForLargeDataSize(Database *db, size_t size)
         curPage_ = (Page*) pageInfo;
         char* data = ((char*)curPage_) + sizeof(PageInfo);
         //*((InUse*)data) = 1;
+#if defined(__sparcv9) 
+        int ret = Mutex::CASL((InUse*)data , 0, 1);
+#else
         int ret = Mutex::CAS((InUse*)data , 0, 1);
+#endif
         if(ret !=0) {
              printError(ErrLockTimeOut, "Lock Timeout: retry...");
              return NULL;
@@ -631,7 +643,7 @@ void Chunk::freeForLargeAllocator(void *ptr, int pslot)
         return;
     }
     PageInfo *pageInfo = (PageInfo*)(((char*)
-                         ptr) - (sizeof(PageInfo) + sizeof(int)));
+                         ptr) - (sizeof(PageInfo) + sizeof(InUse)));
     PageInfo *pInfo = (PageInfo*)firstPage_, *prev = (PageInfo*)firstPage_;
     bool found = false;
     while(!found)
@@ -700,7 +712,11 @@ void Chunk::free(Database *db, void *ptr)
         printError(ErrSysFatal, "Fatal:Data node already freed %x Chunk:%d", ptr, chunkID_);
         //return; 
     }
+#if defined(__sparcv9)
+    int ret = Mutex::CASL(((InUse*)ptr -1), 1, 0);
+#else
     int ret = Mutex::CAS(((InUse*)ptr -1), 1, 0);
+#endif
     if(ret !=0) {
         printError(ErrSysFatal, "Unable to get lock to free for %x", ptr);
         return; 

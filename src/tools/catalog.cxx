@@ -249,9 +249,9 @@ int main(int argc, char **argv)
 		char *data = ((char*)page) + sizeof(PageInfo);
 		for (i = 0; i< noOfDataNodes; i++)
 		{
-			if (*((int*)data) == 1) 
+			if (*((InUse*)data) == 1) 
 			{
-				chk=(Chunk*)((int*)data+1);
+				chk=(Chunk*)((InUse*)data+1);
 				chk->print(); 
 			}
 			data = data + size;
