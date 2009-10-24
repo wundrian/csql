@@ -274,10 +274,11 @@ DbRetVal SqlOdbcConnection::disconnect()
 }
 void SqlOdbcConnection::setTrDbName(char *name)
 {
-    if(strcmp(name, "mysql")==0)
+    if(strcasecmp(name, "mysql")==0)
         tdbName=mysql;
-    else if(strcmp(name, "postgres")==0)
+    else if(strcasecmp(name, "postgres")==0)
         tdbName = postgres;
+    else  printError(ErrNotFound,"Target Database Name is not properly set.Tdb name could be mysql, postgres, sybase, db2, oracle\n");
     return;
 }
 DbRetVal SqlOdbcConnection::beginTrans(IsolationLevel isoLevel, TransSyncMode mode)

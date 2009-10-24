@@ -131,8 +131,9 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
     } 
     fclose(fp);
     TDBInfo tdbName=mysql;
-    if (strcmp(tdb,"postgres")==0) tdbName=postgres;
-    else tdbName=mysql;
+    if (strcasecmp(tdb,"postgres")==0) tdbName=postgres;
+    else if (strcasecmp(tdb,"postgres")==0) tdbName=mysql;
+    else printError(ErrNotFound,"Target Database Name is not properly set.Tdb name could be mysql, postgres, sybase, db2, oracle\n");
          
   //ENDs Here:
 
