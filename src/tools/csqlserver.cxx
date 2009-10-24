@@ -375,6 +375,8 @@ int main(int argc, char **argv)
     }
     if ( (Conf::config.useCache() && 
            Conf::config.getCacheMode()==ASYNC_MODE)) {
+        int msgid = os::msgget(Conf::config.getMsgKey(), 0666);
+        if (msgid != -1) os::msgctl(msgid, IPC_RMID, NULL);
         startAsyncServer();
     }
     if (Conf::config.useCache() && Conf::config.useTwoWayCache()) {
