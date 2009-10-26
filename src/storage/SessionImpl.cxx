@@ -177,12 +177,17 @@ DbRetVal SessionImpl::authenticate(const char *username, const char *password)
 }
 DbRetVal SessionImpl::getExclusiveLock()
 {
+   DbRetVal rv = dbMgr->sysDb()->getProcessTableMutex(true);
+   if (OK != rv) {
+      printError(ErrLockTimeOut, "Unable to acquire proc table mutex");
+      return rv;
+   }
    if (dbMgr->isAnyOneRegistered()) {
       printError(ErrLockTimeOut, "Unable to acquire exclusive lock. somebody is connected");
+      dbMgr->sysDb()->releaseProcessTableMutex(true);
       return ErrLockTimeOut;
    }
-   DbRetVal rv = dbMgr->sysDb()->getProcessTableMutex(true);
-   if (OK == rv) isXTaken = true;
+   isXTaken = true;
    return rv;
 }
 DbRetVal SessionImpl::close()
@@ -205,6 +210,7 @@ DbRetVal SessionImpl::close()
         delete uMgr;
         uMgr = NULL;
     }
+    isXTaken = false;
     return OK;
 }
 

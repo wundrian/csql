@@ -34,7 +34,7 @@ void ThreadInfo::init()
     thrid_ =0;
     want_ = NULL;
     for (int i =0; i <MAX_MUTEX_PER_THREAD; i++) has_[i] = NULL;
-    for (int i =0; i <MAX_THREADS_PER_PROCESS; i++)  thrTrans_[i].init();
+    thrTrans_.init();
 }
 void ThreadTrans::print()
 {
@@ -55,7 +55,7 @@ void ThreadInfo::print()
     for (int i =0; i <MAX_MUTEX_PER_THREAD; i++) if (has_[i]) printf("    <MUTEX> %x </MUTEX>\n", has_[i]);
     printf("  </MUTEXLIST>\n");
     printf("  <TRANSLIST>\n");
-    for (int i =0; i <MAX_THREADS_PER_PROCESS; i++) thrTrans_[i].print();
+    thrTrans_.print();
     printf("  </TRANSLIST>\n");
     printf("</THREADINFO>\n");
 
@@ -81,15 +81,15 @@ DbRetVal ProcessManager::registerThread()
     pid_t pid;
     pid = os::getpid();
     pthread_t thrid = os::getthrid();
-    ThreadInfo* pInfo = systemDatabase->getThreadInfo(0);
+    ThreadInfo* tInfo = systemDatabase->getThreadInfo(0);
     int i=0;
     ThreadInfo* freeSlot = NULL;
     int freeSlotPos =0;
     bool freeSlotSelected = false;
     for (; i < Conf::config.getMaxProcs(); i++)
     {
-        if (pInfo->pid_ == 0 ) break;
-        pInfo++;
+        if (tInfo->pid_ == 0 ) break;
+        tInfo++;
     }
     if ( i == Conf::config.getMaxProcs())
     {
@@ -97,12 +97,10 @@ DbRetVal ProcessManager::registerThread()
         printError(ErrNoResource, "No free thread slot. Limit reached");
         return ErrNoResource;
     }
-    //printf("Process slot used %d %x\n", i, pInfo);
-    //TODO::make the above debug message
-    //TODO:print it to the trace file
-    pInfo->init();
-    pInfo->pid_ = pid;
-    pInfo->thrid_ = thrid;
+    logFiner(Conf::logger, "Process slot taken: %d", i);
+    tInfo->init();
+    tInfo->pid_ = pid;
+    tInfo->thrid_ = thrid;
     procSlot = i;
     printDebug(DM_Process, "Process %d %lu registered with slot %d\n", pid, thrid, procSlot);
     systemDatabase->releaseProcessTableMutex(false);
@@ -118,25 +116,7 @@ DbRetVal ProcessManager::deregisterThread(int procSlot)
     {
         printError(rv,"Unable to get process table mutex");
         return rv;
-    }/*
-    pid_t pid = os::getpid();
-    pthread_t thrid = os::getthrid();
-
-    ThreadInfo* pInfo = systemDatabase->getThreadInfo(0);
-    int i=0;
-    for (; i < Conf::config.getMaxProcs(); i++)
-    {
-        if (pInfo->pid_ == pid && pInfo->thrid_ == thrid) break;
-        pInfo++;
     }
-
-    systemDatabase->releaseProcessTableMutex(false);
-    if (i == Conf::config.getMaxProcs()) 
-    {
-        printError(ErrSysFatal, "Degistering process %d is not registered with csql", pid);
-        return ErrNoResource;
-    }*/
-    ThreadInfo* pInfo = systemDatabase->getThreadInfo(procSlot);
     Transaction *trans = ProcessManager::getThreadTransaction(procSlot);
     if (NULL != trans)
     { 
@@ -146,97 +126,65 @@ DbRetVal ProcessManager::deregisterThread(int procSlot)
        }
        trans->status_ = TransNotUsed;
     }
-    if (pInfo->want_ != NULL) 
+    ThreadInfo* tInfo = systemDatabase->getThreadInfo(procSlot);
+    if (tInfo->want_ != NULL) 
     {
-        printError(ErrSysFatal, "Probable data corruption.wants_ is not null\n");
+        printError(ErrSysFatal, "Fatal:wants_ is not null\n");
         systemDatabase->releaseProcessTableMutex(false);
         return ErrSysFatal;
     }
     for (int muti = 0 ;muti < MAX_MUTEX_PER_THREAD; muti++)
     {
-        if (pInfo->has_[muti] !=  NULL) 
+        if (tInfo->has_[muti] !=  NULL) 
         {
-            printError(ErrSysFatal, "Probable data corruption.some mutexes are not freed %x \n",  pInfo->has_[muti] );
-            pInfo->has_[muti]->print();
-            pInfo->has_[muti]->releaseLock(procSlot); 
+            printError(ErrSysFatal, "Fatal:Some mutexes are not freed %x\n",tInfo->has_[muti] );
+            tInfo->has_[muti]->print();
+            tInfo->has_[muti]->releaseLock(procSlot); 
             systemDatabase->releaseProcessTableMutex(false);
             return ErrSysFatal;
         }
     }
-    printDebug(DM_Process, "Process %d %lu deregistered slot %d\n", pInfo->pid_, pInfo->thrid_, procSlot);
-
-    //printf("Slot freed %d %x %d %lu\n", i, pInfo, pid, thrid); 
-    pInfo->init();
+    printDebug(DM_Process, "Process %d %lu deregistered slot %d\n", tInfo->pid_, tInfo->thrid_, procSlot);
+    logFiner(Conf::logger, "ProcSlot Freed %d", procSlot);
+    tInfo->init();
     systemDatabase->releaseProcessTableMutex(false);
     return OK;
 }
 
 DbRetVal ProcessManager::addMutex(Mutex *mut, int pslot)
 {
-    //pid_t pid = os::getpid();
-    //pthread_t thrid = os::getthrid();
-    if (systemDatabase == NULL)
-    {
-        return OK;
-    }
-    ThreadInfo* pInfo = systemDatabase->getThreadInfo(pslot);
-    int i=0;
-    /*for (; i < Conf::config.getMaxProcs(); i++)
-    {
-        if (pInfo->pid_ == pid && pInfo->thrid_ == thrid) break;
-        pInfo++;
-    }
-    if (i == Conf::config.getMaxProcs())
-    {
-        printError(ErrSysFatal, "Logical Error pid %d thrid %lu not found in procTable while adding mutex %s", pid, thrid, mut->name);
-        return ErrSysFatal;
-    }*/
+    if (systemDatabase == NULL) return OK;
+    ThreadInfo* tInfo = systemDatabase->getThreadInfo(pslot);
     for (int i = 0 ;i < MAX_MUTEX_PER_THREAD; i++)
     {
-        if (pInfo->has_[i] ==  NULL) 
+        if (tInfo->has_[i] ==  NULL) 
         {
-            pInfo->has_[i] = mut; 
+            tInfo->has_[i] = mut; 
             printDebug(DM_Process, "procSlot %d acquiring %d mutex %x %s\n", pslot, i, mut, mut->name);
+            logFinest(Conf::logger, "acquiring mutex %x %s", mut, mut->name);
             return OK;
         }
     }
     printError(ErrSysInternal, "All slots are full. Reached per thread mutex limit.");
-    //printStackTrace();
     for (int i = 0 ;i < MAX_MUTEX_PER_THREAD; i++)
     {
-       printError(ErrWarning, "mutex %d %x", i, pInfo->has_[i]);
-       pInfo->has_[i]->print();
+       printError(ErrWarning, "mutex %d %x", i, tInfo->has_[i]);
+       tInfo->has_[i]->print();
     }
     return ErrSysInternal;
 }
 
 DbRetVal ProcessManager::removeMutex(Mutex *mut, int pslot)
 {
-    //pid_t pid = os::getpid();
-    //pthread_t thrid = os::getthrid();
-    if (systemDatabase == NULL)
-    {
-        return OK;
-    }
-
-    ThreadInfo* pInfo = systemDatabase->getThreadInfo(pslot);
-    int i=0;
-    /*for (; i < Conf::config.getMaxProcs(); i++)
-    {
-        if (pInfo->pid_ == pid && pInfo->thrid_ == thrid) break;
-        pInfo++;
-    }
-    if (i == Conf::config.getMaxProcs())
-    {
-        printError(ErrSysFatal, "Logical Error pid %d thrid %lu not found in procTable", pid, thrid);
-        return ErrSysFatal;
-    }*/
+    if (systemDatabase == NULL) return OK; 
+    ThreadInfo* tInfo = systemDatabase->getThreadInfo(pslot);
     for (int i = 0 ;i < MAX_MUTEX_PER_THREAD; i++)
     {
-        if (pInfo->has_[i] ==  mut) 
+        if (tInfo->has_[i] ==  mut) 
         {
-            pInfo->has_[i] = NULL; 
+            tInfo->has_[i] = NULL; 
             printDebug(DM_Process, "procSlot %d releasing %d mutex %x %s\n", pslot, i, mut, mut->name);
+            logFinest(Conf::logger, "releasing mutex %x %d", mut, mut->name);
             return OK;
         }
     }
@@ -246,39 +194,24 @@ DbRetVal ProcessManager::removeMutex(Mutex *mut, int pslot)
 
 DbRetVal ProcessManager::setThreadTransaction(Transaction *trans, int pslot)
 {
+    if (systemDatabase == NULL) return OK;
     pid_t pid = os::getpid();
     pthread_t thrid = os::getthrid();
-    if (systemDatabase == NULL)
-    {
-        return OK;
-    }
 
-    ThreadInfo* pInfo = systemDatabase->getThreadInfo(pslot);
-    int i=0;
-
-    for (int i = 0 ;i < MAX_THREADS_PER_PROCESS; i++)
-    {
-        if (pInfo->thrTrans_[i].pid_ != 0) continue;
-    }
-    if (i == MAX_THREADS_PER_PROCESS)
-    {
-        printError(ErrSysInternal, "Max thread limit reached.");
-        return ErrSysInternal;
-    }
-    pInfo->thrTrans_[i].pid_ = pid;
-    pInfo->thrTrans_[i].thrid_ = thrid;
-    pInfo->thrTrans_[i].trans_ = trans;
+    ThreadInfo* tInfo = systemDatabase->getThreadInfo(pslot);
+    tInfo->thrTrans_.pid_ = pid;
+    tInfo->thrTrans_.thrid_ = thrid;
+    tInfo->thrTrans_.trans_ = trans;
 
     printDebug(DM_Process, "procSlot %d:  pid: %d thrid: %lu is set to use trans %x\n", pslot, 
                            pid, thrid, trans);
-    //pInfo->trans_ = trans;
     return OK;
 }
 
 Transaction* ProcessManager::getThreadTransaction(int pslot)
 {
-    ThreadInfo* pInfo = systemDatabase->getThreadInfo(pslot);
-    return pInfo->thrTrans_[0].trans_;
+    ThreadInfo* tInfo = systemDatabase->getThreadInfo(pslot);
+    return tInfo->thrTrans_.trans_;
 }
 
 Transaction** ProcessManager::getThreadTransAddr(int pslot)
@@ -290,22 +223,11 @@ Transaction** ProcessManager::getThreadTransAddr(int pslot)
         return NULL;
     }
 
-    ThreadInfo* pInfo = systemDatabase->getThreadInfo(pslot);
-    int i=0;
-
-    for (int i = 0 ;i < MAX_THREADS_PER_PROCESS; i++)
-    {
-        if (pInfo->thrTrans_[i].pid_ == pid && pInfo->thrTrans_[i].thrid_ == thrid) break;
-    }
-    if (i == MAX_THREADS_PER_PROCESS)
-    {
-        printDebug(DM_Process, "Thread specific trans could not be found in list");
-        return NULL;
-    }
+    ThreadInfo* tInfo = systemDatabase->getThreadInfo(pslot);
 
     printDebug(DM_Process, "procSlot %d:  pid: %d thrid: %lu is returning trans %x\n", pslot, 
-                           pid, thrid, pInfo->thrTrans_[i].trans_);
-    return &pInfo->thrTrans_[i].trans_;
+                           pid, thrid, tInfo->thrTrans_.trans_);
+    return &tInfo->thrTrans_.trans_;
 }
 
 
@@ -313,12 +235,12 @@ Transaction** ProcessManager::getThreadTransAddr(int pslot)
 
 void ProcessManager::printUsageStatistics()
 {
-    ThreadInfo* pInfo = systemDatabase->getThreadInfo(0);
+    ThreadInfo* tInfo = systemDatabase->getThreadInfo(0);
     int i=0, usedCount =0 , freeCount =0;
     for (; i < Conf::config.getMaxProcs(); i++)
     {
-        if (pInfo->pid_ != 0 ) usedCount++; else freeCount++;
-        pInfo++;
+        if (tInfo->pid_ != 0 ) usedCount++; else freeCount++;
+        tInfo++;
     }
     printf("<ProcTable>\n");
     printf("  <UsedSlots> %d </UsedSlots>\n", usedCount);
@@ -330,29 +252,29 @@ void ProcessManager::printUsageStatistics()
 void ProcessManager::printDebugInfo()
 {
     printf("<ProcTable>\n");
-    ThreadInfo* pInfo = systemDatabase->getThreadInfo(0);
+    ThreadInfo* tInfo = systemDatabase->getThreadInfo(0);
     int i=0, usedCount =0 , freeCount =0;
     for (; i < Conf::config.getMaxProcs(); i++)
     {
-        if (pInfo->pid_ != 0 ) {pInfo->print(); usedCount++;} else freeCount++;
-        pInfo++;
+        if (tInfo->pid_ != 0 ) {tInfo->print(); usedCount++;} else freeCount++;
+        tInfo++;
     }
     printf("<UsedSlots> %d </UsedSlots>\n", usedCount);
     printf("<FreeSlots> %d </FreeSlots>\n", freeCount);
     printf("</ProcTable>\n");
 }
 
-
+//caller is expected to take proc mutex
 bool ProcessManager::isAnyOneRegistered()
 {
     //the process which calls this will have an entry in proc table. 
     //so checking for 1
-    ThreadInfo* pInfo = systemDatabase->getThreadInfo(0);
+    ThreadInfo* tInfo = systemDatabase->getThreadInfo(0);
     int i=0, usedCount =0;
     for (; i < Conf::config.getMaxProcs(); i++)
     {
-        if (pInfo->pid_ != 0 ) usedCount++; 
-        pInfo++;
+        if (tInfo->pid_ != 0 ) usedCount++; 
+        tInfo++;
     }
     if (usedCount == 1) return false; else return true;
 }

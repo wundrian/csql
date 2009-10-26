@@ -61,6 +61,7 @@ DbRetVal Transaction::insertIntoHasList(Database *sysdb, LockHashNode *node)
     while (NULL != it->next_) { it = it->next_; }
     it->next_ = hasNode;
     printDebug(DM_Transaction, "Added to hasLockList at end:%x",it);
+    logFinest(Conf::logger, "Added locknode:%x to hasLockList", hasNode->node_);
     return OK;
 }
 
@@ -80,6 +81,8 @@ DbRetVal Transaction::removeFromHasList(Database *sysdb, void *tuple)
             prev->next_ = iter->next_;
             chunk->free(sysdb, iter);
             if (iter == hasLockList_) hasLockList_ = NULL;
+            logFinest(Conf::logger, "Removed locknode:%x from hasLockList",  
+                                                       iter->node_);
             return OK;
         }
         prev = iter;
@@ -111,6 +114,7 @@ DbRetVal Transaction::releaseAllLocks(LockManager *lockManager_)
         prev = iter;
         iter = iter->next_;
         printDebug(DM_Transaction, "Releasing lock %x",prev->node_->ptrToTuple_);
+        logFinest(Conf::logger, "Releasing lock for tuple:%x",prev->node_->ptrToTuple_);  
         rv = lockManager_->releaseLock(prev->node_->ptrToTuple_);
         chunk->free(sysdb, prev);
     }
@@ -301,6 +305,7 @@ DbRetVal Transaction::applyUndoLogs(Database *sysdb)
     UndoLogInfo *logInfo = NULL;
     while(NULL != (logInfo = popUndoLog()))
     {
+        logFinest(Conf::logger, "Apply undo log type:%d", logInfo->opType_);
         switch(logInfo->opType_)
         {
             case InsertOperation:

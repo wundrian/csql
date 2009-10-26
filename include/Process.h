@@ -50,7 +50,7 @@ class ThreadInfo
 
     pthread_t thrid_;
 
-    ThreadTrans thrTrans_[MAX_THREADS_PER_PROCESS]; //list of thread specific transactions
+    ThreadTrans thrTrans_; //list of thread specific transactions
 
     Mutex *want_;  //single mutex which we are waiting for.
 

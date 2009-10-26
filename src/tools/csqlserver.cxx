@@ -74,14 +74,11 @@ DbRetVal releaseAllResources(Database *sysdb, ThreadInfo *info )
     }
     TransactionManager *tm = new TransactionManager();
     LockManager *lm = new LockManager(sysdb);
-    for (int i = 0 ;i < MAX_THREADS_PER_PROCESS; i++)
+    if (info->thrTrans_.trans_ != NULL && info->thrTrans_.trans_->status_ == TransRunning)
     {
-        if (info->thrTrans_[i].trans_ != NULL && info->thrTrans_[i].trans_->status_ == TransRunning)
-        {
-            printf("Rollback Transaction %x\n", info->thrTrans_[i].trans_);
-            tm->rollback(lm, info->thrTrans_[i].trans_);
-            info->thrTrans_[i].trans_->status_ = TransNotUsed;
-        }
+        printf("Rollback Transaction %x\n", info->thrTrans_.trans_);
+        tm->rollback(lm, info->thrTrans_.trans_);
+        info->thrTrans_.trans_->status_ = TransNotUsed;
     }
     info->init();
     delete tm;
@@ -102,14 +99,14 @@ DbRetVal cleanupDeadProcs(Database *sysdb)
     pthread_t thrid = os::getthrid();
 
 
-    ThreadInfo* pInfo = sysdb->getThreadInfo(0);
+    ThreadInfo* tInfo = sysdb->getThreadInfo(0);
     int i=0;
     ThreadInfo* freeSlot = NULL;
     for (; i < Conf::config.getMaxProcs(); i++)
     {
         //check whether it is alive
-        if (pInfo->pid_ !=0 && checkDead(pInfo->pid_)) releaseAllResources(sysdb, pInfo);
-        pInfo++;
+        if (tInfo->pid_ !=0 && checkDead(tInfo->pid_)) releaseAllResources(sysdb, tInfo);
+        tInfo++;
     }
     sysdb->releaseProcessTableMutex(false);
     return OK;
@@ -124,19 +121,19 @@ DbRetVal logActiveProcs(Database *sysdb)
         printError(rv,"Unable to get process table mutex");
         return rv;
     }
-    ThreadInfo* pInfo = sysdb->getThreadInfo(0);
+    ThreadInfo* tInfo = sysdb->getThreadInfo(0);
     int i=0, count =0;
     ThreadInfo* freeSlot = NULL;
     for (; i < Conf::config.getMaxProcs(); i++)
     {
-        if (pInfo->pid_ !=0 ) {
-           logFine(Conf::logger, "Registered Procs: %d %lu\n", pInfo->pid_, pInfo->thrid_);
-           printf("Client process with pid %d is still registered\n", pInfo->pid_); 
-           if( pInfo->pid_ != asyncpid && pInfo->pid_ != cachepid &&
-               pInfo->pid_ != sqlserverpid)
+        if (tInfo->pid_ !=0 ) {
+           logFine(Conf::logger, "Registered Procs: %d %lu\n", tInfo->pid_, tInfo->thrid_);
+           printf("Client process with pid %d is still registered\n", tInfo->pid_); 
+           if( tInfo->pid_ != asyncpid && tInfo->pid_ != cachepid &&
+               tInfo->pid_ != sqlserverpid)
                count++;
         }
-        pInfo++;
+        tInfo++;
     }
     sysdb->releaseProcessTableMutex(false);
     if (count) return ErrSysInternal; else return OK;
