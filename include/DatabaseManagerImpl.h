@@ -116,6 +116,7 @@ class DatabaseManagerImpl : public DatabaseManager
     DbRetVal createForeignKey(char *kfName,ForeignKeyInfo *info);
     DbRetVal dropForeignKey(void *ctptr,bool trylock);
     List getAllTableNames(int *rv=NULL);
+    void sendSignal(int signal);
 
     DbRetVal registerThread();
     DbRetVal deregisterThread();

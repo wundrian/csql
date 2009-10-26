@@ -37,6 +37,9 @@ class SqlConnection : public AbsSqlConnection
     Connection conn;
     bool isConnOpen;
     public:
+    static List connList;
+    static bool isInit;
+    void initialize();
     List cachedStmts;
     SqlConnection(){ innerConn = NULL; isConnOpen = false; }
     ~SqlConnection();
@@ -49,6 +52,8 @@ class SqlConnection : public AbsSqlConnection
     DbRetVal connect (char *user, char * pass) {
         DbRetVal ret = conn.open(user, pass);
         if (ret == OK) isConnOpen = true;
+        if (!isInit) initialize();
+        connList.append(this);
         return ret;
     }
 
@@ -58,6 +63,7 @@ class SqlConnection : public AbsSqlConnection
     DbRetVal disconnect () { 
         DbRetVal ret = conn.close(); 
         if (ret == OK) isConnOpen = false;
+        connList.remove(this);
         return ret;
     }
 

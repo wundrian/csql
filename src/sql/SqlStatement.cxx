@@ -24,6 +24,9 @@
 
 char *lexInput;
 extern ParsedData *parsedData;
+bool SqlConnection::isInit = false;
+List SqlConnection::connList;
+
 
 int yyparse ();
 
@@ -113,7 +116,6 @@ DbRetVal SqlStatement::prepare(char *stmtstr)
     {
         free();
         parsedData = NULL;
-        //yyrestart(yyin);
         sysdb->releasePrepareStmtMutex();    
         return ErrSyntaxError;
     }
@@ -139,30 +141,26 @@ DbRetVal SqlStatement::prepare(char *stmtstr)
     {
         free();
         parsedData = NULL;
-        //yyrestart(yyin);
         sysdb->releasePrepareStmtMutex();    
         return rv;
     }
-    parsedData = NULL;
-    //yyrestart(yyin);
-    sysdb->releasePrepareStmtMutex();    
     isPrepd = true;
     if (Conf::config.getStmtCacheSize()) {
       if (stmt->noOfParamFields() > 0) { 
         isCachedStmt = true; 
         sqlCon->addToCache(this, stmtstr); 
-        return OK;
       }
-      if (Conf::config.useCacheNoParam())
+      else if (Conf::config.useCacheNoParam())
       {
         if (parsedData->getCacheWorthy())
         {
            isCachedStmt = true; 
            sqlCon->addToCache(this, stmtstr); 
-           return OK;
         }
       }
     }
+    parsedData = NULL;
+    sysdb->releasePrepareStmtMutex();    
     return OK;
 }
 
@@ -683,5 +681,21 @@ SqlConnection::~SqlConnection()
     innerConn = NULL;
     flushCacheStmt();
     if (isConnOpen) disconnect();
+}
+static void sigUsr1Handler(int sig)
+{
+    ListIterator iter= SqlConnection::connList.getIterator();
+    SqlConnection *conn = NULL;
+    while (iter.hasElement())
+    {
+        conn = (SqlConnection*) iter.nextElement();
+        conn->flushCacheStmt();
+    }
+    return;
+}
+void SqlConnection::initialize()
+{
+    os::signal(SIGCSQL1, sigUsr1Handler);
+    isInit = true;
 }
 

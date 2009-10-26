@@ -83,6 +83,7 @@ int main(int argc, char **argv)
     Connection conn;
     DbRetVal rv = conn.open(username, password);
     if (rv != OK) return 1;
+    os::signal(SIGCSQL1, SIG_IGN);
     DatabaseManagerImpl *dbMgr = (DatabaseManagerImpl*) conn.getDatabaseManager();
     if (dbMgr == NULL) { printf("Auth failed\n"); return 2;}
     List tableList = dbMgr->getAllTableNames();

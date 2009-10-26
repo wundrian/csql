@@ -261,6 +261,7 @@ DbRetVal CreateIdxStatement::execute(int &rowsAffected)
         rv = dbMgr->createIndex(parsedData->getIndexName(), idxInfo);
         delete idxInfo;
     }
+    if (rv == OK) dbMgr->sendSignal(SIGCSQL1);
     return rv;
 }
 
@@ -324,6 +325,7 @@ DbRetVal DropTblStatement::execute(int &rowsAffected)
     }
 #endif
     rv = dbMgr->dropTable(parsedData->getTableName());
+    if (rv == OK) dbMgr->sendSignal(SIGCSQL1);
     return rv;
 }
 
@@ -331,6 +333,7 @@ DbRetVal DropIdxStatement::execute(int &rowsAffected)
 {
     DbRetVal rv = OK;
     rv = dbMgr->dropIndex(parsedData->getIndexName());
+     if (rv == OK) dbMgr->sendSignal(SIGCSQL1);
     return rv;
 }
 

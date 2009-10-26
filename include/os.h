@@ -113,6 +113,7 @@ enum MapMode
 #define MAX_FILE_PATH_LEN 1024
 #define CHUNK_NAME_LEN 64
 #define LOG_ROLLOVER_SIZE 20*1024*1024
+#define SIGCSQL1 SIGUSR1
 
 #define BIT(x) (1 << (x))
 #define SETBITS(x,y) ((x) |= (y))

@@ -53,7 +53,7 @@ int main(int argc, char **argv)
      Connection conn;
      rv = conn.open(I_USER, I_PASS);
      if (rv != OK) return 1;
-     
+     os::signal(SIGCSQL1, SIG_IGN);
      if (!Conf::config.useCache())
      {
         printf("CACHE_TABLE is set to FALSE in csql.conf file.\n");

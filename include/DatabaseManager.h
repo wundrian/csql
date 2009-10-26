@@ -79,6 +79,7 @@ class DatabaseManager
     virtual DbRetVal recover()=0;
     virtual DbRetVal createForeignKey(char *fkName,ForeignKeyInfo *info)=0;
     virtual DbRetVal dropForeignKey(void *ctpr,bool trylock)=0;
+    virtual void sendSignal(int sig)=0;
     virtual ~DatabaseManager(){ }
 };
 

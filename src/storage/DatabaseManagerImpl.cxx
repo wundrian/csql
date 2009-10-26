@@ -1766,4 +1766,13 @@ DbRetVal DatabaseManagerImpl::recover()
     rv = sysDb()->recoverSystemDB();
     return rv;
 }
+void DatabaseManagerImpl::sendSignal(int signal)
+{
+    ThreadInfo* pInfo = sysDb()->getThreadInfo(0);
+    for (int i=0; i < Conf::config.getMaxProcs(); i++)
+    {
+        if (pInfo->pid_ !=0) os::kill(pInfo->pid_, signal);
+        pInfo++;
+    }
+}
 

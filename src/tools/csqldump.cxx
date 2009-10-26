@@ -105,6 +105,7 @@ int main(int argc, char **argv)
             delete stmt;
             return 1;
         }
+        os::signal(SIGCSQL1, SIG_IGN);
         DatabaseManagerImpl *dbMgr = (DatabaseManagerImpl*) conn.getDatabaseManager();
         if (dbMgr == NULL) {  
             printf("Unable to retrive db manager\n"); 
@@ -232,6 +233,7 @@ int main(int argc, char **argv)
             delete stmt;
             return 1;
         }
+        os::signal(SIGCSQL1, SIG_IGN);
         DatabaseManagerImpl *dbMgr = (DatabaseManagerImpl*) conn.getDatabaseManager();
         if (dbMgr == NULL) { printf("Auth failed\n"); return 2;}
         Table *table = dbMgr->openTable(tblName);
