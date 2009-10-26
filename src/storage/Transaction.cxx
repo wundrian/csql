@@ -87,15 +87,15 @@ DbRetVal Transaction::removeFromHasList(Database *sysdb, void *tuple)
     }
     printStackTrace();
     printError(ErrNotFound, "Fatal:There is no tuple lock in has list for tuple:%x", tuple);
-    //TEMP::for debugging
-    iter=hasLockList_; 
+    //TEMP::for debugging.do not remove
+    /*iter=hasLockList_; 
     int cnt=0;
     while (iter != NULL)
     {
         printError(ErrWarning, "Element in hasList: %d %x: %x:%d\n", cnt, iter->node_, iter->node_->ptrToTuple_ , *(int*)iter->node_->ptrToTuple_);
         cnt++;
         iter = iter->next_;
-    }
+    }*/
     return ErrNotFound;
 }
 
@@ -196,7 +196,6 @@ UndoLogInfo* Transaction::createUndoLog(Database *sysdb, OperationType type, voi
             printError(*rv, "Unable to allocate undo log");
             return NULL;
         }
-        //printError (ErrWarning, Undo Log Alloc: LockTimeOut Retry:%d", tries);
         tries++;
     }
 
@@ -304,61 +303,69 @@ DbRetVal Transaction::applyUndoLogs(Database *sysdb)
     {
         switch(logInfo->opType_)
         {
-                case InsertOperation:
-                {
-                   int *isUsed = ((int*)(logInfo->ptrToTuple_) - 1);
-                   if (*isUsed == 0) {
-                      printError(ErrSysFatal, "Fatal: Row is already not in use");
-                   }
-                   *isUsed = 0;
-                   //May memcpy is not needed as no one will update this
-                   //as lock is taken on this tuple
-                   os::memcpy(logInfo->ptrToTuple_, (char*) logInfo +
-                            sizeof(UndoLogInfo), logInfo->size_);
-                   break;
+            case InsertOperation:
+             {
+                InUse *isUsed = ((InUse*)(logInfo->ptrToTuple_) - 1);
+                if (*isUsed == 0) {
+                   printError(ErrSysFatal, "Fatal: Row is already not in use");
                 }
-                case DeleteOperation:
-                {
-                   int *isUsed = ((int*)(logInfo->ptrToTuple_) - 1);
-                   if (*isUsed == 1) {
-                       printError(ErrSysFatal, "Fatal: Row is already in use");
-                   }
-                   *isUsed = 1;
-                   /*os::memcpy(logInfo->ptrToTuple_, (char*) logInfo +
-                            sizeof(UndoLogInfo), logInfo->size_);*/
-                   break;
+                *isUsed = 0;
+                //May memcpy is not needed as no one will update this
+                //as lock is taken on this tuple
+                os::memcpy(logInfo->ptrToTuple_, (char*) logInfo +
+                         sizeof(UndoLogInfo), logInfo->size_);
+                break;
+             }
+             case DeleteOperation:
+             {
+                InUse *isUsed = ((InUse*)(logInfo->ptrToTuple_) - 1);
+                if (*isUsed == 1) {
+                    printError(ErrSysFatal, "Fatal: Row is already in use");
                 }
-                case UpdateOperation:
-                {
-                   int *isUsed = ((int*)(logInfo->ptrToTuple_) - 1);
-                   if (*isUsed == 0) {
-                       printError(ErrSysFatal, "Fatal: Row is not in use during update rollback");
-                   }
-                   os::memcpy(logInfo->ptrToTuple_, (char*) logInfo +
-                            sizeof(UndoLogInfo), logInfo->size_);
-                   break;
+                *isUsed = 1;
+                //data record will be intact as we have lock on that record
+                break;
+             }
+             case UpdateOperation:
+             {
+                InUse *isUsed = ((InUse*)(logInfo->ptrToTuple_) - 1);
+                if (*isUsed == 0) {
+                    printError(ErrSysFatal, "Fatal: Row is not in use during update rollback");
                 }
-                case InsertHashIndexOperation:
+                os::memcpy(logInfo->ptrToTuple_, (char*) logInfo +
+                         sizeof(UndoLogInfo), logInfo->size_);
+                break;
+             }
+             case InsertHashIndexOperation:
+             {
                 HashIndex::deleteLogicalUndoLog(sysdb, (char *)logInfo 
-                                                    + sizeof(UndoLogInfo));
+                                                 + sizeof(UndoLogInfo));
                 break;
-                //case UpdateHashIndexOperation:
-                //HashIndex::updateLogicalUndoLog((char *)logInfo 
-                //                                    + sizeof(UndoLogInfo));
-                //break;
-                case DeleteHashIndexOperation:
+             }
+             case DeleteHashIndexOperation:
+             {
                 HashIndex::insertLogicalUndoLog(sysdb, (char *)logInfo 
-                                                    + sizeof(UndoLogInfo));
+                                                 + sizeof(UndoLogInfo));
                 break;
-                case InsertTreeIndexOperation:
+             }
+             case InsertTreeIndexOperation:
+             {
                 TreeIndex::deleteLogicalUndoLog(sysdb, (char *)logInfo
-                                                    + sizeof(UndoLogInfo));
+                                                 + sizeof(UndoLogInfo));
                 break;
-                case DeleteTreeIndexOperation:
+             }
+             case DeleteTreeIndexOperation:
+             {
                 TreeIndex::insertLogicalUndoLog(sysdb, (char *)logInfo
-                                                    + sizeof(UndoLogInfo));
+                                                 + sizeof(UndoLogInfo));
                 break;
-            }
+             }
+             default:
+             {
+                 printError(ErrSysFatal, "Illegal undo log type");
+                 break;
+             }
+        }
         chunk->free(sysdb, logInfo);
     }
     return OK;
