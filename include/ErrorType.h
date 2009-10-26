@@ -16,7 +16,6 @@
 
 enum DbRetVal
 {
-    ErrNullValues    =  1, //used in evaluate on null values 
     OK               =  0, /**< OK. No error. Operation succeded. */
     ErrSysFatal      = -1, 
     ErrSysInit       = -2,
@@ -53,7 +52,9 @@ enum DbRetVal
     ErrAutoIncUpdate = -33,
     ErrForeignKeyInsert=-34,
     ErrForeignKeyDelete=-35,
+    ErrNullValues      =-36, //used in evaluate on null values 
 //  add new error type here
+    ErrNote          = -97,
     ErrUnknown       = -98,
     ErrWarning       = -99,
     SplCase          = -100

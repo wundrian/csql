@@ -71,6 +71,7 @@ class ConfigValues
     int noOfProcessors;
     int stmtCacheSize;
     bool isCacheNoParam;
+    bool isMonitor;
 
 
     ConfigValues()
@@ -121,7 +122,7 @@ class ConfigValues
         noOfProcessors = 1;
         stmtCacheSize = 10;
         isCacheNoParam = false;
-
+        isMonitor = false;
     }
 };
 
@@ -178,7 +179,7 @@ class Config
     inline int getNoOfProcessors() { return cVal.noOfProcessors; }
     inline int getStmtCacheSize() { return cVal.stmtCacheSize; }
     inline bool useCacheNoParam() { return cVal.isCacheNoParam; }
-
+    inline bool useMonitorServers() { return cVal.isMonitor; }
 };
 
 class Conf

@@ -135,8 +135,7 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
     else if (strcasecmp(tdb,"postgres")==0) tdbName=mysql;
     else printError(ErrNotFound,"Target Database Name is not properly set.Tdb name could be mysql, postgres, sybase, db2, oracle\n");
          
-  //ENDs Here:
-
+    logFine(Conf::logger, "TDB Name:%s\n", tdb);
  
     //DatabaseManager *dbMgr = (DatabaseManager *) conn->getDatabaseManager();
     //char dsn[72];  
@@ -198,6 +197,7 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
         printError(ErrSysInit, "Unable to Prepare ODBC statement \n"); 
         return ErrSysInit; 
     }
+    logFinest(Conf::logger, "Cache Table Stmt %s", stmtBuf);
     if (tabDefinition) {
         short totalFields=0;
         retValue = SQLNumResultCols (hstmt, &totalFields);
@@ -278,7 +278,7 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
                              (strcmp(fieldlistVal,"")!=0) && 
                                          (strcmp(fieldlistVal,"NULL")!=0)) 
             {
-                printError(ErrSysInit, "Bidirectonal caching should have primary key in %s \n", tableName);
+                printError(ErrSysInit, "Bidirectional caching should have primary key in %s \n", tableName);
                 SQLFreeHandle (SQL_HANDLE_STMT, hstmtmeta);
                 SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
                 SQLDisconnect (hdbc);
@@ -292,7 +292,7 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
         {
             if(Conf::config.useTwoWayCache())
             {
-                printError(ErrSysInit, "Bidirectonal caching fail for no primary key in %s \n", tableName);
+                printError(ErrSysInit, "Bidirectional caching fail for no primary key in %s \n", tableName);
                 SQLFreeHandle (SQL_HANDLE_STMT, hstmtmeta);
                 SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
                 SQLDisconnect (hdbc);
@@ -336,7 +336,9 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
                 return ErrSysInit; 
             }
             Util::str_tolower((char*)colName);
-            printDebug(DM_Gateway, "Describe Column %s %d %d \n", colName, colType, colLength);
+            printDebug(DM_Gateway, "Describe Column %s %d %d %d %d \n", colName, colType, colLength, scale, nullable);
+            logFinest(Conf::logger, "Describe Column colName:%s colType:%d colLen:%d scale:%d nullable:%d\n", colName, colType, colLength, scale, nullable);
+
             icol++;
             if(strcmp((char*)colName,fieldName)== 0)
             {
@@ -468,7 +470,7 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
             delete inf;
             return ErrSysInit;
         }   
-        //printf("Table created from create table stmt\n");
+        logFinest(Conf::logger, "Cache Table: Table Created :%s", crtTblStmt);
        
         //Table is created.
         //Create primary key index if present
@@ -812,7 +814,7 @@ DbRetVal CacheTableLoader::unload(bool tabDefinition)
     if (dbMgr == NULL) { 
         conn->disconnect(); 
         delete stmt; delete conn;
-        printError(ErrSysInit, "Auth failed\n"); 
+        printError(ErrSysInit, "Authentication failed\n"); 
         return ErrSysInit; 
     }
     if (!tabDefinition)
@@ -863,6 +865,7 @@ DbRetVal CacheTableLoader::unload(bool tabDefinition)
     }
     conn->disconnect();
     delete stmt; delete conn;
+    logFine(Conf::logger, "Unloaded Cached Table: %s", tableName);
     return rv;
 }
 
@@ -909,7 +912,7 @@ DbRetVal CacheTableLoader::recoverAllCachedTables()
         //continue;
         printDebug(DM_Gateway, "Recovering Table from target db: %s\n", tablename);
         setCondition(TableConf::config.getRealConditionFromFile(condition));
-         if( (strcmp(Conf::config.getDSN(),dsnname)!=0) ){
+        if( (strcmp(Conf::config.getDSN(),dsnname)!=0) ){
 		     setDsnName(dsnname);
              setTable(tablename);
              setFieldName(fieldname);
@@ -917,7 +920,7 @@ DbRetVal CacheTableLoader::recoverAllCachedTables()
              printf("Recovering table %s %s %s\n", tablename,condition,field);
              rv = load();
              if (rv != OK) { fclose(fp); return rv; }
-         } else {
+        } else {
              setDsnName(Conf::config.getDSN());
              setTable(tablename);
              setFieldName(fieldname);
@@ -925,7 +928,8 @@ DbRetVal CacheTableLoader::recoverAllCachedTables()
              printf("Recovering table %s %s %s\n", tablename,condition,field);
              rv = load();
              if (rv != OK) { fclose(fp); return rv; }
-         }
+        }
+        logFine(Conf::logger, "Recovering Table from target db:%s", tablename);
     }
     fclose(fp);
     return OK;

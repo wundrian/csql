@@ -40,37 +40,37 @@ void Logger::rollOverIfRequired()
 {
     char *fileName = Conf::config.getLogFile();
     int fileSize = os::getFileSize(fileName);
+    if (fileSize < LOG_ROLLOVER_SIZE) return ;
     char cmd[MAX_FILE_LEN];
     int ret =0;
-        int tries=0, totalTries=Conf::config.getMutexRetries();
-        while (tries < totalTries) {
-            ret = os::lockFile(fdLog);
-            if (ret ==0) break;
-            os::usleep(10000);
-            tries++;
-        }
-        if (tries == totalTries)
-        {
-            printError(ErrLockTimeOut,"Unable to lock log file for rollover");
-            return ;
-        }
+    int tries=0, totalTries=Conf::config.getMutexRetries();
+    while (tries < totalTries) {
+        ret = os::lockFile(fdLog);
+        if (ret ==0) break;
+        os::usleep(10000);
+        tries++;
+    }
+    if (tries == totalTries)
+    {
+        printError(ErrLockTimeOut,"Unable to lock log file for rollover %d",fdLog);
+        return ;
+    }
 
-    if (fileSize > LOG_ROLLOVER_SIZE) {
-          time_t cnow = ::time(NULL);
+    time_t cnow = ::time(NULL);
 #ifdef SOLARIS
-          struct std::tm *tmval = localtime(&cnow);
+    struct std::tm *tmval = localtime(&cnow);
 #else
-          struct tm *tmval = localtime(&cnow);
+    struct tm *tmval = localtime(&cnow);
 #endif
-          sprintf(cmd, "cp %s %s.%d-%d-%d:%d:%d:%d", fileName, fileName, 
-                     tmval->tm_year+1900,
-                     tmval->tm_mon+1, tmval->tm_mday, tmval->tm_hour, 
-                     tmval->tm_min, tmval->tm_sec);
-          ret = system(cmd);
-          if (ret != 0) {
-            printError(ErrWarning, "Unable to rollover the log file");
-          }
-          truncate(fileName, 0);
+    sprintf(cmd, "cp %s %s.%d-%d-%d:%d:%d:%d", fileName, fileName, 
+                  tmval->tm_year+1900,
+                  tmval->tm_mon+1, tmval->tm_mday, tmval->tm_hour, 
+                  tmval->tm_min, tmval->tm_sec);
+    ret = system(cmd);
+    if (ret != 0) {
+        printError(ErrWarning, "Unable to rollover the log file");
+    }else {
+       truncate(fileName, 0);
     }
     os::unlockFile(fdLog);
     return;
@@ -99,6 +99,15 @@ int Logger::log(LogLevel level, char* filename,
         while (tries < totalTries) {
             ret = os::lockFile(fdLog);
             if (ret ==0) break;
+            if (ret !=0 && errno == EBADF) {
+                fdLog = os::openFile(filename, fileOpenAppend,0);
+                if (fdLog == -1)
+                {
+                    printError(ErrSysInit,"Unable to open log file");
+                    delete[] buffer;
+                    return ErrSysInit;
+                }
+            }
             os::usleep(10000);
             tries++;
         }
@@ -111,7 +120,7 @@ int Logger::log(LogLevel level, char* filename,
         int bytesWritten = os::write(fdLog, buffer, strlen(buffer));
         if (bytesWritten != strlen(buffer))
         {
-            printf("Unable to write log entry");
+            printError(ErrSysInternal, "Unable to write log entry");
             ret = -1;
         }
         os::unlockFile(fdLog);

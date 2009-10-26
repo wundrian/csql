@@ -33,6 +33,7 @@ DbRetVal SqlOdbcStatement::executeDirect(char *stmtstr)
     SQLCHAR* sstr= (SQLCHAR*)stmtstr;
     retValue=(*SqlOdbcConnection::ODBCFuncPtrs.SQLExecDirectPtr) (hstmt, sstr, SQL_NTS);
     if (retValue) return ErrBadCall;
+    logFinest(Conf::logger, "executeDirect %s", stmtstr);
     return rv;
 }     
 
@@ -53,12 +54,14 @@ DbRetVal SqlOdbcStatement::prepare(char *stmtstr)
     retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLPreparePtr) (hstmt, sstr, SQL_NTS);
     if (retValue) { 
     //    setErrorState(hstmt); 
-        return ErrBadCall; 
+        printError(ErrSysInternal, "Unable to prepare statement");
+        return ErrSysInternal; 
     }
     isSelStmt=chechStmtType(stmtstr);
     isPrepared = true;
     if(strstr(stmtstr,"call ")!=NULL || strstr(stmtstr,"CALL ")!=NULL)
     {
+        logFinest(Conf::logger, "Procedure call statement =true");
         isProcedureCallStmt=true;
     }
     short totalFields=0;
@@ -77,6 +80,7 @@ DbRetVal SqlOdbcStatement::prepare(char *stmtstr)
     SWORD                   cType=0;
     SQLULEN                 cLength=0;
     scale=0;
+    logFinest(Conf::logger, "NumParams %d", totalFields);
     if(totalFields != 0)
     {
         paramlen =(SQLINTEGER *) malloc((totalFields+1)*sizeof(SQLINTEGER));
@@ -129,6 +133,7 @@ DbRetVal SqlOdbcStatement::prepare(char *stmtstr)
     }
     //TODO::deallocate memory and remove elements from list in case of any
     //failure in any of the above ODBC functions
+    logFinest(Conf::logger, "Statement prepared %s", stmtstr);
     return OK;
 }
 
@@ -199,12 +204,14 @@ DbRetVal SqlOdbcStatement::execute(int &rowsAffected)
         }
         rv = resolveForBindField(hstmt);
         if(rv!=OK) return rv;
+        logFinest(Conf::logger, "Procedure executed");
     }else{
         retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLExecutePtr) (hstmt);
         if ((retValue != SQL_SUCCESS) && (retValue != SQL_SUCCESS_WITH_INFO )) { 
         //    setErrorState(hstmt); 
            return ErrBadCall;
          }
+         logFinest(Conf::logger, "Statement executed");
     }
     //retValue=SQLRowCount(hstmt,(SQLINTEGER*)&rowsAffected);
     retValue= (*SqlOdbcConnection::ODBCFuncPtrs.SQLRowCountPtr)(hstmt,(SQLINTEGER*)&rowsAffected);
@@ -421,6 +428,7 @@ DbRetVal SqlOdbcStatement::close()
 {
     if (!isPrepared) return OK;
     (*SqlOdbcConnection::ODBCFuncPtrs.SQLCloseCursorPtr)(hstmt);
+    logFinest(Conf::logger, "CloseCursor");
     return OK;
 }
 bool SqlOdbcStatement::chechStmtType(char *buf)
@@ -590,6 +598,7 @@ DbRetVal SqlOdbcStatement::free()
     (*SqlOdbcConnection::ODBCFuncPtrs.SQLFreeHandlePtr)(SQL_HANDLE_STMT, hstmt);
     isPrepared = false;
     isProcedureCallStmt = false;
+    logFinest(Conf::logger, "Statement Freed");
     return OK;
 }
 void SqlOdbcStatement::setShortParam(int paramPos, short value)

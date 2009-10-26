@@ -34,6 +34,7 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <sys/file.h>
+#include <sys/wait.h>
 #if defined(SOLARIS)
     #include <sys/varargs.h>
     #include <crypt.h>

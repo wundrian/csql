@@ -22,19 +22,19 @@
 #include<Transaction.h>
 #include<Lock.h>
 #include<CacheTableLoader.h>
-#include<sys/wait.h> //TODO::move this to os.h
 char* version = "csql-linux-i686-3.0GA";
 int srvStop =0;
 pid_t asyncpid=0;
 pid_t sqlserverpid=0;
 pid_t cachepid=0;
 bool recoverFlag=false;
-void dumpData();
+bool monitorServer= false;
 SessionImpl *session = NULL;
 static void sigTermHandler(int sig)
 {
     printf("Received signal %d\nStopping the server\n", sig);
     srvStop = 1;
+    monitorServer=false;
 }
 static void sigChildHandler(int sig)
 {
@@ -345,7 +345,7 @@ int main(int argc, char **argv)
             }
         }
     }
-    bool isCacheReq = false, isSQLReq= false;
+    bool isCacheReq = false, isSQLReq= false, isAsyncReq=false;
     recoverFlag = true;
     if (opt == 1 && isInit && ! Conf::config.useDurability()) {
         if (Conf::config.useCache()) {
@@ -377,6 +377,7 @@ int main(int argc, char **argv)
            Conf::config.getCacheMode()==ASYNC_MODE)) {
         int msgid = os::msgget(Conf::config.getMsgKey(), 0666);
         if (msgid != -1) os::msgctl(msgid, IPC_RMID, NULL);
+        isAsyncReq = true;
         startAsyncServer();
     }
     if (Conf::config.useCache() && Conf::config.useTwoWayCache()) {
@@ -384,6 +385,8 @@ int main(int argc, char **argv)
         startCacheServer();
     }
     printf("Database Server Started...\n");
+    logFine(Conf::logger, "Database Server Started");
+    monitorServer= Conf::config.useMonitorServers();
        
 reloop:
     while(!srvStop)
@@ -395,15 +398,32 @@ reloop:
         //send signal to all the registered process..check they are alive
         cleanupDeadProcs(sysdb);
         if (srvStop) break;
-        //TODO::if it fails to start 5 times, exit
-        if (isCacheReq && cachepid !=0  && checkDead(cachepid)) 
-              startCacheServer();
+        if (monitorServer) {
+          if (isCacheReq && cachepid !=0  && checkDead(cachepid)) {
+            logFine(Conf::logger, "Cache Receiver Died pid:%d", cachepid);
+            startCacheServer();
+          }
+          if (isAsyncReq && asyncpid !=0  && checkDead(asyncpid)) {
+            logFine(Conf::logger, "Async Server Died pid:%d", asyncpid);
+            int msgid = os::msgget(Conf::config.getMsgKey(), 0666);
+            if (msgid != -1) os::msgctl(msgid, IPC_RMID, NULL);
+            startAsyncServer();
+          }
+          if (isSQLReq && sqlserverpid !=0  && checkDead(sqlserverpid)) {
+            logFine(Conf::logger, "Network Server Died pid:%d", sqlserverpid);
+            os::sleep(5);
+            startServiceClient();
+          }
+        }
+
     }
-    if (logActiveProcs(sysdb) != OK) {srvStop = 0; goto reloop; }
+    if (logActiveProcs(sysdb) != OK) {srvStop = 0; 
+        monitorServer= Conf::config.useMonitorServers();
+        goto reloop; 
+    }
     if (cachepid) os::kill(cachepid, SIGTERM);
     if(asyncpid) os::kill(asyncpid, SIGTERM);
     if (sqlserverpid) os::kill(sqlserverpid, SIGTERM);
-    //if (recoverFlag) dumpData();
     if (Conf::config.useDurability() && Conf::config.useMmap()) {
         //ummap the memory 
         char *startAddr = (char *) sysdb->getMetaDataPtr();
@@ -418,17 +438,4 @@ reloop:
     Conf::logger.stopLogger();
     delete session;
     return 0;
-}
-void dumpData()
-{
-    char cmd[1024];
-    //TODO::TAKE exclusive lock
-    sprintf(cmd, "csqldump >%s/csql.db.chkpt.1",Conf::config.getDbFile()); 
-    int ret = system(cmd);
-    if (ret != 0) return;
-    sprintf(cmd, "rm -rf %s/csql.db.cur", Conf::config.getDbFile());
-    if (ret != 0) return;
-    sprintf(cmd, "mv %s/csql.db.chkpt.1 %s/csql.db.chkpt", Conf::config.getDbFile());
-    if (ret != 0) return;
-    return;
 }

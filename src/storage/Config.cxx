@@ -118,6 +118,9 @@ int Config::storeKeyVal(char *key, char *value)
            { cVal.stmtCacheSize = atoi(value);  }
     else if (os::strcasestr(key, "STMT_CACHE_NOPARAM") != NULL)
            { cVal.isCacheNoParam = os::atobool(value);  }
+    else if (os::strcasestr(key, "MONITOR_SERVERS") != NULL)
+           { cVal.isMonitor = os::atobool(value);  }
+
 
     else  return 1;
     return 0;
@@ -351,7 +354,6 @@ int Config::readAllValues(char *fileName)
     }
     cVal.noOfProcessors = os::getNoOfProcessors();
     isLoaded = true;
-    logConfig();
     return 0;
 }
 void Config::logConfig()

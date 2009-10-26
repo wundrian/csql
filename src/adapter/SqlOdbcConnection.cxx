@@ -256,9 +256,9 @@ DbRetVal SqlOdbcConnection::connect (char *user, char * pass)
     }
     while( ret == SQL_SUCCESS );
  rv = ErrNoConnection;
- rv = OK; //masking the error:tmp
+ //rv = OK; //masking the error:tmp
     }
-    //printError(ErrSysInit, "Connecting with dsn=%s\n", dsn);
+    logFine(Conf::logger, "Connecting with dsn=%s\n", dsn);
     (*ODBCFuncPtrs.SQLSetConnectAttrPtr)(dbHdl, SQL_ATTR_AUTOCOMMIT, SQL_AUTOCOMMIT_OFF, 0);
     return rv;
     
@@ -270,6 +270,7 @@ DbRetVal SqlOdbcConnection::disconnect()
     (*ODBCFuncPtrs.SQLDisconnectPtr)(dbHdl); 
     (*ODBCFuncPtrs.SQLFreeHandlePtr) (SQL_HANDLE_DBC, dbHdl);
     (*ODBCFuncPtrs.SQLFreeHandlePtr) (SQL_HANDLE_ENV, envHdl);
+    logFine(Conf::logger, "disconnected");
     return rv;
 }
 void SqlOdbcConnection::setTrDbName(char *name)
@@ -319,6 +320,8 @@ DbRetVal SqlOdbcConnection::commit()
     int retVal=0;
     retVal = (*ODBCFuncPtrs.SQLTransactPtr)(envHdl, dbHdl, SQL_COMMIT);
     if (!SQL_SUCCEEDED(retVal)) rv = ErrSysInit;
+    else
+        logFinest(Conf::logger, "Transaction Committed");
     return rv;
 }
 DbRetVal SqlOdbcConnection::rollback()
@@ -327,6 +330,8 @@ DbRetVal SqlOdbcConnection::rollback()
     int retVal =0;
     retVal = (*ODBCFuncPtrs.SQLTransactPtr)(envHdl, dbHdl, SQL_ROLLBACK);
     if (!SQL_SUCCEEDED(retVal)) rv = ErrSysInit;
+    else
+        logFinest(Conf::logger, "Transaction Rollback");
     return rv;
 }
 void SqlOdbcConnection::setErrorState( SQLHDBC dbc)

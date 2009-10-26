@@ -100,14 +100,18 @@ int main(int argc, char **argv)
     SqlLogConnection *logConn = (SqlLogConnection *) csqlcon;
     logConn->setNoMsgLog(true);
     rv = csqlcon->connect(I_USER, I_PASS);
-    if (rv != OK) return NULL;
+    if (rv != OK) {
+        printError(ErrSysInternal, "Unable to connect to CSQL");
+        return 1;
+    }
     
     // Reading "csqlds.conf file"
     FILE *fp = NULL;
     fp = fopen(Conf::config.getDsConfigFile(),"r");
     if(fp==NULL){
         printError(ErrSysInit,"csqlds.conf file does not exist");
-        exit(1);
+        csqlcon->disconnect();
+        return 1;
     }
     struct MultiThreadDSN *head=NULL, *pnode=NULL;
     
@@ -132,6 +136,22 @@ int main(int argc, char **argv)
         else { pnode->next=multiDsn; pnode=pnode->next; }
     }
     fclose(fp);
+    if (totalDsn == 1)
+    {
+        
+        MultiDsnThread *info = new MultiDsnThread();
+        strcpy(info->ds,pnode->dsn);
+        strcpy(info->targetDb,pnode->tdb);
+        strcpy(info->userName,pnode->user);
+        strcpy(info->pwdName,pnode->pwd);
+        startThread(info);
+        printf("Cache Server Exiting\n");
+        cacheTableList.reset();
+        csqlcon->disconnect();
+        return 0;
+    }
+
+
         
     // Declare number of thread
     pthread_t *thrId =new pthread_t [totalDsn];
@@ -189,8 +209,23 @@ void *startThread(void *thrInfo)
     targetconn = SqlFactory::createConnection(CSqlAdapter);
     SqlOdbcConnection *dsnAda = (SqlOdbcConnection*)targetconn;
     dsnAda->setDsn(multiDsnInput->ds);//line added
-    rv = targetconn->connect(I_USER, I_PASS);
-    if (rv != OK) return NULL;
+
+    struct timeval timeout, tval;
+    timeout.tv_sec = Conf::config.getCacheWaitSecs();
+    timeout.tv_usec = 0;
+reconnect:
+    while(!srvStop) {
+      rv = targetconn->connect(I_USER, I_PASS);
+      if (rv != OK) {
+         printError(ErrSysInternal, "Unable to connect to target database:%s", multiDsnInput->ds);
+        tval.tv_sec = timeout.tv_sec;
+        tval.tv_usec = timeout.tv_usec;
+        os::select(0, 0, 0, 0, &tval);
+      } else break;
+      if (srvStop) return NULL;
+    }
+    if (srvStop) return NULL;
+
     if (!Conf::config.useCache())
     {
         printf("Cache is set to OFF in csql.conf file\n");
@@ -204,7 +239,6 @@ void *startThread(void *thrInfo)
     int ret = 0;
     struct stat ofstatus,nfstatus;
     ret=stat(Conf::config.getTableConfigFile(),&ofstatus);
-    struct timeval timeout, tval;
     timeout.tv_sec = Conf::config.getCacheWaitSecs();
     timeout.tv_usec = 0;
     createCacheTableList();
@@ -223,6 +257,8 @@ void *startThread(void *thrInfo)
         }
         if((ret = getRecordsFromTargetDb( targetconn, csqlcon, csqlstmt, con, sqlstmt )) == 1)  {
             if (srvStop) break;
+            targetconn->disconnect();
+            goto reconnect;
         }
     }
 
@@ -269,7 +305,7 @@ int getRecordsFromTargetDb(AbsSqlConnection *targetconn, AbsSqlConnection *csqlc
         delstmt->free();
         delete stmt;
         delete delstmt;
-        printf("FAILED\n");
+        printError(ErrSysInternal, "Statement prepare failed. TDB may be down");
         return 1;
     }
     int retVal =0; 
@@ -289,7 +325,7 @@ int getRecordsFromTargetDb(AbsSqlConnection *targetconn, AbsSqlConnection *csqlc
         while ( stmt->fetch() != NULL) 
         {
             Util::trimEnd(tablename);
-            printf("Row value is %s %lld %lld %lld\n", tablename, pkid, op,cId);
+            logFiner(Conf::logger, "Row value is Table:%s PK:%lld OP:%lld CID:%lld\n", tablename, pkid, op,cId);
 
             if (op == 2) { //DELETE 
                 retVal = remove(tablename,pkid, targetconn, csqlstmt, csqlcon); 
