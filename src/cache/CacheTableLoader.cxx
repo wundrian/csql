@@ -524,7 +524,7 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
     sqlStmt->setConnection(con);
     List fNameList = sqlStmt->getFieldNameList(tableName);
     int noOfFields = fNameList.size();
-    
+    int totalFields = noOfFields; 
     while (noOfFields--) {
         if (firstFld) {
             firstFld = false;
@@ -555,7 +555,8 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
     void *tembuf=NULL;//For postgre BigInt type
     BindBuffer *bBuf;
     List valBufList;
-    SQLINTEGER len[IDENTIFIER_LENGTH];
+    SQLLEN *len = (SQLLEN *)malloc((totalFields+1)*sizeof(SQLLEN));
+    for(int i=0;i<=totalFields;i++) { len[i] = SQL_NTS ;}
     while (fNameIter.hasElement()) {
         elem = (Identifier*) fNameIter.nextElement();
         sqlStmt->getFieldInfo(tableName, (const char*)elem->name, info);
@@ -649,6 +650,7 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
             SQLDisconnect (hdbc);
             SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
             SQLFreeHandle (SQL_HANDLE_ENV, henv);
+            free(len);
             return ErrSysInit; 
         }
     }
@@ -665,6 +667,7 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
         SQLDisconnect (hdbc);
         SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
         SQLFreeHandle (SQL_HANDLE_ENV, henv);
+        free(len);
         return ErrSysInit; 
     }
     int fldpos=0;
@@ -734,6 +737,7 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
             SQLDisconnect (hdbc);
             SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
             SQLFreeHandle (SQL_HANDLE_ENV, henv);
+            free(len);
             return ErrSysInit;
         }
         countForCommit++;
@@ -743,6 +747,7 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
             conn->beginTrans();
         }
     }
+    free(len);
     //TODO::leak:: valBufList and its targetdb buffer
     ListIterator it = valBufList.getIterator();
     while(it.hasElement()) {
