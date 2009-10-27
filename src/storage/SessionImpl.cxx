@@ -24,7 +24,6 @@
 #include<Debug.h>
 #include<Config.h>
 #include<Process.h>
-
 //Before calling this method, application is required to call readConfigValues
 DbRetVal SessionImpl::initSystemDatabase()
 
@@ -118,11 +117,19 @@ DbRetVal SessionImpl::open(const char *username, const char *password)
     if ( NULL == dbMgr)
     {
         dbMgr = new DatabaseManagerImpl();
-        rv = dbMgr->openSystemDatabase();
     }
+    int ret = ProcessManager::mutex.tryLock(10, 100);
+    //If you are not getting lock ret !=0, it means somebody else is there.
+    if (ret != 0)
+    {
+        printError(ErrSysInternal, "Another thread calling open:Wait and then Retry\n");
+        return ErrSysInternal;
+    }
+    rv = dbMgr->openSystemDatabase();
     if (OK != rv)
     {
         printError(rv,"Unable to open the system database");
+        ProcessManager::mutex.releaseLock(-1, false);
         return rv;
     }
 
@@ -131,6 +138,7 @@ DbRetVal SessionImpl::open(const char *username, const char *password)
     {
         dbMgr->closeSystemDatabase();
         delete dbMgr; dbMgr = NULL;
+        ProcessManager::mutex.releaseLock(-1, false);
         return rv;
     }
 
@@ -141,15 +149,18 @@ DbRetVal SessionImpl::open(const char *username, const char *password)
     {
         printError(rv,"Unable to register to csql server");
         dbMgr->closeSystemDatabase();
+        ProcessManager::mutex.releaseLock(-1, false);
         delete dbMgr; dbMgr = NULL;
         return rv;
     }
     rv = dbMgr->openDatabase("userdb");
     if (OK != rv) {
         dbMgr->closeSystemDatabase();
+        ProcessManager::mutex.releaseLock(-1, false);
         delete dbMgr; dbMgr = NULL;
         return rv;
     }
+    ProcessManager::mutex.releaseLock(-1, false);
     ((DatabaseManagerImpl*)dbMgr)->setProcSlot();
     //ProcessManager::systemDatabase = dbMgr->sysDb();
     isXTaken = false;
@@ -196,12 +207,30 @@ DbRetVal SessionImpl::close()
     if (isXTaken && dbMgr ) dbMgr->sysDb()->releaseProcessTableMutex(true);
     if (dbMgr)
     {
+        int ret = ProcessManager::mutex.tryLock(10,100);
+        //If you are not getting lock ret !=0, it means somebody else is there.
+        if (ret != 0)
+        {
+           printError(ErrSysInternal, "Another thread calling open:Wait and then Retry\n");
+           return ErrSysInternal;
+        }
+
         rv = dbMgr->closeDatabase();
-        if (rv != OK) { return ErrBadCall;  }
+        if (rv != OK) { 
+           ProcessManager::mutex.releaseLock(-1, false);
+           return ErrBadCall;  
+        }
         rv = dbMgr->deregisterThread();
-        if (rv != OK) {  return ErrBadCall;  }
+        if (rv != OK) {  
+           ProcessManager::mutex.releaseLock(-1, false);
+           return ErrBadCall;  
+        }
         rv = dbMgr->closeSystemDatabase();
-        if (rv != OK) { return ErrBadCall;  }
+        if (rv != OK) { 
+             ProcessManager::mutex.releaseLock(-1, false);
+             return ErrBadCall;  
+        }
+        ProcessManager::mutex.releaseLock(-1, false);
         delete dbMgr;
         dbMgr = NULL;
     }

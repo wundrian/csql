@@ -284,7 +284,7 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
        key = Conf::config.getUserDbKey();
 
 
-    int ret = ProcessManager::mutex.getLock(-1, false);
+    /*int ret = ProcessManager::mutex.getLock(-1, false);
     //If you are not getting lock ret !=0, it means somebody else is there.
     //he will close the database.
     if (ret != 0)
@@ -292,6 +292,7 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
         printError(ErrSysInternal, "Another thread calling open:Wait and then Retry\n");
         return ErrSysInternal;
     }
+*/
     void *shm_ptr = NULL;
     void *mapAddr = NULL;
     bool firstThread = false;
@@ -342,17 +343,25 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
         }    
     }
     
-    ProcessManager::mutex.releaseLock(-1, false);
+    //ProcessManager::mutex.releaseLock(-1, false);
 
     if (!isMmapNeeded || isMmapNeeded && 0 == strcmp(name, SYSTEMDB))
         rtnAddr  = (caddr_t) shm_ptr;
     else rtnAddr = (caddr_t) mapAddr;
-
+#if defined (x86_64)
+    if (rtnAddr < 0 || shm_ptr == (char*)0xffffffffffffffff)
+    {
+        printError(ErrOS, "Shared memory attach returned -ve value %x %d", shm_ptr, errno);
+        return ErrOS;
+    }
+#else
     if (rtnAddr < 0 || shm_ptr == (char*)0xffffffff)
     {
         printError(ErrOS, "Shared memory attach returned -ve value %x %d", shm_ptr, errno);
         return ErrOS;
-    } 
+    }
+#endif
+
     db_ = new Database();
     db_->setMetaDataPtr((DatabaseMetaData*)rtnAddr);
     db_->setChkptfd(fd);
@@ -373,7 +382,7 @@ DbRetVal DatabaseManagerImpl::closeDatabase()
     }
     printDebug(DM_Database, "Closing database: %s",(char*)db_->getName());
     //check if this is the last thread to be deregistered
-    int ret = ProcessManager::mutex.getLock(-1, false);
+    int ret =0;// ProcessManager::mutex.getLock(-1, false);
     //If you are not getting lock ret !=0, it means somebody else is there.
     //he will close the database.
     if (ret == 0) {
@@ -383,7 +392,7 @@ DbRetVal DatabaseManagerImpl::closeDatabase()
                 os::shm_detach((char*)db_->getMetaDataPtr());
             }
     }
-    ProcessManager::mutex.releaseLock(-1, false);
+  //  ProcessManager::mutex.releaseLock(-1, false);
     delete db_;
     db_ = NULL;
     return OK;

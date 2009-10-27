@@ -65,17 +65,17 @@ void ThreadInfo::print()
 //as it is handled in the connection class open and close methods.
 DbRetVal ProcessManager::registerThread()
 {
-    mutex.getLock(-1, false);
+    //mutex.getLock(-1, false);
     noThreads++;
-    mutex.releaseLock(-1, false);
+   // mutex.releaseLock(-1, false);
     DbRetVal rv = systemDatabase->getProcessTableMutex(false);
     if (OK != rv)
     {
         printError(rv,"Unable to get mutex for registering");
         printError(rv,"Recovery may be going on. Retry after some time.");
-        mutex.getLock(-1, false);
+     //   mutex.getLock(-1, false);
         noThreads--;
-        mutex.releaseLock(-1, false);
+       // mutex.releaseLock(-1, false);
         return rv;
     }
     pid_t pid;
@@ -108,9 +108,9 @@ DbRetVal ProcessManager::registerThread()
 }
 DbRetVal ProcessManager::deregisterThread(int procSlot)
 {
-    mutex.getLock(-1, false);
+    //mutex.getLock(-1, false);
     noThreads--;
-    mutex.releaseLock(-1, false);
+    //mutex.releaseLock(-1, false);
     DbRetVal rv = systemDatabase->getProcessTableMutex(false);
     if (OK != rv)
     {
