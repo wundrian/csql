@@ -137,6 +137,7 @@ class AggTableImpl:public Table
     void printSQLIndexString(FILE *fp, int fd){ };
     void printSQLForeignString(){}
     char* getName() { return tableHdl->getName(); }
+    char* getAliasName(){ return tableHdl->getAliasName();}    
     List getFieldNameList(){ List list; return list;}
     DbRetVal execute();
     void* fetch();

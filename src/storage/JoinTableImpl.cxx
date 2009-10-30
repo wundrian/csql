@@ -37,7 +37,7 @@ JoinTableImpl::JoinTableImpl()
     isNestedLoop = true;
     rightExhausted = false;
 }
-JoinTableImpl::~JoinTableImpl() {} 
+JoinTableImpl::~JoinTableImpl() {}
 
 DbRetVal JoinTableImpl::bindFld(const char *fldname, void *val)
 {
@@ -497,6 +497,9 @@ bool JoinTableImpl::pushPredicate(Predicate *pr)
         //TODO::check if needs to be placed here
         char *lTbl = leftTableHdl->getName();
         char *rTbl = rightTableHdl->getName();
+        char *lAliasTbl = leftTableHdl->getAliasName();
+        char *rAliasTbl = rightTableHdl->getAliasName();
+        bool isAliasSet = lAliasTbl &&  rAliasTbl && (!(strcmp(lAliasTbl,"") == 0 && strcmp(rAliasTbl,"") == 0 ));
         char fullName[IDENTIFIER_LENGTH];
         char lTabName[IDENTIFIER_LENGTH];
         char rTabName[IDENTIFIER_LENGTH];
@@ -512,14 +515,14 @@ bool JoinTableImpl::pushPredicate(Predicate *pr)
         if (NULL != lTbl && NULL != rTbl) 
         {
             //both size TableImpl handles are there
-            if (0 == strcmp(lTbl, lTabName) || 0 == strcmp(lTbl, rTabName)) 
+            if (0 == strcmp(lTbl, lTabName) || 0 == strcmp(lTbl, rTabName) || ( isAliasSet && (0 == strcmp(lAliasTbl, lTabName) ||0 == strcmp(lAliasTbl,rTabName))) ) 
             {
-                if (0 == strcmp(rTbl, lTabName) || 0 == strcmp(rTbl, rTabName))
+                if (0 == strcmp(rTbl, lTabName) || 0 == strcmp(rTbl, rTabName)|| (isAliasSet && (0 == strcmp(rAliasTbl, lTabName) ||0 == strcmp(rAliasTbl,rTabName))))
                 {
                     //printf("PRABA::pushed join predicate here1\n");
                     //PRABA::START
                     ComparisionOp op = pImpl->getCompOp();
-                    if (strcmp(rTbl, rTabName) ==0)
+                    if (0 == strcmp(rTbl, rTabName) ||(isAliasSet && 0 == strcmp(rAliasTbl, rTabName)))
                     {
                         //bool ind = rightTableHdl->hasIndex(rFldName);
                         if (OpEquals ==op) {
@@ -527,7 +530,7 @@ bool JoinTableImpl::pushPredicate(Predicate *pr)
                             rightTableHdl->addPredicate(rFldName, op, buf);
                             pImpl->setDontEvaluate();
                         }
-                    }else if (strcmp(rTbl, lTabName) ==0)
+                    }else if (0==strcmp(rTbl, lTabName) || (isAliasSet && 0== strcmp(rAliasTbl, lTabName)))
                     {
                         //bool ind = rightTableHdl->hasIndex(lFldName);
                         if (OpEquals ==op) {

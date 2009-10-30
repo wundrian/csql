@@ -145,6 +145,7 @@ class JoinTableImpl:public Table
     void printSQLForeignString(){}
     List getFieldNameList();
     char* getName() { return NULL; }
+    char* getAliasName(){ return NULL; }
     void *fetchRightFail();
     DbRetVal compact(){ return OK;}
     //bool evaluate();

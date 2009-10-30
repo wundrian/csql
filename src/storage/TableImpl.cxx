@@ -373,7 +373,7 @@ DbRetVal TableImpl::createPlan()
                     break;
                 }
              }//while iter.hasElement()
-             if( noOfIfld == 1 && useIndex_ != -1)return OK;
+             if( noOfIfld == 1 && useIndex_ != -1)return OK; 
              if (!isAllFldPointLookup && useIndex_ != -1) return OK;
            }//for
         }
@@ -1459,9 +1459,10 @@ bool TableImpl::pushPredicate(Predicate *pred)
     //printf("predicate tbl name %s\n", tableName);
 
     //if predicate is of form t1.f1=t2.f1 then do not push here
+    bool isAliasSet = (0 !=strcmp(getAliasName(),"")) ;
     if (0 != strcmp(pImpl->getFldName2(),"")) return ret;
 
-    if (0 == strcmp(getName(), tableName))
+    if (0 == strcmp(getName(), tableName) ||(isAliasSet && 0 == strcmp(getAliasName(), tableName)))
     {
         setPredicate(pred);
         //printf("PRABA::pushed predicate in tablehdl  %s\n", getName());

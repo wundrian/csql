@@ -86,6 +86,7 @@ class OrderTableImpl:public Table
     void printSQLIndexString(FILE *fp, int fd){ };
     void printSQLForeignString(){}
     char* getName() { return tableHdl->getName(); }
+    char* getAliasName(){return tableHdl->getAliasName(); }
     List getFieldNameList(){ List dummyList; return dummyList;}
     DbRetVal execute();
     DbRetVal insert();

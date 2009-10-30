@@ -205,6 +205,7 @@ class Table
     virtual DbRetVal getFieldInfo(const char *fieldName, FieldInfo *&info)=0;
     virtual List getFieldNameList()=0;
     virtual char* getName()=0;
+    virtual char* getAliasName()=0;
     virtual void printSQLIndexString(FILE *fp=NULL, int fd=-1)=0;
     virtual void printSQLForeignString()=0;
     virtual DbRetVal compact()=0;
