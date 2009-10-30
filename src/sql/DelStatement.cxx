@@ -288,6 +288,14 @@ DbRetVal DelStatement::resolveForCondition()
             printError(ErrSysFatal, "Should never happen.");
             return ErrSysFatal;
         }
+        char tName[IDENTIFIER_LENGTH];
+        Table::getTableNameAlone(value->fName,tName);
+        if( strcmp(tName,"")!=0 && strcmp(parsedData->getTableName(),tName)!=0 )
+        {
+            delete fInfo;
+            printError(ErrSyntaxError, "Field %s does not exist in table %s", value->fName,parsedData->getTableName());
+            return ErrSyntaxError;
+        }
         rv = table->getFieldInfo(value->fName, fInfo);
         if (ErrNotFound == rv)
         {

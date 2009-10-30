@@ -537,6 +537,15 @@ DbRetVal UpdStatement::resolveForAssignment()
             printError(ErrSysFatal, "Should never happen.");
             return ErrSysFatal;
         }
+        char tName[IDENTIFIER_LENGTH];
+        Table::getTableNameAlone(cValue->fName,tName);
+        if( strcmp(tName,"")!=0 && strcmp(parsedData->getTableName(),tName)!=0 )
+        {
+            delete fInfo;
+            printError(ErrSyntaxError, "Field %s does not exist in table %s", cValue->fName,parsedData->getTableName());
+            return ErrSyntaxError;
+        }
+
         rv = table->getFieldInfo(cValue->fName, fInfo);
         if (ErrNotFound == rv)
         {
