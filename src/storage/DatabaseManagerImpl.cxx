@@ -284,30 +284,35 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
        key = Conf::config.getUserDbKey();
 
 
-    /*int ret = ProcessManager::mutex.getLock(-1, false);
-    //If you are not getting lock ret !=0, it means somebody else is there.
-    //he will close the database.
-    if (ret != 0)
-    {
-        printError(ErrSysInternal, "Another thread calling open:Wait and then Retry\n");
-        return ErrSysInternal;
-    }
-*/
     void *shm_ptr = NULL;
     void *mapAddr = NULL;
     bool firstThread = false;
     //printf("PRABA::DEBUG:: opendb %d %s\n", ProcessManager::noThreads, name);
     if ( ( ProcessManager::noThreads == 0 && 0 == strcmp(name, SYSTEMDB) || 
-          ProcessManager::noThreads == 1 && 0 != strcmp(name, SYSTEMDB) ) &&
-          ( !isMmapNeeded || isMmapNeeded && 0 == strcmp(name, SYSTEMDB) ) ) {
-        shm_id = os::shm_open(key, size, 0660);
-        if (shm_id == -1 )
+          ProcessManager::noThreads == 1 && 0 != strcmp(name, SYSTEMDB) ) )
+   {
+        if(isMmapNeeded && 0 != strcmp(name, SYSTEMDB)){
+         //BIJAYA: Attached to Map File 
+            sprintf(dbMapFile, "%s/db.chkpt.data", Conf::config.getDbFile());
+            fd = open(dbMapFile, O_RDWR, 0660);
+            if (-1 == fd) {
+                printError(ErrOS, "Mmap file could not be opened");
+                return ErrOS;
+            }
+            mapAddr = os::mmap((void *)fixAddr, size, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_SHARED, fd, 0);
+
+            shm_ptr= (caddr_t) mapAddr;
+            printDebug(DM_Database, "Mapped db file address = %x", mapAddr);
+        }else
         {
-            printError(ErrOS, "Shared memory open failed");
-            ProcessManager::mutex.releaseLock(-1, false);
-            return ErrOS;
+            shm_id = os::shm_open(key, size, 0660);
+            if (shm_id == -1 )
+            {
+                printError(ErrOS, "Shared memory open failed");
+                return ErrOS;
+            }
+            shm_ptr = os::shm_attach(shm_id, startaddr, SHM_RND);
         }
-        shm_ptr = os::shm_attach(shm_id, startaddr, SHM_RND);
         if (0 == strcmp(name, SYSTEMDB))
         {
             firstThread = true;
@@ -317,37 +322,14 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
         {
             ProcessManager::usrAddr = (char*) shm_ptr;
         }
-    } else if (ProcessManager::noThreads == 1 && 
-                0 != strcmp(name, SYSTEMDB) && isMmapNeeded) {
-        //dbFile to be mmapped
-        sprintf(dbMapFile, "%s/db.chkpt.data", Conf::config.getDbFile());
-        fd = open(dbMapFile, O_RDWR, 0660);
-        if (-1 == fd) {
-            printError(ErrOS, "Mmap file could not be opened");
-            ProcessManager::mutex.releaseLock(-1, false);
-            return ErrOS;
-        }
-        mapAddr = os::mmap((void *)fixAddr, size, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_SHARED, fd, 0);
-        
-        rtnAddr = (caddr_t) mapAddr;
-        printDebug(DM_Database, "Mapped db file address = %x", mapAddr);
     } else {
-        if (!isMmapNeeded) {
-            if (0 == strcmp(name, SYSTEMDB)) 
-                shm_ptr = ProcessManager::sysAddr;
-            else shm_ptr = ProcessManager::usrAddr;
-        } else {
-            if (0 == strcmp(name, SYSTEMDB)) 
-                shm_ptr = ProcessManager::sysAddr;
-            else mapAddr = ProcessManager::usrAddr;
-        }    
+        if (0 == strcmp(name, SYSTEMDB)) 
+            shm_ptr = ProcessManager::sysAddr;
+        else shm_ptr = ProcessManager::usrAddr;
     }
     
-    //ProcessManager::mutex.releaseLock(-1, false);
 
-    if (!isMmapNeeded || isMmapNeeded && 0 == strcmp(name, SYSTEMDB))
         rtnAddr  = (caddr_t) shm_ptr;
-    else rtnAddr = (caddr_t) mapAddr;
 #if defined (x86_64)
     if (rtnAddr < 0 || shm_ptr == (char*)0xffffffffffffffff)
     {
