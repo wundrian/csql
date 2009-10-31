@@ -28,6 +28,7 @@ Config Conf::config;
 
 AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
 {
+    DbRetVal rv=OK;
     AbsSqlConnection *conn = NULL ;
     Conf::config.readAllValues(os::getenv("CSQL_CONFIG_FILE"));
     bool isSqlLogNeeded = ( Conf::config.useDurability() ||
@@ -63,16 +64,23 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
             }
         case CSqlGateway:
             {
+            SqlLogConnection *sqllogconn=NULL;
             AbsSqlConnection *sqlCon = new SqlConnection();
             SqlGwConnection *gwconn = new SqlGwConnection();
             if (isSqlLogNeeded) {
-                AbsSqlConnection *sqllogconn = new SqlLogConnection();
+                sqllogconn = new SqlLogConnection();
                 sqllogconn->setInnerConnection(sqlCon);
                 gwconn->setInnerConnection(sqllogconn);
             } else gwconn->setInnerConnection(sqlCon);
             
             //createAdapters for MultiDSN
-            gwconn->createAdapters(gwconn);
+            rv=gwconn->createAdapters(gwconn);
+            if(rv != OK){
+                delete sqlCon;
+                delete gwconn;
+                if(isSqlLogNeeded) delete sqllogconn;
+                return NULL;
+            }
             conn = gwconn;
             break;
             }

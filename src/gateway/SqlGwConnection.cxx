@@ -47,13 +47,14 @@ SqlGwConnection::~SqlGwConnection()
 }
 
 //createAdapters
-void SqlGwConnection::createAdapters(SqlGwConnection *gwconn)
+DbRetVal SqlGwConnection::createAdapters(SqlGwConnection *gwconn)
 {
+    DbRetVal rv=OK;
     FILE *fp = NULL;
     fp = fopen(Conf::config.getDsConfigFile(),"r");
     if(fp==NULL){
         printError(ErrSysInit,"csqlds.conf file does not exist");
-        exit(1);
+        return ErrNotOpen;
     }
 
     char dsnname[IDENTIFIER_LENGTH];dsnname[0]='\0';
@@ -66,11 +67,12 @@ void SqlGwConnection::createAdapters(SqlGwConnection *gwconn)
         fscanf(fp,"%s %s %s %s\n",dsnname,username,password,tdb);
         if(strcmp(dsnname,"") == 0){
             printf("Add entry to csqlds.conf file\n");
-            exit(1);
+            return ErrNotReady;
         }
         gwconn->setAdapter(adapterCon,dsnname);
     }
     fclose(fp);
+    return rv;
 }
 
 //Putting different "Adapter" object into List
