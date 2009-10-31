@@ -34,6 +34,7 @@ ListIterator MetadataStatement::getExportKeyIterator()
        void *tPkptr =NULL;
        void *tFkptr = NULL;
        void *chunkPk = NULL;
+       void *vcchunkPk = NULL;
        char *pkFldName = NULL;
        char *fkFldName = NULL;
        ForeignKeyMetadata *fkMeta= NULL;
@@ -41,8 +42,8 @@ ListIterator MetadataStatement::getExportKeyIterator()
            fkTbl = (TableImpl *) tblIter.nextElement();
            FieldNameList pkFieldList,fkFieldList;
            CatalogTableTABLE cTable(tbl->sysDB_);
-           cTable.getChunkAndTblPtr(tbl->getName(), chunkPk, tPkptr);
-           cTable.getChunkAndTblPtr(fkTbl->getName(), chunkPk, tFkptr);
+           cTable.getChunkAndTblPtr(tbl->getName(), chunkPk, tPkptr, vcchunkPk);
+           cTable.getChunkAndTblPtr(fkTbl->getName(), chunkPk, tFkptr, vcchunkPk);
            CatalogTableFK cFk(tbl->sysDB_);
            cFk.getPkFkFieldInfo(tPkptr,tFkptr,pkFieldList,fkFieldList);
            pkFieldList.resetIter();
@@ -83,6 +84,7 @@ ListIterator MetadataStatement::getImportKeyIterator()
        void *tPkptr =NULL;
        void *tFkptr = NULL;
        void *chunkPk = NULL;
+       void *vcchunkPk = NULL;
        char *pkFldName = NULL;
        char *fkFldName = NULL;
        ForeignKeyMetadata *fkMeta= NULL;
@@ -90,8 +92,8 @@ ListIterator MetadataStatement::getImportKeyIterator()
            fkTbl = (TableImpl *) tblIter.nextElement();
            FieldNameList pkFieldList,fkFieldList;
            CatalogTableTABLE cTable(tbl->sysDB_);
-           cTable.getChunkAndTblPtr(tbl->getName(), chunkPk, tPkptr);
-           cTable.getChunkAndTblPtr(fkTbl->getName(), chunkPk, tFkptr);
+           cTable.getChunkAndTblPtr(tbl->getName(), chunkPk, tPkptr, vcchunkPk);
+           cTable.getChunkAndTblPtr(fkTbl->getName(), chunkPk, tFkptr, vcchunkPk);
            CatalogTableFK cFk(tbl->sysDB_);
            cFk.getPkFkFieldInfo(tFkptr,tPkptr,fkFieldList,pkFieldList);
            pkFieldList.resetIter();

@@ -158,7 +158,7 @@ class TableDef
     //Internal method used to iterate and get information stored
     //in this table definition.
     FieldIterator getFieldIterator(){ return fldList.getIterator(); }
-
+    bool isVarcharPresentInSchema(FieldIterator &iter);
 };
 
 class FieldInfo

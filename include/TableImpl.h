@@ -106,6 +106,7 @@ class TableImpl:public Table
     size_t length_; //length of the tuple
     int numFlds_;
     void* chunkPtr_;
+    void* vcChunkPtr_;
     void *curTuple_; //holds the current tuple ptr. moved during fetch() calls
 
     Predicate *pred_;
@@ -169,7 +170,7 @@ class TableImpl:public Table
 
 
     public:
-    TableImpl() { db_ = NULL; chunkPtr_ = NULL; iter = NULL;
+    TableImpl() { db_ = NULL; chunkPtr_ = NULL; vcChunkPtr_=NULL; iter = NULL;
         idxInfo = NULL; indexPtr_ = NULL; scanType_ = unknownScan; 
         pred_ = NULL; useIndex_ = -1; numFlds_ = 0; bindListArray_ = NULL;
         iNullInfo = 0; cNullInfo = NULL; isIntUsedForNULL = true; 
@@ -271,7 +272,7 @@ class TableImpl:public Table
     char* getAliasName() { return aliasName; }
     void setAliasName(char *name);
     void setTableInfo(char *name, int tblid, size_t  length,
-                       int numFld, int numIdx, void *chunk);
+                       int numFld, int numIdx, void *chunk, void *vcchunk);
     void setLoading(bool flag) { loadFlag = flag; }
     friend class DatabaseManagerImpl;
 };

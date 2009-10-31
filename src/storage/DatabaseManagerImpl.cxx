@@ -509,7 +509,6 @@ DbRetVal DatabaseManagerImpl::createTable(const char *name, TableDef &def)
     int addSize = 0;
     if (fldCount < 31) addSize = 4; else addSize = os::align(fldCount);
     size_t sizeofTuple = os::alignLong(def.getTupleSize()+addSize);
-
     rv = systemDatabase_->getDatabaseMutex();
     if (OK != rv ) {
         printError(rv, "Unable to get Database mutex");
@@ -518,10 +517,11 @@ DbRetVal DatabaseManagerImpl::createTable(const char *name, TableDef &def)
 
     void *tptr =NULL;
     void *chunk = NULL;
+    void *vcchunk = NULL;
 
     //check whether table already exists
     CatalogTableTABLE cTable(systemDatabase_);
-    cTable.getChunkAndTblPtr(name, chunk, tptr);
+    cTable.getChunkAndTblPtr(name, chunk, tptr, vcchunk);
     if (NULL != tptr)
     {
         systemDatabase_->releaseDatabaseMutex();
@@ -541,11 +541,30 @@ DbRetVal DatabaseManagerImpl::createTable(const char *name, TableDef &def)
     ptr->setChunkName(name);
     //add row to TABLE
     int tblID = ((Chunk*)ptr)->getChunkID();
+
+    //check whether varchar is present in table
+    FieldIterator fiter = def.getFieldIterator();
+    bool isVarcharPresent = def.isVarcharPresentInSchema(fiter);
+    Chunk *vcptr = NULL;
+    if (isVarcharPresent) {
+        //creat chunk to store varchar values
+        vcptr = createUserChunk();
+        if (NULL  == vcptr)
+        {
+            deleteUserChunk(ptr);
+            systemDatabase_->releaseDatabaseMutex();
+            printError(ErrNoResource, "Unable to create user chunk for varchar");
+            return ErrNoResource;
+        }
+        printDebug(DM_Database,"Created UserChunk for Varchar:%x", vcptr);
+        vcptr->setChunkName(name);
+    }
     rv = cTable.insert(name, tblID, sizeofTuple,
-                                   def.getFieldCount(), ptr, tptr);
+                                   def.getFieldCount(), ptr, tptr, vcptr);
     if (OK != rv)
     {
         deleteUserChunk(ptr);
+        if (vcptr) deleteUserChunk(vcptr);
         systemDatabase_->releaseDatabaseMutex();
         printError(ErrSysInternal, "Unable to update catalog table TABLE");
         return ErrSysInternal;
@@ -558,6 +577,7 @@ DbRetVal DatabaseManagerImpl::createTable(const char *name, TableDef &def)
     if (OK != rv)
     {
         deleteUserChunk(ptr);
+        if (vcptr) deleteUserChunk(vcptr);
         void *cptr, *ttptr;//Dummy as remove below needs both these OUT params
         cTable.remove(name, cptr, ttptr);
         systemDatabase_->releaseDatabaseMutex();
@@ -580,6 +600,7 @@ DbRetVal DatabaseManagerImpl::dropTable(const char *name)
 {
     void *chunk = NULL;
     void *tptr =NULL;
+    void *vcchunk = NULL;
     DbRetVal rv = systemDatabase_->getDatabaseMutex();
     if (OK != rv) {
         printError(ErrSysInternal, "Unable to get database mutex");
@@ -587,7 +608,7 @@ DbRetVal DatabaseManagerImpl::dropTable(const char *name)
     }
     //remove the entry in TABLE
     CatalogTableTABLE cTable(systemDatabase_);
-    rv = cTable.getChunkAndTblPtr(name, chunk, tptr);
+    rv = cTable.getChunkAndTblPtr(name, chunk, tptr, vcchunk);
     if (OK != rv) {
         systemDatabase_->releaseDatabaseMutex();
         printError(ErrSysInternal, "Table %s does not exist", name);
@@ -634,6 +655,17 @@ DbRetVal DatabaseManagerImpl::dropTable(const char *name)
         return rv;
     }
     printDebug(DM_Database,"Deleted UserChunk:%x", chunk);
+    
+    if (vcchunk != NULL) {
+        rv = deleteUserChunk((Chunk*)vcchunk);
+        if (OK != rv) {
+            systemDatabase_->releaseDatabaseMutex();
+            printError(rv, "Unable to delete the chunk");
+            return rv;
+        }
+        printDebug(DM_Database,"Deleted UserChunk for Varchar:%x", chunk);
+    }
+
     //TODO::check whether indexes are available and drop that also.
     CatalogTableINDEX cIndex(systemDatabase_);
     int noIndexes = cIndex.getNumIndexes(tptr);
@@ -672,6 +704,7 @@ Table* DatabaseManagerImpl::openTable(const char *name,bool checkpkfk)
 
     //to store the chunk pointer of table
     void *chunk = NULL;
+    void *vcchunk = NULL;
 
     //to store the tuple pointer of the table
     void *tptr =NULL;
@@ -687,7 +720,7 @@ Table* DatabaseManagerImpl::openTable(const char *name,bool checkpkfk)
         return NULL;
     }
     CatalogTableTABLE cTable(systemDatabase_);
-    ret = cTable.getChunkAndTblPtr(name, chunk, tptr);
+    ret = cTable.getChunkAndTblPtr(name, chunk, tptr, vcchunk);
     if ( OK != ret)
     {
         systemDatabase_->releaseDatabaseMutex();
@@ -697,7 +730,8 @@ Table* DatabaseManagerImpl::openTable(const char *name,bool checkpkfk)
     }
     CTABLE *tTuple = (CTABLE*)tptr;
     table->setTableInfo(tTuple->tblName_, tTuple->tblID_, tTuple->length_,
-                        tTuple->numFlds_, tTuple->numIndexes_, tTuple->chunkPtr_);
+                        tTuple->numFlds_, tTuple->numIndexes_, 
+                        tTuple->chunkPtr_, tTuple->varcharChunkPtr_);
     /*rv = table->lock(true); //take shared lock
     if (rv !=OK)
     {
@@ -936,6 +970,7 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
     }
     void *tptr =NULL;
     void *chunk = NULL;
+    void *vcchunk = NULL;
     DbRetVal rv = systemDatabase_->getDatabaseMutex();
     if (OK != rv)
     {
@@ -945,7 +980,7 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
 
     //check whether table exists
     CatalogTableTABLE cTable(systemDatabase_);
-    cTable.getChunkAndTblPtr(tblName, chunk, tptr);
+    cTable.getChunkAndTblPtr(tblName, chunk, tptr,chunk);
     if (NULL == tptr)
     {
         systemDatabase_->releaseDatabaseMutex();
@@ -1117,6 +1152,7 @@ DbRetVal DatabaseManagerImpl::createTreeIndex(const char *indName, const char *t
     }
     void *tptr =NULL;
     void *chunk = NULL;
+    void *vcchunk = NULL;
     DbRetVal rv = systemDatabase_->getDatabaseMutex();
     if (OK != rv)
     {
@@ -1126,7 +1162,7 @@ DbRetVal DatabaseManagerImpl::createTreeIndex(const char *indName, const char *t
     //check whether table exists
     
     CatalogTableTABLE cTable(systemDatabase_);
-    cTable.getChunkAndTblPtr(tblName, chunk, tptr);
+    cTable.getChunkAndTblPtr(tblName, chunk, tptr, vcchunk);
     if (NULL == tptr)
     {
         systemDatabase_->releaseDatabaseMutex();
@@ -1328,6 +1364,7 @@ DbRetVal DatabaseManagerImpl::createForeignKey(char *fKName,ForeignKeyInfo *info
    }
     void *tptr =NULL;
     void *chunk = NULL;
+    void *vcchunk = NULL;
     rv = systemDatabase_->getDatabaseMutex();
     if (OK != rv)
     {
@@ -1335,7 +1372,7 @@ DbRetVal DatabaseManagerImpl::createForeignKey(char *fKName,ForeignKeyInfo *info
         return ErrSysInternal;
     }
     CatalogTableTABLE cTable(systemDatabase_);
-    cTable.getChunkAndTblPtr(info->fkTableName, chunk, tptr);
+    cTable.getChunkAndTblPtr(info->fkTableName, chunk, tptr, vcchunk);
     if (NULL == tptr)
     {
         systemDatabase_->releaseDatabaseMutex();
@@ -1356,8 +1393,9 @@ DbRetVal DatabaseManagerImpl::createForeignKey(char *fKName,ForeignKeyInfo *info
     }
     void *tPkptr =NULL;
     void *chunkPk = NULL;
+    void *vcchunkPk = NULL;
     CatalogTableTABLE c2Table(systemDatabase_);
-    c2Table.getChunkAndTblPtr(info->pkTableName, chunkPk, tPkptr);
+    c2Table.getChunkAndTblPtr(info->pkTableName, chunkPk, tPkptr, vcchunkPk);
     if (NULL == tPkptr)
     {
         systemDatabase_->releaseDatabaseMutex();
@@ -1705,9 +1743,9 @@ DbRetVal DatabaseManagerImpl::writeSchemaFile()
         fprintf(fp, "CREATE TABLE %s (", elem->name);
         Table *table = openTable(elem->name);
 
-        void *chunk = NULL; void *tptr =NULL;
+        void *chunk = NULL; void *tptr =NULL; void *vcchunk = NULL;
         CatalogTableTABLE cTable(systemDatabase_);
-        rv = cTable.getChunkAndTblPtr(elem->name, chunk, tptr);
+        rv = cTable.getChunkAndTblPtr(elem->name, chunk, tptr, vcchunk);
         struct Object obj;
         strcpy(obj.name, elem->name);
         obj.type = Tbl;

@@ -466,6 +466,7 @@ char* AllDataType::getSQLString(DataType type)
         case typeTime: return "TIME";
         case typeTimeStamp: return "TIMESTAMP";
         case typeString: return "CHAR";
+        case typeVarchar: return "VARCHAR";
         case typeBinary: return "BINARY";
         default: return "UNKNOWN";
     }
@@ -1297,6 +1298,7 @@ void* AllDataType::alloc(DataType type, int length)
             //TODO::for porting
             //fldDef.length_ = sizeof(long double);
             break;
+        case typeVarchar:
         case typeString:
             if (length == 0 ) return NULL;
             dest = malloc(length);
@@ -1412,7 +1414,8 @@ DbRetVal AllDataType::strToValue(void* dest, char *src, DataType type, int lengt
             break; }
         case typeDecimal:
             //TODO::for porting
-        case typeString: {
+        case typeString: 
+        case typeVarchar: {
                 strncpy((char*)dest, (char*)src, length);
                 char *d =(char*)dest;
                 d[length-1] = '\0'; 
@@ -1953,6 +1956,7 @@ int AllDataType::printVal(void* src, DataType srcType, int length,int dbFlag )
         }
 
         case typeString:
+        case typeVarchar:
         {
             count = printf("%s", (char*)src);
             break;

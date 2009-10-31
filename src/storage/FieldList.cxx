@@ -245,8 +245,9 @@ int FieldList::getTupleSize()
     int offset = 0;
     while(iter != NULL)
     {
-        offset = offset + iter->fldDef.length_;
-        iter = iter ->next;
+        if (iter->fldDef.type_ == typeVarchar) offset += sizeof(void *);
+        else offset = offset + iter->fldDef.length_;
+        iter = iter->next;
     }
     return offset;
 }

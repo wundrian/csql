@@ -82,6 +82,7 @@ int TableDef::addField(const char *name,  DataType type, size_t length,
     switch(type)
     {
         case typeString :
+        case typeVarchar:
         case typeBinary :
             fldDef.length_ = os::align(length);
             break;
@@ -114,7 +115,18 @@ size_t TableDef::getTupleSize()
     while (iter.hasElement())
     {
         FieldDef *def = iter.nextElement();
-        length = length + def->length_;
+        if (def->type_ == typeVarchar) length += sizeof (void *);
+        else length = length + def->length_;
     }
     return length;
+}
+ 
+bool TableDef::isVarcharPresentInSchema(FieldIterator &iter)
+{
+    while (iter.hasElement())
+    {
+        FieldDef *fDef = iter.nextElement();
+        if (fDef->type_ == typeVarchar) return true;
+    }
+    return false;
 }

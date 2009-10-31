@@ -1101,6 +1101,7 @@ void* SelStatement::fetchAndPrint(bool SQL)
                 switch(value->type)
                 {
                     case typeString:
+                    case typeVarchar:
                     case typeBinary:
                     case typeDate:
                     case typeTime:
@@ -1124,6 +1125,7 @@ void* SelStatement::fetchAndPrint(bool SQL)
                 switch(value->type)
                 {
                     case typeString:
+                    case typeVarchar:
                     case typeBinary:
                     case typeDate:
                     case typeTime:

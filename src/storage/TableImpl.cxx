@@ -940,6 +940,18 @@ DbRetVal TableImpl::deleteTuple()
            lMgr_->releaseLock(curTuple_);
         }
     }
+
+    FieldIterator fIter = fldList_.getIterator();
+    char *colPtr = (char*) curTuple_;
+    while (fIter.hasElement()) {
+        FieldDef *def = fIter.nextElement();
+        colPtr =  (char *) curTuple_ + def->offset_;
+        if (def->type_ == typeVarchar) {
+            char *ptr = (char *) *(int *) colPtr;
+            ((Chunk *) vcChunkPtr_)->free(db_, ptr);
+        }
+    }
+
     ((Chunk*)chunkPtr_)->free(db_, curTuple_);
 
     iter->prev();
@@ -1039,6 +1051,18 @@ DbRetVal TableImpl::updateTuple()
             }
         }
     }
+
+    FieldIterator fIter = fldList_.getIterator();
+    char *colPtr = (char*) curTuple_;
+    while (fIter.hasElement()) {
+        FieldDef *def = fIter.nextElement();
+        colPtr =  (char *) curTuple_ + def->offset_;
+        if (def->type_ == typeVarchar) {
+            char *ptr = (char *) *(int *) colPtr;
+            ((Chunk *) vcChunkPtr_)->free(db_, ptr);
+        }
+    }
+
     if (!loadFlag)
         ret = (*trans)->appendUndoLog(sysDB_, UpdateOperation, curTuple_, length_);
     if (ret != OK) {
@@ -1173,6 +1197,17 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
                 else if (!def->isNull_ && isInsert && !def->bindVal_)  setNullBit(fldpos);
                 colPtr = colPtr + def->length_;
                 break;
+            case typeVarchar:
+            {
+                DbRetVal rv = OK;
+                void *ptr =
+                  ((Chunk *) vcChunkPtr_)->allocate(db_, def->length_+1 , &rv);
+                memset(ptr, 0, def->length_+1);
+                memcpy(colPtr, &ptr, sizeof(void *));
+                strcpy((char *)ptr, (char *)def->bindVal_);
+                colPtr = colPtr + sizeof(void *);
+                break;
+            }
             default:
                 if (NULL != def->bindVal_){
 		    if(!isInsert && isFldNull(fldpos)){clearNullBit(fldpos);}
@@ -1207,7 +1242,13 @@ DbRetVal TableImpl::copyValuesToBindBuffer(void *tuplePtr)
     for (int i = 0; i < numBindFlds_; i++) {
        def = (FieldDef *) bindListArray_[i];
        colPtr =  (char *) tuplePtr + def->offset_;
-       AllDataType::copyVal(def->bindVal_, colPtr, def->type_, def->length_);
+       if (def->type_ != typeVarchar)
+           AllDataType::copyVal(def->bindVal_, colPtr, def->type_, 
+                                                                 def->length_);
+       else {
+           char *ptr = (char *) *(int *) colPtr;
+           strcpy((char *)def->bindVal_, ptr);
+       }
     }
     return OK;
 }
@@ -1302,7 +1343,7 @@ DbRetVal TableImpl::updateIndexNode(Transaction *tr, void *indexPtr, IndexInfo *
 
 
 void TableImpl::setTableInfo(char *name, int tblid, size_t  length,
-                       int numFld, int numIdx, void *chunk)
+                       int numFld, int numIdx, void *chunk, void *vcchunk)
 {
     strcpy(tblName_, name);
     tblID_ = tblid;
@@ -1310,6 +1351,7 @@ void TableImpl::setTableInfo(char *name, int tblid, size_t  length,
     numFlds_ = numFld;
     numIndexes_ = numIdx;
     chunkPtr_ = chunk;
+    vcChunkPtr_ = vcchunk;
 }
 
 long TableImpl::spaceUsed()
@@ -1515,6 +1557,7 @@ void TableImpl::printSQLForeignString()
     void *tPkptr =NULL;
     void *tFkptr = NULL;
     void *chunkPk = NULL;
+    void *vcchunkPk = NULL;
     CatalogTableTABLE cTable(sysDB_);
     TableImpl *fkTbl =NULL;
     ListIterator tblIter = tblList.getIterator();
@@ -1522,9 +1565,9 @@ void TableImpl::printSQLForeignString()
     int firstFK=true;
     while (tblIter.hasElement()){
         fkTbl = (TableImpl *) tblIter.nextElement();
-        rv = cTable.getChunkAndTblPtr(fkTbl->getName(), chunkPk, tPkptr);
+        rv = cTable.getChunkAndTblPtr(fkTbl->getName(), chunkPk, tPkptr, vcchunkPk );
         if ( OK != rv){return ;}
-        rv = cTable.getChunkAndTblPtr(getName(), chunkPk, tFkptr);
+        rv = cTable.getChunkAndTblPtr(getName(), chunkPk, tFkptr, vcchunkPk);
         if ( OK != rv){return ;}
         CatalogTableFK cFk(sysDB_);
         rv = cFk.getPkFkFieldInfo(tPkptr,tFkptr,pkFieldList,fkFieldList);
@@ -1570,10 +1613,11 @@ bool TableImpl::isPkTableHasRecord(char *pkTableName, TableImpl *fkTbl,bool isIn
     void *tPkptr =NULL;
     void *tFkptr = NULL;
     void *chunkPk = NULL;
+    void *vcchunkPk = NULL;
     CatalogTableTABLE cTable(sysDB_);
-    rv = cTable.getChunkAndTblPtr(pkTableName, chunkPk, tPkptr);
+    rv = cTable.getChunkAndTblPtr(pkTableName, chunkPk, tPkptr, vcchunkPk);
     if ( OK != rv){return false;}
-    rv = cTable.getChunkAndTblPtr(getName(), chunkPk, tFkptr);
+    rv = cTable.getChunkAndTblPtr(getName(), chunkPk, tFkptr, vcchunkPk);
     if ( OK != rv){return false;}
     CatalogTableFK cFk(sysDB_);
     rv = cFk.getPkFkFieldInfo(tPkptr,tFkptr,pkFieldList,fkFieldList);
@@ -1651,10 +1695,11 @@ bool TableImpl::isFkTableHasRecord(char *pkTableName, TableImpl *fkTbl)
     void *tPkptr =NULL;
     void *tFkptr = NULL;
     void *chunkPk = NULL;
+    void *vcchunkPk = NULL;
     CatalogTableTABLE cTable(sysDB_);
-    rv = cTable.getChunkAndTblPtr(getName(), chunkPk, tPkptr);
+    rv = cTable.getChunkAndTblPtr(getName(), chunkPk, tPkptr, vcchunkPk);
     if ( OK != rv){return false;}
-    rv = cTable.getChunkAndTblPtr(pkTableName, chunkPk, tFkptr);
+    rv = cTable.getChunkAndTblPtr(pkTableName, chunkPk, tFkptr, vcchunkPk);
     if ( OK != rv){return false;}
     CatalogTableFK cFk(sysDB_);
     rv = cFk.getPkFkFieldInfo(tPkptr,tFkptr,pkFieldList,fkFieldList);

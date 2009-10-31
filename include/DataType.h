@@ -37,6 +37,7 @@ enum DataType {
 
    typeString      =  30,
    typeBinary      =  31,
+   typeVarchar     =  32,
 
    typeComposite   =  98,
    typeULong       =  99,

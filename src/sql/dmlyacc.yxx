@@ -29,7 +29,7 @@ void yyerror(const char* Msg);
 %token <stringval> DELETE UPDATE SET NULL_VALUE
 %token <stringval> CREATE TABLE PRIMARY KEY DEFAULT INDEX ON HASH TREE UNIQUE DROP SIZE FOREIGN REFERENCES COMPACT 
 %token <stringval> CACHE CONDITION FIELDLIST PK DIRECT DSN UNCACHE NOSCHEMA
-%token <stringval> INT_TYPE LONG_TYPE SHORT_TYPE DOUBLE_TYPE TIMESTAMP_TYPE DATE_TYPE CHAR_TYPE TIME_TYPE BIGINT_TYPE FLOAT_TYPE TINYINT_TYPE BINARY_TYPE
+%token <stringval> INT_TYPE LONG_TYPE SHORT_TYPE DOUBLE_TYPE TIMESTAMP_TYPE DATE_TYPE CHAR_TYPE VARCHAR_TYPE TIME_TYPE BIGINT_TYPE FLOAT_TYPE TINYINT_TYPE BINARY_TYPE
 %token <stringval> USER PASSWORD ALTER FLUSH
 %token <stringval> MIN MAX AVG SUM COUNT GROUP BY HAVING ORDER ASC DESC DISTINCT
 %token ';' ',' '(' ')'
@@ -1032,6 +1032,12 @@ field_type: INT_TYPE
         | CHAR_TYPE
         {
             parsedData->setFldType(typeString);
+            parsedData->setFldLength(2);
+        }
+        ;
+        | VARCHAR_TYPE
+        {
+            parsedData->setFldType(typeVarchar);
             parsedData->setFldLength(2);
         }
         ;

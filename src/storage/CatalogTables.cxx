@@ -22,7 +22,7 @@ char ChunkName[MAX_CHUNKS][CHUNK_NAME_LEN]={"UserChunkTableId","LockTableHashBuc
 
 
 DbRetVal CatalogTableTABLE::insert(const char *name, int id, size_t size,
-                    int numFlds, void* chunk, void *&tptr)
+                    int numFlds, void* chunk, void *&tptr, void *vcchunk)
 {
     Chunk *tChunk = systemDatabase_->getSystemDatabaseChunk(TableTableId);
     DbRetVal rv = OK;
@@ -40,6 +40,7 @@ DbRetVal CatalogTableTABLE::insert(const char *name, int id, size_t size,
     tableInfo->numFlds_ = numFlds;
     tableInfo->numIndexes_ = 0;
     tableInfo->chunkPtr_ = chunk;
+    tableInfo->varcharChunkPtr_ = vcchunk;
     printDebug(DM_SystemDatabase,"One Row inserted into TABLE %x %s",tptr, name);
     return OK;
 }
@@ -75,7 +76,7 @@ DbRetVal CatalogTableTABLE::remove(const char *name, void *&chunk, void *&tptr)
 }
 
 DbRetVal CatalogTableTABLE::getChunkAndTblPtr(const char *name,
-                                               void *&chunk, void *&tptr)
+                                    void *&chunk, void *&tptr, void *&vcchunk)
 {
     Chunk *chk = systemDatabase_->getSystemDatabaseChunk(TableTableId);
     ChunkIterator iter = chk->getIterator();;
@@ -85,6 +86,7 @@ DbRetVal CatalogTableTABLE::getChunkAndTblPtr(const char *name,
          {
              //there will be only one row for this table(Primary key)
              chunk = (Chunk*) ((CTABLE*)tptr)->chunkPtr_;
+             vcchunk = (Chunk*) ((CTABLE*)tptr)->varcharChunkPtr_;
              return OK;
          }
     }

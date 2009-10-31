@@ -147,6 +147,7 @@ int main(int argc, char **argv)
                     printf(", %s %s ", fieldName, AllDataType::getSQLString(info->type));
                 if (info->type == typeString) printf("(%d)",info->length );
                 if (info->type == typeBinary) printf("(%d)",info->length);
+                if (info->type == typeVarchar) printf("(%d)",info->length);
                 if (info->isNull) printf(" NOT NULL ");
                 if (info->isDefault) printf(" DEFAULT '%s' ", info->defaultValueBuf);
                 if (info->isAutoIncrement) printf(" AUTO_INCREMENT ");

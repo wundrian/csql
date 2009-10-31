@@ -87,7 +87,7 @@ class CTABLE
     int numFlds_;
     int numIndexes_;
     void* chunkPtr_;
-
+    void* varcharChunkPtr_;
 };
 
 class CatalogTableTABLE
@@ -99,7 +99,7 @@ class CatalogTableTABLE
     //Last argument is OUT parameter which will contain the
     //pointer to the inserted tuple
     DbRetVal insert(const char *name, int id, size_t size,
-                     int numFlds, void* chunk, void *&tptr);
+                     int numFlds, void* chunk, void *&tptr, void *vcchunk);
 
     //Second argument is OUT parameter which will contain the
     //chunk pointer of this table
@@ -107,7 +107,7 @@ class CatalogTableTABLE
     //pointer to the removed tuple
     DbRetVal remove(const char *name, void *&chunk, void *&tptr);
 
-    DbRetVal getChunkAndTblPtr(const char *name, void *&chunk, void *&tptr);
+    DbRetVal getChunkAndTblPtr(const char *name, void *&chunk, void *&tptr, void*& vcchunk);
     DbRetVal setChunkPtr(const char *name, void *firstPage, void *curPage);
     List getTableList();
 };
