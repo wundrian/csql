@@ -80,7 +80,7 @@ class SqlGwConnection : public AbsSqlConnection
     friend class SqlFactory;
     bool isCsqlConnected(){ return isCSqlConnected;} 
     bool isAdptConnected(){ return isAdapterConnected;} 
-    void createAdapters(SqlGwConnection *gateway);
+    DbRetVal createAdapters(SqlGwConnection *gateway);
     void setAdapter(AbsSqlConnection *conn, char *dsn);
     AbsSqlConnection* getAdapterConnection(char *dsn);
 
