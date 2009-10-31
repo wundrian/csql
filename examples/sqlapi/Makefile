@@ -2,7 +2,7 @@ OSNAME = $(shell  uname -s)
 PlatForm=supported
 
 ifeq ($(OSNAME), SunOS)
-CPlus = g++
+CPlus = CC
 CPlusFlags = -O2 -w 
 SYSLIBS=-ldl -lnsl -lsocket  -lposix4 
 else 
@@ -18,7 +18,7 @@ endif
 endif
 
 INCL= -I$(CSQL_INSTALL_ROOT)/include
-LIBS= -rdynamic -L$(CSQL_INSTALL_ROOT)/lib -lcsqlsql -lcsql -lcsqlsqllog -lcsqlnw -lcacheload -lcsqlgw -lcsqlodbcadapter -lcsqlsqlnw
+LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlsql -lcsql -lcsqlsqllog -lcsqlnw -lcacheload -lcsqlgw -lcsqlodbcadapter -lcsqlsqlnw
 
 TARGETS = sqlapiexample 
 
