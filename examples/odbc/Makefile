@@ -2,7 +2,7 @@ OSNAME = $(shell  uname -s)
 PlatForm=supported
 
 ifeq ($(OSNAME), SunOS)
-CPlus = g++
+CPlus = CC
 CPlusFlags = -O2 -w
 SYSLIBS=-ldl -lnsl -lsocket  -lposix4
 else
@@ -19,7 +19,7 @@ endif
 
 INCL= -I$(CSQL_INSTALL_ROOT)/include
 
-LIBS= -rdynamic -L$(CSQL_INSTALL_ROOT)/lib -lcsqlodbc
+LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlodbc
 
 TARGETS =  odbcexample
 
