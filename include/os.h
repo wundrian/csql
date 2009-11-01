@@ -108,7 +108,7 @@ enum MapMode
 #define STMT_BUCKET_SIZE 1023
 #define MAX_CHUNKS 20
 #define PAGE_SIZE Conf::config.getPageSize()
-#define MAX_MUTEX_PER_THREAD 3
+#define MAX_MUTEX_PER_THREAD 4
 #define MAX_THREADS_PER_PROCESS 30
 #define MAX_FILE_PATH_LEN 1024
 #define CHUNK_NAME_LEN 64

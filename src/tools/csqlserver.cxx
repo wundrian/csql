@@ -27,6 +27,7 @@ int srvStop =0;
 pid_t asyncpid=0;
 pid_t sqlserverpid=0;
 pid_t cachepid=0;
+pid_t chkptpid=0;
 bool recoverFlag=false;
 bool monitorServer= false;
 SessionImpl *session = NULL;
@@ -174,6 +175,19 @@ void startAsyncServer()
          printf("Async Cache Server Started [PID=%d]\n", asyncpid);
      return;
 }
+void startCheckpointServer()
+{
+    char execName[1024];
+    sprintf(execName, "%s/bin/csqlcheckpointserver", os::getenv("CSQL_INSTALL_ROOT"));
+    if (srvStop) return;
+    chkptpid = os::createProcess(execName, "csqlcheckpointserver");
+    if (chkptpid != -1) {
+        printf("Checkpoint Server Started [PID=%d]\n", chkptpid);
+        logFine(Conf::logger, "Checkpoint Server Started pid:%d", chkptpid);
+    }
+    return;
+}
+
 
 
 void printUsage()
@@ -251,11 +265,11 @@ int main(int argc, char **argv)
 
     if(isInit && Conf::config.useDurability())
     {
-        char dbRedoFileName[1024];
-        char dbChkptSchema[1024];
-        char dbChkptMap[1024];
-        char dbChkptData[1024];
-        char dbBackupFile[1024];
+        char dbRedoFileName[MAX_FILE_LEN];
+        char dbChkptSchema[MAX_FILE_LEN];
+        char dbChkptMap[MAX_FILE_LEN];
+        char dbChkptData[MAX_FILE_LEN];
+        char dbBackupFile[MAX_FILE_LEN];
         
         //check for check point file if present recover 
         sprintf(dbChkptSchema, "%s/db.chkpt.schema1", Conf::config.getDbFile());
@@ -282,7 +296,9 @@ int main(int argc, char **argv)
                 return 30;
             }
         }
-        sprintf(dbChkptData, "%s/db.chkpt.data", Conf::config.getDbFile());
+        int chkptID= Database::getCheckpointID();
+        sprintf(dbChkptData, "%s/db.chkpt.data%d", Conf::config.getDbFile(),
+                                                   chkptID);
         sprintf(dbBackupFile, "%s/db.chkpt.data1", Conf::config.getDbFile());
         FILE *fl = NULL;
         if (!Conf::config.useMmap() && (fl = fopen(dbBackupFile, "r"))) {
@@ -321,28 +337,19 @@ int main(int argc, char **argv)
             }
 
             // take check point at this moment 
-            sprintf(dbChkptSchema, "%s/db.chkpt.schema", Conf::config.getDbFile());
-            sprintf(dbChkptMap, "%s/db.chkpt.map", Conf::config.getDbFile());
-            sprintf(dbChkptData, "%s/db.chkpt.data", Conf::config.getDbFile());
-            ret = system("checkpoint");
-            if (ret != 0) {
-                printf("Unable to create checkpoint file. Database corrupted.\n");
+            DatabaseManager *dbMgr = session->getDatabaseManager();
+            rv = dbMgr->checkPoint();
+            if (rv != OK)
+            {
+                printError(ErrSysInternal, "checkpoint failed after redo log apply");
                 Conf::logger.stopLogger();
                 session->destroySystemDatabase();
                 delete session;
                 return 70;
             }
-            ret = unlink(dbRedoFileName);
-            if (ret != 0) { 
-                printf("Unable to delete redo log file. Delete and restart the server\n");
-                Conf::logger.stopLogger();
-                session->destroySystemDatabase();
-                delete session;
-                return 80;
-            }
         }
     }
-    bool isCacheReq = false, isSQLReq= false, isAsyncReq=false;
+    bool isCacheReq = false, isSQLReq= false, isAsyncReq=false, isChkptReq=false;
     recoverFlag = true;
     if (opt == 1 && isInit && ! Conf::config.useDurability()) {
         if (Conf::config.useCache()) {
@@ -381,6 +388,12 @@ int main(int argc, char **argv)
         isCacheReq = true;
         startCacheServer();
     }
+    if(Conf::config.useDurability())
+    {
+        isChkptReq = true;
+        startCheckpointServer();
+    }
+
     printf("Database Server Started...\n");
     logFine(Conf::logger, "Database Server Started");
     monitorServer= Conf::config.useMonitorServers();
@@ -408,11 +421,13 @@ reloop:
           }
           if (isSQLReq && sqlserverpid !=0  && checkDead(sqlserverpid)) {
             logFine(Conf::logger, "Network Server Died pid:%d", sqlserverpid);
-            os::sleep(5);
             startServiceClient();
           }
-        }
-
+          if (isChkptReq && chkptpid !=0  && checkDead(chkptpid)) {
+            logFine(Conf::logger, "Checkpoint Server Died pid:%d", chkptpid);
+            startCheckpointServer();
+          }
+       }
     }
     if (logActiveProcs(sysdb) != OK) {srvStop = 0; 
         monitorServer= Conf::config.useMonitorServers();
@@ -421,6 +436,7 @@ reloop:
     if (cachepid) os::kill(cachepid, SIGTERM);
     if(asyncpid) os::kill(asyncpid, SIGTERM);
     if (sqlserverpid) os::kill(sqlserverpid, SIGTERM);
+    if (chkptpid) os::kill(chkptpid, SIGTERM);
     if (Conf::config.useDurability() && Conf::config.useMmap()) {
         //ummap the memory 
         char *startAddr = (char *) sysdb->getMetaDataPtr();

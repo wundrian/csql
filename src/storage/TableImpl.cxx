@@ -417,7 +417,7 @@ void* TableImpl::fetchNoBind()
         //if iso level is read committed, operation duration lock is sufficent 
         //so release it here itself.
         int tries = Conf::config.getMutexRetries();
-        struct timeval timeout;
+        struct timeval timeout, timeval;
         timeout.tv_sec = Conf::config.getMutexSecs();
         timeout.tv_usec = Conf::config.getMutexUSecs();
 
@@ -433,7 +433,9 @@ void* TableImpl::fetchNoBind()
             if (!status) break; 
             tries--;
             if (tries == 0) break;
-            os::select(0, 0, 0, 0, &timeout);
+            timeval.tv_sec = timeout.tv_sec;
+            timeval.tv_usec = timeout.tv_usec;
+            os::select(0, 0, 0, 0, &timeval);
         }
         if (tries == 0) 
         { 
@@ -760,10 +762,35 @@ DbRetVal TableImpl::fetchAgg(const char * fldName, AggType aType, void *buf, boo
    delete info;
    return OK;
 }
+DbRetVal TableImpl::getCheckpointMutex()
+{
+   int tries=0;
+   DbRetVal rv = OK;
+   int totalTries = Conf::config.getMutexRetries();
+   struct timeval timeout, timeval;
+   timeout.tv_sec = Conf::config.getMutexSecs();
+   timeout.tv_usec = Conf::config.getMutexUSecs();
+
+   while (tries < totalTries)
+   {
+        rv =  sysDB_->getSCheckpointMutex();
+        if (OK == rv) break;
+        timeval.tv_sec = timeout.tv_sec;
+        timeval.tv_usec = timeout.tv_usec;
+        os::select(0,0,0,0,&timeval);
+        tries++;
+   }
+   if (tries == totalTries) {
+      printError(ErrLockTimeOut, "Checkpoint server is running. Retry after sometime.");
+      return ErrLockTimeOut;
+   }
+   return OK;
+}
 DbRetVal TableImpl::insertTuple()
 {
-    DbRetVal ret =OK;
-    void *tptr = NULL;// ((Chunk*)chunkPtr_)->allocate(db_, &ret);
+    DbRetVal ret = getCheckpointMutex();
+    if (ret !=OK) return ret;
+    void *tptr = NULL;
     int tries=0;
     int totalTries = Conf::config.getMutexRetries();
     while (tries < totalTries)
@@ -773,6 +800,7 @@ DbRetVal TableImpl::insertTuple()
         if (tptr !=NULL) break;
         if (ret != ErrLockTimeOut)
         {
+            sysDB_->releaseCheckpointMutex();
             printError(ret, "Unable to allocate record from chunk");
             return ret;
         }
@@ -780,6 +808,7 @@ DbRetVal TableImpl::insertTuple()
     }
     if (NULL == tptr)
     {
+        sysDB_->releaseCheckpointMutex();
         printError(ret, "Unable to allocate record from chunk after %d retries", tries);
         return ret;
     }
@@ -794,6 +823,7 @@ DbRetVal TableImpl::insertTuple()
            if(!pkRec){
                printError(ErrForeignKeyInsert, "Unable to insert into foreign Key table.Check PK table");
                ((Chunk*)chunkPtr_)->free(db_, tptr);
+               sysDB_->releaseCheckpointMutex();
                return ErrForeignKeyInsert;
            }
         }
@@ -805,6 +835,7 @@ DbRetVal TableImpl::insertTuple()
       {
         ((Chunk*)chunkPtr_)->free(db_, tptr);
         printError(ret, "Could not get lock for the insert tuple %x", tptr);
+        sysDB_->releaseCheckpointMutex();
         return ErrLockTimeOut;
       }
     }
@@ -818,6 +849,7 @@ DbRetVal TableImpl::insertTuple()
              lMgr_->releaseLock(tptr);
         }
         ((Chunk*)chunkPtr_)->free(db_, tptr);
+        sysDB_->releaseCheckpointMutex();
         return ret;
     }
     int addSize = 0;
@@ -853,6 +885,7 @@ DbRetVal TableImpl::insertTuple()
                lMgr_->releaseLock(tptr);
             }
             ((Chunk*)chunkPtr_)->free(db_, tptr);
+            sysDB_->releaseCheckpointMutex();
             return ret;
         }
     }
@@ -870,6 +903,7 @@ DbRetVal TableImpl::insertTuple()
         }
         ((Chunk*)chunkPtr_)->free(db_, tptr);
     }
+    sysDB_->releaseCheckpointMutex();
     return ret;
 }
 
@@ -880,6 +914,8 @@ DbRetVal TableImpl::deleteTuple()
         printError(ErrNotOpen, "Scan not open: No Current tuple");
         return ErrNotOpen;
     }
+    DbRetVal ret = getCheckpointMutex();
+    if (ret !=OK) return ret;
     if(isPkTbl){
         TableImpl *fkTbl =NULL;
         ListIterator tblIter = tblFkList.getIterator();
@@ -889,18 +925,19 @@ DbRetVal TableImpl::deleteTuple()
            bool pkRec = isFkTableHasRecord(fkTbl->getName(),fkTbl);
            if(pkRec){
                 printError(ErrForeignKeyDelete, "A Relation Exists. Delete from child table first");
+                sysDB_->releaseCheckpointMutex();
                 return ErrForeignKeyDelete;
            }
         }
         tblIter.reset();
     }
-    DbRetVal ret = OK;
     if (!loadFlag) {   
         //ret = lMgr_->getExclusiveLock(curTuple_, trans);
         if (OK != tryExclusiveLock(curTuple_, trans))
         {
             printError(ret, "Could not get lock for the delete tuple %x", 
                                                               curTuple_);
+            sysDB_->releaseCheckpointMutex();
             return ErrLockTimeOut;
         }
     }
@@ -924,6 +961,7 @@ DbRetVal TableImpl::deleteTuple()
                 (*trans)->removeFromHasList(db_, curTuple_);
             }
             printError(ret, "Unable to insert index node for tuple %x", curTuple_);
+            sysDB_->releaseCheckpointMutex();
             return ret;
         }
     }
@@ -940,7 +978,7 @@ DbRetVal TableImpl::deleteTuple()
            lMgr_->releaseLock(curTuple_);
         }
     }
-
+   
     FieldIterator fIter = fldList_.getIterator();
     char *colPtr = (char*) curTuple_;
     while (fIter.hasElement()) {
@@ -951,19 +989,24 @@ DbRetVal TableImpl::deleteTuple()
             ((Chunk *) vcChunkPtr_)->free(db_, ptr);
         }
     }
-
     ((Chunk*)chunkPtr_)->free(db_, curTuple_);
-
     iter->prev();
+    sysDB_->releaseCheckpointMutex();
     return ret;
 }
 
 int TableImpl::deleteWhere()
 {
+    DbRetVal ret = getCheckpointMutex();
+    if (ret !=OK) return ret;
+
     int tuplesDeleted = 0;
     DbRetVal rv  = OK;
     rv =  execute();
-    if (rv !=OK) return (int) rv;
+    if (rv !=OK) {
+        sysDB_->releaseCheckpointMutex();
+        return (int) rv;
+    }
     while(true){
         fetchNoBind( rv);
         if (rv != OK) { tuplesDeleted = (int)rv; break; }
@@ -972,11 +1015,13 @@ int TableImpl::deleteWhere()
         if (rv != OK) {
             printError(rv, "Error: Could only delete %d tuples", tuplesDeleted);
             closeScan();
+            sysDB_->releaseCheckpointMutex();
             return (int) rv;
         }
         tuplesDeleted++;
     }
     closeScan();
+    sysDB_->releaseCheckpointMutex();
     return tuplesDeleted;
 }
 
@@ -1007,6 +1052,8 @@ DbRetVal TableImpl::updateTuple()
         printError(ErrNotOpen, "Scan not open: No Current tuple");
         return ErrNotOpen;
     }
+    DbRetVal ret = getCheckpointMutex();
+    if (ret !=OK) return ret;
     if(isFkTbl){
         TableImpl *fkTbl =NULL;
         ListIterator tblIter = tblList.getIterator();
@@ -1016,18 +1063,19 @@ DbRetVal TableImpl::updateTuple()
            bool pkRec = isPkTableHasRecord(fkTbl->getName(),fkTbl,false);
            if(!pkRec){
                printError(ErrForeignKeyInsert, "Unable to insert into foreign Key table.Check PK table");
+               sysDB_->releaseCheckpointMutex();
                return ErrForeignKeyInsert;
            }
         }
         tblIter.reset();
     }
 
-    DbRetVal ret=OK;
     if (!loadFlag) {
       //ret = lMgr_->getExclusiveLock(curTuple_, trans);
       if (OK != tryExclusiveLock(curTuple_, trans))
       {
         printError(ret, "Could not get lock for the update tuple %x", curTuple_);
+        sysDB_->releaseCheckpointMutex();
         return ErrLockTimeOut;
       }
     }
@@ -1047,11 +1095,12 @@ DbRetVal TableImpl::updateTuple()
                   (*trans)->removeFromHasList(db_, curTuple_);
                 }
                 printError(ret, "Unable to update index node for tuple %x", curTuple_);
+                sysDB_->releaseCheckpointMutex();
                 return ret;
             }
         }
     }
-
+    
     FieldIterator fIter = fldList_.getIterator();
     char *colPtr = (char*) curTuple_;
     while (fIter.hasElement()) {
@@ -1070,6 +1119,7 @@ DbRetVal TableImpl::updateTuple()
            lMgr_->releaseLock(curTuple_);
            (*trans)->removeFromHasList(db_, curTuple_);
          }
+         sysDB_->releaseCheckpointMutex();
          return ret;
     }
     int addSize = 0;
@@ -1088,6 +1138,7 @@ DbRetVal TableImpl::updateTuple()
     if (rv != OK && !loadFlag) { 
         lMgr_->releaseLock(curTuple_); 
         (*trans)->removeFromHasList(db_, curTuple_); 
+        sysDB_->releaseCheckpointMutex();
         return rv; 
     }
     
@@ -1110,9 +1161,8 @@ DbRetVal TableImpl::updateTuple()
             i++;
         }
         //os::memcpy(((char*)(curTuple_) + (length_-addSize)), cNullInfo, addSize);
-
-
     }
+    sysDB_->releaseCheckpointMutex();
     return OK;
 }
 
@@ -1197,15 +1247,15 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
                 else if (!def->isNull_ && isInsert && !def->bindVal_)  setNullBit(fldpos);
                 colPtr = colPtr + def->length_;
                 break;
-            case typeVarchar:
+            case typeVarchar: 
             {
                 DbRetVal rv = OK;
-                void *ptr =
+                void *ptr = 
                   ((Chunk *) vcChunkPtr_)->allocate(db_, def->length_+1 , &rv);
                 memset(ptr, 0, def->length_+1);
                 memcpy(colPtr, &ptr, sizeof(void *));
-                strcpy((char *)ptr, (char *)def->bindVal_);
-                colPtr = colPtr + sizeof(void *);
+                strcpy((char *)ptr, (char *)def->bindVal_); 
+                colPtr = colPtr + sizeof(void *); 
                 break;
             }
             default:
@@ -1246,7 +1296,7 @@ DbRetVal TableImpl::copyValuesToBindBuffer(void *tuplePtr)
            AllDataType::copyVal(def->bindVal_, colPtr, def->type_, 
                                                                  def->length_);
        else {
-           char *ptr = (char *) *(int *) colPtr;
+           char *ptr = (char *) *(int *) colPtr;       
            strcpy((char *)def->bindVal_, ptr);
        }
     }
@@ -1565,7 +1615,7 @@ void TableImpl::printSQLForeignString()
     int firstFK=true;
     while (tblIter.hasElement()){
         fkTbl = (TableImpl *) tblIter.nextElement();
-        rv = cTable.getChunkAndTblPtr(fkTbl->getName(), chunkPk, tPkptr, vcchunkPk );
+        rv = cTable.getChunkAndTblPtr(fkTbl->getName(), chunkPk, tPkptr,vcchunkPk);
         if ( OK != rv){return ;}
         rv = cTable.getChunkAndTblPtr(getName(), chunkPk, tFkptr, vcchunkPk);
         if ( OK != rv){return ;}

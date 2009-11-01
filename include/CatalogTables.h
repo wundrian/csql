@@ -74,7 +74,8 @@ enum CatalogTableID
     IndexTableId     = 15,
     IndexFieldTableId= 16,
     ForeignKeyTableId= 17,
-    ForeignKeyFieldTableId= 18
+    ForeignKeyFieldTableId= 18,
+    LastCatalogID = 25 //marks the end of catalog chunk ID.
 };
 
 

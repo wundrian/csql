@@ -217,3 +217,25 @@ DbRetVal TransactionManager::rollback(LockManager *lockManager, Transaction *t)
     logFinest(Conf::logger, "Transaction Aborted:%x", trans);
     return OK;
 }
+bool TransactionManager::isTransactionConsistent(Database *sysdb)
+{
+    DbRetVal rv = sysdb->getTransTableMutex();
+    if (OK != rv)
+    {
+        printError(rv, "Unable to acquire transtable mutex");
+        return false;
+    }
+    Transaction *iter = firstTrans;
+    int i;
+    for (i =0 ; i < Conf::config.getMaxProcs(); i++)
+    {
+        if (iter->status_ == TransRunning && iter->noOfUndoLogs()) {
+            printError( ErrSysInternal, "Transaction slot %d not consistent status:%d undoLogs:%d\n",i, iter->status_, iter->noOfUndoLogs()); 
+            sysdb->releaseTransTableMutex();
+            return false;
+        }
+        iter++;
+    }
+    sysdb->releaseTransTableMutex();
+    return true;
+}

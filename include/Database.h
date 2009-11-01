@@ -50,7 +50,7 @@ class DatabaseMetaData
     //this database
     Mutex dbAllocMutex_;
 
-    Mutex dbMutex_;
+    Mutex ckptMutex_;
 
     Mutex dbTransTableMutex_;
 
@@ -161,9 +161,10 @@ class Database
     DbRetVal getTransTableMutex();
     DbRetVal releaseTransTableMutex();
 
-    int initDatabaseMutex();
-    DbRetVal getDatabaseMutex(bool procAccount = true);
-    DbRetVal releaseDatabaseMutex(bool procAccount = true);
+    int initCheckpointMutex();
+    DbRetVal getSCheckpointMutex(bool procAccount = true);
+    DbRetVal getXCheckpointMutex(bool procAccount = true);
+    DbRetVal releaseCheckpointMutex(bool procAccount = true);
 
     int initProcessTableMutex();
     DbRetVal getProcessTableMutex(bool procAccount = true);
@@ -179,9 +180,12 @@ class Database
     void setProcSlot(int slot) { procSlot =slot;}
     //checks whether the ptr falls in the range of the database file size
     bool isValidAddress(void *ptr);
+    DbRetVal writeDirtyPages(char *chkptFile);
     DbRetVal checkPoint();
     DbRetVal recoverUserDB();
     DbRetVal recoverSystemDB();
+    static int getCheckpointID();
+    static void setCheckpointID(int id);
     friend class DatabaseManagerImpl;
     friend class Table;
     friend class TreeIndex;

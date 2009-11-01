@@ -1,6 +1,6 @@
 INCLUDES = -I$(top_srcdir)/include $(all_includes) -I$(top_srcdir)/src/sql
 METASOURCES = AUTO
-bin_PROGRAMS = csql catalog cachetable csqlserver csqlsqlserver csqlcacheserver csqldump cacheverify redo recover checkpoint csqlds csqlasyncserver
+bin_PROGRAMS = csql catalog cachetable csqlserver csqlsqlserver csqlcacheserver csqldump cacheverify redo recover checkpoint csqlds csqlasyncserver csqlcheckpointserver
 csql_SOURCES = isql.cxx
 csql_LDADD = $(top_builddir)/src/storage/libcsql.la \
 	$(top_builddir)/src/sql/libcsqlsql.la \
@@ -136,6 +136,19 @@ csqlcacheserver_LDADD = $(top_builddir)/src/storage/libcsql.la  \
         $(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la 
 csqlcacheserver_LDFLAGS = -lcrypt -lodbc -lrt -lpthread 
 csqlcacheserver_SOURCES = csqlcacheserver.cxx
+
+csqlcheckpointserver_LDADD = $(top_builddir)/src/storage/libcsql.la \
+    $(top_builddir)/src/sql/libcsqlsql.la \
+    $(top_builddir)/src/sqllog/libcsqlsqllog.la \
+    $(top_builddir)/src/network/libcsqlnw.la \
+    $(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+    $(top_builddir)/src/gateway/libcsqlgw.la \
+    $(top_builddir)/src/cache/libcacheload.la \
+    $(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la 
+csqlcheckpointserver_LDFLAGS = -lcrypt -lodbc -lrt -lpthread
+csqlcheckpointserver_SOURCES = csqlcheckpointserver.cxx
+
+
 
 csqlds_LDADD = $(top_builddir)/src/storage/libcsql.la
 csqlds_LDFLAGS = -lcrypt

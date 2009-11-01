@@ -72,6 +72,9 @@ class ConfigValues
     int stmtCacheSize;
     bool isCacheNoParam;
     bool isMonitor;
+    int chkptSecs;
+    int chkptRedoLimit;
+
 
 
     ConfigValues()
@@ -123,6 +126,9 @@ class ConfigValues
         stmtCacheSize = 10;
         isCacheNoParam = false;
         isMonitor = false;
+        chkptSecs = 600;
+        chkptRedoLimit = 10485760;
+
     }
 };
 
@@ -180,6 +186,9 @@ class Config
     inline int getStmtCacheSize() { return cVal.stmtCacheSize; }
     inline bool useCacheNoParam() { return cVal.isCacheNoParam; }
     inline bool useMonitorServers() { return cVal.isMonitor; }
+    inline int getChkptSecs() { return cVal.chkptSecs; }
+    inline int getChkptRedoLimit() { return cVal.chkptRedoLimit; }
+
 };
 
 class Conf

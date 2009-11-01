@@ -117,7 +117,7 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
         startaddr = startaddr + Conf::config.getMaxSysDbSize();
         key = Conf::config.getUserDbKey();
     }
-    if (!isMmapNeeded || isMmapNeeded && 0 == strcmp(name, SYSTEMDB)) {
+    if (!isMmapNeeded || (isMmapNeeded && 0 == strcmp(name, SYSTEMDB))) {
         shm_id = os::shm_create(key, size, 0660);  
         if (-1 == shm_id) {
             if (errno == EEXIST) 
@@ -130,8 +130,16 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
             return ErrOS;
         }
     } else {
-        sprintf(dbMapFile, "%s/db.chkpt.data1", Conf::config.getDbFile());
-        if (FILE *file = fopen(dbMapFile, "r")) {
+        //switch the checkpoint
+        if (Database::getCheckpointID() == 0)
+            Database::setCheckpointID(1);
+        else
+            Database::setCheckpointID(0);
+        int chkptID=Database::getCheckpointID();
+
+
+        sprintf(dbMapFile, "%s/db.chkpt.data%d", Conf::config.getDbFile(), chkptID);
+        /*if (FILE *file = fopen(dbMapFile, "r")) {
             fclose(file);
             sprintf(cmd, "cp %s %s/db.chkpt.data", dbMapFile, Conf::config.getDbFile());
             int ret = system(cmd);
@@ -141,6 +149,9 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
             }
         }
         sprintf(dbMapFile, "%s/db.chkpt.data", Conf::config.getDbFile());
+        */
+
+        
         fd = open(dbMapFile, O_CREAT | O_RDWR, 0660);
         if (-1 == fd) { 
             printError(ErrOS, "Mmap file could not be opened");
@@ -187,7 +198,7 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
     db_->setNoOfChunks(0);
     db_->initAllocDatabaseMutex();
     db_->initTransTableMutex();
-    db_->initDatabaseMutex();
+    db_->initCheckpointMutex();
     db_->initProcessTableMutex();
     db_->initPrepareStmtMutex();
     db_->setUniqueChunkID(100);                        
@@ -287,13 +298,14 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
     void *shm_ptr = NULL;
     void *mapAddr = NULL;
     bool firstThread = false;
-    //printf("PRABA::DEBUG:: opendb %d %s\n", ProcessManager::noThreads, name);
     if ( ( ProcessManager::noThreads == 0 && 0 == strcmp(name, SYSTEMDB) || 
           ProcessManager::noThreads == 1 && 0 != strcmp(name, SYSTEMDB) ) )
    {
         if(isMmapNeeded && 0 != strcmp(name, SYSTEMDB)){
-         //BIJAYA: Attached to Map File 
-            sprintf(dbMapFile, "%s/db.chkpt.data", Conf::config.getDbFile());
+            //: Attach to Map File 
+            int curChkptID = Database::getCheckpointID();
+            sprintf(dbMapFile, "%s/db.chkpt.data%d", Conf::config.getDbFile(), 
+                                                     curChkptID);
             fd = open(dbMapFile, O_RDWR, 0660);
             if (-1 == fd) {
                 printError(ErrOS, "Mmap file could not be opened");
@@ -368,7 +380,6 @@ DbRetVal DatabaseManagerImpl::closeDatabase()
     //If you are not getting lock ret !=0, it means somebody else is there.
     //he will close the database.
     if (ret == 0) {
-    //printf("PRABA::FOR DEBUG closedb %d %s\n", ProcessManager::noThreads, (char*)db_->getName());
     if (ProcessManager::noThreads == 0 && 0 == strcmp((char*)db_->getName(), SYSTEMDB)
        || ProcessManager::noThreads == 1 && 0 != strcmp((char*)db_->getName(),  SYSTEMDB) )  {
                 os::shm_detach((char*)db_->getMetaDataPtr());
@@ -435,6 +446,7 @@ Chunk* DatabaseManagerImpl::createUserChunk(size_t size)
     //TODO::Generate chunkid::use tableid
     chunkInfo->setChunkID(db_->getUniqueIDForChunk());
     db_->incrementChunk();
+    chunkInfo->setPageDirty(firstPageInfo);
     printDebug(DM_Database, "Creating new User chunk chunkID:%d size: %d firstPage:%x",
                                -1, chunkInfo->allocSize_, firstPageInfo);
 
@@ -455,23 +467,44 @@ DbRetVal DatabaseManagerImpl::deleteUserChunk(Chunk *chunk)
         pageInfo = (PageInfo*)(pageInfo->nextPage_);
         //sets pageInfo->isUsed_ = 0 and pageInfo->hasFreeSpace_ = 0
         //and initializes the page content to zero
-        if(NULL == pageInfo->nextPageAfterMerge_)
+        if(NULL == pageInfo->nextPageAfterMerge_){
             os::memset(prev, 0, PAGE_SIZE);
+            SETBIT(prev->flags, IS_DIRTY);
+            
+        }
         else
         {
             int size = (char*) pageInfo->nextPageAfterMerge_ - (char*) pageInfo;
+            char *iter = (char*)prev, *end=(char*)pageInfo->nextPageAfterMerge_;
             os::memset(prev, 0, size);
+            //set dirty bit for all pages in merged pages
+            while(iter <= end)
+            {
+                PageInfo *info = (PageInfo*) iter;
+                SETBIT(info->flags, IS_DIRTY);
+                iter = iter  + PAGE_SIZE;
+            }
         }
         printDebug(DM_Database,"deleting user chunk:%x clearing page %x",chunk, prev);
     }
     //The above loop wont execute for the last page
     //and for the case where table has only one page
-    if(NULL == pageInfo->nextPageAfterMerge_)
+    if(NULL == pageInfo->nextPageAfterMerge_) {
         os::memset(pageInfo, 0, PAGE_SIZE);
+        SETBIT(pageInfo->flags, IS_DIRTY);
+    }
     else
     {
         int size = (char*) pageInfo->nextPageAfterMerge_ - (char*) pageInfo;
+        char *iter = (char*)pageInfo, *end=(char*)pageInfo->nextPageAfterMerge_;
         os::memset(pageInfo, 0, size);
+        //set dirty bit for all pages in merged pages
+        while(iter <= end)
+        {
+            PageInfo *info = (PageInfo*) iter;
+            SETBIT(info->flags, IS_DIRTY);
+            iter = iter  + PAGE_SIZE;
+        }
     }
     printDebug(DM_Database,"deleting user chunk:%x clearing page %x",chunk, pageInfo);
     chunk->chunkID_ = -1;
@@ -509,7 +542,7 @@ DbRetVal DatabaseManagerImpl::createTable(const char *name, TableDef &def)
     int addSize = 0;
     if (fldCount < 31) addSize = 4; else addSize = os::align(fldCount);
     size_t sizeofTuple = os::alignLong(def.getTupleSize()+addSize);
-    rv = systemDatabase_->getDatabaseMutex();
+    rv = systemDatabase_->getXCheckpointMutex();
     if (OK != rv ) {
         printError(rv, "Unable to get Database mutex");
         return rv;
@@ -524,7 +557,7 @@ DbRetVal DatabaseManagerImpl::createTable(const char *name, TableDef &def)
     cTable.getChunkAndTblPtr(name, chunk, tptr, vcchunk);
     if (NULL != tptr)
     {
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseCheckpointMutex();
         printError(ErrAlready, "Table %s already exists", name);
         return ErrAlready;
     }
@@ -533,7 +566,7 @@ DbRetVal DatabaseManagerImpl::createTable(const char *name, TableDef &def)
     Chunk *ptr = createUserChunk(sizeofTuple);
     if (NULL  == ptr)
     {
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseCheckpointMutex();
         printError(ErrNoResource, "Unable to create user chunk");
         return ErrNoResource;
     }
@@ -552,7 +585,7 @@ DbRetVal DatabaseManagerImpl::createTable(const char *name, TableDef &def)
         if (NULL  == vcptr)
         {
             deleteUserChunk(ptr);
-            systemDatabase_->releaseDatabaseMutex();
+            systemDatabase_->releaseCheckpointMutex();
             printError(ErrNoResource, "Unable to create user chunk for varchar");
             return ErrNoResource;
         }
@@ -565,7 +598,7 @@ DbRetVal DatabaseManagerImpl::createTable(const char *name, TableDef &def)
     {
         deleteUserChunk(ptr);
         if (vcptr) deleteUserChunk(vcptr);
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseCheckpointMutex();
         printError(ErrSysInternal, "Unable to update catalog table TABLE");
         return ErrSysInternal;
     }
@@ -580,12 +613,12 @@ DbRetVal DatabaseManagerImpl::createTable(const char *name, TableDef &def)
         if (vcptr) deleteUserChunk(vcptr);
         void *cptr, *ttptr;//Dummy as remove below needs both these OUT params
         cTable.remove(name, cptr, ttptr);
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseCheckpointMutex();
         printError(ErrSysInternal, "Unable to update catalog table FIELD");
         return ErrSysInternal;
     }
     printDebug(DM_Database,"Inserted into FIELD:%s",name);
-    systemDatabase_->releaseDatabaseMutex();
+    systemDatabase_->releaseCheckpointMutex();
     printDebug(DM_Database,"Table Created:%s",name);
     logFinest(Conf::logger, "Table Created %s" , name);
     return OK;
@@ -601,7 +634,7 @@ DbRetVal DatabaseManagerImpl::dropTable(const char *name)
     void *chunk = NULL;
     void *tptr =NULL;
     void *vcchunk = NULL;
-    DbRetVal rv = systemDatabase_->getDatabaseMutex();
+    DbRetVal rv = systemDatabase_->getXCheckpointMutex();
     if (OK != rv) {
         printError(ErrSysInternal, "Unable to get database mutex");
         return ErrSysInternal;
@@ -610,7 +643,7 @@ DbRetVal DatabaseManagerImpl::dropTable(const char *name)
     CatalogTableTABLE cTable(systemDatabase_);
     rv = cTable.getChunkAndTblPtr(name, chunk, tptr, vcchunk);
     if (OK != rv) {
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseCheckpointMutex();
         printError(ErrSysInternal, "Table %s does not exist", name);
         return ErrSysInternal;
     }
@@ -619,20 +652,20 @@ DbRetVal DatabaseManagerImpl::dropTable(const char *name)
     if(noOfRelation)
     {
         printError(ErrSysInternal, "Unable to drop table due to relation exist.Drop child table...");
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseCheckpointMutex();
         return ErrSysInternal;
     }
     rv = lMgr_->getExclusiveLock(chunk, NULL);
     if (rv !=OK)
     {
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseCheckpointMutex();
         printError(ErrLockTimeOut, "Unable to acquire exclusive lock on the table\n");
         return rv;
     }
 
     rv = cTable.remove(name, chunk, tptr);
     if (OK != rv) {
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseCheckpointMutex();
         printError(ErrSysInternal, "Unable to update catalog table TABLE");
         return ErrSysInternal;
     }
@@ -642,7 +675,7 @@ DbRetVal DatabaseManagerImpl::dropTable(const char *name)
     CatalogTableFIELD cField(systemDatabase_);
     rv = cField.remove(tptr);
     if (OK != rv) {
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseCheckpointMutex();
         printError(ErrSysInternal, "Unable to update catalog table FIELD");
         return ErrSysInternal;
     }
@@ -650,16 +683,16 @@ DbRetVal DatabaseManagerImpl::dropTable(const char *name)
 
     rv = deleteUserChunk((Chunk*)chunk);
     if (OK != rv) {
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseCheckpointMutex();
         printError(rv, "Unable to delete the chunk");
         return rv;
     }
     printDebug(DM_Database,"Deleted UserChunk:%x", chunk);
-    
+   
     if (vcchunk != NULL) {
         rv = deleteUserChunk((Chunk*)vcchunk);
         if (OK != rv) {
-            systemDatabase_->releaseDatabaseMutex();
+            systemDatabase_->releaseCheckpointMutex();
             printError(rv, "Unable to delete the chunk");
             return rv;
         }
@@ -678,7 +711,7 @@ DbRetVal DatabaseManagerImpl::dropTable(const char *name)
     {
        dropForeignKey(tptr,false);
     }
-    systemDatabase_->releaseDatabaseMutex();
+    systemDatabase_->releaseCheckpointMutex();
     printDebug(DM_Database, "Deleted Table %s" , name);
     logFinest(Conf::logger, "Deleted Table %s" , name);
     rv = lMgr_->releaseLock(chunk);
@@ -713,7 +746,7 @@ Table* DatabaseManagerImpl::openTable(const char *name,bool checkpkfk)
     //all ddl operation will be denied on that table
     //which includes index creation, alter table
 
-    DbRetVal rv = systemDatabase_->getDatabaseMutex();
+    DbRetVal rv = systemDatabase_->getAllocDatabaseMutex();
     if (OK != rv) {
         printError(ErrSysInternal, "Unable to get database mutex");
         delete table;
@@ -723,7 +756,7 @@ Table* DatabaseManagerImpl::openTable(const char *name,bool checkpkfk)
     ret = cTable.getChunkAndTblPtr(name, chunk, tptr, vcchunk);
     if ( OK != ret)
     {
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseAllocDatabaseMutex();
         delete table;
         printError(ErrNotExists, "Table not exists %s", name);
         return NULL;
@@ -736,7 +769,7 @@ Table* DatabaseManagerImpl::openTable(const char *name,bool checkpkfk)
     if (rv !=OK)
     {
         printError(ErrLockTimeOut, "Unable to acquire shared lock on the table\n");
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseAllocDatabaseMutex();
         delete table;
         return NULL;
     }*/
@@ -822,7 +855,7 @@ Table* DatabaseManagerImpl::openTable(const char *name,bool checkpkfk)
         hIdxInfo->buckets = (Bucket*)citer.nextElement();
         table->idxInfo[i] = (IndexInfo*) hIdxInfo;
     }
-    systemDatabase_->releaseDatabaseMutex();
+    systemDatabase_->releaseAllocDatabaseMutex();
     //Foreign key Operation
     if(checkpkfk){
         CatalogTableFK cFk(systemDatabase_);
@@ -836,7 +869,14 @@ Table* DatabaseManagerImpl::openTable(const char *name,bool checkpkfk)
             cFk.getFkTableName(tptr,fptr);
             for(int count=0; count < totalFld; count++){
                //printDebug(DM_TEST,"FK Name is %s\n",fptr[count]);
-               table->tblFkList.append(openTable(fptr[count],false));
+               Table *pkTable=openTable(fptr[count],false);
+               if (pkTable) table->tblFkList.append(pkTable);
+               else {
+                   printError(ErrSysInternal, "Unable to open foreign key tables");
+                   delete[] fptr;
+                   pkTable->close();
+                   return NULL;
+               }
             }
             delete[] fptr;
         
@@ -850,22 +890,24 @@ Table* DatabaseManagerImpl::openTable(const char *name,bool checkpkfk)
             cFk.getPkTableName(tptr,fptr);
             for(int count=0; count<totalFld; count++){
                 //printDebug(DM_TEST,"Parent Name is %s\n",fptr[count]);
-                table->tblList.append(openTable(fptr[count],false));
+                Table *fkTable = openTable(fptr[count],false);
+                if (fkTable) table->tblList.append(fkTable);
+                else {
+                   printError(ErrSysInternal, "Unable to open foreign key tables");
+                   delete[] fptr;
+                   fkTable->close();
+                   return NULL;
+               }
             }
             delete[] fptr;
         }
     }
-   // lMgr->  tTuple->chunkPtr_
     printDebug(DM_Database,"Opening table handle name:%s chunk:%x numIndex:%d",
                                          name, chunk, table->numIndexes_);
     logFinest(Conf::logger, "Opening Table %s" , name);
-
     tableHandleList.append(table);
-
     return table;
 }
-
-
 
 List DatabaseManagerImpl::getAllTableNames(int *retval)
 {
@@ -873,16 +915,16 @@ List DatabaseManagerImpl::getAllTableNames(int *retval)
     //to store the tuple pointer of the table
     void *tptr =NULL;
 
-    DbRetVal rv = systemDatabase_->getDatabaseMutex();
+    /*DbRetVal rv = systemDatabase_->getSCheckpointMutex();
     if (OK != rv) {
-        printError(ErrSysInternal, "Unable to get database mutex");
-        *retval = rv;
+        printError(ErrSysInternal, "Unable to get checkpoint mutex");
+        if(retval) *retval = rv;
         List tableList;
         return tableList;
-    }
+    }*/
     CatalogTableTABLE cTable(systemDatabase_);
     List tableList = cTable.getTableList();
-    systemDatabase_->releaseDatabaseMutex();
+    //systemDatabase_->releaseCheckpointMutex();
     return tableList;
 }
 
@@ -971,7 +1013,7 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
     void *tptr =NULL;
     void *chunk = NULL;
     void *vcchunk = NULL;
-    DbRetVal rv = systemDatabase_->getDatabaseMutex();
+    DbRetVal rv = systemDatabase_->getXCheckpointMutex();
     if (OK != rv)
     {
         printError(ErrSysInternal, "Unable to get database mutex");
@@ -980,10 +1022,10 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
 
     //check whether table exists
     CatalogTableTABLE cTable(systemDatabase_);
-    cTable.getChunkAndTblPtr(tblName, chunk, tptr,chunk);
+    cTable.getChunkAndTblPtr(tblName, chunk, tptr, vcchunk);
     if (NULL == tptr)
     {
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseCheckpointMutex();
         printError(ErrNotExists, "Table does not exist %s", tblName);
         return ErrNotExists;
     }
@@ -995,7 +1037,7 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
     if (OK != rv)
     {
         delete[] fptr;
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseCheckpointMutex();
         //TODO::check test cases of dbapi/Index, they give wrong results
         //if (rv == ErrBadCall) {
         ////    if (isPrimary) printError(ErrBadCall, "Field can have NULL values");
@@ -1015,14 +1057,14 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
         {
             printError(ErrBadArg, "HashIndex cannot be created for float or double or timestamp type");
             delete[] fptr;
-            systemDatabase_->releaseDatabaseMutex();
+            systemDatabase_->releaseCheckpointMutex();
             return ErrBadArg;
         }
         if (!fInfo->isNull_ && isPrimary ) 
         {
             printError(ErrBadArg, "Primary Index cannot be created on field without NOTNULL constraint");
             delete[] fptr;
-            systemDatabase_->releaseDatabaseMutex();
+            systemDatabase_->releaseCheckpointMutex();
             return ErrBadArg;
         }
 	 if(isPrimary){fInfo->isPrimary_=true;fInfo->isUnique_=true;}
@@ -1036,7 +1078,7 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
     if (NULL == chunkInfo)
     {
         delete[] fptr;
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseCheckpointMutex();
         printError(ErrSysInternal, "Unable to create chunk");
         return ErrSysInternal;
     }
@@ -1047,7 +1089,7 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
     {
         delete[] fptr;
         deleteUserChunk(chunkInfo);
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseCheckpointMutex();
         printError(rv, "Unable to allocate memory for bucket");
         return rv;
     }
@@ -1060,7 +1102,7 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
     {
         delete[] fptr;
         deleteUserChunk(chunkInfo);
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseCheckpointMutex();
         printError(ErrSysInternal, "Unable to create chunk for storing hash index nodes");
         return ErrSysInternal;
     }
@@ -1076,7 +1118,7 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
         delete[] fptr;
         deleteUserChunk(hChunk);
         deleteUserChunk(chunkInfo);
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseCheckpointMutex();
         printError(ErrSysInternal, "Catalog table updation failed in INDEX table");
         return ErrSysInternal;
     }
@@ -1090,17 +1132,21 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
         cIndex.remove(indName, (void *&)chunkInfo, (void *&)hChunk, (void *&)tupleptr);
         deleteUserChunk(hChunk);
         deleteUserChunk(chunkInfo);
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseCheckpointMutex();
         printError(ErrSysInternal, "Catalog table updation failed in INDEXFIELD table");
         return ErrSysInternal;
     }
     delete[] fptr;
-    systemDatabase_->releaseDatabaseMutex();
+    systemDatabase_->releaseCheckpointMutex();
     
     //TODO:: Take table lock
 
     // Following code is written by Kishor Amballi
     TableImpl *tbl = (TableImpl *) openTable(tblName);
+    if (NULL == tbl) {
+        printError(ErrSysInternal, "Unable to open table %s", tblName);
+        return ErrSysInternal;
+    }
     if (! tbl->numTuples()) { 
         printDebug(DM_Database, "Creating Hash Index Name:%s tblname:%s buckets:%x", indName, tblName, buckets);
         logFinest(Conf::logger, "Creating HashIndex %s on %s with bucket size %d", indName, tblName, buckets);
@@ -1153,7 +1199,7 @@ DbRetVal DatabaseManagerImpl::createTreeIndex(const char *indName, const char *t
     void *tptr =NULL;
     void *chunk = NULL;
     void *vcchunk = NULL;
-    DbRetVal rv = systemDatabase_->getDatabaseMutex();
+    DbRetVal rv = systemDatabase_->getXCheckpointMutex();
     if (OK != rv)
     {
         printError(ErrSysInternal, "Unable to get database mutex");
@@ -1165,7 +1211,7 @@ DbRetVal DatabaseManagerImpl::createTreeIndex(const char *indName, const char *t
     cTable.getChunkAndTblPtr(tblName, chunk, tptr, vcchunk);
     if (NULL == tptr)
     {
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseCheckpointMutex();
         printError(ErrNotExists, "Table does not exist %s", tblName);
         return ErrNotExists;
     }
@@ -1175,7 +1221,7 @@ DbRetVal DatabaseManagerImpl::createTreeIndex(const char *indName, const char *t
     if (OK != rv)
     {
         delete[] fptr;
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseCheckpointMutex();
         if (rv != ErrBadCall) {
             printError(ErrNotExists, "Field does not exist");
             return ErrNotExists;
@@ -1188,7 +1234,7 @@ DbRetVal DatabaseManagerImpl::createTreeIndex(const char *indName, const char *t
         {
             printError(ErrBadArg, "Primary Index cannot be created on field without NOTNULL constraint");
             delete[] fptr;
-            systemDatabase_->releaseDatabaseMutex();
+            systemDatabase_->releaseCheckpointMutex();
             return ErrBadArg;
         }
     }
@@ -1199,7 +1245,7 @@ DbRetVal DatabaseManagerImpl::createTreeIndex(const char *indName, const char *t
     if (NULL == chunkInfo)
     {
         delete[] fptr;
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseCheckpointMutex();
         printError(ErrSysInternal, "Unable to create chunk");
         return ErrSysInternal;
     }
@@ -1214,7 +1260,7 @@ DbRetVal DatabaseManagerImpl::createTreeIndex(const char *indName, const char *t
     {
         delete[] fptr;
         deleteUserChunk(chunkInfo);
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseCheckpointMutex();
         printError(ErrSysInternal, "Catalog table updation failed in INDEX table");
         return ErrSysInternal;
     }
@@ -1227,15 +1273,19 @@ DbRetVal DatabaseManagerImpl::createTreeIndex(const char *indName, const char *t
         void *hChunk = NULL;
         cIndex.remove(indName, (void *&)chunkInfo, (void *&)hChunk, (void *&)tupleptr);
         deleteUserChunk(chunkInfo);
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseCheckpointMutex();
         printError(ErrSysInternal, "Catalog table updation failed in INDEXFIELD table");
         return ErrSysInternal;
     }
     delete[] fptr;
-    systemDatabase_->releaseDatabaseMutex();
+    systemDatabase_->releaseCheckpointMutex();
     //TODO::if tuples already present in this table, then create tree index '
     //nodes
     TableImpl *tbl = (TableImpl *) openTable(tblName);
+    if (NULL == tbl) {
+        printError(ErrSysInternal, "Unable to open table %s", tblName);
+        return ErrSysInternal;
+    }
     if (! tbl->numTuples()) {
         printDebug(DM_Database, "Creating Tree Index Name:%s tblname:%s node size:%x",indName, tblName, nodeSize);
         logFinest(Conf::logger, "Creating TreeIndex %s on %s with node size %d",indName, tblName, nodeSize);
@@ -1294,7 +1344,7 @@ DbRetVal DatabaseManagerImpl::dropIndexInt(const char *name, bool takeLock)
     void *tptr =NULL;
     int ret = 0;
     if (takeLock) {
-        rv = systemDatabase_->getDatabaseMutex();
+        rv = systemDatabase_->getXCheckpointMutex();
         if (OK != rv)
         {
             printError(ErrSysInternal, "Unable to get database mutex");
@@ -1307,7 +1357,7 @@ DbRetVal DatabaseManagerImpl::dropIndexInt(const char *name, bool takeLock)
     rv = cIndex.remove(name, chunk, hchunk, tptr);
     if (OK != rv)
     {
-        if (takeLock) systemDatabase_->releaseDatabaseMutex();
+        if (takeLock) systemDatabase_->releaseCheckpointMutex();
         printError(ErrSysInternal, "Catalog table updation failed for INDEX table");
         return ErrSysInternal;
     }
@@ -1317,7 +1367,7 @@ DbRetVal DatabaseManagerImpl::dropIndexInt(const char *name, bool takeLock)
     rv = cIndexField.remove(tptr);
     if (OK != rv)
     {
-        if (takeLock) systemDatabase_->releaseDatabaseMutex();
+        if (takeLock) systemDatabase_->releaseCheckpointMutex();
         printError(ErrSysInternal, "Catalog table updation failed for INDEX table");
         return ErrSysInternal;
     }
@@ -1328,7 +1378,7 @@ DbRetVal DatabaseManagerImpl::dropIndexInt(const char *name, bool takeLock)
     rv = deleteUserChunk((Chunk*)chunk);
     if (OK != rv)
     {
-        if (takeLock) systemDatabase_->releaseDatabaseMutex();
+        if (takeLock) systemDatabase_->releaseCheckpointMutex();
         printError(ErrSysInternal, "Unable to delete the index chunk");
         return ErrSysInternal;
     }
@@ -1337,12 +1387,12 @@ DbRetVal DatabaseManagerImpl::dropIndexInt(const char *name, bool takeLock)
         rv = deleteUserChunk((Chunk*)hchunk);
         if (OK != rv)
         {
-            if (takeLock) systemDatabase_->releaseDatabaseMutex();
+            if (takeLock) systemDatabase_->releaseCheckpointMutex();
             printError(ErrSysInternal, "Unable to delete the index hash node chunk");
             return ErrSysInternal;
         }
     }
-    if (takeLock) systemDatabase_->releaseDatabaseMutex();
+    if (takeLock) systemDatabase_->releaseCheckpointMutex();
 
     //TODO::If tuples present in this table, then
     //free all hash index nodes for this table.
@@ -1365,7 +1415,7 @@ DbRetVal DatabaseManagerImpl::createForeignKey(char *fKName,ForeignKeyInfo *info
     void *tptr =NULL;
     void *chunk = NULL;
     void *vcchunk = NULL;
-    rv = systemDatabase_->getDatabaseMutex();
+    rv = systemDatabase_->getXCheckpointMutex();
     if (OK != rv)
     {
         printError(ErrSysInternal, "Unable to get database mutex");
@@ -1375,7 +1425,7 @@ DbRetVal DatabaseManagerImpl::createForeignKey(char *fKName,ForeignKeyInfo *info
     cTable.getChunkAndTblPtr(info->fkTableName, chunk, tptr, vcchunk);
     if (NULL == tptr)
     {
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseCheckpointMutex();
         printError(ErrNotExists, "Table does not exist %s", info->fkTableName);
         return ErrNotExists;
     }
@@ -1385,7 +1435,7 @@ DbRetVal DatabaseManagerImpl::createForeignKey(char *fKName,ForeignKeyInfo *info
     if (OK != rv)
     {
         delete[] fptr;
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseCheckpointMutex();
         if (rv != ErrBadCall) {
             printError(ErrNotExists, "Field does not exist");
             return ErrNotExists;
@@ -1398,7 +1448,7 @@ DbRetVal DatabaseManagerImpl::createForeignKey(char *fKName,ForeignKeyInfo *info
     c2Table.getChunkAndTblPtr(info->pkTableName, chunkPk, tPkptr, vcchunkPk);
     if (NULL == tPkptr)
     {
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseCheckpointMutex();
         printError(ErrNotExists, "Table does not exist %s", info->pkTableName);
         return ErrNotExists;
     }
@@ -1409,7 +1459,7 @@ DbRetVal DatabaseManagerImpl::createForeignKey(char *fKName,ForeignKeyInfo *info
     {
         delete[] fptr;
         delete[] fPkptr;
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseCheckpointMutex();
         if (rv != ErrBadCall) {
             printError(ErrNotExists, "Field does not exist");
             return ErrNotExists;
@@ -1422,7 +1472,7 @@ DbRetVal DatabaseManagerImpl::createForeignKey(char *fKName,ForeignKeyInfo *info
     {
         delete[] fptr;
         delete[] fPkptr;
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseCheckpointMutex();
         printError(ErrSysInternal, "Catalog table updation failed in CFK table");
         return ErrSysInternal;
     }
@@ -1434,11 +1484,11 @@ DbRetVal DatabaseManagerImpl::createForeignKey(char *fKName,ForeignKeyInfo *info
         delete[] fptr;
         delete[] fPkptr;
         cFK.remove(tptr);
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseCheckpointMutex();
         printError(ErrSysInternal, "Catalog table updation failed in CFKFIELD table");
         return ErrSysInternal;
     }
-    systemDatabase_->releaseDatabaseMutex();
+    systemDatabase_->releaseCheckpointMutex();
     delete[] fptr;    
     delete[] fPkptr;
     return rv;
@@ -1447,7 +1497,7 @@ DbRetVal DatabaseManagerImpl::dropForeignKey(void *tptr,bool trylock)
 {
     DbRetVal rv = OK;
     if(trylock){
-        rv = systemDatabase_->getDatabaseMutex();
+        rv = systemDatabase_->getXCheckpointMutex();
         if (OK != rv)
         {
             printError(ErrSysInternal, "Unable to get database mutex");
@@ -1464,7 +1514,7 @@ DbRetVal DatabaseManagerImpl::dropForeignKey(void *tptr,bool trylock)
          if(NULL==fkChunk)
          {
             if(trylock){
-                systemDatabase_->releaseDatabaseMutex();
+                systemDatabase_->releaseCheckpointMutex();
             }
             printError(ErrSysInternal, "Catalog table not finds CFKFIELD table");
             return ErrSysInternal;
@@ -1474,7 +1524,7 @@ DbRetVal DatabaseManagerImpl::dropForeignKey(void *tptr,bool trylock)
          if (OK != rv)
          {
              if(trylock){
-                systemDatabase_->releaseDatabaseMutex();
+                systemDatabase_->releaseCheckpointMutex();
              }
              printError(ErrSysInternal, "Catalog table updation failed in CFKFIELD table");
              return ErrSysInternal;
@@ -1483,14 +1533,14 @@ DbRetVal DatabaseManagerImpl::dropForeignKey(void *tptr,bool trylock)
          if (OK != rv)
          {
             if(trylock){
-                systemDatabase_->releaseDatabaseMutex();
+                systemDatabase_->releaseCheckpointMutex();
             }
             printError(ErrSysInternal, "Catalog table updation failed for INDEX table");
             return ErrSysInternal;
          }
     }  
     if(trylock){
-        systemDatabase_->releaseDatabaseMutex();
+        systemDatabase_->releaseCheckpointMutex();
     }
     return rv;
 }
@@ -1632,6 +1682,10 @@ Chunk* DatabaseManagerImpl::getSystemTableChunk(CatalogTableID id)
 int DatabaseManagerImpl::getNoOfPagesForTable(char *tblName)
 {
     Table *tbl = openTable(tblName);
+    if (NULL == tbl) {
+        printError(ErrSysInternal, "Unable to open table %s", tblName);
+        return 0;
+    }
     TableImpl *tb = (TableImpl *) tbl;
     int pages = 0;
     if (tb->numTuples()) pages = tb->pagesUsed();
@@ -1643,6 +1697,10 @@ DbRetVal DatabaseManagerImpl::loadRecords(char *tblName, char *buffer)
 {
     // buffer should be as big as the no of pages occupied by the records
     Table *tbl = openTable(tblName);
+    if (NULL == tbl) {
+        printError(ErrSysInternal, "Unable to open table %s", tblName);
+        return ErrSysInternal;
+    }
     TableImpl *tb = (TableImpl *) tbl;
     char *bufIter = buffer;
     int pages = *(int *) bufIter; bufIter += sizeof(int);
@@ -1664,6 +1722,10 @@ DbRetVal DatabaseManagerImpl::pasteRecords(char *tblName, void *buffer)
 {
     // buffer should be as big as the no of pages occupied by the records
     Table *tbl = openTable(tblName);
+    if (NULL == tbl) {
+        printError(ErrSysInternal, "Unable to open table %s", tblName);
+        return ErrSysInternal;
+    }
     TableImpl *tb = (TableImpl *) tbl;
     Database *db = tb->getDB();
     char *bufIter = (char *) buffer;
@@ -1689,9 +1751,22 @@ DbRetVal DatabaseManagerImpl::pasteRecords(char *tblName, void *buffer)
 
 DbRetVal DatabaseManagerImpl::checkPoint()
 {
-    DbRetVal rv = writeSchemaFile();
-    if (rv != OK) { printf ("checkpoint error\n"); }
+    DbRetVal rv = systemDatabase_->getXCheckpointMutex();
+    if (OK != rv ) {
+        printError(rv, "Unable to get checkpoint mutex");
+        return ErrLockTimeOut;
+    }
+    if (tMgr_ && !tMgr_->isTransactionConsistent(systemDatabase_)) {
+        printf("not in transaction consistent point\n");
+        systemDatabase_->releaseCheckpointMutex();
+        return ErrLockTimeOut;
+    }
+    rv = writeSchemaFile();
+    if (rv != OK) { 
+        printError(ErrSysInternal, "checkpoint error"); 
+    }
     rv = db()->checkPoint();
+    systemDatabase_->releaseCheckpointMutex();
     return rv;
 }
 
@@ -1701,8 +1776,8 @@ DbRetVal DatabaseManagerImpl::writeSchemaFile()
     FILE *fp = NULL;
     FILE *fp1 = NULL;
     int fd = -1;
-    char schFile[1024];
-    char mapFile[1024];
+    char schFile[MAX_FILE_LEN];
+    char mapFile[MAX_FILE_LEN];
     sprintf(schFile, "%s/db.chkpt.schema1", Conf::config.getDbFile());
     sprintf(mapFile, "%s/db.chkpt.map1", Conf::config.getDbFile());
     fp = fopen(schFile, "r");
@@ -1742,8 +1817,11 @@ DbRetVal DatabaseManagerImpl::writeSchemaFile()
 //        if (TableConf::config.isTableCached(elem->name) == OK) continue;
         fprintf(fp, "CREATE TABLE %s (", elem->name);
         Table *table = openTable(elem->name);
-
-        void *chunk = NULL; void *tptr =NULL; void *vcchunk = NULL;
+        if (NULL == table) {
+            printError(ErrSysInternal, "Unable to open table %s", elem->name);
+            return ErrSysInternal;
+        }
+        void *chunk = NULL; void *tptr = NULL; void *vcchunk = NULL;
         CatalogTableTABLE cTable(systemDatabase_);
         rv = cTable.getChunkAndTblPtr(elem->name, chunk, tptr, vcchunk);
         struct Object obj;
@@ -1791,8 +1869,8 @@ DbRetVal DatabaseManagerImpl::writeSchemaFile()
 DbRetVal DatabaseManagerImpl::recover()
 {
     DbRetVal rv = OK;
-    if (!Conf::config.useMmap())rv = db()->recoverUserDB();  
     rv = sysDb()->recoverSystemDB();
+    if (!Conf::config.useMmap())rv = db()->recoverUserDB();  
     return rv;
 }
 

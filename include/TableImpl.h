@@ -167,6 +167,7 @@ class TableImpl:public Table
     }
     DbRetVal trySharedLock(void *curTuple, Transaction **trans);
     DbRetVal tryExclusiveLock(void *curTuple, Transaction **trans);
+    DbRetVal getCheckpointMutex();
 
 
     public:

@@ -49,7 +49,7 @@ DbRetVal SessionImpl::initSystemDatabase()
 
     Database *db = dbMgr->sysDb();
 
-    rv = db->getDatabaseMutex();
+    rv = db->getXCheckpointMutex();
     if (OK != rv)
     {
         printError(ErrLockTimeOut, "Unable to get Database Mutex");
@@ -64,14 +64,14 @@ DbRetVal SessionImpl::initSystemDatabase()
     rv = cUser.insert(I_USER, I_PASS);
     if (OK != rv)
     {
-        db->releaseDatabaseMutex();
+        db->releaseCheckpointMutex();
         return rv;
     }
 
     rv = cUser.insert(DBAUSER, DBAPASS);
     if (OK != rv)
     {
-        db->releaseDatabaseMutex();
+        db->releaseCheckpointMutex();
         return rv;
     }
     void *ret = NULL;
@@ -79,11 +79,11 @@ DbRetVal SessionImpl::initSystemDatabase()
     ret = db->allocLockHashBuckets();
     if (NULL == ret)
     {
-        db->releaseDatabaseMutex();
+        db->releaseCheckpointMutex();
         printError(ErrSysInit, "Allocation of Lock buckets failed");
         return ErrSysInit;
     }
-    db->releaseDatabaseMutex();
+    db->releaseCheckpointMutex();
 
     printf("Sys_DB  [Size=%4.4ldMB] \nUser_DB [Size=%4.4ldMB]\n", Conf::config.getMaxSysDbSize()/1048576, Conf::config.getMaxDbSize()/1048576);
     //create user database
@@ -168,17 +168,9 @@ DbRetVal SessionImpl::open(const char *username, const char *password)
 }
 DbRetVal SessionImpl::authenticate(const char *username, const char *password)
 {
-    DbRetVal rv = dbMgr->sysDb()->getDatabaseMutex(false);
-    if (OK != rv)
-    {
-        printError(ErrLockTimeOut,"System under recovery or DDL operation going on.");
-        printError(ErrLockTimeOut,"Unable to get the database mutex.Retry...");
-        return ErrLockTimeOut;
-    }
     CatalogTableUSER cUser(dbMgr->sysDb());
     cUser.authenticate(username, password, isAuthenticated, isDba);
     strcpy(userName, username);
-    dbMgr->sysDb()->releaseDatabaseMutex(false);
     if (!isAuthenticated)
     {
         printError(ErrNoPrivilege,"User Authentication failed");
@@ -245,9 +237,7 @@ DbRetVal SessionImpl::close()
 
 DatabaseManager* SessionImpl::getDatabaseManager()
 {
-    if (isAuthenticated) return dbMgr;
-    printError(ErrNoPrivilege, "Not Authenticated: Returning NULL");
-    return NULL;
+    return dbMgr;
 }
 
 UserManager* SessionImpl::getUserManager()

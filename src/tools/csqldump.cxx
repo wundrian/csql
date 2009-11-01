@@ -123,7 +123,11 @@ int main(int argc, char **argv)
             //if (!exclusive && isCached(elem->name)) continue;
             printf("CREATE TABLE %s (", elem->name);
             Table *table = dbMgr->openTable(elem->name);
-	        FieldInfo *info = new FieldInfo();
+            if (NULL == table) {
+                printError(ErrSysInternal, "Unable to open table %s", elem->name);
+                break;
+            }
+	    FieldInfo *info = new FieldInfo();
             List fNameList = table->getFieldNameList();
             ListIterator fNameIter = fNameList.getIterator();
             count++;

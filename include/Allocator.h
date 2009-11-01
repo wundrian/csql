@@ -44,11 +44,14 @@ class VarSizeInfo
 //have this info in them.Only the start page where that
 //data is stored will have this info
 //This object is stored at the start of each page
+#define HAS_SPACE 1
+#define IS_DIRTY  2
+
 class PageInfo
 {
      public:
      int isUsed_;
-     int hasFreeSpace_;
+     int flags; //stores hasFreeSpace and isDirty
 
      Page *nextPageAfterMerge_; //used only in case of
      //where pages are merged to store data which are more than
@@ -182,6 +185,7 @@ class Chunk
 
     long getTotalDataNodes();
     int totalPages();
+    int totalDirtyPages();
     int compact(int procSlot);
 
     private:
@@ -204,6 +208,8 @@ class Chunk
     void* allocFromNewPageForVarSize(Database *db, size_t size, int pslot,
                                      DbRetVal *status);
     void* allocateFromCurPageForVarSize(size_t size, int pslot, DbRetVal *status);
+    void setPageDirty(Database *db, void *ptr);
+    void setPageDirty(PageInfo *pInfo);
 
 
     friend class Database;

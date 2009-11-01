@@ -66,7 +66,7 @@ DbRetVal SqlGwConnection::createAdapters(SqlGwConnection *gwconn)
         AbsSqlConnection *adapterCon = new SqlOdbcConnection();
         fscanf(fp,"%s %s %s %s\n",dsnname,username,password,tdb);
         if(strcmp(dsnname,"") == 0){
-            printf("Add entry to csqlds.conf file\n");
+            printError(ErrSysInternal, "Add entry to csqlds.conf file");
             return ErrNotReady;
         }
         gwconn->setAdapter(adapterCon,dsnname);

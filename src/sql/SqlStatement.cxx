@@ -24,11 +24,11 @@
 
 char *lexInput;
 extern ParsedData *parsedData;
+
+int yyparse ();
 bool SqlConnection::isInit = false;
 List SqlConnection::connList;
 
-
-int yyparse ();
 
 SqlStatement::~SqlStatement()
 {
@@ -116,6 +116,7 @@ DbRetVal SqlStatement::prepare(char *stmtstr)
     {
         free();
         parsedData = NULL;
+        //yyrestart(yyin);
         sysdb->releasePrepareStmtMutex();    
         return ErrSyntaxError;
     }
@@ -141,6 +142,7 @@ DbRetVal SqlStatement::prepare(char *stmtstr)
     {
         free();
         parsedData = NULL;
+        //yyrestart(yyin);
         sysdb->releasePrepareStmtMutex();    
         return rv;
     }
@@ -149,8 +151,7 @@ DbRetVal SqlStatement::prepare(char *stmtstr)
       if (stmt->noOfParamFields() > 0) { 
         isCachedStmt = true; 
         sqlCon->addToCache(this, stmtstr); 
-      }
-      else if (Conf::config.useCacheNoParam())
+      }else if (Conf::config.useCacheNoParam())
       {
         if (parsedData->getCacheWorthy())
         {
@@ -553,6 +554,11 @@ List SqlStatement::getFieldNameList(const char *tblName)
 {
     DatabaseManager *dbMgr = sqlCon->getConnObject().getDatabaseManager();
     Table *table = dbMgr->openTable(tblName);
+    if (NULL == table) {
+        List dummyList;
+        printError(ErrLockTimeOut, "Unable to open table %s", tblName);
+        return dummyList;
+    }
     List fldNameList = table->getFieldNameList();
     dbMgr->closeTable(table);
     return fldNameList;
@@ -561,6 +567,10 @@ DbRetVal SqlStatement::getFieldInfo(const char *tblName, const char *fldName, Fi
 {
     DatabaseManager *dbMgr = sqlCon->getConnObject().getDatabaseManager();
     Table *table = dbMgr->openTable(tblName);
+    if (NULL == table) {
+        printError(ErrLockTimeOut, "Unable to open table %s", tblName);
+        return ErrLockTimeOut;
+    }
     DbRetVal rv = table->getFieldInfo(fldName, info);
     dbMgr->closeTable(table);
     return OK;
@@ -691,6 +701,7 @@ static void sigUsr1Handler(int sig)
         conn = (SqlConnection*) iter.nextElement();
         conn->flushCacheStmt();
     }
+    os::signal(SIGCSQL1, sigUsr1Handler);
     return;
 }
 void SqlConnection::initialize()
@@ -698,4 +709,3 @@ void SqlConnection::initialize()
     os::signal(SIGCSQL1, sigUsr1Handler);
     isInit = true;
 }
-

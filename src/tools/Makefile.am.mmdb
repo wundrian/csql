@@ -1,6 +1,6 @@
 INCLUDES = -I$(top_srcdir)/include $(all_includes) -I$(top_srcdir)/src/sql
 METASOURCES = AUTO
-bin_PROGRAMS = csql catalog csqlserver csqlsqlserver csqldump 
+bin_PROGRAMS = csql catalog csqlserver csqlsqlserver csqldump  csqlcheckpointserver
 csql_SOURCES = isql.cxx
 csql_LDADD = $(top_builddir)/src/storage/libcsql.la \
 	 $(top_builddir)/src/sql/libcsqlsql.la \
@@ -23,6 +23,15 @@ csqlsqlserver_LDADD = $(top_builddir)/src/sql/libcsqlsql.la \
 	$(top_builddir)/src/storage/libcsql.la -lrt -lpthread -lcrypt
 csqlsqlserver_LDFLAGS = -lcrypt 
 csqlsqlserver_SOURCES = csqlsqlserver.cxx
+
+csqlcheckpointserver_LDADD = $(top_builddir)/src/storage/libcsql.la \
+    $(top_builddir)/src/sql/libcsqlsql.la \
+    $(top_builddir)/src/sqllog/libcsqlsqllog.la \
+    $(top_builddir)/src/network/libcsqlnw.la \
+    $(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la 
+csqlcheckpointserver_LDFLAGS = -lcrypt -lodbc -lrt -lpthread
+csqlcheckpointserver_SOURCES = csqlcheckpointserver.cxx
+
 
 csqldump_LDADD = $(top_builddir)/src/sql/libcsqlsql.la \
 	$(top_builddir)/src/sqllog/libcsqlsqllog.la \

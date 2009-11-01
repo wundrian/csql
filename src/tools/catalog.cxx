@@ -112,6 +112,10 @@ int main(int argc, char **argv)
             printf("  <TableInfo> \n");
             printf("    <TableName> %s </TableName>\n", elem->name);
             Table *table = dbMgr->openTable(elem->name);
+            if (NULL == table) {
+                printError(ErrSysInternal, "Unable to open table %s", elem->name);
+                break;
+            }
 	    FieldInfo *info = new FieldInfo();
             List fNameList = table->getFieldNameList();
             ListIterator fNameIter = fNameList.getIterator();

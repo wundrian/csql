@@ -120,6 +120,11 @@ int Config::storeKeyVal(char *key, char *value)
            { cVal.isCacheNoParam = os::atobool(value);  }
     else if (os::strcasestr(key, "MONITOR_SERVERS") != NULL)
            { cVal.isMonitor = os::atobool(value);  }
+    else if (os::strcasestr(key, "CHECKPOINT_SECS") != NULL)
+           { cVal.chkptSecs = ::atoi(value);  }
+    else if (os::strcasestr(key, "CHECKPOINT_LOG_SIZE") != NULL)
+           { cVal.chkptRedoLimit = ::atoi(value);  }
+
 
 
     else  return 1;
@@ -305,7 +310,16 @@ int Config::validateValues()
         printError(ErrBadArg, "STMT_CACHE_SIZE should be >=0 and <1024");
         return 1;
     }
-
+    if (cVal.chkptSecs < 1 || cVal.chkptSecs > 1000000)
+    {
+        printError(ErrBadArg, "CHECKPOINT_SECS should be >=1 and <1000000");
+        return 1;
+    }
+    if (cVal.chkptRedoLimit < 1024 * 1024 || cVal.stmtCacheSize > 1024 * 1024 * 1024)
+    {
+        printError(ErrBadArg, "CHECKPOINT_LOG_SIZE should be >=1MB and <1 GB");
+        return 1;
+    }
     return 0;
 }
 

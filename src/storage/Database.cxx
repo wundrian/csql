@@ -160,18 +160,23 @@ DbRetVal Database::releaseProcessTableMutex(bool procAccount)
 
 
 
-int Database::initDatabaseMutex()
+int Database::initCheckpointMutex()
 {
-    return metaData_->dbMutex_.init("db");
+    return metaData_->ckptMutex_.init("checkpoint");
 }
-DbRetVal Database::getDatabaseMutex(bool procAccount)
+DbRetVal Database::getSCheckpointMutex(bool procAccount)
 {
-    int ret = metaData_->dbMutex_.getLock(procSlot, procAccount);
+    int ret = metaData_->ckptMutex_.getShareLock(procSlot, procAccount);
     if (ret) return ErrLockTimeOut; else return OK;
 }
-DbRetVal Database::releaseDatabaseMutex(bool procAccount)
+DbRetVal Database::getXCheckpointMutex(bool procAccount)
 {
-    metaData_->dbMutex_.releaseLock(procSlot, procAccount);
+    int ret = metaData_->ckptMutex_.getExclusiveLock(procSlot, procAccount);
+    if (ret) return ErrLockTimeOut; else return OK;
+}
+DbRetVal Database::releaseCheckpointMutex(bool procAccount)
+{
+    metaData_->ckptMutex_.releaseShareLock(procSlot, procAccount);
     return OK;
 }
 
@@ -188,8 +193,8 @@ DbRetVal Database::releaseDatabaseMutex(bool procAccount)
 //NOTE::IMPORTANT::assumes alloc database lock is taken before calling this
 Page* Database::getFreePage()
 {
-    //Page* page = getFirstPage();
-    Page* page = getCurrentPage();
+    Page* page = getFirstPage();
+    //Page* page = getCurrentPage();
     //printDebug(DM_Alloc, "Database::getFreePage firstPage:%x",page);
     printDebug(DM_Alloc, "Database::getFreePage currentpage:%x",page);
     PageInfo* pageInfo = ((PageInfo*)page);
@@ -290,6 +295,7 @@ void Database::printStatistics()
     Page* page = getFirstPage();
     PageInfo* pageInfo = ((PageInfo*)page);
     int usedPageCount =0, usedMergedPageCount =0, totalPages=0;
+    int totalDirtyPages=0;
     printf("<DatabaseStatistics>\n");
     printf("  <Database Name>  %s </Database Name>\n", getName());
     printf("  <Max Size> %ld </Max Size>\n", getMaxSize());
@@ -297,25 +303,30 @@ void Database::printStatistics()
     while(isValidAddress((char*) pageInfo))
     {
         if (pageInfo == NULL) break;
+        //if (pageInfo > getCurrentPage()) break;
         if (1 == pageInfo->isUsed_) {
            if ( pageInfo->nextPageAfterMerge_ == NULL) {
+              if (BITSET(pageInfo->flags, IS_DIRTY)) totalDirtyPages++;
               pageInfo = (PageInfo*)((char*)pageInfo + PAGE_SIZE);
               usedPageCount++; totalPages++;
               printDebug(DM_Alloc, "Normal Page:Moving to page:%x\n",pageInfo);
               continue;
            }
            else {
+              if (BITSET(pageInfo->flags, IS_DIRTY)) totalDirtyPages++;
               pageInfo = (PageInfo*)pageInfo->nextPageAfterMerge_;
               usedMergedPageCount++; totalPages++;
               printDebug(DM_Alloc,"Merged Page:Moving to page:%x\n",pageInfo);
               continue;
            }
-        }
+        } else if (BITSET(pageInfo->flags, IS_DIRTY)) totalDirtyPages++;
         pageInfo = (PageInfo*)((char*)pageInfo + PAGE_SIZE);
         printDebug(DM_Alloc,"Normal Page not used:Moving to page:%x\n",pageInfo);
         totalPages++;
     }
     printf("  <Total Pages> %d </Total Pages>\n", totalPages);
+    if (Conf::config.useDurability())
+        printf("  <Dirty Pages> %d </Dirty Pages>\n", totalDirtyPages);
     printf("  <Used Normal Pages> %d </Used Normal Pages>\n", usedPageCount);
     printf("  <Used Merged Pages> %d </Used Merged Pages>\n", usedMergedPageCount);
     printf("  <Chunks Used> %d </Chunks Used>\n", getNoOfChunks());
@@ -515,12 +526,64 @@ DbRetVal Database::recoverMutex(Mutex *mut)
     //TODO: operations need to be undone before recovering the mutex.
     mut->recoverMutex();    
     return OK;
-}    
+}
+DbRetVal Database::writeDirtyPages(char *dataFile)
+{
+    int fd = open(dataFile, O_WRONLY|O_CREAT, 0644);
+    lseek(fd, 0, SEEK_SET);
+    void *buf = (void *) metaData_;
+    int sizeToWrite = os::alignLong(sizeof(DatabaseMetaData));
+    ssize_t retSize = os::write(fd, (char*)buf, sizeToWrite);
+    if (-1 == retSize)
+    {
+       printError(ErrWarning, "Warning:Unable to write metadata");
+    }
+    PageInfo *pageInfo = (PageInfo*) getFirstPage();
+    long pageSize =PAGE_SIZE;
+    int pagesWritten=0, writeOffset=0;
+    long long totalBytesWritten=0;
+    while(isValidAddress((char*) pageInfo))
+    {
+        if ( NULL == pageInfo ) break;
+        if (pageInfo > getCurrentPage()) {
+           char *a="0";
+           lseek(fd, getMaxSize() -1, SEEK_SET);
+           os::write(fd, a, 1);
+           break;
+        }
+        if (BITSET(pageInfo->flags, IS_DIRTY)) {
+            if (NULL == pageInfo->nextPageAfterMerge_)
+                pageSize = PAGE_SIZE;
+            else
+                pageSize = (long)pageInfo->nextPageAfterMerge_ - (long)pageInfo;
+            writeOffset = (long) pageInfo - (long) metaData_;
+            lseek(fd, writeOffset, SEEK_SET);
+            CLEARBIT(pageInfo->flags, IS_DIRTY);
+            retSize = os::write(fd, (char*)pageInfo, pageSize);
+            if ( -1  == retSize ) {
+                printError(ErrWarning, "Warning:Unable to write dirty page %x", pageInfo);
+            }
+            totalBytesWritten= totalBytesWritten + retSize;
+            pagesWritten++;
+        }
+        if ( pageInfo->nextPageAfterMerge_ == NULL) {
+           pageInfo = (PageInfo*)((char*)pageInfo + PAGE_SIZE);
+        } else {
+           pageInfo = (PageInfo*)pageInfo->nextPageAfterMerge_;
+        }
+    }
+    printf("Total Dirty pages written %d %lld\n", pagesWritten, totalBytesWritten);
+    logFine(Conf::logger, "Total Dirty pages written %d\n", pagesWritten);
+    close(fd);
+    return OK;
+}
 
 DbRetVal Database::checkPoint()
 {
-    char dataFile[1024];
-    char cmd[1024];
+    char dataFile[MAX_FILE_LEN];
+    char cmd[MAX_FILE_LEN];
+    char dbRedoFileName[MAX_FILE_LEN];
+    sprintf(dbRedoFileName, "%s/csql.db.cur", Conf::config.getDbFile());
     if (!Conf::config.useMmap()) {
        // sprintf(dataFile, "%s/db.chkpt.data1", Conf::config.getDbFile());
         sprintf(dataFile, "%s/db.chkpt.data", Conf::config.getDbFile());
@@ -535,6 +598,7 @@ DbRetVal Database::checkPoint()
         }
         int fd = open(dataFile, O_WRONLY|O_CREAT, 0644);
         void *buf = (void *) metaData_;
+        lseek(fd, 0, SEEK_SET);
         write(fd, buf, Conf::config.getMaxDbSize());
         close(fd);  
         sprintf(cmd, "cp -f %s/db.chkpt.data %s/db.chkpt.data1", Conf::config.getDbFile(), Conf::config.getDbFile());
@@ -546,21 +610,66 @@ DbRetVal Database::checkPoint()
     } else {
         int fd = getChkptfd();
         if (!os::fdatasync(fd)) { printf("pages written. checkpoint taken\n"); }
-        sprintf(cmd, "cp -f %s/db.chkpt.data %s/db.chkpt.data1", Conf::config.getDbFile(), Conf::config.getDbFile());
-        int ret = system(cmd);
-        if (ret != 0) {
-            printError(ErrOS, "Unable to take checkpoint back up file");
-            return ErrOS;
-        }
+        int val=0;
+        if (Database::getCheckpointID() == 0)
+            val = 1;
+        else
+            val = 0;
+
+        sprintf(dataFile, "%s/db.chkpt.data%d", Conf::config.getDbFile(), val);
+        /*
+        fd = open(dataFile, O_WRONLY|O_CREAT, 0644);
+        lseek(fd, 0, SEEK_SET);
+        void *buf = (void *) metaData_;
+        ssize_t retSize = os::write(fd, (char*)buf, Conf::config.getMaxDbSize());
+        if (retSize != Conf::config.getMaxDbSize()) {
+            printError(ErrWarning, "Unable to take checkpoint");
+            //TODO:: If it is because of signal handler, 
+            //compute remaining bytes to be written and finish it here
+        }*/
+        writeDirtyPages(dataFile);
+        close(fd);  
+    }
+    int ret = unlink(dbRedoFileName);
+    if (ret != 0) {
+        printError(ErrSysInternal, "Unable to delete redo log file. Delete and restart the server\n");
+       return ErrOS;
     }
     return OK;
 }
+int Database::getCheckpointID()
+{
+    int id=0;
+    char curCkptFile[MAX_FILE_LEN];
+    sprintf(curCkptFile, "%s/db.chkpt.cur", Conf::config.getDbFile());
+    FILE *fp = fopen(curCkptFile, "r");
+    if (NULL == fp) { setCheckpointID(0); return 0; }
+    fscanf(fp, "%d", &id);
+    fclose(fp);
+    return id;
+}
+void Database::setCheckpointID(int id)
+{
+    char curCkptFile[MAX_FILE_LEN];
+    sprintf(curCkptFile, "%s/db.chkpt.cur", Conf::config.getDbFile());
+    FILE *fp = fopen(curCkptFile, "w");
+    if (NULL == fp) { 
+ 
+        printError(ErrSysInternal, "Unable to set checkpointID");
+        return;
+    }
+    fprintf(fp, "%d", id);
+    logFine(Conf::logger, "Current checkpoint set to %d", id);
+    fclose(fp);
+    return;
+}
+
 
 //used only by the user database not the system database
 DbRetVal Database::recoverUserDB()
 {
-    char dataFile[1024];
-    char cmd[1024];
+    char dataFile[MAX_FILE_LEN];
+    char cmd[MAX_FILE_LEN];
     sprintf(dataFile, "%s/db.chkpt.data", Conf::config.getDbFile());
     int fd = open(dataFile, O_RDONLY);
     if (-1 == fd) { return OK; }
@@ -573,7 +682,7 @@ DbRetVal Database::recoverUserDB()
 //used only by the system database 
 DbRetVal Database::recoverSystemDB()
 {
-    char mapFile[1024];
+    char mapFile[MAX_FILE_LEN];
     sprintf(mapFile, "%s/db.chkpt.map", Conf::config.getDbFile());
     int fd = open(mapFile, O_RDONLY);
     if (-1 == fd) { return OK; }

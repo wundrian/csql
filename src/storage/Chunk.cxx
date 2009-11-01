@@ -48,12 +48,14 @@ void* Chunk::allocateForLargeDataSize(Database *db)
     }
 
     //check whether we have space in curPage 
-    if (pageInfo->hasFreeSpace_ == 1)
+    if (BITSET(pageInfo->flags, HAS_SPACE))
     {
         char *data = ((char*)curPage_) + sizeof(PageInfo);
-        //pageInfo->hasFreeSpace_ =0;
-        int retVal = Mutex::CAS(&pageInfo->hasFreeSpace_, pageInfo->hasFreeSpace_, 0);
-        if (retVal !=0) printError(ErrSysFatal, "Unable to set hashFreeSpace flag");
+        int oldVal = pageInfo->flags;
+        int newVal = oldVal;
+        CLEARBIT(newVal, HAS_SPACE);
+        int retVal = Mutex::CAS(&pageInfo->flags, oldVal, newVal);
+        if (retVal !=0) printError(ErrSysFatal, "Unable to set flags");
         *((InUse*)data) = 1;
         //Mutex::CAS((InUse*)data , 0, 1);
         db->releaseAllocDatabaseMutex();
@@ -74,6 +76,8 @@ void* Chunk::allocateForLargeDataSize(Database *db)
     int offset = ((multiple + 1) * PAGE_SIZE);
 
     pageInfo->setPageAsUsed(offset);
+    setPageDirty(pageInfo);
+    
 
     //create the link
     //((PageInfo*)curPage_)->nextPage_ = (Page*) pageInfo;
@@ -91,9 +95,12 @@ void* Chunk::allocateForLargeDataSize(Database *db)
     }
 
     char* data = ((char*)curPage_) + sizeof(PageInfo);
-    retVal = Mutex::CAS(&pageInfo->hasFreeSpace_, pageInfo->hasFreeSpace_, 0);
+    int oldVal = pageInfo->flags;
+    int newVal = oldVal;
+    CLEARBIT(newVal, HAS_SPACE);
+    retVal = Mutex::CAS(&pageInfo->flags, oldVal, newVal);
     if(retVal !=0) {
-        printError(ErrLockTimeOut, "Fatal:Unable to set hasFreeSpace");
+        printError(ErrLockTimeOut, "Fatal:Unable to set flags");
     }
     *((InUse*)data) = 1;
     //Mutex::CASL((InUse*)data , 0, 1);
@@ -115,7 +122,7 @@ void* Chunk::allocateFromFirstPage(Database *db, int noOfDataNodes, DbRetVal *st
     while(NULL != pageIter)
     {
         data = ((char*)pageIter) + sizeof(PageInfo);
-        if (pageIter->hasFreeSpace_ == 1)
+        if (BITSET(pageIter->flags, HAS_SPACE))
         {
             for (i = 0; i< noOfDataNodes ; i++)
             {
@@ -171,6 +178,7 @@ void* Chunk::allocateFromNewPage(Database *db, DbRetVal *status)
     //Initialize pageInfo for this new page
     PageInfo *pInfo = (PageInfo*)page;
     pInfo->setPageAsUsed(0);
+    setPageDirty(pInfo);
 
     char* data = ((char*)page) + sizeof(PageInfo);
     *((InUse*)data) = 1;
@@ -244,7 +252,7 @@ void* Chunk::allocate(Database *db, DbRetVal *status)
         return NULL;
     }*/
     int i = noOfDataNodes;
-    if (pageInfo->hasFreeSpace_ == 1)
+    if (BITSET(pageInfo->flags, HAS_SPACE))
     {
         for (i = 1; i< noOfDataNodes; i++)
         {
@@ -255,49 +263,35 @@ void* Chunk::allocate(Database *db, DbRetVal *status)
     }
     printDebug(DM_Alloc, "ChunkID:%d Node which might be free is %d",
                                                         chunkID_, i);
-    //It comes here if the pageInfo->hasFreeSpace ==0
+    //It comes here if the pageInfo hasFreeSpace 
     //or there are no free data space in this page
     if (i == noOfDataNodes && *((InUse*)data) == 1)
     {
 
         printDebug(DM_Alloc, "ChunkID:%d curPage does not have free nodes.", chunkID_);
         //there are no free data space in this page
-        //pageInfo->hasFreeSpace_ = 0;
-        int ret = Mutex::CAS(&pageInfo->hasFreeSpace_, pageInfo->hasFreeSpace_, 0);
+        int oldVal = pageInfo->flags;
+        int newVal = oldVal;
+        CLEARBIT(newVal, HAS_SPACE);
+        int ret = Mutex::CAS(&pageInfo->flags, oldVal, newVal);
         if(ret !=0) {
             *status = ErrLockTimeOut;
             printDebug(DM_Warning, "Unable to set hasFreespace");
             return NULL;
         }
-        //if (chunkID_ == LockTableId || chunkID_ == TransHasTableId) 
-        {
-           *status = OK;
-           data = (char*) allocateFromFirstPage(db, noOfDataNodes, status);
-           if (NULL == data && *status != ErrLockTimeOut)
-           {
-              *status = OK;
-              data = (char*) allocateFromNewPage(db, status);
-              if (data == NULL && *status != ErrLockTimeOut)
-              {
-                printError(ErrNoMemory, "No memory in any of the pages:Increase db size");
-                *status = ErrNoMemory;
-              }
-           }
-        } 
-        /*else 
-        {
-           data = (char*) allocateFromNewPage(db, status);
-           if (NULL == data && *status != ErrLockTimeOut)
-           {
-              data = (char*) allocateFromFirstPage(db, noOfDataNodes);
-              if (data == NULL)
-              {
-                printError(ErrNoMemory, "No memory in any of the pages:Increase db size");
-                *status = ErrNoMemory;
-              }
-           }
-        }*/
-        //releaseChunkMutex(db->procSlot);
+       *status = OK;
+       data = (char*) allocateFromFirstPage(db, noOfDataNodes, status);
+       if (NULL == data && *status != ErrLockTimeOut)
+       {
+          *status = OK;
+          data = (char*) allocateFromNewPage(db, status);
+          if (data == NULL && *status != ErrLockTimeOut)
+          {
+            printError(ErrNoMemory, "No memory in any of the pages:Increase db size");
+            *status = ErrNoMemory;
+          }
+        }
+        setPageDirty(db, data);
         return data;
     }
     //*((InUse*)data) = 1;
@@ -311,10 +305,27 @@ void* Chunk::allocate(Database *db, DbRetVal *status)
         printDebug(DM_Warning, "Unable to set isUsed : retry...");
         return NULL;
     }
-    //releaseChunkMutex(db->procSlot);
+    setPageDirty(db, data);
     return data + sizeof(InUse);
 }
 
+void Chunk::setPageDirty(Database *db, void *ptr)
+{
+    if (chunkID_ < LastCatalogID) return;
+    PageInfo *pageInfo = getPageInfo(db, ptr);
+    if (NULL == pageInfo)
+    {
+        printError(ErrSysFatal,"Fatal: pageInfo is NULL", pageInfo );
+        return;
+    }
+    SETBIT(pageInfo->flags, IS_DIRTY);
+    return;
+}
+void Chunk::setPageDirty(PageInfo *pInfo)
+{
+    if (chunkID_ < LastCatalogID) return;
+    SETBIT(pInfo->flags, IS_DIRTY);
+}
 
 void* Chunk::allocateForLargeDataSize(Database *db, size_t size)
 {
@@ -351,8 +362,12 @@ void* Chunk::allocateForLargeDataSize(Database *db, size_t size)
              return NULL;
         }
         pageInfo->isUsed_=1;
-        ret = Mutex::CAS(&pageInfo->hasFreeSpace_, pageInfo->hasFreeSpace_, 0);
-        if (ret !=0) printError(ErrSysFatal, "Unable to set hashFreeSpace");
+        int oldVal = pageInfo->flags;
+        int newVal = oldVal;
+        CLEARBIT(newVal, HAS_SPACE);
+        SETBIT(newVal, IS_DIRTY);
+        ret = Mutex::CAS(&pageInfo->flags, oldVal, newVal);
+        if (ret !=0) printError(ErrSysFatal, "Unable to set flags");
         return data + sizeof(InUse);
     }else{
         //large size allocate for varSize data
@@ -367,6 +382,7 @@ void* Chunk::allocateForLargeDataSize(Database *db, size_t size)
              return NULL;
         }
         pageInfo->isUsed_=1;
+        SETBIT(pageInfo->flags, IS_DIRTY);
         return (char *) varInfo + sizeof(VarSizeInfo);
     }
     //REDESIGN MAY BE REQUIRED:Lets us live with this for now.
@@ -377,7 +393,6 @@ void* Chunk::allocateForLargeDataSize(Database *db, size_t size)
     //undo logging and currently we shall assume that the logs generated
     //wont be greater than PAGE_SIZE.
     return NULL;
-
 }
 
 
@@ -408,6 +423,7 @@ void* Chunk::allocFromNewPageForVarSize(Database *db, size_t size, int pslot, Db
     printDebug(DM_VarAlloc, "ChunkID:%d New Page: %x ", chunkID_, newPage);
     PageInfo *pInfo = (PageInfo*) newPage;
     pInfo->setPageAsUsed(0);
+    setPageDirty(pInfo);
     if (1 == createDataBucket(newPage, PAGE_SIZE, size, pslot))
     {
         printError(ErrSysFatal, "Split failed in new page...Should never happen");
@@ -619,13 +635,16 @@ void Chunk::freeForVarSizeAllocator(void *ptr, int pslot)
          if(curPage_== pageInfo) {curPage_ = prev ; }
          pageInfo->isUsed_ = 0;
          pageInfo->nextPageAfterMerge_ = NULL; 
-         pageInfo->hasFreeSpace_ = 1;
+         CLEARBIT(pageInfo->flags, IS_DIRTY);
+         SETBIT(pageInfo->flags, HAS_SPACE);
          prev->nextPage_ = pageInfo->nextPage_;
     }
     int ret = Mutex::CAS((int*)&varInfo->isUsed_, 1, 0);
     if(ret !=0) {
         printError(ErrAlready, "Fatal: Varsize double free for %x", ptr);
     }
+    //TODO
+    //setPageDirty(ptr);
     printDebug(DM_VarAlloc,"chunkID:%d Unset isUsed for %x", chunkID_, varInfo);
     //releaseChunkMutex(pslot);
     return;
@@ -664,21 +683,28 @@ void Chunk::freeForLargeAllocator(void *ptr, int pslot)
       //pageInfo->isUsed_ = 0;
       ret = Mutex::CAS((int*)&pageInfo->isUsed_, pageInfo->isUsed_, 0);
       if (ret != 0) printError(ErrSysFatal, "Unable to set isUsed flag");
-      //pageInfo->hasFreeSpace_ = 1;
-      ret = Mutex::CAS((int*)&pageInfo->hasFreeSpace_, pageInfo->hasFreeSpace_, 1);
-      if (ret != 0) printError(ErrSysFatal, "Unable to set hasFreeSpace flag");
+      int oldVal = pageInfo->flags;
+      int newVal = oldVal;
+      SETBIT(newVal, HAS_SPACE);
+      ret = Mutex::CAS((int*)&pageInfo->flags, oldVal, newVal);
+      if (ret != 0) printError(ErrSysFatal, "Unable to set flags");
       if(pageInfo == firstPage_ && ((PageInfo*)firstPage_)->nextPage_ != NULL)
+      {
         //firstPage_ = pageInfo->nextPage_ ;
         ret = Mutex::CASL((long*)&firstPage_, (long) firstPage_, 
                                       (long)pageInfo->nextPage_);
         if (ret != 0) printError(ErrSysFatal, "Unable to set firstPage");
+        SETBIT(((PageInfo*)firstPage_)->flags , IS_DIRTY);
+      }
       else { 
         //prev->nextPage_ = pageInfo->nextPage_;
         ret = Mutex::CASL((long*)&prev->nextPage_, (long) prev->nextPage_, 
                                        (long)pageInfo->nextPage_);
         if (ret != 0) printError(ErrSysFatal, "Unable to set nextPage");
+        SETBIT(prev->flags, IS_DIRTY);
       }
     }
+    SETBIT(pageInfo->flags, IS_DIRTY);
     releaseChunkMutex(pslot);
     return;
 }
@@ -730,14 +756,13 @@ void Chunk::free(Database *db, void *ptr)
         return;
     }
     //set the pageinfo where this ptr points
-    //pageInfo->hasFreeSpace_ = 1;
-    if (! (pageInfo->hasFreeSpace_ == 0 || pageInfo->hasFreeSpace_ == 1)) {
-        printError(ErrSysFatal, "Fatal: hasFreeSpace has invalid value:%d for page %x", pageInfo->hasFreeSpace_, pageInfo);
-        return;
-    }
-    ret = Mutex::CAS((int*)&pageInfo->hasFreeSpace_, pageInfo->hasFreeSpace_, 1);
+    int oldVal = pageInfo->flags;
+    int newVal = oldVal;
+    SETBIT(newVal, HAS_SPACE);
+    SETBIT(newVal, IS_DIRTY);
+    ret = Mutex::CAS((int*)&pageInfo->flags, oldVal, newVal);
     if(ret !=0) {
-        printError(ErrSysFatal, "Unable to get lock to set hasFreeSpace");
+        printError(ErrSysFatal, "Unable to get lock to set flags");
     }
     //releaseChunkMutex(db->procSlot);
     return;
@@ -899,6 +924,18 @@ int Chunk::totalPages()
     }
     return totPages;
 }
+int Chunk::totalDirtyPages()
+{
+    PageInfo* pageInfo = ((PageInfo*)firstPage_);
+    int dirtyPages=0;
+    while( pageInfo != NULL )
+    {
+        if(BITSET(pageInfo->flags, IS_DIRTY)) dirtyPages++;
+        pageInfo = (PageInfo*)(((PageInfo*)pageInfo)->nextPage_) ;
+    }
+    return dirtyPages;
+}
+
 
 int Chunk::initMutex()
 {
@@ -985,22 +1022,23 @@ void Chunk::setChunkNameForSystemDB(int id)
 
 void Chunk::print()
 {
-        printf("        <Chunk Id> %d </Chunk Id> \n",chunkID_);
-        printf("                <TotalPages> %d </TotalPages> \n",totalPages());
-        printf("                <ChunkName > %s </ChunkName> \n",getChunkName());
-        printf("                <TotalDataNodes> %d </TotalDataNodes> \n",getTotalDataNodes());
-        printf("                <SizeOfDataNodes> %d </SizeOfDataNodes> \n",getSize());
-        printf("                <Allocation Type> ");
-        if(allocType_==0)
-        {
-                printf("FixedSizeAllocator ");
-        }else if(allocType_==1)
-        {
-                printf("VariableSizeAllocator ");
-        }else
-        {
-                printf("UnknownAllocator ");
-
-        }
-        printf("</Allocation Type>\n");
+    printf("        <Chunk Id> %d </Chunk Id> \n",chunkID_);
+    printf("                <TotalPages> %d </TotalPages> \n",totalPages());
+    if (Conf::config.useDurability())
+        printf("                <DirtyPages> %d </DirtyPages> \n",totalDirtyPages());
+    printf("                <ChunkName > %s </ChunkName> \n",getChunkName());
+    printf("                <TotalDataNodes> %d </TotalDataNodes> \n",getTotalDataNodes());
+    printf("                <SizeOfDataNodes> %d </SizeOfDataNodes> \n",getSize());
+    printf("                <Allocation Type> ");
+    if(allocType_==0)
+    {
+        printf("FixedSizeAllocator ");
+    }else if(allocType_==1)
+    {
+        printf("VariableSizeAllocator ");
+    }else
+    {
+        printf("UnknownAllocator ");
+    }
+    printf("</Allocation Type>\n");
 }

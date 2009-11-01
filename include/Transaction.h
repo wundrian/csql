@@ -139,6 +139,7 @@ class TransactionManager
     DbRetVal startTransaction(LockManager *lManager, IsolationLevel level);
     DbRetVal commit(LockManager *lManager);
     DbRetVal rollback(LockManager *lManager, Transaction *t=NULL);
+    bool isTransactionConsistent(Database *db);
 
 };
 #endif
