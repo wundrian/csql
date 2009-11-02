@@ -42,7 +42,8 @@ enum StatementType
     CopyTableStatement,
     MetaStatement,
     UserStatement,
-    MgmtStatement
+    MgmtStatement,
+    AlterStatement
 };
 #endif
 
@@ -138,6 +139,16 @@ enum UserNodeType
     DROPUSER,
     ALTERUSER
 };
+enum AlterTableType
+{
+    ALTERADD=0,
+    ALTERDROP,
+    ALTERMODIFY,
+    ALTERFIELDRENAME,
+    ALTERTABLERENAME
+};
+
+
 class UserNode
 {
     public:
@@ -150,7 +161,7 @@ class ParsedData
 {
     private:
     char tblName[IDENTIFIER_LENGTH];
-    char idxName[IDENTIFIER_LENGTH];
+    char idxName[IDENTIFIER_LENGTH]; //Also used for rename table
     char pkTblName[IDENTIFIER_LENGTH];//This is also used as DSN name when cachestatement executed and copy table statemnet
     StatementType stmtType;
     bool isDistinct; 
@@ -207,6 +218,8 @@ class ParsedData
     List foreignKeyList;
     bool isForeign;
     bool shouldCreateTbl;
+    //ALTER Statement
+    AlterTableType aTblType;
     //stores index information
     bool isUnique;
     bool isPrimary;
@@ -231,8 +244,11 @@ class ParsedData
     public:
     ParsedData() { limit = 0;  offset= 0; paramCounter = 0; stmtType = UnknownStatement;  isDistinct = false; isExplain=false;
                  isUnique = false; isPrimary = false; isAutoIncrement=false ;indexType = hashIndex; plan = Normal; bucketSize=0; isForeign=false; hCondFld=false; vCondFld=false;pkFld=false;forceOption=false; direct=false; uncache=false; noschema=false; dsn=false; 
-    shouldCreateTbl=false; userNode = NULL; isWorthyToCache=false;
+    shouldCreateTbl=false; userNode = NULL; isWorthyToCache=false; 
     } 
+    void setAlterType(AlterTableType type){ aTblType = type;}
+    AlterTableType getAlterType(){ return aTblType; }
+    
     void createUserNode(char *name, char *password);
     char *getUserName() { return userNode->userName; }
     char *getPassWord() { return userNode->passName; }

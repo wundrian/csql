@@ -44,7 +44,45 @@ DbRetVal CatalogTableTABLE::insert(const char *name, int id, size_t size,
     printDebug(DM_SystemDatabase,"One Row inserted into TABLE %x %s",tptr, name);
     return OK;
 }
-
+DbRetVal CatalogTableTABLE::renameTable( const char *oldName,const char *newName)
+{
+     Chunk *tChunk = systemDatabase_->getSystemDatabaseChunk(TableTableId);
+     ChunkIterator iter = tChunk->getIterator();
+     void *data = NULL;
+     bool isTableExits = false ;
+     CTABLE *oldTable = NULL;
+     while ((data = iter.nextElement())!= NULL)
+     {
+         if (0 == strcmp(((CTABLE*)data)->tblName_, oldName))
+         {
+             oldTable =(CTABLE*)data;
+             isTableExits = true;
+         }
+         if (0 == strcmp(((CTABLE*)data)->tblName_,newName))
+         {
+             printError(ErrNotExists,"A Table with name %s already exists", newName);
+             return ErrNotExists;
+         }
+     }
+     strcpy(oldTable->tblName_, newName);
+     if(!isTableExits){
+        printError(ErrNotExists,"Table %s not exists in TABLE catalog table", oldName);
+        return ErrNotExists;
+     }
+ 
+     tChunk = systemDatabase_->getSystemDatabaseChunk(IndexTableId);
+     iter = tChunk->getIterator();
+     char tmpName[IDENTIFIER_LENGTH]="";
+     sprintf(tmpName, "%s_idx1_Primary", oldName); 
+     while ((data = iter.nextElement())!= NULL)
+     {
+         if(strcmp(((CINDEX*)data)->indName_ ,tmpName)==0) {
+                sprintf(((CINDEX*)data)->indName_, "%s_idx1_Primary", newName);
+                break;
+         }
+     }
+    return OK;
+}
 DbRetVal CatalogTableTABLE::remove(const char *name, void *&chunk, void *&tptr)
 {
     Chunk *tChunk = systemDatabase_->getSystemDatabaseChunk(TableTableId);
@@ -76,7 +114,7 @@ DbRetVal CatalogTableTABLE::remove(const char *name, void *&chunk, void *&tptr)
 }
 
 DbRetVal CatalogTableTABLE::getChunkAndTblPtr(const char *name,
-                                    void *&chunk, void *&tptr, void *&vcchunk)
+                              void *&chunk, void *&tptr, void *&vcchunk)
 {
     Chunk *chk = systemDatabase_->getSystemDatabaseChunk(TableTableId);
     ChunkIterator iter = chk->getIterator();;
@@ -127,6 +165,28 @@ List CatalogTableTABLE::getTableList()
          tableList.append(elem);
     }
     return tableList;
+}
+
+DbRetVal CatalogTableFIELD::renameField(const char *tableName, const char *oldName, const char *newName)
+{
+    Chunk *fChunk = systemDatabase_->getSystemDatabaseChunk(FieldTableId);
+    ChunkIterator iter = fChunk->getIterator();   
+    void *data = NULL;
+    bool isFieldExists=false;
+    while ((data = iter.nextElement())!= NULL)
+    {
+        if ((strcmp(((CFIELD*)data)->fldName_,oldName)== 0) && (strcmp(((CTABLE *)((CFIELD*)data)->tblPtr_)->tblName_,tableName) == 0) )
+        {
+           strcpy(((CFIELD*)data)->fldName_,newName);
+           isFieldExists = true;
+           break;
+        }
+    }
+    if(!isFieldExists){
+        printError(ErrNotExists,"Field %s not exists in table", oldName);
+        return ErrNotExists;
+    }
+    return OK;
 }
 
 DbRetVal CatalogTableFIELD::insert(FieldIterator &iter, int tblID, void *tptr)

@@ -29,8 +29,8 @@ void yyerror(const char* Msg);
 %token <stringval> DELETE UPDATE SET NULL_VALUE
 %token <stringval> CREATE TABLE PRIMARY KEY DEFAULT INDEX ON HASH TREE UNIQUE DROP SIZE FOREIGN REFERENCES COMPACT 
 %token <stringval> CACHE CONDITION FIELDLIST PK DIRECT DSN UNCACHE NOSCHEMA
-%token <stringval> INT_TYPE LONG_TYPE SHORT_TYPE DOUBLE_TYPE TIMESTAMP_TYPE DATE_TYPE CHAR_TYPE VARCHAR_TYPE TIME_TYPE BIGINT_TYPE FLOAT_TYPE TINYINT_TYPE BINARY_TYPE
-%token <stringval> USER PASSWORD ALTER FLUSH
+%token <stringval> INT_TYPE LONG_TYPE SHORT_TYPE DOUBLE_TYPE TIMESTAMP_TYPE DATE_TYPE CHAR_TYPE TIME_TYPE BIGINT_TYPE FLOAT_TYPE TINYINT_TYPE BINARY_TYPE VARCHAR_TYPE
+%token <stringval> USER PASSWORD ALTER FLUSH ADD COLUMN MODIFY RENAME TO
 %token <stringval> MIN MAX AVG SUM COUNT GROUP BY HAVING ORDER ASC DESC DISTINCT
 %token ';' ',' '(' ')'
 %type <stringval> ident field value not_opt doub_value num_value 
@@ -48,8 +48,49 @@ command:  select_statement { YYACCEPT; }
         | copy_table_statement { YYACCEPT; }
         | user_manager_statement { YYACCEPT; }
 	| management_statement { YYACCEPT; }
+	| alter_statement { YYACCEPT; }
         | other {YYACCEPT;}
         ;
+alter_statement: ALTER TABLE ident ADD '(' create_defn_list_con ')' semicolon_opt
+	{
+            parsedData->setStmtType(AlterStatement);
+            parsedData->setAlterType(ALTERADD);
+            parsedData->setTableName($3);
+            free($3); 
+	}
+	| ALTER TABLE ident DROP COLUMN ident semicolon_opt
+	{
+            parsedData->setStmtType(AlterStatement);
+            parsedData->setAlterType(ALTERDROP);
+            parsedData->setTableName($3);
+            parsedData->setIndexName($6); 
+            free($3);
+	}
+	| ALTER TABLE ident MODIFY '(' create_defn ')' semicolon_opt
+	{
+            printf(" Not Implemented\n");
+            free($3);
+            YYABORT;
+	}
+	| RENAME TABLE ident TO ident semicolon_opt
+	{
+            parsedData->setStmtType(AlterStatement);
+            parsedData->setAlterType(ALTERTABLERENAME);
+            parsedData->setTableName($3);
+            parsedData->setIndexName($5); 
+            free($3); free($5);
+
+	}
+	| ALTER TABLE ident RENAME COLUMN ident TO ident semicolon_opt
+        {
+            parsedData->setStmtType(AlterStatement);
+            parsedData->setAlterType(ALTERFIELDRENAME);
+            parsedData->setTableName($3);
+            parsedData->setIndexName($6);
+            parsedData->setPKTableName($8);
+            free($3); free($5); free($8);
+        }
+	;
 management_statement: FLUSH CACHE semicolon_opt
 	{
            parsedData->setStmtType(MgmtStatement);

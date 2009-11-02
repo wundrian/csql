@@ -463,6 +463,26 @@ class UserTblStatement : public DdlStatement
     //~UserTblStatement(){ delete usrMgr;}
 
 };
+class AlterTblStatement : public DdlStatement
+{
+    public:
+    DbRetVal execute(int &rowsAffected);
+    DbRetVal resolve(); 
+    DbRetVal resolveForModifyColumn();
+    DbRetVal resolveForAddDropColumn();
+    DbRetVal executeForAddDropColumn(int &rowsAffected);
+    DbRetVal executeForModifyColumn(int &rowsAffected){}
+    DbRetVal createIndex(const char *oldName,const char *newName);
+    AlterTblStatement();
+    ~AlterTblStatement();
+    AlterTableType altType;    
+    void **bindFieldValues;
+    int totalFields;
+    int noOfOldTabFld;
+    Table *table;
+    TableDef tblDef;
+};
+
 
 class DropIdxStatement : public DdlStatement
 {

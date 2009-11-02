@@ -76,22 +76,28 @@
 #define FLOAT_TYPE 332
 #define TINYINT_TYPE 333
 #define BINARY_TYPE 334
-#define USER 335
-#define PASSWORD 336
-#define ALTER 337
-#define FLUSH 338
-#define MIN 339
-#define MAX 340
-#define AVG 341
-#define SUM 342
-#define COUNT 343
-#define GROUP 344
-#define BY 345
-#define HAVING 346
-#define ORDER 347
-#define ASC 348
-#define DESC 349
-#define DISTINCT 350
+#define VARCHAR_TYPE 335
+#define USER 336
+#define PASSWORD 337
+#define ALTER 338
+#define FLUSH 339
+#define ADD 340
+#define COLUMN 341
+#define MODIFY 342
+#define RENAME 343
+#define TO 344
+#define MIN 345
+#define MAX 346
+#define AVG 347
+#define SUM 348
+#define COUNT 349
+#define GROUP 350
+#define BY 351
+#define HAVING 352
+#define ORDER 353
+#define ASC 354
+#define DESC 355
+#define DISTINCT 356
 typedef union
 {
    char *stringval;

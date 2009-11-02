@@ -109,6 +109,8 @@ class DatabaseManagerImpl : public DatabaseManager
 
     DbRetVal createTable(const char *name, TableDef &def);
     DbRetVal dropTable(const char *name);
+    DbRetVal renameTable(const char *oldName,const char *newName);
+    DbRetVal renameField(const char *tableName,const char *oldName,const char *newName);
     Table* openTable(const char *name, bool checkpkfk=true);
     void closeTable(Table *table);
     DbRetVal createIndex(const char *indName, IndexInitInfo *info);

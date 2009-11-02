@@ -623,6 +623,42 @@ DbRetVal DatabaseManagerImpl::createTable(const char *name, TableDef &def)
     logFinest(Conf::logger, "Table Created %s" , name);
     return OK;
 }
+DbRetVal DatabaseManagerImpl::renameTable(const char *oldName,const char *newName)
+{
+    void *chunk = NULL;
+    DbRetVal rv = systemDatabase_->getXCheckpointMutex();
+    if (OK != rv) {
+        printError(ErrSysInternal, "Unable to get database mutex for rename table");
+        return ErrSysInternal;
+    }
+    CatalogTableTABLE cTable(systemDatabase_);
+    rv = cTable.renameTable(oldName,newName);
+    if (OK != rv) {
+        printError(ErrSysInternal, "Unable to rename table");
+        systemDatabase_->releaseCheckpointMutex();
+        return ErrSysInternal;
+    }
+    systemDatabase_->releaseCheckpointMutex();
+    return OK;
+}
+
+DbRetVal DatabaseManagerImpl::renameField(const char *tableName,const char *oldName,const char *newName)
+{
+   DbRetVal rv = systemDatabase_->getXCheckpointMutex();
+    if (OK != rv) {
+        printError(ErrSysInternal, "Unable to get database mutex for rename table");
+        return ErrSysInternal;
+    }
+    CatalogTableFIELD fTable(systemDatabase_);
+    rv = fTable.renameField(tableName, oldName, newName);
+    if (OK != rv) {
+        printError(ErrSysInternal, "Unable to rename table");
+        systemDatabase_->releaseCheckpointMutex();
+        return ErrSysInternal;
+    }
+    systemDatabase_->releaseCheckpointMutex();
+    return rv;
+}
 
 //TODO::If any operation fails in between, then we may have some 
 //dangling tuples, say we have have rows in INDEX table 

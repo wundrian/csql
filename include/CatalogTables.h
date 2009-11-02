@@ -89,6 +89,7 @@ class CTABLE
     int numIndexes_;
     void* chunkPtr_;
     void* varcharChunkPtr_;
+
 };
 
 class CatalogTableTABLE
@@ -107,8 +108,8 @@ class CatalogTableTABLE
     //Third argument is OUT parameter which will contain the
     //pointer to the removed tuple
     DbRetVal remove(const char *name, void *&chunk, void *&tptr);
-
-    DbRetVal getChunkAndTblPtr(const char *name, void *&chunk, void *&tptr, void*& vcchunk);
+    DbRetVal renameTable(const char *oldName,const char *newName);
+    DbRetVal getChunkAndTblPtr(const char *name, void *&chunk, void *&tptr, void*&vcchunk);
     DbRetVal setChunkPtr(const char *name, void *firstPage, void *curPage);
     List getTableList();
 };
@@ -156,6 +157,7 @@ class CatalogTableFIELD
     //returns the pointer to fields for the corresponding name
     //in field name list as an array
     DbRetVal getFieldPtrs(FieldNameList &fldList,void *tptr, char **&array);
+    DbRetVal renameField(const char *tableName, const char *oldName, const char *newName);
 };
 
 class CUSER

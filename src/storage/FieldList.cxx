@@ -91,6 +91,17 @@ DbRetVal FieldList::removeAll()
     return OK;
 }
 
+int FieldList::size()
+{
+    int size = 0;    
+    FieldNode *iter = head;
+    while (iter!= NULL)
+    {
+       size++;
+       iter = iter->next;
+    }
+    return size;
+}
 //-1->if val is passed NULL
 //-2->if fld is not present
 DbRetVal FieldList::updateBindVal(const char *fldName, void *val )
@@ -155,7 +166,7 @@ DbRetVal FieldList::getFieldInfo(const char *fldName, FieldInfo *&info)
         info->type   = iter->fldDef.type_;
         info->offset = iter->fldDef.offset_;
         info->isDefault = iter->fldDef.isDefault_;
-        if (info->isDefault)
+        if (info->isDefault) 
             strcpy(info->defaultValueBuf, iter->fldDef.defaultValueBuf_);
         info->isNull = iter->fldDef.isNull_;
         info->isPrimary = iter->fldDef.isPrimary_;

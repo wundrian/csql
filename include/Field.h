@@ -115,7 +115,7 @@ class FieldList
 
     DbRetVal getFieldInfo(const char *fldName, FieldInfo *&info);
     void fillFieldInfo(int fldpos, void *info);
-
+    int size();
     int getTupleSize();
 
     FieldIterator getIterator()

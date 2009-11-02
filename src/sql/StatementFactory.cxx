@@ -59,6 +59,9 @@ Statement* StatementFactory::getStatement(ParsedData *data)
         case UserStatement:
             stmt = new UserTblStatement();
             break;
+        case AlterStatement:
+            stmt = new AlterTblStatement();
+            break;
     }
     stmt->setParsedData(data);
     return stmt;

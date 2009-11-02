@@ -7,4 +7,5 @@ libcsqlsql_la_SOURCES = dmlyacc.yxx dmllex.lxx ParsedData.cxx SelStatement.cxx \
 	InsStatement.cxx UpdStatement.cxx DelStatement.cxx \
 	DdlStatement.cxx \
 	SqlStatement.cxx  StatementFactory.cxx SqlFactory.cxx \
-        CopyTblStatement.cxx MetadataStatement.cxx
+        CopyTblStatement.cxx MetadataStatement.cxx \
+	AlterTblStatement.cxx
