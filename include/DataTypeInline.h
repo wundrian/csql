@@ -50,6 +50,7 @@ long AllDataType::size(DataType type, int length )
             size = sizeof(TimeStamp);
             break;
         case typeString:
+        case typeVarchar:
         case typeBinary:
         case typeComposite:
             size = length;
@@ -66,16 +67,12 @@ void AllDataType::cachecopyVal(void* dest, void *src, DataType type, int length,
     {
         *(int*)dest = *(int*)src;
         return;
-    }else if (typeString == type)
+    }else if (typeString == type || typeVarchar == type)
     {
-        //null is always put at the last byte by insert
-        //so using strcpy is safe
-        //strcpy((char*)dest, (char*)src);
         Util::trimRight((char*)src);
         strncpy((char*)dest, (char*)src, length);
-        //strncpy((char*)dest, (char*)src, length);
-        //char *d =(char*)dest;
-        //d[length-1] = '\0';
+        char *d =(char*)dest;
+        d[length-1] = '\0';
         return;
     }else if (typeShort == type) {
         *(short*)dest = *(short*)src;
@@ -113,13 +110,9 @@ void AllDataType::copyVal(void* dest, void *src, DataType type, int length,int d
     {
         *(int*)dest = *(int*)src;
         return;
-    }else if (typeString == type)
+    }else if (typeString == type || typeVarchar == type)
     {
-        //null is always put at the last byte by insert
-        //so using strcpy is safe
-        //strcpy((char*)dest, (char*)src);
-        memcpy(dest, src, length);
-        //strncpy((char*)dest, (char*)src, length);
+        strncpy((char*)dest, (char*)src, length);
         char *d =(char*)dest;
         d[length-1] = '\0';
         return;
@@ -153,7 +146,7 @@ void AllDataType::copyZeroVal(void *dest, DataType type, int length)
     if (typeInt == type )
     {
         *(int*)dest = 0;
-    }else if (typeString == type)
+    }else if (typeString == type || typeVarchar == type)
     {
         char *d =(char*)dest;
         d[0] = '\0';
@@ -255,7 +248,7 @@ bool AllDataType::compareVal(void *val1, void *val2, ComparisionOp op,
             else return false;
         }
        
-    }else if(typeString == type) {
+    }else if(typeString == type || typeVarchar == type) {
         return AllDataType::compareStringVal(val1, val2, op);
     } else if (typeShort == type) {
         return AllDataType::compareShortVal(val1, val2, op);

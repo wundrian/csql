@@ -72,7 +72,7 @@ unsigned int HashIndex::computeHashBucket(DataType type, void *key, int noOfBuck
     if (typeInt == type) {
         int val = *(int*)key;
         return val % noOfBuckets;
-    }else if (typeString == type) {
+    }else if (typeString == type || typeVarchar == type) {
         unsigned int val = hashString((char*)key);
         return val % noOfBuckets;
     }else if (typeShort == type) {
@@ -137,7 +137,12 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         ::free(keyStartBuffer);
     }
     else {
-        bucketNo = computeHashBucket(type, keyPtr, noOfBuckets, info->compLength);
+        if (type != typeVarchar)
+            bucketNo =
+                computeHashBucket(type, keyPtr, noOfBuckets, info->compLength);
+        else bucketNo =
+            computeHashBucket(type, (void *) *(long *) keyPtr, noOfBuckets,
+                                                             info->compLength);
     }
     printDebug(DM_HashIndex, "HashIndex insert bucketno %d", bucketNo);
     Bucket *bucket =  &(buckets[bucketNo]);
@@ -170,7 +175,11 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
                     if (!res) break;  
                 }
             }  
-            else res = AllDataType::compareVal((void*)((char*)bucketTuple +offset), (void*)((char*)tuple +offset), OpEquals,type, info->compLength); 
+            else {
+                if (type != typeVarchar)
+                    res = AllDataType::compareVal((void*)((char*)bucketTuple +offset), (void*)((char*)tuple +offset), OpEquals,type, info->compLength);
+                else res = AllDataType::compareVal((void*)*(long *)((char*)bucketTuple +offset), (void*)*(long *)((char*)tuple +offset), OpEquals,type, info->compLength);
+            }
             if (res) 
             {
                 printError(ErrUnique, "Unique key violation");
@@ -278,7 +287,12 @@ DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         ::free(keyStartBuffer);
     }
     else {
-         bucket = HashIndex::computeHashBucket(type, keyPtr, noOfBuckets, info->compLength);
+         if (type != typeVarchar)
+             bucket = HashIndex::computeHashBucket(type, keyPtr, noOfBuckets,
+                                                             info->compLength);
+         else bucket =
+             HashIndex::computeHashBucket(type, (void *) *(long *)keyPtr,
+                                                noOfBuckets, info->compLength);
     }
 
     Bucket *bucket1 = &buckets[bucket];

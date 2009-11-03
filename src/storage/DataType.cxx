@@ -506,6 +506,8 @@ SQLSMALLINT AllDataType::convertToSQLType(DataType type)
             return SQL_CHAR;
         case typeBinary:
             return SQL_BINARY;
+        case typeVarchar:
+            return SQL_VARCHAR;
     }
     return SQL_INTEGER;
 }
@@ -542,6 +544,8 @@ SQLSMALLINT AllDataType::convertToCSQLSQLType(DataType type)
             return SQL_CHAR;
         case typeBinary:
             return SQL_BINARY;
+        case typeVarchar:
+            return SQL_VARCHAR;
     }
     return SQL_INTEGER;
 }
@@ -578,6 +582,7 @@ SQLSMALLINT AllDataType::convertToSQL_C_Type(DataType type,TDBInfo tdbname)
            return SQL_C_TYPE_TIME;
         case typeTimeStamp:
            return SQL_C_TYPE_TIMESTAMP;
+        case typeVarchar:
         case typeString:
             return SQL_C_CHAR;
         case typeBinary:
@@ -614,7 +619,7 @@ DataType  AllDataType::convertFromSQLType(SQLSMALLINT type,int length,int scale,
             case SQL_LONGVARCHAR:
                return typeString;
             case SQL_VARCHAR:
-               return typeString;
+               return typeVarchar;
             case SQL_BINARY:
                return typeBinary;
        }
@@ -646,7 +651,7 @@ DataType  AllDataType::convertFromSQLType(SQLSMALLINT type,int length,int scale,
         case SQL_LONGVARCHAR:
             return typeString;
         case SQL_VARCHAR:
-            return typeString;
+            return typeVarchar;
         case SQL_BINARY:
             return typeBinary;
     }
@@ -1349,6 +1354,7 @@ void  AllDataType::memoryset(void *value,DataType type)
         case typeDecimal:
             break;
         case typeString:
+        case typeVarchar:
              *(char*)value = '\0';
             //if (length == 0 ) return NULL;
             //dest = malloc(length);
@@ -1540,7 +1546,7 @@ void AllDataType::convert(DataType srcType, void *src,
 
         //TODO 
         case typeDecimal:    convertToDouble(dest, src, srcType); break;
-
+        case typeVarchar:
         case typeString:     convertToString(dest, src, srcType); break;
         case typeBinary:     convertToBinary(dest, src, srcType,length); break;
         case typeDate:       convertToDate(dest, src, srcType); break;
@@ -1562,7 +1568,7 @@ void AllDataType::convertToInt( void* dest, void* src, DataType srcType )
 
         case typeFloat:      *(int *)dest = (int) *(float *)src; break;
         case typeDouble:     *(int *)dest =(int) *(double *)src; break;
-
+        case typeVarchar:
         case typeString:     sscanf((const char*)src, "%d", (int*) dest); break;
 
         case typeDate:
@@ -1585,7 +1591,7 @@ void AllDataType::convertToLong( void* dest, void* src, DataType srcType )
 
         case typeFloat:      *(long *)dest = (long) *(float *)src; break;
         case typeDouble:     *(long *)dest =(long) *(double *)src; break;
-
+        case typeVarchar:
         case typeString:     sscanf((const char*)src, "%ld", (long*) dest); break;
 
         case typeDate:
@@ -1609,7 +1615,7 @@ void AllDataType::convertToLongLong( void* dest, void* src, DataType srcType )
 
         case typeFloat:      *(long long *)dest = (long long) *(float *)src; break;
         case typeDouble:     *(long long *)dest =(long long) *(double *)src; break;
-
+        case typeVarchar:
         case typeString:     sscanf((const char*)src, "%lld", (long long*) dest); break;
 
         case typeDate:
@@ -1632,7 +1638,7 @@ void AllDataType::convertToShort( void* dest, void* src, DataType srcType )
 
         case typeFloat:      *(short*)dest = (short) *(float *)src; break;
         case typeDouble:     *(short*)dest =(short) *(double *)src; break;
-
+        case typeVarchar: 
         case typeString:     sscanf((const char*)src, "%hd", (short*) dest); break;
 
         case typeDate:
@@ -1655,7 +1661,7 @@ void AllDataType::convertToByteInt( void* dest, void* src, DataType srcType )
 
         case typeFloat:      *(char*)dest = (char) *(float *)src; break;
         case typeDouble:     *(char*)dest =(char) *(double *)src; break;
-
+        case typeVarchar:
         case typeString:     sscanf((const char*)src, "%hhd", (char*) dest); break;
 
         case typeDate:
@@ -1678,7 +1684,7 @@ void AllDataType::convertToFloat( void* dest, void* src, DataType srcType )
 
         case typeFloat:      *(float *)dest = *(float *)src; break;
         case typeDouble:     *(float *)dest =(float) *(double *)src; break;
-
+        case typeVarchar:
         case typeString:     sscanf((const char*)src, "%f", (float*) dest); break;
 
         case typeDate:
@@ -1701,7 +1707,7 @@ void AllDataType::convertToDouble( void* dest, void* src, DataType srcType )
 
         case typeFloat:      *(double *)dest =(double) *(float *)src; break;
         case typeDouble:     *(double *)dest = *(double *)src; break;
-
+        case typeVarchar:
         case typeString:     sscanf((const char*)src, "%lf", (double*) dest); break;
 
         case typeDate:
@@ -1752,7 +1758,7 @@ void AllDataType::convertToString( void* dest, void* src, DataType srcType, int 
             sprintf ((char *) dest, "%lf", *(double *)src); 
             break;
         }
-
+        case typeVarchar:
         case typeString:
         {
             strcpy((char*)dest, (char*)src);
@@ -1812,6 +1818,7 @@ void AllDataType::convertToDate( void* dest, void* src, DataType srcType )
         case typeDate:
         case typeTime:
         case typeTimeStamp:
+        case typeVarchar:
         case typeString:
         {
             Date *dt = (Date*) dest;
@@ -1836,6 +1843,7 @@ void AllDataType::convertToTime( void* dest, void* src, DataType srcType )
         case typeDate:
         case typeTime:
         case typeTimeStamp:
+        case typeVarchar:
         case typeString:
         {
             Time *dt = (Time*) dest;
@@ -1860,6 +1868,7 @@ void AllDataType::convertToTimeStamp( void* dest, void* src, DataType srcType )
         case typeDate:
         case typeTime:
         case typeTimeStamp:
+        case typeVarchar:
         case typeString:
         {
             TimeStamp *dt = (TimeStamp*) dest;

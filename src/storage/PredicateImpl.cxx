@@ -544,7 +544,10 @@ void PredicateImpl::evaluateForTable(bool &result, char *tuple)
         return;
     }
     //printf(" val1 %d val2 %d\n", *(int*)val1, *(int*)val2);
-    result = AllDataType::compareVal(val1, val2, compOp, type,length);
+    if (type != typeVarchar)
+        result = AllDataType::compareVal(val1, val2, compOp, type,length);
+    else result = AllDataType::compareVal((void *) *(long *) val1, val2,
+                                                         compOp, type,length);
     //if (!result && val3) AllDataType::copyVal(val3, 
     return;
 }

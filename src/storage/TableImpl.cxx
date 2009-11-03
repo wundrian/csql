@@ -985,7 +985,7 @@ DbRetVal TableImpl::deleteTuple()
         FieldDef *def = fIter.nextElement();
         colPtr =  (char *) curTuple_ + def->offset_;
         if (def->type_ == typeVarchar) {
-            char *ptr = (char *) *(int *) colPtr;
+            char *ptr = (char *) *(long *) colPtr;
             ((Chunk *) vcChunkPtr_)->free(db_, ptr);
         }
     }
@@ -1107,7 +1107,7 @@ DbRetVal TableImpl::updateTuple()
         FieldDef *def = fIter.nextElement();
         colPtr =  (char *) curTuple_ + def->offset_;
         if (def->type_ == typeVarchar) {
-            char *ptr = (char *) *(int *) colPtr;
+            char *ptr = (char *) *(long *) colPtr;
             ((Chunk *) vcChunkPtr_)->free(db_, ptr);
         }
     }
@@ -1296,7 +1296,7 @@ DbRetVal TableImpl::copyValuesToBindBuffer(void *tuplePtr)
            AllDataType::copyVal(def->bindVal_, colPtr, def->type_, 
                                                                  def->length_);
        else {
-           char *ptr = (char *) *(int *) colPtr;       
+           char *ptr = (char *) *(long *) colPtr;       
            strcpy((char *)def->bindVal_, ptr);
        }
     }
