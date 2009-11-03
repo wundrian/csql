@@ -161,7 +161,12 @@ DbRetVal AlterTblStatement::executeForAddDropColumn(int &rowsAffected)
     sprintf(tblName,"%s_temp",parsedData->getTableName());
     rv = dbMgr->createTable(tblName, tblDef);
     if (rv != OK) return rv;
-    //Create index
+    rv = createIndex(parsedData->getTableName(),tblName);
+    if (rv != OK){ 
+        dbMgr->dropTable(tblName);
+        return rv;
+    }
+    //TODO:Create Foreign Key Info
     Table *tempTable = dbMgr->openTable(tblName);
     List fNameList = tempTable->getFieldNameList();
     ListIterator fNameIter = fNameList.getIterator();
@@ -232,30 +237,57 @@ DbRetVal AlterTblStatement::createIndex(const char *oldName,const char *newName)
 {
     DbRetVal rv=OK;
     CatalogTableINDEXFIELD cIndexField(((DatabaseManagerImpl *)dbMgr)->sysDb());
-    ListIterator iter = cIndexField.getIndexListIterater(table->getName());
+    ListIterator iter = cIndexField.getIndexListIterater((char*)oldName);
     IndexInfoForDriver *info=NULL;
-    char name[IDENTIFIER_LENGTH];
+    char name[IDENTIFIER_LENGTH]="";
+    char indName[IDENTIFIER_LENGTH]="";
+    char tempIndexName[IDENTIFIER_LENGTH] ="";
+    sprintf(tempIndexName, "%s_idx1_Primary", oldName);
+    bool shouldCreateIndex = false;
+    bool isFirstEntry=true;
+    HashIndexInitInfo *idxInfo = NULL, *indexInfo2 = NULL;
     while(iter.hasElement())
     {
-        info = (IndexInfoForDriver *) iter.nextElement();
-        HashIndexInitInfo *idxInfo = new HashIndexInitInfo();
-        //strcpy(idxInfo->tableName, oldName);
-       
-    //    idxInfo->list.append(info->fldName);
-        idxInfo->indType = hashIndex;
-        idxInfo->isPrimary = true;
-        idxInfo->isUnique = true;
-        char indName[IDENTIFIER_LENGTH];
-        //sprintf(indName, "%s_idx_Auto_increment", tblName);
-        rv = dbMgr->createIndex(indName, idxInfo);
-        if (rv != OK)
+        if(shouldCreateIndex)
         {
-    //        dbMgr->dropTable(tblName);
+            if(idxInfo->isPrimary && 0 == strcmp(info->indexName,tempIndexName))
+                sprintf(indName, "%s_idx1_Primary", newName);
+            rv = dbMgr->createIndex(indName, idxInfo);
+            if (rv != OK)
+            {
+                delete idxInfo;
+                return rv;
+            }
             delete idxInfo;
-            return rv;
+            shouldCreateIndex = false;
+            idxInfo = NULL;
         }
-        delete idxInfo;
+        info = (IndexInfoForDriver *) iter.nextElement();
+        if((0 == strcmp(info->indexName,indName)))
+        {
+           if(idxInfo) idxInfo->list.append(info->fieldName);
+           else printf("should not happen\n");
+        }else{
+            idxInfo = new HashIndexInitInfo();
+            strcpy(idxInfo->tableName, newName);
+            strcpy(indName,info->indexName);
+            if(!isFirstEntry)shouldCreateIndex =true;
+            isFirstEntry = false;
+            idxInfo->indType =(IndexType) info->type;
+            idxInfo->isPrimary = info->isPrimary ;
+            idxInfo->isUnique = info->isUnique;
+            idxInfo->list.append(info->fieldName);            
+        }
     }
+    if(idxInfo->isPrimary && 0 == strcmp(info->indexName,tempIndexName))
+         sprintf(indName, "%s_idx1_Primary", newName);
+    rv = dbMgr->createIndex(indName, idxInfo);
+    if (rv != OK)
+    {
+         delete idxInfo;
+         return rv;
+    }
+    delete idxInfo;
     return OK;
 }
 
