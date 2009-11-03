@@ -93,6 +93,7 @@ enum MapMode
 
 };
 
+#define SQL_STMT_LEN 8192
 #define MAX_FILE_LEN 1024
 #define IDENTIFIER_LENGTH 64
 #define ERROR_STRING_LENGTH 128
