@@ -773,7 +773,7 @@ DbRetVal CacheTableLoader::reload()
     //get table cache senarios
     fp = fopen(Conf::config.getTableConfigFile(),"r");
     if( fp == NULL ) {
-        printError(ErrSysInit, "cachetable.conf file does not exist");
+        printError(ErrSysInit, "csqltable.conf file does not exist");
         return OK;
     }
     int mode;
@@ -890,7 +890,7 @@ DbRetVal CacheTableLoader::recoverAllCachedTables()
 
     fp = fopen(Conf::config.getTableConfigFile(),"r");
     if( fp == NULL ) {
-        printError(ErrSysInit, "cachetable.conf file does not exist");
+        printError(ErrSysInit, "csqltable.conf file does not exist");
         conn.close();
 	return OK;
     }

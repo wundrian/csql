@@ -267,7 +267,7 @@ DbRetVal TableConfig :: isTablePresent()
 	fp = fopen(Conf :: config.getTableConfigFile(),"r");
 	if(fp == NULL)
         {
- 		printError(ErrSysInit, "cachetable.conf file does not exist");
+ 		printError(ErrSysInit, "csqltable.conf file does not exist");
 		return OK;
 	}
 	conn.close();
@@ -333,7 +333,7 @@ unsigned int TableConfig::getTableMode(char *tabname)
     FILE *fp;
     fp = fopen(Conf::config.getTableConfigFile(),"r");
     if( fp == NULL ) {
-        printError(ErrSysInit, "cachetable.conf file does not exist");
+        printError(ErrSysInit, "csqltable.conf file does not exist");
         fclose(fp);
         return 0;
     }
@@ -383,7 +383,7 @@ DbRetVal TableConfig::CacheInfo(bool isTabPresent)
 	 FILE *fp;
 	 fp = fopen(Conf::config.getTableConfigFile(),"r");
 	 if( fp == NULL ) {
-	 printError(ErrSysInit, "cachetable.conf file does not exist");
+	 printError(ErrSysInit, "csqltable.conf file does not exist");
 	 fclose(fp);
 	 return OK;
 	 }
@@ -476,7 +476,7 @@ DbRetVal TableConfig::getDsnForTable(char *tab, char *dsnname)
     FILE *fp;
     fp = fopen(Conf::config.getTableConfigFile(),"r");
     if( fp == NULL){
-        printError(ErrSysInit, "cachetable.conf file does not exist");
+        printError(ErrSysInit, "csqltable.conf file does not exist");
         fclose(fp);
         return ErrOS;
      }

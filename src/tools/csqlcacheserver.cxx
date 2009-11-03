@@ -528,7 +528,7 @@ void createCacheTableList()
     FILE *fp;
     fp = fopen(Conf::config.getTableConfigFile(),"r");
     if( fp == NULL ) {
-        printError(ErrSysInit, "cachetable.conf file does not exist");
+        printError(ErrSysInit, "csqltable.conf file does not exist");
         fclose(fp);
     }
     char tablename[IDENTIFIER_LENGTH];

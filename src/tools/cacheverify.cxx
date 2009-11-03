@@ -111,7 +111,7 @@ DbRetVal verifyCount(const char *tblName, long numTuples)
     rv = adStmt->prepare(statement);
     if(rv != OK) {
         delete adStmt; delete adConn;
-        printf("Prepare failed\n");
+        printError(rv, "Prepare failed");
         return rv;
     }
     SqlOdbcConnection *adcon= (SqlOdbcConnection *)adConn;
@@ -119,12 +119,12 @@ DbRetVal verifyCount(const char *tblName, long numTuples)
     rv  = adStmt->execute(rows);
     if(rv != OK) {
         delete adStmt; delete adConn;
-        printf("Execute failed\n");
+        printError(rv, "Execute failed");
         return rv;
     }
     if (adStmt->fetch()== NULL) {
         delete adStmt; delete adConn;
-        printf("Fetch failed\n");
+        printError(ErrSysInternal, "Fetch failed");
         return ErrSysInternal;
     }
     adConn->commit();
@@ -157,7 +157,7 @@ DbRetVal verifyMismatchingRecords(const char *tblName, int option)
     ostmt->getPrimaryKeyFieldName((char*)tblName, fieldName);
     if (fieldName[0] == '\0') {
         delete trgtDbStmt; delete trgtDbCon;
-        printf("Primary key does not exist on table %s\n", tblName);
+        printError(ErrSysInternal, "Primary key does not exist on table %s", tblName);
         return ErrNotExists;
     }
     printf("\nPrimary key field name is \'%s\'\n", fieldName);
@@ -205,7 +205,7 @@ DbRetVal verifyMismatchingRecords(const char *tblName, int option)
     if(rv != OK) {
         stmt->free();
         delete trgtDbStmt; delete trgtDbCon;
-        printf("Execute failed\n");
+        printError(ErrSysInternal, "Execute failed");
         return rv;
     }
     rv = trgtDbCon->beginTrans();
@@ -239,7 +239,7 @@ DbRetVal verifyMismatchingRecords(const char *tblName, int option)
     rv = trgtDbStmt->prepare(tdbstatement);
     if(rv != OK) {
         delete trgtDbStmt; delete trgtDbCon;
-        printf("Prepare failed\n");
+        printError(rv, "Prepare failed");
         return rv;
     }
     stmt->prepare(csqlstatement);
@@ -248,7 +248,7 @@ DbRetVal verifyMismatchingRecords(const char *tblName, int option)
     rv  = trgtDbStmt->execute(rows);
     if(rv != OK) {
         delete trgtDbStmt; delete trgtDbCon;
-        printf("Execute failed\n");
+        printError(rv, "Execute failed\n");
         return rv;
     }
     conn->beginTrans();
@@ -369,7 +369,7 @@ DbRetVal verifyMismatchingRecords(const char *tblName, int option)
         rv = trgtDbStmt->prepare(csqlstatement);
         if(rv != OK) {
             delete trgtDbStmt; delete trgtDbCon;
-            printf("Prepare failed\n");
+            printError(rv, "Prepare failed");
             return rv;
         }
 
@@ -390,14 +390,14 @@ DbRetVal verifyMismatchingRecords(const char *tblName, int option)
             if (NULL == fname) {
                 delete trgtDbStmt; delete trgtDbCon;
                 delete fldInfo;
-                printf("Should never happen. Field Name list has NULL\n");
+                printError(ErrSysFatal, "Fatal:Field Name list has NULL");
                 return ErrSysFatal;
             }
             rv = sqlStmt->getFieldInfo(tblName, fname->name, fldInfo);
             if (ErrNotFound == rv) {
                 delete trgtDbStmt; delete trgtDbCon;
                 delete fldInfo;
-                printf("Field %s does not exist in table\n", fname->name);
+                printError(ErrSysInternal, "Field %s does not exist in table", fname->name);
                 return ErrSyntaxError;
             }
             FldVal *cfldVal = new FldVal();
@@ -435,7 +435,7 @@ DbRetVal verifyMismatchingRecords(const char *tblName, int option)
             rv  = trgtDbStmt->execute(rows);
             if(rv != OK) {
                 delete trgtDbStmt; delete trgtDbCon;
-                printf("Execute failed\n");
+                printError(rv, "Execute failed");
                 return rv;
             }
             if (stmt->fetch() != NULL && trgtDbStmt->fetch() != NULL) {
@@ -646,7 +646,7 @@ int main(int argc, char **argv)
     }
     
     if (!tableNameSpecified) {
-        printf("Table name is not specified. Check usage with ?\n");
+        printError(ErrSysInternal, "Table name is not specified. Check usage with ?");
         return 1;
     }
 
@@ -660,7 +660,7 @@ int main(int argc, char **argv)
     conn = SqlFactory::createConnection(CSqlDirect);
     DbRetVal rv = conn->connect(username, password);
     if (rv != OK) {
-        printf("Authentication failed\n"); 
+        printError(rv, "Authentication failed"); 
         delete conn;
         return 1;
     }
@@ -681,7 +681,7 @@ int main(int argc, char **argv)
     if( fp == NULL ) {
         conn->disconnect();
         delete stmt; delete conn;
-        printf("cachetable.conf file does not exist\n");
+        printError(ErrSysInternal, "csqltable.conf file does not exist");
         return 2;
     }
     char tablename[IDENTIFIER_LENGTH];
@@ -731,7 +731,7 @@ int main(int argc, char **argv)
     
     if (isCached == false) { 
         conn->disconnect();
-        printf("The table \'%s\' is not cached\n", tableName);
+        printError(ErrSysInternal, "The table \'%s\' is not cached", tableName);
         delete stmt; delete conn; return 5;
     }
 
