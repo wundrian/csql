@@ -92,7 +92,7 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
 */
     int fd = -1;
     char cmd[1024];
-    char dbMapFile[1024];
+    char dbMapFile[MAX_FILE_LEN];
     struct stat st;
     long fixAddr = 399998976L;
     bool firstTimeServer = false;
@@ -163,7 +163,7 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
             db_->setChkptfd(-1);
             return ErrOS;
         }
-        if (st.st_size == 0) {
+        if (st.st_size == 0 || st.st_size < size) {
             firstTimeServer = true;
             off_t flSize = lseek(fd, size - 1, SEEK_SET); 
         }

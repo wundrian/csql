@@ -537,6 +537,7 @@ DbRetVal Database::writeDirtyPages(char *dataFile)
     if (-1 == retSize)
     {
        printError(ErrWarning, "Warning:Unable to write metadata");
+       return ErrSysInternal;
     }
     PageInfo *pageInfo = (PageInfo*) getFirstPage();
     long pageSize =PAGE_SIZE;
@@ -548,7 +549,11 @@ DbRetVal Database::writeDirtyPages(char *dataFile)
         if (pageInfo > getCurrentPage()) {
            char *a="0";
            lseek(fd, getMaxSize() -1, SEEK_SET);
-           os::write(fd, a, 1);
+           if ( -1 == os::write(fd, a, 1)) {
+               printError(ErrSysInternal, "Unable to extend chkpt file");
+               close(fd);
+               return ErrSysInternal;
+           }
            break;
         }
         if (BITSET(pageInfo->flags, IS_DIRTY)) {
@@ -561,7 +566,9 @@ DbRetVal Database::writeDirtyPages(char *dataFile)
             CLEARBIT(pageInfo->flags, IS_DIRTY);
             retSize = os::write(fd, (char*)pageInfo, pageSize);
             if ( -1  == retSize ) {
-                printError(ErrWarning, "Warning:Unable to write dirty page %x", pageInfo);
+                printError(ErrSysInternal, "Unable to write dirty page %x", pageInfo);
+                close(fd);
+                return ErrSysInternal;
             }
             totalBytesWritten= totalBytesWritten + retSize;
             pagesWritten++;
@@ -609,26 +616,46 @@ DbRetVal Database::checkPoint()
         }
     } else {
         int fd = getChkptfd();
-        if (!os::fdatasync(fd)) { printf("pages written. checkpoint taken\n"); }
-        int val=0;
+        if (!os::fdatasync(fd)) { 
+            logFine(Conf::logger, "fsync succedded"); 
+        }
+        int ret = unlink(dbRedoFileName);
+        if (ret != 0) {
+            close(fd);  
+            printError(ErrSysInternal, "Unable to delete redo log file");
+            printError(ErrSysInternal, "Delete %s manually and restart the server", dbRedoFileName);
+            return ErrOS;
+        }
+        //switch the checkpoint so that during recovery, fsynced checkpoint is
+        //used during recovery if the below step(writeDirtyPages)
+        //is not completed succesfully.
         if (Database::getCheckpointID() == 0)
-            val = 1;
+            Database::setCheckpointID(1);
         else
-            val = 0;
+            Database::setCheckpointID(0);
+
+        int val=Database::getCheckpointID();
 
         sprintf(dataFile, "%s/db.chkpt.data%d", Conf::config.getDbFile(), val);
-        /*
-        fd = open(dataFile, O_WRONLY|O_CREAT, 0644);
-        lseek(fd, 0, SEEK_SET);
-        void *buf = (void *) metaData_;
-        ssize_t retSize = os::write(fd, (char*)buf, Conf::config.getMaxDbSize());
-        if (retSize != Conf::config.getMaxDbSize()) {
-            printError(ErrWarning, "Unable to take checkpoint");
-            //TODO:: If it is because of signal handler, 
-            //compute remaining bytes to be written and finish it here
-        }*/
-        writeDirtyPages(dataFile);
+        DbRetVal rv = writeDirtyPages(dataFile);
+        if (OK != rv)
+        {
+            printError(ErrSysInternal, "Unable to write dirty pages");
+            close(fd);  
+            return rv;
+        }
+
+        //Note: do not change order, chkpt id should be switched only after 
+        //all dirty pages are written to disk. otherwise(if server crashes
+        //when it writes these dirty pages) recovery should use
+        //mapped file as fsync is already done on that file.
+        if (Database::getCheckpointID() == 0)
+            Database::setCheckpointID(1);
+        else
+            Database::setCheckpointID(0);
+
         close(fd);  
+        return OK;
     }
     int ret = unlink(dbRedoFileName);
     if (ret != 0) {
