@@ -77,7 +77,7 @@ int os::openFile(const char *name, FileOpenMode flags, size_t size)
     int retval = -1;
     //mode_t mode = S_IRWXU | S_IRGRP | S_IWGRP ;
     mode_t oldMode = umask(0000);
-    mode_t mode = (mode_t)0777 ;
+    mode_t mode = (mode_t)0644 ;
     retval=::open(name, flags, mode);
     umask(oldMode);
     if (0 == size)
