@@ -86,25 +86,14 @@ DbRetVal SqlStatement::prepare(char *stmtstr)
         return OK;
     }
     // take mutex here
-    DatabaseManager *dbMgr = sqlCon->getConnObject().getDatabaseManager();
-    Database *sysdb = ((DatabaseManagerImpl *)dbMgr)->sysDb();
-    int tries = Conf::config.getMutexRetries();
-    struct timeval timeout;
-    timeout.tv_sec = Conf::config.getMutexSecs();
-    timeout.tv_usec = Conf::config.getMutexUSecs();
+    int ret = ProcessManager::prepareMutex.tryLock(10, 1000);
+    if (ret != 0)
+    {
+        printError(ErrLockTimeOut, "Unable to get prepare mutex");
+        return ErrLockTimeOut;
+    }
 
-    while (true) {
-        rv = sysdb->getPrepareStmtMutex();    
-        if (rv == OK) break;
-        tries--;
-        if (tries == 0) {
-            printError(rv, 
-                        "Unable to get prepare statement mutex after %d tries", Conf::config.getMutexRetries()); 
-            return rv;
-        }
-        os::select(0, 0, 0, 0, &timeout);
-    } 
-        
+    DatabaseManager *dbMgr = sqlCon->getConnObject().getDatabaseManager();
     if (isPrepared()) free();
     lexInput = stmtstr;
     parsedData = &pData;
@@ -116,8 +105,7 @@ DbRetVal SqlStatement::prepare(char *stmtstr)
     {
         free();
         parsedData = NULL;
-        //yyrestart(yyin);
-        sysdb->releasePrepareStmtMutex();    
+        ProcessManager::prepareMutex.releaseLock(-1, false);
         return ErrSyntaxError;
     }
     if( parsedData->getStmtType() == MgmtStatement)
@@ -125,7 +113,7 @@ DbRetVal SqlStatement::prepare(char *stmtstr)
         isPrepd = true;
         parsedData = NULL;
         isMgmtStatement = true;
-        sysdb->releasePrepareStmtMutex();
+        ProcessManager::prepareMutex.releaseLock(-1, false);
         logFine(Conf::logger,"PREPARE: %s %x", stmtstr, stmt);
         return OK;
     }
@@ -142,8 +130,7 @@ DbRetVal SqlStatement::prepare(char *stmtstr)
     {
         free();
         parsedData = NULL;
-        //yyrestart(yyin);
-        sysdb->releasePrepareStmtMutex();    
+        ProcessManager::prepareMutex.releaseLock(-1, false);
         return rv;
     }
     isPrepd = true;
@@ -161,7 +148,7 @@ DbRetVal SqlStatement::prepare(char *stmtstr)
       }
     }
     parsedData = NULL;
-    sysdb->releasePrepareStmtMutex();    
+    ProcessManager::prepareMutex.releaseLock(-1, false);
     return OK;
 }
 

@@ -64,6 +64,7 @@ class ProcessManager
     public:
     static int noThreads;
     static Mutex mutex;
+    static Mutex prepareMutex;
     static caddr_t sysAddr;
     static caddr_t usrAddr;
     static Database *systemDatabase;
