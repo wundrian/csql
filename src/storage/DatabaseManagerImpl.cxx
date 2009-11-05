@@ -32,11 +32,6 @@
 DatabaseManagerImpl::~DatabaseManagerImpl()
 {
     //Note:Databases are closed by the session interface
-    Table *tbl = NULL;
-    ListIterator iter = tableHandleList.getIterator();
-    //PRABA::commented below...gives core dump
-    //while ((tbl = (Table *)iter.nextElement()) != NULL) delete tbl;
-    tableHandleList.reset();
     delete tMgr_;
     delete lMgr_;
 }
@@ -941,7 +936,6 @@ Table* DatabaseManagerImpl::openTable(const char *name,bool checkpkfk)
     printDebug(DM_Database,"Opening table handle name:%s chunk:%x numIndex:%d",
                                          name, chunk, table->numIndexes_);
     logFinest(Conf::logger, "Opening Table %s" , name);
-    tableHandleList.append(table);
     return table;
 }
 
@@ -988,7 +982,6 @@ void DatabaseManagerImpl::closeTable(Table *table)
         closeTable(fkTbl);
     }
     ((TableImpl*)table)->tblFkList.reset();*/
-    tableHandleList.remove(table, false);
     if (table) delete table; table = NULL;
     logFinest(Conf::logger, "Closing Table");
 }
