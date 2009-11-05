@@ -59,6 +59,7 @@ class FileSend : public AbsSqlLogSend
     public:
     FileSend();
     ~FileSend();
+    DbRetVal openRedoFile();
     DbRetVal prepare(int txnId, int stmtId, int len, char *stmt, char*tn);
     DbRetVal commit(int len, void *data);
     DbRetVal free(int txnId, int stmtId);

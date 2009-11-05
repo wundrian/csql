@@ -23,7 +23,11 @@
 
 FileSend::FileSend()
 {
-    char fileName[1024];
+    openRedoFile();
+}
+DbRetVal FileSend::openRedoFile()
+{
+    char fileName[MAX_FILE_LEN];
     sprintf(fileName, "%s/csql.db.cur", Conf::config.getDbFile());
     int durableMode = Conf::config.getDurableMode();
     switch(durableMode) {
@@ -45,6 +49,11 @@ FileSend::FileSend()
             fdRedoLog = os::openFileForAppend(fileName, O_CREAT);
             break;
     }
+    if (-1 == fdRedoLog) {
+        printError(ErrSysInternal, "Unable to open redo log file");
+        return ErrSysInternal;
+    }
+    return OK;
 }
 
 FileSend::~FileSend() { if (fdRedoLog > 0) os::closeFile(fdRedoLog); fdRedoLog = -1; }
@@ -75,6 +84,8 @@ DbRetVal FileSend::prepare(int txnId, int stmtId, int len, char *stmt, char *tbl
     msg[len-1] = '\0';
     strcpy(msg, stmt);
     int ret =0;
+    bool firstTime=true;
+retry:
     if (Conf::config.getDurableMode() != 1) {
         ret = os::lockFile(fdRedoLog);
         if (-1 == ret) {
@@ -87,10 +98,18 @@ DbRetVal FileSend::prepare(int txnId, int stmtId, int len, char *stmt, char *tbl
     if (Conf::config.getDurableMode() != 1) {
         os::unlockFile(fdRedoLog); 
     }
+    if (-1 == ret) { 
+        DbRetVal rv = openRedoFile();
+        if (OK == rv) {
+            logFine(Conf::logger, "Reopening redo log file");
+            if(firstTime) { firstTime = false; goto retry; }
+        }
+        printError(ErrOS, "Unable to write undo log");
+        ::free(buf);
+        return ErrOS; 
+    }
     ::free(buf);
-    //if (ret == datalen) { printf("log written successfully %d\n", ret); return OK; }
-    if (ret == datalen) { return OK; }
-    return ErrOS;
+    return OK;
 };
 
 DbRetVal FileSend::commit(int len, void *data)
@@ -98,6 +117,8 @@ DbRetVal FileSend::commit(int len, void *data)
     if (fdRedoLog < 0) return ErrBadArg;
     char *dat=(char*)data - sizeof(int);
     *(int*)dat = -2; //type 2->commit
+    bool firstTime = true;
+retry:
     if (Conf::config.getDurableMode() != 1) {
         int ret = os::lockFile(fdRedoLog);
         if (-1 == ret) {
@@ -109,9 +130,16 @@ DbRetVal FileSend::commit(int len, void *data)
     if (Conf::config.getDurableMode() != 1) {
         os::unlockFile(fdRedoLog); 
     }
-    //if (ret == len+sizeof(int)) { printf("log written successfully %d\n", ret); return OK; }
-    if (ret == len+sizeof(int)) { return OK; }
-    return ErrOS;
+    if (-1 == ret) {
+        DbRetVal rv = openRedoFile();
+        if (OK == rv) {
+            logFine(Conf::logger, "Reopening redo log file");
+            if(firstTime) { firstTime = false; goto retry; }
+        }
+        printError(ErrOS, "Unable to write undo log");
+        return ErrOS;
+    }
+    return OK;
 }
 DbRetVal FileSend::free(int txnId, int stmtId)
 {
@@ -126,6 +154,8 @@ DbRetVal FileSend::free(int txnId, int stmtId)
     ptr += sizeof(int);
     *(int *)ptr = stmtId;
     printDebug(DM_SqlLog, "stmtID sent = %d\n", *(int *)ptr);
+    bool firstTime = false;
+retry:
     if (Conf::config.getDurableMode() != 1) {
         int ret = os::lockFile(fdRedoLog);
         if (-1 == ret) {
@@ -138,8 +168,16 @@ DbRetVal FileSend::free(int txnId, int stmtId)
     if (Conf::config.getDurableMode() != 1) {
         os::unlockFile(fdRedoLog); 
     }
-    //if (ret == buflen) { printf("log written successfully %d\n", ret); return OK; }
+    if (-1 == ret) {
+        DbRetVal rv = openRedoFile();
+        if (OK == rv) {
+            logFine(Conf::logger, "Reopening redo log file");
+            if(firstTime) { firstTime = false; goto retry; }
+        }
+        printError(ErrOS, "Unable to write undo log");
+        ::free(msg);
+        return ErrOS;
+    }
     ::free(msg);
-    if (ret == buflen) { return OK; }
-    return ErrOS;
+    return OK;
 }

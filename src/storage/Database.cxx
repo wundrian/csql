@@ -619,10 +619,10 @@ DbRetVal Database::checkPoint()
         if (!os::fdatasync(fd)) { 
             logFine(Conf::logger, "fsync succedded"); 
         }
-        int ret = unlink(dbRedoFileName);
+        int ret = truncate(dbRedoFileName,0);
         if (ret != 0) {
             close(fd);  
-            printError(ErrSysInternal, "Unable to delete redo log file");
+            printError(ErrSysInternal, "Unable to truncate redo log file");
             printError(ErrSysInternal, "Delete %s manually and restart the server", dbRedoFileName);
             return ErrOS;
         }
@@ -657,9 +657,9 @@ DbRetVal Database::checkPoint()
         close(fd);  
         return OK;
     }
-    int ret = unlink(dbRedoFileName);
+    int ret = truncate(dbRedoFileName,0);
     if (ret != 0) {
-        printError(ErrSysInternal, "Unable to delete redo log file. Delete and restart the server\n");
+        printError(ErrSysInternal, "Unable to truncate redo log file. Delete and restart the server\n");
        return ErrOS;
     }
     return OK;
