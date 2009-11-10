@@ -207,8 +207,8 @@ UndoLogInfo* Transaction::createUndoLog(Database *sysdb, OperationType type, voi
         printError(*rv, "Unable to allocate undo log record after %d retries", tries);
         return NULL;
     }
+    logInfo->data_ = (char *)logInfo + sizeof(UndoLogInfo);
     logInfo->opType_ = type;
-    logInfo->ptrToTuple_ = data;
     logInfo->size_ = size;
     logInfo->next_ = NULL;
     return logInfo;
@@ -310,35 +310,96 @@ DbRetVal Transaction::applyUndoLogs(Database *sysdb)
         {
             case InsertOperation:
              {
-                InUse *isUsed = ((InUse*)(logInfo->ptrToTuple_) - 1);
+                // logInfo->data_ will have following info encapsulated.
+                // tupleptr + metadataPtr + nVarchars + varchar chunk ptr +
+                // ptrs to varchars
+                char *ptr = (char *)logInfo->data_;
+                void *ptrToTuple = (void *)*(long *)ptr; ptr += sizeof(void *);
+                InUse *isUsed = ((InUse*)(ptrToTuple) - 1);
                 if (*isUsed == 0) {
                    printError(ErrSysFatal, "Fatal: Row is already not in use");
                 }
                 *isUsed = 0;
-                //May memcpy is not needed as no one will update this
-                //as lock is taken on this tuple
-                os::memcpy(logInfo->ptrToTuple_, (char*) logInfo +
-                         sizeof(UndoLogInfo), logInfo->size_);
+
+                Database db;
+                void *metaData = (void *)*(long *)ptr; ptr += sizeof(void *);
+                db.setMetaDataPtr((DatabaseMetaData *) metaData);
+                db.setProcSlot(sysdb->procSlot);
+
+                int noOfVarchar = *(int *)ptr; ptr += sizeof(int);
+                Chunk *vcchunk = (Chunk *) *(long *)ptr; ptr += sizeof(void *);
+                void **ptrToVarchars = (void **) ptr;
+                for (int i = 0; i < noOfVarchar; i++) {
+                    vcchunk->free(&db, ptrToVarchars[i]);
+                };
                 break;
              }
              case DeleteOperation:
              {
-                InUse *isUsed = ((InUse*)(logInfo->ptrToTuple_) - 1);
+                // logInfo->data_ will have following info encapsulated.
+                // tupleptr + tuple length + actual tuple + metadataPtr + 
+                // nVarchars + varchar chunk ptr + ptrs to varchars +
+                // size and value pairs for varchars
+                char *ptr = (char *)logInfo->data_;
+                void *ptrToTuple = (void *)*(long *)ptr; ptr += sizeof(void *);
+                InUse *isUsed = ((InUse*)(ptrToTuple) - 1);
                 if (*isUsed == 1) {
                     printError(ErrSysFatal, "Fatal: Row is already in use");
                 }
                 *isUsed = 1;
                 //data record will be intact as we have lock on that record
+
+                void *metaData = (void *)*(long *)ptr; ptr += sizeof(void *);
+                Database db;
+                db.setMetaDataPtr((DatabaseMetaData *) metaData);
+                db.setProcSlot(sysdb->procSlot);
+                DbRetVal rv = OK;
+                int noOfVarchar = *(int *) ptr; ptr+= sizeof(int);
+                Chunk *vcchunk = (Chunk *) *(long *)ptr; ptr += sizeof(void *);
+                void **ptrToVarchars = (void **) ptr;
+                ptr += noOfVarchar * sizeof (void *);
+                char *lenValPtr = (char *) ptr;
+                for (int i = 0; i < noOfVarchar; i++) {
+                    int len = *(int *) lenValPtr; lenValPtr += sizeof(int);
+                    void *ptr = vcchunk->allocate(&db, len, &rv);
+                    strcpy((char *)ptr, lenValPtr); lenValPtr += len;
+                    *(long *) ptrToVarchars[i] =  (long)ptr;
+                };
                 break;
              }
              case UpdateOperation:
              {
-                InUse *isUsed = ((InUse*)(logInfo->ptrToTuple_) - 1);
+                // logInfo->data_ will have following info encapsulated.
+                // tupleptr + tuple length + actual tuple + metadataPtr + 
+                // nVarchars + varchar chunk ptr + ptrs to varchars +
+                // size and value pairs for varchars
+                char *ptr = (char *)logInfo->data_;
+                void *ptrToTuple = (void *)*(long *)ptr; ptr += sizeof(void *);                 InUse *isUsed = ((InUse*)(ptrToTuple) - 1);
                 if (*isUsed == 0) {
                     printError(ErrSysFatal, "Fatal: Row is not in use during update rollback");
                 }
-                os::memcpy(logInfo->ptrToTuple_, (char*) logInfo +
-                         sizeof(UndoLogInfo), logInfo->size_);
+                int tupleLen = *(int *) ptr; ptr += sizeof(int);
+                void *tuple = ptr; ptr += tupleLen;
+                void *metaData = (void *)*(long *)ptr; ptr += sizeof(void *);
+                Database db;
+                db.setMetaDataPtr((DatabaseMetaData *) metaData);
+                db.setProcSlot(sysdb->procSlot);
+                DbRetVal rv = OK;
+                int noOfVarchar = *(int *) ptr; ptr+= sizeof(int);
+                Chunk *vcchunk = (Chunk *) *(long *)ptr; ptr += sizeof(void *);
+                void **ptrToVarchars = (void **) ptr;
+                ptr += noOfVarchar * sizeof (void *);
+                char *lenValPtr = (char *) ptr;
+                for (int i = 0; i < noOfVarchar; i++) {
+                    vcchunk->free(&db, (void *) *(long *) ptrToVarchars[i]);
+                }
+                os::memcpy(ptrToTuple, tuple, tupleLen);
+                for (int i = 0; i < noOfVarchar; i++) {
+                    int len = *(int *) lenValPtr; lenValPtr += sizeof(int);
+                    void *ptr = vcchunk->allocate(&db, len, &rv);
+                    strcpy((char *)ptr, lenValPtr); lenValPtr += len;
+                    *(long *) ptrToVarchars[i] = (long) ptr;
+                };
                 break;
              }
              case InsertHashIndexOperation:

@@ -884,13 +884,54 @@ DbRetVal TableImpl::insertTuple()
               (*trans)->removeFromHasList(db_, tptr);
                lMgr_->releaseLock(tptr);
             }
+
+            FieldIterator fIter = fldList_.getIterator();
+            char *colPtr = (char*) curTuple_;
+            while (fIter.hasElement()) {
+                FieldDef *def = fIter.nextElement();
+                colPtr =  (char *) curTuple_ + def->offset_;
+                if (def->type_ == typeVarchar) {
+                    char *ptr = (char *) *(long *) colPtr;
+                    ((Chunk *) vcChunkPtr_)->free(db_, ptr);
+                }
+            }
             ((Chunk*)chunkPtr_)->free(db_, tptr);
             sysDB_->releaseCheckpointMutex();
             return ret;
         }
     }
-    if (!loadFlag)
-        ret = (*trans)->appendUndoLog(sysDB_, InsertOperation, tptr, length_);
+    if (!loadFlag) {
+        //TODO: number of varchar fields to be stored as a member in TableImpl 
+        int nVarchars = 0;
+        FieldIterator fIter = fldList_.getIterator();
+        while (fIter.hasElement()) {
+            FieldDef *def = fIter.nextElement();
+            if (def->type_ == typeVarchar) nVarchars++;
+        }
+
+        // the undo log for insert should contain 
+        // tuple ptr + metadata Ptr + no of varchars + ptrs to varchars for insert opearation
+        int size = (3 + nVarchars) * sizeof(void *) + sizeof(int);
+        void *data = malloc(size);
+        char *ptr = (char *)data;
+        *(long *) ptr = (long) tptr; ptr += sizeof(void *);
+        void *metaData = db_->getMetaDataPtr();
+        *(long *) ptr = (long) metaData; ptr += sizeof(void *);
+        *(int *) ptr = nVarchars; ptr += sizeof(int);
+        *(long *) ptr = (long) vcChunkPtr_; ptr += sizeof(void *);
+        fIter = fldList_.getIterator();
+        char *colPtr = (char*) curTuple_;
+        while (fIter.hasElement()) {
+            FieldDef *def = fIter.nextElement();
+            colPtr =  (char *) curTuple_ + def->offset_;
+            if (def->type_ == typeVarchar) {
+                *(long *) ptr = * (long *)colPtr;
+                ptr += sizeof(void *);
+            }
+        }
+        ret = (*trans)->appendUndoLog(sysDB_, InsertOperation, data, size);
+        ::free(data);
+    }
     if (ret != OK) {
         printError(ret, "Unable to create undo log for %x %d", tptr, *(int*)tptr);
         for (int j = 0; j < numIndexes_ ; j++) {
@@ -915,7 +956,7 @@ DbRetVal TableImpl::deleteTuple()
         return ErrNotOpen;
     }
     DbRetVal ret = getCheckpointMutex();
-    if (ret !=OK) return ret;
+    if (ret != OK) return ret;
     if(isPkTbl){
         TableImpl *fkTbl =NULL;
         ListIterator tblIter = tblFkList.getIterator();
@@ -965,8 +1006,54 @@ DbRetVal TableImpl::deleteTuple()
             return ret;
         }
     }
-    if (!loadFlag)
-        ret = (*trans)->appendUndoLog(sysDB_, DeleteOperation, curTuple_, 0);
+    if (!loadFlag) {
+        // the undo log for delete should contain 
+        // tupleptr + metadataPtr + nVarchars + varchar chunk ptr + 
+        // ptrs to varchars + size and value pairs for varchars
+
+        //TODO: number of varchar fields to be stored as a member in TableImpl 
+        void *tptr = curTuple_;
+        char *colPtr = (char *)curTuple_;
+        int nVarchars = 0;
+        int vcLenValPairSize = 0;
+        FieldIterator fIter = fldList_.getIterator();
+        while (fIter.hasElement()) {
+            FieldDef *def = fIter.nextElement();
+            colPtr =  (char *) curTuple_ + def->offset_;
+            if (def->type_ == typeVarchar) {
+                nVarchars++;
+                vcLenValPairSize = vcLenValPairSize + sizeof(int) +
+                             + os::align(strlen((char *) *(long *)colPtr) + 1);
+            }
+        }
+        int size = (3 + nVarchars) * sizeof(void *) + sizeof(int)
+                                                    + vcLenValPairSize;
+        void *data = malloc(size);
+        char *ptr = (char *)data;
+        *(long *) ptr = (long) tptr; ptr += sizeof(void *);
+        void *metaData = db_->getMetaDataPtr();
+        *(long *) ptr = (long) metaData; ptr += sizeof(void *);
+        *(int *) ptr = nVarchars; ptr += sizeof(int);
+        *(long *) ptr = (long) vcChunkPtr_; ptr += sizeof(void *);
+        fIter = fldList_.getIterator();
+        colPtr = (char*) curTuple_;
+        char *valLenPairPtr = ptr + nVarchars * sizeof(void *);
+        while (fIter.hasElement()) {
+            FieldDef *def = fIter.nextElement();
+            colPtr =  (char *) curTuple_ + def->offset_;
+            int vcStrLen = 0;
+            if (def->type_ == typeVarchar) {
+                *(long *) ptr = (long )colPtr; ptr += sizeof(void *);
+                *(int *)valLenPairPtr = vcStrLen =
+                            os::align(strlen((char *) *(long *)colPtr) + 1);
+                valLenPairPtr += sizeof(int);
+                strcpy(valLenPairPtr, (char *)*(long *)colPtr);
+                valLenPairPtr += vcStrLen;
+            }
+        }
+        ret = (*trans)->appendUndoLog(sysDB_, DeleteOperation, data, size);
+        ::free(data);
+    }
     if (ret != OK) {
         printError(ret, "Unable to create undo log for %x ", curTuple_);
         for (int j = 0; j < numIndexes_ ; j++) {
@@ -1101,6 +1188,67 @@ DbRetVal TableImpl::updateTuple()
         }
     }
     
+    if (!loadFlag) {
+        // the undo log for update should contain 
+        // tupleptr + tuple length + actual tuple + metadataPtr + 
+        // nVarchars + varchar chunk ptr + ptrs to varchars +
+        // size and value pairs for varchars
+
+        //TODO: number of varchar fields to be stored as a member in TableImpl 
+        void *tptr = curTuple_;
+        char *colPtr = (char *)curTuple_;
+        int nVarchars = 0;
+        int vcLenValPairSize = 0;
+        FieldIterator fIter = fldList_.getIterator();
+        while (fIter.hasElement()) {
+            FieldDef *def = fIter.nextElement();
+            colPtr =  (char *) curTuple_ + def->offset_;
+            if (def->type_ == typeVarchar) {
+                nVarchars++;
+                vcLenValPairSize = vcLenValPairSize + sizeof(int) +
+                             + os::align(strlen((char *) *(long *)colPtr) + 1);
+            }
+        }
+        int size = (3 + nVarchars) * sizeof(void *) + 2 * sizeof(int) +
+                                                   vcLenValPairSize + length_;
+        void *data = malloc(size);
+        char *ptr = (char *) data;
+        *(long *) ptr = (long) tptr; ptr += sizeof(void *);
+        *(int *) ptr = length_; ptr += sizeof(int);
+        os::memcpy(ptr, tptr, length_); ptr += length_;
+        void *metaData = db_->getMetaDataPtr();
+        *(long *) ptr = (long) metaData; ptr += sizeof(void *);
+        *(int *) ptr = nVarchars; ptr += sizeof(int);
+        *(long *) ptr = (long) vcChunkPtr_; ptr += sizeof(void *);
+        fIter = fldList_.getIterator();
+        colPtr = (char*) curTuple_;
+        char *valLenPairPtr = ptr + nVarchars * sizeof(void *);
+        while (fIter.hasElement()) {
+            FieldDef *def = fIter.nextElement();
+            colPtr =  (char *) curTuple_ + def->offset_;
+            int vcStrLen = 0;
+            if (def->type_ == typeVarchar) {
+                *(long *) ptr = (long)colPtr; ptr += sizeof(void *);
+
+                *(int *) valLenPairPtr = vcStrLen =
+                            os::align(strlen((char *)*(long *)colPtr) + 1);
+                valLenPairPtr += sizeof(int);
+                strcpy(valLenPairPtr, (char *)*(long *)colPtr);
+                valLenPairPtr += vcStrLen;
+            }
+        }
+        ret = (*trans)->appendUndoLog(sysDB_, UpdateOperation, data, size);
+        ::free(data);
+    }
+    if (ret != OK) {
+        if (!loadFlag) {
+           lMgr_->releaseLock(curTuple_);
+           (*trans)->removeFromHasList(db_, curTuple_);
+         }
+         sysDB_->releaseCheckpointMutex();
+         return ret;
+    }
+
     FieldIterator fIter = fldList_.getIterator();
     char *colPtr = (char*) curTuple_;
     while (fIter.hasElement()) {
@@ -1112,16 +1260,6 @@ DbRetVal TableImpl::updateTuple()
         }
     }
 
-    if (!loadFlag)
-        ret = (*trans)->appendUndoLog(sysDB_, UpdateOperation, curTuple_, length_);
-    if (ret != OK) {
-        if (!loadFlag) {
-           lMgr_->releaseLock(curTuple_);
-           (*trans)->removeFromHasList(db_, curTuple_);
-         }
-         sysDB_->releaseCheckpointMutex();
-         return ret;
-    }
     int addSize = 0;
     int iNullVal=iNullInfo;
     if (numFlds_ < 31){ 
@@ -1217,12 +1355,20 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
         }
         if (def->isDefault_ && NULL == def->bindVal_ && isInsert)
         {
-            void *dest = AllDataType::alloc(def->type_, def->length_);
-            AllDataType::convert(typeString, def->defaultValueBuf_, def->type_, dest, def->length_);
-            AllDataType::copyVal(colPtr, dest, def->type_, def->length_);
+            if (def->type_ == typeVarchar) {
+                DbRetVal rv = OK;
+                void *ptr =
+                  ((Chunk *) vcChunkPtr_)->allocate(db_, def->length_, &rv);
+                *(long *)colPtr = (long)ptr;
+                AllDataType::convert(typeString, def->defaultValueBuf_, def->type_, ptr, def->length_);
+            } else {
+                void *dest = AllDataType::alloc(def->type_, def->length_);
+                AllDataType::convert(typeString, def->defaultValueBuf_, def->type_, dest, def->length_);
+                AllDataType::copyVal(colPtr, dest, def->type_, def->length_);
+                free (dest);
+            }
             colPtr = colPtr + def->length_;
             fldpos++;
-            free (dest); 
             continue;
         }
         switch(def->type_)
@@ -1251,9 +1397,8 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
             {
                 DbRetVal rv = OK;
                 void *ptr = 
-                  ((Chunk *) vcChunkPtr_)->allocate(db_, def->length_+1 , &rv);
-                memset(ptr, 0, def->length_+1);
-                memcpy(colPtr, &ptr, sizeof(void *));
+                  ((Chunk *) vcChunkPtr_)->allocate(db_, def->length_, &rv);
+                *(long *)colPtr = (long)ptr;
                 strcpy((char *)ptr, (char *)def->bindVal_); 
                 colPtr = colPtr + sizeof(void *); 
                 break;

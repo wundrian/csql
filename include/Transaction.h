@@ -50,13 +50,13 @@ class UndoLogInfo
     public:
     int size_;
     OperationType opType_;
-    void *ptrToTuple_;
+    void *data_;
     UndoLogInfo *next_;
     void print() {
        printf("<UndoLogInfo>\n");
        printf("  <Size> %d </Size>\n", size_);
        printf("  <OperationType> %d </OperationType>\n", opType_);
-       printf("  <TuplePtr> %x </TuplePtr>\n", ptrToTuple_);
+       printf("  <TuplePtr> %x </TuplePtr>\n", (void *) *(long *)data_);
        printf("</UndoLogInfo>\n");
 
     }
@@ -65,8 +65,8 @@ class UndoLogInfo
 class HashUndoLogInfo
 {
     public:
-    void *metaData_;
     void *tuple_;
+    void *metaData_;
     void *keyPtr_;
     void *hChunk_;
     void *bucket_;
@@ -77,8 +77,8 @@ class HashUndoLogInfo
 class TreeUndoLogInfo
 {
     public:
-    void *metaData_;
     void *tuple_;
+    void *metaData_;
     //void *keyPtr_;
     void *cIndex_;//CINDEX ptr
     TreeUndoLogInfo()

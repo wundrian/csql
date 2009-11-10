@@ -190,7 +190,7 @@ class Database
     friend class Table;
     friend class TreeIndex;
     friend class HashIndex;
-
+    friend class Transaction;
 };
 
 #endif
