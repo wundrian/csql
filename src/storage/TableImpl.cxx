@@ -1249,17 +1249,6 @@ DbRetVal TableImpl::updateTuple()
          return ret;
     }
 
-    FieldIterator fIter = fldList_.getIterator();
-    char *colPtr = (char*) curTuple_;
-    while (fIter.hasElement()) {
-        FieldDef *def = fIter.nextElement();
-        colPtr =  (char *) curTuple_ + def->offset_;
-        if (def->type_ == typeVarchar) {
-            char *ptr = (char *) *(long *) colPtr;
-            ((Chunk *) vcChunkPtr_)->free(db_, ptr);
-        }
-    }
-
     int addSize = 0;
     int iNullVal=iNullInfo;
     if (numFlds_ < 31){ 
@@ -1336,21 +1325,26 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
             if(def->bindVal_==NULL)
             {
                 AllDataType::increment(colPtr, dest , def->type_);
-                AllDataType::copyVal(ptrToAuto,colPtr, def->type_, def->length_);
+                AllDataType::copyVal(ptrToAuto,colPtr, def->type_, 
+                                                                 def->length_);
                 colPtr = colPtr + def->length_;
                 fldpos++;
                 free(dest);
                 continue;
-            }else {
-                if(AllDataType::compareVal(def->bindVal_, dest, OpGreaterThan, def->type_)){
-                    AllDataType::copyVal(ptrToAuto,def->bindVal_, def->type_, def->length_);
+            } else {
+                if(AllDataType::compareVal(def->bindVal_, dest, OpGreaterThan, 
+                                                                 def->type_)) {
+                    AllDataType::copyVal(ptrToAuto,def->bindVal_, def->type_, 
+                                                                 def->length_);
                 }
                 free(dest);
             }
         }
-        if (def->isNull_ && !def->isDefault_ && NULL == def->bindVal_ && isInsert) 
+        if (def->isNull_ && !def->isDefault_ && NULL == def->bindVal_ && 
+                                                                      isInsert) 
         {
-            printError(ErrNullViolation, "NOT NULL constraint violation for field %s", def->fldName_);
+            printError(ErrNullViolation, 
+                  "NOT NULL constraint violation for field %s", def->fldName_);
             return ErrNullViolation;
         }
         if (def->isDefault_ && NULL == def->bindVal_ && isInsert)
@@ -1360,10 +1354,12 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
                 void *ptr =
                   ((Chunk *) vcChunkPtr_)->allocate(db_, def->length_, &rv);
                 *(long *)colPtr = (long)ptr;
-                AllDataType::convert(typeString, def->defaultValueBuf_, def->type_, ptr, def->length_);
+                AllDataType::convert(typeString, def->defaultValueBuf_, 
+                                                def->type_, ptr, def->length_);
             } else {
                 void *dest = AllDataType::alloc(def->type_, def->length_);
-                AllDataType::convert(typeString, def->defaultValueBuf_, def->type_, dest, def->length_);
+                AllDataType::convert(typeString, def->defaultValueBuf_, 
+                                               def->type_, dest, def->length_);
                 AllDataType::copyVal(colPtr, dest, def->type_, def->length_);
                 free (dest);
             }
@@ -1376,44 +1372,55 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
             case typeString:
                 if (NULL != def->bindVal_)
                 {
-		    if(!isInsert && isFldNull(fldpos)){clearNullBit(fldpos);}
+		            if(!isInsert && isFldNull(fldpos)){clearNullBit(fldpos);}
                     strncpy((char*)colPtr, (char*)def->bindVal_, def->length_);
                     *(((char*)colPtr) + (def->length_-1)) = '\0';
+                } else if (!def->isNull_ && !def->bindVal_ && isInsert) { 
+                    setNullBit(fldpos);
                 }
-                else if (!def->isNull_ && !def->bindVal_ && isInsert)  setNullBit(fldpos);
                 colPtr = colPtr + def->length_;
                 break;
             case typeBinary:
                 if (NULL != def->bindVal_ ) 
                 {
-		    if(!isInsert && isFldNull(fldpos)){clearNullBit(fldpos);}
-		    DbRetVal rv = AllDataType::strToValue(colPtr, (char *) def->bindVal_, def->type_, def->length_);
+		            if(!isInsert && isFldNull(fldpos)){clearNullBit(fldpos);}
+		            DbRetVal rv = AllDataType::strToValue(colPtr, 
+                             (char *) def->bindVal_, def->type_, def->length_);
                     if (rv != OK) return ErrBadArg;
-		}
-                else if (!def->isNull_ && isInsert && !def->bindVal_)  setNullBit(fldpos);
+		        } else if (!def->isNull_ && isInsert && !def->bindVal_) {
+                    setNullBit(fldpos);
+                }
                 colPtr = colPtr + def->length_;
                 break;
             case typeVarchar: 
-            {
-                DbRetVal rv = OK;
-                void *ptr = 
-                  ((Chunk *) vcChunkPtr_)->allocate(db_, def->length_, &rv);
-                *(long *)colPtr = (long)ptr;
-                strcpy((char *)ptr, (char *)def->bindVal_); 
+                if (NULL != def->bindVal_) {
+                    if (!isInsert && isFldNull(fldpos)) {clearNullBit(fldpos);}
+                    DbRetVal rv = OK;
+                    if (!isInsert) {
+                        ((Chunk *) vcChunkPtr_)->free(db_,
+                                                      (void *)*(long *)colPtr);
+                    }
+                    void *ptr = 
+                     ((Chunk *) vcChunkPtr_)->allocate(db_, def->length_, &rv);
+                    if (rv != OK) return ErrBadArg;
+                    *(long *)colPtr = (long)ptr;
+                    strcpy((char *)ptr, (char *)def->bindVal_); 
+                } else if (!def->isNull_ && isInsert && !def->bindVal_) {
+                    setNullBit(fldpos);
+                }
                 colPtr = colPtr + sizeof(void *); 
                 break;
-            }
             default:
-                if (NULL != def->bindVal_){
-		    if(!isInsert && isFldNull(fldpos)){clearNullBit(fldpos);}
-                    AllDataType::copyVal(colPtr, def->bindVal_, def->type_);}
-                else { if (!def->isNull_ && isInsert)  setNullBit(fldpos); }
+                if (NULL != def->bindVal_) {
+		            if(!isInsert && isFldNull(fldpos)){clearNullBit(fldpos);}
+                    AllDataType::copyVal(colPtr, def->bindVal_, def->type_);
+                } else { if (!def->isNull_ && isInsert) setNullBit(fldpos); }
                 colPtr = colPtr + def->length_;
                 break;
         }
         fldpos++;
     }
-    return OK;
+        return OK;
 }
 void TableImpl::clearNullBit(int fldpos)
 {
