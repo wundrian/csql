@@ -117,6 +117,18 @@ void PredicateImpl::setTerm(const char* fName1, ComparisionOp op, void *opnd)
     operand2 =NULL;
     operand2Ptr = NULL;
 }
+void  PredicateImpl::setTerm(Expression *exp, ComparisionOp op, void **opnd)
+{
+    compOp = op;
+    lhs = rhs = NULL;
+    operandPtr = opnd;
+    operand = NULL;
+    logicalOp = OpInvalidLogicalOp;
+    comp2Op = OpInvalidComparisionOp;
+    operand2 =NULL;
+    operand2Ptr = NULL;
+    lExp = exp;
+}
 void PredicateImpl::setTerm(const char* fName1, ComparisionOp op,bool nullFlag)
 {
     strcpy(fldName1, fName1);
@@ -477,6 +489,23 @@ void PredicateImpl::evaluateForTable(bool &result, char *tuple)
         }
     }
     //Table null check of condition
+    if(lExp || rExp){
+       void* val=NULL;    
+       TableImpl *tImpl =  (TableImpl*) table;
+       if(lExp){  
+          lExp->setTable(tImpl);
+          lExp->setTuple(tuple);
+          val = lExp->evaluateForFunction(AllDataType::getCsqlTypeFromFunctionType(lExp->getFunctionType())); 
+       }
+       //if(rExp)  val = lExp->evaluateForFunction(typeDate)
+       if( val && operandPtr!=NULL){
+           val2 = *(char**)operandPtr;
+           result = AllDataType::compareVal(val, val2, compOp, AllDataType::getCsqlTypeFromFunctionTypeForComparision(lExp->getFunctionType()),length);
+       }else{
+           result =false;
+       }
+       return;
+    }
     if (isNullable) {
         TableImpl *tImpl =  (TableImpl*) table;
         tImpl->setCurTuple(tuple);
@@ -544,9 +573,9 @@ void PredicateImpl::evaluateForTable(bool &result, char *tuple)
         return;
     }
     //printf(" val1 %d val2 %d\n", *(int*)val1, *(int*)val2);
-    if (type != typeVarchar)
+    if (type != typeVarchar) 
         result = AllDataType::compareVal(val1, val2, compOp, type,length);
-    else result = AllDataType::compareVal((void *) *(long *) val1, val2,
+    else result = AllDataType::compareVal((void *) *(long *) val1, val2, 
                                                          compOp, type,length);
     //if (!result && val3) AllDataType::copyVal(val3, 
     return;

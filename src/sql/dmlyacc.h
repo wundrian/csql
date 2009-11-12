@@ -77,31 +77,49 @@
 #define TINYINT_TYPE 333
 #define BINARY_TYPE 334
 #define VARCHAR_TYPE 335
-#define USER 336
-#define PASSWORD 337
-#define ALTER 338
-#define FLUSH 339
-#define ADD 340
-#define COLUMN 341
-#define MODIFY 342
-#define RENAME 343
-#define TO 344
-#define MIN 345
-#define MAX 346
-#define AVG 347
-#define SUM 348
-#define COUNT 349
-#define GROUP 350
-#define BY 351
-#define HAVING 352
-#define ORDER 353
-#define ASC 354
-#define DESC 355
-#define DISTINCT 356
+#define DATE_DIFF 336
+#define DATE_ADD 337
+#define DATE_SUB 338
+#define HOUR 339
+#define MINUTE 340
+#define SECOND 341
+#define YEAR 342
+#define MONTH 343
+#define DAY 344
+#define INTERVAL 345
+#define TIME_DIFF 346
+#define TIME_ADD 347
+#define TIME_SUB 348
+#define TIMESTAMP_DIFF 349
+#define TIMESTAMP_ADD 350
+#define TIMESTAMP_SUB 351
+#define EXTRACT 352
+#define USER 353
+#define PASSWORD 354
+#define ALTER 355
+#define FLUSH 356
+#define ADD 357
+#define COLUMN 358
+#define MODIFY 359
+#define RENAME 360
+#define TO 361
+#define MIN 362
+#define MAX 363
+#define AVG 364
+#define SUM 365
+#define COUNT 366
+#define GROUP 367
+#define BY 368
+#define HAVING 369
+#define ORDER 370
+#define ASC 371
+#define DESC 372
+#define DISTINCT 373
 typedef union
 {
    char *stringval;
    void *predicate;
    void *Expression;
+   void *FunctionType;
 } YYSTYPE;
 extern YYSTYPE yylval;

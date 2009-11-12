@@ -10,7 +10,7 @@
 #include<sqltypes.h>
 #include<ErrorType.h>
 #include<Config.h>
-//#include<os.h>
+#include<Function.h>
 typedef int JulianRep;
 
 
@@ -138,7 +138,8 @@ class AllDataType
     static void convertToTime(void* dest, void* src, DataType srcType);
     static void convertToTimeStamp(void* dest, void* src, DataType srcType);
     static void convertToBinary(void* dest, void* src, DataType srcType, int length);
-
+    static DataType getCsqlTypeFromFunctionType(FunctionType type);
+    static  DataType getCsqlTypeFromFunctionTypeForComparision(FunctionType type);
     static void memoryset(void *value,DataType type);
     inline static ComparisionOp getComparisionOperator(char *str);
 
@@ -273,6 +274,13 @@ class Date {  // The class a user would declare to hold date
     static int dayOfWeek(JulianRep juldate);
 
 
+    void addDay(int noOfDays);
+    void subDay(int noOfDays);
+    void addMonth(int noOfMons);
+    void subMonth(int noOfMons);
+    void addYear(int noOfYrs);
+    void subYear(int noOfYrs);
+    
     /** returns the day of the month. Values are 1 to 31
     */  
     int dayOfMonth() const;
@@ -312,7 +320,8 @@ class Date {  // The class a user would declare to hold date
     *It should of the format "mm/dd/yyyy"
     */
     int parseFrom(const char *s);
-
+    
+    int getCalDay() { return julianDate;}
     static void changeToCsqlFormat(char *src);
 
 
@@ -395,6 +404,10 @@ class Time {  // The class a user would declare to hold time
     */  
     int get(int &hours, int &mins, int &secs) const;
 
+
+
+
+    int getCalSec(){ return timeVal/1000; }
     /** checks for the validity of the time
     */  
     bool isValid() const;
@@ -425,6 +438,13 @@ class Time {  // The class a user would declare to hold time
     */ 
     int hours() const;
 
+    //
+    int addSec(int secs);
+    int subSec(int secs);
+    int addMin(int mins);
+    int subMin(int mins);
+    int addHour(int hours);
+    int subHour(int hours);
 
     /** sets the millisecs
     */ 
@@ -644,7 +664,36 @@ day".
     friend int  operator>=(const TimeStamp &d1, const TimeStamp &d2);
     friend int  operator==(const TimeStamp &d1, const TimeStamp &d2);
     friend int  operator!=(const TimeStamp &d1, const TimeStamp &d2);
+    void addYear(int noOfYrs ){ date.addYear(noOfYrs);}
 
+    void subYear(int noOfYrs ) {   date.subYear(noOfYrs); }
+
+    void addMonth(int noOfMons ) { date.addMonth(noOfMons);}   
+
+    void subMonth(int noOfMons) { date.subMonth(noOfMons);}
+
+    void addDay(int noOfDays) { date.addDay(noOfDays);}
+
+    void subDay(int noOfDays) { date.subDay(noOfDays); }
+
+    void addHour(int hours);
+
+    void subHour(int hours);
+
+    void addMin(int noOfMins);
+
+    void subMin(int noOfMins);
+
+    void addSec(int noOfSecs);
+
+    void subSec(int noOfSecs);
+    
+    int secDiff(TimeStamp &ts);
+    int minDiff(TimeStamp &ts);
+    int hourDiff(TimeStamp &ts);
+    int dayDiff(TimeStamp &ts);
+    int monthDiff(TimeStamp &ts);
+    int yearDiff(TimeStamp &ts); 
 
     private:
     Date date;

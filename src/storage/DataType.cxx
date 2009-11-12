@@ -94,6 +94,54 @@ void Date::changeToCsqlFormat(char *src)
     strcpy(src, dst);
     return;
 }   
+void Date::addDay(int noOfDays)
+{
+   julianDate = julianDate + noOfDays;
+}
+void Date::subDay(int noOfDays)
+{
+   julianDate = julianDate - noOfDays;
+}
+
+void Date::addMonth(int noOfMons)
+{
+   int year, month, day;
+   get(year,month,day);
+   month += noOfMons;
+   year += (month /12);
+   month %= 12;
+   set(year,month,day);
+}
+void Date::subMonth(int noOfMons)
+{
+   int year, month, day;
+   get(year,month,day);
+   if(noOfMons>12)
+   {
+       year -= (noOfMons/12);
+   }
+   month -= (noOfMons%12);
+   if(month<0){
+       year -= 1;
+       month += 12;
+   }
+   set(year,month,day);
+}
+void Date::addYear(int noOfYrs )
+{
+   int year, month, day;
+   get(year,month,day);
+   year += noOfYrs;
+   set(year,month,day);
+}
+
+void Date::subYear(int noOfYrs )
+{
+   int year, month, day;
+   get(year,month,day);
+   year -= noOfYrs;
+   set(year,month,day);
+}
 
 
 int Date::dayOfMonth() const {
@@ -287,6 +335,56 @@ int Time::get(int &hours, int &mins, int &secs) const {
     return 0;
 }
 
+int Time::addSec(int secs)
+{
+    timeVal += (secs *10000);
+    int quit = timeVal /864000000;
+    if(0==quit) return 0;
+    timeVal %= 864000000;
+    return quit;
+}
+
+int Time::subSec(int secs)
+{
+    timeVal -= (secs *10000);
+    int quit = timeVal /864000000;
+    if(0==quit) return 0;
+    timeVal %= 864000000;
+    return quit;
+}
+int Time::addMin(int mins)
+{
+    timeVal += (mins * 60 * 10000);
+    int quit = timeVal /864000000;
+    if(0==quit) return 0;
+    timeVal %= 864000000;
+    return quit;
+}
+int Time::subMin(int mins)
+{
+    timeVal -= (mins * 60 * 10000);
+    int quit = timeVal /864000000;
+    if(0==quit) return 0;
+    timeVal %= 864000000;
+    return quit;
+}
+int Time::addHour(int hours)
+{
+    timeVal += (hours* 60 * 60 * 10000);
+    int quit = timeVal /864000000;
+    if(0==quit) return 0;
+    timeVal %= 864000000;
+    return quit;
+}
+int Time::subHour(int hours)
+{
+   timeVal -= (hours* 60 * 60 * 10000);
+   int quit = timeVal /864000000;
+   if(0==quit) return 0;
+   timeVal %= 864000000;
+   return quit;
+}
+
 int Time::seconds() const { return (timeVal/10000) % 60; }
 int Time::minutes() const { return (timeVal /(60*10000)) % 60; }
 int Time::hours() const   { return timeVal / (3600*10000); }
@@ -403,7 +501,99 @@ int TimeStamp::parseFrom(const char *s) {
     return setTime(hours,mins,secs);
     }
 }
+void TimeStamp::addHour(int hours )
+{
+   int day = time.addHour(hours);
+   if(day!=0){ date.addDay(day);}
+}
 
+void TimeStamp::subHour(int hours )
+{
+   int day = time.subHour(hours);
+   if(day!=0){ date.subDay(day);}
+}
+
+void TimeStamp::addMin(int noOfMins )
+{
+   int day = time.addMin(noOfMins);
+   if(day!=0){ date.addDay(day);}
+}
+
+void TimeStamp::subMin(int noOfMins)
+{
+   int day = time.subMin(noOfMins);
+   if(day!=0) {date.subDay(day);}
+}
+void TimeStamp::addSec(int noOfSecs)
+{
+   int day = time.addSec(noOfSecs);
+   if(day!=0){ date.addDay(day);}
+}
+void TimeStamp::subSec(int noOfSecs)
+{
+    int day = time.subSec(noOfSecs);
+    if(day!=0){ date.subDay(day);}
+}
+
+int TimeStamp::secDiff(TimeStamp &ts)
+{
+  int day1= date.getCalDay();
+  int day2= Date(ts).getCalDay();
+  int sec1= time.getCalSec();
+  int sec2= Time(ts).getCalSec();
+  return (((day1*24*60*60)+sec1) - ((day2*24*60*60)+sec2));
+}
+int TimeStamp::minDiff(TimeStamp &ts)
+{
+  int day1= date.getCalDay();
+  int day2= Date(ts).getCalDay();
+  int sec1= time.getCalSec();
+  int sec2= Time(ts).getCalSec();
+  int secdiff = (((day1*24*60*60)+sec1) - ((day2*24*60*60)+sec2));
+
+  return (secdiff/60);
+}
+
+int TimeStamp::hourDiff(TimeStamp &ts)
+{
+   int day1= date.getCalDay();
+   int day2= Date(ts).getCalDay();
+   int sec1= time.getCalSec();
+   int sec2= Time(ts).getCalSec();
+   int secdiff = (((day1*24*60*60)+sec1) - ((day2*24*60*60)+sec2));
+   return (secdiff/3600);
+}
+
+int TimeStamp::dayDiff(TimeStamp &ts)
+{
+   int day1= date.getCalDay();
+   int day2= Date(ts).getCalDay();
+   int sec1= time.getCalSec();
+   int sec2= Time(ts).getCalSec();
+   int secdiff = (((day1*24*60*60)+sec1) - ((day2*24*60*60)+sec2));
+   return (secdiff/(3600*24));
+
+}
+
+int TimeStamp::monthDiff(TimeStamp &ts)
+{
+   int day1= date.getCalDay();
+   int day2= Date(ts).getCalDay();
+   int sec1= time.getCalSec();
+   int sec2= Time(ts).getCalSec();
+   int secdiff = (((day1*24*60*60)+sec1) - ((day2*24*60*60)+sec2));
+   return (secdiff/(3600*24*30));
+
+}
+int TimeStamp::yearDiff(TimeStamp &ts)
+{
+   int day1= date.getCalDay();
+   int day2= Date(ts).getCalDay();
+   int sec1= time.getCalSec();
+   int sec2= Time(ts).getCalSec();
+   int secdiff = (((day1*24*60*60)+sec1) - ((day2*24*60*60)+sec2));
+   return (secdiff/(3600*24*30*12));
+}
 void TimeStamp::changeToCsqlFormat(char *src)
 {
     char dst[20];
@@ -450,6 +640,109 @@ int operator==(const TimeStamp &d1, const TimeStamp &d2)
 int operator!=(const TimeStamp &d1, const TimeStamp &d2)
     { return d1.date != d2.date || d1.time != d2.time; }
 
+DataType AllDataType::getCsqlTypeFromFunctionType(FunctionType type)
+{
+    switch(type)
+    {
+        case DATEDIFF: return typeDate;
+        case DATEADDWITHYEAR:
+        case DATEADDWITHMON:
+        case DATEADDWITHDAY:
+        case DATESUBWITHYEAR:
+        case DATESUBWITHMON:
+        case DATESUBWITHDAY:
+        case TIMEDIFF: return typeTime;
+        case TIMEADDWITHHOUR:
+        case TIMEADDWITHMIN:
+        case TIMEADDWITHSEC:
+        case TIMESUBWITHHOUR:
+        case TIMESUBWITHMIN:
+        case TIMESUBWITHSEC: return typeInt;
+        case TIMESTAMPADDWITHYEAR:
+        case TIMESTAMPADDWITHMON:
+        case TIMESTAMPADDWITHDAY:
+        case TIMESTAMPSUBWITHYEAR:
+        case TIMESTAMPSUBWITHMON:
+        case TIMESTAMPSUBWITHDAY:
+        case TIMESTAMPADDWITHHOUR:
+        case TIMESTAMPADDWITHMIN:
+        case TIMESTAMPADDWITHSEC:
+        case TIMESTAMPSUBWITHHOUR:
+        case TIMESTAMPSUBWITHMIN:
+        case TIMESTAMPSUBWITHSEC: return typeInt;
+        case TIMESTAMPDIFFYEAR:
+        case TIMESTAMPDIFFMON:
+        case TIMESTAMPDIFFDAY:
+        case TIMESTAMPDIFFHOUR:
+        case TIMESTAMPDIFFMIN:
+        case TIMESTAMPDIFFSEC: return typeTimeStamp;
+        case EXTRACTYEARFROMDAY:
+        case EXTRACTMONFROMDAY:
+        case EXTRACTDAYFROMDAY:return typeDate;
+        case EXTRACTHOURFROMTIME:
+        case EXTRACTMINFROMTIME:
+        case EXTRACTSECFROMTIME: return typeTime;
+        case EXTRACTYEARFROMTIMESTAMP:
+        case EXTRACTMONFROMTIMESTAMP:
+        case EXTRACTDAYFROMTIMESTAMP:
+        case EXTRACTHOURFROMTIMESTAMP:
+        case EXTRACTMINFROMTIMESTAMP:
+        case EXTRACTSECFROMTIMESTAMP: return typeTimeStamp;
+        default: return typeInt;
+    }
+}
+DataType AllDataType::getCsqlTypeFromFunctionTypeForComparision(FunctionType type)
+{
+    switch(type)
+    {
+        case DATEDIFF: return typeInt;
+        case DATEADDWITHYEAR: return typeDate;
+        case DATEADDWITHMON: return typeDate;
+        case DATEADDWITHDAY: return typeDate;
+        case DATESUBWITHYEAR: return typeDate;
+        case DATESUBWITHMON: return typeDate;
+        case DATESUBWITHDAY: return typeDate;
+        case TIMEDIFF: return typeInt;
+        case TIMEADDWITHHOUR: return typeTime;
+        case TIMEADDWITHMIN: return typeTime;
+        case TIMEADDWITHSEC: return typeTime;
+        case TIMESUBWITHHOUR: return typeTime;
+        case TIMESUBWITHMIN: return typeTime;
+        case TIMESUBWITHSEC: return typeTime;
+        case TIMESTAMPADDWITHYEAR: return typeTimeStamp;
+        case TIMESTAMPADDWITHMON: return typeTimeStamp;
+        case TIMESTAMPADDWITHDAY: return typeTimeStamp;
+        case TIMESTAMPSUBWITHYEAR: return typeTimeStamp;
+        case TIMESTAMPSUBWITHMON: return typeTimeStamp;
+        case TIMESTAMPSUBWITHDAY: return typeTimeStamp;
+        case TIMESTAMPADDWITHHOUR:  return typeTimeStamp;
+        case TIMESTAMPADDWITHMIN: return typeTimeStamp;
+        case TIMESTAMPADDWITHSEC: return typeTimeStamp;
+        case TIMESTAMPSUBWITHHOUR:  return typeTimeStamp;
+        case TIMESTAMPSUBWITHMIN: return typeTimeStamp;
+        case TIMESTAMPSUBWITHSEC: return typeTimeStamp;
+        case TIMESTAMPDIFFYEAR:
+        case TIMESTAMPDIFFMON:
+        case TIMESTAMPDIFFDAY:
+        case TIMESTAMPDIFFHOUR:
+        case TIMESTAMPDIFFMIN:
+        case TIMESTAMPDIFFSEC:
+        case EXTRACTYEARFROMDAY:
+        case EXTRACTMONFROMDAY:
+        case EXTRACTDAYFROMDAY:
+        case EXTRACTHOURFROMTIME:
+        case EXTRACTMINFROMTIME:
+        case EXTRACTSECFROMTIME:
+        case EXTRACTYEARFROMTIMESTAMP:
+        case EXTRACTMONFROMTIMESTAMP:
+        case EXTRACTDAYFROMTIMESTAMP:
+        case EXTRACTHOURFROMTIMESTAMP:
+        case EXTRACTMINFROMTIMESTAMP:
+        case EXTRACTSECFROMTIMESTAMP:return typeInt;
+        default: return typeInt;
+    }
+
+}
 
 char* AllDataType::getSQLString(DataType type)
 {

@@ -16,6 +16,7 @@ void yyerror(const char* Msg);
    char *stringval;
    void *predicate;
    void *Expression;
+   void *FunctionType;
 }
 
 %left OR 
@@ -30,13 +31,15 @@ void yyerror(const char* Msg);
 %token <stringval> CREATE TABLE PRIMARY KEY DEFAULT INDEX ON HASH TREE UNIQUE DROP SIZE FOREIGN REFERENCES COMPACT 
 %token <stringval> CACHE CONDITION FIELDLIST PK DIRECT DSN UNCACHE NOSCHEMA
 %token <stringval> INT_TYPE LONG_TYPE SHORT_TYPE DOUBLE_TYPE TIMESTAMP_TYPE DATE_TYPE CHAR_TYPE TIME_TYPE BIGINT_TYPE FLOAT_TYPE TINYINT_TYPE BINARY_TYPE VARCHAR_TYPE
+%token <stringval> DATE_DIFF DATE_ADD DATE_SUB HOUR MINUTE SECOND YEAR MONTH DAY INTERVAL TIME_DIFF TIME_ADD TIME_SUB TIMESTAMP_DIFF TIMESTAMP_ADD TIMESTAMP_SUB EXTRACT 
 %token <stringval> USER PASSWORD ALTER FLUSH ADD COLUMN MODIFY RENAME TO
 %token <stringval> MIN MAX AVG SUM COUNT GROUP BY HAVING ORDER ASC DESC DISTINCT
 %token ';' ',' '(' ')'
 %type <stringval> ident field value not_opt doub_value num_value 
 /*%type <stringval> foreign_key_constraint foreign_key_create foreign_key_constraint_L*/
 %type <predicate> conditions condition hconditions hcondition 
-%type <Expression> stmt_exp atom
+%type <Expression> stmt_exp atom function_opt
+%type <FunctionType> date_opt time_opt datetime_opt
 %%
 command:  select_statement { YYACCEPT; }
         | insert_statement { YYACCEPT; }
@@ -387,8 +390,133 @@ stmt_exp: stmt_exp '/' stmt_exp
         {
             $$ = $2;
         }
+        | function_opt
         | atom
         ;
+function_opt: DATE_DIFF '(' atom ',' atom ')'
+        {
+              Expression* exp;
+              parsedData->setFunctionType(DATEDIFF);
+              exp=parsedData->insertExpression((Expression *)$3, DATEDIFF, (Expression *)$5);
+            $$=exp;
+        }
+	| DATE_ADD '(' atom  INTERVAL atom date_opt ')'
+	{
+	     Expression* exp;
+             parsedData->setFunctionType((*(FunctionType *)$6));
+             exp=parsedData->insertExpression((Expression *)$3, (*(FunctionType *)$6), (Expression *)$5);
+             $$=exp;
+	}
+        | DATE_SUB '(' atom  INTERVAL atom date_opt ')'
+        {
+             Expression* exp;
+             //parsedData->setFunctionType((*(FunctionType *)$6));
+             parsedData->setFunctionType((FunctionType)((int)(*(FunctionType *)$6)+3));
+             exp=parsedData->insertExpression((Expression *)$3, (FunctionType)((int)(*(FunctionType *)$6)+3), (Expression *)$5);
+             $$=exp;
+        }
+        | TIME_DIFF '(' atom ',' atom ')'
+        {
+              Expression* exp;
+              parsedData->setFunctionType(TIMEDIFF);
+              exp=parsedData->insertExpression((Expression *)$3, TIMEDIFF, (Expression *)$5);
+            $$=exp;
+        }
+        | TIME_ADD '(' atom  INTERVAL atom time_opt ')'
+        {
+             Expression* exp;
+             parsedData->setFunctionType((*(FunctionType *)$6));
+             exp=parsedData->insertExpression((Expression *)$3, (*(FunctionType *)$6), (Expression *)$5);
+             $$=exp;
+        }
+        | TIME_SUB '(' atom  INTERVAL atom time_opt ')'
+        {
+             Expression* exp;
+             parsedData->setFunctionType((FunctionType)((int)(*(FunctionType *)$6)+3));
+             exp=parsedData->insertExpression((Expression *)$3, (FunctionType)((int)(*(FunctionType *)$6)+3), (Expression *)$5);
+             $$=exp;
+        }
+	| TIMESTAMP_DIFF '(' datetime_opt ','  atom ',' atom ')'
+        {
+              Expression* exp;
+              int diff=0;
+              FunctionType val = (*(FunctionType *)$3);
+              if( val == DATEADDWITHYEAR || val == DATEADDWITHMON || val == DATEADDWITHDAY ) diff = 24;
+              else diff = 21;
+              parsedData->setFunctionType((FunctionType)((int)(*(FunctionType *)$3+diff)));
+              exp=parsedData->insertExpression((Expression *)$5, (FunctionType)((int)(*(FunctionType *)$3)+diff), (Expression *)$7);
+            $$=exp;
+        }
+        | TIMESTAMP_ADD '(' atom  INTERVAL atom datetime_opt ')'
+        {
+             Expression* exp;
+             parsedData->setFunctionType((FunctionType)((int)(*(FunctionType *)$6)+12));
+             exp=parsedData->insertExpression((Expression *)$3, (FunctionType)((int)(*(FunctionType *)$6)+12), (Expression *)$5);
+             $$=exp;
+        }
+        | TIMESTAMP_SUB '(' atom  INTERVAL atom datetime_opt ')'
+        {
+             Expression* exp;
+             parsedData->setFunctionType((FunctionType)((int)(*(FunctionType *)$6)+15));
+             exp=parsedData->insertExpression((Expression *)$3, (FunctionType)((int)(*(FunctionType *)$6)+15), (Expression *)$5);
+             $$=exp;
+        }
+        | EXTRACT '(' datetime_opt FROM atom ')'
+	{
+            FunctionType val = UNKNOWN_FUNCTION;
+            //if((*(FunctionType *)$3) >=8)
+              // val = (FunctionType)((int)(*(FunctionType *)$3)+36);
+            //else
+               val = (FunctionType)((int)(*(FunctionType *)$3)+30);
+            Expression* exp;
+            parsedData->setFunctionType(val);
+            exp=parsedData->insertExpression((Expression *)$5, val,NULL);
+            $$=exp;
+	}
+        ;
+datetime_opt: time_opt
+        {
+           FunctionType val = *(FunctionType *)$1;
+           $$ = &val;
+        }
+	| date_opt
+        {
+           FunctionType val = *(FunctionType *)$1;
+           $$ = &val;
+        }
+	;
+time_opt: HOUR 
+	{ 
+             FunctionType val = TIMEADDWITHHOUR;
+             $$ = &val;
+        }
+	| MINUTE  
+        {
+             FunctionType val = TIMEADDWITHMIN;
+             $$ = &val;
+        }
+	| SECOND  
+        {
+             FunctionType val = TIMEADDWITHSEC;
+             $$ = &val;
+        }
+	;
+date_opt: YEAR    
+	{
+	    FunctionType val = DATEADDWITHYEAR;
+            $$ = &val;
+	}
+	| MONTH   
+        {
+	    FunctionType val = DATEADDWITHMON;
+            $$ = &val;
+        }
+	| DAY  
+        {
+            FunctionType val = DATEADDWITHDAY;
+            $$ = &val;
+        }
+	;
 atom    :  ident
         {
             Expression* exp;
@@ -412,7 +540,7 @@ atom    :  ident
             $$=exp;
         }
         ;
-     
+
 where_clause_opt:  WHERE conditions
         {
            parsedData->setCondition((Predicate*)$2);
@@ -680,6 +808,22 @@ condition: ident OPERATOR value
             pred = parsedData->insertNullPredicate((char*) $1, OpIsNull, true);
             free( $1 ); free($2); free( $3 );
             $$=pred;  
+        }
+/*        | function_opt OPERATOR function_opt
+        {
+ 
+        }
+        | function_opt OPERATOR ident
+        {
+            
+        }*/
+        | function_opt OPERATOR value 
+        {
+            ComparisionOp  op = AllDataType::getComparisionOperator((char*)$2);
+            void **ptr = parsedData->insertCondValueAndGetPtr((char*)"dummy", (char*)$3, false, AGG_UNKNOWN, false, true);
+            Predicate *pred;
+            pred = parsedData->insertPredicate(((Expression*)$1), op, ptr);
+            $$=pred;
         }
         ;
 not_opt: NOT

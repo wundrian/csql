@@ -50,8 +50,7 @@ void ParsedData::insertInValue(char *val)
     newVal->isAllocVal=false;
     inValueList.append(newVal);
 }
-
-void** ParsedData::insertCondValueAndGetPtr(char *fldName, char *val, bool opLike, AggType aType, bool isInHaving)
+void** ParsedData::insertCondValueAndGetPtr(char *fldName, char *val, bool opLike, AggType aType, bool isInHaving,bool function)
 {
     ConditionValue *newVal = new ConditionValue();
     if (val == NULL) 
@@ -64,7 +63,8 @@ void** ParsedData::insertCondValueAndGetPtr(char *fldName, char *val, bool opLik
     newVal->aType = aType;
     newVal->length = 0;
     strcpy(newVal->fName, fldName);
-	newVal->opLike = opLike;
+    newVal->opLike = opLike;
+    newVal->isFunctionInvolve = function;
     conditionValueList.append(newVal);
     if (isInHaving) {
         FieldName *fName = new FieldName();
@@ -190,6 +190,14 @@ void ParsedData::insertUpdateValue(char *fName, char *val)
     updFldValList.append(newVal);
 }
 
+Predicate* ParsedData::insertPredicate(Expression *exp, ComparisionOp op,void **val)
+{
+    PredicateImpl *pImpl = new PredicateImpl();
+    exp->convertStrToVal(AllDataType::getCsqlTypeFromFunctionType(exp->getFunctionType()));
+    pImpl->setTerm(exp, op, val);
+    predList.append(pImpl);
+    return (Predicate*) pImpl;
+}
 Predicate* ParsedData::insertPredicate(char *fName, ComparisionOp op, void **val, AggType aggType)
 {
     PredicateImpl *pImpl = new PredicateImpl();
@@ -398,6 +406,7 @@ void ParsedData::reset()
     shouldCreateTbl=false;
     limit =0;
     offset =0;
+    ftype = UNKNOWN_FUNCTION;
 }
 void ParsedData::clearFieldNameList()
 {
@@ -478,19 +487,26 @@ void ParsedData::insertFldDef()
     DbRetVal rv = creFldList.append(fldDef);
     fldDef.init();
 }
-
+Expression* ParsedData::insertExpression(Expression* exp1, FunctionType type,Expression* exp2)
+{
+    Expression *exp =new Expression();
+    exp->setExpr(exp1, type, exp2);
+    return exp;
+}
 Expression* ParsedData::insertExpression(char *fldName)
 {
     Expression *exp =new Expression();
     exp->setExpr(fldName);
     return exp;
 }
+
 Expression* ParsedData::insertExpression(char *value,bool flag)
 {
     Expression *exp =new Expression();
     exp->setExpr(strdup(value),flag);
     return exp;
 }
+
 Expression* ParsedData::insertExpression(Expression* exp1, ArithOperator op ,Expression* exp2)
 {
     Expression *exp =new Expression();

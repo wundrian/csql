@@ -17,10 +17,10 @@
 #define EXPRESSION_H
 #include<os.h>
 #include<DataType.h>
+#include<Function.h>
 
 class Table;
 class TableImpl;
-
 enum ArithOperator {
     unKnownOperator = 0,
     addition,
@@ -39,12 +39,16 @@ class Expression
     ArithOperator arOp;
     Expression *lhs;
     Expression *rhs;
+    FunctionType fType;    
+    DataType dType;
     public:
     Expression()
     {
         table=NULL; arOp = unKnownOperator; lhs=NULL; rhs=NULL;
         tuple=NULL; constVal=NULL;
         strcpy(fldName,"\0");
+        calVal = NULL;
+        fType = UNKNOWN_FUNCTION;
     }
     ~Expression()
     {
@@ -54,11 +58,19 @@ class Expression
     void setTable(Table *tbl);
     void setTuple(void *tpl);
     bool isSingleTerm();
+    bool setDataType(DataType type){dType = type;};
+    DataType getDataType(){ return dType;};
+    void setFunctionType(FunctionType type);
+    FunctionType getFunctionType() {return fType;}
+    void copyFunctionVal(void *dest,void *src, FunctionType type, int length);
+    void *evaluateAndGetValPtr(void *lhsResult, void *rhsResult);
+    void setExpr(Expression* exp1, FunctionType type,Expression* exp2);
     void setExpr(char const *name,ArithOperator op,void *cVal );
     void setExpr(char const *name);
     void setExpr(Expression *exp1, ArithOperator op, Expression *exp2 );
     void setExpr(void *cVal,bool flag );
     void *evaluate(DataType type,bool &result);
+    void *evaluateForFunction(DataType type);
     void solve(void *opand1, void *opand2, DataType type, ArithOperator arOp);
     void convertStrToVal(DataType type);
     void freeVal();

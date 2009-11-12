@@ -803,25 +803,29 @@ DbRetVal SelStatement::resolveForCondition()
             printError(ErrSysFatal, "Should never happen.");
             return ErrSysFatal;
         }
-        rv = table->getFieldInfo(value->fName, fInfo);
-        if (ErrNotFound == rv || ErrNotExists == rv)
-        {
-            delete fInfo;
-            printError(ErrSyntaxError, "Field %s does not exist in table", 
+        if(!value->isFunctionInvolve){
+            rv = table->getFieldInfo(value->fName, fInfo);
+            if (ErrNotFound == rv || ErrNotExists == rv)
+            {
+                delete fInfo;
+                printError(ErrSyntaxError, "Field %s does not exist in table", 
                                         value->fName);
-            return ErrSyntaxError;
+                return ErrSyntaxError;
+            }
+            if (value->aType == AGG_AVG) {
+                value->type = typeDouble;
+                value->length = sizeof(double);
+            } else if (value->aType == AGG_COUNT) {
+                value->type = typeInt;
+                value->length = sizeof(int);
+            } else {
+                value->type = fInfo->type;
+                value->length = fInfo->length;
+            }
+            value->isNullable = fInfo->isNull;
+        }else{
+             value->type = AllDataType::getCsqlTypeFromFunctionTypeForComparision(parsedData->getFunctionType());
         }
-        if (value->aType == AGG_AVG) {
-            value->type = typeDouble;
-            value->length = sizeof(double);
-        } else if (value->aType == AGG_COUNT) {
-            value->type = typeInt;
-            value->length = sizeof(int);
-        } else {
-            value->type = fInfo->type;
-            value->length = fInfo->length;
-        }
-        value->isNullable = fInfo->isNull;
         value->value = AllDataType::alloc(value->type, value->length);
         //table->bindFld(name->fldName, value->value);
         if(value->paramNo ==1) continue;//For Predecate t1.f1=t2.f1

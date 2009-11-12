@@ -184,6 +184,23 @@ operator        "<"|">"|">="|"<="|"="|"\!="|"<>"|"LIKE"|"like"
                 if(strcasecmp(yytext,"COLUMN") ==0) token = COLUMN;
                 if(strcasecmp(yytext,"RENAME") ==0) token = RENAME;
                 if(strcasecmp(yytext,"TO") ==0) token = TO;
+                if(strcasecmp(yytext,"DATE_DIFF") ==0) token = DATE_DIFF;
+                if(strcasecmp(yytext,"DATE_ADD") ==0) token = DATE_ADD;
+                if(strcasecmp(yytext,"DATE_SUB") ==0) token = DATE_SUB;
+                if(strcasecmp(yytext,"TIME_DIFF") ==0) token = TIME_DIFF;
+                if(strcasecmp(yytext,"TIME_ADD") ==0) token = TIME_ADD;
+                if(strcasecmp(yytext,"TIME_SUB") ==0) token = TIME_SUB;
+                if(strcasecmp(yytext,"DAY") ==0) token = DAY;
+                if(strcasecmp(yytext,"MONTH") ==0) token = MONTH;
+                if(strcasecmp(yytext,"YEAR") ==0) token = YEAR;
+                if(strcasecmp(yytext,"HOUR") ==0) token = HOUR;
+                if(strcasecmp(yytext,"MINUTE") ==0) token = MINUTE;
+                if(strcasecmp(yytext,"SECOND") ==0) token = SECOND;
+                if(strcasecmp(yytext,"INTERVAL") ==0) token = INTERVAL;
+                if(strcasecmp(yytext,"TIMESTAMP_DIFF") ==0) token = TIMESTAMP_DIFF;
+                if(strcasecmp(yytext,"TIMESTAMP_ADD") ==0) token = TIMESTAMP_ADD;
+                if(strcasecmp(yytext,"TIMESTAMP_SUB") ==0) token = TIMESTAMP_SUB;
+                if(strcasecmp(yytext,"EXTRACT") ==0) token = EXTRACT;
                 if( token == FIELD )
                     yylval.stringval = strdup((const char*)yytext);
                 else

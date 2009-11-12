@@ -24,6 +24,7 @@
 #include <JoinTableImpl.h>
 #include <os.h>
 #include <Util.h>
+#include <Function.h>
 #ifndef STMT_TYPE
 #define STMT_TYPE
 enum StatementType
@@ -79,6 +80,7 @@ struct ConditionValue
     bool opLike;
     bool isNullable;
     char fName[IDENTIFIER_LENGTH];
+    bool isFunctionInvolve;
 };
 
 struct FieldName
@@ -241,11 +243,14 @@ class ParsedData
     int limit;
     int offset;
     bool isWorthyToCache;
+    FunctionType ftype;
     public:
     ParsedData() { limit = 0;  offset= 0; paramCounter = 0; stmtType = UnknownStatement;  isDistinct = false; isExplain=false;
                  isUnique = false; isPrimary = false; isAutoIncrement=false ;indexType = hashIndex; plan = Normal; bucketSize=0; isForeign=false; hCondFld=false; vCondFld=false;pkFld=false;forceOption=false; direct=false; uncache=false; noschema=false; dsn=false; 
-    shouldCreateTbl=false; userNode = NULL; isWorthyToCache=false; 
+    shouldCreateTbl=false; userNode = NULL; isWorthyToCache=false; ftype = UNKNOWN_FUNCTION;
     } 
+    void setFunctionType(FunctionType type) { ftype = type; }
+    FunctionType getFunctionType(){ return ftype;}
     void setAlterType(AlterTableType type){ aTblType = type;}
     AlterTableType getAlterType(){ return aTblType; }
     
@@ -300,7 +305,7 @@ class ParsedData
 	// third parameter is to avoid conflict between '?' between like operand and parameterized value in sql statement.
 	// eg: select * from t1 where f1 = ? and f2 like '_ti%';
 	// _ is converted to ? before it is processed
-    void** insertCondValueAndGetPtr(char *fName, char *value, bool opLike=false, AggType atp=AGG_UNKNOWN, bool isInHaving=false);
+    void** insertCondValueAndGetPtr(char *fName, char *value, bool opLike=false, AggType atp=AGG_UNKNOWN, bool isInHaving=false,bool function=false);
     void insertCondValue(char *fldName); //For Predecate t1.f1=t2.f1
     void insertUpdateValue(char *fldName, char *value);
 
@@ -319,6 +324,7 @@ class ParsedData
     Predicate* insertPredicate(char *fldName, ComparisionOp op, char *fldName1);
     Predicate* insertBetPredicate(char *fldName, ComparisionOp op1, void **value1, ComparisionOp op2, void **value2);
     Predicate* insertPredicate(Predicate *p1, LogicalOp op, Predicate *p2 = NULL);
+    Predicate* insertPredicate(Expression *exp, ComparisionOp op,void **val);
     Predicate* insertNullPredicate(char *fName, ComparisionOp op,bool nullFlag);
     void setCondition(Predicate *pred) 
     { 
@@ -373,6 +379,7 @@ class ParsedData
     Expression* insertExpression(char *fldName);
     Expression* insertExpression(char *value, bool flag);
     Expression* insertExpression(Expression* exp1, ArithOperator op ,Expression* exp2);
+    Expression* insertExpression(Expression* exp1, FunctionType type,Expression* exp2);
     void insertUpdateExpression(char *fName, Expression *exp);
 
     void insertFldDef(); //check if fldDef needs to be a part of ParsedData 

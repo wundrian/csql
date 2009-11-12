@@ -16,6 +16,7 @@
   ***************************************************************************/
 #ifndef PREDICATE_H
 #define PREDICATE_H
+#include<Expression.h>
 #include<DataType.h>
 class PredicateImpl;
 class Predicate;
@@ -127,6 +128,7 @@ class Predicate
 
     virtual void setTerm(Predicate *p1, LogicalOp op, Predicate *p2 = NULL)=0;
     virtual void setTerm(const char* fName1, ComparisionOp op,bool nullFlag)=0;
+    virtual void setTerm(Expression *exp, ComparisionOp op, void **opnd) = 0;
     virtual void print(int space)=0;
     virtual ~Predicate(){}
 };

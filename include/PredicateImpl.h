@@ -44,7 +44,6 @@ class PredicateImpl:public Predicate
     List *projList;
     bool isPushedDown;
     AggType aggType;
-    
     //optimization:caching val1 and val2 for evaluation
     char *val1;
     char *val2;
@@ -52,7 +51,8 @@ class PredicateImpl:public Predicate
     bool isBindBufSet;
     bool isNoLeftRight;
     bool dontEvaluate;
-
+    Expression *lExp;
+    Expression *rExp;
     //opt for between queries
     ComparisionOp comp2Op;
     void *operand2;
@@ -81,6 +81,7 @@ class PredicateImpl:public Predicate
         compOp = comp2Op = OpInvalidComparisionOp;
         logicalOp = OpInvalidLogicalOp;
         isNull=false;
+        lExp = NULL; rExp = NULL;
     }
     ~PredicateImpl();
 
@@ -96,6 +97,7 @@ class PredicateImpl:public Predicate
 
 
     void setTerm(Predicate *p1, LogicalOp op, Predicate *p2 = NULL);
+    void setTerm(Expression *exp, ComparisionOp op, void **opnd);
     void setTerm(const char* fName1, ComparisionOp op,bool nullFlag);
     void* valPtrForIndexField(const char *name, bool isUnique);
     ComparisionOp opForIndexField(const char *name);
