@@ -206,7 +206,9 @@ int FieldList::getFieldOffset(const char *fldName)
         {
             return offset;
         }
-        offset = offset + iter->fldDef.length_;
+        if (iter->fldDef.type_ != typeVarchar)
+            offset = offset + iter->fldDef.length_;
+        else offset = offset + sizeof(void *);
         iter = iter ->next;
         }
         return -1;
@@ -223,7 +225,9 @@ int FieldList::getFieldOffset(int fldpos)
         {
             return offset;
         }
-        offset = offset + iter->fldDef.length_;
+        if (iter->fldDef.type_ != typeVarchar)
+            offset = offset + iter->fldDef.length_;
+        else offset = offset + sizeof(void *);
         iter = iter ->next;
         counter++;
     }
