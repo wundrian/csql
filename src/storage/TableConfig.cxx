@@ -500,3 +500,38 @@ DbRetVal TableConfig::getDsnForTable(char *tab, char *dsnname)
       fclose(fp);
       return ErrNotFound;
 }
+DbRetVal TableConfig::tablesOnDsn()
+{
+    FILE *fp;
+    fp = fopen(Conf::config.getTableConfigFile(),"r");
+    if( fp == NULL){
+        printError(ErrSysInit, "csqltable.conf file does not exist");
+        fclose(fp);
+        return ErrOS;
+     }
+     char tablename[IDENTIFIER_LENGTH];tablename[0]='\0';
+     char pkfield[IDENTIFIER_LENGTH];pkfield[0]='\0';
+     char condition[IDENTIFIER_LENGTH];condition[0]='\0';
+     char field[IDENTIFIER_LENGTH];field[0]='\0';
+     char dsn[IDENTIFIER_LENGTH];dsn[0]='\0';
+     int mode;
+     int totalTables=0;
+     printf("==========================================\n");
+     printf("|The list of cached tables present in DS.|\n");
+     printf("==========================================\n");
+     while(!feof(fp)){
+        fscanf(fp,"%d %s %s %s %s %s \n",&mode,tablename,pkfield,condition,field,dsn);
+        if(strcmp(dsn,dsnName)==0){
+             printf("%s\n",tablename);
+             totalTables++;
+        }
+     }
+     if(totalTables==0){
+         fclose(fp);
+         return ErrNotFound;
+     }
+     printf("-------------------------------------------\n");
+     fclose(fp);
+     return OK;
+}
+
