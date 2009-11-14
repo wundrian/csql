@@ -132,7 +132,7 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
     fclose(fp);
     TDBInfo tdbName=mysql;
     if (strcasecmp(tdb,"postgres")==0) tdbName=postgres;
-    else if (strcasecmp(tdb,"postgres")==0) tdbName=mysql;
+    else if (strcasecmp(tdb,"mysql")==0) tdbName=mysql;
     else printError(ErrNotFound,"Target Database Name is not properly set.Tdb name could be mysql, postgres, sybase, db2, oracle\n");
          
     logFine(Conf::logger, "TDB Name:%s\n", tdb);
@@ -513,7 +513,19 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
             return rv;
         }
         //delete inf;
+    }else{
+           rv=checkingSchema(hdbc,hstmt,conn,stmt,tdbName);
+           if(rv != OK){
+                printError(ErrSysInit,"Unable to cache the '%s' table due to schema mismatched.",tableName);
+                SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
+                SQLDisconnect (hdbc);
+                SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
+                SQLFreeHandle (SQL_HANDLE_ENV, henv);
+                return ErrSysInit;
+           }
     }
+
+
     // Now load the table with records
     char insStmt[1024];
     char *ptr = insStmt;
@@ -1124,4 +1136,117 @@ DbRetVal CacheTableLoader::createIndex(SQLHSTMT hstmtmeta, char *tableName, Hash
      return OK;
 }
 
+DbRetVal CacheTableLoader::checkingSchema(SQLHDBC hdbc,SQLHSTMT hstmt, AbsSqlConnection *conn, AbsSqlStatement *stmt,TDBInfo tdbName)
+{
+    DbRetVal rv=OK;
+    int noOfPrimaryKey=0;
+    int retValue=0;
+    int csqlFields=0;
 
+    SQLSMALLINT tdbFields=0;
+    SQLHSTMT hstmtmeta;
+    char columnname[IDENTIFIER_LENGTH];
+
+    UWORD                   icol=1;
+    UCHAR                   colName[IDENTIFIER_LENGTH];
+    SWORD                   colNameMax=0;
+    SWORD                   nameLength=0;
+    SWORD                   colType=0;
+    SQLULEN                 colLength = 0;
+    SWORD                   scale=0;
+    SWORD                   nullable=0;
+    colNameMax = IDENTIFIER_LENGTH;
+
+    SqlConnection *con = (SqlConnection *) conn->getInnerConnection();
+    DatabaseManager *dbMgr = con->getConnObject().getDatabaseManager();
+
+    SqlStatement *sqlStmt = (SqlStatement *)stmt->getInnerStatement();
+    sqlStmt->setConnection(con);
+
+    List fNameList ;
+    fNameList = sqlStmt->getFieldNameList(tableName);
+    ListIterator fNameIter = fNameList.getIterator();
+    FieldInfo *info = new FieldInfo();
+    Identifier *elem = NULL;
+
+    retValue=SQLNumResultCols(hstmt, &tdbFields);
+    if(retValue) {
+       printError(ErrSysInit, "Unable to retrieve ODBC total columns.\n");
+       SQLFreeHandle (SQL_HANDLE_STMT, hstmtmeta);
+       return ErrSysInit;
+    }
+    /* CSQL Table fields */
+    fNameList = sqlStmt->getFieldNameList(tableName);
+    csqlFields = fNameList.size();
+    /* noOfFields in both the database are same or not. */
+    if(tdbFields!=csqlFields){
+        printError(ErrSysInit,"Number of fields between CSQL and TDB are not equal.");
+        SQLFreeHandle (SQL_HANDLE_STMT, hstmtmeta);
+        return ErrSysInit;
+    }
+    retValue=SQLAllocHandle (SQL_HANDLE_STMT, hdbc, &hstmtmeta);
+    if(retValue){
+        printError(ErrSysInit, "Unable to allocate ODBC handle. \n");
+        SQLFreeHandle (SQL_HANDLE_STMT, hstmtmeta);
+        return ErrSysInit;
+    }
+    retValue=SQLPrimaryKeys(hstmtmeta, NULL, SQL_NTS, NULL, SQL_NTS, (SQLCHAR*) tableName, SQL_NTS);
+    retValue = SQLBindCol(hstmtmeta, 4, SQL_C_CHAR,columnname, 129,NULL);
+
+    while(icol<=tdbFields){
+        retValue = SQLDescribeCol(hstmt, icol, colName, colNameMax,
+                             &nameLength, &colType, &colLength,
+                             &scale, &nullable);//TDB Field Name
+        if(retValue){
+            printError(ErrSysInit, "Unable to retrieve ODBC column info.\n");
+            SQLFreeHandle (SQL_HANDLE_STMT, hstmtmeta);
+            return ErrSysInit;
+        }
+        Util::str_tolower((char*)colName);
+        elem = (Identifier*) fNameIter.nextElement();
+        sqlStmt->getFieldInfo(tableName, (const char*)elem->name, info);
+        char fldName[20];
+        int isNull;
+        int isPrimary;
+        rv = stmt->getParamFldInfo(icol,info);
+        char *name=(info->fldName);//Getting field name for CSQL table.
+        Util::str_tolower((char*)name);
+        if(strcmp(name,(char *)colName) != 0){ //Field name matching between CSQL and TDB.
+            printError(ErrSysInit,"CSQL's '%s' field did not match with TDB's '%s' field.\n",name,(char*)colName);
+            SQLFreeHandle (SQL_HANDLE_STMT, hstmtmeta);
+            return ErrSysInit;
+        }
+     
+        /* DataType matching between CSQL and TDB */
+        char ptr[IDENTIFIER_LENGTH]; ptr[0]='\0';
+        char ptr1[IDENTIFIER_LENGTH]; ptr1[0]='\0';
+
+        sprintf(ptr,"%s",AllDataType::getSQLString (AllDataType::convertFromSQLType(colType,colLength,scale,tdbName)));
+        sprintf(ptr1,"%s",AllDataType::getSQLString(info->type));//CSQL Type 
+        if(strcmp(ptr,ptr1)!=0){
+           printError(ErrSysInit,"DataType did not match for '%s' field in CSQL.\n",name);
+           SQLFreeHandle (SQL_HANDLE_STMT, hstmtmeta);
+           return ErrSysInit;
+        }
+        
+       /* Primary Key checking */
+       bool tdbPKey=false;
+       if(SQLFetch( hstmtmeta ) == SQL_SUCCESS) tdbPKey=true;
+       if(tdbPKey && (!info->isPrimary))
+       printf("Warning: In CSQL, The %s's '%s' field should have Primery Key constraint.\n",tableName,name);
+       if((!tdbPKey) && info->isPrimary)
+           printf("Warning: In TDB, The %s's '%s' field should have Primary Key constraint.\n",tableName,colName);
+       
+       /* NotNull Checking */
+       bool isCsqlNotNull=false;
+       bool isTdbNotNull=false;
+       if(tdbName==mysql){
+           if(info->isNull && nullable)
+           printf("Warning: In TDB, The %s's '%s' field should have a NOT NULL constraint.\n",tableName,colName);
+           if((!info->isNull) && (!nullable))
+               printf("Warning: In CSQL, The %s's '%s' field should have a NOT NULL constraint.\n",tableName,name);
+       }
+       icol++;
+   }
+   return OK;
+}
