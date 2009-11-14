@@ -96,6 +96,7 @@ class TableConfig
     DbRetVal isTablePresent();// new one by :Jitendra
     bool isFieldExist(char *fieldname);
     DbRetVal CacheInfo(bool isTabPresent);
+    DbRetVal tablesOnDsn();
     char *getRealConditionFromFile(char *condition);
     char *getConditionVal(char *condition);
     static DbRetVal getDsnAndTdb(char *dsn,char *newdsn, char *tdb);

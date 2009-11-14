@@ -75,6 +75,7 @@ class CacheTableLoader
     DbRetVal load(AbsSqlConnection *conn, AbsSqlStatement *stmt, bool tabDef);
     DbRetVal isTablePresent();// new one by :Jitendra
     DbRetVal CacheInfo(bool isTabPresent);
+    DbRetVal tablesOnDsn();
     char *getConditionVal(char *condition);
     void setParamValues(AbsSqlStatement *stmt, int parampos, DataType type, int length, char *value);
     DbRetVal checkingSchema(SQLHDBC hdbc,SQLHSTMT hstmt,AbsSqlConnection *conn, AbsSqlStatement *stmt,TDBInfo tdbName);
