@@ -196,7 +196,6 @@ DbRetVal showAllDsn()
         fscanf(fp,"%s %s %s %s\n",dsnId,user,passwd,tdbname);
         printf("%s\n",dsnId);
     }
-    printf("---------------------------------------------------\n");
     fclose(fp);
     return OK;
 }
