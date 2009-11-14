@@ -36,6 +36,8 @@ void printUsage()
    printf("       f -> List of field names to be cached. Comma separated.\n");
    printf("       p -> Not Null unique index field name for Bidirectional\n");
    printf("            caching on which trigger needs to be run.\n");
+   printf("       d -> Cache the tables from the specified DSN.\n");
+   printf("       l -> Retrievs all the cached table names for the specified DSN.\n");
    printf("       F -> Forceful caching.\n");
    printf("       s -> Load only the records from target db.\n"); 
    printf("            Assumes table is already created in csql.\n");
@@ -83,7 +85,9 @@ int main(int argc, char **argv)
     bool fieldNameSpecified = false;
     bool forceEnable=false;
     bool isDsn=false;
-    while ((c = getopt(argc, argv, "U:P:t:d:f:c:p:FRDSsru?")) != EOF) 
+    bool isDsnSpecified=false;
+
+    while ((c = getopt(argc, argv, "U:P:t:d:f:c:p:l:FRDSsru?")) != EOF) 
     {
         switch (c)
         {
@@ -95,6 +99,7 @@ int main(int argc, char **argv)
                          break; 
                        }
             case 'd' : { strcpy(dsnName,argv[optind - 1]);isDsn=true;break;}
+           case 'l'  : {strcpy(dsnName,argv[optind - 1]); isDsnSpecified=true; opt=7; break;}
             case 'p' : { strcpy(fieldname, argv[optind - 1]);
                          if(opt==2){fieldNameSpecified = true;break;}
                        }
@@ -204,6 +209,17 @@ int main(int argc, char **argv)
 	        printf("\nError (%d): None of the table found in Cache,You need to cache the table from Target DB.\n\n",rv);
 	        exit(2);
 	    }
+    }else if(opt==7){
+         if(isDsnSpecified){
+            cacheLoader.setDsnName(dsnName);
+            TableConf::config.setDsnName(dsnName);
+        }
+        rv = TableConf::config.tablesOnDsn();
+        if(rv != OK){
+            printf("Error(%d):There is no cache table present in the specified(%s)DS.\n\n",rv,dsnName);
+            return 10;
+        }
+
     }
     return 0;
 }
