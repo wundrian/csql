@@ -530,7 +530,6 @@ DbRetVal TableConfig::tablesOnDsn()
          fclose(fp);
          return ErrNotFound;
      }
-     printf("-------------------------------------------\n");
      fclose(fp);
      return OK;
 }
