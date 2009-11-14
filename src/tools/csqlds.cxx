@@ -31,6 +31,7 @@ void printUsage()
 }
 DbRetVal removeEntryFromCsqlds(char *dsn);
 DbRetVal addEntryToCsqlds(char *dsn, char *uname, char *pwd, char *tbdname);
+DbRetVal showAllDsn();
 Config Conf::config;
 int shouldadd=0;
 int main(int argc, char **argv)
@@ -48,7 +49,7 @@ int main(int argc, char **argv)
     bool isTDBSpecified=false;
     bool isDSNSpecified=false;
     bool showmsg=false;
-    while ((c = getopt(argc, argv, "U:P:D:N:ar?")) != EOF) 
+    while ((c = getopt(argc, argv, "U:P:D:N:are?")) != EOF) 
     {
         switch (c)
         {
@@ -70,6 +71,7 @@ int main(int argc, char **argv)
             case '?' : {showmsg=true; break; } //print help 
             case 'a' : { shouldadd=1; break; } 
             case 'r' : { shouldadd=2; break;} 
+            case 'e' : { opt=4; break;}
             default: opt=10; 
         }
     }//while options
@@ -97,6 +99,9 @@ int main(int argc, char **argv)
     }else if (shouldadd == 2)
     {
         removeEntryFromCsqlds(dsn);
+    }else if(opt==4){
+
+        showAllDsn();    
     }else
     {
         printf("Invalid option passed\n");
@@ -169,3 +174,30 @@ DbRetVal removeEntryFromCsqlds(char *dsn)
    }
    return OK;
 }
+
+DbRetVal showAllDsn()
+{
+    char dsnId[IDENTIFIER_LENGTH]; dsnId[0]='\0';
+    char user[IDENTIFIER_LENGTH]; user[0] = '\0';
+    char passwd[IDENTIFIER_LENGTH]; passwd[0] = '\0';
+    char tdbname[IDENTIFIER_LENGTH]; tdbname[0]='\0';
+    FILE *fp=NULL;
+    bool isDSNExist=false;
+    fp = fopen(Conf :: config.getDsConfigFile(),"r");
+    if(fp==NULL)
+    {
+        printError(ErrSysInit, "csqlds.conf file does not exist");
+        return ErrSysInit;
+    }
+    printf("===================================================\n");
+    printf("List of Data Sources present in 'csqlds.conf' file.\n");
+    printf("===================================================\n");
+    while(!feof(fp)){
+        fscanf(fp,"%s %s %s %s\n",dsnId,user,passwd,tdbname);
+        printf("%s\n",dsnId);
+    }
+    printf("---------------------------------------------------\n");
+    fclose(fp);
+    return OK;
+}
+
