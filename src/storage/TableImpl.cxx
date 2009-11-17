@@ -1926,6 +1926,9 @@ bool TableImpl::isFkTableHasRecord(char *pkTableName, TableImpl *fkTbl)
             {
                 if(def->type_==typeString)
                     condition[i].setTerm(fkFldName,OpEquals,&val);//((char*)curTuple_+def->offset_));
+                else if (def->type_ == typeVarchar)
+                    condition[i].setTerm(fkFldName,OpEquals,
+                                                       (void *) *(long *) val);
                 else
                     condition[i].setTerm(fkFldName,OpEquals,val);//((char*)curTuple_+def->offset_));
                 i++;
