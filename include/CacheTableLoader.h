@@ -79,6 +79,8 @@ class CacheTableLoader
     char *getConditionVal(char *condition);
     void setParamValues(AbsSqlStatement *stmt, int parampos, DataType type, int length, char *value);
     DbRetVal checkingSchema(SQLHDBC hdbc,SQLHSTMT hstmt,AbsSqlConnection *conn, AbsSqlStatement *stmt,TDBInfo tdbName);
+    DbRetVal cacheAllTablesFromDs(char* tdbName,bool tableDefinition, bool isDirect,char *username,char *password);
+ 
 
 };
 
