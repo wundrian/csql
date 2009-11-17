@@ -1844,7 +1844,10 @@ bool TableImpl::isPkTableHasRecord(char *pkTableName, TableImpl *fkTbl,bool isIn
             {
                 if(NULL == def->bindVal_ && isInsert) { return true; }
                 if(NULL == def->bindVal_) {
-                    val = (char*)curTuple_+ def->offset_;
+                    if (def->type_ != typeVarchar)
+                        val = (char*)curTuple_+ def->offset_;
+                    else val = (void *) *(long *) ((char*)curTuple_+ 
+                                                                 def->offset_); 
                 } else {
                     val = def->bindVal_;
                 }
@@ -1921,14 +1924,14 @@ bool TableImpl::isFkTableHasRecord(char *pkTableName, TableImpl *fkTbl)
         while (fIter.hasElement())
         {
             def = fIter.nextElement();
-            void *val = (char*)curTuple_+ def->offset_;
+            void *val = NULL;
+            if (def->type_ != typeVarchar)
+                val = (char*)curTuple_+ def->offset_;
+            else val = (void *) *(long *) ((char*)curTuple_+ def->offset_);
             if (strcmp(def->fldName_, pkFldName) == 0)
             {
                 if(def->type_==typeString)
                     condition[i].setTerm(fkFldName,OpEquals,&val);//((char*)curTuple_+def->offset_));
-                else if (def->type_ == typeVarchar)
-                    condition[i].setTerm(fkFldName,OpEquals,
-                                                       (void *) *(long *) val);
                 else
                     condition[i].setTerm(fkFldName,OpEquals,val);//((char*)curTuple_+def->offset_));
                 i++;
