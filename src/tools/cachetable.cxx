@@ -98,8 +98,11 @@ int main(int argc, char **argv)
                          tableNameSpecified = true; 
                          break; 
                        }
-            case 'd' : { strcpy(dsnName,argv[optind - 1]);isDsn=true;break;}
-           case 'l'  : {strcpy(dsnName,argv[optind - 1]); isDsnSpecified=true; opt=7; break;}
+            case 'd' : { strcpy(dsnName,argv[optind - 1]);
+                         if(!tableNameSpecified)opt=50;
+                         isDsn=true;break;
+                       }
+            case 'l' : {strcpy(dsnName,argv[optind - 1]); isDsnSpecified=true; opt=7; break;}
             case 'p' : { strcpy(fieldname, argv[optind - 1]);
                          if(opt==2){fieldNameSpecified = true;break;}
                        }
@@ -219,7 +222,15 @@ int main(int argc, char **argv)
             printf("Error(%d):There is no cache table present in the specified(%s)DS.\n\n",rv,dsnName);
             return 10;
         }
-
+    }else if(opt==50){
+        isCached = TableConf::config.isTableCached(mode);
+        if(isCached) {
+            printf("Table is already cached, unload table by\n");
+            printf("\"cachetable -t <tablename> -u\" and then try \n");
+            return 11;
+        }
+        rv = cacheLoader.cacheAllTablesFromDs(dsnName,tableDefinition, isDirect,username,password);
+        if(rv!=OK)return 12;
     }
     return 0;
 }
