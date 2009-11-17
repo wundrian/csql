@@ -1404,7 +1404,9 @@ DbRetVal CacheTableLoader::cacheAllTablesFromDs(char *dsnName,bool tableDefiniti
         printf("Table Name: %s\n",buf);
         counter++;
     }
-     /*Closing opening forwarded Cursor */
+    /* Checking couter value */
+    if(counter==0) printf("None of the Table present in TDB.\n");
+    /*Closing opening forwarded Cursor */
     retValue=SQLCloseCursor(hstmt);
     if(retValue){
         printError(ErrSysInit,"Unable to close the cursor\n");
