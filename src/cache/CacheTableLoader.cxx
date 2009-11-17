@@ -572,7 +572,7 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
     while (fNameIter.hasElement()) {
         elem = (Identifier*) fNameIter.nextElement();
         sqlStmt->getFieldInfo(tableName, (const char*)elem->name, info);
-        if (info->type == typeString) {
+        if (info->type == typeString || info->type == typeVarchar) {
             valBuf = AllDataType::alloc(info->type, info->length+1);
             os::memset(valBuf,0,info->length+1);
         } else {
@@ -986,6 +986,7 @@ void CacheTableLoader::setParamValues(AbsSqlStatement *stmt, int parampos, DataT
         case typeTimeStamp:
             stmt->setTimeStampParam(parampos, *(TimeStamp*)value);
             break;
+        case typeVarchar:
         case typeString:
             {
                 char *d =(char*)value;
