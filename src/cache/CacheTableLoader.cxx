@@ -1251,3 +1251,195 @@ DbRetVal CacheTableLoader::checkingSchema(SQLHDBC hdbc,SQLHSTMT hstmt, AbsSqlCon
    }
    return OK;
 }
+
+DbRetVal CacheTableLoader::cacheAllTablesFromDs(char *dsnName,bool tableDefinition, bool isDirect,char *username, char *password)
+{
+    char dsn[72];
+    DbRetVal rv = OK;
+    FILE *fp;
+    fp = fopen(Conf :: config.getDsConfigFile(),"r");
+    if(fp==NULL) {
+        printError(ErrSysInit, "csqlds.conf file does not exist");
+        return ErrSysInit;
+    }
+    char dsnId[IDENTIFIER_LENGTH]; dsnId[0]='\0';
+    char user[IDENTIFIER_LENGTH]; user[0] = '\0';
+    char passwd[IDENTIFIER_LENGTH]; passwd[0] = '\0';
+    char tdb[IDENTIFIER_LENGTH]; tdb[0]='\0';
+     /* If -d option is disable, the If statementn will true. */
+    if(strcmp(dsnName,"")==0) {
+        strcpy(dsnName, Conf::config.getDSN());
+    }
+    bool isDSNExist=false;
+    while(!feof(fp)) {
+       fscanf(fp,"%s %s %s %s\n",dsnId,user,passwd,tdb);
+       if(strcmp(dsnId,dsnName)==0) {
+           if( strcmp(user,"NULL")!=0 && strcmp(passwd,"NULL")!=0) {
+               sprintf(dsn,"DSN=%s;UID=%s;PWD=%s;",dsnName,user,passwd);
+               isDSNExist=true;
+               break;
+           }else{
+               sprintf(dsn,"DSN=%s;",dsnName);
+               isDSNExist=true;
+               break;
+           }
+       }
+    }
+     if(!isDSNExist) {
+       printError(ErrNotExists,"Entries is not present in the csqlds.conf file\n");
+       fclose(fp);
+       return ErrNotExists;
+    }
+    fclose(fp);
+    
+    TDBInfo tdbName=mysql;
+    if (strcasecmp(tdb,"mysql") == 0) tdbName=mysql;
+    else if (strcasecmp(tdb,"postgres")==0) tdbName=postgres;
+    else printError(ErrNotFound,"Target Database Name is not properly set.Tdb name could be MySql and Postgres.\n");
+    logFine(Conf::logger, "TDB Name:%s\n", tdb);
+     /* The ODBC section in intended to get all the tables from TDB,
+ *      * what SQLTables() is doing that. */
+
+    SQLCHAR outstr[1024];
+    SQLSMALLINT outstrlen;
+    int retValue =0;
+    SQLHENV henv;
+    SQLHDBC hdbc;
+    SQLHSTMT hstmt;
+    SQLSMALLINT columns;
+    char table[IDENTIFIER_LENGTH][IDENTIFIER_LENGTH];
+    int counter=0;
+    char buf[IDENTIFIER_LENGTH];
+    int row = 0;
+    SQLINTEGER indicator[ 5 ];
+     int colPos;//Only to bind table name filed.
+
+    CacheTableLoader cacheLoader;
+
+    /* Environment Handle. */
+    retValue = SQLAllocHandle (SQL_HANDLE_ENV, SQL_NULL_HANDLE, &henv);
+    if (retValue) {
+        printError(ErrSysInit, "Unable to allocate ODBC handle \n");
+        return ErrSysInit;
+    }
+     /* We want ODBC 3 support */
+    SQLSetEnvAttr(henv, SQL_ATTR_ODBC_VERSION, (void *) SQL_OV_ODBC3, 0);
+    /* Conenction handle. */
+    retValue = SQLAllocHandle (SQL_HANDLE_DBC, henv, &hdbc);
+     if (retValue) {
+        printError(ErrSysInit, "Unable to allocate ODBC handle \n");
+        return ErrSysInit;
+    }
+     /* Connect to TDB */
+    retValue = SQLDriverConnect(hdbc, NULL, (SQLCHAR*)dsn, SQL_NTS,
+                         outstr, sizeof(outstr), &outstrlen,
+                         SQL_DRIVER_NOPROMPT);
+    if (SQL_SUCCEEDED(retValue)) {
+        printDebug(DM_Gateway, "Connected to target database using dsn = %s\n", dsn);
+    }else{
+        printError(ErrSysInit, "Failed to connect to target database\n");
+        return ErrSysInit;
+    }
+     /* Statement handle */
+    retValue=SQLAllocHandle (SQL_HANDLE_STMT, hdbc, &hstmt);
+    if (retValue) {
+        printError(ErrSysInit, "Unable to allocate ODBC handle \n");
+        return ErrSysInit;
+    }
+    if(tdbName == mysql){
+        colPos=3;
+        /* User name is required in upper case for the SQLTables()'s  4th parameter */
+        Util::str_toupper((char*)user);
+        retValue=SQLTables(hstmt,NULL, 0, (SQLCHAR*)user, SQL_NTS, NULL, 0, (SQLCHAR*)"TABLE", SQL_NTS);
+        if(retValue){
+            printError(ErrSysInit, "Unable to retrieve list of tables\n");
+            return ErrSysInit;
+        }
+        /* Binding Column for 3rd parameter to get Table name. */
+        retValue=SQLBindCol(hstmt,3, SQL_C_CHAR,buf,sizeof(buf),NULL);
+        if(retValue){
+            printError(ErrSysInit,"Unable to BindCol\n");
+            return ErrSysInit;
+        }
+        /* For Postgres DB , SQLTables() retrieves all system and metadata tables,along with User defined table.
+         * So Here is a another option to fetch the user defined tables only */
+    }else if(tdbName==postgres){
+        SQLCHAR table[200]="SELECT table_name FROM information_schema.tables  WHERE table_schema NOT IN ('pg_catalog','information_schema');";
+        /* Preparing the query */
+        retValue=SQLPrepare(hstmt,table,SQL_NTS);
+        if(retValue){
+            printError(ErrSysInit,"Unable to Prapare the statement\n");
+            return ErrSysInit;
+        }
+        /* Binding the "table_name" column only */
+        retValue = SQLBindCol(hstmt,1,SQL_C_CHAR,buf,sizeof(buf),NULL);
+        if(retValue){
+            printError(ErrSysInit,"Unable to bind the column\n");
+            return ErrSysInit;
+        }
+        /* Execute the SELECT statement */
+        retValue = SQLExecute(hstmt);
+        if(retValue){
+            printError(ErrSysInit,"Unable to execute\n");
+            return ErrSysInit;
+        }
+    }
+
+    while(SQL_SUCCEEDED(retValue = SQLFetch(hstmt))){
+        /* copy Buffer value */
+        strcpy(&table[counter][0],buf);
+        /* settign DSN */
+        cacheLoader.setDsnName(dsnName);
+        TableConf::config.setDsnName(dsnName);
+        cacheLoader.setConnParam(username, password);
+        TableConf::config.setConnParam(username, password);
+        /* Settign up table */
+        cacheLoader.setTable(&table[counter][0]);
+        TableConf::config.setTable(&table[counter][0]);
+        /* Loading Table from TDB to CSQL */
+        rv = cacheLoader.load(tableDefinition);
+        if(rv != OK) return ErrSysInit;
+        /* Adding entries into the csqltable.conf file, after successful caching */
+        TableConf::config.addToCacheTableFile(isDirect);
+        printf("Table Name: %s\n",buf);
+        counter++;
+    }
+     /*Closing opening forwarded Cursor */
+    retValue=SQLCloseCursor(hstmt);
+    if(retValue){
+        printError(ErrSysInit,"Unable to close the cursor\n");
+        return ErrSysInit;
+    }
+    /* Commiting the transaction */
+    retValue=SQLTransact(henv,hdbc,SQL_COMMIT);
+    if(retValue){
+        printError(ErrSysInit,"Unable to commit the transaction\n");
+        return ErrSysInit;
+    }
+     /* Freeing Statement handle */
+    retValue = SQLFreeHandle(SQL_HANDLE_STMT,hstmt);
+    if(retValue){
+        printError(ErrSysInit,"Unable to free statement handle\n");
+        return ErrSysInit;
+    }
+     /* Disconnecting from TDB */
+    retValue = SQLDisconnect(hdbc);
+    if(retValue){
+         printError(ErrSysInit,"Unable to disconnect from DS handle\n");
+         return ErrSysInit;
+    }
+     /* Freeing Connection handle */
+    retValue = SQLFreeHandle(SQL_HANDLE_DBC,hdbc);
+    if(retValue){
+        printError(ErrSysInit,"Unable to free connection handle\n");
+        return ErrSysInit;
+    }
+    /* Freeing Environmant handle */
+    retValue = SQLFreeHandle(SQL_HANDLE_ENV,henv);
+    if(retValue){
+        printError(ErrSysInit,"Unable to free environment handle\n");
+        return ErrSysInit;
+    }
+    return OK;
+}/* -----------------------------End------------------------------- */
+
