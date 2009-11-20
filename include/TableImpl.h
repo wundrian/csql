@@ -215,7 +215,7 @@ class TableImpl:public Table
      //{ isPlanCreated = false; if (p) pred_ = p->getPredicate(); else pred_ = NULL;}
 
     //binding
-    DbRetVal bindFld(const char *name, void *val);
+    DbRetVal bindFld(const char *name, void *val, bool isNullExpl=false);
     void *getBindFldAddr(const char *name);
     int getFldPos(char *name);
     DbRetVal markFldNull(const char *name);

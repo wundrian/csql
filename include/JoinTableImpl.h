@@ -116,7 +116,7 @@ class JoinTableImpl:public Table
     DbRetVal closeScan();
     void setJoinType(JoinType type) { jType = type; }
     //binding
-    DbRetVal bindFld(const char *name, void *val);
+    DbRetVal bindFld(const char *name, void *val, bool dummy=false);
     //DbRetVal setJoinCondition(const char *fldname1, ComparisionOp op,  
     //                          const char *fldname2);
 

@@ -96,7 +96,7 @@ class AggTableImpl:public Table
     Table* getTableHdl(){ return tableHdl; }
     DbRetVal closeScan();
     void *getBindFldAddr(const char *name);
-    DbRetVal bindFld(const char *name, void *val);
+    DbRetVal bindFld(const char *name, void *val, bool dummy=false);
     DbRetVal bindFld(const char *name, AggType aggType, void *val);
     DbRetVal setGroup(const char *name, void *val);
     bool isFldPresentInGrp(char *fname);

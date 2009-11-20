@@ -39,7 +39,7 @@ JoinTableImpl::JoinTableImpl()
 }
 JoinTableImpl::~JoinTableImpl() {}
 
-DbRetVal JoinTableImpl::bindFld(const char *fldname, void *val)
+DbRetVal JoinTableImpl::bindFld(const char *fldname, void *val, bool dummy)
 {
     FieldInfo *info = new FieldInfo();
     char tableName[IDENTIFIER_LENGTH];

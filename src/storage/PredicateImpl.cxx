@@ -828,8 +828,7 @@ void PredicateImpl::setOffsetAndType()
         type = info->type;
         length = info->length;
         isNullable = true;
-        if (info->isNull || info->isPrimary || 
-            info->isDefault || info->isAutoIncrement)
+        if (info->isNull || info->isPrimary || info->isAutoIncrement)
              isNullable = false;
         //printf("isNullable is set to %d\n", isNullable);
         delete info;

@@ -330,8 +330,9 @@ DbRetVal Transaction::applyUndoLogs(Database *sysdb)
                 Chunk *vcchunk = (Chunk *) *(long *)ptr; ptr += sizeof(void *);
                 void **ptrToVarchars = (void **) ptr;
                 for (int i = 0; i < noOfVarchar; i++) {
-                    vcchunk->free(&db, ptrToVarchars[i]);
-                };
+                    if (ptrToVarchars[i] != NULL) 
+                        vcchunk->free(&db, ptrToVarchars[i]);
+                }
                 break;
              }
              case DeleteOperation:
@@ -361,10 +362,12 @@ DbRetVal Transaction::applyUndoLogs(Database *sysdb)
                 char *lenValPtr = (char *) ptr;
                 for (int i = 0; i < noOfVarchar; i++) {
                     int len = *(int *) lenValPtr; lenValPtr += sizeof(int);
-                    void *ptr = vcchunk->allocate(&db, len, &rv);
-                    strcpy((char *)ptr, lenValPtr); lenValPtr += len;
-                    *(long *) ptrToVarchars[i] =  (long)ptr;
-                };
+                    if (len != 0) {
+                        void *ptr = vcchunk->allocate(&db, len, &rv);
+                        strcpy((char *)ptr, lenValPtr); lenValPtr += len;
+                        *(long *) ptrToVarchars[i] =  (long)ptr;
+                    } else *(long *) ptrToVarchars[i] = 0L;
+                }
                 break;
              }
              case UpdateOperation:
@@ -396,10 +399,12 @@ DbRetVal Transaction::applyUndoLogs(Database *sysdb)
                 os::memcpy(ptrToTuple, tuple, tupleLen);
                 for (int i = 0; i < noOfVarchar; i++) {
                     int len = *(int *) lenValPtr; lenValPtr += sizeof(int);
-                    void *ptr = vcchunk->allocate(&db, len, &rv);
-                    strcpy((char *)ptr, lenValPtr); lenValPtr += len;
-                    *(long *) ptrToVarchars[i] = (long) ptr;
-                };
+                    if (len != 0) {
+                        void *ptr = vcchunk->allocate(&db, len, &rv);
+                        strcpy((char *)ptr, lenValPtr); lenValPtr += len;
+                        *(long *) ptrToVarchars[i] = (long) ptr;
+                    } else *(long *) ptrToVarchars[i] = 0L;
+                }
                 break;
              }
              case InsertHashIndexOperation:

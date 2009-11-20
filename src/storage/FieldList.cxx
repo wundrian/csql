@@ -104,9 +104,10 @@ int FieldList::size()
 }
 //-1->if val is passed NULL
 //-2->if fld is not present
-DbRetVal FieldList::updateBindVal(const char *fldName, void *val )
+DbRetVal FieldList::updateBindVal(const char *fldName, void *val, 
+                                                           bool isNullExplicit)
 {
-    if (NULL == val)
+    if (NULL == val && isNullExplicit == false)
     {
         printError(ErrBadArg, "Value passed is NULL");
         return ErrBadArg;
@@ -116,7 +117,8 @@ DbRetVal FieldList::updateBindVal(const char *fldName, void *val )
     {
         if (strcmp(iter->fldDef.fldName_, fldName) == 0)
         {
-            iter->fldDef.bindVal_ = val;
+            if (NULL == val) iter->fldDef.isNullExplicit_ = true;
+            else iter->fldDef.bindVal_ = val;
             return OK;
         }
         iter = iter ->next;

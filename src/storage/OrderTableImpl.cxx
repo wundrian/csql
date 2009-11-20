@@ -57,7 +57,7 @@ void *OrderTableImpl::getBindFldAddr(const char *name)
     return NULL;
 }
 
-DbRetVal OrderTableImpl::bindFld(const char *name, void *val)
+DbRetVal OrderTableImpl::bindFld(const char *name, void *val, bool dummy)
 {
     printError(ErrBadCall, "OrderTableImpl bindFld not implemented\n"); 
     return ErrBadCall;

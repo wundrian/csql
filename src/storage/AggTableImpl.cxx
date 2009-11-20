@@ -69,7 +69,7 @@ void *AggTableImpl::getBindFldAddr(const char *name)
     return NULL;
 }
 
-DbRetVal AggTableImpl::bindFld(const char *name, void *val)
+DbRetVal AggTableImpl::bindFld(const char *name, void *val, bool dummy)
 {
     printError(ErrBadCall, "AggTableImpl bindFld not implemented\n"); 
     return ErrBadCall;

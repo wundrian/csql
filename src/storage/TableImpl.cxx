@@ -49,13 +49,13 @@ void Table::getTableNameAlone(char *fname, char *name) {
     return;
 }
 
-DbRetVal TableImpl::bindFld(const char *name, void *val)
+DbRetVal TableImpl::bindFld(const char *name, void *val, bool isNullExpl)
 {
     if (name[0] == '*' ) return OK;
     //set it in the field list
     char fieldName[IDENTIFIER_LENGTH];
     getFieldNameAlone((char*)name, fieldName);
-    DbRetVal rv = fldList_.updateBindVal(fieldName, val);
+    DbRetVal rv = fldList_.updateBindVal(fieldName, val, isNullExpl);
     if (OK != rv) {
         printError(ErrNotExists, "Field %s does not exist", fieldName);
         return  rv;
@@ -1022,7 +1022,9 @@ DbRetVal TableImpl::deleteTuple()
             colPtr =  (char *) curTuple_ + def->offset_;
             if (def->type_ == typeVarchar) {
                 nVarchars++;
-                vcLenValPairSize = vcLenValPairSize + sizeof(int) +
+                if (* (long *) colPtr == 0L)
+                    vcLenValPairSize = vcLenValPairSize + sizeof(int);
+                else vcLenValPairSize = vcLenValPairSize + sizeof(int) +
                              + os::align(strlen((char *) *(long *)colPtr) + 1);
             }
         }
@@ -1044,11 +1046,16 @@ DbRetVal TableImpl::deleteTuple()
             int vcStrLen = 0;
             if (def->type_ == typeVarchar) {
                 *(long *) ptr = (long )colPtr; ptr += sizeof(void *);
-                *(int *)valLenPairPtr = vcStrLen =
-                            os::align(strlen((char *) *(long *)colPtr) + 1);
-                valLenPairPtr += sizeof(int);
-                strcpy(valLenPairPtr, (char *)*(long *)colPtr);
-                valLenPairPtr += vcStrLen;
+                if (*(long *) colPtr == 0L) {
+                    *(int *) valLenPairPtr = vcStrLen = 0;
+                    valLenPairPtr += sizeof(int);
+                } else {
+                    *(int *) valLenPairPtr = vcStrLen =
+                                os::align(strlen((char *)*(long *)colPtr) + 1);
+                    valLenPairPtr += sizeof(int);
+                    strcpy(valLenPairPtr, (char *)*(long *)colPtr);
+                    valLenPairPtr += vcStrLen;
+                }
             }
         }
         ret = (*trans)->appendUndoLog(sysDB_, DeleteOperation, data, size);
@@ -1072,8 +1079,10 @@ DbRetVal TableImpl::deleteTuple()
         FieldDef *def = fIter.nextElement();
         colPtr =  (char *) curTuple_ + def->offset_;
         if (def->type_ == typeVarchar) {
-            char *ptr = (char *) *(long *) colPtr;
-            ((Chunk *) vcChunkPtr_)->free(db_, ptr);
+            if (*(long *) colPtr != 0L) {
+                char *ptr = (char *) *(long *) colPtr;
+                ((Chunk *) vcChunkPtr_)->free(db_, ptr);
+            }
         }
     }
     ((Chunk*)chunkPtr_)->free(db_, curTuple_);
@@ -1205,7 +1214,9 @@ DbRetVal TableImpl::updateTuple()
             colPtr =  (char *) curTuple_ + def->offset_;
             if (def->type_ == typeVarchar) {
                 nVarchars++;
-                vcLenValPairSize = vcLenValPairSize + sizeof(int) +
+                if (* (long *) colPtr == 0L) 
+                    vcLenValPairSize = vcLenValPairSize + sizeof(int);
+                else vcLenValPairSize = vcLenValPairSize + sizeof(int) +
                              + os::align(strlen((char *) *(long *)colPtr) + 1);
             }
         }
@@ -1229,12 +1240,16 @@ DbRetVal TableImpl::updateTuple()
             int vcStrLen = 0;
             if (def->type_ == typeVarchar) {
                 *(long *) ptr = (long)colPtr; ptr += sizeof(void *);
-
-                *(int *) valLenPairPtr = vcStrLen =
-                            os::align(strlen((char *)*(long *)colPtr) + 1);
-                valLenPairPtr += sizeof(int);
-                strcpy(valLenPairPtr, (char *)*(long *)colPtr);
-                valLenPairPtr += vcStrLen;
+                if (*(long *) colPtr == 0L) {
+                    *(int *) valLenPairPtr = vcStrLen = 0;
+                    valLenPairPtr += sizeof(int);
+                } else {
+                    *(int *) valLenPairPtr = vcStrLen =
+                                os::align(strlen((char *)*(long *)colPtr) + 1);
+                    valLenPairPtr += sizeof(int);
+                    strcpy(valLenPairPtr, (char *)*(long *)colPtr);
+                    valLenPairPtr += vcStrLen;
+                }
             }
         }
         ret = (*trans)->appendUndoLog(sysDB_, UpdateOperation, data, size);
@@ -1349,21 +1364,28 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
         }
         if (def->isDefault_ && NULL == def->bindVal_ && isInsert)
         {
-            if (def->type_ == typeVarchar) {
-                DbRetVal rv = OK;
-                void *ptr =
-                  ((Chunk *) vcChunkPtr_)->allocate(db_, def->length_, &rv);
-                *(long *)colPtr = (long)ptr;
-                AllDataType::convert(typeString, def->defaultValueBuf_, 
+            if (! def->isNullExplicit_) {
+                if (def->type_ == typeVarchar) {
+                    DbRetVal rv = OK;
+                    void *ptr =
+                     ((Chunk *) vcChunkPtr_)->allocate(db_, def->length_, &rv);
+                    *(long *)colPtr = (long)ptr;
+                    AllDataType::convert(typeString, def->defaultValueBuf_, 
                                                 def->type_, ptr, def->length_);
-            } else {
-                void *dest = AllDataType::alloc(def->type_, def->length_);
-                AllDataType::convert(typeString, def->defaultValueBuf_, 
+                } else {
+                    void *dest = AllDataType::alloc(def->type_, def->length_);
+                    AllDataType::convert(typeString, def->defaultValueBuf_, 
                                                def->type_, dest, def->length_);
-                AllDataType::copyVal(colPtr, dest, def->type_, def->length_);
-                free (dest);
+                    AllDataType::copyVal(colPtr, dest, def->type_, 
+                                                                 def->length_);
+                    free (dest);
+                }
+            } else {
+                setNullBit(fldpos);
+                *(long *) colPtr = 0L;
             }
-            colPtr = colPtr + def->length_;
+            if (def->type_ != typeVarchar) colPtr = colPtr + def->length_;
+            else colPtr = colPtr + sizeof(void *);
             fldpos++;
             continue;
         }
@@ -1397,7 +1419,8 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
                     if (!isInsert && isFldNull(fldpos)) {clearNullBit(fldpos);}
                     DbRetVal rv = OK;
                     if (!isInsert) {
-                        ((Chunk *) vcChunkPtr_)->free(db_,
+                        if (*(long *) colPtr != 0L)
+                           ((Chunk *) vcChunkPtr_)->free(db_,
                                                       (void *)*(long *)colPtr);
                     }
                     void *ptr = 
@@ -1448,8 +1471,8 @@ DbRetVal TableImpl::copyValuesToBindBuffer(void *tuplePtr)
            AllDataType::copyVal(def->bindVal_, colPtr, def->type_, 
                                                                  def->length_);
        else {
-           char *ptr = (char *) *(long *) colPtr;       
-           strcpy((char *)def->bindVal_, ptr);
+           char *ptr = (char *) *(long *) colPtr;
+           if (ptr != NULL) strcpy((char *)def->bindVal_, ptr);
        }
     }
     return OK;

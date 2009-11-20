@@ -36,6 +36,7 @@ class FieldDef
         isPrimary_ = false;
         isUnique_ = false;
         isAutoIncrement_=false;
+        isNullExplicit_ = false;
         strcpy(fldName_, "");
     }
     char fldName_[IDENTIFIER_LENGTH];
@@ -54,6 +55,7 @@ class FieldDef
     bool isDefault_;
     bool isUnique_;
     bool isAutoIncrement_;
+    bool isNullExplicit_; // if null is specified on default value field.
     long long autoVal_;//[DEFAULT_VALUE_BUF_LENGTH];
     //TODO::width and scale
 };
@@ -101,7 +103,7 @@ class FieldList
 
     DbRetVal removeAll();
 
-    DbRetVal updateBindVal(const char *fldName, void *val);
+    DbRetVal updateBindVal(const char *fldName, void *val, bool isNllEx=false);
     void * getBindField(const char *fldName);
     int getFieldOffset(const char *fldName);
     int getFieldOffset(int fldpos);
