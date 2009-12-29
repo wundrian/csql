@@ -182,6 +182,7 @@ DbRetVal SqlOdbcConnection::loadSymbols()
     symbolsLoaded=true;
     return OK;
 }
+ 
 DbRetVal SqlOdbcConnection::connect (char *user, char * pass)
 {
     DbRetVal rv = OK;
@@ -260,6 +261,7 @@ DbRetVal SqlOdbcConnection::connect (char *user, char * pass)
     }
     logFine(Conf::logger, "Connecting with dsn=%s\n", dsn);
     (*ODBCFuncPtrs.SQLSetConnectAttrPtr)(dbHdl, SQL_ATTR_AUTOCOMMIT, SQL_AUTOCOMMIT_OFF, 0);
+    if (rv == OK) isConnOpen = true;
     return rv;
     
 }
@@ -271,8 +273,10 @@ DbRetVal SqlOdbcConnection::disconnect()
     (*ODBCFuncPtrs.SQLFreeHandlePtr) (SQL_HANDLE_DBC, dbHdl);
     (*ODBCFuncPtrs.SQLFreeHandlePtr) (SQL_HANDLE_ENV, envHdl);
     logFine(Conf::logger, "disconnected");
+    if (rv == OK) isConnOpen = false;
     return rv;
 }
+
 void SqlOdbcConnection::setTrDbName(char *name)
 {
     if(strcasecmp(name, "mysql")==0)
@@ -282,6 +286,7 @@ void SqlOdbcConnection::setTrDbName(char *name)
     else  printError(ErrNotFound,"Target Database Name is not properly set.Tdb name could be mysql, postgres, sybase, db2, oracle\n");
     return;
 }
+
 DbRetVal SqlOdbcConnection::beginTrans(IsolationLevel isoLevel, TransSyncMode mode)
 {
     if (prevIsoLevel == isoLevel) return OK;
@@ -314,6 +319,7 @@ DbRetVal SqlOdbcConnection::beginTrans(IsolationLevel isoLevel, TransSyncMode mo
     //if (!SQL_SUCCEEDED(retVal)) rv = ErrSysInit;
     return rv;
 }
+
 DbRetVal SqlOdbcConnection::commit()
 {
     DbRetVal rv = OK;
@@ -324,6 +330,7 @@ DbRetVal SqlOdbcConnection::commit()
         logFinest(Conf::logger, "Transaction Committed");
     return rv;
 }
+
 DbRetVal SqlOdbcConnection::rollback()
 {
     DbRetVal rv = OK;
@@ -334,6 +341,7 @@ DbRetVal SqlOdbcConnection::rollback()
         logFinest(Conf::logger, "Transaction Rollback");
     return rv;
 }
+
 void SqlOdbcConnection::setErrorState( SQLHDBC dbc)
 {
     SQLINTEGER   i = 0;

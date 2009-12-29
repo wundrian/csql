@@ -641,6 +641,7 @@ void setParamValues(AbsSqlStatement *stmt, int parampos, DataType type, int leng
         case typeTimeStamp:
             stmt->setTimeStampParam(parampos, *(TimeStamp*)value);
             break;
+        case typeVarchar:
         case typeString:
             {
                 char *d =(char*)value;

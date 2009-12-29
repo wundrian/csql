@@ -486,6 +486,7 @@ void SqlNetworkHandler::setParamValues(AbsSqlStatement *stmt, int parampos, Data
         case typeTimeStamp:
             stmt->setTimeStampParam(parampos, *(TimeStamp*)value);
             break;
+        case typeVarchar:
         case typeString:
             {
                 char *d =(char*)value;

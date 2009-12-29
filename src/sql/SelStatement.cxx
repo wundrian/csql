@@ -841,23 +841,23 @@ DbRetVal SelStatement::resolveForCondition()
                 value->paramNo = paramPos++;
         }
         if (!value->paramNo) {
-	     // for valid Integer 
-             if (value->type  == typeDate || value->type == typeTime ||
-                 value->type == typeTimeStamp)
-                 parsedData->setCacheWorthy(false);
-
-	     if((value->type == typeInt) || (value->type==typeShort) || (value->type==typeByteInt) || (value->type==typeLongLong) || (value->type==typeLong)){
+	        // for valid Integer 
+            if (value->type  == typeDate || value->type == typeTime ||
+                value->type == typeTimeStamp)
+                parsedData->setCacheWorthy(false);
+	        if((value->type == typeInt) || (value->type==typeShort) || 
+                (value->type==typeByteInt) || (value->type==typeLongLong) || 
+                                                     (value->type==typeLong)) {
 	            int len=strlen(value->parsedString);
 	            for(int n=0;n<len;n++){
-	                 int p=value->parsedString[n];
-	                 if(!(p>=48 && p<=57 || p==45))
-	                     return ErrBadArg;
+	                int p=value->parsedString[n];
+	                if(!(p>=48 && p<=57 || p==45)) return ErrBadArg;
 	            }
-	     }
+	        }
 		     		    
-	    // Here for binary dataType it is not strcpy'd bcos internally memcmp is done for predicates like f2 = 'abcd' where f2 is binary
+	        // Here for binary dataType it is not strcpy'd bcos internally memcmp is done for predicates like f2 = 'abcd' where f2 is binary
             AllDataType::strToValue(value->value, value->parsedString, value->type, value->length);
-	}	
+	    }	
     }
     delete fInfo;
     totalParams = paramPos -1;
@@ -877,7 +877,7 @@ DbRetVal SelStatement::resolveForCondition()
             printError(ErrSysFatal, "Should never happen. value NULL after iteration");
             return ErrSysFatal;
         }
-        params[value->paramNo -1 ] = value;
+        if (value->paramNo) params[value->paramNo - 1] = value;
     }
     return OK;
 }

@@ -68,13 +68,14 @@ class SqlOdbcConnection : public AbsSqlConnection
     TDBInfo tdbName;
     char errState[STATE_LENGTH];
     char dsnAdapter[IDENTIFIER_LENGTH];
+    bool isConnOpen;
     public:
     SQLHENV envHdl;
     SQLHDBC dbHdl;
     char dsn[IDENTIFIER_LENGTH];
     IsolationLevel prevIsoLevel;
     SqlOdbcConnection()
-    { strcpy(errState,"00000"); innerConn = NULL; tdbName = mysql; prevIsoLevel = READ_COMMITTED; dsnAdapter[0]='\0';}
+    { strcpy(errState,"00000"); innerConn = NULL; tdbName = mysql; prevIsoLevel = READ_COMMITTED; dsnAdapter[0]='\0'; isConnOpen = false; }
     ~SqlOdbcConnection(){}
     
     void setDsn(char *dsn){ strcpy(dsnAdapter,dsn);}
@@ -89,7 +90,8 @@ class SqlOdbcConnection : public AbsSqlConnection
 
     //Note::forced to implement this as it is pure virtual in base class
     Connection& getConnObject(){  return dummyConn; }
-
+    bool isConnectionOpen() { if (isConnOpen) return true; return false; }
+    
     DbRetVal connect (char *user, char * pass);
 
     DbRetVal disconnect();

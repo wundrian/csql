@@ -23,6 +23,12 @@ CopyTblStatement::CopyTblStatement()
     innerSelStmt = NULL;
     totalFields = 0;
     bindFieldValues= NULL;
+    parsedData = NULL;
+    dbMgr = NULL;
+    table = NULL;
+    params = NULL;
+    paramValues = NULL;
+    totalParams = 0;
 }
 
 CopyTblStatement::~CopyTblStatement()

@@ -310,6 +310,12 @@ void* SqlOdbcStatement::fetch()
 
 void* SqlOdbcStatement::fetch(DbRetVal &rv)
 {
+    SqlOdbcConnection *sqlOdbcCon = (SqlOdbcConnection *)con;
+    if (! sqlOdbcCon->isConnectionOpen()) {
+        printError(ErrNotOpen, "Connection not open");
+        rv = ErrNoConnection;
+        return NULL;
+    }
     if (!isPrepared) return NULL;
     //int retValue = SQLFetch (hstmt);
     int retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLFetchPtr) (hstmt);
@@ -887,6 +893,7 @@ DbRetVal SqlOdbcStatement::resolveForBindField(SQLHSTMT hstmt)
              switch(bindProjField->type)
              {
                 case typeString:
+                case typeVarchar:
                     fieldsize = colLength+1;
                     bindProjField->targetvalue = malloc(fieldsize);
                     break;

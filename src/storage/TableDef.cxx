@@ -57,7 +57,7 @@ int TableDef::addField(const char *name,  DataType type, size_t length,
     fldDef.type_ = type;
     fldDef.length_ = AllDataType::size(type, length);
     fldDef.bindVal_=NULL;
-    if (defaultValue != NULL)
+    if (defaultValue != NULL && *(char *)defaultValue != '\0')
     {
         fldDef.isDefault_ = true;
         if (typeBinary == type) {

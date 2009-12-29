@@ -218,6 +218,7 @@ void* SqlStatement::fetch(DbRetVal &rv)
 {
     if (! sqlCon->isConnectionOpen()) {
         printError(ErrNotOpen, "Connection not open");
+        rv = ErrNoConnection;
         return NULL;
     }
     if (! isPrepared()) {
