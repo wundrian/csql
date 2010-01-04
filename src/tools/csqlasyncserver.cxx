@@ -225,14 +225,20 @@ void *startThread(void *thrInfo)
     flag = CSqlAdapter;
     printDebug(DM_ReplServer, "SqlAdapter Thread created");
     AbsCSqlQIterator *iter = thrInput->qIter;
-    while (1) { if (csqlQ->size()) break; }
+    struct timeval timeout, tval;
+    timeout.tv_sec = 5;
+    while (1) {
+        if (csqlQ->size()) break;
+        timeout.tv_sec = 10;
+        timeout.tv_usec = 0;
+        os::select(0, 0, 0, 0, &timeout);
+    }
+
     iter = new ListIter(((ListAsQueue *)csqlQ)->list);
     AbsSqlConnection *conn = SqlFactory::createConnection(flag);
     void *stmtBuckets = malloc (STMT_BUCKET_SIZE * sizeof(StmtBucket));
     memset(stmtBuckets, 0, STMT_BUCKET_SIZE * sizeof(StmtBucket));
     printDebug(DM_ReplServer, "stmtbuckets: %x", stmtBuckets);
-    struct timeval timeout, tval;
-    timeout.tv_sec = 0;
     while (1) {
         while (1) {
             rv = conn->connect(I_USER, I_PASS);
