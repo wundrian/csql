@@ -201,6 +201,7 @@ operator        "<"|">"|">="|"<="|"="|"\!="|"<>"|"LIKE"|"like"
                 if(strcasecmp(yytext,"TIMESTAMP_ADD") ==0) token = TIMESTAMP_ADD;
                 if(strcasecmp(yytext,"TIMESTAMP_SUB") ==0) token = TIMESTAMP_SUB;
                 if(strcasecmp(yytext,"EXTRACT") ==0) token = EXTRACT;
+                if(strcasecmp(yytext,"TRUNCATE") ==0) token = TRUNCATE;
                 if( token == FIELD )
                     yylval.stringval = strdup((const char*)yytext);
                 else

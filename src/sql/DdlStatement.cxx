@@ -337,6 +337,46 @@ DbRetVal DropIdxStatement::execute(int &rowsAffected)
     return rv;
 }
 
+//================== Trunctate Table Statement ===============
+
+
+DbRetVal TruncateTblStatement::execute(int &rowsAffected)
+{
+    DbRetVal rv = OK;
+    table->setCondition(NULL);
+    rv = table->execute();
+    if (rv != OK) return rv;
+    rowsAffected = 0;
+    table->setLoading(true);
+    void *tuple;
+    while(true)
+    {
+        tuple = (char*)table->fetchNoBind(rv);
+        if (rv != OK) break;
+        if (tuple == NULL) {break;}
+        rv = table->deleteTuple();
+        if (rv != OK) break;
+        rowsAffected++;
+    }
+    table->closeScan();
+    return rv;
+}
+DbRetVal TruncateTblStatement::resolve()
+{
+   DbRetVal rv = OK;
+   table = dbMgr->openTable(parsedData->getTableName());
+    if (table == NULL)
+    {
+        printError(ErrNotExists, "Unable to open the table:Table not exists");
+        return ErrNotExists;
+    }
+    return rv;
+}
+
+
+
+
+
 //================== Compact Table Statement===================
 DbRetVal CompactTblStatement::resolve()
 {

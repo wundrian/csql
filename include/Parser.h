@@ -44,7 +44,8 @@ enum StatementType
     MetaStatement,
     UserStatement,
     MgmtStatement,
-    AlterStatement
+    AlterStatement,
+    TruncateStatement
 };
 #endif
 

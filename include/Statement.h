@@ -440,6 +440,18 @@ class DropTblStatement : public DdlStatement
     DropTblStatement(){}
     ~DropTblStatement(){}
 };
+class TruncateTblStatement : public DdlStatement
+{
+    Table *table;
+    public:
+    DbRetVal execute(int &rowsAffected);
+    DbRetVal resolve();
+
+    TruncateTblStatement(){}
+    ~TruncateTblStatement(){}
+};
+
+
 class CacheTblStatement : public DdlStatement
 {
     public:
