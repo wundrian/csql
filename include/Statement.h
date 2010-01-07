@@ -54,6 +54,7 @@ class Statement
     virtual int getFldPos(char *name)=0;
     virtual DbRetVal setNull(int pos)=0;
     virtual ResultSetPlan getResultSetPlan()=0;
+    virtual long long getLastInsertedVal(DbRetVal &rv)=0;
     virtual ~Statement(){}
 };
 
@@ -95,6 +96,7 @@ class DmlStatement : public Statement
     virtual int getFldPos(char *name)=0;
     virtual ~DmlStatement(){}
     virtual ResultSetPlan getResultSetPlan()=0;
+    virtual  long long getLastInsertedVal(DbRetVal &rv)=0;
     void setLoading(bool flag) { table->setLoading(flag); }
 };
 
@@ -123,6 +125,7 @@ class InsStatement : public DmlStatement
     void* getParamValuePtr( int );
     int getFldPos(char *name);
     DbRetVal setNull(int pos);
+    long long getLastInsertedVal(DbRetVal &rv);
     DbRetVal resolve();
     ResultSetPlan getResultSetPlan(){return Normal;}
     InsStatement();
@@ -177,7 +180,8 @@ class SelStatement : public DmlStatement
     DbRetVal setNull(int pos){ return ErrBadCall;}
     DbRetVal close();
     DbRetVal resolve();
-
+    long long getLastInsertedVal(DbRetVal &rv){rv = ErrBadCall;return 0;}
+ 
     void* handleSingleTableAggWithoutGroup();
     bool isGroupFld(char *fName);
     bool isJoinStmt() { return isJoin; }
@@ -235,6 +239,7 @@ class UpdStatement : public DmlStatement
     int getFldPos(char *name);
     DbRetVal setNull(int pos);
     DbRetVal resolve();
+    long long getLastInsertedVal(DbRetVal &rv){ rv=ErrBadCall; return 0;}
     UpdStatement();
     ~UpdStatement();
     ResultSetPlan getResultSetPlan() {return Normal;}
@@ -267,6 +272,7 @@ class DelStatement : public DmlStatement
     void* getParamValuePtr(int);
     DbRetVal setNull(int pos){ return ErrBadCall;}
     DbRetVal resolve();
+    long long getLastInsertedVal(DbRetVal &rv){ rv = ErrBadCall;return 0;}
     DelStatement();
     ~DelStatement();
     int getFldPos(char *name);
@@ -316,7 +322,7 @@ class MetadataStatement : public DmlStatement
 
     MetadataStatement();
     ~MetadataStatement();
-
+    long long getLastInsertedVal(DbRetVal &rv){rv=ErrBadCall; return 0;}
     void *getParamValuePtr( int ){ return NULL;}
     DbRetVal openTables();
     DbRetVal setBindField(int pos, void* value);
@@ -368,6 +374,7 @@ class CopyTblStatement : public DmlStatement
     ResultSetPlan getResultSetPlan(){return Normal;}
     DbRetVal resolveForInsert();
     DbRetVal resolveForCreate();
+    long long getLastInsertedVal(DbRetVal &rv){ rv = ErrBadCall; return 0;}
     CopyTblStatement();
     ~CopyTblStatement();
     private:
@@ -402,6 +409,7 @@ class DdlStatement : public Statement
     bool isFldNull(int pos){  return false;}
     bool isFldNull(char *fldName ){ return false;}
     int getFldPos(char *name){ return -1;}
+    long long getLastInsertedVal(DbRetVal &rv){ rv = ErrBadCall; return 0;}
     DbRetVal setNull(int pos){ return ErrBadCall;}
     ResultSetPlan getResultSetPlan(){ ResultSetPlan dummy; return dummy;}
 };

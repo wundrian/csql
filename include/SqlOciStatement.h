@@ -71,7 +71,7 @@ class SqlOciStatement: public AbsSqlStatement
     void setBinaryParam(int paramPos, void *value);
     bool isSelect();
     void getPrimaryKeyFieldName(char *tablename, char *pkfieldname);
-
+    long long getLastInsertedVal(DbRetVal &rv){ return 0;}
     private:
     bool isPrepared;
     List paramList;

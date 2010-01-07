@@ -118,7 +118,8 @@ DbRetVal TCPServer::handleClient()
                    header.packetType != SQL_NW_PKT_COMMIT     &&
                    header.packetType != SQL_NW_PKT_ROLLBACK   &&
                    header.packetType != SQL_NW_PKT_FETCH      && 
-                   header.packetType != SQL_NW_PKT_SHOWTABLES )
+                   header.packetType != SQL_NW_PKT_SHOWTABLES &&
+                   header.packetType != SQL_NW_PKT_LASTAIVAL )
                {
                    buffer = (char*) malloc(header.packetLength);
                    numbytes = os::recv(clientfd,buffer,header.packetLength,0);

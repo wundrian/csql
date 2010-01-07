@@ -194,7 +194,8 @@ class TableImpl:public Table
     int getNumFields() { return numFlds_; }
     void fillFieldInfo(int pos, void* val)
         { return fldList_.fillFieldInfo(pos,val); }
-
+    
+    long long getLastInsertedVal(DbRetVal &rv);
     DbRetVal getFieldInfo(const char *fieldName,  FieldInfo *&info)
     { 
         char tblName[IDENTIFIER_LENGTH];

@@ -92,6 +92,7 @@ class SqlOdbcStatement: public AbsSqlStatement
     void setErrorState(SQLHSTMT hStmt);
     DbRetVal resolveForBindField(SQLHSTMT hstmt);
     void getProjFieldType(int *data);
+    long long getLastInsertedVal(DbRetVal &rv){ rv = ErrBadCall; return 0;} //TODO
     private:
     char errState[STATE_LENGTH];
     TDBInfo tdbname;

@@ -51,6 +51,7 @@ class SqlNetworkHandler
     void * processSqlShowTables(PacketHeader &header, char *buffer);
     void * processSqlIsTablePresent(PacketHeader &header, char *buffer);
     void * processSqlLoadRecords(PacketHeader &header, char *buffer);
+    void * processSqlLastAutoIncrementVal(PacketHeader &header);
     DbRetVal closeConnection();
     static AbsSqlConnection *createConnection(SqlApiImplType type);   
     static AbsSqlStatement *createStatement(SqlApiImplType type);   

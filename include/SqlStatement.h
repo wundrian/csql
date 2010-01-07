@@ -257,6 +257,7 @@ class SqlStatement: public AbsSqlStatement
     void getProjFieldType(int *data);
     void setCachedStmt(bool flag){ isCachedStmt= flag; }
     void flushCacheStmt();
+    long long getLastInsertedVal(DbRetVal &rv);
     private:
     bool isMgmtStatement;
     SqlConnection *sqlCon;

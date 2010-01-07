@@ -255,6 +255,16 @@ DbRetVal InsStatement::setBinaryParam(int paramNo, void *value, int length)
     return OK;
 }
 
+long long InsStatement::getLastInsertedVal(DbRetVal &rv)
+{
+    if(table)
+        return ((TableImpl*)table)->getLastInsertedVal(rv);
+    else{
+        rv = ErrBadCall;
+        return 0;
+    }
+}
+
 DbRetVal InsStatement::resolve()
 {
     if (dbMgr == NULL) return ErrNoConnection;

@@ -219,7 +219,7 @@ void* SqlStatement::fetch(DbRetVal &rv)
     if (! sqlCon->isConnectionOpen()) {
         printError(ErrNotOpen, "Connection not open");
         rv = ErrNoConnection;
-        return NULL;
+        return NULL; 
     }
     if (! isPrepared()) {
         printError(ErrNotPrepared, "Statement Not Prepared");
@@ -514,6 +514,10 @@ void SqlStatement::setBinaryParam(int paramPos, void *value, int length)
 int SqlStatement::getFldPos(char *name)
 {
     return stmt->getFldPos(name);
+}
+long long SqlStatement::getLastInsertedVal(DbRetVal &rv)
+{
+   return stmt->getLastInsertedVal(rv);
 }
 List SqlStatement::getAllTableNames(DbRetVal &ret)
 {

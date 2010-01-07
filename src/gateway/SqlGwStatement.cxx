@@ -431,6 +431,11 @@ ResultSetPlan SqlGwStatement::getResultSetPlan()
    if (innerStmt && shouldCSqlHandle())  return innerStmt->getResultSetPlan();
    return Normal;
 }
+long long SqlGwStatement::getLastInsertedVal(DbRetVal &rv)
+{
+    if (innerStmt) return innerStmt->getLastInsertedVal(rv);
+    if (adapter) return adapter->getLastInsertedVal(rv);
+}
 
 //Function for COMMIT according to its name DSN 
 void SqlGwStatement::setToCommit(char *dsName)

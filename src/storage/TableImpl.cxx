@@ -1323,7 +1323,11 @@ void TableImpl::printInfo()
     printf("  </Indexes>\n");
 
 }
-
+long long TableImpl::getLastInsertedVal(DbRetVal &rv)
+{
+    rv=OK;
+    return *(long long*)ptrToAuto;
+}
 DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
 {
     //Iterate through the bind list and copy the value here

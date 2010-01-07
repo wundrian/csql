@@ -804,3 +804,28 @@ void SqlNwStatement::setNull(int fldPos)
 {
     if (nullInfoDml) nullInfoDml[fldPos-1] = 1;
 }
+long long SqlNwStatement::getLastInsertedVal(DbRetVal &rv)
+{
+    DbRetVal ret = OK;
+    SqlNwConnection *conn = (SqlNwConnection*)con;
+    if (! conn->isConOpen()) {
+        printError(ErrNoConnection, "No connection present");
+        rv = ErrNoConnection;
+        return 0;
+    }
+    rv = conn->nwClient->send(SQL_NW_PKT_LASTAIVAL, getStmtID());
+    if (rv != OK) {
+        printError(rv, "Connection lost with peer.");
+        conn->setConnClosed(false);
+        return 0;
+    }
+    rv = conn->receive();
+    if (rv == ErrNoConnection || rv == ErrPeerTimeOut) {
+        conn->setConnClosed(false);
+        return 0;
+    }
+    ResponsePacket *rpkt = (ResponsePacket *)
+                                        ((TCPClient *)conn->nwClient)->respPkt;
+    return rpkt->lastAutoIncVal;
+}
+

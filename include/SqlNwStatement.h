@@ -91,6 +91,7 @@ class SqlNwStatement: public AbsSqlStatement
     ResultSetPlan getResultSetPlan() { return plan;}
     bool isPrepd() { return isPrepared; }
     void getProjFieldType(int *data);
+    long long getLastInsertedVal(DbRetVal &rv);
     private:
     ResultSetPlan plan;
     bool isPrepared;

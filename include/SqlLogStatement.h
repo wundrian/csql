@@ -96,6 +96,7 @@ class SqlLogStatement: public AbsSqlStatement
     int getNoOfPagesForTable(char *tbl){ return -1;}
     DbRetVal loadRecords(char *tbl, void *buf){ return ErrBadCall;}
     ResultSetPlan getResultSetPlan(){ return innerStmt->getResultSetPlan();}
+    long long getLastInsertedVal(DbRetVal &rv){return innerStmt->getLastInsertedVal(rv);}
     void getProjFieldType(int *data);
     TableSyncMode mode;
     bool isNonSelDML;

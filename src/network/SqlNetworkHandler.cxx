@@ -79,6 +79,9 @@ void *SqlNetworkHandler::process(PacketHeader &header, char *buffer)
         case SQL_NW_PKT_GETRECORDS:
             rpkt =  processSqlLoadRecords(header, buffer);
             break;
+        case SQL_NW_PKT_LASTAIVAL:
+            rpkt = processSqlLastAutoIncrementVal(header);
+            break;
     }
     if (rpkt != NULL) sendResponse(rpkt);
     return rpkt;
@@ -614,6 +617,22 @@ void *SqlNetworkHandler::processSqlLoadRecords(PacketHeader &header, char *buffe
     strcpy(rpkt->errorString, pkt->tblName);
     delete pkt;
     delete sqlstmt;
+    return rpkt;
+}
+
+void *SqlNetworkHandler::processSqlLastAutoIncrementVal(PacketHeader &header)
+{
+    ListIterator stmtIter = stmtList.getIterator();
+    NetworkStmt *stmt;
+    while (stmtIter.hasElement())
+    {
+       stmt = (NetworkStmt*) stmtIter.nextElement();
+       if (stmt->stmtID == header.stmtID ) break;
+    }
+    AbsSqlStatement *sqlstmt = stmt->stmt;
+    ResponsePacket *rpkt = new ResponsePacket();
+    DbRetVal rv = OK;
+    rpkt->lastAutoIncVal = sqlstmt->getLastInsertedVal(rv);
     return rpkt;
 }
 

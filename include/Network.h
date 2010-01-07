@@ -56,6 +56,7 @@ enum NetworkPacketType
     SQL_NW_PKT_ISTABLEPRESENT=113,
     SQL_NW_PKT_GETRECORDS=114,
     SQL_NW_PKT_LOADRECORDS=115,
+    SQL_NW_PKT_LASTAIVAL=116,
 };
 
 class ResponsePacket
@@ -64,13 +65,14 @@ class ResponsePacket
     ResponsePacket()
     { 
         stmtID = 0; retVal = 0; errRetVal = OK; isSelect = false; rows=0; 
-        errorString[0] = '\0';
+        lastAutoIncVal=0; errorString[0] = '\0';
     }
     ~ResponsePacket() { }
     int retVal; // will include for fetch end flag, params flag, proj flag
     DbRetVal errRetVal;
     int stmtID;
     int rows;
+    long long lastAutoIncVal;
     bool isSelect;
     char errorString[ERROR_STRING_LENGTH];
     DbRetVal marshall();
