@@ -344,6 +344,12 @@ DbRetVal TruncateTblStatement::execute(int &rowsAffected)
 {
     DbRetVal rv = OK;
     table->setCondition(NULL);
+    IsolationLevel level = ((DatabaseManagerImpl*)dbMgr)->txnMgr()->getIsoLevel();
+    rv=((DatabaseManagerImpl*)dbMgr)->txnMgr()->commit(((DatabaseManagerImpl*)dbMgr)->lockMgr());
+    if (rv != OK) return rv;
+    rv=((DatabaseManagerImpl*)dbMgr)->txnMgr()->startTransaction(((DatabaseManagerImpl*)dbMgr)->lockMgr(),level);
+    if (rv != OK) return rv;
+
     rv = table->execute();
     if (rv != OK) return rv;
     rowsAffected = 0;
