@@ -36,9 +36,24 @@ class SqlConnection : public AbsSqlConnection
 {
     Connection conn;
     bool isConnOpen;
+#if (defined MMDB && defined EMBED)
+    DbRetVal recoverCsqlDB();
+    DbRetVal recoverSystemAndUserDB();
+    DbRetVal applySchemaFile(FILE *fp);
+    char getQueryFromSchemaFile(FILE *fp, char *buf);
+    int applyRedoLogs(char *redoFile);
+    AbsSqlStatement *getStmtFromHashTable(int stmtId);
+    void removeFromHashTable(int stmtID);
+    void addToHashTable(int stmtID, AbsSqlStatement* sHdl);
+#endif
     public:
     static List connList;
     static bool isInit;
+#if (defined MMDB && EMBED)
+    static bool firstThread;
+    static GlobalUniqueID UID;
+    void *stmtBuckets;
+#endif
     void initialize();
     List cachedStmts;
     SqlConnection(){ innerConn = NULL; isConnOpen = false; }
@@ -49,13 +64,7 @@ class SqlConnection : public AbsSqlConnection
     *   @param pass password for authentication
     *   @return DbRetVal
     */
-    DbRetVal connect (char *user, char * pass) {
-        DbRetVal ret = conn.open(user, pass);
-        if (ret == OK) isConnOpen = true;
-        if (!isInit) initialize();
-        connList.append(this);
-        return ret;
-    }
+    DbRetVal connect (char *user, char * pass);
 
     /** closes connection to the database and releases all the resources
     *   @return DbRetVal 
@@ -63,6 +72,9 @@ class SqlConnection : public AbsSqlConnection
     DbRetVal disconnect () { 
         DbRetVal ret = conn.close(); 
         if (ret == OK) isConnOpen = false;
+# if (defined MMDB && defined EMBED)
+        if (Conf::config.useDurability() && connList.size()==1) UID.destroy();
+# endif
         connList.remove(this);
         return ret;
     }

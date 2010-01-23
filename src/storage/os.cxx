@@ -30,6 +30,10 @@ int os::munmap(caddr_t addr, size_t len)
     return ::munmap(addr, len);
 }
 
+int os::atexit(void (*exitHndlr)(void))
+{
+    return ::atexit(exitHndlr);
+}
 
 shared_memory_id os::shm_create(shared_memory_key key, size_t size, int flag)
 {

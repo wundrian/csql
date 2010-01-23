@@ -41,6 +41,9 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
                 conn = new SqlConnection();
             }else {
                AbsSqlConnection *sqlCon = new SqlConnection();
+#if (defined MMDB && defined EMBED)
+    ((SqlConnection *)sqlCon)->UID.create();
+#endif
                conn = new SqlLogConnection();
                SqlLogConnection *logCon = (SqlLogConnection *)conn;
                logCon->setNoMsgLog(true);

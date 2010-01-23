@@ -579,7 +579,7 @@ DbRetVal Database::writeDirtyPages(char *dataFile)
            pageInfo = (PageInfo*)pageInfo->nextPageAfterMerge_;
         }
     }
-    printf("Total Dirty pages written %d %lld\n", pagesWritten, totalBytesWritten);
+    //printf("Total Dirty pages written %d %lld\n", pagesWritten, totalBytesWritten);
     logFine(Conf::logger, "Total Dirty pages written %d\n", pagesWritten);
     close(fd);
     return OK;

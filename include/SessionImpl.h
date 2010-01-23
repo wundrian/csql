@@ -31,7 +31,9 @@ class SessionImpl : public Session
     bool isAuthenticated;
     bool isDba;
     bool isXTaken;
-
+#if (defined MMDB && defined EMBED)
+    static int noOfThreads;
+#endif
     public:
     SessionImpl()
     {
@@ -62,6 +64,10 @@ class SessionImpl : public Session
     Database* getSystemDatabase();
     DbRetVal getExclusiveLock();
     private:
+#if (defined MMDB && defined EMBED)
+    DbRetVal openEmbeddedConnection(const char *uname, const char *password);
+    DbRetVal closeEmbeddedConnection();
+#endif
     DbRetVal authenticate(const char *username, const char *password);
 };
 

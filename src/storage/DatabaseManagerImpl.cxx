@@ -116,7 +116,12 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
         shm_id = os::shm_create(key, size, 0660);  
         if (-1 == shm_id) {
             if (errno == EEXIST) 
+#if (defined MMDB && defined EMBED)
+                printError(ErrOS, "One application is already running.");
+            return ErrOS;
+#else
                 printError(ErrOS, "Shared Memory already exists");
+#endif
             printError(ErrOS, "Shared memory create failed");
             shm_id = os::shm_open(Conf::config.getSysDbKey(), 100, 0660);
             os::shmctl(shm_id, IPC_RMID);
@@ -177,6 +182,10 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
             printError(ErrOS, "Shared memory attach returned -ve value %d", rtnAddr);
             return ErrOS;
         }
+# if (defined MMDB && defined EMBED)
+        if (0 == strcmp(name, SYSTEMDB)) ProcessManager::sysAddr = rtnAddr;
+        else ProcessManager::usrAddr = rtnAddr;
+# endif
     }
     db_ = new Database();
     printDebug(DM_Database, "Creating database:%s",name);
@@ -330,8 +339,7 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
             ProcessManager::usrAddr = (char*) shm_ptr;
         }
     } else {
-        if (0 == strcmp(name, SYSTEMDB)) 
-            shm_ptr = ProcessManager::sysAddr;
+        if (0 == strcmp(name, SYSTEMDB)) shm_ptr = ProcessManager::sysAddr;
         else shm_ptr = ProcessManager::usrAddr;
     }
     
@@ -1648,7 +1656,9 @@ DbRetVal DatabaseManagerImpl::registerThread()
     }
     pMgr_ = new ProcessManager();
     rv = pMgr_->registerThread();
-    if (rv ==OK) { procSlot = pMgr_->getProcSlot();
+    if (rv ==OK) { 
+        procSlot = pMgr_->getProcSlot();
+        systemDatabase_->setProcSlot(procSlot);
         printDebug(DM_Process, "Process registed with slot %d\n", procSlot);
     }
     return rv;

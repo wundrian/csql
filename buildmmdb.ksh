@@ -11,6 +11,7 @@ cp src/Makefile.am.mmdb src/Makefile.am
 
 make -f Makefile.cvs
 
+#./configure --prefix=`pwd`/install CXXFLAGS="-g  -DMMDB -I$JDK_HOME/include -I$JDK_HOME/include/linux"
 ./configure --prefix=`pwd`/install CXXFLAGS="-g  -DMMDB -I$JDK_HOME/include -I$JDK_HOME/include/linux"
 libtoolavailable=`which libtool`
 if [ -z "$libtoolavailable" ]

@@ -27,6 +27,10 @@ extern ParsedData *parsedData;
 
 int yyparse ();
 bool SqlConnection::isInit = false;
+#if (defined MMDB && defined EMBED)
+bool SqlConnection::firstThread = false;
+GlobalUniqueID SqlConnection::UID;
+#endif
 List SqlConnection::connList;
 
 
@@ -604,6 +608,44 @@ void SqlStatement::flushCacheStmt()
     return sqlCon->flushCacheStmt();
 }
 //-------------------------------------------------------------------
+
+static void sigTermHandler(int sig)
+{
+    ListIterator iter= SqlConnection::connList.getIterator();
+    SqlConnection *conn = NULL;
+    while (iter.hasElement())
+    {
+        conn = (SqlConnection*) iter.nextElement();
+        conn->flushCacheStmt();
+        if (conn->isConnectionOpen()) conn->disconnect();
+    }
+    exit(0);
+}
+
+DbRetVal SqlConnection::connect (char *user, char * pass)
+{
+    DbRetVal ret = conn.open(user, pass);
+    if (ret != OK) return ret;
+    if (ret == OK) isConnOpen = true;
+    if (!isInit) initialize();
+    connList.append(this);
+    DbRetVal rv = OK;
+#if (defined MMDB && EMBED)
+    os::signal(SIGINT, sigTermHandler);
+    os::signal(SIGTERM, sigTermHandler);
+    if (Conf::config.useDurability() && !firstThread) {
+        rv = recoverCsqlDB();
+        if (rv != OK) {
+            printError(ErrSysInternal, "Recovery Failed");
+            return rv;
+        }
+        firstThread = true;
+    }
+    rollback(); //for drop table execute in redo log
+#endif
+    return ret;
+}
+
 void SqlConnection::flushCacheStmt()
 {
     ListIterator iter = cachedStmts.getIterator();
@@ -696,8 +738,402 @@ static void sigUsr1Handler(int sig)
     os::signal(SIGCSQL1, sigUsr1Handler);
     return;
 }
+
+static void exithandler(void)
+{
+    ListIterator iter= SqlConnection::connList.getIterator();
+    SqlConnection *conn = NULL;
+    while (iter.hasElement())
+    {
+        conn = (SqlConnection*) iter.nextElement();
+        conn->flushCacheStmt();
+        conn->disconnect();
+    }
+}
+
 void SqlConnection::initialize()
 {
     os::signal(SIGCSQL1, sigUsr1Handler);
+#if (defined MMDB && defined EMBED)
+    os::atexit(exithandler);
+#endif
     isInit = true;
 }
+
+#if (defined MMDB && defined EMBED)
+DbRetVal SqlConnection::recoverCsqlDB()
+{
+    DbRetVal rv = OK;
+    char dbRedoFileName[MAX_FILE_LEN];
+    char dbChkptSchema[MAX_FILE_LEN];
+    char dbChkptMap[MAX_FILE_LEN];
+    char dbChkptData[MAX_FILE_LEN];
+    char dbBackupFile[MAX_FILE_LEN];
+    char cmd[IDENTIFIER_LENGTH];
+    //check for check point file if present recover 
+    sprintf(dbChkptSchema, "%s/db.chkpt.schema1", Conf::config.getDbFile());
+    if (FILE *file = fopen(dbChkptSchema, "r")) {
+        fclose(file);
+        sprintf(cmd, "cp -f %s %s/db.chkpt.schema", dbChkptSchema,
+                                                     Conf::config.getDbFile());
+        int ret = system(cmd);
+        if (ret != 0) return ErrOS;
+    }
+    sprintf(dbChkptMap, "%s/db.chkpt.map1", Conf::config.getDbFile());
+    if (FILE *file = fopen(dbChkptMap, "r")) {
+        fclose(file);
+        sprintf(cmd, "cp -f %s %s/db.chkpt.map", dbChkptMap,
+                                                     Conf::config.getDbFile());
+        int ret = system(cmd);
+        if (ret != 0) return ErrOS;
+    }
+    int chkptID= Database::getCheckpointID();
+    sprintf(dbChkptData, "%s/db.chkpt.data%d", Conf::config.getDbFile(),
+                                                                      chkptID);
+    sprintf(dbBackupFile, "%s/db.chkpt.data1", Conf::config.getDbFile());
+    FILE *fl = NULL;
+    if (!Conf::config.useMmap() && (fl = fopen(dbBackupFile, "r"))) {
+        fclose(fl);
+        sprintf(cmd, "cp %s/db.chkpt.data1 %s", Conf::config.getDbFile(),
+                                                                  dbChkptData);
+        int ret = system(cmd);
+        if (ret != 0) return ErrOS;
+    }
+    if (FILE *file = fopen(dbChkptData, "r")) {
+        fclose(file);
+        rv = recoverSystemAndUserDB();
+    }
+
+    //check for redo log file if present apply redo logs
+    sprintf(dbRedoFileName, "%s/csql.db.cur", Conf::config.getDbFile());
+    if (FILE *file = fopen(dbRedoFileName, "r"))
+    {
+        fclose(file);
+        applyRedoLogs(dbRedoFileName);
+        DatabaseManager *dbMgr = getConnObject().getDatabaseManager();
+        rv = dbMgr->checkPoint();
+        if (rv != OK)
+        {
+            printError(ErrSysInternal, "checkpoint failed after redo log apply");
+            return ErrOS;
+        }
+    }
+    return OK;
+}
+
+DbRetVal SqlConnection::recoverSystemAndUserDB()
+{
+    DbRetVal rv = OK;
+    char schFile[1024];
+    sprintf(schFile, "%s/db.chkpt.schema", Conf::config.getDbFile());
+    if (FILE *file = fopen(schFile, "r")) {
+        applySchemaFile(file);
+    }
+    DatabaseManager *dbMgr = getConnObject().getDatabaseManager();
+    dbMgr->recover();
+    return OK;
+}
+
+DbRetVal SqlConnection::applySchemaFile(FILE *fp)
+{
+    char buf[8192];
+    char eof;
+    SqlStatement *stmt = new SqlStatement();
+    while ((eof = getQueryFromSchemaFile(fp,buf)) != EOF) {
+        stmt->setConnection(this);
+        stmt->prepare(buf);
+        int rows = 0;
+        stmt->execute(rows);
+    }
+    delete stmt;
+    return OK;
+}
+
+char SqlConnection::getQueryFromSchemaFile(FILE *fp, char *buf)
+{
+    char c, *bufBegin=buf;
+    int charCnt=0;
+    while( (c=(char ) fgetc(fp)) != EOF && c != ';')
+    {
+        *buf++ = c; charCnt++;
+    if( charCnt == SQL_STMT_LEN ) {
+            printf("SQL Statement length is greater than %d. "
+        "Ignoring the statement.\n", SQL_STMT_LEN );
+            *bufBegin++ =';';
+            *bufBegin ='\0';
+        return 0;
+    }
+    }
+    *buf++ = ';';
+    *buf = '\0';
+    return c;
+}
+
+void SqlConnection::addToHashTable(int stmtID, AbsSqlStatement* sHdl)
+{
+    int bucketNo = stmtID % STMT_BUCKET_SIZE;
+    StmtBucket *buck = (StmtBucket *) stmtBuckets;
+    StmtBucket *stmtBucket = &buck[bucketNo];
+    StmtNode *node = new StmtNode();
+    node->stmtId = stmtID;
+    node->stmt = sHdl;
+    stmtBucket->bucketList.append(node);
+    return;
+}
+
+void SqlConnection::removeFromHashTable(int stmtID)
+{
+    int bucketNo = stmtID % STMT_BUCKET_SIZE;
+    StmtBucket *buck = (StmtBucket *) stmtBuckets;
+    StmtBucket *stmtBucket = &buck[bucketNo];
+    StmtNode *node = NULL;
+    ListIterator it = stmtBucket->bucketList.getIterator();
+    while(it.hasElement()) {
+        node = (StmtNode *) it.nextElement();
+        if(stmtID == node->stmtId) break;
+    }
+    it.reset();
+    stmtBucket->bucketList.remove(node);
+    return;
+}
+
+AbsSqlStatement *SqlConnection::getStmtFromHashTable(int stmtId)
+{
+    int bucketNo = stmtId % STMT_BUCKET_SIZE;
+    StmtBucket *buck = (StmtBucket *) stmtBuckets;
+    StmtBucket *stmtBucket = &buck[bucketNo];
+    StmtNode *node = NULL;
+    ListIterator it = stmtBucket->bucketList.getIterator();
+    while(it.hasElement()) {
+        node = (StmtNode *) it.nextElement();
+        if(stmtId == node->stmtId) {
+            return node->stmt;
+        }
+    }
+    return NULL;
+}
+
+void setParam(AbsSqlStatement *stmt, int pos, DataType type , int length, void *value)
+{
+    switch(type)
+    {
+        case typeInt:
+            stmt->setIntParam(pos, *(int*)value);
+            break;
+        case typeLong:
+            stmt->setLongParam(pos, *(long*) value);
+            break;
+        case typeLongLong:
+            stmt->setLongLongParam(pos, *(long long*)value);
+            break;
+        case typeShort:
+            stmt->setShortParam(pos, *(short*)value);
+            break;
+        case typeByteInt:
+            stmt->setByteIntParam(pos, *(ByteInt*)value);
+            break;
+        case typeDouble:
+            stmt->setDoubleParam(pos, *(double*)value);
+            break;
+        case typeFloat:
+            stmt->setFloatParam(pos, *(float*)value);
+            break;
+        case typeDate:
+            stmt->setDateParam(pos, *(Date*)value);
+            break;
+        case typeTime:
+            stmt->setTimeParam(pos, *(Time*)value);
+            break;
+        case typeTimeStamp:
+            stmt->setTimeStampParam(pos, *(TimeStamp*)value);
+            break;
+        case typeString:
+        case typeVarchar:
+            stmt->setStringParam(pos, (char*)value);
+            break;
+        case typeBinary:
+            stmt->setBinaryParam(pos, value, length);
+            break;
+        default:
+            printf("unknown type\n");
+            break;
+    }
+    return;
+}
+
+int SqlConnection::applyRedoLogs(char *redoFile)
+{
+    struct stat st;
+    DbRetVal rv = OK;
+    int fd = open(redoFile, O_RDONLY);
+    if (-1 == fd) { return OK; }
+    if (fstat(fd, &st) == -1) {
+        printError(ErrSysInternal, "Unable to retrieve undo log file size");
+        close(fd);
+        return 1;
+    }
+    if (st.st_size ==0) {
+        close(fd);
+        return OK;
+    }
+    void *startAddr = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    if (MAP_FAILED == startAddr) {
+        printf("Unable to read undo log file:mmap failed.\n");
+        return 2;
+    }
+    stmtBuckets = malloc (STMT_BUCKET_SIZE * sizeof(StmtBucket));
+    memset(stmtBuckets, 0, STMT_BUCKET_SIZE * sizeof(StmtBucket));
+
+    char *iter = (char*)startAddr;
+    void *value = NULL;
+    int logType, eType;
+    int stmtID;
+    int txnID;
+    int len, ret, retVal =0;
+    int loglen;
+    char stmtString[SQL_STMT_LEN];
+    //printf("size of file %d\n", st.st_size);
+    while(true) {
+        //printf("OFFSET HERE %d\n", iter - (char*)startAddr);
+        if (iter - (char*)startAddr >= st.st_size) break;
+        logType = *(int*)iter;
+        if (logType == -1) { //prepare
+            iter = iter + sizeof(int);
+            txnID = *(int*) iter; iter += sizeof(int);
+            loglen = *(int*) iter; iter += sizeof(int);
+            stmtID = *(int*)iter;
+            iter = iter + sizeof(int);
+            len = *(int*)iter;
+            iter = iter + sizeof(int);
+            strncpy(stmtString, iter, len);
+            iter = iter + len;
+            //printf("PREPARE:%d %d %s\n", stmtID, len, stmtString);
+            AbsSqlStatement *st = SqlFactory::createStatement(CSqlDirect);
+            SqlStatement *stmt = (SqlStatement *)st;
+            stmt->setConnection(this);
+            rv = stmt->prepare(stmtString);
+            if (rv != OK) {
+                printError(ErrSysInternal, "unable to prepare stmt:%s", stmtString);
+                retVal=1;
+                break;
+            }
+            stmt->prepare(stmtString);
+            SqlStatement *sqlStmt = (SqlStatement*)stmt;
+            sqlStmt->setLoading(true);
+            addToHashTable(stmtID, stmt);
+        }
+        else if(logType == -2) { //commit
+            beginTrans();
+            iter = iter + sizeof(int);
+            txnID = *(int*) iter; iter += sizeof(int);
+            loglen = *(int*) iter; iter += sizeof(int);
+            char *curPtr = iter;
+            while(true) {
+                //printf("Iter length %d\n", iter - curPtr);
+                if (iter - (char*)startAddr >= st.st_size) {
+                    //file end reached
+                    //printf("Redo log file end\n");
+                    retVal=0;
+                    break;
+                }
+                stmtID = *(int*)iter;
+                //printf("stmtid %d\n", stmtID);
+                iter = iter + sizeof(int);
+                eType = *(int*)iter;
+                //printf("eType is %d\n", eType);
+                AbsSqlStatement *stmt = getStmtFromHashTable(stmtID);
+                if (0 == eType) { //execute type
+                    iter = iter + sizeof(int);
+                    //printf("EXEC: %d\n", stmtID);
+                    if (stmt) {
+                        rv = stmt->execute(ret);
+                        if (rv != OK) {
+                            printError(ErrSysInternal, "unable to execute");
+                            retVal=2;
+                            break;
+                        }
+                    } else {
+                        printError(ErrSysInternal, "statement not found for %d\n",stmtID);
+                    }
+                    if (*(int*)iter <0) break;
+                } else if ( 1 == eType) { //set type
+                    iter=iter+sizeof(int);
+                    int pos = *(int*) iter;
+                    iter=iter+sizeof(int);
+                    DataType type = (DataType)(*(int*)iter);
+                    iter=iter+sizeof(int);
+                    int len = *(int*) iter;
+                    iter=iter+sizeof(int);
+                    value = iter;
+                    //AllDataType::printVal(value, type, len);
+                    iter=iter+len;
+                    //printf("SET: %d %d %d %d\n", stmtID, pos, type, len);
+                    setParam(stmt, pos, type, len, value);
+                    if (*(int*)iter <0) break;
+                }
+            }
+            commit();
+        }
+        else if(logType == -3) { //free
+            iter = iter + sizeof(int);
+            txnID = *(int*) iter; iter += sizeof(int);
+            loglen = *(int*) iter; iter += sizeof(int);
+            stmtID = *(int*)iter;
+            iter = iter + sizeof(int);
+            AbsSqlStatement *stmt = getStmtFromHashTable(stmtID);
+            if (stmt) {
+                stmt->free();
+                removeFromHashTable(stmtID);
+            } else { printError(ErrSysInternal, "statement not found for %d\n",stmtID);}
+        }
+        else if(logType == -4) { //prepare and execute
+            iter = iter + sizeof(int);
+            txnID = *(int*) iter; iter += sizeof(int);
+            loglen = *(int*) iter; iter += sizeof(int);
+            stmtID = *(int*)iter;
+            iter = iter + sizeof(int);
+            len = *(int*)iter;
+            iter = iter + sizeof(int);
+            strncpy(stmtString, iter, len);
+            stmtString[len+1] ='\0';
+            iter = iter + len;
+            //printf("CREATE:%d %d %s\n", stmtID, len, stmtString);
+            AbsSqlStatement *stmt = SqlFactory::createStatement(CSqlDirect);
+            if ( NULL == stmt) {
+                printError(ErrSysInternal, "unable to prepare:%s", stmtString);
+                retVal=3;
+                break;
+            }
+            stmt->setConnection(this);
+            rv = stmt->prepare(stmtString);
+            if (rv != OK) {
+                printError(ErrSysInternal, "unable to prepare:%s", stmtString);
+                retVal=4;
+                break;
+            }
+            rv = stmt->execute(ret);
+            if (rv != OK) {
+                if (strlen(stmtString) > 6 &&
+                    ( (strncasecmp(stmtString,"CREATE", 6) == 0) ||
+                      (strncasecmp(stmtString,"DROP", 4) == 0)) ) {
+            //        conn->disconnect();
+              //      return OK;
+                    continue;
+                }
+                printError(ErrSysInternal, "unable to execute %s", stmtString);
+                retVal=5;
+                break;
+            }
+            stmt->free();
+        }else{
+            printError(ErrSysInternal, "Redo log file corrupted: logType:%d", logType);
+            retVal=6;
+            break;
+        }
+    }
+    munmap((char*)startAddr, st.st_size);
+    close(fd);
+    //freeAllStmtHandles();
+    return retVal;
+}
+#endif

@@ -3,4 +3,4 @@
 #define CSQL
 #define LINUX
 #define i686
-#endif 
+#endif

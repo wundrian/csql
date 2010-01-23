@@ -24,6 +24,11 @@
 #include<Debug.h>
 #include<Config.h>
 #include<Process.h>
+
+#if (defined MMDB && defined EMBED)
+int SessionImpl::noOfThreads = 0;
+#endif
+
 //Before calling this method, application is required to call readConfigValues
 DbRetVal SessionImpl::initSystemDatabase()
 
@@ -40,7 +45,7 @@ DbRetVal SessionImpl::initSystemDatabase()
 
    // Conf::config.print();
 
-    dbMgr = new DatabaseManagerImpl();
+    if (dbMgr == NULL) dbMgr = new DatabaseManagerImpl();
     rv = dbMgr->createDatabase(SYSTEMDB, Conf::config.getMaxSysDbSize());
     if (OK != rv) return rv;
     
@@ -84,8 +89,9 @@ DbRetVal SessionImpl::initSystemDatabase()
         return ErrSysInit;
     }
     db->releaseCheckpointMutex();
-
+#if !(defined MMDB && defined EMBED)
     printf("Sys_DB  [Size=%4.4ldMB] \nUser_DB [Size=%4.4ldMB]\n", Conf::config.getMaxSysDbSize()/1048576, Conf::config.getMaxDbSize()/1048576);
+#endif
     //create user database
     rv = dbMgr->createDatabase("userdb", Conf::config.getMaxDbSize());
     if (OK != rv) return rv;
@@ -106,6 +112,9 @@ DbRetVal SessionImpl::destroySystemDatabase()
 
 DbRetVal SessionImpl::open(const char *username, const char *password)
 {
+#if (defined MMDB) && (defined EMBED)
+    openEmbeddedConnection(username, password);
+# else 
     DbRetVal rv = OK;
     rv = readConfigFile();
     if (rv != OK)
@@ -165,6 +174,7 @@ DbRetVal SessionImpl::open(const char *username, const char *password)
     //ProcessManager::systemDatabase = dbMgr->sysDb();
     isXTaken = false;
     return OK;
+#endif
 }
 DbRetVal SessionImpl::authenticate(const char *username, const char *password)
 {
@@ -195,6 +205,9 @@ DbRetVal SessionImpl::getExclusiveLock()
 }
 DbRetVal SessionImpl::close()
 {
+# if (defined MMDB) && (defined EMBED)
+    closeEmbeddedConnection();
+# else
     DbRetVal rv = OK;
     if (isXTaken && dbMgr ) dbMgr->sysDb()->releaseProcessTableMutex(true);
     if (dbMgr)
@@ -233,6 +246,7 @@ DbRetVal SessionImpl::close()
     }
     isXTaken = false;
     return OK;
+#endif
 }
 
 DatabaseManager* SessionImpl::getDatabaseManager()
@@ -335,3 +349,111 @@ Database* SessionImpl::getSystemDatabase()
     return dbMgr->sysDb();
 }
 
+#if (defined MMDB && defined EMBED)
+DbRetVal SessionImpl::openEmbeddedConnection(const char *username, const char *password)
+{
+    DbRetVal rv = OK;
+    rv = readConfigFile();
+    if (rv != OK)
+    {
+       printError(ErrSysFatal, "Configuration file read failed\n");
+       return ErrSysFatal;
+    }
+
+    if ( NULL == dbMgr)
+    {
+        dbMgr = new DatabaseManagerImpl();
+    }
+    int ret = ProcessManager::mutex.tryLock(10, 100);
+    //If you are not getting lock ret !=0, it means somebody else is there.
+    if (ret != 0)
+    {
+        printError(ErrSysInternal, "Another thread calling open:Wait and then Retry\n");
+        return ErrSysInternal;
+    }
+
+    if (!noOfThreads) {
+        ret = initSystemDatabase();
+        if (0  != ret) {
+            printError(ErrSysInternal, "Unable to initialize the Database");
+            ProcessManager::mutex.releaseLock(-1, false);
+            return ErrSysInternal;
+        }
+        ProcessManager::systemDatabase = dbMgr->sysDb();
+    } else {
+        rv = dbMgr->openSystemDatabase();
+        if (OK != rv)
+        {
+            printError(rv,"Unable to open the system database");
+            ProcessManager::mutex.releaseLock(-1, false);
+            return rv;
+        }
+    }
+
+    rv = authenticate(username, password);
+    if (OK != rv)
+    {
+        delete dbMgr; dbMgr = NULL;
+        ProcessManager::mutex.releaseLock(-1, false);
+        return rv;
+    }
+
+    dbMgr->createTransactionManager();
+    dbMgr->createLockManager();
+    if (noOfThreads) {
+        rv = dbMgr->openDatabase("userdb");
+        if (OK != rv) {
+            dbMgr->closeSystemDatabase();
+            ProcessManager::mutex.releaseLock(-1, false);
+            delete dbMgr; dbMgr = NULL;
+            return rv;
+        }
+    }
+
+    rv = dbMgr->registerThread();
+    if (OK != rv)
+    {
+        printError(rv,"Unable to register to csql server");
+        ProcessManager::mutex.releaseLock(-1, false);
+        delete dbMgr; dbMgr = NULL;
+        return rv;
+    }
+
+    ProcessManager::mutex.releaseLock(-1, false);
+    noOfThreads++;
+    return OK;
+}
+
+DbRetVal SessionImpl::closeEmbeddedConnection()
+{
+    DbRetVal rv = OK;
+    if (dbMgr)
+    {
+        int ret = ProcessManager::mutex.tryLock(10,100);
+        //If you are not getting lock ret !=0, it means somebody else is there.
+        if (ret != 0)
+        {
+           printError(ErrSysInternal, "Another thread calling open:Wait and then Retry\n");
+           return ErrSysInternal;
+        }
+
+        rv = dbMgr->deregisterThread();
+        if (rv != OK) {
+           ProcessManager::mutex.releaseLock(-1, false);
+           return ErrBadCall;
+        }
+        ProcessManager::mutex.releaseLock(-1, false);
+    }
+    if (uMgr)
+    {
+        delete uMgr;
+        uMgr = NULL;
+    }
+    if(noOfThreads == 1) {
+        destroySystemDatabase();
+        Conf::logger.stopLogger();
+    }
+    noOfThreads--;
+    return OK;
+}
+#endif
