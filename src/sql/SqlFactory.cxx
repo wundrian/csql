@@ -31,15 +31,18 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
     DbRetVal rv=OK;
     AbsSqlConnection *conn = NULL ;
     Conf::config.readAllValues(os::getenv("CSQL_CONFIG_FILE"));
-    bool isSqlLogNeeded = ( Conf::config.useDurability() ||
-                          ( Conf::config.useCache() &&
-                            Conf::config.getCacheMode() == ASYNC_MODE) );
+    bool isSqlLogNeeded = false;
+#if !(defined MMDB && defined EMBED)
+    isSqlLogNeeded = Conf::config.useDurability() ||
+        (Conf::config.useCache() && Conf::config.getCacheMode() == ASYNC_MODE);
+#else
+    isSqlLogNeeded = Conf::config.useDurability();
+#endif
     switch(implFlag)
     {
         case CSql:
-            if (!Conf::config.useDurability()) {
-                conn = new SqlConnection();
-            }else {
+            if (!isSqlLogNeeded) conn = new SqlConnection();
+            else {
                AbsSqlConnection *sqlCon = new SqlConnection();
 #if (defined MMDB && defined EMBED)
     ((SqlConnection *)sqlCon)->UID.create();
@@ -49,6 +52,16 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
                logCon->setNoMsgLog(true);
                conn->setInnerConnection(sqlCon);
             }
+            break;
+        case CSqlNetwork:
+            {
+            SqlNwConnection *sqlNwCon = new SqlNwConnection(CSqlNetwork);
+            sqlNwCon->setInnerConnection(NULL);
+            conn = sqlNwCon;
+            break;
+            }
+        case CSqlDirect:
+            conn = new SqlConnection();
             break;
         case CSqlLog:
             {
@@ -87,14 +100,6 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
             conn = gwconn;
             break;
             }
-#endif
-        case CSqlNetwork:
-            {
-            SqlNwConnection *sqlNwCon = new SqlNwConnection(CSqlNetwork);
-            sqlNwCon->setInnerConnection(NULL);
-            conn = sqlNwCon;
-            break;
-            }
         case CSqlNetworkAdapter:
             {
             SqlNwConnection *sqlNwCon = new SqlNwConnection(CSqlNetworkAdapter);
@@ -109,9 +114,7 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
             conn = sqlNwCon;
             break;
             }
-        case CSqlDirect:
-            conn = new SqlConnection();
-            break;
+#endif
         default:
             printf("Todo");
             break;
@@ -122,19 +125,32 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
 AbsSqlStatement* SqlFactory::createStatement(SqlApiImplType implFlag)
 {
     AbsSqlStatement *stmt = NULL;
-    bool isSqlLogNeeded = ( Conf::config.useDurability() ||
-                          ( Conf::config.useCache() &&
-                            Conf::config.getCacheMode() == ASYNC_MODE )); 
+    bool isSqlLogNeeded = false;
+#if !(defined MMDB && defined EMBED)
+    isSqlLogNeeded = Conf::config.useDurability() ||
+        (Conf::config.useCache() && Conf::config.getCacheMode() == ASYNC_MODE);
+#else
+    isSqlLogNeeded = Conf::config.useDurability();
+#endif
     switch(implFlag)
     {
         case CSql:
-            if (!Conf::config.useDurability()) {
-                stmt = new SqlStatement();
-            }else {
+            if (!isSqlLogNeeded) stmt = new SqlStatement();
+            else {
                AbsSqlStatement *sqlStmt = new SqlStatement();
                stmt = new SqlLogStatement();
                stmt->setInnerStatement(sqlStmt);
             }
+            break;
+        case CSqlNetwork:
+            {
+            SqlNwStatement *sqlNwStmt = new SqlNwStatement();
+            sqlNwStmt->setInnerStatement(NULL);
+            stmt = sqlNwStmt;
+            break;
+            }
+        case CSqlDirect:
+            stmt = new SqlStatement();
             break;
         case CSqlLog:
             {
@@ -166,14 +182,6 @@ AbsSqlStatement* SqlFactory::createStatement(SqlApiImplType implFlag)
             stmt = gwstmt;
             break;
             }
-#endif
-        case CSqlNetwork:
-            {
-            SqlNwStatement *sqlNwStmt = new SqlNwStatement();
-            sqlNwStmt->setInnerStatement(NULL);
-            stmt = sqlNwStmt;
-            break;
-            }
         case CSqlNetworkAdapter:
             {
             SqlNwStatement *sqlNwStmt = new SqlNwStatement();
@@ -188,9 +196,7 @@ AbsSqlStatement* SqlFactory::createStatement(SqlApiImplType implFlag)
             stmt = sqlNwStmt;
             break;
             }
-        case CSqlDirect:
-            stmt = new SqlStatement();
-            break;
+#endif
         default:
             printf("Todo");
             break;

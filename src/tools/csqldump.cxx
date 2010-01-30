@@ -28,8 +28,10 @@ void printUsage()
    printf("            Default value is 100. If system db size is big, then it shall be increased.\n");
    printf("       T -> Will dump only the table specified with this option.\n");
    return;
-  
 }
+
+SqlConnection *sqlconn;
+SqlStatement *stmt;
 
 bool isCached(char *tblName)
 {
@@ -90,29 +92,24 @@ int main(int argc, char **argv)
         strcpy(username, I_USER);
         strcpy(password, I_PASS);
     }
-    SqlConnection *sqlconn = (SqlConnection*) SqlFactory::createConnection(CSqlDirect);
-
-    SqlStatement *stmt = (SqlStatement*) SqlFactory::createStatement(CSqlDirect);
+    sqlconn = (SqlConnection*) SqlFactory::createConnection(CSqlDirect);
+    DbRetVal rv = sqlconn->connect(username, password);
+    if (rv != OK)  {
+        printf("Unable to get connection to csql\n");
+        delete sqlconn; delete stmt; return 1;
+    }
+    stmt = (SqlStatement*) SqlFactory::createStatement(CSqlDirect);
+    stmt->setSqlConnection(sqlconn);
     if (exclusive) { stmt->setLoading(true); }
     
     if (opt == 0 || opt == 1) opt = 5;
     if (opt == 5) {
-        Connection conn;
-        DbRetVal rv = conn.open(username, password);
-        if (rv != OK)  {  
-            printf("Unable to get connection to csql\n");
-            delete sqlconn;
-            delete stmt;
-            return 1;
-        }
         os::signal(SIGCSQL1, SIG_IGN);
-        DatabaseManagerImpl *dbMgr = (DatabaseManagerImpl*) conn.getDatabaseManager();
+        DatabaseManagerImpl *dbMgr = (DatabaseManagerImpl*) 
+                                 sqlconn->getConnObject().getDatabaseManager();
         if (dbMgr == NULL) {  
             printf("Unable to retrive db manager\n"); 
-            conn.close();
-            delete stmt;
-            delete sqlconn;
-            return 2;
+            sqlconn->disconnect(); delete stmt; delete sqlconn; return 2; 
         }
         List tableList = dbMgr->getAllTableNames();
         ListIterator iter = tableList.getIterator();
@@ -124,10 +121,11 @@ int main(int argc, char **argv)
             printf("CREATE TABLE %s (", elem->name);
             Table *table = dbMgr->openTable(elem->name);
             if (NULL == table) {
-                printError(ErrSysInternal, "Unable to open table %s", elem->name);
+                printError(ErrSysInternal, 
+                                        "Unable to open table %s", elem->name);
                 break;
             }
-	    FieldInfo *info = new FieldInfo();
+            FieldInfo *info = new FieldInfo();
             List fNameList = table->getFieldNameList();
             ListIterator fNameIter = fNameList.getIterator();
             count++;
@@ -139,21 +137,24 @@ int main(int argc, char **argv)
                 Table::getFieldNameAlone(elem1->name, fieldName);
                 rv = table->getFieldInfo(elem1->name, info);
                 if (rv !=OK)  {
-                    printf("unable to retrive info for table %s\n", elem1->name);
-                    conn.close();
-                    delete stmt;
-                    delete sqlconn;
+                    printf("unable to retrive info for table %s\n", 
+                                                                  elem1->name);
+                    sqlconn->disconnect(); delete stmt; delete sqlconn;
+                    return 3;
                 }
                 if (firstField) {
-                    printf("%s %s ", fieldName, AllDataType::getSQLString(info->type));
+                    printf("%s %s ", fieldName, 
+                                        AllDataType::getSQLString(info->type));
                     firstField = false;
                 } else
-                    printf(", %s %s ", fieldName, AllDataType::getSQLString(info->type));
-                if (info->type == typeString) printf("(%d)",info->length );
-                if (info->type == typeBinary) printf("(%d)",info->length);
-                if (info->type == typeVarchar) printf("(%d)",info->length);
+                    printf(", %s %s ", fieldName, 
+                                        AllDataType::getSQLString(info->type));
+                if (info->type == typeString || info->type == typeVarchar ||
+                                                      info->type == typeBinary)
+                     printf("(%d)",info->length);
                 if (info->isNull) printf(" NOT NULL ");
-                if (info->isDefault) printf(" DEFAULT '%s' ", info->defaultValueBuf);
+                if (info->isDefault) 
+                    printf(" DEFAULT '%s' ", info->defaultValueBuf);
                 if (info->isAutoIncrement) printf(" AUTO_INCREMENT ");
             }
             fNameIter.reset();
@@ -170,25 +171,16 @@ int main(int argc, char **argv)
             delete info;
             dbMgr->closeTable(table);
         }
-        conn.close();
-        if (schema) { delete sqlconn; delete stmt; return 0; }
-
-        rv = sqlconn->connect(I_USER, I_PASS);
-        if (OK !=rv) {
-            printf("unable to connect to csql\n");
-            delete sqlconn;
-            delete stmt;
-            return 10;
+        if (schema) { 
+            sqlconn->disconnect(); 
+            delete sqlconn; delete stmt; return 0; 
         }
-        stmt->setConnection(sqlconn);
+        stmt->setSqlConnection(sqlconn);
         if (exclusive) {
             rv = sqlconn->getExclusiveLock();
             if (rv != OK) {
                 printf("Unable to get exclusive lock\n");
-                sqlconn->disconnect();
-                delete sqlconn;
-                delete stmt;
-                return 1;
+                sqlconn->disconnect(); delete sqlconn; delete stmt; return 4;
             }
         }
         iter.reset();
@@ -230,24 +222,17 @@ int main(int argc, char **argv)
         tableList.reset();
     } 
     if (opt == 15) {
-        Connection conn;
-        DbRetVal rv = conn.open(username, password);
-        if (rv != OK)  {  
-            printf("Unable to get connection to csql\n");
-            delete sqlconn;
-            delete stmt;
-            return 1;
-        }
         os::signal(SIGCSQL1, SIG_IGN);
-        DatabaseManagerImpl *dbMgr = (DatabaseManagerImpl*) conn.getDatabaseManager();
-        if (dbMgr == NULL) { printf("Auth failed\n"); return 2;}
+        DatabaseManagerImpl *dbMgr = (DatabaseManagerImpl*) 
+                                 sqlconn->getConnObject().getDatabaseManager();
+        if (dbMgr == NULL) {
+            printf("Unable to retrive db manager\n");
+            sqlconn->disconnect(); delete stmt; delete sqlconn; return 5;
+        }
         Table *table = dbMgr->openTable(tblName);
         if (table == NULL) {
             printf("csqldump: Table \'%s\' does not exist\n", tblName);
-            conn.close();
-            delete sqlconn;
-            delete stmt;
-            return 3;
+            sqlconn->disconnect(); delete sqlconn; delete stmt; return 6;
         }
         printf("CREATE TABLE %s (", tblName);
 	    FieldInfo *info = new FieldInfo();
@@ -261,40 +246,35 @@ int main(int argc, char **argv)
             Table::getFieldNameAlone(elem->name, fieldName);
             table->getFieldInfo((const char*)elem->name, info);
             if (firstField) {
-                printf("%s %s ", fieldName, AllDataType::getSQLString(info->type));
+                printf("%s %s ", fieldName, 
+                                        AllDataType::getSQLString(info->type));
                 firstField = false;
             }
             else
-                printf(", %s %s ", fieldName, AllDataType::getSQLString(info->type));
-            if (info->type == typeString) printf("(%d)",info->length);
-            if (info->type == typeBinary) printf("(%d)",info->length);
+                printf(", %s %s ", fieldName, 
+                                        AllDataType::getSQLString(info->type));
+            if (info->type == typeString || info->type == typeVarchar ||
+                                                      info->type == typeBinary)
+                printf("(%d)",info->length);
             if (info->isNull) printf(" NOT NULL ");
-            if (info->isDefault) printf(" DEFAULT '%s' ", info->defaultValueBuf);
+            if (info->isDefault) 
+                printf(" DEFAULT '%s' ", info->defaultValueBuf);
         }
         printf(");\n");
         table->printSQLIndexString();
         delete info;
-        conn.close();
         char sqlstring[1024];
-      //  char sqlstring1[1024];
-	bool flag=false;
+	    bool flag=false;
         if (!flag) { printf("SET AUTOCOMMIT OFF;\n"); flag=true; } 
-        rv = sqlconn->connect(I_USER, I_PASS);
-        if (OK !=rv) {
-            printf("unable to connect\n");
-            return 10;
-        }
-        stmt->setConnection(sqlconn);
-        
-	if(Iscondition)
-	   sprintf(sqlstring, "SELECT * FROM %s WHERE %s;", tblName,conditionVal);
-	else   
-	   sprintf(sqlstring, "SELECT * FROM %s;", tblName);
-	   sqlconn->beginTrans();
-           rv = stmt->prepare(sqlstring);
+	    if(Iscondition)
+            sprintf(sqlstring, "SELECT * FROM %s WHERE %s;", tblName,
+                                                                 conditionVal);
+        else sprintf(sqlstring, "SELECT * FROM %s;", tblName);
+        sqlconn->beginTrans();
+        rv = stmt->prepare(sqlstring);
 	
         //***********************************************
-	int rows = 0;
+	    int rows = 0;
         rv = stmt->execute(rows);
         void *tuple = NULL;
         rows = 0;
@@ -315,6 +295,5 @@ int main(int argc, char **argv)
     sqlconn->disconnect();
     delete sqlconn;
     delete stmt;
-    
     return 0;
 }

@@ -59,7 +59,7 @@ DbRetVal GlobalUniqueID::destroy()
     int key = Conf::config.getShmIDKey();
     int id = os::shm_open(key, MAX_UNIQUE_ID *sizeof(int), 0666);
     if (-1 == id) {
-        printError(ErrOS, "Unable to open shared memory");
+//        printError(ErrOS, "Unable to open shared memory");
         return ErrOS;
     }
     os::shmctl(id, IPC_RMID);

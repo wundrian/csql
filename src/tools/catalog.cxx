@@ -20,6 +20,9 @@
 #include <TableImpl.h>
 #include <CacheTableLoader.h>
 #include <TableConfig.h>
+#include <SqlFactory.h>
+#include <SqlConnection.h>
+#include <SqlStatement.h>
 
 void printUsage()
 {
@@ -35,6 +38,9 @@ void printUsage()
    return;
   
 }
+
+SqlConnection *sqlconn;
+SqlStatement *stmt;
 
 int main(int argc, char **argv)
 {
@@ -79,13 +85,21 @@ int main(int argc, char **argv)
         strcpy(password, I_PASS);
         opt=1;//if username is not specified, just list all table names
     }
-    
-    Connection conn;
-    DbRetVal rv = conn.open(username, password);
-    if (rv != OK) return 1;
+    sqlconn = (SqlConnection*) SqlFactory::createConnection(CSqlDirect);
+    DbRetVal rv = sqlconn->connect(username, password);
+    if (rv != OK)  {
+        printf("Unable to get connection to csql\n");
+        delete sqlconn; delete stmt; return 1;
+    }
+    stmt = (SqlStatement*) SqlFactory::createStatement(CSqlDirect);
+    stmt->setSqlConnection(sqlconn);    
     os::signal(SIGCSQL1, SIG_IGN);
-    DatabaseManagerImpl *dbMgr = (DatabaseManagerImpl*) conn.getDatabaseManager();
-    if (dbMgr == NULL) { printf("Auth failed\n"); return 2;}
+    DatabaseManagerImpl *dbMgr = (DatabaseManagerImpl*) 
+                                 sqlconn->getConnObject().getDatabaseManager();
+    if (dbMgr == NULL) {
+        printf("Unable to retrive db manager\n");
+        sqlconn->disconnect(); delete stmt; delete sqlconn; return 2;
+    }
     List tableList = dbMgr->getAllTableNames();
     ListIterator iter = tableList.getIterator();
     Identifier *elem = NULL;
@@ -116,7 +130,7 @@ int main(int argc, char **argv)
                 printError(ErrSysInternal, "Unable to open table %s", elem->name);
                 break;
             }
-	    FieldInfo *info = new FieldInfo();
+	        FieldInfo *info = new FieldInfo();
             List fNameList = table->getFieldNameList();
             ListIterator fNameIter = fNameList.getIterator();
             count++;
@@ -145,11 +159,9 @@ int main(int argc, char **argv)
         printf("</Table Information of all tables>\n");
         printf("<Index Information of all Indexs>\n");
         CatalogTableINDEXFIELD cIndexField(dbMgr->sysDb()); 
-	cIndexField.printAllIndex();
-	printf("</Index Information of all Indexs>\n");
-
-    }else if (opt == 3)
-    {
+	    cIndexField.printAllIndex();
+	    printf("</Index Information of all Indexs>\n");
+    } else if (opt == 3) {
         if (!dbMgr->isAnyOneRegistered()) {
             printf("<DropTable>\n");
             int count =0; 
@@ -281,6 +293,7 @@ int main(int argc, char **argv)
     iter.reset();
     while (iter.hasElement()) delete iter.nextElement();
     tableList.reset();
-    conn.close();
+    sqlconn->disconnect();
+    delete stmt; delete sqlconn;
     return ret;
 }

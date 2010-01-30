@@ -1,16 +1,36 @@
 INCLUDES = -I$(top_srcdir)/include $(all_includes) -I$(top_srcdir)/src/sql
 METASOURCES = AUTO
-bin_PROGRAMS = csql catalog csqlserver csqlsqlserver csqldump  csqlcheckpointserver
+bin_PROGRAMS = csql catalog csqlserver csqlsqlserver csqldump  csqlcheckpointserver redo recover
 csql_SOURCES = isql.cxx
 csql_LDADD = $(top_builddir)/src/storage/libcsql.la \
 	 $(top_builddir)/src/sql/libcsqlsql.la \
 	 $(top_builddir)/src/sqllog/libcsqlsqllog.la \
 	 $(top_builddir)/src/network/libcsqlnw.la \
-	 $(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la \
-	-lrt -lpthread -lcrypt -lreadline
+	 $(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la 
+csql_LDFLAGS = -lrt -lpthread -lcrypt -lreadline
+
+redo_SOURCES = redo.cxx
+redo_LDADD = $(top_builddir)/src/storage/.libs/libcsql.so \
+	$(top_builddir)/src/sql/.libs/libcsqlsql.so \
+	$(top_builddir)/src/sqllog/.libs/libcsqlsqllog.so \
+	$(top_builddir)/src/network/.libs/libcsqlnw.so \
+	$(top_builddir)/src/sqlnetwork/.libs/libcsqlsqlnw.so 
+redo_LDFLAGS = -lrt -lpthread -lcrypt 
+
+recover_SOURCES = recover.cxx
+recover_LDADD = $(top_builddir)/src/storage/.libs/libcsql.so \
+    $(top_builddir)/src/sql/.libs/libcsqlsql.so \
+    $(top_builddir)/src/sqllog/.libs/libcsqlsqllog.so \
+    $(top_builddir)/src/network/.libs/libcsqlnw.so \
+    $(top_builddir)/src/sqlnetwork/.libs/libcsqlsqlnw.so
+recover_LDFLAGS = -lrt -lpthread -lcrypt
 
 catalog_SOURCES = catalog.cxx
-catalog_LDADD = $(top_builddir)/src/storage/libcsql.la 
+catalog_LDADD = $(top_builddir)/src/storage/.libs/libcsql.so \
+     $(top_builddir)/src/sql/.libs/libcsqlsql.so \
+    $(top_builddir)/src/sqllog/.libs/libcsqlsqllog.so \
+    $(top_builddir)/src/network/.libs/libcsqlnw.so \
+    $(top_builddir)/src/sqlnetwork/.libs/libcsqlsqlnw.so
 catalog_LDFLAGS = -lcrypt
 
 csqlserver_LDADD = $(top_builddir)/src/storage/libcsql.la 
@@ -18,10 +38,11 @@ csqlserver_LDFLAGS = -lcrypt -lrt -lpthread
 csqlserver_SOURCES = csqlserver.cxx
 
 csqlsqlserver_LDADD = $(top_builddir)/src/sql/libcsqlsql.la \
+    $(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la \
 	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
 	$(top_builddir)/src/network/libcsqlnw.la \
-	$(top_builddir)/src/storage/libcsql.la -lrt -lpthread -lcrypt
-csqlsqlserver_LDFLAGS = -lcrypt 
+	$(top_builddir)/src/storage/libcsql.la 
+csqlsqlserver_LDFLAGS = -lcrypt -lrt -lpthread
 csqlsqlserver_SOURCES = csqlsqlserver.cxx
 
 csqlcheckpointserver_LDADD = $(top_builddir)/src/storage/libcsql.la \
@@ -32,10 +53,10 @@ csqlcheckpointserver_LDADD = $(top_builddir)/src/storage/libcsql.la \
 csqlcheckpointserver_LDFLAGS = -lcrypt -lodbc -lrt -lpthread
 csqlcheckpointserver_SOURCES = csqlcheckpointserver.cxx
 
-
 csqldump_LDADD = $(top_builddir)/src/sql/libcsqlsql.la \
+	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la \
 	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
 	$(top_builddir)/src/network/libcsqlnw.la \
-	$(top_builddir)/src/storage/libcsql.la -lrt -lpthread -lcrypt
-csqldump_LDFLAGS = -lcrypt 
+	$(top_builddir)/src/storage/libcsql.la 
+csqldump_LDFLAGS = -lrt -lpthread -lcrypt
 csqldump_SOURCES = csqldump.cxx
