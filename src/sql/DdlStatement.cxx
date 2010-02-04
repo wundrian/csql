@@ -149,8 +149,12 @@ DbRetVal CreateTblStatement::resolve()
             printf("Check SQL Syntax: .\n");
             return  rv;
         }
-       
-       //TODO : need a new addField function which can take FieldDef as parameter.
+        /* To check char field and restrict it for the max length 8kb(8000)  */
+        if( (fDef->type_ == 30) && (fDef->length_ > 8000) ){
+            printError(ErrBadRange,"Char data type length should be less than 8kb(8000).");
+            return ErrBadRange;
+        }
+        //TODO : need a new addField function which can take FieldDef as parameter.
        if (!fDef->isDefault_ || fDef->isDefault_ && fDef->defaultValueBuf_[0] == '\0')  {
            i = tblDef.addField(fDef->fldName_, fDef->type_, fDef->length_, 
                         NULL,fDef->isNull_,fDef->isAutoIncrement_);

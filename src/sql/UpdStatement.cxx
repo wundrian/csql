@@ -522,6 +522,15 @@ DbRetVal UpdStatement::resolveForAssignment()
             if (value->type == typeBinary)
                 strncpy((char *)value->value, value->parsedString, 2 * fInfo->length);
             else AllDataType::strToValue(value->value, value->parsedString, fInfo->type, value->length);
+            /* Check for char data type 8kb(8000) */
+            if(value->type==typeString){
+                 int len=strlen(value->parsedString);
+                 if(len > 8000){
+                     printError(ErrBadRange, "Char DataType length should be less than 8kb(8000).");
+                     return ErrBadRange;
+                 }
+             }
+
        }	
     }
     totalAssignParams = paramPos -1;
