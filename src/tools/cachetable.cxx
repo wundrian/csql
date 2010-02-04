@@ -222,12 +222,10 @@ int main(int argc, char **argv)
             printf("Error(%d):There is no cache table present in the specified(%s)DS.\n\n",rv,dsnName);
             return 10;
         }
-    }else if(opt==50){
-        isCached = TableConf::config.isTableCached(mode);
-        if(isCached) {
-            printf("Table is already cached, unload table by\n");
-            printf("\"cachetable -t <tablename> -u\" and then try \n");
-            return 11;
+    }else if(opt==50 && tableDefinition){
+         if(conditionval || fieldlistval || tableNameSpecified){
+            printf("Not a valid commnad. Use \"cachetable -d <dsName>\" to cache all tables.\n");
+            return 12;
         }
         rv = cacheLoader.cacheAllTablesFromDs(dsnName,tableDefinition, isDirect,username,password);
         if(rv!=OK)return 12;
