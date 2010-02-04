@@ -1266,7 +1266,10 @@ DbRetVal CacheTableLoader::cacheAllTablesFromDs(char *dsnName,bool tableDefiniti
     char user[IDENTIFIER_LENGTH]; user[0] = '\0';
     char passwd[IDENTIFIER_LENGTH]; passwd[0] = '\0';
     char tdb[IDENTIFIER_LENGTH]; tdb[0]='\0';
-     /* If -d option is disable, the If statementn will true. */
+    unsigned int mode;
+    bool isCached=false;
+
+    /* If -d option is disable, the If statementn will true. */
     if(strcmp(dsnName,"")==0) {
         strcpy(dsnName, Conf::config.getDSN());
     }
@@ -1387,25 +1390,35 @@ DbRetVal CacheTableLoader::cacheAllTablesFromDs(char *dsnName,bool tableDefiniti
 
     while(SQL_SUCCEEDED(retValue = SQLFetch(hstmt))){
         /* copy Buffer value */
-        strcpy(&table[counter][0],buf);
+        //strcpy(&table[counter][0],buf);
         /* settign DSN */
         cacheLoader.setDsnName(dsnName);
         TableConf::config.setDsnName(dsnName);
         cacheLoader.setConnParam(username, password);
         TableConf::config.setConnParam(username, password);
+        /* Check table is cached or not */
+        mode = TableConf::config.getTableMode(buf);
         /* Settign up table */
-        cacheLoader.setTable(&table[counter][0]);
-        TableConf::config.setTable(&table[counter][0]);
-        /* Loading Table from TDB to CSQL */
-        rv = cacheLoader.load(tableDefinition);
-        if(rv != OK) return ErrSysInit;
-        /* Adding entries into the csqltable.conf file, after successful caching */
-        TableConf::config.addToCacheTableFile(isDirect);
-        printf("Table Name: %s\n",buf);
+        cacheLoader.setTable(buf);
+        TableConf::config.setTable(buf);
+        isCached = TableConf::config.isTableCached(mode);
+        if(isCached){
+            printf("Warning: Table '%s' is already cached.\n",buf);
+        }else{
+             rv = cacheLoader.load(tableDefinition);
+             if(rv != OK){
+                 printf("Warning: Table '%s' is present in CSQL locally.\n",buf);
+             }else{
+                  TableConf::config.addToCacheTableFile(isDirect);
+                  printf("Cached Table:%s\n",buf);
+                  TableConf::config.init();
+             }   
+        }
         counter++;
     }
     /* Checking couter value */
-    if(counter==0) printf("None of the Table present in TDB.\n");
+    if(counter==0) 
+    printf("There is no table present in Target Database.\n");
     /*Closing opening forwarded Cursor */
     retValue=SQLCloseCursor(hstmt);
     if(retValue){
