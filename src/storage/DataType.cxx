@@ -253,7 +253,7 @@ int Date::daysInMonth(int month, int year) {
 
 bool Date::isValidDate(int year, int month, int day) {
    
-    if (year  < 1 || year  >= 9999) return false;
+    if (year  < 1 || year  > 9999) return false;
     if (month < 1 || month > 12) return false;
     return (day >= 1) && (day <= daysInMonth(month,year));
 }
@@ -1674,6 +1674,8 @@ void  AllDataType::memoryset(void *value,DataType type)
 
 DbRetVal AllDataType::strToValue(void* dest, char *src, DataType type, int length)
 {
+    Date date;
+    Time time;
     switch(type)
     {
         case typeInt: {
@@ -1739,6 +1741,11 @@ DbRetVal AllDataType::strToValue(void* dest, char *src, DataType type, int lengt
                 fprintf(stderr,"Error reading date. yyyy{-/}mm{-/}dd is the valid format.");
                 d=m=y=0;
             }
+            /* Looking up at ranges of year-month-day */
+            if(!date.isValidDate(y, m, d)){
+                fprintf(stderr,"Error reading date. The value \"%d-%d-%d\" is inappropriate.",y,m,d);
+                d=m=y=0;
+            }
             Date dateObj(y,m,d);
             *(Date*)dest = dateObj;
             break; }
@@ -1753,6 +1760,11 @@ DbRetVal AllDataType::strToValue(void* dest, char *src, DataType type, int lengt
 	    if( res != 3 )
             {
                 fprintf(stderr, "Error reading time, hh:mm:ss is the valid format.");
+                h=m=s=0;
+            }
+            /* validate time */
+            if(!time.isValidTime(h, m, s)){
+                fprintf(stderr,"Error reading Time. The value \"%d-%d-%d\" is inappropriate.",h,m,s);
                 h=m=s=0;
             }
 	    Time timeObj(h,m,s);
@@ -1780,6 +1792,16 @@ DbRetVal AllDataType::strToValue(void* dest, char *src, DataType type, int lengt
 	        if ( res != 6 )
             {
                 fprintf(stderr, "Error reading timestamp, yyyy{-/}mm{-/}dd[,] hh:mm:ss is the valid format.");
+                d=m=y=h=mn=s=0;
+            }
+             /* Looking up at 'YY-MM-DD' */
+            if(!date.isValidDate(y, m, d)){
+                fprintf(stderr,"Error reading date. The value \"%d-%d-%d\" is inappropriate.",y,m,d);
+                d=m=y=h=mn=s=0;
+            }
+            /* Looking up at 'Hour-Min-Sec' */
+            if(!time.isValidTime(h, m, s)){
+                fprintf(stderr,"Error reading Time. The value \"%d-%d-%d\" is inappropriate.",h,m,s);
                 d=m=y=h=mn=s=0;
             }
             TimeStamp timeStampObj(y,m,d,h,mn,s);
