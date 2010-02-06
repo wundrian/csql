@@ -61,6 +61,7 @@ SqlLogConnection::~SqlLogConnection()
 {
     if (msgQSend) { delete msgQSend; msgQSend = NULL; }
     if (fileSend) { delete fileSend; fileSend = NULL; }
+    if (offlineLog) { delete offlineLog; offlineLog = NULL; }
     txnUID.close();
     ListIterator it = cacheList.getIterator();
     while(it.hasElement()) delete (CachedTable *) it.nextElement();

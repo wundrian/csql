@@ -92,6 +92,11 @@ DbRetVal SqlLogStatement::prepare(char *stmtstr)
         conn->msgPrepare(txnId, sid, strlen(stmtstr) + 1, stmtstr, tblName);
     if (Conf::config.useDurability()) 
         conn->fileLogPrepare(txnId, sid, strlen(stmtstr) + 1, stmtstr, NULL);
+    if (Conf::config.useCache() && 
+                           Conf::config.getCacheMode() == OFFLINE_MODE && 
+                                                           !conn->noOfflineLog)
+        conn->offlineLogPrepare(txnId, sid, strlen(stmtstr) + 1, stmtstr, NULL);
+
     return OK;
 }
 

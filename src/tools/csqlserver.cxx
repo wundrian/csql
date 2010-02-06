@@ -377,14 +377,14 @@ int main(int argc, char **argv)
         isSQLReq = true;
         startServiceClient();
     }
-    if ( (Conf::config.useCache() && 
-           Conf::config.getCacheMode()==ASYNC_MODE)) {
+    if ( (Conf::config.useCache() && Conf::config.getCacheMode()==ASYNC_MODE)){
         int msgid = os::msgget(Conf::config.getMsgKey(), 0666);
         if (msgid != -1) os::msgctl(msgid, IPC_RMID, NULL);
         isAsyncReq = true;
         startAsyncServer();
     }
-    if (Conf::config.useCache() && Conf::config.useTwoWayCache()) {
+    if (Conf::config.useCache() && Conf::config.useTwoWayCache() &&
+                              Conf::config.getCacheMode() != OFFLINE_MODE) {
         isCacheReq = true;
         startCacheServer();
     }

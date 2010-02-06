@@ -37,8 +37,7 @@ typedef struct my_msgbuffer {
 class AbsSqlLogSend
 {
     public:
-    virtual DbRetVal prepare(int tId, int sId, int len, char *st, 
-                                                              char *tn)=0;
+    virtual DbRetVal prepare(int tId, int sId, int len, char *st, char *tn)=0;
     virtual DbRetVal commit(int len, void *data)=0;
     virtual DbRetVal free(int txnId, int stmtId)=0;
 };
@@ -64,6 +63,21 @@ class FileSend : public AbsSqlLogSend
     DbRetVal commit(int len, void *data);
     DbRetVal free(int txnId, int stmtId);
 };
+
+class OfflineLog : public AbsSqlLogSend
+{
+    int fdOfflineLog;
+    DbRetVal createMmapFileForMetadata();
+    public:
+    OfflineLog();
+    ~OfflineLog();
+    DbRetVal openOfflineLogFile();
+    DbRetVal prepare(int txnId, int stmtId, int len, char *stmt, char*tn);
+    DbRetVal commit(int len, void *data);
+    DbRetVal free(int txnId, int stmtId);
+};
+
+
 
 enum ExecType
 {
@@ -109,6 +123,7 @@ class SqlLogConnection : public AbsSqlConnection
     NetworkTable nwTable;
     AbsSqlLogSend *msgQSend;
     AbsSqlLogSend *fileSend;
+    AbsSqlLogSend *offlineLog;
 
     GlobalUniqueID txnUID;
     static List cacheList;
@@ -117,19 +132,24 @@ class SqlLogConnection : public AbsSqlConnection
     public:
     SqlLogConnection() {
         innerConn = NULL; syncMode = ASYNC; 
-        if (Conf::config.useCache() && 
-            Conf::config.getCacheMode()==ASYNC_MODE) 
+        if (Conf::config.useCache() && Conf::config.getCacheMode()==ASYNC_MODE) 
                msgQSend = new MsgQueueSend();
         else msgQSend = NULL;
         if (Conf::config.useDurability()) { fileSend = new FileSend(); } 
         else fileSend = NULL;
+        if (Conf::config.useCache() && 
+                                   Conf::config.getCacheMode() == OFFLINE_MODE)
+            offlineLog = new OfflineLog;
+        else offlineLog = NULL;
         txnUID.open();
         execLogStoreSize =0;
         noMsgLog = false;
+        noOfflineLog = false;
     }
     ~SqlLogConnection();
     bool isTableCached(char *name);
     bool noMsgLog;
+    bool noOfflineLog;
     //Note::forced to implement this as it is pure virtual in base class
     Connection& getConnObject(){  return dummyConn; }
 
@@ -151,6 +171,10 @@ class SqlLogConnection : public AbsSqlConnection
     {
         return fileSend->prepare(tId, sId, len, stmt, tname);
     }
+    DbRetVal offlineLogPrepare(int tId, int sId, int len, char *st, char *tnm)
+    {
+        return offlineLog->prepare(tId, sId, len, st, tnm);
+    }
     DbRetVal commitLogs(int logSize, void *data) 
     {  
         int txnId = getTxnID();
@@ -158,6 +182,10 @@ class SqlLogConnection : public AbsSqlConnection
              Conf::config.getCacheMode() == ASYNC_MODE)) && !noMsgLog) 
             msgQSend->commit(logSize, data); 
         if (Conf::config.useDurability()) fileSend->commit(logSize, data);
+        if (Conf::config.useCache() && 
+                               Conf::config.getCacheMode()==OFFLINE_MODE &&
+                                                                 !noOfflineLog)
+            offlineLog->commit(logSize, data);
         return OK;
     }
     DbRetVal freeLogs(int stmtId)
@@ -167,6 +195,10 @@ class SqlLogConnection : public AbsSqlConnection
              Conf::config.getCacheMode() == ASYNC_MODE)) && !noMsgLog)
             msgQSend->free(txnId, stmtId);
         if (Conf::config.useDurability()) fileSend->free(txnId, stmtId);
+        if (Conf::config.useCache() && 
+                            Conf::config.getCacheMode()==OFFLINE_MODE &&
+                                                                 !noOfflineLog)
+            offlineLog->free(txnId, stmtId);
         return OK;
     }
     void addExecLog(ExecLogInfo *info) { execLogStore.append(info); }
@@ -179,6 +211,7 @@ class SqlLogConnection : public AbsSqlConnection
 
     DbRetVal setSyncMode(TransSyncMode mode);
     void setNoMsgLog(bool nmlog) { noMsgLog = nmlog; }
+    void setNoOfflineLog(bool nolog) { noOfflineLog = nolog; }
     TransSyncMode getSyncMode() { return syncMode; }
     int getTxnID() { return txnID; }
     DbRetVal connectIfNotConnected() { return nwTable.connectIfNotConnected(); }

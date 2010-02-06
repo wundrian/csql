@@ -86,8 +86,12 @@ int Config::storeKeyVal(char *key, char *value)
                {    cVal.mode = SYNC_MODE;    }
                else if (strcmp(value, "ASYNC") == 0)
                {    cVal.mode = ASYNC_MODE;   }
+               else if (strcmp(value, "OFFLINE") == 0)
+               {    cVal.mode = OFFLINE_MODE;   }
                else cVal.mode = UNKNOWN;
            }
+    else if (os::strcasestr(key, "OFFLINE_FILE_SIZE") != NULL)
+       { cVal.offlineLogFileSize = atol(value); }
     else if(os::strcasestr(key,"SITE_ID")!=NULL)
            { cVal.siteID = atoi(value);}
     else if (os::strcasestr(key, "DURABILITY") != NULL)

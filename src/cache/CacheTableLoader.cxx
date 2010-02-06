@@ -58,6 +58,7 @@ DbRetVal CacheTableLoader::load(bool tabDefinition)
     stmt->setConnection(conn);
     SqlLogConnection *logConn = (SqlLogConnection *) conn;
     logConn->setNoMsgLog(true);
+    logConn->setNoOfflineLog(true);
     SqlConnection *con = (SqlConnection *) conn->getInnerConnection();
     DatabaseManager *dbMgr = con->getConnObject().getDatabaseManager();
     if (tabDefinition == false) {

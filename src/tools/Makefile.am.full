@@ -1,6 +1,7 @@
 INCLUDES = -I$(top_srcdir)/include $(all_includes) -I$(top_srcdir)/src/sql
 METASOURCES = AUTO
-bin_PROGRAMS = csql catalog cachetable csqlserver csqlsqlserver csqlcacheserver csqldump cacheverify redo recover checkpoint csqlds csqlasyncserver csqlcheckpointserver
+bin_PROGRAMS = csql catalog cachetable csqlserver csqlsqlserver csqlcacheserver csqldump cacheverify redo recover checkpoint csqlds csqlasyncserver csqlcheckpointserver applyofflinelogs
+
 csql_SOURCES = isql.cxx
 csql_LDADD = $(top_builddir)/src/storage/libcsql.la \
 	$(top_builddir)/src/sql/libcsqlsql.la \
@@ -22,6 +23,17 @@ redo_LDADD = $(top_builddir)/src/storage/libcsql.la  \
         $(top_builddir)/src/cache/libcacheload.la \
         $(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la
 redo_LDFLAGS = -lrt -lpthread -lcrypt -lodbc -lreadline
+
+applyofflinelogs_SOURCES = applyofflinelogs.cxx
+applyofflinelogs_LDADD = $(top_builddir)/src/storage/.libs/libcsql.so \
+    $(top_builddir)/src/sql/.libs/libcsqlsql.so \
+    $(top_builddir)/src/sqllog/.libs/libcsqlsqllog.so \
+    $(top_builddir)/src/network/.libs/libcsqlnw.so \
+    $(top_builddir)/src/adapter/.libs/libcsqlodbcadapter.so \
+    $(top_builddir)/src/gateway/.libs/libcsqlgw.so \
+    $(top_builddir)/src/cache/.libs/libcacheload.so \
+    $(top_builddir)/src/sqlnetwork/.libs/libcsqlsqlnw.so 
+applyofflinelogs_LDFLAGS = -lrt -lpthread -lcrypt -lodbc
 
 recover_SOURCES = recover.cxx
 recover_LDADD = $(top_builddir)/src/storage/libcsql.la  \

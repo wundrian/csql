@@ -12,6 +12,7 @@
 enum CacheMode {
     SYNC_MODE=0,
     ASYNC_MODE=1,
+    OFFLINE_MODE=2,
     UNKNOWN=100
 };
 enum TDBInfo
@@ -58,6 +59,7 @@ class ConfigValues
     int durableMode;
     char dsn[IDENTIFIER_LENGTH];
     CacheMode mode;
+    long offlineLogFileSize;
     int cacheWaitSecs;
     
     int port;
@@ -113,6 +115,7 @@ class ConfigValues
         durableMode=1;
         strcpy(dsn,"myodbc3");
         mode = SYNC_MODE;
+        offlineLogFileSize = 1048576;
         cacheWaitSecs =10;
         
         port = 5678;
@@ -164,6 +167,7 @@ class Config
     inline int getSiteID(){ return cVal.siteID;}
     inline bool useCache() { return cVal.isCache; }
     inline int getCacheMode() { return (int) cVal.mode; }
+    inline long getOfflineLogFileSize() { return cVal.offlineLogFileSize; }
     inline char* getDSN() { return cVal.dsn; }
     inline char* getDsConfigFile() { return cVal.dsConfigFile; } 
     inline char* getTableConfigFile() { return cVal.tableConfigFile; }
