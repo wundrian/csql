@@ -367,7 +367,9 @@ class ParsedData
     void setFldType(DataType type);
     DataType getFldType();
     DbRetVal setFldLength(size_t length);
-    void setDefaultValue(char * value);
+    DbRetVal setDefaultValue(char * value);
+    /* Newly added to validate default value  */
+    DbRetVal validateDefaultValue(char* value);
     //void setFldDefaultValue -- will need two parametersers, check how u want to pass default value.
     void setFldNotNull(bool notNull);
     void setForeign(bool foreign){ isForeign = foreign; }

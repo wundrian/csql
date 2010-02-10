@@ -466,20 +466,68 @@ void ParsedData::setFldNotNull(bool notNull)
 {
     fldDef.isNull_ = notNull;
 }
-void ParsedData::setDefaultValue(char *value)
+DbRetVal ParsedData::setDefaultValue(char *value)
 {
+    DbRetVal rv=OK;
     fldDef.isDefault_ = true;
     if (value == NULL) {
         fldDef.defaultValueBuf_[0]='\0';
-        return;
+        return OK;;
     }
+    /* Function to check Default Value */
+    rv=validateDefaultValue(value);
+    if(rv !=OK) return ErrDefaultValue;
+
     if (strlen(value) > DEFAULT_VALUE_BUF_LENGTH -1) 
     {
         strncpy(fldDef.defaultValueBuf_, value, DEFAULT_VALUE_BUF_LENGTH -1);
         fldDef.defaultValueBuf_[DEFAULT_VALUE_BUF_LENGTH] ='\0';
     } else strcpy(fldDef.defaultValueBuf_, value);
-    return;
+    return rv;
 }
+/* Validate Default value  */
+DbRetVal ParsedData::validateDefaultValue(char *value)
+{
+    DbRetVal rv=OK;
+    Date date;
+    Time time;
+    TimeStamp timeStamp;
+    int ret=0;
+    /* Default value checking for INT, SHORT, LONG, LONGLONG data type */
+    if(fldDef.type_ == typeInt || fldDef.type_ == typeShort || fldDef.type_ == typeByteInt || fldDef.type_ == typeLongLong || fldDef.type_ == typeLong){
+        for(int i=0; i<strlen(value); i++){
+            if(!(value[i] >= '0' && value[i] <= '9'  || value[0]=='-')){
+                return ErrDefaultValue;
+            }
+        }
+    }
+    /* Default value check for FLOAT and DOUBLE data type*/
+    else if (fldDef.type_ == typeFloat || fldDef.type_ == typeDouble){
+        for(int i=0;i<strlen(value);i++){
+            if(!(value[i] >= '0' && value[i] <='9' || value[0]=='-'  || value[i] == '.')){
+                return ErrDefaultValue;
+            }
+        }
+    }
+    /* Default value checking for DATE */
+    else if(fldDef.type_ == typeDate ){
+        ret=date.parseFrom(value);
+        if(ret==-1){ return ErrDefaultValue;}
+    }
+     /*Default value checking for TIME  */
+    else if(fldDef.type_ == typeTime ){
+        ret=time.parseFrom(value);
+        if(ret==-1){ return ErrDefaultValue;}
+    }
+    /* Default value checking for TIMESTAMP */
+    else if(fldDef.type_ == typeTimeStamp ){
+        ret=timeStamp.parseFrom(value);
+        if(ret==-1){ return ErrDefaultValue;}
+    }
+    return rv;
+}
+
+
 
 
 void ParsedData::insertFldDef()
