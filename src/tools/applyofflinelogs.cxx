@@ -113,6 +113,8 @@ void setParam(AbsSqlStatement *stmt, int pos, DataType type , int length, void *
     return;
 }
 
+int applyOfflinelogs(char *fileName, bool interactive);
+
 int main(int argc, char **argv)
 {
     struct stat st;
@@ -133,10 +135,45 @@ int main(int argc, char **argv)
        exit(1);
     }
     Conf::config.readAllValues(os::getenv("CSQL_CONFIG_FILE"));
-    sprintf(fileName, "%s/offlineLogFile.0", Conf::config.getDbFile());
+    conn = SqlFactory::createConnection(CSqlAdapter);
+    DbRetVal rv = conn->connect(I_USER, I_PASS);
+    stmtBuckets = malloc (STMT_BUCKET_SIZE * sizeof(StmtBucket));
+    memset(stmtBuckets, 0, STMT_BUCKET_SIZE * sizeof(StmtBucket));
+    int counter=0;
+    while (true) {
+        sprintf(fileName, "%s/offlineLogFile.%d", Conf::config.getDbFile(),
+                                                                      counter);
+        if (::access(fileName, F_OK) != 0) break;
+        int retval = applyOfflinelogs(fileName, interactive);
+        if (retval) { return retval; }
+        printf("Applied logs from file: %s\n", fileName);
+        counter++;
+    }
+    printf("All the offline log files have been successfully applied.\n");
+    counter = 0;
+    char cmd[128];
+    while (true) {
+        sprintf(fileName,"%s/offlineLogFile.%d",Conf::config.getDbFile(),
+                                                                      counter);
+        if (::access(fileName, F_OK) != 0) break;
+        sprintf(cmd, "rm -f %s", fileName);
+        int retval = system(cmd);
+        if (retval) return retval;
+        counter++;
+    }
+    printf("All the applied log files have been successfully removed.\n");
+    freeAllStmtHandles();
+    conn->disconnect();
+    delete conn;
+    return 0;
+}
+ 
+int applyOfflinelogs(char *fileName, bool interactive)
+{
+    struct stat st;
     printf("offline log filename is :%s\n", fileName);
     int fd = open(fileName, O_RDONLY);
-    if (-1 == fd) { return OK; }
+    if (-1 == fd) { return 0; }
     if (fstat(fd, &st) == -1) {
         printError(ErrSysInternal, "Unable to retrieve undo log file size");
         close(fd);
@@ -147,8 +184,6 @@ int main(int argc, char **argv)
         close(fd);
         return 0;
     }
-    conn = SqlFactory::createConnection(CSqlAdapter);
-    DbRetVal rv = conn->connect(I_USER, I_PASS);
     void *startAddr = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     if (MAP_FAILED == startAddr) {
         printf("Unable to read undo log file:mmap failed.\n");
@@ -156,9 +191,7 @@ int main(int argc, char **argv)
         delete conn;
         return 2;
     }
-    stmtBuckets = malloc (STMT_BUCKET_SIZE * sizeof(StmtBucket));
-    memset(stmtBuckets, 0, STMT_BUCKET_SIZE * sizeof(StmtBucket));
-
+    DbRetVal rv=OK;
     char *iter = (char*)startAddr;
     void *value = NULL;
     int logType, eType;
@@ -308,8 +341,5 @@ int main(int argc, char **argv)
     }
     munmap((char*)startAddr, st.st_size);
     close(fd);
-    freeAllStmtHandles();
-    conn->disconnect();
-    delete conn;
     return retVal;
 }

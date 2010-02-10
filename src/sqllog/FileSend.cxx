@@ -185,26 +185,41 @@ retry:
     ::free(msg);
     return OK;
 }
+
 OfflineLog::OfflineLog()
 {
+    fdOfflineLog = -1;
+    metadata = NULL;
+    createMetadataFile();
     openOfflineLogFile();
 }
+
 DbRetVal OfflineLog::openOfflineLogFile()
 {
     char fileName[MAX_FILE_LEN];
-    int fileCounter = 0;
-    int fileSize = 0;
-    createMmapFileForMetadata();   
     int offlineLogFileSize = Conf::config.getOfflineLogFileSize();
+    fileSize = 0;
+    if (metadata == NULL) {
+        metadata = openMetadataFile();
+        if (metadata == NULL) {
+            printError(ErrOS, "Unable to open Metadata file");
+            return ErrOS;
+        }
+    }
+    char *ptr = (char *) metadata;
     sprintf(fileName, "%s/offlineLogFile.%d", 
-                                        Conf::config.getDbFile(), fileCounter);
-    while (true) {
-        if ((::access(fileName, F_OK) == 0) && 
-                (fileSize = os::getFileSize(fileName)) >= offlineLogFileSize) { 
-            fileCounter++;
-            sprintf(fileName, "%s/offlineLogFile.%d", 
-                                        Conf::config.getDbFile(), fileCounter); 
-        } else break;
+                                        Conf::config.getDbFile(), *(int *)ptr);
+    int ret = 0;
+    if ( ((ret = ::access(fileName, F_OK)) == 0) &&
+              ((fileSize = os::getFileSize(fileName)) >= offlineLogFileSize) )
+        sprintf(fileName, "%s/offlineLogFile.%d",
+                                    Conf::config.getDbFile(), ++(*(int *)ptr));
+    else if (ret == 0)
+        sprintf(fileName, "%s/offlineLogFile.%d", Conf::config.getDbFile(),
+                                                                  *(int *)ptr);
+    else {
+        sprintf(fileName, "%s/offlineLogFile.0", Conf::config.getDbFile());
+        *(int *) ptr = 0;
     }
     int durableMode = Conf::config.getDurableMode();
     switch(durableMode) {
@@ -230,6 +245,11 @@ DbRetVal OfflineLog::openOfflineLogFile()
         printError(ErrSysInternal, "Unable to open redo log file");
         return ErrSysInternal;
     }
+    ret = msync(metadata, sizeof(int), MS_SYNC);
+    if (ret) {
+        printError(ErrOS, "Unable to sync file index to metadata file.");
+        return ErrOS;
+    }
     return OK;
 }
 
@@ -242,6 +262,12 @@ OfflineLog::~OfflineLog()
 DbRetVal OfflineLog::prepare(int txnId, int stId, int len, char *stmt, char*tn)
 {
     if (fdOfflineLog < 0) return ErrBadArg;
+    DbRetVal rv = OK;
+    if (fileSize > Conf::config.getOfflineLogFileSize())
+    {
+        rv = openOfflineLogFile();
+        if (rv != OK) return rv;
+    }
     //The following structure needs strlen after stmt id for traversal in 
     //redolog file unlike msg queue structure where string is the last element 
     //and is not a continuous piece of memory.
@@ -294,12 +320,19 @@ retry:
         return ErrOS;
     }
     ::free(buf);
+    fileSize += datalen;
     return OK;
 }
 
 DbRetVal OfflineLog::commit(int len, void *data)
 {
     if (fdOfflineLog < 0) return ErrBadArg;
+    DbRetVal rv = OK;
+    if (fileSize > Conf::config.getOfflineLogFileSize())
+    {
+        rv = openOfflineLogFile();
+        if (rv != OK) return rv;
+    }
     char *dat=(char*)data - sizeof(int);
     *(int*)dat = -2; //type 2->commit
     bool firstTime = true;
@@ -325,11 +358,19 @@ retry:
         printError(ErrOS, "Unable to write undo log");
         return ErrOS;
     }
+    fileSize += len+sizeof(int);
     return OK;
 }
 
 DbRetVal OfflineLog::free(int txnId, int stId)
 {
+    if (fdOfflineLog < 0) return ErrBadArg;
+    DbRetVal rv = OK;
+    if (fileSize > Conf::config.getOfflineLogFileSize())
+    {
+        rv = openOfflineLogFile();
+        if (rv != OK) return rv;
+    }
     int buflen =  4 *sizeof(int);
     char *msg = (char *) malloc(buflen);
     char *ptr = msg;
@@ -367,15 +408,16 @@ retry:
         return ErrOS;
     }
     ::free(msg);
+    fileSize += buflen;
     return OK;
 }
 
-DbRetVal OfflineLog::createMmapFileForMetadata()
+DbRetVal OfflineLog::createMetadataFile()
 {
     int fd = -1;
     char mmapFile[128];
     sprintf(mmapFile, "%s/offlineLogFile.dat", Conf::config.getDbFile());
-    int size = sizeof(int) + sizeof(long); 
+    int size = sizeof(int); 
     // int for offlineLogFile index + long for committed TxnID
     char buffer[size];
     if (::access(mmapFile, F_OK) == 0) return OK;
@@ -396,4 +438,20 @@ DbRetVal OfflineLog::createMmapFileForMetadata()
     return OK;
 }
 
-
+void *OfflineLog::openMetadataFile()
+{
+    char mmapFile[128];
+    int size = sizeof(int) + sizeof(long);
+    sprintf(mmapFile, "%s/offlineLogFile.dat", Conf::config.getDbFile());
+    int fd = ::open(mmapFile, O_RDWR, 0666);
+    if (fd == -1) {
+        printError(ErrOS, "Unable to open Mmap file %s", mmapFile);
+        return NULL;
+    }
+    metadata = os::mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if (metadata == NULL) {
+        printError(ErrOS, "Unable to map the file %s to memory", mmapFile);
+        return NULL;
+    }
+    return metadata;
+}

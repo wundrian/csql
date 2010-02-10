@@ -67,7 +67,10 @@ class FileSend : public AbsSqlLogSend
 class OfflineLog : public AbsSqlLogSend
 {
     int fdOfflineLog;
-    DbRetVal createMmapFileForMetadata();
+    void *metadata;
+    int fileSize;
+    DbRetVal createMetadataFile();
+    void *openMetadataFile();
     public:
     OfflineLog();
     ~OfflineLog();
