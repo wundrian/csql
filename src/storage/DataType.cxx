@@ -380,6 +380,11 @@ int Time::subHour(int hours)
 {
    timeVal -= (hours* 60 * 60 * 10000);
    int quit = timeVal /864000000;
+   if(timeVal < 0) {
+      quit += -1;
+      if(quit<0)   timeVal += ( 864000000 * quit *(-1) );
+      else timeVal +=864000000;
+   }
    if(0==quit) return 0;
    timeVal %= 864000000;
    return quit;
