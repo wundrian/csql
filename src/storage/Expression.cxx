@@ -200,10 +200,16 @@ void *Expression::evaluateForFunction(DataType type)
             AllDataType::memoryset(calVal,type);
         }
         dType = lhs->getDataType();
-        if(fType == EXTRACTYEARFROMDAY || fType == EXTRACTHOURFROMTIME){
-            if(dType == typeTimeStamp)
-                fType = (FunctionType)((int)(fType)+3);
+        if(dType == typeTimeStamp)
+        {
+            if(fType == EXTRACTYEARFROMDAY || fType == EXTRACTHOURFROMTIME
+                    || fType == EXTRACTMINFROMTIME || fType ==EXTRACTSECFROMTIME
+                           || fType == EXTRACTMONFROMDAY || fType ==EXTRACTDAYFROMDAY)
+             {
+                 fType = (FunctionType)((int)(fType)+3);
+             }
         }
+ 
         return evaluateAndGetValPtr(lhsResult,rhsResult);
     }
     return NULL;
