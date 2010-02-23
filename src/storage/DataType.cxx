@@ -370,8 +370,10 @@ int Time::subMin(int mins)
 }
 int Time::addHour(int hours)
 {
+    int day=hours/24;
+    hours%=24;
     timeVal += (hours* 60 * 60 * 10000);
-    int quit = timeVal /864000000;
+    int quit = day+(timeVal /864000000);
     if(0==quit) return 0;
     timeVal %= 864000000;
     return quit;
