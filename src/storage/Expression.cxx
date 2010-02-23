@@ -529,15 +529,27 @@ void Expression::copyFunctionVal(void *dest,void *src, FunctionType type, int le
         case EXTRACTYEARFROMDAY:
         case EXTRACTMONFROMDAY:
         case EXTRACTDAYFROMDAY:
+        {
+            AllDataType::copyVal(dest, src,typeDate,length);
+            return;
+        }
         case EXTRACTHOURFROMTIME:
         case EXTRACTMINFROMTIME:
         case EXTRACTSECFROMTIME:
+        {
+            AllDataType::copyVal(dest, src, typeTime,length);
+            return;
+        }
         case EXTRACTYEARFROMTIMESTAMP:
         case EXTRACTMONFROMTIMESTAMP:
         case EXTRACTDAYFROMTIMESTAMP:
         case EXTRACTHOURFROMTIMESTAMP:
         case EXTRACTMINFROMTIMESTAMP:
         case EXTRACTSECFROMTIMESTAMP:
+        {
+            AllDataType::copyVal(dest, src,typeTimeStamp,length);
+            return;
+        }
         default: return;
     }
 
