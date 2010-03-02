@@ -652,13 +652,13 @@ DataType AllDataType::getCsqlTypeFromFunctionType(FunctionType type)
     switch(type)
     {
         case DATEDIFF: return typeDate;
+        case TIMEDIFF: return typeTime;
         case DATEADDWITHYEAR:
         case DATEADDWITHMON:
         case DATEADDWITHDAY:
         case DATESUBWITHYEAR:
         case DATESUBWITHMON:
         case DATESUBWITHDAY:
-        case TIMEDIFF: return typeTime;
         case TIMEADDWITHHOUR:
         case TIMEADDWITHMIN:
         case TIMEADDWITHSEC:
