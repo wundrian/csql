@@ -98,6 +98,8 @@ class PredicateImpl:public Predicate
 
     void setTerm(Predicate *p1, LogicalOp op, Predicate *p2 = NULL);
     void setTerm(Expression *exp, ComparisionOp op, void **opnd);
+    void setTerm(Expression *exp, ComparisionOp op, const char *fName2);
+    void setTerm(Expression *exp1, ComparisionOp op, Expression *exp2);
     void setTerm(const char* fName1, ComparisionOp op,bool nullFlag);
     void* valPtrForIndexField(const char *name, bool isUnique);
     ComparisionOp opForIndexField(const char *name);

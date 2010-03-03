@@ -198,6 +198,25 @@ Predicate* ParsedData::insertPredicate(Expression *exp, ComparisionOp op,void **
     predList.append(pImpl);
     return (Predicate*) pImpl;
 }
+Predicate* ParsedData::insertPredicate(Expression *exp, ComparisionOp op,char *fName2)
+{
+   PredicateImpl *pImpl = new PredicateImpl();
+   exp->convertStrToVal(AllDataType::getCsqlTypeFromFunctionType(exp->getFunctionType()));
+    pImpl->setTerm(exp, op, fName2);
+    predList.append(pImpl);
+    return (Predicate*) pImpl;
+
+}
+Predicate* ParsedData::insertPredicate(Expression *exp1, ComparisionOp op,Expression *exp2)
+{
+   PredicateImpl *pImpl = new PredicateImpl();
+   exp1->convertStrToVal(AllDataType::getCsqlTypeFromFunctionType(exp1->getFunctionType()));
+   exp2->convertStrToVal(AllDataType::getCsqlTypeFromFunctionType(exp2->getFunctionType()));
+    pImpl->setTerm(exp1, op, exp2);
+    predList.append(pImpl);
+    return (Predicate*) pImpl;
+}
+
 Predicate* ParsedData::insertPredicate(char *fName, ComparisionOp op, void **val, AggType aggType)
 {
     PredicateImpl *pImpl = new PredicateImpl();

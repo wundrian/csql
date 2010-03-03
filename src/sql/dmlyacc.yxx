@@ -809,14 +809,24 @@ condition: ident OPERATOR value
             free( $1 ); free($2); free( $3 );
             $$=pred;  
         }
-/*        | function_opt OPERATOR function_opt
+        | function_opt OPERATOR function_opt
         {
+            ComparisionOp  op = AllDataType::getComparisionOperator((char*)$2);
+            Predicate *pred;
+            pred = parsedData->insertPredicate(((Expression*)$1), op, ((Expression*)$3));
+            $$=pred;
  
         }
         | function_opt OPERATOR ident
         {
+
+            ComparisionOp  op = AllDataType::getComparisionOperator((char*)$2);
+            parsedData->insertCondValue((char*) $3);
+            Predicate *pred;
+            pred = parsedData->insertPredicate(((Expression*)$1), op, (char*) $3);
+            $$=pred;
             
-        }*/
+        }
         | function_opt OPERATOR value 
         {
             ComparisionOp  op = AllDataType::getComparisionOperator((char*)$2);
@@ -1101,9 +1111,9 @@ default_expr_opt:
         {
             DbRetVal rv = parsedData->setDefaultValue($2);
             if(rv != OK){
-                 yyerror("Invalid Default value.");
-                 free($2);
-                 YYABORT;
+                yyerror("Invalid Default value.");
+                free($2);
+                YYABORT;
             }
             free($2);
         }

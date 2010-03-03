@@ -129,6 +129,35 @@ void  PredicateImpl::setTerm(Expression *exp, ComparisionOp op, void **opnd)
     operand2Ptr = NULL;
     lExp = exp;
 }
+void  PredicateImpl::setTerm(Expression *exp1, ComparisionOp op, Expression *exp2)
+{
+    compOp = op;
+    lhs = rhs = NULL;
+    operandPtr = NULL;
+    operand = NULL;
+    logicalOp = OpInvalidLogicalOp;
+    comp2Op = OpInvalidComparisionOp;
+    operand2 =NULL;
+    operand2Ptr = NULL;
+    lExp = exp1;
+    rExp = exp2;
+}
+void PredicateImpl::setTerm(Expression *exp, ComparisionOp  op, const char *fName2 )
+{
+    strcpy(fldName2, fName2);
+    compOp = op;
+    operand = NULL;
+    operandPtr = NULL;
+    lhs = rhs = NULL;
+    parent = NULL;
+    logicalOp = OpInvalidLogicalOp;
+    comp2Op = OpInvalidComparisionOp;
+    operand2 =NULL;
+    operand2Ptr = NULL;
+    lExp = exp;
+    return;
+}
+
 void PredicateImpl::setTerm(const char* fName1, ComparisionOp op,bool nullFlag)
 {
     strcpy(fldName1, fName1);
@@ -491,19 +520,30 @@ void PredicateImpl::evaluateForTable(bool &result, char *tuple)
     //Table null check of condition
     if(lExp || rExp){
        void* val=NULL;    
+       void* rval = NULL;
        TableImpl *tImpl =  (TableImpl*) table;
        if(lExp){  
           lExp->setTable(tImpl);
           lExp->setTuple(tuple);
           val = lExp->evaluateForFunction(AllDataType::getCsqlTypeFromFunctionType(lExp->getFunctionType())); 
        }
-       //if(rExp)  val = lExp->evaluateForFunction(typeDate)
-       if( val && operandPtr!=NULL){
+       if(rExp) {  
+          rExp->setTable(tImpl);
+          rExp->setTuple(tuple);
+          rval = rExp->evaluateForFunction(AllDataType::getCsqlTypeFromFunctionType(rExp->getFunctionType()));
+       }
+       if( val && rval){
+          result = AllDataType::compareVal(val, rval, compOp, AllDataType::getCsqlTypeFromFunctionTypeForComparision(lExp->getFunctionType()),length);
+       }else if( val && operandPtr!=NULL){
            val2 = *(char**)operandPtr;
            result = AllDataType::compareVal(val, val2, compOp, AllDataType::getCsqlTypeFromFunctionTypeForComparision(lExp->getFunctionType()),length);
+       }else if(val && (offset2 != -1 && operand == NULL && operandPtr == NULL)){
+             val2 = tuple + offset2;
+             result = AllDataType::compareVal(val, val2, compOp, AllDataType::getCsqlTypeFromFunctionTypeForComparision(lExp->getFunctionType()),length); 
        }else{
            result =false;
        }
+       
        return;
     }
     if (isNullable) {

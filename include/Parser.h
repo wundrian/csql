@@ -326,6 +326,8 @@ class ParsedData
     Predicate* insertBetPredicate(char *fldName, ComparisionOp op1, void **value1, ComparisionOp op2, void **value2);
     Predicate* insertPredicate(Predicate *p1, LogicalOp op, Predicate *p2 = NULL);
     Predicate* insertPredicate(Expression *exp, ComparisionOp op,void **val);
+    Predicate* insertPredicate(Expression *exp, ComparisionOp op,char *fName2);
+    Predicate* insertPredicate(Expression *exp1, ComparisionOp op,Expression *exp2);
     Predicate* insertNullPredicate(char *fName, ComparisionOp op,bool nullFlag);
     void setCondition(Predicate *pred) 
     { 
@@ -368,7 +370,6 @@ class ParsedData
     DataType getFldType();
     DbRetVal setFldLength(size_t length);
     DbRetVal setDefaultValue(char * value);
-    /* Newly added to validate default value  */
     DbRetVal validateDefaultValue(char* value);
     //void setFldDefaultValue -- will need two parametersers, check how u want to pass default value.
     void setFldNotNull(bool notNull);
