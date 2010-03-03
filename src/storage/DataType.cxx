@@ -108,8 +108,10 @@ void Date::addMonth(int noOfMons)
    int year, month, day;
    get(year,month,day);
    month += noOfMons;
-   year += (month /12);
-   month %= 12;
+   if(month > 12){
+     year += (month /12);
+     month %= 12;
+   }
    set(year,month,day);
 }
 void Date::subMonth(int noOfMons)
