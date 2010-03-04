@@ -697,6 +697,8 @@ DataType AllDataType::getCsqlTypeFromFunctionType(FunctionType type)
         case EXTRACTHOURFROMTIMESTAMP:
         case EXTRACTMINFROMTIMESTAMP:
         case EXTRACTSECFROMTIMESTAMP: return typeTimeStamp;
+        case DATEFROMTIMESTAMP: return typeTimeStamp;
+        case TIMEFROMTIMESTAMP: return typeTimeStamp;
         default: return typeInt;
     }
 }
@@ -748,6 +750,8 @@ DataType AllDataType::getCsqlTypeFromFunctionTypeForComparision(FunctionType typ
         case EXTRACTHOURFROMTIMESTAMP:
         case EXTRACTMINFROMTIMESTAMP:
         case EXTRACTSECFROMTIMESTAMP:return typeInt;
+        case DATEFROMTIMESTAMP: return typeDate;
+        case TIMEFROMTIMESTAMP: return typeTime;
         default: return typeInt;
     }
 

@@ -2,6 +2,8 @@
 #ifndef FUNCTION_H 
 #define FUNCTION_H
 
+
+//Bijaya : Donot change order of Constant.
 enum FunctionType
 {
     UNKNOWN_FUNCTION =-1,
@@ -48,7 +50,9 @@ enum FunctionType
     EXTRACTSECFROMTIME,
     EXTRACTHOURFROMTIMESTAMP,
     EXTRACTMINFROMTIMESTAMP,
-    EXTRACTSECFROMTIMESTAMP
+    EXTRACTSECFROMTIMESTAMP,
+    DATEFROMTIMESTAMP,
+    TIMEFROMTIMESTAMP
 
 };
 #endif

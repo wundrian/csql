@@ -200,16 +200,15 @@ void *Expression::evaluateForFunction(DataType type)
             AllDataType::memoryset(calVal,type);
         }
         dType = lhs->getDataType();
-        if(dType == typeTimeStamp)
+        if(dType == typeTimeStamp) 
         {
-            if(fType == EXTRACTYEARFROMDAY || fType == EXTRACTHOURFROMTIME
-                    || fType == EXTRACTMINFROMTIME || fType ==EXTRACTSECFROMTIME
+            if(fType == EXTRACTYEARFROMDAY || fType == EXTRACTHOURFROMTIME 
+                    || fType == EXTRACTMINFROMTIME || fType ==EXTRACTSECFROMTIME 
                            || fType == EXTRACTMONFROMDAY || fType ==EXTRACTDAYFROMDAY)
              {
                  fType = (FunctionType)((int)(fType)+3);
              }
         }
- 
         return evaluateAndGetValPtr(lhsResult,rhsResult);
     }
     return NULL;
@@ -439,6 +438,16 @@ void *Expression::evaluateAndGetValPtr( void *lhsResult, void *rhsResult)
             *(int *)calVal = ((TimeStamp*)lhsResult)->seconds();
             return calVal;
         }
+        case DATEFROMTIMESTAMP:
+        {
+            ((TimeStamp*)lhsResult)->getDate(*(Date *)calVal);
+            return calVal;
+        }
+        case TIMEFROMTIMESTAMP:
+        {
+            ((TimeStamp*)lhsResult)->getTime(*(Time *)calVal);
+            return calVal;
+        }
         default: return NULL; 
     }
  
@@ -537,7 +546,7 @@ void Expression::copyFunctionVal(void *dest,void *src, FunctionType type, int le
         case EXTRACTMINFROMTIME:
         case EXTRACTSECFROMTIME:
         {
-            AllDataType::copyVal(dest, src, typeTime,length);
+            AllDataType::copyVal(dest, src,typeTime,length);
             return;
         }
         case EXTRACTYEARFROMTIMESTAMP:
@@ -549,6 +558,14 @@ void Expression::copyFunctionVal(void *dest,void *src, FunctionType type, int le
         {
             AllDataType::copyVal(dest, src,typeTimeStamp,length);
             return;
+
+        }
+        case DATEFROMTIMESTAMP:
+        case TIMEFROMTIMESTAMP:
+        {
+            AllDataType::copyVal(dest, src,typeTimeStamp,length);
+            return;
+
         }
         default: return;
     }

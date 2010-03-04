@@ -31,7 +31,7 @@ void yyerror(const char* Msg);
 %token <stringval> CREATE TABLE PRIMARY KEY DEFAULT INDEX ON HASH TREE UNIQUE DROP SIZE FOREIGN REFERENCES COMPACT TRUNCATE 
 %token <stringval> CACHE CONDITION FIELDLIST PK DIRECT DSN UNCACHE NOSCHEMA
 %token <stringval> INT_TYPE LONG_TYPE SHORT_TYPE DOUBLE_TYPE TIMESTAMP_TYPE DATE_TYPE CHAR_TYPE TIME_TYPE BIGINT_TYPE FLOAT_TYPE TINYINT_TYPE BINARY_TYPE VARCHAR_TYPE
-%token <stringval> DATE_DIFF DATE_ADD DATE_SUB HOUR MINUTE SECOND YEAR MONTH DAY INTERVAL TIME_DIFF TIME_ADD TIME_SUB TIMESTAMP_DIFF TIMESTAMP_ADD TIMESTAMP_SUB EXTRACT 
+%token <stringval> DATE_DIFF DATE_ADD DATE_SUB HOUR MINUTE SECOND YEAR MONTH DAY INTERVAL TIME_DIFF TIME_ADD TIME_SUB TIMESTAMP_DIFF TIMESTAMP_ADD TIMESTAMP_SUB EXTRACT
 %token <stringval> USER PASSWORD ALTER FLUSH ADD COLUMN MODIFY RENAME TO
 %token <stringval> MIN MAX AVG SUM COUNT GROUP BY HAVING ORDER ASC DESC DISTINCT
 %token ';' ',' '(' ')'
@@ -400,13 +400,13 @@ function_opt: DATE_DIFF '(' atom ',' atom ')'
               exp=parsedData->insertExpression((Expression *)$3, DATEDIFF, (Expression *)$5);
             $$=exp;
         }
-	| DATE_ADD '(' atom  INTERVAL atom date_opt ')'
-	{
-	     Expression* exp;
+	    | DATE_ADD '(' atom  INTERVAL atom date_opt ')'
+	    {
+	         Expression* exp;
              parsedData->setFunctionType((*(FunctionType *)$6));
              exp=parsedData->insertExpression((Expression *)$3, (*(FunctionType *)$6), (Expression *)$5);
              $$=exp;
-	}
+	    }
         | DATE_SUB '(' atom  INTERVAL atom date_opt ')'
         {
              Expression* exp;
@@ -436,7 +436,7 @@ function_opt: DATE_DIFF '(' atom ',' atom ')'
              exp=parsedData->insertExpression((Expression *)$3, (FunctionType)((int)(*(FunctionType *)$6)+3), (Expression *)$5);
              $$=exp;
         }
-	| TIMESTAMP_DIFF '(' datetime_opt ','  atom ',' atom ')'
+	    | TIMESTAMP_DIFF '(' datetime_opt ','  atom ',' atom ')'
         {
               Expression* exp;
               int diff=0;
@@ -462,7 +462,7 @@ function_opt: DATE_DIFF '(' atom ',' atom ')'
              $$=exp;
         }
         | EXTRACT '(' datetime_opt FROM atom ')'
-	{
+	    {
             FunctionType val = UNKNOWN_FUNCTION;
             //if((*(FunctionType *)$3) >=8)
               // val = (FunctionType)((int)(*(FunctionType *)$3)+36);
@@ -472,51 +472,66 @@ function_opt: DATE_DIFF '(' atom ',' atom ')'
             parsedData->setFunctionType(val);
             exp=parsedData->insertExpression((Expression *)$5, val,NULL);
             $$=exp;
-	}
+	    }
+		| DATE_TYPE '(' atom  ')'
+        {
+            Expression* exp;
+            parsedData->setFunctionType(DATEFROMTIMESTAMP);
+            exp=parsedData->insertExpression((Expression *)$3, DATEFROMTIMESTAMP, NULL);
+            $$=exp;
+
+        }
+        | TIME_TYPE '(' atom  ')'
+        {
+            Expression* exp;
+            parsedData->setFunctionType(TIMEFROMTIMESTAMP);
+            exp=parsedData->insertExpression((Expression *)$3, TIMEFROMTIMESTAMP, NULL);
+            $$=exp;
+        }
         ;
 datetime_opt: time_opt
         {
            FunctionType val = *(FunctionType *)$1;
            $$ = &val;
         }
-	| date_opt
+	    | date_opt
         {
            FunctionType val = *(FunctionType *)$1;
            $$ = &val;
         }
-	;
+	    ;
 time_opt: HOUR 
-	{ 
+	    { 
              FunctionType val = TIMEADDWITHHOUR;
              $$ = &val;
         }
-	| MINUTE  
+	    | MINUTE  
         {
              FunctionType val = TIMEADDWITHMIN;
              $$ = &val;
         }
-	| SECOND  
+	    | SECOND  
         {
              FunctionType val = TIMEADDWITHSEC;
              $$ = &val;
         }
-	;
+	    ;
 date_opt: YEAR    
-	{
-	    FunctionType val = DATEADDWITHYEAR;
+	    {
+	        FunctionType val = DATEADDWITHYEAR;
             $$ = &val;
-	}
-	| MONTH   
+	    }
+	    | MONTH   
         {
-	    FunctionType val = DATEADDWITHMON;
+	        FunctionType val = DATEADDWITHMON;
             $$ = &val;
         }
-	| DAY  
+	    | DAY  
         {
             FunctionType val = DATEADDWITHDAY;
             $$ = &val;
         }
-	;
+	    ;
 atom    :  ident
         {
             Expression* exp;
