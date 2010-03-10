@@ -31,7 +31,7 @@ void yyerror(const char* Msg);
 %token <stringval> CREATE TABLE PRIMARY KEY DEFAULT INDEX ON HASH TREE UNIQUE DROP SIZE FOREIGN REFERENCES COMPACT TRUNCATE 
 %token <stringval> CACHE CONDITION FIELDLIST PK DIRECT DSN UNCACHE NOSCHEMA
 %token <stringval> INT_TYPE LONG_TYPE SHORT_TYPE DOUBLE_TYPE TIMESTAMP_TYPE DATE_TYPE CHAR_TYPE TIME_TYPE BIGINT_TYPE FLOAT_TYPE TINYINT_TYPE BINARY_TYPE VARCHAR_TYPE
-%token <stringval> DATE_DIFF DATE_ADD DATE_SUB HOUR MINUTE SECOND YEAR MONTH DAY INTERVAL TIME_DIFF TIME_ADD TIME_SUB TIMESTAMP_DIFF TIMESTAMP_ADD TIMESTAMP_SUB EXTRACT
+%token <stringval> DATE_DIFF DATE_ADD DATE_SUB HOUR MINUTE SECOND YEAR MONTH DAY INTERVAL TIME_DIFF TIME_ADD TIME_SUB TIMESTAMP_DIFF TIMESTAMP_ADD TIMESTAMP_SUB EXTRACT NOW
 %token <stringval> USER PASSWORD ALTER FLUSH ADD COLUMN MODIFY RENAME TO
 %token <stringval> MIN MAX AVG SUM COUNT GROUP BY HAVING ORDER ASC DESC DISTINCT
 %token ';' ',' '(' ')'
@@ -927,6 +927,18 @@ value:    STRING { $$ = $1; }
         | doub_value
         | PARAMETER { $$ = $1; }
         | NULL_VALUE { $$ = (char*) 0; }
+        | NOW '(' ')'
+        {
+              char *str=(char*)malloc(20);
+              time_t rawtime;
+              struct tm * timeinfo;
+              time ( &rawtime );
+              timeinfo = localtime ( &rawtime );
+              sprintf(str,"%d-%d-%d %d:%d:%d",timeinfo->tm_year+1900,timeinfo->tm_mon+1,timeinfo->tm_mday,timeinfo->tm_hour,timeinfo->tm_min,timeinfo->tm_sec);
+              $$=str;
+
+
+        }
         ;
 num_value: NUMBER_STRING { $$ =  $1; }
         | '-' NUMBER_STRING %prec UMINUS

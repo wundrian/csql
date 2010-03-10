@@ -1772,8 +1772,12 @@ DbRetVal AllDataType::strToValue(void* dest, char *src, DataType type, int lengt
 	    }
 	    if( res != 3 )
             {
-                fprintf(stderr, "Error reading time, hh:mm:ss is the valid format.");
-                h=m=s=0;
+                int d,mn,y;
+                res = sscanf( src, "%d-%d-%d %d:%d:%d", &y, &mn, &d, &h, &m, &s );
+                if(res!=6){
+                    fprintf(stderr, "Error reading time, hh:mm:ss is the valid format.");
+                    h=m=s=0;
+                }
             }
             /* validate time */
             if(!time.isValidTime(h, m, s)){
