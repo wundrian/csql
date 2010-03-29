@@ -330,8 +330,10 @@ DbRetVal Transaction::applyUndoLogs(Database *sysdb)
                 Chunk *vcchunk = (Chunk *) *(long *)ptr; ptr += sizeof(void *);
                 void **ptrToVarchars = (void **) ptr;
                 for (int i = 0; i < noOfVarchar; i++) {
-                    if (ptrToVarchars[i] != NULL) 
-                        vcchunk->free(&db, ptrToVarchars[i]);
+                    if (*(long *) ptrToVarchars[i] != 0L) {
+                        vcchunk->free(&db, (void *)*(long *)ptrToVarchars[i]);
+                        *(long *) ptrToVarchars[i] = 0L;
+                    }
                 }
                 break;
              }
@@ -394,7 +396,10 @@ DbRetVal Transaction::applyUndoLogs(Database *sysdb)
                 ptr += noOfVarchar * sizeof (void *);
                 char *lenValPtr = (char *) ptr;
                 for (int i = 0; i < noOfVarchar; i++) {
-                    vcchunk->free(&db, (void *) *(long *) ptrToVarchars[i]);
+                    if (*(long *) ptrToVarchars[i] != 0L) {
+                        vcchunk->free(&db, (void *)*(long *) ptrToVarchars[i]);
+                        *(long *) ptrToVarchars[i] = 0L;
+                    }
                 }
                 os::memcpy(ptrToTuple, tuple, tupleLen);
                 for (int i = 0; i < noOfVarchar; i++) {

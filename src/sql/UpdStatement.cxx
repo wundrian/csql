@@ -502,6 +502,7 @@ DbRetVal UpdStatement::resolveForAssignment()
         {    
             if (fInfo->isNull) { delete fInfo; return ErrNullViolation; }
             table->markFldNull(value->fldName); 
+            memset(value->value, 0, value->length);
             continue; 
         }
         if (value->parsedString[0] == '?')

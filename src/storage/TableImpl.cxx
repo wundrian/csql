@@ -848,6 +848,17 @@ DbRetVal TableImpl::insertTuple()
             (*trans)->removeFromHasList(db_, tptr);
              lMgr_->releaseLock(tptr);
         }
+
+        FieldIterator fIter = fldList_.getIterator();
+        char *colPtr = (char*) curTuple_;
+        while (fIter.hasElement()) {
+            FieldDef *def = fIter.nextElement();
+            colPtr =  (char *) curTuple_ + def->offset_;
+            if (def->type_ == typeVarchar) {
+                char *ptr = (char *) *(long *) colPtr;
+                if (ptr != 0L) ((Chunk *) vcChunkPtr_)->free(db_, ptr);
+            }
+        }
         ((Chunk*)chunkPtr_)->free(db_, tptr);
         sysDB_->releaseCheckpointMutex();
         return ret;
@@ -892,7 +903,7 @@ DbRetVal TableImpl::insertTuple()
                 colPtr =  (char *) curTuple_ + def->offset_;
                 if (def->type_ == typeVarchar) {
                     char *ptr = (char *) *(long *) colPtr;
-                    ((Chunk *) vcChunkPtr_)->free(db_, ptr);
+                    if (ptr != 0L) ((Chunk *) vcChunkPtr_)->free(db_, ptr);
                 }
             }
             ((Chunk*)chunkPtr_)->free(db_, tptr);
@@ -925,7 +936,7 @@ DbRetVal TableImpl::insertTuple()
             FieldDef *def = fIter.nextElement();
             colPtr =  (char *) curTuple_ + def->offset_;
             if (def->type_ == typeVarchar) {
-                *(long *) ptr = * (long *)colPtr;
+                *(long *) ptr = (long)colPtr;
                 ptr += sizeof(void *);
             }
         }
@@ -1426,12 +1437,16 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
                         if (*(long *) colPtr != 0L)
                            ((Chunk *) vcChunkPtr_)->free(db_,
                                                       (void *)*(long *)colPtr);
+                        *(long *) colPtr = 0L;
                     }
-                    void *ptr = 
-                     ((Chunk *) vcChunkPtr_)->allocate(db_, def->length_, &rv);
-                    if (rv != OK) return ErrBadArg;
-                    *(long *)colPtr = (long)ptr;
-                    strcpy((char *)ptr, (char *)def->bindVal_); 
+                    if (strcmp((char *)def->bindVal_,"") != 0) {
+                        void *ptr = 
+                             ((Chunk *) vcChunkPtr_)->allocate(db_, 
+                                                            def->length_, &rv);
+                        if (rv != OK) return ErrBadArg;
+                        *(long *)colPtr = (long)ptr;
+                        strcpy((char *)ptr, (char *)def->bindVal_); 
+                    } else {  setNullBit(fldpos); } 
                 } else if (!def->isNull_ && isInsert && !def->bindVal_) {
                     setNullBit(fldpos);
                 }
