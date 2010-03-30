@@ -2013,9 +2013,9 @@ DbRetVal TableImpl::compact()
 {
    DbRetVal rv=OK;
    int ret =((Chunk*)chunkPtr_)->compact(db_->procSlot);
-   if(ret!=0){
-       return ErrLockTimeOut;
-   }
+   if(ret!=0) return ErrLockTimeOut;
+   ret = ((Chunk*)vcChunkPtr_)->compact(db_->procSlot);
+   if(ret!=0) return ErrLockTimeOut;
    if (NULL != indexPtr_)
    {
         int i;

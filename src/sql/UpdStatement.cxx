@@ -500,7 +500,11 @@ DbRetVal UpdStatement::resolveForAssignment()
         }
         if (value->parsedString == NULL) 
         {    
-            if (fInfo->isNull) { delete fInfo; return ErrNullViolation; }
+            if (fInfo->isNull) { 
+                delete fInfo; 
+                printError(ErrNullViolation, "Null Violation Error.");
+                return ErrNullViolation; 
+            }
             table->markFldNull(value->fldName); 
             memset(value->value, 0, value->length);
             continue; 

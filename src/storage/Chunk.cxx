@@ -851,62 +851,57 @@ int Chunk::compact(int procSlot)
 {
     PageInfo* pageInfo = ((PageInfo*)firstPage_);
     PageInfo* prevPage = pageInfo;
-    if (NULL == pageInfo) 
-    {
-        return 0;
-    }
+    if (NULL == pageInfo) return 0;
     int ret = getChunkMutex(procSlot);
-    if (ret != 0)
-    {
+    if (ret != 0) {
         printError(ErrLockTimeOut,"Unable to acquire chunk Mutex");
         return ret;
     }
     pageInfo = (PageInfo*)pageInfo->nextPage_;
-    if (0 == allocSize_) 
-    {
-      while( pageInfo != NULL )
-      {
-        bool flag = false;
-        VarSizeInfo *varInfo = (VarSizeInfo*)(((char*)pageInfo) +
-                                            sizeof(PageInfo));
-        while ((char*) varInfo < ((char*)pageInfo + PAGE_SIZE))
-        {
-            if (1 == varInfo->isUsed_) {flag=true; break;}
-            varInfo = (VarSizeInfo*)((char*)varInfo + sizeof(VarSizeInfo)
-                                   +varInfo->size_);
+    if (0 == allocSize_) {
+        while( pageInfo != NULL ) {
+            bool flag = false;
+            VarSizeInfo *varInfo = (VarSizeInfo*)(((char*)pageInfo) +
+                                                             sizeof(PageInfo));
+            while ((char*) varInfo < ((char*)pageInfo + PAGE_SIZE)) {
+                if (1 == varInfo->isUsed_) {flag=true; break;}
+                varInfo = (VarSizeInfo*)((char*)varInfo + sizeof(VarSizeInfo)
+                                                              +varInfo->size_);
+            }
+            if (!flag) {
+                printDebug(DM_VarAlloc,
+                    "Freeing unused page in varsize allocator %x\n", pageInfo);
+                prevPage->nextPage_ = pageInfo->nextPage_;
+                pageInfo->isUsed_ = 0;
+                pageInfo = (PageInfo*)(((PageInfo*)prevPage)->nextPage_);
+            } else {
+                prevPage = pageInfo;
+                pageInfo = (PageInfo*)(((PageInfo*)pageInfo)->nextPage_);
+            }
+            printDebug(DM_VarAlloc,"compact iter %x\n", pageInfo);
         }
-        if (!flag) {
-            printDebug(DM_VarAlloc,"Freeing unused page in varsize allocator %x\n", pageInfo);
-            prevPage->nextPage_ = pageInfo->nextPage_;
-            pageInfo->isUsed_ = 0;
+    } else if (allocSize_ < PAGE_SIZE) {
+        while( pageInfo != NULL ) {
+            bool flag = false;
+            int noOfDataNodes=(int) 
+                          os::floor((PAGE_SIZE - sizeof(PageInfo))/allocSize_);
+            char *data = ((char*)pageInfo) + sizeof(PageInfo);
+            for (int i = 0; i< noOfDataNodes ; i++) {
+                if (1 == *((InUse*)data)) { flag = true; break; }
+                data = data +allocSize_;
+            }
+            if (!flag) {
+                printDebug(DM_Alloc,
+                      "Freeing unused page in fixed allocator %x\n", pageInfo);
+                prevPage->nextPage_ = pageInfo->nextPage_;
+                pageInfo->isUsed_ = 0;
+                pageInfo = (PageInfo*)(((PageInfo*)prevPage)->nextPage_);
+            } else {
+                prevPage = pageInfo;
+                pageInfo = (PageInfo*)(((PageInfo*)pageInfo)->nextPage_) ;
+            }
+            printDebug(DM_Alloc,"compact iter %x\n", pageInfo);
         }
-        prevPage = pageInfo;
-        pageInfo = (PageInfo*)(((PageInfo*)pageInfo)->nextPage_) ;
-        printDebug(DM_VarAlloc,"compact iter %x\n", pageInfo);
-      }
-    }else if (allocSize_ < PAGE_SIZE)
-    {
-      while( pageInfo != NULL )
-      {
-        bool flag = false;
-        int noOfDataNodes=(int) os::floor((PAGE_SIZE - sizeof(PageInfo))/allocSize_);
-        char *data = ((char*)pageInfo) + sizeof(PageInfo);
-        for (int i = 0; i< noOfDataNodes ; i++)
-        {
-            if (1 == *((InUse*)data)) { flag = true; break; }
-            data = data +allocSize_;
-        }
-        if (!flag) {
-            printDebug(DM_Alloc,"Freeing unused page in fixed allocator %x\n", pageInfo);
-            prevPage->nextPage_ = pageInfo->nextPage_;
-            pageInfo->isUsed_ = 0;
-            pageInfo = (PageInfo*)(((PageInfo*)prevPage)->nextPage_) ;
-        }else{
-            prevPage = pageInfo;
-            pageInfo = (PageInfo*)(((PageInfo*)pageInfo)->nextPage_) ;
-        }
-        printDebug(DM_Alloc,"compact iter %x\n", pageInfo);
-      }
     }
     releaseChunkMutex(procSlot);
     return 0;
