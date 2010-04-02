@@ -73,7 +73,7 @@ DbRetVal CreateTblStatement::execute(int &rowsAffected)
             name = (FieldInfo*)iter.nextElement();
             idxInfo->list.append(name->fldName);
         }
-        idxInfo->indType = hashIndex;
+        idxInfo->indType = treeIndex;
         idxInfo->isPrimary = true;
         idxInfo->isUnique = true;
         char indName[IDENTIFIER_LENGTH];
