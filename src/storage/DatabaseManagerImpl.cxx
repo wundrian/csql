@@ -1274,6 +1274,14 @@ DbRetVal DatabaseManagerImpl::createTreeIndex(const char *indName, const char *t
             systemDatabase_->releaseCheckpointMutex();
             return ErrBadArg;
         }
+        if (fInfo->type_ == typeVarchar)
+        {
+            printError(ErrBadArg, "Tree Index not supported for varchar type. Use char data type instead.");
+            delete[] fptr;
+           systemDatabase_->releaseCheckpointMutex();
+            return ErrBadArg;
+        }
+
     }
     int chunkSize = sizeof(TreeNode)+(nodeSize * sizeof(void*));
     printDebug(DM_HashIndex, "Creating chunk for storing tree nodes of size %d\n", chunkSize);
@@ -1896,11 +1904,22 @@ DbRetVal DatabaseManagerImpl::writeSchemaFile()
             if (info->isDefault) fprintf(fp, " DEFAULT '%s' ", info->defaultValueBuf);
             if (info->isAutoIncrement) fprintf(fp, " AUTO_INCREMENT ");
         }
+        fNameIter.reset();
+        while (fNameIter.hasElement())
+            delete ((FieldName *) fNameIter.nextElement());
+        fNameList.reset();
+
         fprintf(fp, ");\n");
         table->printSQLIndexString(fp, fd);
         delete info;
         closeTable(table);
     }
+    ListIterator tIter = tableList.getIterator();
+    tIter.reset();
+    while (tIter.hasElement())
+        delete ((FieldName *) tIter.nextElement());
+    tableList.reset();
+
     fclose(fp);
     close(fd);
     return OK;
