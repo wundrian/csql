@@ -25,13 +25,11 @@ void printUsage()
 {
    printf("Usage: csqldump [-u username] [-p passwd] [-n noOfStmtsPerCommit] [-T tableName]\n");
    printf("       n -> number of statements per commit\n");
-   printf("            Default value is 100. If system db size is big, then it shall be increased.\n");
+   printf("            Default value is 1. If system db size is big, then it shall be increased.\n");
    printf("       T -> Will dump only the table specified with this option.\n");
    return;
+  
 }
-
-SqlConnection *sqlconn;
-SqlStatement *stmt;
 
 bool isCached(char *tblName)
 {
@@ -47,12 +45,16 @@ bool isCached(char *tblName)
     int mode;
     bool isCached=false;
     while(!feof(fp)) {
-        fscanf(fp, "%d %s %s %s %s %s %s %s\n", &mode, ctablename,fieldname,condition,field,dsnName);
+        fscanf(fp, "%d %s %s %s %s %s %s %s\n", &mode, ctablename,
+                                            fieldname,condition,field,dsnName);
         if (strcmp (ctablename, tblName) == 0) { isCached=true; break; }
     }
     fclose(fp);
     return isCached;
 }
+
+SqlConnection *sqlconn;
+SqlStatement *stmt;
 
 int main(int argc, char **argv)
 {
@@ -63,7 +65,7 @@ int main(int argc, char **argv)
     char tblName[IDENTIFIER_LENGTH];
     char conditionVal[IDENTIFIER_LENGTH];
     int c = 0, opt = 0;
-    int noOfStmts =100;
+    int noOfStmts =1;
     bool exclusive = false;
     bool Iscondition=false;
     bool schema = false;
@@ -74,8 +76,11 @@ int main(int argc, char **argv)
             case 'p' : { strcpy(password, argv[optind - 1]); opt=1; break; }
             case 'n' : { noOfStmts = atoi(argv[optind - 1]); opt = 5; break; }
             case 'T' : { strcpy(tblName,  argv[optind - 1]); opt = 15; break; }
-            case 'c' : {strcpy(conditionVal,argv[optind -1]); Iscondition=true;break;}
-	    case 'X' : { exclusive = true; break; }
+            case 'c' : { 
+                           strcpy(conditionVal,argv[optind -1]); 
+                           Iscondition=true;break;
+                       }
+	        case 'X' : { exclusive = true; break; }
             case 'S' : { schema = true; break; }
             case '?' : { opt = 10; break; } //print help 
             default: opt=1; //list all the tables
@@ -94,14 +99,13 @@ int main(int argc, char **argv)
     }
     sqlconn = (SqlConnection*) SqlFactory::createConnection(CSqlDirect);
     DbRetVal rv = sqlconn->connect(username, password);
-    if (rv != OK)  {
+    if (rv != OK)  {  
         printf("Unable to get connection to csql\n");
         delete sqlconn; delete stmt; return 1;
     }
     stmt = (SqlStatement*) SqlFactory::createStatement(CSqlDirect);
     stmt->setSqlConnection(sqlconn);
     if (exclusive) { stmt->setLoading(true); }
-    
     if (opt == 0 || opt == 1) opt = 5;
     if (opt == 5) {
         os::signal(SIGCSQL1, SIG_IGN);
@@ -109,7 +113,7 @@ int main(int argc, char **argv)
                                  sqlconn->getConnObject().getDatabaseManager();
         if (dbMgr == NULL) {  
             printf("Unable to retrive db manager\n"); 
-            sqlconn->disconnect(); delete stmt; delete sqlconn; return 2; 
+            sqlconn->disconnect(); delete stmt; delete sqlconn; return 2;
         }
         List tableList = dbMgr->getAllTableNames();
         ListIterator iter = tableList.getIterator();
@@ -125,7 +129,7 @@ int main(int argc, char **argv)
                                         "Unable to open table %s", elem->name);
                 break;
             }
-            FieldInfo *info = new FieldInfo();
+	        FieldInfo *info = new FieldInfo();
             List fNameList = table->getFieldNameList();
             ListIterator fNameIter = fNameList.getIterator();
             count++;
@@ -149,12 +153,12 @@ int main(int argc, char **argv)
                 } else
                     printf(", %s %s ", fieldName, 
                                         AllDataType::getSQLString(info->type));
-                if (info->type == typeString || info->type == typeVarchar ||
-                                                      info->type == typeBinary)
-                     printf("(%d)",info->length);
+                if (info->type == typeString) printf("(%d)",info->length );
+                if (info->type == typeBinary) printf("(%d)",info->length);
+                if (info->type == typeVarchar) printf("(%d)",info->length);
                 if (info->isNull) printf(" NOT NULL ");
-                if (info->isDefault) 
-                    printf(" DEFAULT '%s' ", info->defaultValueBuf);
+                if (info->isDefault) printf(" DEFAULT '%s' ", 
+                                                        info->defaultValueBuf);
                 if (info->isAutoIncrement) printf(" AUTO_INCREMENT ");
             }
             fNameIter.reset();
@@ -172,9 +176,18 @@ int main(int argc, char **argv)
             dbMgr->closeTable(table);
         }
         if (schema) { 
-            sqlconn->disconnect(); 
+            sqlconn->disconnect();
             delete sqlconn; delete stmt; return 0; 
         }
+/*
+        rv = sqlconn->connect(I_USER, I_PASS);
+        if (OK !=rv) {
+            printf("unable to connect to csql\n");
+            delete sqlconn;
+            delete stmt;
+            return 10;
+        }
+*/
         stmt->setSqlConnection(sqlconn);
         if (exclusive) {
             rv = sqlconn->getExclusiveLock();
@@ -189,7 +202,10 @@ int main(int argc, char **argv)
         while (iter.hasElement()) {
             elem = (Identifier*) iter.nextElement();
             //if (!exclusive && isCached(elem->name)) continue;
-            if (!flag) { printf("SET AUTOCOMMIT OFF;\n"); flag=true; } 
+            if (!flag) { 
+                if (noOfStmts !=1) printf("SET AUTOCOMMIT OFF;\n"); 
+                flag=true; 
+            } 
             sprintf(sqlstring, "SELECT * FROM %s;", elem->name);
             sqlconn->beginTrans();
             DbRetVal rv = stmt->prepare(sqlstring);
@@ -204,12 +220,12 @@ int main(int argc, char **argv)
                 if (rows % noOfStmts ==0) {
                     sqlconn->commit();
                     sqlconn->beginTrans();
-                    printf("COMMIT;\n");
+                    if (noOfStmts !=1) printf("COMMIT;\n");
                 }
             }
             if (rows % noOfStmts !=0) { 
                 sqlconn->commit(); 
-                printf("COMMIT;\n"); 
+                if (noOfStmts !=1) printf("COMMIT;\n"); 
             }
             stmt->close();
             stmt->free();
@@ -225,14 +241,14 @@ int main(int argc, char **argv)
         os::signal(SIGCSQL1, SIG_IGN);
         DatabaseManagerImpl *dbMgr = (DatabaseManagerImpl*) 
                                  sqlconn->getConnObject().getDatabaseManager();
-        if (dbMgr == NULL) {
-            printf("Unable to retrive db manager\n");
+        if (dbMgr == NULL) { 
+            printf("Unable to retrive db manager\n"); 
             sqlconn->disconnect(); delete stmt; delete sqlconn; return 5;
         }
         Table *table = dbMgr->openTable(tblName);
         if (table == NULL) {
             printf("csqldump: Table \'%s\' does not exist\n", tblName);
-            sqlconn->disconnect(); delete sqlconn; delete stmt; return 6;
+            sqlconn->disconnect(); delete stmt; delete sqlconn; return 6;
         }
         printf("CREATE TABLE %s (", tblName);
 	    FieldInfo *info = new FieldInfo();
@@ -253,28 +269,28 @@ int main(int argc, char **argv)
             else
                 printf(", %s %s ", fieldName, 
                                         AllDataType::getSQLString(info->type));
-            if (info->type == typeString || info->type == typeVarchar ||
-                                                      info->type == typeBinary)
-                printf("(%d)",info->length);
+            if (info->type == typeString) printf("(%d)",info->length);
+            if (info->type == typeBinary) printf("(%d)",info->length);
             if (info->isNull) printf(" NOT NULL ");
-            if (info->isDefault) 
-                printf(" DEFAULT '%s' ", info->defaultValueBuf);
+            if (info->isDefault) printf(" DEFAULT '%s' ", 
+                                                        info->defaultValueBuf);
         }
         printf(");\n");
         table->printSQLIndexString();
         delete info;
-        char sqlstring[1024];
-	    bool flag=false;
-        if (!flag) { printf("SET AUTOCOMMIT OFF;\n"); flag=true; } 
-	    if(Iscondition)
-            sprintf(sqlstring, "SELECT * FROM %s WHERE %s;", tblName,
-                                                                 conditionVal);
-        else sprintf(sqlstring, "SELECT * FROM %s;", tblName);
-        sqlconn->beginTrans();
-        rv = stmt->prepare(sqlstring);
+        char sqlstring[SQL_STMT_LEN];
+        if (noOfStmts != 1) printf("SET AUTOCOMMIT OFF;\n"); 
+        
+	if(Iscondition)
+	    sprintf(sqlstring, "SELECT * FROM %s WHERE %s;", tblName,
+                                                             conditionVal);
+	else   
+	   sprintf(sqlstring, "SELECT * FROM %s;", tblName);
+	   sqlconn->beginTrans();
+           rv = stmt->prepare(sqlstring);
 	
         //***********************************************
-	    int rows = 0;
+        int rows = 0;
         rv = stmt->execute(rows);
         void *tuple = NULL;
         rows = 0;
@@ -285,10 +301,13 @@ int main(int argc, char **argv)
             if (rows % noOfStmts ==0) {
                 sqlconn->commit();
                 sqlconn->beginTrans();
-                printf("COMMIT;\n");
+                if (noOfStmts !=1) printf("COMMIT;\n");
             }
         }       
-        if (rows % noOfStmts !=0) { sqlconn->commit(); printf("COMMIT;\n"); }
+        if (rows % noOfStmts !=0) { 
+            sqlconn->commit(); 
+            if (noOfStmts !=1) printf("COMMIT;\n"); 
+        }
         stmt->close();
         stmt->free();
     }   
