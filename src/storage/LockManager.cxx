@@ -275,8 +275,8 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
             printError(ErrLockTimeOut, "Unable to add to hasList : Timeout. Retry..");
             return ErrLockTimeOut;
         }
-        int lockRet = bucket->mutex_.getLock(systemDatabase_->procSlot);
-        if (lockRet != 0)
+        DbRetVal lockRet = getBucketMutex(bucket, systemDatabase_->procSlot);
+        if (lockRet != OK)
         {
             printError(ErrLockTimeOut, "Unable to acquire bucket mutex");
             if (trans != NULL) (*trans)->removeFromHasList(systemDatabase_, tuple);
@@ -325,7 +325,7 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
    //printDebug(DM_Lock, "Trying to get mutex: for bucket %x\n", bucket);
    while (tries < Conf::config.getLockRetries())
    {
-       /*lockRet = bucket->mutex_.getLock(systemDatabase_->procSlot);
+       /*lockRet = getBucketMutex(bucket, systemDatabase_->procSlot);
        if (lockRet != 0)
        {
            printDebug(DM_Lock, "Mutex is waiting for long time:May be deadlock");
@@ -434,7 +434,7 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
    //to acquire lock so for sure we will get it.
 
    Bucket *bucket = getLockBucket(tuple);
-   /*int lockRet = bucket->mutex_.getLock(systemDatabase_->procSlot);
+   /*int lockRet = getBucketMutex(bucket, systemDatabase_->procSlot);
    if (lockRet != 0)
    {
        printDebug(DM_Lock, "Unable to acquire bucket mutex:May be deadlock");
@@ -536,7 +536,7 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
             printError(ErrLockTimeOut, "Unable to add to hasList. Timeout : Retry..");
             return ErrLockTimeOut;
         }
-        int lockRet = bucket->mutex_.getLock(systemDatabase_->procSlot);
+        int lockRet = getBucketMutex(bucket, systemDatabase_->procSlot);
         if (lockRet != 0)
         {
             printError(ErrLockTimeOut, "Unable to acquire bucket mutex");
@@ -584,7 +584,7 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
 
    while (tries < Conf::config.getLockRetries())
    {
-       /*lockRet = bucket->mutex_.getLock(systemDatabase_->procSlot);
+       /*lockRet = getBucketMutex(bucket, systemDatabase_->procSlot);
        if (lockRet != 0)
        {
            printError(ErrLockTimeOut, "Unable to get bucket mutex");
@@ -736,7 +736,7 @@ DbRetVal LockManager::releaseLock(void *tuple)
    printDebug(DM_Lock, "LockManager:releaseLock Start");
    Bucket *bucket = getLockBucket(tuple);
    printDebug(DM_Lock,"Bucket is %x", bucket);
-   /*int lockRet = bucket->mutex_.getLock(systemDatabase_->procSlot);
+   /*int lockRet = getBucketMutex(bucket, systemDatabase_->procSlot);
    if (lockRet != 0)
    {
        printDebug(DM_Lock, "Mutex is waiting for long time:May be deadlock");
@@ -776,8 +776,8 @@ DbRetVal LockManager::releaseLock(void *tuple)
                {
                     //TODO::above condition is not atomic
                     //put waitReaders_, WaitReaders in one integer
-                    int lockRet = bucket->mutex_.getLock(systemDatabase_->procSlot);
-                    if (lockRet == 0) {
+                    DbRetVal lockRet = getBucketMutex(bucket,systemDatabase_->procSlot);
+                    if (lockRet == OK) {
                       int tries = Conf::config.getMutexRetries();
                       do {
                         rv = deallocLockNode(iter, bucket);
@@ -812,8 +812,8 @@ DbRetVal LockManager::releaseLock(void *tuple)
                }
                if (iter->lInfo_.waitWriters_ == 0 || iter->lInfo_.waitReaders_ ==0)
                {
-                  int lockRet = bucket->mutex_.getLock(systemDatabase_->procSlot);
-                  if (lockRet == 0) {
+                  DbRetVal lockRet = getBucketMutex(bucket, systemDatabase_->procSlot);
+                  if (lockRet == OK) {
                     int tries = Conf::config.getMutexRetries();
                     do {
                         rv = deallocLockNode(iter, bucket);
@@ -872,7 +872,7 @@ DbRetVal LockManager::isExclusiveLocked(void *tuple, Transaction **trans, bool &
        status = false;
        return OK;
    }
-   /*int lockRet = bucket->mutex_.getLock(systemDatabase_->procSlot);
+   /*int lockRet = getBucketMutex(bucket, systemDatabase_->procSlot);
    if (lockRet != 0)
    {
        printDebug(DM_Lock, "Mutex is waiting for long time:May be deadlock");
@@ -994,3 +994,25 @@ DbRetVal LockManager::deallocLockNode(LockHashNode *node, Bucket *bucket)
     chunk->free(systemDatabase_, node);
     return OK;
 }
+DbRetVal LockManager::getBucketMutex(Bucket *bucket, int procSlot)
+{
+    struct timeval timeout, timeval;
+    timeout.tv_sec = Conf::config.getMutexSecs();
+    timeout.tv_usec = Conf::config.getMutexUSecs();
+    int tries=0;
+    int totalTries = Conf::config.getMutexRetries() *2;
+    int ret =0;
+    while (tries < totalTries)
+    {
+        ret = bucket->mutex_.getLock(procSlot, true);
+        if (ret == 0) break;
+        timeval.tv_sec = timeout.tv_sec;
+        timeval.tv_usec = timeout.tv_usec;
+        os::select(0, 0, 0, 0, &timeval);
+        tries++;
+    }
+    if (tries >= totalTries) return ErrLockTimeOut;
+    return OK;
+
+}
+

@@ -91,6 +91,7 @@ class LockManager
     DbRetVal getExclusiveLock(void * tuple, Transaction **trans);
     DbRetVal releaseLock(void *tuple);
     DbRetVal isExclusiveLocked(void *tuple, Transaction **trans, bool &status);
+    DbRetVal getBucketMutex(Bucket *bucket, int procslot);
     void printUsageStatistics();
     void printDebugInfo();
 };

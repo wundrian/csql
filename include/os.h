@@ -115,6 +115,7 @@ enum MapMode
 #define CHUNK_NAME_LEN 64
 #define LOG_ROLLOVER_SIZE 20*1024*1024
 #define SIGCSQL1 SIGUSR1
+#define MIN_VARCHAR_ALLOC_SIZE 30
 
 #define BIT(x) (1 << (x))
 #define SETBITS(x,y) ((x) |= (y))

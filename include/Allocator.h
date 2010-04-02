@@ -198,7 +198,7 @@ class Chunk
     int splitDataBucket(VarSizeInfo *varInfo, size_t needSize, int pslot, DbRetVal *status);
     void* varSizeFirstFitAllocate(size_t size, int pslot, DbRetVal *status);
     void freeForLargeAllocator(void *ptr, int pslot);
-    void freeForVarSizeAllocator(void *ptr, int pslot);
+    void freeForVarSizeAllocator(Database *db, void *ptr, int pslot);
 
     void* allocateForLargeDataSize(Database *db);
     void* allocateFromFirstPage(Database *db, int noOfDataNodes, DbRetVal *status);
