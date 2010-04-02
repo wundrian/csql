@@ -1350,26 +1350,31 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
         FieldDef *def = fIter.nextElement();
         if(def->isAutoIncrement_ && isInsert)
         {
-            void *dest = AllDataType::alloc(def->type_, def->length_);
-            AllDataType::copyVal(dest,ptrToAuto, def->type_, def->length_);
+            if (OK != takeTableMutex())
+            {
+                printError(ErrLockTimeOut,
+                  " Unable to take table mutex for increment key");
+                return ErrLockTimeOut;
+            }
+            AllDataType::copyVal(&tempAutoVal,ptrToAuto, def->type_, def->length_);
             if(def->bindVal_==NULL)
             {
-                AllDataType::increment(colPtr, dest , def->type_);
-                AllDataType::copyVal(ptrToAuto,colPtr, def->type_, 
+                AllDataType::increment(colPtr, &tempAutoVal , def->type_);
+                AllDataType::copyVal(ptrToAuto,colPtr, def->type_,
                                                                  def->length_);
                 colPtr = colPtr + def->length_;
                 fldpos++;
-                free(dest);
-                continue;
-            } else {
-                if(AllDataType::compareVal(def->bindVal_, dest, OpGreaterThan, 
+            }else {
+                if(AllDataType::compareVal(def->bindVal_, &tempAutoVal, OpGreaterThan,
                                                                  def->type_)) {
-                    AllDataType::copyVal(ptrToAuto,def->bindVal_, def->type_, 
+                    AllDataType::copyVal(ptrToAuto,def->bindVal_, def->type_,
                                                                  def->length_);
                 }
-                free(dest);
             }
+            releaseTableMutex();
+            continue;
         }
+
         if (def->isNull_ && !def->isDefault_ && NULL == def->bindVal_ && 
                                                                       isInsert) 
         {
@@ -1674,6 +1679,32 @@ DbRetVal TableImpl::closeScan()
     }
     return OK;
 }
+DbRetVal TableImpl::takeTableMutex()
+{
+    struct timeval timeout, timeval;
+    timeout.tv_sec = Conf::config.getMutexSecs();
+    timeout.tv_usec = Conf::config.getMutexUSecs();
+    int tries=0;
+    int totalTries = Conf::config.getMutexRetries() *2;
+    int ret =0;
+    while (tries < totalTries)
+    {
+        ret = sysDB_->getAllocDatabaseMutex();
+        if (ret == 0) break;
+        timeval.tv_sec = timeout.tv_sec;
+        timeval.tv_usec = timeout.tv_usec;
+        os::select(0, 0, 0, 0, &timeval);
+        tries++;
+    }
+    if (tries >= totalTries) return ErrLockTimeOut;
+    return OK;
+}
+DbRetVal TableImpl::releaseTableMutex()
+{
+    sysDB_->releaseAllocDatabaseMutex();
+    return OK;
+}
+
 DbRetVal TableImpl::lock(bool shared)
 {
 

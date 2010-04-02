@@ -136,6 +136,7 @@ class TableImpl:public Table
     Database *db_;
     Database *sysDB_;
     void *ptrToAuto;
+    long long tempAutoVal;
     //Either one of the below is populated based on the no of fields and 
     //is used for tuple insertions
     bool isIntUsedForNULL;
@@ -255,6 +256,8 @@ class TableImpl:public Table
 
     DbRetVal lock(bool shared);
     DbRetVal unlock();
+    DbRetVal takeTableMutex();
+    DbRetVal releaseTableMutex();
    
     DbRetVal setUndoLogging(bool flag) { loadFlag = flag; return OK;}
 
