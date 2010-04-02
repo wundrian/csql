@@ -102,6 +102,7 @@ class HashMap
     void setGrpIntNoNull(){ optGrpIntNoNull = true; }
     DbRetVal insert(void *elem);
     void* find(void *elem);
+    bool remove(void *elem);
     void removeAll();
 };
 

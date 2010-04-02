@@ -48,6 +48,50 @@ void* HashMap::find(void *element)
     }
     return NULL;
 }
+bool HashMap::remove(void *element)
+{
+    int hashVal = 0;
+    HashMapNode *delNode=NULL;
+    HashMapNode *head = NULL, *prev = NULL;
+    if (optGrpIntNoNull) {
+        int value = *(int*)element;
+        hashVal = value % bucketSize;
+        HashMapNode *node = (HashMapNode*) bucket[hashVal];
+        head = node;
+        prev = node;
+        while(node != NULL) {
+          if (*(int*)node->elem == value) {
+             if (head == node) {
+                 *(long*)(&(bucket[hashVal]))  = (long)node->next;
+             }else {
+                 prev->next= node->next;
+             }
+             delete node;
+             return true;
+          }
+          node = node->next;
+        }
+    }
+    else {
+        hashVal = Util::hashBinary((char*)element, keySize) % bucketSize;
+        HashMapNode *node = (HashMapNode*) bucket[hashVal];
+        while(node != NULL) {
+          if (AllDataType::compareVal(node->elem, element, OpEquals,
+                                             typeBinary, keySize)) {
+              if (head == node) {
+                 *(long*)(&(bucket[hashVal])) = (long)node->next;
+              }else{
+                 prev->next = node->next;
+              }
+              delete node;
+              return true;
+          }
+          node = node->next;
+        }
+    }
+    return false;
+}
+
 void HashMap::removeAll()
 {
     for (int i=0; i <bucketSize; i++) {
