@@ -29,7 +29,11 @@ struct CachedStmtNode{
     int stmtLength;
     char *sqlString;
     int hits;
-    CachedStmtNode() { sqlStmt = NULL; sqlString=NULL; stmtLength=0; hits=0;}
+    bool inUse;
+    CachedStmtNode() { sqlStmt = NULL; sqlString=NULL; stmtLength=0; hits=0; inUse=0;}
+    void display() {
+        printf(" SQL=%s hits=%d inuse=%d\n", sqlString, hits, inUse);
+    }
     
 };
 class SqlConnection : public AbsSqlConnection
@@ -70,6 +74,7 @@ class SqlConnection : public AbsSqlConnection
     *   @return DbRetVal 
     */
     DbRetVal disconnect () { 
+        flushCacheStmt();
         DbRetVal ret = conn.close(); 
         if (ret == OK) isConnOpen = false;
 # if (defined MMDB && defined EMBED)
@@ -117,6 +122,10 @@ class SqlConnection : public AbsSqlConnection
     void flushCacheStmt();
     void addToCache(SqlStatement *stmt, char *stmtStr);
     void removeLeastUsed();
+    void setStmtNotInUse(char *stmtStr);
+    void displayStmtCache();
+    void display() { displayStmtCache(); }
+
 
     friend class SqlFactory;
 };

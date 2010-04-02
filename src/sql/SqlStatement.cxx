@@ -33,9 +33,9 @@ GlobalUniqueID SqlConnection::UID;
 #endif
 List SqlConnection::connList;
 
-
 SqlStatement::~SqlStatement()
 {
+    if (sqlStmtString) { ::free(sqlStmtString); sqlStmtString=NULL;}
     if (isPrepd) { free(); isPrepd = false; }
 }
 
@@ -51,6 +51,7 @@ SqlStatement::SqlStatement()
     isPrepd = false;
     isCachedStmt=false;
     isMgmtStatement = false;
+    sqlStmtString = NULL;
 }
 void SqlStatement::setConnection(AbsSqlConnection *conn)
 {
@@ -73,8 +74,27 @@ DbRetVal SqlStatement::executeDirect(char *str)
     if (rv != OK) return rv;
     return rv;
 }
+void SqlStatement::setStmtString(char *ststr)
+{
+    if (sqlStmtString) { ::free(sqlStmtString); sqlStmtString=NULL; }
+    sqlStmtString = (char*) malloc(strlen(ststr)+1);
+    strcpy(sqlStmtString, ststr);
+}
+
+DbRetVal SqlStatement::prepare() 
+{ 
+    return prepareInt(sqlStmtString); 
+}
 
 DbRetVal SqlStatement::prepare(char *stmtstr)
+{
+   if (sqlStmtString) { ::free(sqlStmtString); sqlStmtString=NULL;}
+   sqlStmtString = (char*) malloc(strlen(stmtstr)+1);
+   strcpy(sqlStmtString, stmtstr);
+   return prepareInt(stmtstr);
+}
+
+DbRetVal SqlStatement::prepareInt(char *stmtstr)
 {
     DbRetVal rv = OK;
     if (! sqlCon->isConnectionOpen()) {
@@ -86,6 +106,7 @@ DbRetVal SqlStatement::prepare(char *stmtstr)
     {
         *this = *cachedStmt;
         this->stmt->setParsedData(&this->pData);
+        isCachedStmt=true;
         logFine(Conf::logger,"GOT STMT FROM CACHE: %s %x", stmtstr, cachedStmt);
         return OK;
     }
@@ -138,7 +159,7 @@ DbRetVal SqlStatement::prepare(char *stmtstr)
         return rv;
     }
     isPrepd = true;
-    if (Conf::config.getStmtCacheSize()) {
+    if (!isCachedStmt && Conf::config.getStmtCacheSize()) {
       if (stmt->noOfParamFields() > 0) { 
         isCachedStmt = true; 
         sqlCon->addToCache(this, stmtstr); 
@@ -453,6 +474,9 @@ DbRetVal SqlStatement::free()
         stmt=NULL;
         pData.init();
         isPrepd = false;
+        if (sqlStmtString) sqlCon->setStmtNotInUse(sqlStmtString);
+        if (sqlStmtString) { ::free(sqlStmtString); sqlStmtString=NULL; }
+        isCachedStmt = false;
         return OK;
     }
     if(stmt) delete stmt;
@@ -460,6 +484,8 @@ DbRetVal SqlStatement::free()
     pData.reset();
     isMgmtStatement = false;
     isPrepd = false;
+    isCachedStmt = false;
+    if (sqlStmtString) { ::free(sqlStmtString); sqlStmtString=NULL; }
     return OK;
 }
 
@@ -607,6 +633,9 @@ void SqlStatement::flushCacheStmt()
 {
     return sqlCon->flushCacheStmt();
 }
+void SqlStatement::resetStmtString() {
+    sqlStmtString=NULL; 
+}
 //-------------------------------------------------------------------
 
 static void sigTermHandler(int sig)
@@ -617,12 +646,12 @@ static void sigTermHandler(int sig)
     {
         conn = (SqlConnection*) iter.nextElement();
         conn->flushCacheStmt();
-        if (conn->isConnectionOpen()) conn->disconnect();
+        if (conn->isConnectionOpen()) conn->disconnect(); 
     }
     exit(0);
 }
 
-DbRetVal SqlConnection::connect (char *user, char * pass)
+DbRetVal SqlConnection::connect (char *user, char * pass) 
 {
     DbRetVal ret = conn.open(user, pass);
     if (ret != OK) return ret;
@@ -651,6 +680,10 @@ void SqlConnection::flushCacheStmt()
     ListIterator iter = cachedStmts.getIterator();
     while (iter.hasElement()) {
         CachedStmtNode* node = (CachedStmtNode*) iter.nextElement();
+        //do not delete when the statement is currently in use.
+        //otherwise it leads to illegal memory access when application 
+        //calls any method on this statement
+        if (node->inUse) continue;
         free(node->sqlString);
         node->sqlStmt->setCachedStmt(false);
         node->sqlStmt->free();
@@ -661,6 +694,23 @@ void SqlConnection::flushCacheStmt()
     return;
 }
 
+void SqlConnection::setStmtNotInUse(char *stmtstr)
+{
+    ListIterator iter = cachedStmts.getIterator();
+    int inputStmtLen = strlen(stmtstr);
+    CachedStmtNode *node = NULL;
+    while ((node = (CachedStmtNode*)iter.nextElement()) != NULL)
+    {
+        if (node->stmtLength == inputStmtLen)
+        {
+           if (0 == strcmp(node->sqlString, stmtstr))
+           {
+               node->inUse =0;
+           }
+        }
+    }
+
+}
 SqlStatement* SqlConnection::findInCache(char *stmtstr)
 {
     ListIterator iter = cachedStmts.getIterator();
@@ -675,6 +725,7 @@ SqlStatement* SqlConnection::findInCache(char *stmtstr)
                logFiner(Conf::logger, "Statement Retrieved From Cache %x\n", 
                                       node->sqlStmt);
                node->hits++;
+               node->inUse = 1;
                return node->sqlStmt;
            }
         }
@@ -689,11 +740,13 @@ void SqlConnection::addToCache(SqlStatement *sqlStmt, char* stmtString)
     node->sqlStmt = stmt;
     node->stmtLength  = strlen(stmtString);
     node->sqlString = (char*)malloc(node->stmtLength+1);
+    node->inUse=1;
     strcpy(node->sqlString, stmtString);
     if (cachedStmts.size() >= Conf::config.getStmtCacheSize())
     {
         removeLeastUsed();
     }
+    node->sqlStmt->resetStmtString();
     cachedStmts.append(node);
     logFiner(Conf::logger, "Statement added To Cache %x\n", node->sqlStmt);
     logFinest(Conf::logger, "Statement added To Cache %s\n", node->sqlString);
@@ -716,16 +769,18 @@ void SqlConnection::removeLeastUsed()
         if (lowHits >= node->hits) toRemove = node;
     }
     cachedStmts.remove(toRemove);
+    //TODO::check whether there is memory leak for list elements
     logFiner(Conf::logger, "Statement removed from Cache %x\n", toRemove->sqlStmt);
     logFinest(Conf::logger, "Statement removed from Cache %s\n", toRemove->sqlString);
     return;
 }
 SqlConnection::~SqlConnection()
 {
-    innerConn = NULL;
     flushCacheStmt();
     if (isConnOpen) disconnect();
+    innerConn = NULL;
 }
+
 static void sigUsr1Handler(int sig)
 {
     ListIterator iter= SqlConnection::connList.getIterator();
@@ -749,6 +804,17 @@ static void exithandler(void)
         conn->flushCacheStmt();
         conn->disconnect();
     }
+}
+void SqlConnection::displayStmtCache()
+{
+    ListIterator iter = cachedStmts.getIterator();
+    CachedStmtNode *node = NULL;
+    printf("STATEMENT CACHE START \n");
+    while ((node = (CachedStmtNode*)iter.nextElement()) != NULL)
+    {
+        node->display();
+    }
+    printf("STATEMENT CACHE END\n");
 }
 
 void SqlConnection::initialize()
@@ -774,7 +840,7 @@ DbRetVal SqlConnection::recoverCsqlDB()
     sprintf(dbChkptSchema, "%s/db.chkpt.schema1", Conf::config.getDbFile());
     if (FILE *file = fopen(dbChkptSchema, "r")) {
         fclose(file);
-        sprintf(cmd, "cp -f %s %s/db.chkpt.schema", dbChkptSchema,
+        sprintf(cmd, "cp -f %s %s/db.chkpt.schema", dbChkptSchema, 
                                                      Conf::config.getDbFile());
         int ret = system(cmd);
         if (ret != 0) return ErrOS;
@@ -782,7 +848,7 @@ DbRetVal SqlConnection::recoverCsqlDB()
     sprintf(dbChkptMap, "%s/db.chkpt.map1", Conf::config.getDbFile());
     if (FILE *file = fopen(dbChkptMap, "r")) {
         fclose(file);
-        sprintf(cmd, "cp -f %s %s/db.chkpt.map", dbChkptMap,
+        sprintf(cmd, "cp -f %s %s/db.chkpt.map", dbChkptMap, 
                                                      Conf::config.getDbFile());
         int ret = system(cmd);
         if (ret != 0) return ErrOS;
@@ -794,7 +860,7 @@ DbRetVal SqlConnection::recoverCsqlDB()
     FILE *fl = NULL;
     if (!Conf::config.useMmap() && (fl = fopen(dbBackupFile, "r"))) {
         fclose(fl);
-        sprintf(cmd, "cp %s/db.chkpt.data1 %s", Conf::config.getDbFile(),
+        sprintf(cmd, "cp %s/db.chkpt.data1 %s", Conf::config.getDbFile(), 
                                                                   dbChkptData);
         int ret = system(cmd);
         if (ret != 0) return ErrOS;
@@ -818,7 +884,7 @@ DbRetVal SqlConnection::recoverCsqlDB()
             return ErrOS;
         }
     }
-    return OK;
+    return OK;   
 }
 
 DbRetVal SqlConnection::recoverSystemAndUserDB()
@@ -831,7 +897,7 @@ DbRetVal SqlConnection::recoverSystemAndUserDB()
     }
     DatabaseManager *dbMgr = getConnObject().getDatabaseManager();
     dbMgr->recover();
-    return OK;
+    return OK; 
 }
 
 DbRetVal SqlConnection::applySchemaFile(FILE *fp)
@@ -844,9 +910,9 @@ DbRetVal SqlConnection::applySchemaFile(FILE *fp)
         stmt->prepare(buf);
         int rows = 0;
         stmt->execute(rows);
-    }
+    } 
     delete stmt;
-    return OK;
+    return OK; 
 }
 
 char SqlConnection::getQueryFromSchemaFile(FILE *fp, char *buf)

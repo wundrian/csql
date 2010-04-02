@@ -258,6 +258,11 @@ class SqlStatement: public AbsSqlStatement
     void setCachedStmt(bool flag){ isCachedStmt= flag; }
     void flushCacheStmt();
     long long getLastInsertedVal(DbRetVal &rv);
+    void setStmtString(char *ststr);
+    DbRetVal prepare();
+    DbRetVal prepareInt(char *ststr);
+    void resetStmtString();
+
     private:
     bool isMgmtStatement;
     SqlConnection *sqlCon;
@@ -265,6 +270,7 @@ class SqlStatement: public AbsSqlStatement
     ParsedData pData;
     bool isPrepd;
     bool isCachedStmt;
+    char *sqlStmtString;
     friend class SqlFactory;
 };
 

@@ -95,6 +95,10 @@ class AbsSqlConnection
     {
         if (innerConn) { delete innerConn; innerConn = NULL; }
     }
+    virtual void display()
+    {
+        if (innerConn)  innerConn->display();
+    }
 };
 
 #endif
