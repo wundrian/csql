@@ -357,7 +357,7 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
                             ptr += strlen(ptr);
                             if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) 
                             {
-                                sprintf(ptr, "(%d) NOT NULL",colLength);
+                                sprintf(ptr, "(%d) NOT NULL",colLength+1);
                             } else { sprintf(ptr, " NOT NULL"); } 
                                 ptr += strlen(ptr);
                         } else {
@@ -365,11 +365,11 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
                             ptr += strlen(ptr);
                             if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) 
                             {
-                                sprintf(ptr, "(%d) NOT NULL",colLength);
+                                sprintf(ptr, "(%d) NOT NULL",colLength+1);
                             } else { sprintf(ptr, " NOT NULL"); }
                             ptr += strlen(ptr);
                         }
-                        tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType,colLength,scale,tdbName), colLength +1, NULL, true);
+                        //tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType,colLength,scale,tdbName), colLength +1, NULL, true);
                         isPriFld=true;
                         break;
                     }
@@ -381,36 +381,36 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
                             sprintf(ptr, "%s %s", colName, AllDataType::getSQLString(AllDataType::convertFromSQLType(colType,colLength,scale,tdbName)));   
                             ptr += strlen(ptr);
                             if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) {
-                                sprintf(ptr, "(%d)",colLength);
+                                sprintf(ptr, "(%d)",colLength+1);
                                 ptr += strlen(ptr);
                             } 
                         } else {
                             sprintf(ptr, ", %s %s", colName, AllDataType::getSQLString(AllDataType::convertFromSQLType(colType,colLength,scale,tdbName)));   
                             ptr += strlen(ptr);
                             if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) {
-                                sprintf(ptr, "(%d)",colLength);
+                                sprintf(ptr, "(%d)",colLength+1);
                                 ptr += strlen(ptr);
                             } 
                         }
-                        tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType,colLength,scale,tdbName), colLength+1); 
+                        //tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType,colLength,scale,tdbName), colLength+1); 
                     } else {
                         if (firstFld) {
                             firstFld = false;
                             sprintf(ptr, "%s %s", colName, AllDataType::getSQLString(AllDataType::convertFromSQLType(colType,colLength,scale,tdbName)));   
                             ptr += strlen(ptr);
                             if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) {
-                                sprintf(ptr, "(%d) NOT NULL",colLength);
+                                sprintf(ptr, "(%d) NOT NULL",colLength+1);
                             } else { sprintf(ptr, " NOT NULL",colLength); }
                             ptr += strlen(ptr);
                         } else {
                             sprintf(ptr, ", %s %s", colName, AllDataType::getSQLString(AllDataType::convertFromSQLType(colType,colLength,scale,tdbName)));   
                             ptr += strlen(ptr);
                             if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) {
-                                sprintf(ptr, "(%d) NOT NULL",colLength);
+                                sprintf(ptr, "(%d) NOT NULL",colLength+1);
                             } else { sprintf(ptr, " NOT NULL",colLength); }
                             ptr += strlen(ptr);
                         }
-                        tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType,colLength,scale,tdbName), colLength+1, NULL, true);
+                        //tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType,colLength,scale,tdbName), colLength+1, NULL, true);
                         isNullfld=false;
                     }
                 }
@@ -420,18 +420,18 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
                     sprintf(ptr, "%s %s", colName, AllDataType::getSQLString(AllDataType::convertFromSQLType(colType,colLength,scale,tdbName)));   
                     ptr += strlen(ptr);
                     if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) {
-                        sprintf(ptr, "(%d) NOT NULL",colLength);
+                        sprintf(ptr, "(%d) NOT NULL",colLength+1);
                     } else { sprintf(ptr, " NOT NULL",colLength); }
                     ptr += strlen(ptr);
                 } else {
                     sprintf(ptr, ", %s %s", colName, AllDataType::getSQLString(AllDataType::convertFromSQLType(colType,colLength, scale, tdbName)));   
                     ptr += strlen(ptr);
                     if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) {
-                        sprintf(ptr, "(%d) NOT NULL",colLength);
+                        sprintf(ptr, "(%d) NOT NULL",colLength+1);
                     } else { sprintf(ptr, " NOT NULL",colLength); }
                     ptr += strlen(ptr);
                 }
-                tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType,colLength,scale, tdbName), colLength +1, NULL, true);
+                //tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType,colLength,scale, tdbName), colLength +1, NULL, true);
             }
         }
         sprintf(ptr, ");");
@@ -684,7 +684,6 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
         return ErrSysInit; 
     }
     int fldpos=0;
-    int countForCommit = 0;
     while(true) {
         //TODO: if SQLFetch return other than record not found error
         //it should drop the table
@@ -753,12 +752,9 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
             free(len);
             return ErrSysInit;
         }
-        countForCommit++;
-        if (countForCommit == 1000) {
-            countForCommit = 0;
-            conn->commit();
-            conn->beginTrans();
-        }
+        conn->commit();
+        conn->beginTrans();
+        //Note:one operation per txn gives best performance than 100/txn
     }
     free(len);
     //TODO::leak:: valBufList and its targetdb buffer
