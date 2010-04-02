@@ -140,6 +140,9 @@ class TreeIndex : public Index
     DbRetVal update(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool undoFlag);
     static DbRetVal insertLogicalUndoLog(Database *sysdb, void *info);
     static DbRetVal deleteLogicalUndoLog(Database *sysdb, void *info);
+    static DbRetVal getTreeNodeMutex(TreeNode*, int procSlot, bool isX=false);
+    static DbRetVal upgradeTreeNodeMutex(TreeNode*, int procSlot);
+
 };
 class TreeIter
 {

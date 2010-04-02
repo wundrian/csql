@@ -298,16 +298,18 @@ void TreeNode::displayAll(int fldOffset)
     TreeNode *prev = iter;
     bool result = false;
     printf("<TreeNode Info>\n");
+    int i=0;
     while(iter != NULL)
     {
+        i++;
         tnode = (TreeNode *)*((char**)((char*)((char*)iter + sizeof(TreeNode))+ ((iter->noElements_-1)*sizeof(void *))));
         char *record = ((char*)tnode->max_)+ fldOffset;
         TreeNode *needremovetnode = (TreeNode *)*((char**)((char*)((char*)iter + sizeof(TreeNode))));
-        printf("  <First level Max/Min> %d / %d </First level>\n",*(int*)record,*(int*)((char*)needremovetnode->min_)+ fldOffset);
+        printf("  <First level > node:%d noElements:%d </First level>\n",i, iter->noElements_);
         for(int i=0;i< iter->noElements_;i++)
         {
              tnode = (TreeNode *)*((char**)((char*)((char*)iter + sizeof(TreeNode))+ ((i)*sizeof(void *))));
-             printf("    <Second Level Node> %d Min:%d Max:%d</Second Level Node>\n ",i, *(int*)tnode->min_,  *(int*)tnode->max_); 
+             printf("    <Second Level Node> Node:%d Elements:%d Min:%d Max:%d </Second Level Node>\n ",i, tnode->noElements_, *(int*)((char*)tnode->min_+fldOffset),  *(int*)((char*)tnode->max_ + fldOffset)); 
              char **rec= (char**)((char*)tnode + sizeof(TreeNode));
              for(int j=0; j < tnode->noElements_; j++){
                  printf("%d,",*((int*)((char*) *(rec + j )+fldOffset)));              
@@ -434,8 +436,6 @@ DbRetVal TreeNode::insertNodeIntoFirstLevel(Database * db, IndexInfo * indInfo, 
     printDebug(DM_TreeIndex," Mutex Release on %x\n",tempNode);
     return OK;         
 }
-
-
 
 DbRetVal TreeNode::insertRecordIntoNodeAndArrangeFirstLevel(Database * db, IndexInfo * indInfo, void* indexPtr, void * tuple, TreeNode * fstLevel, int nodePos)
 {
@@ -827,15 +827,16 @@ DbRetVal TreeIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     if (NULL == fltnode) return rc; //First Level Node Not found
     TreeNode *iter = start->locateNodeFromFirstLevel(fltnode, indInfo, tuple, &pos);
     if (NULL == iter) { 
+        //element not found
         fltnode->mutex_.releaseShareLock((tbl->getDB())->procSlot); 
         printDebug(DM_TreeIndex," Mutex Release on %x\n",fltnode);
         return OK; 
-     }  //element not found
+     }  
     rc = removeElement(tbl->getDB(), iter, tuple, info);
     if( rc != OK ){
         fltnode->mutex_.releaseShareLock((tbl->getDB())->procSlot);
         printDebug(DM_TreeIndex," Mutex Release on %x\n",fltnode);
-        printError(rc, "Romove from TreeNode Failed ");
+        printError(rc, "Remove from TreeNode Failed");
         return rc;
     }
     if(0 == iter->noElements_)
@@ -909,15 +910,16 @@ DbRetVal TreeNode::insert(Database *db,IndexInfo *indInfo,void *indexPtr,void *t
     TreeNode *tnode=NULL;
     TreeNode *prev = iter;
     bool result = false;
-    int ret = iter->mutex_.getExclusiveLock(db->procSlot);
-    if (0 != ret) {
+    DbRetVal  ret = TreeIndex::getTreeNodeMutex(iter, db->procSlot, true);
+    if (OK != ret) {
          printError(ErrLockTimeOut,"Unable to lock the tree node. Retry...");
          return ErrLockTimeOut;
     }
-    printDebug(DM_TreeIndex," Mutex Taken on %x\n",iter);
+    printDebug(DM_TreeIndex," Tree I Level Mutex Taken on %x\n",iter);
     
-    while(iter != NULL )//&& iter->noElements_>= info->noOfBuckets )
+    while(iter != NULL )
     {
+        //get the second level last node as min and max are not stored in first level tree node
         tnode = (TreeNode *)*((char**)((char*)((char*)iter + sizeof(TreeNode))+ ((iter->noElements_-1)*sizeof(void *))));
         char *record = ((char*)tnode->max_)+ info->fldOffset;
         result = AllDataType::compareVal(searchKey, record,OpLessThanEquals,info->type, info->compLength);
@@ -930,19 +932,19 @@ DbRetVal TreeNode::insert(Database *db,IndexInfo *indInfo,void *indexPtr,void *t
              {
                  if(iter->next_!=NULL)
                  {
-                     ret = iter->next_->mutex_.getExclusiveLock(db->procSlot);
-                     if (0 != ret) 
+                     DbRetVal ret = TreeIndex::getTreeNodeMutex(iter->next_, db->procSlot, true);
+                     if (OK != ret) 
                      {
                          printError(ErrLockTimeOut,"Unable to lock the tree node. Retry...");
                          iter->mutex_.releaseShareLock(db->procSlot);
-                         printDebug(DM_TreeIndex," Mutex Release on %x\n",iter);
+                         printDebug(DM_TreeIndex," Tree I Level Mutex Release on %x\n",iter);
                          return ErrLockTimeOut;
                      }
-                     printDebug(DM_TreeIndex," Mutex Taken on %x\n",iter->next_);
+                     printDebug(DM_TreeIndex," Tree I Level Mutex Taken on %x\n",iter->next_);
                      prev = iter;
                      iter = iter->next_;
                      prev->mutex_.releaseShareLock(db->procSlot);
-                     printDebug(DM_TreeIndex," Mutex Release on %x\n",prev);
+                     printDebug(DM_TreeIndex," Tree I Level Mutex Release on %x\n",prev);
                  }else{
                      prev = iter;
                      iter = iter->next_;
@@ -959,10 +961,11 @@ DbRetVal TreeNode::insert(Database *db,IndexInfo *indInfo,void *indexPtr,void *t
                          break;
                      } else 
                      {
-                         if(iter->next_!=NULL)
+                         //if(iter->next_!=NULL)
                          {
-                             ret = iter->next_->mutex_.getExclusiveLock(db->procSlot);
-                             if (0 != ret)
+                             DbRetVal  ret = TreeIndex::getTreeNodeMutex(iter->next_, 
+                                                                          db->procSlot, true);
+                             if (OK != ret)
                              {
                                  printError(ErrLockTimeOut,"Unable to lock the tree node. Retry...");
                                  iter->mutex_.releaseShareLock(db->procSlot);
@@ -974,11 +977,12 @@ DbRetVal TreeNode::insert(Database *db,IndexInfo *indInfo,void *indexPtr,void *t
                              iter = iter->next_;
                              prev->mutex_.releaseShareLock(db->procSlot);
                              printDebug(DM_TreeIndex," Mutex Release on %x\n",prev);
-                         }else
+                         }
+                         /*else
                          {
                              prev = iter;
                              iter = iter->next_;
-                         }
+                         }*/
                      }
                  }else{
                       break;
@@ -986,13 +990,16 @@ DbRetVal TreeNode::insert(Database *db,IndexInfo *indInfo,void *indexPtr,void *t
              }
          }
     }    
+    //iter will be null if the value being inserted is greater 
+    //than the last I-level node's II-level last node's max
     if( iter == NULL && prev->noElements_< info->noOfBuckets)
     {
         iter = prev ;
     }
     if(iter == NULL)
     {
-    //create Ist level node  then leaf node ,insert record and return
+        //TODO::Put this is another function and use the same from 1st record insert
+        //create Ist level node  then leaf node ,insert record and return
         printDebug(DM_TreeIndex, "iter =NULL create Ist level node  then leaf node ,insert record and return");
         Chunk *chunk = (Chunk*) iptr->chunkPtr_;
         TreeNode *tnode = (TreeNode*) chunk->allocate(db, &rv);
@@ -1038,9 +1045,14 @@ DbRetVal TreeNode::insert(Database *db,IndexInfo *indInfo,void *indexPtr,void *t
         printDebug(DM_TreeIndex," Mutex Release on %x\n",prev);
         return OK;
     }
-    //Get leaf Node
+    //Get second level node and node position from the 
+    //first level node identified above as 'iter'
     int nodepos=0;
     tnode = locateNodeFromFirstLevel(iter, indInfo, tuple, &nodepos);
+    //first level mutex is taken and it is released in the below function
+    //This is because in case arrangement in first level node when it is full 
+    //then subsequent first level node mutex is taken and current first level node 
+    //mutex is released
     rv = tnode->insertRecordIntoNodeAndArrangeFirstLevel(db, indInfo, indexPtr, tuple, iter, nodepos);
     return rv;
 }
@@ -1051,8 +1063,8 @@ TreeNode* TreeNode::locateNode(Database *db, TreeNode *iter, void *tuple, IndexI
     HashIndexInfo *info = (HashIndexInfo*) indInfo;
     void *searchKey =(void*)((char*)tuple + info->fldOffset);
     TreeNode *tnode=NULL;
-    int ret = iter->mutex_.getExclusiveLock(db->procSlot);
-    if (0 != ret) {
+    DbRetVal  ret = TreeIndex::getTreeNodeMutex(iter, db->procSlot, true);
+    if (OK != ret) {
          printError(ErrLockTimeOut,"Unable to lock the tree node. Retry...");
          rv = ErrLockTimeOut;
          return NULL;
@@ -1071,8 +1083,8 @@ TreeNode* TreeNode::locateNode(Database *db, TreeNode *iter, void *tuple, IndexI
         {
             if(iter->next_!=NULL)
             {
-                ret = iter->next_->mutex_.getExclusiveLock(db->procSlot);
-                if (0 != ret) 
+                DbRetVal  ret = TreeIndex::getTreeNodeMutex(iter->next_, db->procSlot, true);
+                if (OK != ret) 
                 {
                     printError(ErrLockTimeOut,"Unable to lock the tree node. Retry...");
                     iter->mutex_.releaseShareLock(db->procSlot);    
@@ -1139,8 +1151,8 @@ DbRetVal TreeIndex::removeElement(Database *db, TreeNode *iter, void *tuple, Has
     void *searchKey =(void*)((char*)tuple + info->fldOffset);
     int loc=0, middle=0, start=0, end=iter->noElements_-1;
     char **rec = (char**)((char*)iter + sizeof(TreeNode));
-    int ret = iter->mutex_.getExclusiveLock(db->procSlot,true,true);
-    if (0 != ret) {
+    DbRetVal ret = TreeIndex::upgradeTreeNodeMutex(iter, db->procSlot);
+    if (OK != ret) {
          printError(ErrLockTimeOut,"Unable to lock the tree node. Retry...");
          return ErrLockTimeOut;
     }
@@ -1167,16 +1179,23 @@ DbRetVal TreeIndex::removeElement(Database *db, TreeNode *iter, void *tuple, Has
             }
         }
     }
-    char *tmp = (char *)malloc(sizeof(void *) * (iter->noElements_ - loc));
-    memcpy(tmp, (char*)rec + ((loc+1) * sizeof(void *)), sizeof(void *) * (iter->noElements_ - loc));
-    memcpy((char*)rec + ((loc) * sizeof(void *)), tmp, sizeof(void *) * (iter->noElements_ - loc));
-    free(tmp);
+    if (loc == iter->noElements_-1)
+    {
+        iter->max_ = *(char**)((char*)rec + ((loc-1) * sizeof(void *)));
+    }else {
+       char *tmp = (char *)malloc(sizeof(void *) * (iter->noElements_ - loc));
+       memcpy(tmp, (char*)rec + ((loc+1) * sizeof(void *)), 
+                                    sizeof(void *) * (iter->noElements_ - loc));
+       memcpy((char*)rec + ((loc) * sizeof(void *)), tmp, 
+                                    sizeof(void *) * (iter->noElements_ - loc));
+       free(tmp);
+    }
     if(loc==0)
     {
-       iter->min_ = tuple;
+       iter->min_ = *(char**)rec ;
     }
-    iter->mutex_.releaseShareLock(db->procSlot);
     iter->noElements_--;
+    iter->mutex_.releaseShareLock(db->procSlot);
     return OK;
 }
 
@@ -1214,5 +1233,52 @@ DbRetVal TreeIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         return OK;
     }
     return ErrNotYet;
+}
+
+DbRetVal TreeIndex::getTreeNodeMutex(TreeNode *node, int procSlot, bool isX)
+{
+    struct timeval timeout, timeval;
+    timeout.tv_sec = Conf::config.getMutexSecs();
+    timeout.tv_usec = Conf::config.getMutexUSecs();
+    int tries=0;
+    int totalTries = Conf::config.getMutexRetries() *2;
+    int ret =0;
+    while (tries < totalTries)
+    {
+        ret = 0;
+        if (isX)
+           ret = node->mutex_.getExclusiveLock(procSlot,true);
+        else
+           ret = node->mutex_.getShareLock(procSlot,true);
+        if (ret == 0) break;
+        timeval.tv_sec = timeout.tv_sec;
+        timeval.tv_usec = timeout.tv_usec;
+        os::select(0, 0, 0, 0, &timeval);
+        tries++;
+    }
+    if (tries >= totalTries) return ErrLockTimeOut;
+    return OK;
+
+}
+DbRetVal TreeIndex::upgradeTreeNodeMutex(TreeNode *node, int procSlot)
+{
+    struct timeval timeout, timeval;
+    timeout.tv_sec = Conf::config.getMutexSecs();
+    timeout.tv_usec = Conf::config.getMutexUSecs();
+    int tries=0;
+    int totalTries = Conf::config.getMutexRetries() *2;
+    int ret =0;
+    while (tries < totalTries)
+    {
+        ret = 0;
+        ret = node->mutex_.getExclusiveLock(procSlot,true, true);
+        if (ret == 0) break;
+        timeval.tv_sec = timeout.tv_sec;
+        timeval.tv_usec = timeout.tv_usec;
+        os::select(0, 0, 0, 0, &timeval);
+        tries++;
+    }
+    if (tries >= totalTries) return ErrLockTimeOut;
+    return OK;
 }
 
