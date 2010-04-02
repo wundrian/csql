@@ -31,7 +31,8 @@ JoinTableImpl::JoinTableImpl()
     availableLeft = true;
     isFirstFetch = true;
     isReturnNull = false;
-    isOuterJoin = false;
+    //isOuterJoin = false;
+    isOptimized = false;
     leftSideFail = false;
     jType = INNER_JOIN;
     isNestedLoop = true;
@@ -227,12 +228,12 @@ DbRetVal JoinTableImpl::execute()
     //if( jType != LEFT_JOIN) optimize();
     if (leftTableHdl->getName()) {
        //printf("left execute call %s", leftTableHdl->getName());
-       optimize();
+       if (!isOptimized) { optimize(); isOptimized = true; }
        leftTableHdl->execute();
        leftTableHdl->fetch();
     }else if (isFirstCall) {
        //printf("First call");
-       optimize();
+       if (!isOptimized) { optimize(); isOptimized = true; }
        leftTableHdl->execute();
        void *rec = leftTableHdl->fetch();
        //printf("rec value is %x\n", rec);
@@ -240,7 +241,7 @@ DbRetVal JoinTableImpl::execute()
     }
     rightTableHdl->execute();
     TableImpl *tImpl = (TableImpl*) rightTableHdl;
-    isOuterJoin= true;
+    //isOuterJoin= true;
     isFirstFetch = true;
     return OK;
 }

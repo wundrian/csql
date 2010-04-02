@@ -90,7 +90,8 @@ class JoinTableImpl:public Table
     bool availableLeft;
     bool isFirstFetch;
     bool isReturnNull;
-    bool isOuterJoin;
+    //bool isOuterJoin;
+    bool isOptimized;
     bool isLeftRecOver;
     bool isFirstCall;
     bool leftSideFail;
