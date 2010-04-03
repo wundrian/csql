@@ -107,6 +107,59 @@ unsigned int HashIndex::computeHashBucket(DataType type, void *key, int noOfBuck
     return -1;
 }
 
+bool HashIndex::checkForUniqueKey(HashIndexNode *head, HashIndexInfo *info, void *tuple)
+{
+    if (!head) return false;
+    int offset = info->fldOffset;
+    DataType type = info->type;
+        BucketList list(head);
+        BucketIter iter = list.getIterator();
+        HashIndexNode *node;
+        void *bucketTuple;
+        printDebug(DM_HashIndex, "HashIndex insert Checking for unique");
+        bool res = false;
+
+        while((node = iter.next()) != NULL)
+        {
+            bucketTuple = node->ptrToTuple_;
+            if (type == typeComposite) {
+                FieldIterator fldIter = info->idxFldList.getIterator();
+                int i = 0;
+                while (fldIter.hasElement()) {
+                    FieldDef *def = fldIter.nextElement();
+                    if (def->type_ != typeVarchar) {
+                        res = AllDataType::compareVal(
+                              (char *)bucketTuple + def->offset_,
+                                          (char *)tuple + def->offset_,
+                                           OpEquals, def->type_, def->length_);
+                    } else {
+                        char *tvcptr = (char *) *(long *)
+                                                ((char *)tuple + def->offset_);
+                        char *btvcptr = (char *) *(long *)
+                                         ((char *)bucketTuple + def->offset_);
+                        res = AllDataType::compareVal(tvcptr, btvcptr,
+                                           OpEquals, def->type_, def->length_);
+                    }
+                    if (!res) break;
+                }
+            }
+            else {
+                if (type != typeVarchar)
+                    res = AllDataType::compareVal((void*)((char*)bucketTuple +offset), (void*)((char*)tuple +offset), OpEquals,type, info->compLength);
+                else res = AllDataType::compareVal((void*)*(long *)((char*)bucketTuple +offset), (void*)*(long *)((char*)tuple +offset), OpEquals,type, info->compLength);
+            }
+            if (res)
+            {
+                if (type == typeLongLong)
+                   printError(ErrUnique, "Unique key violation for id:%lld",*(long long*) ((char*)tuple +offset) );
+                else
+                   printError(ErrUnique, "Unique key violation");
+                return true;
+            }
+        }
+    return false;
+}
+
 DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *indInfo, void *tuple, bool loadFlag)
 {
     HashIndexInfo *info = (HashIndexInfo*) indInfo;
@@ -130,7 +183,13 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         {
             FieldDef *def = iter.nextElement();
             keyPtr = (char *)tuple + def->offset_;
-            AllDataType::copyVal(keyBuffer, keyPtr, def->type_, def->length_);
+            if (def->type_ != typeVarchar) {
+                AllDataType::copyVal(keyBuffer, keyPtr, def->type_,
+                                                                 def->length_);
+            } else {
+                void *ptr = (void *) *(long *) keyPtr;
+                AllDataType::copyVal(keyBuffer, ptr, def->type_, def->length_);
+            }  
             keyBuffer = keyBuffer + AllDataType::size(def->type_, def->length_);
         }
         bucketNo = computeHashBucket(type, keyStartBuffer, noOfBuckets, info->compLength);
@@ -154,41 +213,11 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     hInfo.keyPtr_ = keyPtr;
 
     HashIndexNode *head = (HashIndexNode*) bucket->bucketList_;
-    if (head && info->isUnique)
+    if (info->isUnique)
     {
-        BucketList list(head); 
-        BucketIter iter = list.getIterator();
-        HashIndexNode *node;
-        void *bucketTuple;
-        printDebug(DM_HashIndex, "HashIndex insert Checking for unique");
-        bool res = false;
-        
-        while((node = iter.next()) != NULL)
-        {
-            bucketTuple = node->ptrToTuple_;
-            if (type == typeComposite) {
-                FieldIterator fldIter = info->idxFldList.getIterator();
-                int i = 0;
-                while (fldIter.hasElement()) {
-                    FieldDef *def = fldIter.nextElement();
-                    res = AllDataType::compareVal((char *)bucketTuple + def->offset_, (char *)tuple + def->offset_, OpEquals, def->type_, def->length_);
-                    if (!res) break;  
-                }
-            }  
-            else {
-                if (type != typeVarchar)
-                    res = AllDataType::compareVal((void*)((char*)bucketTuple +offset), (void*)((char*)tuple +offset), OpEquals,type, info->compLength);
-                else res = AllDataType::compareVal((void*)*(long *)((char*)bucketTuple +offset), (void*)*(long *)((char*)tuple +offset), OpEquals,type, info->compLength);
-            }
-            if (res) 
-            {
-                printError(ErrUnique, "Unique key violation");
-                if (type == typeLongLong) printError(ErrUnique, "Unique key violation for id:%lld",*(long long*) ((char*)tuple +offset) );
-                return ErrUnique;
-            }
-        }
-    }
-    
+        bool isKeyPresent = checkForUniqueKey(head, info, tuple);
+        if (isKeyPresent) return ErrUnique;
+    }        
     Chunk *hIdxNodeChunk = (Chunk*)iptr->hashNodeChunk_;
     printDebug(DM_HashIndex, "HashIndex insert into bucket list");
     if (!head)
