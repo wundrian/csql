@@ -64,6 +64,8 @@ DbRetVal AlterTblStatement::execute(int &rowsAffected)
        return rv;
     }else if( altType == ALTERFIELDRENAME)
     {
+        if (strcmp(parsedData->getIndexName(),parsedData->getPKTableName())==0)
+            return OK;
        rv = dbMgr->renameField(parsedData->getTableName(), parsedData->getIndexName(),parsedData->getPKTableName());
        return rv;
     }
@@ -279,6 +281,7 @@ DbRetVal AlterTblStatement::createIndex(const char *oldName,const char *newName)
             idxInfo->list.append(info->fieldName);            
         }
     }
+    if (idxInfo == NULL) return OK;
     if(idxInfo->isPrimary && 0 == strcmp(info->indexName,tempIndexName))
          sprintf(indName, "%s_idx1_Primary", newName);
     rv = dbMgr->createIndex(indName, idxInfo);

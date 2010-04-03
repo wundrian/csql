@@ -655,7 +655,7 @@ DbRetVal DatabaseManagerImpl::renameField(const char *tableName,const char *oldN
     CatalogTableFIELD fTable(systemDatabase_);
     rv = fTable.renameField(tableName, oldName, newName);
     if (OK != rv) {
-        printError(ErrSysInternal, "Unable to rename table");
+        printError(ErrSysInternal, "Unable to rename field.");
         systemDatabase_->releaseCheckpointMutex();
         return ErrSysInternal;
     }

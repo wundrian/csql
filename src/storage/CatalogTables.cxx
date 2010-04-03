@@ -170,9 +170,19 @@ List CatalogTableTABLE::getTableList()
 DbRetVal CatalogTableFIELD::renameField(const char *tableName, const char *oldName, const char *newName)
 {
     Chunk *fChunk = systemDatabase_->getSystemDatabaseChunk(FieldTableId);
-    ChunkIterator iter = fChunk->getIterator();   
+    ChunkIterator iter = fChunk->getIterator();
     void *data = NULL;
     bool isFieldExists=false;
+    while ((data = iter.nextElement())!= NULL)
+    {
+        if ((strcmp(((CFIELD*)data)->fldName_,newName)== 0) && (strcmp(((CTABLE *)((CFIELD*)data)->tblPtr_)->tblName_,tableName) == 0) )
+        {
+           printError(ErrAlready,
+                  "New Field Name '%s' already exists in the table.", newName);
+           return ErrAlready;
+        }
+    }
+    iter = fChunk->getIterator();
     while ((data = iter.nextElement())!= NULL)
     {
         if ((strcmp(((CFIELD*)data)->fldName_,oldName)== 0) && (strcmp(((CTABLE *)((CFIELD*)data)->tblPtr_)->tblName_,tableName) == 0) )
@@ -183,7 +193,8 @@ DbRetVal CatalogTableFIELD::renameField(const char *tableName, const char *oldNa
         }
     }
     if(!isFieldExists){
-        printError(ErrNotExists,"Field %s not exists in table", oldName);
+        printError(ErrNotExists, "Old Field Name '%s' does not exist in table",
+                                                                      oldName);
         return ErrNotExists;
     }
     return OK;
