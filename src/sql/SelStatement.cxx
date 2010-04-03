@@ -337,7 +337,11 @@ DbRetVal SelStatement::resolve()
     FieldName *name = NULL;
     FieldInfo *fInfo = new FieldInfo();
     List bindFldList;
+    bool isMixPrjList = false;
+    bool isAggFld = false;
+    bool isNotAggFld = false;
     bool isSingleTableNoGrp = false;
+    bool isGroupFld = false;
     if(parsedData->getTableNameList().size() == 1 &&
        parsedData->getGroupFieldNameList().size() == 0)
     {
@@ -376,8 +380,10 @@ DbRetVal SelStatement::resolve()
             //as soon as it encounters *, it breaks the loop negleting other field names
             //as they all are deleted during resolveStar method.
             break;
-        }else {
-            if ('*' == name->fldName[0] && name->aType != AGG_COUNT) {return ErrSyntaxError;}
+        } else {
+            if ('*' == name->fldName[0] && name->aType != AGG_COUNT) {
+                return ErrSyntaxError;
+            }
             rv = table->getFieldInfo(name->fldName, fInfo);
             if (ErrNotFound == rv || ErrNotExists == rv)
             {
@@ -394,6 +400,11 @@ DbRetVal SelStatement::resolve()
             newVal->parsedString = NULL;
             newVal->paramNo = 0;
             newVal->aType = name->aType;
+            if (!isMixPrjList) {
+                if (newVal->aType != AGG_UNKNOWN) isAggFld = true;
+                else isNotAggFld = true;
+                if (isAggFld && isNotAggFld) isMixPrjList = true;
+            }
             newVal->isInResSet = true;
             newVal->offset = fInfo->offset;
             newVal->isPrimary = fInfo->isPrimary;
@@ -556,7 +567,7 @@ DbRetVal SelStatement::resolve()
         return rv;
     }
     if (NULL == parsedData->getCondition()) parsedData->setCacheWorthy(false);
-    rv = resolveGroupFld(aggTable);
+    rv = resolveGroupFld(aggTable, isGroupFld);
     if (rv != OK) 
     {
         delete fInfo;
@@ -570,7 +581,19 @@ DbRetVal SelStatement::resolve()
         table = NULL;
         return rv;
     }
-    
+    if (isMixPrjList && ! isGroupFld) {
+        printError(ErrSyntax, "Group By Field required.");
+        delete fInfo;
+        if (aggTable) { delete aggTable; aggTable = NULL; }
+        else if (table)
+        {
+            table->setCondition(NULL);
+            dbMgr->closeTable(table);
+        }
+        table = NULL;
+        return ErrSyntax;
+    }   
+ 
     rv = resolveOrderByFld();
     if (rv != OK) 
     {
@@ -645,7 +668,7 @@ DbRetVal SelStatement::resolveOrderByFld()
     return OK;
 }
 
-DbRetVal SelStatement::resolveGroupFld(AggTableImpl *aggTable)
+DbRetVal SelStatement::resolveGroupFld(AggTableImpl *aggTable, bool &isGrpFld)
 {
     if (!aggTable) return OK;
     
@@ -657,7 +680,9 @@ DbRetVal SelStatement::resolveGroupFld(AggTableImpl *aggTable)
     {
         name = (FieldName*) iter.nextElement();
         if (name->aType == AGG_UNKNOWN && !isGroupFld(name->fldName) ) {
-            printError(ErrSyntaxError, "Non aggregate projection contains non group field: %s", name->fldName);
+            printError(ErrSyntaxError, 
+                 "Non aggregate projection contains non group field: %s", 
+                                                                name->fldName);
             return ErrSyntaxError;
         } 
     }
@@ -672,7 +697,7 @@ DbRetVal SelStatement::resolveGroupFld(AggTableImpl *aggTable)
         {
             delete fInfo;
             printError(ErrSyntaxError, "Field %s does not exist in table",
-                                        name->fldName);
+                                                                name->fldName);
             return ErrSyntaxError;
         }
         FieldValue *newVal = new FieldValue();
@@ -701,6 +726,7 @@ DbRetVal SelStatement::resolveGroupFld(AggTableImpl *aggTable)
        return ErrSyntaxError; 
     }*/
     table = aggTable;
+    isGrpFld = true;
     return OK; 
 }
 

@@ -2042,22 +2042,29 @@ bool TableImpl::isFkTableHasRecord(char *pkTableName, TableImpl *fkTbl)
 }
 DbRetVal TableImpl::compact()
 {
-   DbRetVal rv=OK;
-   int ret =((Chunk*)chunkPtr_)->compact(db_->procSlot);
-   if(ret!=0) return ErrLockTimeOut;
-   ret = ((Chunk*)vcChunkPtr_)->compact(db_->procSlot);
-   if(ret!=0) return ErrLockTimeOut;
-   if (NULL != indexPtr_)
-   {
+    DbRetVal rv=OK;
+    int ret =((Chunk*)chunkPtr_)->compact(db_->procSlot);
+    if(ret!=0) return ErrLockTimeOut;
+
+    if (NULL != vcChunkPtr_) {
+        ret = ((Chunk*)vcChunkPtr_)->compact(db_->procSlot);
+        if(ret!=0) return ErrLockTimeOut;
+    }
+ 
+    if (NULL != indexPtr_)
+    {
         int i;
         //it has index
         for (i = 0; i < numIndexes_ ; i++)
         {
             rv = compactIndexNode(indexPtr_[i]);
-            if (rv != OK) { printError(rv, "Error in compacting index Node"); break;}
+            if (rv != OK) { 
+                printError(rv, "Error in compacting index Node"); 
+                break;
+            }
         }
-   }  
-   return rv;
+    }  
+    return rv;
 }
 
 DbRetVal TableImpl::compactIndexNode( void *indexPtr)

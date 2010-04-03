@@ -171,7 +171,7 @@ class SelStatement : public DmlStatement
     DbRetVal setBinaryParam(int paramNo, void *value, int length);
     
     DbRetVal replaceStarWithFirstFldName(FieldName *name);
-    DbRetVal resolveGroupFld(AggTableImpl *impl);
+    DbRetVal resolveGroupFld(AggTableImpl *impl, bool &isGrpFld);
     DbRetVal resolveOrderByFld();
     bool isInProjectionList(char *name, AggType aType);
     bool isFldNull(int pos){return table->isFldNull(pos);}
