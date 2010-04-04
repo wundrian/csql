@@ -400,14 +400,14 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
                             ptr += strlen(ptr);
                             if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) {
                                 sprintf(ptr, "(%d) NOT NULL",colLength+1);
-                            } else { sprintf(ptr, " NOT NULL",colLength); }
+                            } else { sprintf(ptr, " NOT NULL"); }
                             ptr += strlen(ptr);
                         } else {
                             sprintf(ptr, ", %s %s", colName, AllDataType::getSQLString(AllDataType::convertFromSQLType(colType,colLength,scale,tdbName)));   
                             ptr += strlen(ptr);
                             if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) {
                                 sprintf(ptr, "(%d) NOT NULL",colLength+1);
-                            } else { sprintf(ptr, " NOT NULL",colLength); }
+                            } else { sprintf(ptr, " NOT NULL"); }
                             ptr += strlen(ptr);
                         }
                         //tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType,colLength,scale,tdbName), colLength+1, NULL, true);
@@ -421,14 +421,14 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
                     ptr += strlen(ptr);
                     if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) {
                         sprintf(ptr, "(%d) NOT NULL",colLength+1);
-                    } else { sprintf(ptr, " NOT NULL",colLength); }
+                    } else { sprintf(ptr, " NOT NULL"); }
                     ptr += strlen(ptr);
                 } else {
                     sprintf(ptr, ", %s %s", colName, AllDataType::getSQLString(AllDataType::convertFromSQLType(colType,colLength, scale, tdbName)));   
                     ptr += strlen(ptr);
                     if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) {
                         sprintf(ptr, "(%d) NOT NULL",colLength+1);
-                    } else { sprintf(ptr, " NOT NULL",colLength); }
+                    } else { sprintf(ptr, " NOT NULL"); }
                     ptr += strlen(ptr);
                 }
                 //tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType,colLength,scale, tdbName), colLength +1, NULL, true);
