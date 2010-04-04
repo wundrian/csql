@@ -71,8 +71,8 @@ void TreeIter::nextNode()
     TreeNode *tmpIter = iter;
     iter = iter->next_;
     if(iter){
-        int ret = iter->mutex_.getShareLock(procSlot, true);
-        if (0 != ret)
+        DbRetVal ret = TreeIndex::getTreeNodeMutex(iter, procSlot);
+        if (OK != ret)
         {
              printError(ErrLockTimeOut,"Unable to lock the tree node. Retry...");
              tmpIter->mutex_.releaseShareLock(procSlot);
@@ -107,8 +107,8 @@ void* TreeIter::next()
             nodeOffset = 1;
             firstCall = false;
             char **rec = (char**)((char*) iter + sizeof(TreeNode));
-            int ret = iter->mutex_.getShareLock(procSlot,true);
-            if (0 != ret)
+            DbRetVal ret = TreeIndex::getTreeNodeMutex(iter, procSlot);
+            if (OK != ret)
             {
                printError(ErrLockTimeOut,"Unable to lock the tree node. Retry...");
                return NULL;
@@ -174,8 +174,8 @@ void* TreeIter::next()
             }
             TreeNode *tmpIter = iter;
             iter = iter->next_;
-            int ret = iter->mutex_.getShareLock(procSlot,true);
-            if (0 != ret) 
+            DbRetVal ret = TreeIndex::getTreeNodeMutex(iter, procSlot);
+            if (OK != ret) 
             {
                printError(ErrLockTimeOut,"Unable to lock the tree node. Retry...");
                tmpIter->mutex_.releaseShareLock(procSlot);
@@ -201,9 +201,9 @@ void* TreeIter::locateNode()
 {
     TreeNode *tnode=NULL;
     TreeNode *fiter= (TreeNode *)fstLTnode;
-    int ret=0;
-    ret = fiter->mutex_.getShareLock(procSlot,true);
-    if (0 != ret) 
+    DbRetVal  ret=OK;
+    ret = TreeIndex::getTreeNodeMutex(fiter, procSlot);
+    if (OK != ret) 
     {
         printError(ErrLockTimeOut,"Unable to lock the tree node. Retry...");
         return NULL;
@@ -223,8 +223,8 @@ void* TreeIter::locateNode()
             TreeNode* tmpIter = fiter;
             if(fiter->next_!= NULL){
                fiter = fiter->next_;
-               ret = fiter->mutex_.getShareLock(procSlot,true);
-               if (0 != ret) 
+               ret = TreeIndex::getTreeNodeMutex(fiter, procSlot);
+               if (OK != ret) 
                {
                    printError(ErrLockTimeOut,"Unable to lock the tree node. Retry...");
                    tmpIter->mutex_.releaseShareLock(procSlot);
@@ -289,14 +289,13 @@ void* TreeIter::locateNode()
     return rec1;
 }
 
-
 void* TreeIter::locateElement()
 {
     //do binary search and locate the element 
     int loc=0, middle=0, start=0, end=iter->noElements_-1;
     char **rec = (char**)((char*)iter + sizeof(TreeNode));
-    int ret = iter->mutex_.getShareLock(procSlot,true);
-    if (0 != ret) 
+    DbRetVal ret = TreeIndex::getTreeNodeMutex(iter, procSlot);
+    if (OK != ret) 
     {
         printError(ErrLockTimeOut,"Unable to lock the tree node. Retry...");
         return NULL;
