@@ -180,17 +180,21 @@ class Database
     void setProcSlot(int slot) { procSlot =slot;}
     //checks whether the ptr falls in the range of the database file size
     bool isValidAddress(void *ptr);
+
     DbRetVal writeDirtyPages(char *chkptFile);
     DbRetVal checkPoint();
+    DbRetVal filterAndRemoveStmtLogs();
     DbRetVal recoverUserDB();
     DbRetVal recoverSystemDB();
     static int getCheckpointID();
     static void setCheckpointID(int id);
+
     friend class DatabaseManagerImpl;
     friend class Table;
     friend class TreeIndex;
     friend class HashIndex;
     friend class Transaction;
+
 };
 
 #endif

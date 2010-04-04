@@ -24,7 +24,8 @@
 #include<Util.h>
 #include<Network.h>
 
-/**
+/*
+*
 * @class SqlLogConnection
 *
 */
@@ -37,9 +38,10 @@ typedef struct my_msgbuffer {
 class AbsSqlLogSend
 {
     public:
-    virtual DbRetVal prepare(int tId, int sId, int len, char *st, char *tn)=0;
+    virtual DbRetVal prepare(int tId, int sId, int len, char *st, char *tn,
+                             bool hasParam)=0;
     virtual DbRetVal commit(int len, void *data)=0;
-    virtual DbRetVal free(int txnId, int stmtId)=0;
+    virtual DbRetVal free(int txnId, int stmtId, bool hasParam)=0;
 };
 
 class MsgQueueSend : public AbsSqlLogSend
@@ -47,22 +49,26 @@ class MsgQueueSend : public AbsSqlLogSend
     int msgQId;
     public:
     MsgQueueSend() { msgQId = os::msgget(Conf::config.getMsgKey(), 0666); }
-    DbRetVal prepare(int tId, int sId, int len, char *stmt, char *tn);
+    DbRetVal prepare(int tId, int sId, int len, char *stmt, char *tn, 
+                     bool hasParam);
     DbRetVal commit(int len, void *data);
-    DbRetVal free(int txnId, int stmtId);
+    DbRetVal free(int txnId, int stmtId, bool hasParam);
 };
 
 class FileSend : public AbsSqlLogSend
 {
     int fdRedoLog;
+    int fdStmtLog;
     public:
     FileSend();
     ~FileSend();
     DbRetVal openRedoFile();
-    DbRetVal prepare(int txnId, int stmtId, int len, char *stmt, char*tn);
+    DbRetVal prepare(int txnId, int stmtId, int len, char *stmt, char*tn,
+                     bool hasParam);
     DbRetVal commit(int len, void *data);
-    DbRetVal free(int txnId, int stmtId);
+    DbRetVal free(int txnId, int stmtId, bool hasParam);
 };
+
 
 class OfflineLog : public AbsSqlLogSend
 {
@@ -75,11 +81,11 @@ class OfflineLog : public AbsSqlLogSend
     OfflineLog();
     ~OfflineLog();
     DbRetVal openOfflineLogFile();
-    DbRetVal prepare(int txnId, int stmtId, int len, char *stmt, char*tn);
+    DbRetVal prepare(int txnId, int stmtId, int len, char *stmt, char*tn, 
+                     bool hasParam);
     DbRetVal commit(int len, void *data);
-    DbRetVal free(int txnId, int stmtId);
+    DbRetVal free(int txnId, int stmtId, bool hasParam);
 };
-
 
 
 enum ExecType
@@ -135,19 +141,21 @@ class SqlLogConnection : public AbsSqlConnection
     public:
     SqlLogConnection() {
         innerConn = NULL; syncMode = ASYNC; 
-        if (Conf::config.useCache() && Conf::config.getCacheMode()==ASYNC_MODE) 
-               msgQSend = new MsgQueueSend();
+        if ( Conf::config.useCache() && 
+              Conf::config.getCacheMode()==ASYNC_MODE) 
+            msgQSend = new MsgQueueSend();
         else msgQSend = NULL;
         if (Conf::config.useDurability()) { fileSend = new FileSend(); } 
         else fileSend = NULL;
         if (Conf::config.useCache() && 
-                                   Conf::config.getCacheMode() == OFFLINE_MODE)
+                                   Conf::config.getCacheMode() == OFFLINE_MODE) 
             offlineLog = new OfflineLog;
         else offlineLog = NULL;
         txnUID.open();
         execLogStoreSize =0;
         noMsgLog = false;
         noOfflineLog = false;
+        txnID = 0;
     }
     ~SqlLogConnection();
     bool isTableCached(char *name);
@@ -166,17 +174,20 @@ class SqlLogConnection : public AbsSqlConnection
 
     DbRetVal beginTrans (IsolationLevel isoLevel, TransSyncMode mode);
 
-    DbRetVal msgPrepare(int tId, int sId, int len, char *stmt, char *tname)
+    DbRetVal msgPrepare(int tId, int sId, int len, char *stmt, char *tname,
+                        bool hasParam)
     {
-        return msgQSend->prepare(tId, sId, len, stmt, tname);
+        return msgQSend->prepare(tId, sId, len, stmt, tname, hasParam);
     }
-    DbRetVal fileLogPrepare(int tId, int sId, int len, char *stmt, char *tname)
+    DbRetVal fileLogPrepare(int tId, int sId, int len, char *stmt, char *tname,
+                            bool hasParam)
     {
-        return fileSend->prepare(tId, sId, len, stmt, tname);
+        return fileSend->prepare(tId, sId, len, stmt, tname, hasParam);
     }
-    DbRetVal offlineLogPrepare(int tId, int sId, int len, char *st, char *tnm)
+    DbRetVal offlineLogPrepare(int tId, int sId, int len, char *stmt, 
+                               char *tname, bool hasParam)
     {
-        return offlineLog->prepare(tId, sId, len, st, tnm);
+        return offlineLog->prepare(tId, sId, len, stmt, tname, hasParam);
     }
     DbRetVal commitLogs(int logSize, void *data) 
     {  
@@ -186,22 +197,22 @@ class SqlLogConnection : public AbsSqlConnection
             msgQSend->commit(logSize, data); 
         if (Conf::config.useDurability()) fileSend->commit(logSize, data);
         if (Conf::config.useCache() && 
-                               Conf::config.getCacheMode()==OFFLINE_MODE &&
-                                                                 !noOfflineLog)
+                            Conf::config.getCacheMode()==OFFLINE_MODE &&
+                                                                 !noOfflineLog) 
             offlineLog->commit(logSize, data);
         return OK;
     }
-    DbRetVal freeLogs(int stmtId)
+    DbRetVal freeLogs(int stmtId, bool hasParam)
     {
         int txnId = getTxnID(); 
         if ( ((Conf::config.useCache() &&
              Conf::config.getCacheMode() == ASYNC_MODE)) && !noMsgLog)
-            msgQSend->free(txnId, stmtId);
-        if (Conf::config.useDurability()) fileSend->free(txnId, stmtId);
+            msgQSend->free(txnId, stmtId, hasParam);
+        if (Conf::config.useDurability()) fileSend->free(txnId, stmtId, hasParam);
         if (Conf::config.useCache() && 
-                            Conf::config.getCacheMode()==OFFLINE_MODE &&
+                              Conf::config.getCacheMode()==OFFLINE_MODE &&
                                                                  !noOfflineLog)
-            offlineLog->free(txnId, stmtId);
+            offlineLog->free(txnId, stmtId, hasParam);
         return OK;
     }
     void addExecLog(ExecLogInfo *info) { execLogStore.append(info); }

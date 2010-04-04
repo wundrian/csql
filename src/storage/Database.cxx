@@ -21,6 +21,7 @@
 #include<Debug.h>
 #include<Config.h>
 #include<Process.h>
+#include<HeapAllocator.h>
 
 const char* Database::getName()
 {
@@ -619,6 +620,7 @@ DbRetVal Database::checkPoint()
         if (!os::fdatasync(fd)) { 
             logFine(Conf::logger, "fsync succedded"); 
         }
+        filterAndRemoveStmtLogs();
         int ret = truncate(dbRedoFileName,0);
         if (ret != 0) {
             close(fd);  
@@ -657,6 +659,7 @@ DbRetVal Database::checkPoint()
         close(fd);  
         return OK;
     }
+    filterAndRemoveStmtLogs();
     int ret = truncate(dbRedoFileName,0);
     if (ret != 0) {
         printError(ErrSysInternal, "Unable to truncate redo log file. Delete and restart the server\n");
@@ -664,6 +667,104 @@ DbRetVal Database::checkPoint()
     }
     return OK;
 }
+DbRetVal Database::filterAndRemoveStmtLogs()
+{
+    struct stat st;
+    char fName[MAX_FILE_LEN];
+    sprintf(fName, "%s/csql.db.stmt", Conf::config.getDbFile());
+    int fdRead = open(fName, O_RDONLY);
+    if (-1 == fdRead) { return OK; }
+    if (fstat(fdRead, &st) == -1) {
+        printError(ErrSysInternal, "Unable to retrieve stmt log file size");
+        close(fdRead);
+        return ErrSysInternal;
+    }
+    if (st.st_size ==0) {
+        close(fdRead);
+        return OK;
+    }
+   void *startAddr = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fdRead, 0);
+    if (MAP_FAILED == startAddr) {
+        printError(ErrSysInternal, "Unable to mmap stmt log file\n");
+        return ErrSysInternal;
+    }
+    sprintf(fName, "%s/csql.db.stmt1", Conf::config.getDbFile());
+    int fd = os::openFileForAppend(fName, O_CREAT|O_TRUNC);
+    char *iter = (char*)startAddr;
+    char *logStart = NULL, *logEnd = NULL;
+    int logType;
+    int stmtID;
+    int len =0, ret =0;
+    int txnID, loglen;
+    DbRetVal rv = OK;
+    HashMap stmtMap;
+    stmtMap.setKeySize(sizeof(int));
+    //PASS-I load all prepare stmts and free them 
+    while(true) {
+        if (iter - (char*)startAddr >= st.st_size) break;
+        logType = *(int*)iter;
+        logStart = iter;
+        if (logType == -1) { //prepare
+            iter = iter + sizeof(int);
+            len = *(int*) iter;
+            iter = iter + 2 * sizeof(int);
+            stmtID = *(int*)iter;
+            stmtMap.insert(iter);
+            iter = logStart+ len;
+            ret =0;
+        }
+        else if(logType == -3) { //free
+            iter = iter + sizeof(int);
+            txnID = *(int*) iter; iter += sizeof(int);
+            loglen = *(int*) iter; iter += sizeof(int);
+            stmtID = *(int*)iter;
+            stmtMap.remove(iter);
+            iter = iter + sizeof(int);
+        }else{
+            printError(ErrSysInternal, "Stmt Redo log file corrupted: logType:%d", logType);
+            rv = ErrSysInternal;
+            break;
+        }
+    }
+    //PASS-II take the prepared statements which are not freed into another backup file
+    while(true) {
+        if (iter - (char*)startAddr >= st.st_size) break;
+        logType = *(int*)iter;
+        logStart = iter;
+        if (logType == -1) { //prepare
+            iter = iter + sizeof(int);
+            len = *(int*) iter;
+            iter = iter + 2 * sizeof(int);
+            stmtID = *(int*)iter;
+            iter = logStart+ len;
+            ret =0;
+            if (stmtMap.find(&stmtID))
+                ret = os::write(fd, logStart, len);
+            if (-1 == ret) {
+                printError(ErrSysInternal, "Unable to write statement logs");
+            }
+        }
+        else if(logType == -3) { //free
+            iter = logStart + 4 *sizeof(int);
+        }else{
+            printError(ErrSysInternal, "Stmt Redo log file corrupted: logType:%d", logType);
+            rv = ErrSysInternal;
+            break;
+        }
+    }
+
+    os::closeFile(fd);
+    munmap((char*)startAddr, st.st_size);
+    close(fdRead);
+    stmtMap.removeAll();
+    char cmd[MAX_FILE_LEN *2];
+    sprintf(cmd, "mv %s/csql.db.stmt1 %s/csql.db.stmt",
+                  Conf::config.getDbFile(), Conf::config.getDbFile());
+    ret = system(cmd);
+    return rv;
+}
+
+    
 int Database::getCheckpointID()
 {
     int id=0;

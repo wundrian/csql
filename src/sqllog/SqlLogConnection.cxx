@@ -273,7 +273,7 @@ bool SqlLogConnection::isTableCached(char *tblName)
 }
 
 DbRetVal MsgQueueSend::prepare(int txnId, int stmtId, int len, char *stmt, 
-                                                                 char *tblName) 
+                                                 char *tblName, bool hasParam) 
 {
     //strlen is not included string is the last element in the following  
     //structure
@@ -316,7 +316,7 @@ DbRetVal MsgQueueSend::commit(int len, void *data)
     return OK;
 }
 
-DbRetVal MsgQueueSend::free(int txnId, int stmtId)
+DbRetVal MsgQueueSend::free(int txnId, int stmtId, bool hasParam)
 {
     // data to be sent is len + txn id +  stmtId
     int dataLen = 3 * sizeof(int);

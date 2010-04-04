@@ -23,48 +23,70 @@
 
 FileSend::FileSend()
 {
+    fdRedoLog = -1;
+    fdStmtLog = -1;
     openRedoFile();
 }
 DbRetVal FileSend::openRedoFile()
 {
+    if (fdRedoLog > 0) os::closeFile(fdRedoLog); 
+    if (fdStmtLog > 0) os::closeFile(fdStmtLog); 
     char fileName[MAX_FILE_LEN];
+    char stmtFileName[MAX_FILE_LEN];
     sprintf(fileName, "%s/csql.db.cur", Conf::config.getDbFile());
+    sprintf(stmtFileName, "%s/csql.db.stmt", Conf::config.getDbFile());
     int durableMode = Conf::config.getDurableMode();
     switch(durableMode) {
         case 1:
         case 2:
             fdRedoLog = os::openFileForAppend(fileName, O_CREAT);
+            fdStmtLog = os::openFileForAppend(stmtFileName, O_CREAT);
             break;
         case 3:
             fdRedoLog = os::openFileForAppend(fileName, O_CREAT|O_SYNC);
+            fdStmtLog = os::openFileForAppend(stmtFileName, O_CREAT|O_SYNC);
             break;
         case 4:
 #ifdef SOLARIS
             fdRedoLog = os::openFileForAppend(fileName, O_CREAT|O_DSYNC);
+            fdStmtLog = os::openFileForAppend(stmtFileName, O_CREAT|O_DSYNC);
 #else
             fdRedoLog = os::openFileForAppend(fileName, O_CREAT|O_DIRECT);
+            fdStmtLog = os::openFileForAppend(stmtFileName, O_CREAT|O_DIRECT);
 #endif
             break;
         default:
             fdRedoLog = os::openFileForAppend(fileName, O_CREAT);
+            fdStmtLog = os::openFileForAppend(stmtFileName, O_CREAT);
             break;
     }
-    if (-1 == fdRedoLog) {
+    if (-1 == fdRedoLog || -1 == fdStmtLog) {
         printError(ErrSysInternal, "Unable to open redo log file");
         return ErrSysInternal;
     }
     return OK;
 }
 
-FileSend::~FileSend() 
-{ 
+FileSend::~FileSend() { 
     if (fdRedoLog > 0) os::closeFile(fdRedoLog); 
+    if (fdStmtLog > 0) os::closeFile(fdStmtLog); 
     fdRedoLog = -1; 
+    fdStmtLog = -1;
 }
 
-DbRetVal FileSend::prepare(int txnId, int stmtId, int len, char *stmt, char *tblName) 
+DbRetVal FileSend::prepare(int txnId, int stmtId, int len, char *stmt, 
+                           char *tblName, bool hasParam) 
 {
-    if (fdRedoLog < 0) return ErrBadArg;
+    if (fdRedoLog < 0) {
+       printError(ErrBadArg, "Redo Log file not opened");
+       return ErrBadArg;
+    }
+    if (fdStmtLog < 0) {
+       printError(ErrBadArg, "Redo Stmt Log file not opened");
+       return ErrBadArg;
+    }
+    int fd =fdRedoLog;
+    if (hasParam) fd=fdStmtLog;
     //The following structure needs strlen after stmt id for traversal in 
     //redolog file unlike msg queue structure where string is the last element 
     //and is not a continuous piece of memory.
@@ -91,19 +113,20 @@ DbRetVal FileSend::prepare(int txnId, int stmtId, int len, char *stmt, char *tbl
     bool firstTime=true;
 retry:
     if (Conf::config.getDurableMode() != 1) {
-        ret = os::lockFile(fdRedoLog);
+        ret = os::lockFile(fd);
         if (-1 == ret) {
             ::free(buf);
             printError(ErrLockTimeOut,"Unable to get exclusive lock on redo log file");
             return ErrLockTimeOut;
         }
     }
-    ret = os::write(fdRedoLog, buf, datalen);     
+    ret = os::write(fd, buf, datalen);     
     if (Conf::config.getDurableMode() != 1) {
-        os::unlockFile(fdRedoLog); 
+        os::unlockFile(fd); 
     }
     if (-1 == ret) { 
         DbRetVal rv = openRedoFile();
+        if (hasParam) fd=fdStmtLog; else fd=fdRedoLog;
         if (OK == rv) {
             logFine(Conf::logger, "Reopening redo log file");
             if(firstTime) { firstTime = false; goto retry; }
@@ -118,7 +141,10 @@ retry:
 
 DbRetVal FileSend::commit(int len, void *data)
 {
-    if (fdRedoLog < 0) return ErrBadArg;
+    if (fdRedoLog < 0) {
+       printError(ErrBadArg, "Redo Log file not opened");
+       return ErrBadArg;
+    }
     char *dat=(char*)data - sizeof(int);
     *(int*)dat = -2; //type 2->commit
     bool firstTime = true;
@@ -145,8 +171,17 @@ retry:
     }
     return OK;
 }
-DbRetVal FileSend::free(int txnId, int stmtId)
+DbRetVal FileSend::free(int txnId, int stmtId, bool hasParam)
 {
+    if (fdRedoLog < 0) {
+       printError(ErrBadArg, "Redo Log file not opened");
+       return ErrBadArg;
+    }
+    if (fdStmtLog < 0) {
+       printError(ErrBadArg, "Redo Stmt Log file not opened");
+       return ErrBadArg;
+    }
+    int fd =fdRedoLog;
     int buflen =  4 *sizeof(int);
     char *msg = (char *) malloc(buflen);
     char *ptr = msg;
@@ -158,25 +193,56 @@ DbRetVal FileSend::free(int txnId, int stmtId)
     ptr += sizeof(int);
     *(int *)ptr = stmtId;
     printDebug(DM_SqlLog, "stmtID sent = %d\n", *(int *)ptr);
-    bool firstTime = false;
+    bool firstTime = true;
 retry:
     if (Conf::config.getDurableMode() != 1) {
-        int ret = os::lockFile(fdRedoLog);
+        int ret = os::lockFile(fd);
         if (-1 == ret) {
             ::free(msg);
             printError(ErrLockTimeOut,"Unable to get exclusive lock on redo log file");
             return ErrLockTimeOut;
         }
     }
-    int ret = os::write(fdRedoLog, msg, buflen);
+    int ret = os::write(fd, msg, buflen);
     if (Conf::config.getDurableMode() != 1) {
-        os::unlockFile(fdRedoLog); 
+        os::unlockFile(fd); 
+    }
+    if (-1 == ret) {
+        DbRetVal rv = openRedoFile();
+        if (hasParam) fd=fdStmtLog; else fd=fdRedoLog;
+        if (OK == rv) {
+            logFine(Conf::logger, "Reopening redo log file");
+            if(firstTime) { firstTime = false; goto retry; }
+        }
+        printError(ErrOS, "Unable to write undo log");
+        ::free(msg);
+        return ErrOS;
+    }
+    if (!hasParam) {
+        //For non parameterized stmts , no need to write in stmt log
+        ::free(msg);
+        return OK;
+    }
+    fd=fdStmtLog;
+retry1:
+    if (Conf::config.getDurableMode() != 1) {
+        int ret = os::lockFile(fd);
+        if (-1 == ret) {
+            ::free(msg);
+            printError(ErrLockTimeOut,"Unable to get exclusive lock on redo log file");
+            return ErrLockTimeOut;
+        }
+    }
+
+    ret = os::write(fd, msg, buflen);
+    if (Conf::config.getDurableMode() != 1) {
+        os::unlockFile(fd); 
     }
     if (-1 == ret) {
         DbRetVal rv = openRedoFile();
         if (OK == rv) {
             logFine(Conf::logger, "Reopening redo log file");
-            if(firstTime) { firstTime = false; goto retry; }
+            if(firstTime) { firstTime = false; goto retry1; }
         }
         printError(ErrOS, "Unable to write undo log");
         ::free(msg);
@@ -188,9 +254,9 @@ retry:
 
 OfflineLog::OfflineLog()
 {
-    fdOfflineLog = -1;
+    fdOfflineLog = -1; 
     metadata = NULL;
-    createMetadataFile();
+    createMetadataFile();   
     openOfflineLogFile();
 }
 
@@ -210,13 +276,13 @@ DbRetVal OfflineLog::openOfflineLogFile()
     sprintf(fileName, "%s/offlineLogFile.%d", 
                                         Conf::config.getDbFile(), *(int *)ptr);
     int ret = 0;
-    if ( ((ret = ::access(fileName, F_OK)) == 0) &&
-              ((fileSize = os::getFileSize(fileName)) >= offlineLogFileSize) )
+    if ( ((ret = ::access(fileName, F_OK)) == 0) &&  
+              ((fileSize = os::getFileSize(fileName)) >= offlineLogFileSize) ) 
         sprintf(fileName, "%s/offlineLogFile.%d",
-                                    Conf::config.getDbFile(), ++(*(int *)ptr));
-    else if (ret == 0)
-        sprintf(fileName, "%s/offlineLogFile.%d", Conf::config.getDbFile(),
-                                                                  *(int *)ptr);
+                                    Conf::config.getDbFile(), ++(*(int *)ptr)); 
+    else if (ret == 0) 
+        sprintf(fileName, "%s/offlineLogFile.%d", Conf::config.getDbFile(), 
+                                                                  *(int *)ptr); 
     else {
         sprintf(fileName, "%s/offlineLogFile.0", Conf::config.getDbFile());
         *(int *) ptr = 0;
@@ -259,7 +325,8 @@ OfflineLog::~OfflineLog()
     fdOfflineLog = -1; 
 }
 
-DbRetVal OfflineLog::prepare(int txnId, int stId, int len, char *stmt, char*tn)
+DbRetVal OfflineLog::prepare(int txnId, int stId, int len, char *stmt, 
+                             char*tn, bool hasParam)
 {
     if (fdOfflineLog < 0) return ErrBadArg;
     DbRetVal rv = OK;
@@ -271,16 +338,13 @@ DbRetVal OfflineLog::prepare(int txnId, int stId, int len, char *stmt, char*tn)
     //The following structure needs strlen after stmt id for traversal in 
     //redolog file unlike msg queue structure where string is the last element 
     //and is not a continuous piece of memory.
-    // for len + txnId + msg type + stmtId + tableName + stmtstrlen + 
-    // stmtstring
-    int datalen = os::align(5 * sizeof(int) + len); 
+    int datalen = os::align(5 * sizeof(int) + len); // for len + txnId + msg type + stmtId + tableName + stmtstrlen + stmtstring
     char *buf = (char*) malloc(datalen);
     char *msg = buf;
     //Note:: msg type is taken as -ve as we need to differentiate between 
     //statement id and logtype during recovery.
     *(int*) msg = -1;
-    if (strlen(stmt) > 6 && ( strncasecmp(stmt,"CREATE", 6) == 0 || 
-                                            strncasecmp(stmt,"DROP", 4) == 0 ))
+    if (strlen(stmt) > 6 && ( strncasecmp(stmt,"CREATE", 6) == 0 || strncasecmp(stmt,"DROP", 4) == 0 ))
         *(int*)msg = -4; //means prepare and execute the stmt
     msg = msg+sizeof(int);
     *(int *)msg = datalen;
@@ -300,8 +364,7 @@ retry:
         ret = os::lockFile(fdOfflineLog);
         if (-1 == ret) {
             ::free(buf);
-            printError(ErrLockTimeOut,
-                              "Unable to get exclusive lock on redo log file");
+            printError(ErrLockTimeOut,"Unable to get exclusive lock on redo log file");
             return ErrLockTimeOut;
         }
     }
@@ -323,7 +386,6 @@ retry:
     fileSize += datalen;
     return OK;
 }
-
 DbRetVal OfflineLog::commit(int len, void *data)
 {
     if (fdOfflineLog < 0) return ErrBadArg;
@@ -340,8 +402,7 @@ retry:
     if (Conf::config.getDurableMode() != 1) {
         int ret = os::lockFile(fdOfflineLog);
         if (-1 == ret) {
-            printError(ErrLockTimeOut,
-                             "Unable to get exclusive lock on redo log file");
+            printError(ErrLockTimeOut,"Unable to get exclusive lock on redo log file");
             return ErrLockTimeOut;
         }
     }
@@ -361,8 +422,7 @@ retry:
     fileSize += len+sizeof(int);
     return OK;
 }
-
-DbRetVal OfflineLog::free(int txnId, int stId)
+DbRetVal OfflineLog::free(int txnId, int stId, bool hasParam)
 {
     if (fdOfflineLog < 0) return ErrBadArg;
     DbRetVal rv = OK;
@@ -388,8 +448,7 @@ retry:
         int ret = os::lockFile(fdOfflineLog);
         if (-1 == ret) {
             ::free(msg);
-            printError(ErrLockTimeOut,
-                             "Unable to get exclusive lock on redo log file");
+            printError(ErrLockTimeOut,"Unable to get exclusive lock on redo log file");
             return ErrLockTimeOut;
         }
     }
@@ -438,7 +497,7 @@ DbRetVal OfflineLog::createMetadataFile()
     return OK;
 }
 
-void *OfflineLog::openMetadataFile()
+void *OfflineLog::openMetadataFile() 
 {
     char mmapFile[128];
     int size = sizeof(int) + sizeof(long);

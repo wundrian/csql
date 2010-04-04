@@ -51,12 +51,14 @@ DbRetVal SqlLogStatement::prepare(char *stmtstr)
            isNonSelDML = false; return rv;
        }
     }
+    bool hasParam = false;
+    if (innerStmt->noOfParamFields() >0) hasParam = true;
     if (Conf::config.useDurability()) {
         if (strlen(stmtstr) > 6 && ((strncasecmp(stmtstr,"CREATE", 6) == 0) ||
                                    (strncasecmp(stmtstr,"DROP", 4) == 0))) {
             sid  = SqlLogStatement::stmtUID.getID(STMT_ID);
             printDebug(DM_SqlLog, "CREATE|DROP: stmt id = %d\n", sid);
-            conn->fileLogPrepare(0, sid, strlen(stmtstr)+1, stmtstr, NULL);
+            conn->fileLogPrepare(0, sid, strlen(stmtstr)+1, stmtstr, NULL, hasParam);
             isNonSelDML = false;
             return OK;
         }
@@ -89,13 +91,13 @@ DbRetVal SqlLogStatement::prepare(char *stmtstr)
     printDebug(DM_SqlLog, "stmt id = %d\n", sid);
     if ((Conf::config.useCache() && Conf::config.getCacheMode() == ASYNC_MODE) 
              && !conn->noMsgLog && isCached) 
-        conn->msgPrepare(txnId, sid, strlen(stmtstr) + 1, stmtstr, tblName);
+        conn->msgPrepare(txnId, sid, strlen(stmtstr) + 1, stmtstr, tblName, hasParam);
     if (Conf::config.useDurability()) 
-        conn->fileLogPrepare(txnId, sid, strlen(stmtstr) + 1, stmtstr, NULL);
+        conn->fileLogPrepare(txnId, sid, strlen(stmtstr) + 1, stmtstr, NULL, hasParam);
     if (Conf::config.useCache() && 
                            Conf::config.getCacheMode() == OFFLINE_MODE && 
                                                            !conn->noOfflineLog)
-        conn->offlineLogPrepare(txnId, sid, strlen(stmtstr) + 1, stmtstr, NULL);
+        conn->offlineLogPrepare(txnId, sid, strlen(stmtstr) + 1, stmtstr, NULL, hasParam);
 
     return OK;
 }
@@ -217,18 +219,20 @@ DbRetVal SqlLogStatement::getParamFldInfo (int parampos, FieldInfo *&fInfo)
 DbRetVal SqlLogStatement::free()
 {
     DbRetVal rv = OK;
-    if (!isPrepared) return OK;
+    bool hasParam = false;
+    if (innerStmt->noOfParamFields() >0) hasParam = true;
     if (innerStmt) rv = innerStmt->free();
+    if (!isPrepared) return OK;
     if (rv != OK)  return rv;
     if (!needLog) { isPrepared = false; return rv; }
     if (isNonSelDML && isCached) { 
         SqlLogConnection* logConn = (SqlLogConnection*)con;
-        if (sid != 0 ) logConn->freeLogs(sid);
+        if (sid != 0 ) logConn->freeLogs(sid, hasParam);
     }
     sid = 0;
     isNonSelDML = false;
     isPrepared = false;
-    return OK;
+    return rv;
 }
 void SqlLogStatement::setShortParam(int paramPos, short value)
 {
