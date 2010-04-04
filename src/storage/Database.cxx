@@ -103,8 +103,23 @@ int Database::initAllocDatabaseMutex()
 }
 DbRetVal Database::getAllocDatabaseMutex(bool procAccount) 
 {
-    int ret= metaData_->dbAllocMutex_.getLock(procSlot, procAccount);
-    if (ret) return ErrLockTimeOut; else return OK;
+    struct timeval timeout, timeval;
+    timeout.tv_sec = Conf::config.getMutexSecs();
+    timeout.tv_usec = Conf::config.getMutexUSecs();
+    int tries=0;
+    int totalTries = Conf::config.getMutexRetries() *2;
+    int ret =0;
+    while (tries < totalTries)
+    {
+        ret = metaData_->dbAllocMutex_.getLock(procSlot, procAccount);
+        if (ret == 0) break;
+        timeval.tv_sec = timeout.tv_sec;
+        timeval.tv_usec = timeout.tv_usec;
+        os::select(0, 0, 0, 0, &timeval);
+        tries++;
+    }
+    if (tries >= totalTries) return ErrLockTimeOut;
+    return OK;
 }
 DbRetVal Database::releaseAllocDatabaseMutex(bool procAccount)
 {
@@ -118,8 +133,24 @@ int Database::initPrepareStmtMutex()
 }
 DbRetVal Database::getPrepareStmtMutex(bool procAccount) 
 {
-    int ret= metaData_->dbPrepareStmtMutex_.getLock(procSlot, procAccount);
-    if (ret) return ErrLockTimeOut; else return OK;
+    struct timeval timeout, timeval;
+    timeout.tv_sec = Conf::config.getMutexSecs();
+    timeout.tv_usec = Conf::config.getMutexUSecs();
+    int tries=0;
+    int totalTries = Conf::config.getMutexRetries() *2;
+    int ret =0;
+    while (tries < totalTries)
+    {
+        ret = metaData_->dbPrepareStmtMutex_.getLock(procSlot, procAccount);
+        if (ret == 0) break;
+        timeval.tv_sec = timeout.tv_sec;
+        timeval.tv_usec = timeout.tv_usec;
+        os::select(0, 0, 0, 0, &timeval);
+        tries++;
+    }
+    if (tries >= totalTries) return ErrLockTimeOut;
+    return OK;
+
 }
 DbRetVal Database::releasePrepareStmtMutex(bool procAccount)
 {
@@ -133,8 +164,24 @@ int Database::initTransTableMutex()
 }
 DbRetVal Database::getTransTableMutex()
 {
-    int ret = metaData_->dbTransTableMutex_.getLock(procSlot);
-    if (ret) return ErrLockTimeOut; else return OK;
+    struct timeval timeout, timeval;
+    timeout.tv_sec = Conf::config.getMutexSecs();
+    timeout.tv_usec = Conf::config.getMutexUSecs();
+    int tries=0;
+    int totalTries = Conf::config.getMutexRetries() *2;
+    int ret =0;
+    while (tries < totalTries)
+    {
+        ret = metaData_->dbTransTableMutex_.getLock(procSlot);
+        if (ret == 0) break;
+        timeval.tv_sec = timeout.tv_sec;
+        timeval.tv_usec = timeout.tv_usec;
+        os::select(0, 0, 0, 0, &timeval);
+        tries++;
+    }
+    if (tries >= totalTries) return ErrLockTimeOut;
+    return OK;
+
 }
 DbRetVal Database::releaseTransTableMutex()
 {
@@ -150,8 +197,24 @@ int Database::initProcessTableMutex()
 }
 DbRetVal Database::getProcessTableMutex(bool procAccount)
 {
-    int ret = metaData_->dbProcTableMutex_.getLock(procSlot, procAccount);
-    if (ret) return ErrLockTimeOut; else return OK;
+    struct timeval timeout, timeval;
+    timeout.tv_sec = Conf::config.getMutexSecs();
+    timeout.tv_usec = Conf::config.getMutexUSecs();
+    int tries=0;
+    int totalTries = Conf::config.getMutexRetries() *2;
+    int ret =0;
+    while (tries < totalTries)
+    {
+        ret = metaData_->dbProcTableMutex_.getLock(procSlot, procAccount);
+        if (ret == 0) break;
+        timeval.tv_sec = timeout.tv_sec;
+        timeval.tv_usec = timeout.tv_usec;
+        os::select(0, 0, 0, 0, &timeval);
+        tries++;
+    }
+    if (tries >= totalTries) return ErrLockTimeOut;
+    return OK;
+
 }
 DbRetVal Database::releaseProcessTableMutex(bool procAccount)
 {
@@ -167,13 +230,45 @@ int Database::initCheckpointMutex()
 }
 DbRetVal Database::getSCheckpointMutex(bool procAccount)
 {
-    int ret = metaData_->ckptMutex_.getShareLock(procSlot, procAccount);
-    if (ret) return ErrLockTimeOut; else return OK;
+    struct timeval timeout, timeval;
+    timeout.tv_sec = Conf::config.getMutexSecs();
+    timeout.tv_usec = Conf::config.getMutexUSecs();
+    int tries=0;
+    int totalTries = Conf::config.getMutexRetries() *2;
+    int ret =0;
+    while (tries < totalTries)
+    {
+        ret = metaData_->ckptMutex_.getShareLock(procSlot, procAccount);
+        if (ret == 0) break;
+        timeval.tv_sec = timeout.tv_sec;
+        timeval.tv_usec = timeout.tv_usec;
+        os::select(0, 0, 0, 0, &timeval);
+        tries++;
+    }
+    if (tries >= totalTries) return ErrLockTimeOut;
+    return OK;
+
 }
 DbRetVal Database::getXCheckpointMutex(bool procAccount)
 {
-    int ret = metaData_->ckptMutex_.getExclusiveLock(procSlot, procAccount);
-    if (ret) return ErrLockTimeOut; else return OK;
+    struct timeval timeout, timeval;
+    timeout.tv_sec = Conf::config.getMutexSecs();
+    timeout.tv_usec = Conf::config.getMutexUSecs();
+    int tries=0;
+    int totalTries = Conf::config.getMutexRetries() *2;
+    int ret =0;
+    while (tries < totalTries)
+    {
+        ret = metaData_->ckptMutex_.getExclusiveLock(procSlot, procAccount);
+        if (ret == 0) break;
+        timeval.tv_sec = timeout.tv_sec;
+        timeval.tv_usec = timeout.tv_usec;
+        os::select(0, 0, 0, 0, &timeval);
+        tries++;
+    }
+    if (tries >= totalTries) return ErrLockTimeOut;
+    return OK;
+
 }
 DbRetVal Database::releaseCheckpointMutex(bool procAccount)
 {
@@ -660,7 +755,7 @@ DbRetVal Database::checkPoint()
         return OK;
     }
     filterAndRemoveStmtLogs();
-    int ret = truncate(dbRedoFileName,0);
+    int ret = ::truncate(dbRedoFileName,0);
     if (ret != 0) {
         printError(ErrSysInternal, "Unable to truncate redo log file. Delete and restart the server\n");
        return ErrOS;
@@ -746,6 +841,7 @@ DbRetVal Database::filterAndRemoveStmtLogs()
         }
         else if(logType == -3) { //free
             iter = logStart + 4 *sizeof(int);
+            //neglet free stmt logs in this pass
         }else{
             printError(ErrSysInternal, "Stmt Redo log file corrupted: logType:%d", logType);
             rv = ErrSysInternal;
@@ -763,8 +859,6 @@ DbRetVal Database::filterAndRemoveStmtLogs()
     ret = system(cmd);
     return rv;
 }
-
-    
 int Database::getCheckpointID()
 {
     int id=0;
