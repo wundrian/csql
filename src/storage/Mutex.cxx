@@ -118,13 +118,13 @@ int TSL(Lock *lock)
 #endif
 }
 #endif
-int Mutex::tryShareLock(int tryTimes, int waitmsecs,bool share, bool isDelete)
+int Mutex::tryShareLock(int tryTimes, int waitmsecs,bool share, bool upgrade)
 {
     int ret=0;
     int oldValue = (int)lock;
     if (oldValue >= 0  && share){
         ret = CAS((int*)&lock, oldValue, oldValue+1);
-    }else if ((oldValue == 1 && isDelete ) || ( !share && oldValue == 0) ){
+    }else if ((oldValue == 1 && upgrade ) || ( !share && oldValue == 0) ){
         ret = CAS((int*)&lock, oldValue, -1);
     }else { ret = 1;} 
     if (0 == ret) return 0; 
@@ -148,7 +148,7 @@ int Mutex::tryShareLock(int tryTimes, int waitmsecs,bool share, bool isDelete)
             oldValue = (int)lock;
             if (oldValue >= 0  && share) {
                 ret = CAS((int*)&lock, oldValue, oldValue+1);
-            }else if ((oldValue == 1 && isDelete ) || (!share && oldValue == 0) ) {
+            }else if ((oldValue == 1 && upgrade ) || (!share && oldValue == 0) ) {
                 ret = CAS((int*)&lock, oldValue, -1);
             }else { ret = 1; }
          
@@ -160,7 +160,7 @@ int Mutex::tryShareLock(int tryTimes, int waitmsecs,bool share, bool isDelete)
             oldValue = (int)lock;
             if (oldValue >= 0  && share) {
                 ret = CAS((int*)&lock, oldValue, oldValue+1);
-            }else if ((oldValue == 1 && isDelete ) || (!share && oldValue == 0) ){
+            }else if ((oldValue == 1 && upgrade ) || (!share && oldValue == 0) ){
                 ret = CAS((int*)&lock, oldValue, -1);
             } else { ret =1;}
             if(ret==0) return 0;
@@ -173,7 +173,7 @@ int Mutex::tryShareLock(int tryTimes, int waitmsecs,bool share, bool isDelete)
         os::select(0, 0, 0, 0, &timeout);
         tries++;
     }
-    printError(ErrLockTimeOut, "Unable to get the mutex %s, tried %d times", name,tries);
+    //printError(ErrLockTimeOut, "Unable to get the mutex %s, tried %d times", name,tries);
     return 1;
 }
 
@@ -219,7 +219,7 @@ int Mutex::tryLock(int tryTimes, int waitmsecs)
         os::select(0, 0, 0, 0, &timeout);
         tries++;
     }
-    printError(ErrLockTimeOut, "Unable to get the mutex %s, val:%d tried %d times", name, lock, tries);
+    //printError(ErrLockTimeOut, "Unable to get the mutex %s, val:%d tried %d times", name, lock, tries);
     return 1;
 }
 
@@ -281,11 +281,11 @@ int Mutex::getShareLock(int procSlot, bool procAccount)
         return 1;
 }
 
-int Mutex::getExclusiveLock(int procSlot, bool procAccount, bool isDelete)
+int Mutex::getExclusiveLock(int procSlot, bool procAccount, bool upgrade)
 {
     int ret=0;
 #if defined(sparc) || defined(i686) || defined (x86_64)
-    ret = tryShareLock(0,0,false,isDelete);
+    ret = tryShareLock(0,0,false,upgrade);
     //add it to the has_ of the ThreadInfo
     if (ret ==0 && procAccount) ProcessManager::addMutex(this, procSlot);
     return ret;
@@ -382,7 +382,7 @@ int Mutex::CASL(long *ptr, long oldVal, long newVal)
     return CAS((int*)ptr, (int)oldVal, (int)newVal);
 #endif
 #endif
-#if defined (LINUX) || defined(FreeBSD)
+#if defined(LINUX) || defined (FreeBSD)
 #ifdef x86_64
         long result;
         __asm__ __volatile__ ("lock; cmpxchgq %q2, %1"
@@ -408,7 +408,7 @@ int Mutex::CASL(long *ptr, long oldVal, long newVal)
 }
 int Mutex::CAS(int *ptr, int oldVal, int newVal)
 {
-#if defined(LINUX) || defined(FreeBSD)
+#if defined(LINUX) || defined (FreeBSD)
         unsigned char ret;
         __asm__ __volatile__ (
                 "  lock\n"

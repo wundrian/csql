@@ -24,9 +24,9 @@ class Mutex
     int tryLock(int tries=0, int waitmsecs=0);
     int getLock(int procSlot, bool procAccount=true);
     int releaseLock(int procSlot, bool procAccount=true);
-    int tryShareLock(int tries=0, int waitmsecs=0,bool share=false,bool isDelete=false);
+    int tryShareLock(int tries=0, int waitmsecs=0,bool share=false,bool upgrade=false);
     int getShareLock(int procSlot, bool procAccount=true);
-    int getExclusiveLock(int procSlot, bool procAccount=true,bool isDelete=false);
+    int getExclusiveLock(int procSlot, bool procAccount=true,bool upgrade=false);
     int releaseShareLock(int procSlot, bool procAccount=true);
     int destroy();
     int recoverMutex();
