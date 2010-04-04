@@ -283,7 +283,7 @@ void* JoinTableImpl::fetchInt()
             bool result = true;
             while (true) {
                 if (pred) rv = predImpl->evaluate(result);
-                if ( rv !=OK) return NULL; 
+                if ( rv !=OK && rv !=ErrNullValues ) return NULL; 
                 if (result) break;
                 rec = rightTableHdl->fetch(); 
                 if (rec == NULL) {
