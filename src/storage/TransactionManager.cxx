@@ -28,7 +28,7 @@ void TransactionManager::printUsageStatistics()
     int i=0, usedCount =0, freeCount =0, undoLogCount=0;
     for (; i < Conf::config.getMaxProcs(); i++)
     {
-            if (iter->status_ == TransNotUsed) freeCount++; 
+            if (iter->status_ == TransNotUsed || iter->status_ == TransReserved) freeCount++; 
             else 
             { 
                 usedCount++;
