@@ -123,11 +123,7 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
                 printError(ErrOS, "Shared Memory already exists");
 #endif
             printError(ErrOS, "Shared memory create failed");
-            shm_id = os::shm_open(Conf::config.getSysDbKey(), 100, 0660);
-            os::shmctl(shm_id, IPC_RMID);
-            delete systemDatabase_;
-            systemDatabase_ = NULL;
-            return ErrOS;
+            exit(0);
         }
     } else {
         //switch the checkpoint

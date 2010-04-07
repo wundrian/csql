@@ -545,7 +545,10 @@ int main(int argc, char **argv)
             if (rv != OK) {
                 if (strlen(stmtString) > 6 && 
                     ( (strncasecmp(stmtString,"CREATE", 6) == 0) ||
-                      (strncasecmp(stmtString,"DROP", 4) == 0)) ) {
+                      (strncasecmp(stmtString,"DROP", 4) == 0)   ||
+                      (strncasecmp(stmtString,"RENAME", 6) == 0) ||
+                      (strncasecmp(stmtString,"ALTER", 5) == 0)) ) {
+
             //        conn->disconnect();
               //      return OK;
                     continue;

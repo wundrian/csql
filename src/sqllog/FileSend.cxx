@@ -96,7 +96,10 @@ DbRetVal FileSend::prepare(int txnId, int stmtId, int len, char *stmt,
     //Note:: msg type is taken as -ve as we need to differentiate between 
     //statement id and logtype during recovery.
     *(int*) msg = -1;
-    if (strlen(stmt) > 6 && ( strncasecmp(stmt,"CREATE", 6) == 0 || strncasecmp(stmt,"DROP", 4) == 0 ))
+    if (strlen(stmt) > 6 && ( strncasecmp(stmt,"CREATE", 6) == 0 || 
+                                  strncasecmp(stmt,"DROP", 4) == 0 ||
+                                      strncasecmp(stmt,"RENAME", 6) == 0 ||
+                                          strncasecmp(stmt,"ALTER", 5) == 0 ))
         *(int*)msg = -4; //means prepare and execute the stmt
     msg = msg+sizeof(int);
     *(int *)msg = datalen;

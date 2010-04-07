@@ -55,7 +55,9 @@ DbRetVal SqlLogStatement::prepare(char *stmtstr)
     if (innerStmt->noOfParamFields() >0) hasParam = true;
     if (Conf::config.useDurability()) {
         if (strlen(stmtstr) > 6 && ((strncasecmp(stmtstr,"CREATE", 6) == 0) ||
-                                   (strncasecmp(stmtstr,"DROP", 4) == 0))) {
+                                    (strncasecmp(stmtstr,"DROP", 4) == 0)   ||
+                                    (strncasecmp(stmtstr,"RENAME", 6) == 0) ||
+                                     (strncasecmp(stmtstr,"ALTER", 5) == 0))) {
             sid  = SqlLogStatement::stmtUID.getID(STMT_ID);
             printDebug(DM_SqlLog, "CREATE|DROP: stmt id = %d\n", sid);
             conn->fileLogPrepare(0, sid, strlen(stmtstr)+1, stmtstr, NULL, hasParam);

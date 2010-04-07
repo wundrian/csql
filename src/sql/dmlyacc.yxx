@@ -744,12 +744,7 @@ condition: ident OPERATOR value
 	{
             ComparisionOp  op = AllDataType::getComparisionOperator((char*)$2);
 			bool opLike = false;
-            if (op == OpLike) {
-                char *c = (char *)$3;
-                //if (*c == '%' && *(c+1) == '\0')  
-                Util::changeWildcardChar(c);
-		opLike = true;
-            }
+            if (op == OpLike) opLike = true;
             Predicate *pred;
             void **ptr = parsedData->insertCondValueAndGetPtr((char*)$1, (char*)$3, opLike);
             pred = parsedData->insertPredicate((char*) $1, op, ptr);

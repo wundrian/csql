@@ -97,16 +97,6 @@ void PredicateImpl::setTerm(const char* fName1, ComparisionOp op,
 void PredicateImpl::setTerm(const char* fName1, ComparisionOp op, void *opnd)
 {
     strcpy(fldName1, fName1);
-    if (op == OpLike) 
-    {
-        char *c = (char *) opnd;
-	while (*c != '\0') 
-        {
-	    if (*c == '_') *c = '?';
-	    else if(*c == '%') *c = '*';
-	    c++;
-	}
-    }
     compOp = op;
     operand = opnd;
     operandPtr = NULL;

@@ -863,7 +863,6 @@ DbRetVal SelStatement::resolveForCondition()
         }
         if (value->parsedString[0] == '?')
         {
-		//if(!value->opLike) // checks if 'LIKE' operator is used
                 value->paramNo = paramPos++;
         }
         if (!value->paramNo) {
