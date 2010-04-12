@@ -2,11 +2,12 @@ INCLUDES = -I$(top_srcdir)/include $(all_includes) -I$(top_srcdir)/src/sql
 METASOURCES = AUTO
 lib_LTLIBRARIES = libcsqljdbc.la
 libcsqljdbc_la_LDFLAGS = -avoid-version -module \
-	$(top_srcdir)/src/sql/libcsqlsql.la  \
-	$(top_srcdir)/src/storage/libcsql.la 
-	$(top_srcdir)/src/sqllog/libcsqlsqllog.la \
-	$(top_srcdir)/src/network/libcsqlnw.la \ 
-	$(top_srcdir)/src/sqlnetwork/libcsqlsqlnw.la -lcrypt 
+		-L$(top_srcdir)/src/storage/.libs -lcsql \
+		-L$(top_srcdir)/src/network/.libs -lcsqlnw \
+		-L$(top_srcdir)/src/sql/.libs -lcsqlsql \
+		-L$(top_srcdir)/src/sqlnetwork/.libs -lcsqlsqlnw \
+		-L$(top_srcdir)/src/sqllog/.libs -lcsqlsqllog \
+-lcrypt
 libcsqljdbc_la_SOURCES = JSqlConnection.cxx JSqlStatement.cxx
 
 noinst_HEADERS = JSqlConnection.h JSqlStatement.h

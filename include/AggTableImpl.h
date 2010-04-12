@@ -107,19 +107,20 @@ class AggTableImpl:public Table
     void setCondition(Condition *p){ havingPred = p->getPredicate();}
     DbRetVal markFldNull(const char *name){ return OK;}
     inline DbRetVal markFldNull(int colpos){
-        SETBIT(grpNullInfo, colpos);
+        SETBIT(grpNullInfo, colpos-1);
         return OK;
     }
     bool isFldNull(const char *name);
     inline bool isFldNull(int colpos) {
-       if (colpos <= 32) { if (BITSET(prjNullInfo, colpos)) return true; }
-       else if (BITSET(*(int *)((char *)&prjNullInfo + 4), colpos)) return true;
+       if (colpos <= 32) { if (BITSET(prjNullInfo, colpos-1)) return true; }
+       else if (BITSET(*(int *)((char *)&prjNullInfo + 4), colpos-1)) 
+           return true;
        return false;
     }
     void clearFldNull(const char *name){}
     inline void clearFldNull(int colpos){
-       if (colpos <= 32) CLEARBIT(prjNullInfo, colpos);
-       else CLEARBIT(*(int *)((char*)&prjNullInfo + 4), colpos);
+       if (colpos <= 32) CLEARBIT(prjNullInfo, colpos-1);
+       else CLEARBIT(*(int *)((char*)&prjNullInfo + 4), colpos-1);
     }
     DbRetVal compact(){ return OK;}
     int getFldPos(char *name){ return 0;}

@@ -407,7 +407,7 @@ class Time {  // The class a user would declare to hold time
 
 
 
-    int getCalSec(){ return timeVal/1000; }
+    int getCalSec(){ return timeVal/10000; }
     /** checks for the validity of the time
     */  
     bool isValid() const;

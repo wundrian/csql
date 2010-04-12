@@ -534,12 +534,12 @@ DbRetVal DatabaseManagerImpl::createTable(const char *name, TableDef &def)
         return ErrNotExists;
     }
 
-    //If total field count is less than 32, then 1 integer is used to store all null
-    //information, if it is more then 1 char is used to store null information 
-    //of each field
+    //If total field count is within 32, then 1 integer is used to store all 
+    // null information, if it is more then 1 char is used to store null 
+    // information of each field
     //This is to done to reduce cpu cycles for small tables
     int addSize = 0;
-    if (fldCount < 31) addSize = 4; else addSize = os::align(fldCount);
+    if (fldCount <= 32) addSize = 4; else addSize = os::align(fldCount);
     size_t sizeofTuple = os::alignLong(def.getTupleSize()+addSize);
     rv = systemDatabase_->getXCheckpointMutex();
     if (OK != rv ) {
@@ -810,7 +810,7 @@ Table* DatabaseManagerImpl::openTable(const char *name,bool checkpkfk)
     }*/
 
 
-    if (tTuple->numFlds_ < 31) 
+    if (tTuple->numFlds_ <= 32) 
     { 
         table->isIntUsedForNULL = true;
         table->iNullInfo = 0;
@@ -838,7 +838,7 @@ Table* DatabaseManagerImpl::openTable(const char *name,bool checkpkfk)
     {
         FieldDef *def = fIter.nextElement();
         if (table->isIntUsedForNULL) {
-            if (def->isNull_) SETBIT(table->iNotNullInfo, fldpos);
+            if (def->isNull_) SETBIT(table->iNotNullInfo, fldpos-1);
         }
         else {
             if (def->isNull_) table->cNotNullInfo[fldpos-1] = 1;
