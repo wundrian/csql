@@ -1925,6 +1925,7 @@ DbRetVal DatabaseManagerImpl::recover()
 {
     DbRetVal rv = OK;
     rv = sysDb()->recoverSystemDB();
+    if (rv != OK) return rv;
     if (!Conf::config.useMmap())rv = db()->recoverUserDB();  
     return rv;
 }

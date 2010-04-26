@@ -896,7 +896,8 @@ DbRetVal Database::recoverUserDB()
     int fd = open(dataFile, O_RDONLY);
     if (-1 == fd) { return OK; }
     void *buf = (void *) metaData_;
-    read(fd, buf, Conf::config.getMaxDbSize());
+    int readbytes = read(fd, buf, Conf::config.getMaxDbSize());
+    if (readbytes == -1) { close(fd); return ErrOS; }
     close(fd);
     return OK;
 }

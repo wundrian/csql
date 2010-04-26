@@ -49,6 +49,11 @@ class SqlConnection : public AbsSqlConnection
     AbsSqlStatement *getStmtFromHashTable(int stmtId);
     void removeFromHashTable(int stmtID);
     void addToHashTable(int stmtID, AbsSqlStatement* sHdl);
+    void freeAllStmtHandles();
+    DbRetVal readAndPopulateStmts();
+    DbRetVal iterateStmtLogs(void *startAddr, int size);
+    DbRetVal filterAndWriteStmtLogs();
+    bool isStmtInHashTable(int stmtId);
 #endif
     public:
     static List connList;
