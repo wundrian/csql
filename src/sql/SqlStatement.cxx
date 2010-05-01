@@ -435,7 +435,8 @@ void SqlStatement::getProjFieldType(int *data)
 
 int SqlStatement::noOfParamFields()
 {
-    return stmt->noOfParamFields();
+    if (NULL == stmt) return 0;
+    else return stmt->noOfParamFields();
 }
 
 DbRetVal SqlStatement::getProjFldInfo (int projpos, FieldInfo *&fInfo)

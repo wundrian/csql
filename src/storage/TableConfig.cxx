@@ -257,18 +257,16 @@ DbRetVal TableConfig::updateIntoCacheTableFile(bool upgrade, bool isDirect)
 DbRetVal TableConfig :: isTablePresent()
 {
 	DbRetVal rv = OK;
-        FILE *fp;
+    FILE *fp;
   	Connection conn;
 	rv = conn.open(userName,password);
 	if(rv !=OK) return ErrSysInit;
 	// check for CACHE_TABLE variable
 	
-	
 	fp = fopen(Conf :: config.getTableConfigFile(),"r");
-	if(fp == NULL)
-        {
+	if(fp == NULL) {
  		printError(ErrSysInit, "csqltable.conf file does not exist");
-		return OK;
+		return ErrNotExists;
 	}
 	conn.close();
 	
@@ -283,14 +281,12 @@ DbRetVal TableConfig :: isTablePresent()
 	{
 		tablename[0] = '\0'; condition[0] = '\0';
 		fscanf(fp,"%d %s %s %s %s %s \n",&mode,tablename,fieldname,condition,field,dsnName);
-	
-        	if(strcmp(tableName,tablename)==0)
-        	{
-                     fclose(fp);
-                     return OK;
-        	}
-        }  
-        fclose(fp);
+       	if(strcmp(tableName,tablename)==0) {
+            fclose(fp);
+            return OK;
+       	}
+    }  
+    fclose(fp);
 	return ErrNotExists;
 }
 
