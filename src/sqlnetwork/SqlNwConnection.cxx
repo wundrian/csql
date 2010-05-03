@@ -61,18 +61,15 @@ DbRetVal SqlNwConnection::connect (char *user, char * pass)
         return ErrNoConnection; 
     }
     ResponsePacket *rpkt = (ResponsePacket *) ((TCPClient *)nwClient)->respPkt;
-    char *ptr = (char *) &rpkt->retVal;
-/*    if (*ptr != 1) {
-        printError(ErrPeerResponse, "%s", rpkt->errorString);
-        delete pkt;
-        nwClient->disconnect();
-        delete nwClient; 
-        nwClient = NULL;
-        return ErrPeerResponse;
-    }*/
+    if (rpkt->errRetVal != OK) {
+        delete pkt; 
+        delete nwClient;
+	    nwClient = NULL;
+        return rpkt->errRetVal;
+    }
     isConnOpen = true;
     delete pkt;
-    return rv;
+    return OK;
 }
 DbRetVal SqlNwConnection::disconnect()
 {

@@ -63,13 +63,13 @@ DbRetVal SqlGwConnection::createAdapters(SqlGwConnection *gwconn)
     char password[IDENTIFIER_LENGTH];
 
     while(!feof(fp)){
-        AbsSqlConnection *adapterCon = new SqlOdbcConnection();
         fscanf(fp,"%s %s %s %s\n",dsnname,username,password,tdb);
         if(strcmp(dsnname,"") == 0){
             printError(ErrSysInternal, "Add entry to csqlds.conf file");
             fclose(fp);
             return ErrNotReady;
         }
+        AbsSqlConnection *adapterCon = new SqlOdbcConnection();
         gwconn->setAdapter(adapterCon,dsnname);
     }
     fclose(fp);
@@ -269,20 +269,22 @@ DbRetVal SqlGwConnection::populateCachedTableList()
         printError(ErrSysInit, "cache.table file does not exist");
         return ErrSysInit;
     }
-    char tablename[IDENTIFIER_LENGTH];
-    char fieldname[IDENTIFIER_LENGTH];
-    char condition[IDENTIFIER_LENGTH];
-    char field[IDENTIFIER_LENGTH];
-    char dsnName[IDENTIFIER_LENGTH];
-
-    int cmode;
-    CachedTable *node;
+    char tablename[IDENTIFIER_LENGTH]; tablename[0] = '\0';
+    char fieldname[IDENTIFIER_LENGTH]; fieldname[0] = '\0';
+    char condition[IDENTIFIER_LENGTH]; condition[0] = '\0';
+    char field[IDENTIFIER_LENGTH]; field[0] = '\0';
+    char dsnName[IDENTIFIER_LENGTH]; dsnName[0] = '\0';
+    int cmode = 0;
+    CachedTable *node = NULL;
     while(!feof(fp))
     {
-        fscanf(fp, "%d %s %s %s %s %s \n", &cmode, tablename,fieldname,condition,field,dsnName);
-        node = new CachedTable();
-        strcpy(node->tableName, tablename);
-        cacheList.append(node);
+        fscanf(fp, "%d %s %s %s %s %s \n", &cmode, tablename, fieldname,
+                                                    condition, field, dsnName);
+        if (cmode) {
+            node = new CachedTable();
+            strcpy(node->tableName, tablename);
+            cacheList.append(node);
+        }
     }
     fclose(fp);
     return OK;

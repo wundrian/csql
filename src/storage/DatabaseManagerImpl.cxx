@@ -378,13 +378,17 @@ DbRetVal DatabaseManagerImpl::closeDatabase()
     int ret =0;// ProcessManager::mutex.getLock(-1, false);
     //If you are not getting lock ret !=0, it means somebody else is there.
     //he will close the database.
+    if (0 != strcmp((char*)db_->getName(),  SYSTEMDB)) {
+        int fd = db_->getChkptfd();
+        close(fd);
+    }
     if (ret == 0) {
     if (ProcessManager::noThreads == 0 && 0 == strcmp((char*)db_->getName(), SYSTEMDB)
        || ProcessManager::noThreads == 1 && 0 != strcmp((char*)db_->getName(),  SYSTEMDB) )  {
                 os::shm_detach((char*)db_->getMetaDataPtr());
             }
     }
-  //  ProcessManager::mutex.releaseLock(-1, false);
+    // ProcessManager::mutex.releaseLock(-1, false);
     delete db_;
     db_ = NULL;
     return OK;
