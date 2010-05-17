@@ -29,6 +29,7 @@
 #include <SqlLogStatement.h>
 #include <Parser.h>
 
+bool SqlNetworkHandler::isSqlLogNeeded;
 List SqlNetworkHandler::stmtList;
 List SqlNetworkHandler::tableNameList;
 AbsSqlConnection* SqlNetworkHandler::conn;
@@ -113,6 +114,8 @@ void * SqlNetworkHandler::processSqlConnect(PacketHeader &header, char *buffer)
     pkt->setBufferSize(header.packetLength);
     pkt->unmarshall();
     type = (SqlApiImplType) pkt->sqlApiImplType;
+    isSqlLogNeeded = (Conf::config.useDurability() || (Conf::config.useCache() 
+                               && Conf::config.getCacheMode() == ASYNC_MODE ));
     conn = createConnection(type);   
     char *ptr = (char *) &rpkt->retVal;
     DbRetVal rv=conn->connect(pkt->userName, pkt->passWord);
@@ -568,8 +571,7 @@ void *SqlNetworkHandler::processSqlIsTablePresent(PacketHeader &header, char *bu
     pkt->unmarshall();
     SqlStatement *sqlstmt = new SqlStatement();
     SqlConnection *sqlcon = NULL;
-    if (Conf::config.useDurability())
-        sqlcon = (SqlConnection *) conn->getInnerConnection();
+    if (isSqlLogNeeded) sqlcon = (SqlConnection *) conn->getInnerConnection();
     else sqlcon = (SqlConnection *) conn;
     sqlstmt->setSqlConnection(sqlcon);
     DbRetVal rv = OK; bool found = false;
@@ -606,8 +608,7 @@ void *SqlNetworkHandler::processSqlLoadRecords(PacketHeader &header, char *buffe
     pkt->unmarshall();
     SqlStatement *sqlstmt = new SqlStatement();
     SqlConnection *sqlcon = NULL;
-    if (Conf::config.useDurability())
-        sqlcon = (SqlConnection *) conn->getInnerConnection();
+    if (isSqlLogNeeded) sqlcon = (SqlConnection *) conn->getInnerConnection();
     else sqlcon = (SqlConnection *) conn;
     sqlstmt->setSqlConnection(sqlcon);
     DbRetVal rv = OK;
@@ -738,7 +739,7 @@ DbRetVal SqlNetworkHandler::servePacket(PacketHeader &header, void *respkt)
         pkt->marshall();
         SqlStatement *sqlstmt = new SqlStatement();
         SqlConnection *sqlcon = NULL;
-        if (Conf::config.useDurability())
+        if (isSqlLogNeeded)
             sqlcon = (SqlConnection *) conn->getInnerConnection();
         else sqlcon = (SqlConnection *) conn;
         sqlstmt->setSqlConnection(sqlcon);

@@ -222,8 +222,10 @@ DbRetVal SqlLogStatement::free()
 {
     DbRetVal rv = OK;
     bool hasParam = false;
-    if (innerStmt->noOfParamFields() >0) hasParam = true;
-    if (innerStmt) rv = innerStmt->free();
+    if (innerStmt) {
+        if (innerStmt->noOfParamFields() >0) hasParam = true;
+        rv = innerStmt->free();
+    }
     if (!isPrepared) return OK;
     if (rv != OK)  return rv;
     if (!needLog) { isPrepared = false; return rv; }

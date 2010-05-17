@@ -30,67 +30,158 @@
 #include <SqlLogStatement.h> //for BindSqlField
 #include <SqlNetworkHandler.h>
 
-class AbsCSqlQIterator
-{
-    public:
-    virtual void *next() = 0;
-};
-
-class AbsCSqlQueue
-{
-    public:
-    virtual void push(void *log, int len) = 0;
-    virtual void pop() = 0;
-    virtual int size() = 0;
-};
-
-class ListIter : public AbsCSqlQIterator
-{
-    public:
-    ListIterator iter;
-    ListIter(List &list) { iter = list.getIterator(); }
-    void *next() { return iter.nextElementInQueue(); }
-};
-
 typedef struct FailedStmtObject {
     int stmtId;
     DbRetVal eType;
 } FailStmt;
 
+typedef struct item ITEM;
 
-long long qIndex = 0;
-
-class ListAsQueue : public AbsCSqlQueue
+struct item
 {
-    public:
-    List list;
-    ListAsQueue() {}
-    void push(void *log, int len) 
-    {
-        int logSize = sizeof(long long) + len + sizeof(int) + sizeof(long);
-        char *logElem = (char *) malloc(os::align(logSize));
-        *(long long *) logElem = ++qIndex;
-        *(int*)(logElem + sizeof(long long))= len;
-        char *ptr = logElem + sizeof(int) + sizeof(long long);
-        memcpy(ptr, log, len+sizeof(long)); //long for msg type
-        list.append(logElem);
-        printDebug(DM_ReplServer, "Pushed Element: %x", logElem);
-    }
-    int size() { return list.size(); }
-    void pop(){};
+    ITEM *next;
+    void *data;
 };
 
+// please dont touch the following code for queIterator
+typedef class queueIterator
+{
+     ITEM *head;
+     ITEM *iter;
+     ITEM *processed;
+     public:
+     queueIterator(ITEM *hd) { head = iter = hd; processed = NULL; }
+     inline void *next(ITEM *hd)
+     {
+         if (head == NULL) { head = iter = hd; }
+         if (head != hd) head = hd;
+         ITEM *elem = iter;
+         if (iter == NULL && processed) {
+             if (processed->next != NULL) {
+                 processed = processed->next;
+                 iter = processed;
+                 elem = iter;
+             } else { return NULL; }
+         }
+         processed = elem;
+         printDebug(DM_ReplServer, "Processed ITEM: %X", processed);
+         iter = iter->next;
+         return &elem->data;
+     }
+} QITER;
+
+class queue
+{
+    ITEM *head;
+    int nItems;
+    // array of msg indexes processed, First index for first thread and so on.
+    // As and when the msg is read from the queue by each of the threads
+    // respcective slot is filled with that index 
+    long long *processedMsgIndexArray;
+    long long minProcessedMsgIndex;
+    long long qIndex;
+    long long lastFreedIndex;
+    QITER **qIter;
+    Mutex qMutex;
+    public:
+    queue(int asySites)
+    {
+        nItems = 0; head = NULL; processedMsgIndexArray = NULL;
+        qIndex = 0; qIter = NULL;  minProcessedMsgIndex = 0;
+        lastFreedIndex = 0;
+        qMutex.init();
+        int size = sizeof (long long) * asySites;
+        processedMsgIndexArray = (long long *) malloc(size);
+        memset(processedMsgIndexArray, 0, size);
+        qIter = (QITER **) malloc(sizeof (QITER *) * asySites);
+        for (int i = 0; i < asySites; i++) qIter[i] = new QITER(head);
+    }
+    ~queue() {}
+    int push(void *log, int len)
+    {
+        // log includes size of long (msgType) + size of (Msg data);
+        // 2nd parameter len is the size of (Msg data) excluding size of long
+
+        // long long for Msg Index
+        // int for size of the msg data
+        // long for msgType
+        // len bytes for msg data
+        int logSize = sizeof(long long) + sizeof(int) + sizeof(long) + len;
+        ITEM *item = (ITEM *) malloc(sizeof(ITEM) - sizeof(void *)
+                                                        + os::align(logSize));
+        item->next = NULL;
+        char *ptr = (char *) &item->data;
+        *(long long *) ptr = ++qIndex; ptr += sizeof (long long);
+        *(int*) ptr= len; ptr += sizeof (int);
+        int sizeOfMsg = len + sizeof(long);
+        memcpy(ptr, log, sizeOfMsg);
+        if (head == NULL) { nItems++; head = item; return 0; }
+        ITEM *p = head;
+        while (p->next != NULL) p = p->next;
+        p->next = item;
+        nItems++;
+        return 0;
+    }
+    int size() { return nItems; }
+    void *readNextMessage(int thrIndex)
+    {
+       if (head == NULL) return NULL;
+       else return qIter[thrIndex]->next(head);
+    }
+    inline void updateProcessedIndex(int thrInd, int processedIndex)
+    {
+        processedMsgIndexArray[thrInd] = processedIndex;
+    }
+    inline long long findMinIndexForFree(int asySites)
+    {
+        long long minIndex = processedMsgIndexArray[0];
+        for (int i=1; i < asySites; i++) {
+            if (minIndex > processedMsgIndexArray[i]) {
+                minIndex = processedMsgIndexArray[i];
+            }
+        }
+        return minIndex-1;
+    }
+    void freeMessagesFromQueue(int asySites)
+    {
+        long long minIndex = findMinIndexForFree(asySites);
+        if (minIndex <= lastFreedIndex) return;
+        ITEM *elem = head;
+        ITEM *freeFrom = head;
+        ITEM *freeUptoThis = NULL;
+        long long ind = 0;
+        while (elem != NULL) {
+            ind = * (long long *) &elem->data;
+            if (ind == minIndex) {
+                freeUptoThis = elem;
+                head = elem->next;
+                break;
+            }
+            elem = elem->next;
+        }
+        ITEM *toFree = elem = freeFrom;
+        while (elem != freeUptoThis) {
+            toFree = elem;
+            elem = elem->next;
+            if (toFree) { ::free(toFree); nItems--; }
+            printDebug(DM_ReplServer, "FREED %X", toFree);
+        }
+        if (elem) { ::free(elem); nItems--; }
+        printDebug(DM_ReplServer, "FREED %X", elem);
+        lastFreedIndex = minIndex;
+    }
+};
+
+typedef class queue QUE;
 
 class ThreadInputData
 {
     public:
-    AbsCSqlQIterator *qIter;
-    long long *indexPtr;
-    ThreadInputData() { qIter = NULL; indexPtr = NULL; }
+    int thrIndex;
+    ThreadInputData() { thrIndex = 0; }
 };
 
 void *startThread(void *p);
-
 
 void printUsage()
 {
@@ -111,22 +202,13 @@ AbsSqlStatement *getStmtFromHashTable(int stmtId, void *stmtBuckets);
 DbRetVal writeToConfResFile(void *data, int len, void *stmtBuckets, 
                                                     char *dsn);
 
-int getHashBucket(int stmtid)
-{
-    return (stmtid % STMT_BUCKET_SIZE);
-}
+int getHashBucket(int stmtid) { return (stmtid % STMT_BUCKET_SIZE); }
 
-AbsCSqlQueue *csqlQ = NULL;
-
+//Globals
+QUE *que = NULL;
 int srvStop =0;
 int msgKey = 0;
-
 ThreadInputData **thrInput;
-
-
-int asyncSites = 0;
-int syncSites = 0;
-long long * indexCountPtr = NULL;
 pthread_t freeThrId = 0;
 
 static void sigTermHandler(int sig)
@@ -145,70 +227,53 @@ int main(int argc, char **argv)
             default: opt=10; 
         }
     }//while options
-    if (opt == 10) { printUsage();
-        return 0;
-    }
+
+    if (opt == 10) { printUsage(); return 0; }
 
     os::signal(SIGINT, sigTermHandler);
     os::signal(SIGTERM, sigTermHandler);
 
     Conf::config.readAllValues(os::getenv("CSQL_CONFIG_FILE"));
-    if (( !Conf::config.useCache() && 
-            Conf::config.getCacheMode() == SYNC_MODE) ) {
-        printf("Replication server not started\n");
-        return 1;
-    } 
-
-    bool found =false;
-    //printf("config id = %d\n", Conf::config.getSiteID()); 
-    
-    if ((!Conf::config.useCache() && 
-          Conf::config.getCacheMode()==SYNC_MODE)) {
-        printf("There are no async sites\n");
-        return 4;
-    }
-
     msgKey = os::msgget(Conf::config.getMsgKey(), 0666);
     if (msgKey == -1) {
         printf("Message Queue creation failed\n");
         return 4;
     }
-
-    csqlQ = new ListAsQueue();
-    ListIterator itr = ((ListAsQueue *)csqlQ)->list.getIterator(); 
     
-    if (Conf::config.useCache() && Conf::config.getCacheMode()==ASYNC_MODE) {
-        asyncSites++;
-    }
+    //Only single cache async updation is supported hence hard coded.
+    int asyncSites = 1;
+
+    // Create and Initialize repl server queue
+    que = new queue(asyncSites);
+
     pthread_t *thrId =new pthread_t [asyncSites];
-    thrInput = (ThreadInputData **) malloc(sizeof(ThreadInputData *) * asyncSites);
-    indexCountPtr = (long long *) malloc(sizeof(long long) * asyncSites);
-    memset(indexCountPtr, 0, sizeof(long long) * asyncSites);
+    int thrInfoSize = sizeof(ThreadInputData *) * asyncSites;
+    thrInput = (ThreadInputData **) malloc(thrInfoSize);
+    
     int i=0;
     if(Conf::config.useCache() && Conf::config.getCacheMode()==ASYNC_MODE) {
         thrInput[i] = new ThreadInputData();
-        thrInput[i]->qIter = NULL;
-        thrInput[i]->indexPtr = &indexCountPtr[i];
+        thrInput[i]->thrIndex = i;
         pthread_create(&thrId[i], NULL, &startThread, thrInput[i]);
         i++;
     } 
-    pthread_create(&freeThrId, NULL, freeMsgFromQueue, NULL);
-    struct timeval timeout, tval;
-    timeout.tv_sec = 5;
-    timeout.tv_usec = 0;
+    pthread_create(&freeThrId, NULL, freeMsgFromQueue, (void *) asyncSites);
+    struct timeval timeout;
     int msgSize = Conf::config.getAsyncMsgMax();
     char str[8192];
-   // printf("Replication Server Started");
+    
     while (!srvStop) {
-        tval.tv_sec = timeout.tv_sec;
-        tval.tv_usec = timeout.tv_usec;
-        os::select(0, 0, 0, 0, &tval);
+        timeout.tv_sec = 5;
+        timeout.tv_usec = 0;
+        os::select(0, 0, 0, 0, &timeout);
         printDebug(DM_ReplServer, "waiting for message");
         while(true) {
-           long size = os::msgrcv(msgKey, str, msgSize, 0, 0666|IPC_NOWAIT);// process logs
+           // pick messages from message que with key msgKey
+           long size = os::msgrcv(msgKey, str, msgSize, 0, 0666|IPC_NOWAIT);
            printDebug(DM_ReplServer, "Received msg size = %d", size);
            if (size == -1 || srvStop) break;
-           csqlQ->push(str, size); // long for mtype of msg  
+           // push the received msg to the repl server queue
+           que->push(str, size);   
         }
     }
     delete[] thrId;
@@ -219,26 +284,20 @@ int main(int argc, char **argv)
 void *startThread(void *thrInfo)
 {
     DbRetVal rv = OK;
+    DbRetVal proMsgRetVal = OK;
+    void *msg=NULL;
     ThreadInputData *thrInput = (ThreadInputData *)thrInfo;
     List prepareFailList;
-    SqlApiImplType flag;
-    flag = CSqlAdapter;
+    SqlApiImplType flag = CSqlAdapter;
+    int thrInd = thrInput->thrIndex;
     printDebug(DM_ReplServer, "SqlAdapter Thread created");
-    AbsCSqlQIterator *iter = thrInput->qIter;
-    struct timeval timeout, tval;
-    timeout.tv_sec = 5;
-    while (1) {
-        if (csqlQ->size()) break;
-        timeout.tv_sec = 10;
-        timeout.tv_usec = 0;
-        os::select(0, 0, 0, 0, &timeout);
-    }
-
-    iter = new ListIter(((ListAsQueue *)csqlQ)->list);
     AbsSqlConnection *conn = SqlFactory::createConnection(flag);
+    
     void *stmtBuckets = malloc (STMT_BUCKET_SIZE * sizeof(StmtBucket));
     memset(stmtBuckets, 0, STMT_BUCKET_SIZE * sizeof(StmtBucket));
     printDebug(DM_ReplServer, "stmtbuckets: %x", stmtBuckets);
+    
+    struct timeval timeout, tval;
     while (1) {
         while (1) {
             rv = conn->connect(I_USER, I_PASS);
@@ -249,24 +308,30 @@ void *startThread(void *thrInfo)
             os::select(0, 0, 0, 0, &timeout);
         }
         while (1) {
-            void *msg = NULL;
             while (1) {
-                msg = iter->next(); //receive msg from csqlQ
+                if (proMsgRetVal != ErrNoConnection) {
+                    msg = NULL;
+                    msg = que->readNextMessage(thrInd);
+                }
                 if (msg != NULL) break;
                 tval.tv_sec = 5;
                 tval.tv_usec = 1000;
                 os::select(0, 0, 0, 0, &tval);
             }
             long long index = *(long long *) msg;
+            printDebug(DM_ReplServer, "Received message with index: %lld",
+                                                                        index);
             int length = *(int *)((char *)msg+sizeof(long long));             
             char *msgptr = (char *)msg + sizeof(long long) + sizeof(int);
             printDebug(DM_ReplServer, "entering process message");
-            rv = processMessage(msgptr, length, conn, stmtBuckets, flag, 
-                                                             &prepareFailList);
-            if (rv == ErrNoConnection) break;
-            printDebug(DM_ReplServer, "processed message");
-            *(long long *) thrInput->indexPtr = index;
-            printDebug(DM_ReplServer, "index %d is stored in Main index log array\n", index);
+            proMsgRetVal = processMessage(msgptr, length, conn, stmtBuckets, 
+                                                       flag, &prepareFailList);
+            if (proMsgRetVal == ErrNoConnection) break;
+            printDebug(DM_ReplServer, "Processed message with index: %lld",
+                                                                        index);
+            //store processed index in the processed index array
+            que->updateProcessedIndex(thrInd, index);
+            printDebug(DM_ReplServer, "Updated processed index %lld", index);
         }
     }
     return NULL;
@@ -285,36 +350,15 @@ DbRetVal processMessage(void *str, int len, void *conn, void *stmtBuckets,
     else if (type == 3) return handleFree(data, stmtBuckets, prepareFailList);
 }
 
-void *freeMsgFromQueue(void *indCntPtr)
+void *freeMsgFromQueue(void *nAsync)
 {
-    long long minIndex = 0;
-    struct timeval timeout, tval;
-    timeout.tv_sec = 0;
-    printDebug(DM_ReplServer, "waiting for free the q elements");
-    while(1) {
-        if (csqlQ->size()) break;
-///        printError(ErrWarning, "List is empty");
-        tval.tv_sec = 1;
-        tval.tv_usec = 1000;
-        os::select(0, 0, 0, 0, &tval);
-    }
-    AbsCSqlQIterator *iter = new ListIter(((ListAsQueue *)csqlQ)->list);
+    int asySites = (int)nAsync;
+    struct timeval tval;
+    printDebug(DM_ReplServer, "Waiting for free the q elements");
     while (1) {
-        minIndex = indexCountPtr[0];
-        for (int i=0; i < asyncSites; i++) {
-            if (minIndex > indexCountPtr[i]) minIndex = indexCountPtr[i];
-        }
-        void *msg = NULL;
-        while (1) {
-            msg = iter->next(); //receive msg from csqlQ
-            if (msg == NULL) break;
-            if( *(long long *) msg <= minIndex) {
-                long long num = *(long long *) msg;
-                free (msg); msg = NULL;
-            } else break;
-        }
-        tval.tv_sec = 0;
-        tval.tv_usec = 100000;
+        que->freeMessagesFromQueue(asySites);
+        tval.tv_sec = 5;
+        tval.tv_usec = 0;
         os::select(0, 0, 0, 0, &tval);
     }
     return NULL;

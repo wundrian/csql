@@ -32,7 +32,7 @@
 
 typedef struct my_msgbuffer {
     long mtype;
-    char data[1];
+    void *data;
 } Message;
 
 class AbsSqlLogSend

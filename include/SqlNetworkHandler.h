@@ -33,6 +33,7 @@ class SqlNetworkHandler
     static SqlApiImplType type;
     static int stmtID;
     static int sockfd;
+    static bool isSqlLogNeeded;
     void * process(PacketHeader &header, char *buffer);
     DbRetVal servePacket(PacketHeader &header, void *rpkt);
     DbRetVal sendResponse(void *rpkt);

@@ -556,8 +556,7 @@ List SqlStatement::getAllTableNames(DbRetVal &ret)
     List tbNmList;
     dbMgr=sqlCon->getConnObject().getDatabaseManager();
     int rv = ret;
-    if(dbMgr != NULL)
-    tbNmList = dbMgr->getAllTableNames(&rv);
+    if(dbMgr != NULL) tbNmList = dbMgr->getAllTableNames(&rv);
     ret = (DbRetVal) rv;
     return tbNmList;
 }

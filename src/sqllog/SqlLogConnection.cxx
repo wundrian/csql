@@ -279,7 +279,7 @@ DbRetVal MsgQueueSend::prepare(int txnId, int stmtId, int len, char *stmt,
     //structure
     int datalen = 3 * sizeof(int) + IDENTIFIER_LENGTH + os::align(len); // for len + txnId + stmtId + tblName + string
     
-    int buffer = sizeof(Message) - 1 + datalen;
+    int buffer = sizeof(Message) - sizeof(void *) + datalen;
     Message *msg = (Message *) malloc(buffer);
     msg->mtype = 1;
     *(int *)&msg->data =  datalen;
@@ -320,7 +320,7 @@ DbRetVal MsgQueueSend::free(int txnId, int stmtId, bool hasParam)
 {
     // data to be sent is len + txn id +  stmtId
     int dataLen = 3 * sizeof(int);
-    int bufferSize = sizeof(Message) - 1 + dataLen; 
+    int bufferSize = sizeof(Message) - sizeof(void *) + dataLen; 
     Message *msg = (Message *) malloc(bufferSize);
     msg->mtype = 3;
     *(int *) &msg->data = dataLen;
