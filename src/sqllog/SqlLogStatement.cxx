@@ -33,10 +33,8 @@ DbRetVal SqlLogStatement::executeDirect(char *stmtstr)
 {
     DbRetVal rv = OK;
     int rows = 0;
-    rv = prepare(stmtstr);
-    if (rv != OK)  return rv;
-    rv = execute(rows);
-    if (rv != OK) return rv;
+    rv = prepare(stmtstr); if (rv != OK)  return rv;
+    rv = execute(rows); if (rv != OK) return rv;
     return rv;
 }
 
@@ -53,6 +51,7 @@ DbRetVal SqlLogStatement::prepare(char *stmtstr)
     }
     bool hasParam = false;
     if (innerStmt->noOfParamFields() >0) hasParam = true;
+
     if (Conf::config.useDurability()) {
         if (strlen(stmtstr) > 6 && ((strncasecmp(stmtstr,"CREATE", 6) == 0) ||
                                     (strncasecmp(stmtstr,"DROP", 4) == 0)   ||
@@ -74,33 +73,25 @@ DbRetVal SqlLogStatement::prepare(char *stmtstr)
     }
     isPrepared = true;
     if (strncasecmp(stmtstr,"CACHE", 5) == 0 ||
-        strncasecmp(stmtstr,"UNCACHE", 7) == 0)
-    {
+                                      strncasecmp(stmtstr,"UNCACHE", 7) == 0) {
         isNonSelDML = false;
         return OK;
     }
-    if ( (!Conf::config.useCache() || 
-        (Conf::config.useCache() && Conf::config.getCacheMode()==SYNC_MODE)) &&
-        !Conf::config.useDurability()) 
-    { 
-        isNonSelDML = false; 
-        return OK; 
-    }
-    needLog = true;
-    isNonSelDML = true;
+    if (conn->isNoLogRequired()) { isNonSelDML = false; return OK; }
+
+    needLog = true; isNonSelDML = true;
     int txnId=conn->getTxnID();
     sid = stmtUID.getID(STMT_ID);
     printDebug(DM_SqlLog, "stmt id = %d\n", sid);
-    if ((Conf::config.useCache() && Conf::config.getCacheMode() == ASYNC_MODE) 
-             && !conn->noMsgLog && isCached) 
-        conn->msgPrepare(txnId, sid, strlen(stmtstr) + 1, stmtstr, tblName, hasParam);
-    if (Conf::config.useDurability()) 
-        conn->fileLogPrepare(txnId, sid, strlen(stmtstr) + 1, stmtstr, NULL, hasParam);
-    if (Conf::config.useCache() && 
-                           Conf::config.getCacheMode() == OFFLINE_MODE && 
-                                                           !conn->noOfflineLog)
-        conn->offlineLogPrepare(txnId, sid, strlen(stmtstr) + 1, stmtstr, NULL, hasParam);
-
+    if (conn->isMsgQReqd() && !conn->noMsgLog && isCached) 
+        conn->msgPrepare(txnId, sid, strlen(stmtstr) + 1, stmtstr, 
+                                                            tblName, hasParam);
+    if (conn->isFileLogReqd()) 
+        conn->fileLogPrepare(txnId, sid, strlen(stmtstr) + 1, stmtstr, 
+                                                               NULL, hasParam);
+    if (conn->isOfflineLogReqd() && !conn->noOfflineLog)
+        conn->offlineLogPrepare(txnId, sid, strlen(stmtstr) + 1, stmtstr, 
+                                                               NULL, hasParam);
     return OK;
 }
 
@@ -227,12 +218,9 @@ DbRetVal SqlLogStatement::free()
         rv = innerStmt->free();
     }
     if (!isPrepared) return OK;
-    if (rv != OK)  return rv;
     if (!needLog) { isPrepared = false; return rv; }
-    if (isNonSelDML && isCached) { 
-        SqlLogConnection* logConn = (SqlLogConnection*)con;
-        if (sid != 0 ) logConn->freeLogs(sid, hasParam);
-    }
+    SqlLogConnection* logConn = (SqlLogConnection*)con;
+    if (sid != 0) logConn->freeLogs(sid, hasParam);
     sid = 0;
     isNonSelDML = false;
     isPrepared = false;

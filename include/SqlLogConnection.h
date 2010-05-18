@@ -110,26 +110,12 @@ class SqlLogConnection : public AbsSqlConnection
 {
     Connection dummyConn;
 
-    //stores all the sql log packets to be shipped to peers
-    List logStore;
-    
     List execLogStore;
     int execLogStoreSize;
-
-    //stores all the prepare log packets to be shipped to peers
-    //as soon as connection is reestablished to cache server
-    List prepareStore;
-
-    //stores all the prepare log packets to be shipped between two
-    //consecutive commits. Commit() call sends first all the stmts
-    //prepared during the course and then sends the exec pkts
-    List curPrepareStore;
 
     //sync mode of the current transaction
     TransSyncMode syncMode;
 
-    //stores client objects in it for peer
-    NetworkTable nwTable;
     AbsSqlLogSend *msgQSend;
     AbsSqlLogSend *fileSend;
     AbsSqlLogSend *offlineLog;
@@ -139,18 +125,20 @@ class SqlLogConnection : public AbsSqlConnection
     int txnID;
     DbRetVal populateCachedTableList();
     public:
+    bool noMsgLog;
+    bool noOfflineLog;
+
     SqlLogConnection() {
         innerConn = NULL; syncMode = ASYNC; 
-        if ( Conf::config.useCache() && 
-              Conf::config.getCacheMode()==ASYNC_MODE) 
+        msgQSend = NULL; fileSend = NULL; offlineLog = NULL;
+#ifndef MMDB
+        if (Conf::config.useCache() && Conf::config.getCacheMode()==ASYNC_MODE) 
             msgQSend = new MsgQueueSend();
-        else msgQSend = NULL;
-        if (Conf::config.useDurability()) { fileSend = new FileSend(); } 
-        else fileSend = NULL;
         if (Conf::config.useCache() && 
                                    Conf::config.getCacheMode() == OFFLINE_MODE) 
             offlineLog = new OfflineLog;
-        else offlineLog = NULL;
+#endif
+        if (Conf::config.useDurability()) { fileSend = new FileSend(); } 
         txnUID.open();
         execLogStoreSize =0;
         noMsgLog = false;
@@ -159,8 +147,24 @@ class SqlLogConnection : public AbsSqlConnection
     }
     ~SqlLogConnection();
     bool isTableCached(char *name);
-    bool noMsgLog;
-    bool noOfflineLog;
+
+    inline bool isNoLogRequired()
+    {
+        if (!msgQSend && !fileSend && !offlineLog) return true;
+        else return false;
+    }
+    inline bool isMsgQReqd()
+    {
+        if (msgQSend) return true; else return false;
+    }
+    inline bool isFileLogReqd()
+    {
+        if (fileSend) return true; else return false;
+    }
+    inline bool isOfflineLogReqd()
+    {
+        if (offlineLog) return true; else return false;
+    }
     //Note::forced to implement this as it is pure virtual in base class
     Connection& getConnObject(){  return dummyConn; }
 
@@ -192,44 +196,31 @@ class SqlLogConnection : public AbsSqlConnection
     DbRetVal commitLogs(int logSize, void *data) 
     {  
         int txnId = getTxnID();
-        if (((Conf::config.useCache() && 
-             Conf::config.getCacheMode() == ASYNC_MODE)) && !noMsgLog) 
-            msgQSend->commit(logSize, data); 
-        if (Conf::config.useDurability()) fileSend->commit(logSize, data);
-        if (Conf::config.useCache() && 
-                            Conf::config.getCacheMode()==OFFLINE_MODE &&
-                                                                 !noOfflineLog) 
-            offlineLog->commit(logSize, data);
+        if (msgQSend && !noMsgLog) msgQSend->commit(logSize, data); 
+        if (fileSend) fileSend->commit(logSize, data);
+        if (offlineLog && !noOfflineLog) offlineLog->commit(logSize, data);
         return OK;
     }
     DbRetVal freeLogs(int stmtId, bool hasParam)
     {
         int txnId = getTxnID(); 
-        if ( ((Conf::config.useCache() &&
-             Conf::config.getCacheMode() == ASYNC_MODE)) && !noMsgLog)
-            msgQSend->free(txnId, stmtId, hasParam);
-        if (Conf::config.useDurability()) fileSend->free(txnId, stmtId, hasParam);
-        if (Conf::config.useCache() && 
-                              Conf::config.getCacheMode()==OFFLINE_MODE &&
-                                                                 !noOfflineLog)
+        if (msgQSend && !noMsgLog) msgQSend->free(txnId, stmtId, hasParam);
+        if (fileSend) fileSend->free(txnId, stmtId, hasParam);
+        if (offlineLog && !noOfflineLog) 
             offlineLog->free(txnId, stmtId, hasParam);
         return OK;
     }
-    void addExecLog(ExecLogInfo *info) { execLogStore.append(info); }
-    void addToExecLogSize(int size){ execLogStoreSize += size; }
-    int getExecLogStoreSize() { return execLogStoreSize; }
+
+    inline void addExecLog(ExecLogInfo *info) { execLogStore.append(info); }
+    inline void addToExecLogSize(int size) { execLogStoreSize += size; }
+    inline int getExecLogStoreSize() { return execLogStoreSize; }
     List getExecLogList() { return execLogStore; }
-    DbRetVal addPacket(BasePacket *pkt);
-    DbRetVal addPreparePacket(PacketPrepare *pkt);
-    DbRetVal removePreparePacket(int stmtid);
 
     DbRetVal setSyncMode(TransSyncMode mode);
-    void setNoMsgLog(bool nmlog) { noMsgLog = nmlog; }
-    void setNoOfflineLog(bool nolog) { noOfflineLog = nolog; }
-    TransSyncMode getSyncMode() { return syncMode; }
-    int getTxnID() { return txnID; }
-    DbRetVal connectIfNotConnected() { return nwTable.connectIfNotConnected(); }
-    DbRetVal sendAndReceive(NetworkPacketType type, char *packet, int length);
+    inline void setNoMsgLog(bool nmlog) { noMsgLog = nmlog; }
+    inline void setNoOfflineLog(bool nolog) { noOfflineLog = nolog; }
+    inline TransSyncMode getSyncMode() { return syncMode; }
+    inline int getTxnID() { return txnID; }
     friend class SqlFactory;
 };
 

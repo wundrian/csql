@@ -34,9 +34,9 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
     bool isSqlLogNeeded = false;
 #if !(defined MMDB && defined EMBED)
     isSqlLogNeeded = Conf::config.useDurability() ||
-          (Conf::config.useCache() && Conf::config.getCacheMode()==ASYNC_MODE);
-    bool isNoMsgLog = Conf::config.useDurability() &&
-         !(Conf::config.useCache() && Conf::config.getCacheMode()==ASYNC_MODE);
+                     (Conf::config.useCache() && 
+                      (Conf::config.getCacheMode()==ASYNC_MODE || 
+                        Conf::config.getCacheMode() == OFFLINE_MODE));
 #else
     isSqlLogNeeded = Conf::config.useDurability();
 #endif
@@ -88,6 +88,9 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
             if (isSqlLogNeeded) {
                 sqllogconn = new SqlLogConnection();
                 sqllogconn->setInnerConnection(sqlCon);
+                bool isNoMsgLog = Conf::config.useDurability() &&
+                                  !(Conf::config.useCache() && 
+                                    Conf::config.getCacheMode()==ASYNC_MODE);
                 if (isNoMsgLog) sqllogconn->setNoMsgLog(true);
                 gwconn->setInnerConnection(sqllogconn);
             } else gwconn->setInnerConnection(sqlCon);
@@ -131,7 +134,9 @@ AbsSqlStatement* SqlFactory::createStatement(SqlApiImplType implFlag)
     bool isSqlLogNeeded = false;
 #if !(defined MMDB && defined EMBED)
     isSqlLogNeeded = Conf::config.useDurability() ||
-        (Conf::config.useCache() && Conf::config.getCacheMode() == ASYNC_MODE);
+                     (Conf::config.useCache() && 
+                      (Conf::config.getCacheMode()==ASYNC_MODE || 
+                        Conf::config.getCacheMode() == OFFLINE_MODE));
 #else
     isSqlLogNeeded = Conf::config.useDurability();
 #endif
