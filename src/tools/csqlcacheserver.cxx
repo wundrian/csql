@@ -40,7 +40,6 @@ void createCacheTableList();
 DbRetVal getCacheField(char *tblName,char *fldName);
 DbRetVal getCacheProjField(char *tblName,char *fielflist);
 DbRetVal getCacheCondition(char *tblName,char *condition);
-void setParamValues(AbsSqlStatement *stmt, int parampos, DataType type, int length, char *value);
 void *fillBindBuffer(TDBInfo tName, DataType type, void *valBuf, int length=0);
 List cacheTableList;
 int srvStop =0;
@@ -460,8 +459,8 @@ if (info->type == typeString) {
         int pos = 1;
         while (bindIter.hasElement()) {
             bBuf = (BindBuffer *) bindIter.nextElement();
-            setParamValues(csqlstmt, pos++, bBuf->type, bBuf->length,
-                                                          (char *)bBuf->csql);
+            SqlStatement::setParamValues(csqlstmt, pos++, bBuf->type, 
+                                             bBuf->length, (char *)bBuf->csql);
         }
         csqlcon->beginTrans();
         int rows = 0;
@@ -605,55 +604,6 @@ DbRetVal getCacheField(char *tblName,char *fldName)
             
     }
     return ErrNotExists;
-}
-
-void setParamValues(AbsSqlStatement *stmt, int parampos, DataType type, int length, char *value)
-{
-    switch(type)
-    {
-        case typeInt:
-            stmt->setIntParam(parampos, *(int*)value);
-            break;
-        case typeLong:
-            stmt->setLongParam(parampos, *(long*)value);
-            break;
-        case typeLongLong:
-            stmt->setLongLongParam(parampos, *(long long*)value);
-            break;
-        case typeShort:
-            stmt->setShortParam(parampos, *(short*)value);
-            break;
-        case typeByteInt:
-            stmt->setByteIntParam(parampos, *(char*)value);
-            break;
-        case typeDouble:
-            stmt->setDoubleParam(parampos, *(double*)value);
-            break;
-        case typeFloat:
-            stmt->setFloatParam(parampos, *(float*)value);
-            break;
-        case typeDate:
-            stmt->setDateParam(parampos, *(Date*)value);
-            break;
-        case typeTime:
-            stmt->setTimeParam(parampos, *(Time*)value);
-            break;
-        case typeTimeStamp:
-            stmt->setTimeStampParam(parampos, *(TimeStamp*)value);
-            break;
-        case typeVarchar:
-        case typeString:
-            {
-                char *d =(char*)value;
-                d[length-1] = '\0';
-                stmt->setStringParam(parampos, (char*)value);
-                break;
-            }
-        case typeBinary:
-            stmt->setBinaryParam(parampos, (char *) value, length);
-            break;
-    }
-    return;
 }
 
 void *fillBindBuffer(TDBInfo tdbName, DataType type, void *valBuf, int length)

@@ -56,7 +56,6 @@ class SqlNetworkHandler
     DbRetVal closeConnection();
     static AbsSqlConnection *createConnection(SqlApiImplType type);   
     static AbsSqlStatement *createStatement(SqlApiImplType type);   
-    static void setParamValues(AbsSqlStatement *stmt, int parampos, DataType type, int length, char *value);
     void fillErrorString(ResponsePacket *rpkt);
     DbRetVal send(NetworkPacketType type, char *buf, int len);
 };

@@ -94,8 +94,6 @@ int cmpStringRecord (const void *pkfv1, const void *pkfv2)
     else return 1;
 }
 
-void setParamValues(AbsSqlStatement *stmt, int parampos, DataType type, int length, void *value);
-
 DbRetVal verifyCount(const char *tblName, long numTuples)
 {
     char statement[200];
@@ -216,7 +214,7 @@ DbRetVal verifyMismatchingRecords(const char *tblName, int option)
         AllDataType::copyVal(&pkFldVal->val, pkval, pkFldType, pkFldLen);
         pkFldVal->inCsql = true;
         pkFldVal->inTrgtDb = true;
-        setParamValues(trgtDbStmt, 1, pkFldType, pkFldLen, pkval);
+        SqlStatement::setParamValues(trgtDbStmt,1, pkFldType,pkFldLen,pkval);
         trgtDbStmt->execute(rows);
         if (trgtDbStmt->fetch(rv) != NULL) {
             sameInBothDb.append(pkFldVal);  
@@ -258,7 +256,7 @@ DbRetVal verifyMismatchingRecords(const char *tblName, int option)
         AllDataType::copyVal(&pkFldVal->val, pkval, pkFldType, pkFldLen);
         pkFldVal->inCsql = true;
         pkFldVal->inTrgtDb = true;
-        setParamValues(stmt, 1, pkFldType, pkFldLen, pkval);
+        SqlStatement::setParamValues(stmt, 1, pkFldType, pkFldLen, pkval);
         stmt->execute(rows);
         if (stmt->fetch(rv) == NULL && rv ==OK) {
             pkFldVal->inCsql = false;
@@ -429,8 +427,10 @@ DbRetVal verifyMismatchingRecords(const char *tblName, int option)
         while((sameElem = (PrimKeyFldVal *)sameValIter.nextElement()) != NULL) {
             conn->beginTrans();
             trgtDbCon->beginTrans();
-            setParamValues(stmt, 1, pkFldType, pkFldLen, sameElem->val);
-            setParamValues(trgtDbStmt, 1, pkFldType, pkFldLen, sameElem->val);
+            SqlStatement::setParamValues(stmt, 1, pkFldType, pkFldLen, 
+                                                                sameElem->val);
+            SqlStatement::setParamValues(trgtDbStmt, 1, pkFldType, pkFldLen, 
+                                                                sameElem->val);
             rv  = stmt->execute(rows);
             rv  = trgtDbStmt->execute(rows);
             if(rv != OK) {
@@ -755,53 +755,3 @@ int main(int argc, char **argv)
     conn->disconnect(); delete stmt; delete conn;
     return 0;
 }
-
-void setParamValues(AbsSqlStatement *stmt, int parampos, DataType type, int length, void *value)
-{
-    switch(type)
-    {
-        case typeInt:
-            stmt->setIntParam(parampos, *(int*)value);
-            break;
-        case typeLong:
-            stmt->setLongParam(parampos, *(long*)value);
-            break;
-        case typeLongLong:
-            stmt->setLongLongParam(parampos, *(long long*)value);
-            break;
-        case typeShort:
-            stmt->setShortParam(parampos, *(short*)value);
-            break;
-        case typeByteInt:
-            stmt->setByteIntParam(parampos, *(char*)value);
-            break;
-        case typeDouble:
-            stmt->setDoubleParam(parampos, *(double*)value);
-            break;
-        case typeFloat:
-            stmt->setFloatParam(parampos, *(float*)value);
-            break;
-        case typeDate:
-            stmt->setDateParam(parampos, *(Date*)value);
-            break;
-        case typeTime:
-            stmt->setTimeParam(parampos, *(Time*)value);
-            break;
-        case typeTimeStamp:
-            stmt->setTimeStampParam(parampos, *(TimeStamp*)value);
-            break;
-        case typeVarchar:
-        case typeString:
-            {
-                char *d =(char*)value;
-                d[length-1] = '\0';
-                stmt->setStringParam(parampos, (char*)value);
-                break;
-            }
-        case typeBinary:
-            stmt->setBinaryParam(parampos, (char *) value, length);
-            break;
-    }
-    return;
-}
-

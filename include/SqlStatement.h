@@ -262,7 +262,17 @@ class SqlStatement: public AbsSqlStatement
     DbRetVal prepare();
     DbRetVal prepareInt(char *ststr);
     void resetStmtString();
-
+    static void setParamValues(AbsSqlStatement *sqlStmt, int parampos,
+                                       DataType type, int length, void *value);
+    static void addToHashTable(int stmtID, AbsSqlStatement* sHdl,
+                                             void *stmtBuckets, char *stmtstr);
+    static void removeFromHashTable(int stmtID, void *stmtBuckets);
+    static AbsSqlStatement *getStmtFromHashTable(int stmtId, void *stmtBuckets);
+    static bool isStmtInHashTable(int stmtID, void *stmtBuckets);
+    static void freeAllStmtHandles(void *stmtBuckets);
+    static DbRetVal filterAndWriteStmtLogs(void *stmtBuckets);
+    static DbRetVal readAndPopulateStmts(AbsSqlConnection *conn, void *&stmtBuckets, bool list = false, bool interactive = false);
+    static DbRetVal iterateStmtLogs(AbsSqlConnection *conn, void *startAddr, int size, void *stmtBuckets, bool list=false, bool interactive = false);
     private:
     bool isMgmtStatement;
     SqlConnection *sqlCon;

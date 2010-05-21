@@ -191,18 +191,14 @@ void printUsage()
 }
 
 DbRetVal processMessage(void *str, int len, void *conn, void *hashBucketPtr,
-                   SqlApiImplType flag, List *prepareFailList);
+                                   SqlApiImplType flag, List *prepareFailList);
 void *freeMsgFromQueue(void *p);
 DbRetVal handlePrepare(void *str, void *conn, void *stmtBuckets,
                                    SqlApiImplType flag, List *prepareFailList);
 DbRetVal handleCommit(void *str, int len, void *conn, void *stmtBuckets,
-                                         List *prepareFailList);
+                                                        List *prepareFailList);
 DbRetVal handleFree(void *str, void *stmtBuckets, List *prepareFailList);
-AbsSqlStatement *getStmtFromHashTable(int stmtId, void *stmtBuckets);
-DbRetVal writeToConfResFile(void *data, int len, void *stmtBuckets, 
-                                                    char *dsn);
-
-int getHashBucket(int stmtid) { return (stmtid % STMT_BUCKET_SIZE); }
+DbRetVal writeToConfResFile(void *data, int len, void *stmtBuckets, char *dsn);
 
 //Globals
 QUE *que = NULL;
@@ -399,20 +395,7 @@ DbRetVal handlePrepare(void *data, void *conn, void *stmtBuckets,
         prepareFailList->append(fst);
         return rv;
     }
-    int bucketNo = getHashBucket(stmtId);
-    printDebug(DM_ReplServer, "PrepHdl: stmtBuckets: %x", stmtBuckets);
-    printDebug(DM_ReplServer, "PrepHdl: bucketno: %d", bucketNo);
-    StmtBucket *buck = (StmtBucket *) stmtBuckets;
-    StmtBucket *stmtBucket = &buck[bucketNo];
-    printDebug(DM_ReplServer, "PrepHdl: bucket addr: %x", stmtBucket);
-    StmtNode *node = new StmtNode();
-    printDebug(DM_ReplServer, "PredHdl: stmtNode addr: %x", node);
-    node->stmtId = stmtId;
-    node->stmt = stmt;
-    strcpy(node->stmtstr, stmtstr);
-    printDebug(DM_ReplServer, "PrepHdl: stmt id: %d stmt %x", node->stmtId, node->stmt);
-    stmtBucket->bucketList.append(node);
-    
+    SqlStatement::addToHashTable(stmtId, stmt, stmtBuckets, stmtstr);
     printDebug(DM_ReplServer, "returning from prepare");
     return rv;
 }; 
@@ -438,7 +421,8 @@ DbRetVal handleCommit(void *data, int len, void *conn, void *stmtBuckets,
     while ((ptr - (char *)data) < len) {
         int stmtId = *(int *)ptr;
         ptr += sizeof(int);
-        AbsSqlStatement *stmt = getStmtFromHashTable(stmtId, stmtBuckets);
+        AbsSqlStatement *stmt = SqlStatement::getStmtFromHashTable(stmtId, 
+                                                                  stmtBuckets);
         printDebug(DM_ReplServer, "commit: stmtId: %d", stmtId);
         printDebug(DM_ReplServer, "commit: stmtbuckets: %x", stmtBuckets);
         printDebug(DM_ReplServer, "commit: stmt: %x", stmt);
@@ -454,7 +438,7 @@ DbRetVal handleCommit(void *data, int len, void *conn, void *stmtBuckets,
             void *value = ptr; 
             ptr += length;
             if (stmt != NULL) 
-                SqlNetworkHandler::setParamValues(stmt, parampos, dataType, 
+                SqlStatement::setParamValues(stmt, parampos, dataType, 
                                                         length, (char *)value);
         } else {
             // start executing and committing for all active connections
@@ -503,7 +487,8 @@ DbRetVal handleFree(void *data, void *stmtBuckets, List *prepareFailList)
     int len = *(int *) ptr; ptr += sizeof(int);
     int txnId = *(int *) ptr; ptr += sizeof(int);
     int stmtId = *(int *)ptr;
-    AbsSqlStatement *stmt = getStmtFromHashTable(stmtId, stmtBuckets);
+    AbsSqlStatement *stmt = SqlStatement::getStmtFromHashTable(stmtId, 
+                                                                  stmtBuckets);
     FailStmt *elem = NULL;
     if (stmt == NULL) {
         ListIterator failListIter = prepareFailList->getIterator();
@@ -520,48 +505,12 @@ DbRetVal handleFree(void *data, void *stmtBuckets, List *prepareFailList)
         printError(rv, "HandleFree failed with return vlaue %d", rv);
         return rv;
     }
-    int bucketNo = getHashBucket(stmtId);
-    StmtBucket *buck = (StmtBucket *) stmtBuckets;
-    StmtBucket *stmtBucket = &buck[bucketNo];
-    StmtNode *node = NULL;
-    ListIterator it = stmtBucket->bucketList.getIterator();
-    while(it.hasElement()) {
-        node = (StmtNode *) it.nextElement();
-        if(stmtId == node->stmtId) break;
-    }
-    it.reset(); 
-    printDebug(DM_ReplServer, "GSFHT: node: %x", node);
-    printDebug(DM_ReplServer, "GSFHT: stmtId: %d", node->stmtId);
-    printDebug(DM_ReplServer, "GSFHT stmt: %x", node->stmt);
-    stmtBucket->bucketList.remove(node);
-    if (node->stmt) delete stmt;
-    delete node; node = NULL;
+    SqlStatement::removeFromHashTable(stmtId, stmtBuckets);
+    printDebug(DM_ReplServer, "Freed the statement from hashTable");
     return OK;
 }
 
-AbsSqlStatement *getStmtFromHashTable(int stmtId, void *stmtBuckets)
-{
-    int bucketNo = getHashBucket(stmtId);
-    printDebug(DM_ReplServer, "GSFHT: bucketNo: %d", bucketNo);
-    StmtBucket *buck = (StmtBucket *) stmtBuckets;
-    StmtBucket *stmtBucket = &buck[bucketNo];
-    printDebug(DM_ReplServer, "GSFHT: bucket: %x", stmtBucket);
-    StmtNode *node = NULL;
-    ListIterator it = stmtBucket->bucketList.getIterator();
-    while(it.hasElement()) {
-        node = (StmtNode *) it.nextElement();
-        printDebug(DM_ReplServer, "GSFHT: node: %x", node);
-        if(stmtId == node->stmtId) {
-            printDebug(DM_ReplServer, "GSFHT: stmtId: %d", node->stmtId);
-            printDebug(DM_ReplServer, "GSFHT stmt: %x", node->stmt);
-            return node->stmt;
-        }
-    }
-    return NULL;
-}
-
-DbRetVal writeToConfResFile(void *data, int len, void *stmtBuckets, 
-                                              char *dsn)
+DbRetVal writeToConfResFile(void *data, int len, void *stmtBuckets, char *dsn)
 {
     DbRetVal rv = OK;
     bool isPrmStmt=false;
@@ -591,7 +540,7 @@ DbRetVal writeToConfResFile(void *data, int len, void *stmtBuckets,
     while ((ptr - (char *)data) < len) {
         int stmtId = *(int *)ptr;
         ptr += sizeof(int);
-        int bucketNo = getHashBucket(stmtId);
+        int bucketNo = stmtId % STMT_BUCKET_SIZE;
         StmtBucket *buck = (StmtBucket *) stmtBuckets;
         StmtBucket *stmtBucket = &buck[bucketNo];
         StmtNode *node = NULL;

@@ -292,7 +292,8 @@ void * SqlNetworkHandler::processSqlExecute(PacketHeader &header, char *buffer)
     for (int i=0; i < pkt->noParams; i++) {
         BindSqlField *bindField = (BindSqlField *) stmt->paramList.get(i+1);
         if (nullInfo[i]) sqlstmt->setNull(i+1);
-        else setParamValues(sqlstmt, i+1, bindField->type, bindField->length, (char *)bindField->value);
+        else SqlStatement::setParamValues(sqlstmt, i+1, bindField->type, 
+                                  bindField->length, (char *)bindField->value);
     }
     //SqlStatement *st = (SqlStatement *)sqlstmt;
     if(sqlstmt->isSelect()) { 
@@ -455,56 +456,6 @@ void *SqlNetworkHandler::processSqlRollback(PacketHeader &header, char *buffer)
     rv = conn->beginTrans();
     strcpy(rpkt->errorString, "Success");
     return rpkt;
-}
-
-void SqlNetworkHandler::setParamValues(AbsSqlStatement *stmt, int parampos, DataType type,
-                    int length, char *value)
-{
-    switch(type)
-    {
-        case typeInt:
-            stmt->setIntParam(parampos, *(int*)value);
-            break;
-        case typeLong:
-            stmt->setLongParam(parampos, *(long*)value);
-            break;
-        case typeLongLong:
-            stmt->setLongLongParam(parampos, *(long long*)value);
-            break;
-        case typeShort:
-            stmt->setShortParam(parampos, *(short*)value);
-            break;
-        case typeByteInt:
-            stmt->setByteIntParam(parampos, *(char*)value);
-            break;
-        case typeDouble:
-            stmt->setDoubleParam(parampos, *(double*)value);
-            break;
-        case typeFloat:
-            stmt->setFloatParam(parampos, *(float*)value);
-            break;
-        case typeDate:
-            stmt->setDateParam(parampos, *(Date*)value);
-            break;
-        case typeTime:
-            stmt->setTimeParam(parampos, *(Time*)value);
-            break;
-        case typeTimeStamp:
-            stmt->setTimeStampParam(parampos, *(TimeStamp*)value);
-            break;
-        case typeVarchar:
-        case typeString:
-            {
-                char *d =(char*)value;
-                d[length-1] = '\0';
-                stmt->setStringParam(parampos, (char*)value);
-                break;
-            }
-        case typeBinary:
-            stmt->setBinaryParam(parampos, (char *) value, length);
-            break; 
-    }
-    return;
 }
 
 AbsSqlConnection * SqlNetworkHandler::createConnection(SqlApiImplType type)

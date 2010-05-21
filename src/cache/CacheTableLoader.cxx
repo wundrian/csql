@@ -732,7 +732,8 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
                     break;
                 }
             }
-            setParamValues(stmt, ++fldpos, bBuf->type, bBuf->length, (char *) bBuf->csql);
+            SqlStatement::setParamValues(stmt, ++fldpos, bBuf->type, 
+                                            bBuf->length, (char *) bBuf->csql);
         }
         fldpos=0;
         //table->resetNullinfo();
@@ -947,55 +948,6 @@ DbRetVal CacheTableLoader::recoverAllCachedTables()
     }
     fclose(fp);
     return OK;
-}
-
-void CacheTableLoader::setParamValues(AbsSqlStatement *stmt, int parampos, DataType type, int length, char *value)
-{
-    switch(type)
-    {
-        case typeInt:
-            stmt->setIntParam(parampos, *(int*)value);
-            break;
-        case typeLong:
-            stmt->setLongParam(parampos, *(long*)value);
-            break;
-        case typeLongLong:
-            stmt->setLongLongParam(parampos, *(long long*)value);
-            break;
-        case typeShort:
-            stmt->setShortParam(parampos, *(short*)value);
-            break;
-        case typeByteInt:
-            stmt->setByteIntParam(parampos, *(char*)value);
-            break;
-        case typeDouble:
-            stmt->setDoubleParam(parampos, *(double*)value);
-            break;
-        case typeFloat:
-            stmt->setFloatParam(parampos, *(float*)value);
-            break;
-        case typeDate:
-            stmt->setDateParam(parampos, *(Date*)value);
-            break;
-        case typeTime:
-            stmt->setTimeParam(parampos, *(Time*)value);
-            break;
-        case typeTimeStamp:
-            stmt->setTimeStampParam(parampos, *(TimeStamp*)value);
-            break;
-        case typeVarchar:
-        case typeString:
-            {
-                char *d =(char*)value;
-                d[length-1] = '\0';
-                stmt->setStringParam(parampos, (char*)value);
-                break;
-            }
-        case typeBinary:
-            stmt->setBinaryParam(parampos, (char *) value, length);
-            break;
-    }
-    return;
 }
 
 DbRetVal CacheTableLoader::createIndex(SQLHSTMT hstmtmeta, char *tableName, HashIndexInitInfo *inf,AbsSqlStatement *stmt,bool isPKFieldSpecified)

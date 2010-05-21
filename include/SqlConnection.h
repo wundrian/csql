@@ -46,14 +46,6 @@ class SqlConnection : public AbsSqlConnection
     DbRetVal applySchemaFile(FILE *fp);
     char getQueryFromSchemaFile(FILE *fp, char *buf);
     int applyRedoLogs(char *redoFile);
-    AbsSqlStatement *getStmtFromHashTable(int stmtId);
-    void removeFromHashTable(int stmtID);
-    void addToHashTable(int stmtID, AbsSqlStatement* sHdl);
-    void freeAllStmtHandles();
-    DbRetVal readAndPopulateStmts();
-    DbRetVal iterateStmtLogs(void *startAddr, int size);
-    DbRetVal filterAndWriteStmtLogs();
-    bool isStmtInHashTable(int stmtId);
 #endif
     public:
     static List connList;

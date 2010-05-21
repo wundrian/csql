@@ -21,97 +21,6 @@
 
 AbsSqlConnection *conn;
 void *stmtBuckets;
-void addToHashTable(int stmtID, AbsSqlStatement* sHdl)
-{
-    int bucketNo = stmtID % STMT_BUCKET_SIZE;
-    StmtBucket *buck = (StmtBucket *) stmtBuckets;
-    StmtBucket *stmtBucket = &buck[bucketNo];
-    StmtNode *node = new StmtNode();
-    node->stmtId = stmtID;
-    node->stmt = sHdl;
-    stmtBucket->bucketList.append(node);
-    return; 
-}
-void removeFromHashTable(int stmtID)
-{
-    int bucketNo = stmtID % STMT_BUCKET_SIZE;
-    StmtBucket *buck = (StmtBucket *) stmtBuckets;
-    StmtBucket *stmtBucket = &buck[bucketNo];
-    StmtNode *node = NULL;
-    ListIterator it = stmtBucket->bucketList.getIterator();
-    while(it.hasElement()) {
-        node = (StmtNode *) it.nextElement();
-        if(stmtID == node->stmtId) break;
-    }
-    it.reset();
-    stmtBucket->bucketList.remove(node);
-    return;
-}
-AbsSqlStatement *getStmtFromHashTable(int stmtId)
-{
-    int bucketNo = stmtId % STMT_BUCKET_SIZE;
-    StmtBucket *buck = (StmtBucket *) stmtBuckets;
-    StmtBucket *stmtBucket = &buck[bucketNo];
-    StmtNode *node = NULL;
-    ListIterator it = stmtBucket->bucketList.getIterator();
-    while(it.hasElement()) {
-        node = (StmtNode *) it.nextElement();
-        if(stmtId == node->stmtId) {
-            return node->stmt;
-        }
-    }
-    return NULL;
-}
-void freeAllStmtHandles()
-{
-    //TODO
-}
-void setParam(AbsSqlStatement *stmt, int pos, DataType type , int length, void *value)
-{
-    switch(type)
-    {
-        case typeInt:
-            stmt->setIntParam(pos, *(int*)value);
-            break;
-        case typeLong:
-            stmt->setLongParam(pos, *(long*) value);
-            break;
-        case typeLongLong:
-            stmt->setLongLongParam(pos, *(long long*)value);
-            break;
-        case typeShort:
-            stmt->setShortParam(pos, *(short*)value);
-            break;
-        case typeByteInt:
-            stmt->setByteIntParam(pos, *(ByteInt*)value);
-            break;
-        case typeDouble:
-            stmt->setDoubleParam(pos, *(double*)value);
-            break;
-        case typeFloat:
-            stmt->setFloatParam(pos, *(float*)value);
-            break;
-        case typeDate:
-            stmt->setDateParam(pos, *(Date*)value);
-            break;
-        case typeTime:
-            stmt->setTimeParam(pos, *(Time*)value);
-            break;
-        case typeTimeStamp:
-            stmt->setTimeStampParam(pos, *(TimeStamp*)value);
-            break;
-        case typeString:
-            stmt->setStringParam(pos, (char*)value);
-            break;
-        case typeBinary:
-            stmt->setBinaryParam(pos, value, length);
-            break;
-        default:
-            printf("unknown type\n");
-            break;
-    }
-    return;
-}
 
 int applyOfflinelogs(char *fileName, bool interactive);
 
@@ -162,7 +71,7 @@ int main(int argc, char **argv)
         counter++;
     }
     printf("All the applied log files have been successfully removed.\n");
-    freeAllStmtHandles();
+    SqlStatement::freeAllStmtHandles(stmtBuckets);
     conn->disconnect();
     delete conn;
     return 0;
@@ -225,7 +134,7 @@ int applyOfflinelogs(char *fileName, bool interactive)
                 retVal=1;
                 break;
             }
-            addToHashTable(stmtID, stmt); 
+            SqlStatement::addToHashTable(stmtID, stmt, stmtBuckets, stmtString);
         }    
         else if(logType == -2) { //commit
             conn->beginTrans();
@@ -247,7 +156,8 @@ int applyOfflinelogs(char *fileName, bool interactive)
                 iter = iter + sizeof(int);
                 eType = *(int*)iter;
                 //printf("eType is %d\n", eType);
-                AbsSqlStatement *stmt = getStmtFromHashTable(stmtID);
+                AbsSqlStatement *stmt = 
+                       SqlStatement::getStmtFromHashTable(stmtID, stmtBuckets);
                 if (0 == eType) { //execute type
                     iter = iter + sizeof(int);
                     //printf("EXEC: %d\n", stmtID);
@@ -274,7 +184,7 @@ int applyOfflinelogs(char *fileName, bool interactive)
                     //AllDataType::printVal(value, type, len);
                     iter=iter+len;
                     //printf("SET: %d %d %d %d\n", stmtID, pos, type, len);
-                    setParam(stmt, pos, type, len, value);
+                    SqlStatement::setParamValues(stmt, pos, type, len, value);
                     if (*(int*)iter <0) break;
                 }
             }
@@ -287,10 +197,11 @@ int applyOfflinelogs(char *fileName, bool interactive)
             stmtID = *(int*)iter;
             iter = iter + sizeof(int);
             if (interactive) printf("FREE %d:\n", stmtID);
-            AbsSqlStatement *stmt = getStmtFromHashTable(stmtID);
+            AbsSqlStatement *stmt = SqlStatement::getStmtFromHashTable(stmtID, 
+                                                                  stmtBuckets);
             if (stmt) {
                 stmt->free();
-                removeFromHashTable(stmtID);
+                SqlStatement::removeFromHashTable(stmtID, stmtBuckets);
             } else { printError(ErrSysInternal, "statement not found for %d\n",stmtID);}
         }    
         else if(logType == -4) { //prepare and execute

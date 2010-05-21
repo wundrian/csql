@@ -18,296 +18,11 @@
 #include <SqlFactory.h>
 #include <SqlStatement.h>
 
-DbRetVal iterateStmtLogs(void *startAddr, int size);
 AbsSqlConnection *conn;
 void *stmtBuckets = NULL;
 bool list = false;
 bool interactive=false;
 char fileName[MAX_FILE_LEN];
-void addToHashTable(int stmtID, AbsSqlStatement* sHdl)
-{
-    int bucketNo = stmtID % STMT_BUCKET_SIZE;
-    StmtBucket *buck = (StmtBucket *) stmtBuckets;
-    StmtBucket *stmtBucket = &buck[bucketNo];
-    StmtNode *node = new StmtNode();
-    node->stmtId = stmtID;
-    node->stmt = sHdl;
-    stmtBucket->bucketList.append(node);
-    return; 
-}
-void removeFromHashTable(int stmtID)
-{
-    int bucketNo = stmtID % STMT_BUCKET_SIZE;
-    StmtBucket *buck = (StmtBucket *) stmtBuckets;
-    StmtBucket *stmtBucket = &buck[bucketNo];
-    StmtNode *node = NULL, *delNode = NULL;
-    ListIterator it = stmtBucket->bucketList.getIterator();
-    while(it.hasElement()) {
-        node = (StmtNode *) it.nextElement();
-        if(stmtID == node->stmtId) { delNode = node; break; }
-    }
-    it.reset();
-    if (delNode != NULL) {
-       stmtBucket->bucketList.remove(delNode);
-       delete delNode;
-    }
-    return;
-}
-AbsSqlStatement *getStmtFromHashTable(int stmtId)
-{
-    int bucketNo = stmtId % STMT_BUCKET_SIZE;
-    StmtBucket *buck = (StmtBucket *) stmtBuckets;
-    StmtBucket *stmtBucket = &buck[bucketNo];
-    if (stmtBucket == NULL) return NULL;
-    StmtNode *node = NULL;
-    ListIterator it = stmtBucket->bucketList.getIterator();
-    while(it.hasElement()) {
-        node = (StmtNode *) it.nextElement();
-        if(stmtId == node->stmtId) {
-            SqlStatement *sqlStmt = (SqlStatement*)node->stmt;
-            if (!sqlStmt->isPrepared()) sqlStmt->prepare();
-            return node->stmt;
-        }
-    }
-    return NULL;
-}
-
-bool isStmtInHashTable(int stmtId)
-{
-    int bucketNo = stmtId % STMT_BUCKET_SIZE;
-    StmtBucket *buck = (StmtBucket *) stmtBuckets;
-    StmtBucket *stmtBucket = &buck[bucketNo];
-    if (stmtBucket == NULL) return false;
-    StmtNode *node = NULL;
-    ListIterator it = stmtBucket->bucketList.getIterator();
-    while(it.hasElement()) {
-        node = (StmtNode *) it.nextElement();
-        if(stmtId == node->stmtId) {
-            SqlStatement *sqlStmt = (SqlStatement*)node->stmt;
-            if (sqlStmt->isPrepared()) return true;
-            else break;
-        }
-    }
-    return false;
-}
-
-
-void freeAllStmtHandles()
-{
-    if (NULL == stmtBuckets) return;
-    StmtBucket *buck = (StmtBucket *) stmtBuckets;
-    StmtNode *node = NULL;
-    for (int i=0; i <STMT_BUCKET_SIZE; i++)
-    {
-        StmtBucket *stmtBucket = &buck[i];
-        if (stmtBucket == NULL) continue;
-        ListIterator it = stmtBucket->bucketList.getIterator();
-        while(it.hasElement()) {
-            node = (StmtNode *) it.nextElement();
-            node->stmt->free();
-            delete node->stmt;
-        }
-    }
-    ::free(stmtBuckets);
-}
-void setParam(AbsSqlStatement *stmt, int pos, DataType type , int length, void *value)
-{
-    switch(type)
-    {
-        case typeInt:
-            stmt->setIntParam(pos, *(int*)value);
-            break;
-        case typeLong:
-            stmt->setLongParam(pos, *(long*) value);
-            break;
-        case typeLongLong:
-            stmt->setLongLongParam(pos, *(long long*)value);
-            break;
-        case typeShort:
-            stmt->setShortParam(pos, *(short*)value);
-            break;
-        case typeByteInt:
-            stmt->setByteIntParam(pos, *(ByteInt*)value);
-            break;
-        case typeDouble:
-            stmt->setDoubleParam(pos, *(double*)value);
-            break;
-        case typeFloat:
-            stmt->setFloatParam(pos, *(float*)value);
-            break;
-        case typeDate:
-            stmt->setDateParam(pos, *(Date*)value);
-            break;
-        case typeTime:
-            stmt->setTimeParam(pos, *(Time*)value);
-            break;
-        case typeTimeStamp:
-            stmt->setTimeStampParam(pos, *(TimeStamp*)value);
-            break;
-        case typeString:
-            stmt->setStringParam(pos, (char*)value);
-            break;
-        case typeBinary:
-            stmt->setBinaryParam(pos, value, length);
-            break;
-        default:
-            printf("unknown type\n");
-            break;
-    }
-    return;
-}
-
-DbRetVal readAndPopulateStmts()
-{
-    struct stat st;
-    char fName[MAX_FILE_LEN];
-    sprintf(fName, "%s/csql.db.stmt", Conf::config.getDbFile());
-    printf("Statement Redo log filename is :%s\n", fName);
-    int fd = open(fName, O_RDONLY);
-    if (-1 == fd) { return OK; }
-    if (fstat(fd, &st) == -1) {
-        printError(ErrSysInternal, "Unable to retrieve stmt log file size");
-        close(fd);
-        return ErrSysInternal;
-    }
-    if (NULL != stmtBuckets)
-    {
-        printError(ErrSysInternal, "stmtBuckets already populated");
-        return ErrSysInternal;
-    }
-    stmtBuckets = malloc (STMT_BUCKET_SIZE * sizeof(StmtBucket));
-    memset(stmtBuckets, 0, STMT_BUCKET_SIZE * sizeof(StmtBucket));
-    if (st.st_size ==0) {
-        printError(ErrNote, "No Statement logs found during recovery");
-        close(fd);
-        return OK;
-    }
-    void *startAddr = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-    if (MAP_FAILED == startAddr) {
-        printError(ErrSysInternal, "Unable to mmap stmt log file\n");
-        return ErrSysInternal;
-    }
-    DbRetVal rv = iterateStmtLogs(startAddr, st.st_size);
-    munmap((char*)startAddr, st.st_size);
-    close(fd);
-    return rv;
-}
-DbRetVal filterAndWriteStmtLogs()
-{
-    struct stat st;
-    char fName[MAX_FILE_LEN];
-    sprintf(fName, "%s/csql.db.stmt", Conf::config.getDbFile());
-    int fdRead = open(fName, O_RDONLY);
-    if (-1 == fdRead) { return OK; }
-    if (fstat(fdRead, &st) == -1) {
-        printError(ErrSysInternal, "Unable to retrieve stmt log file size");
-        close(fdRead);
-        return ErrSysInternal;
-    }
-    if (st.st_size ==0) {
-        close(fdRead);
-        return OK;
-    }
-    void *startAddr = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fdRead, 0);
-    if (MAP_FAILED == startAddr) {
-        printError(ErrSysInternal, "Unable to mmap stmt log file\n");
-        return ErrSysInternal;
-    }
-    sprintf(fName, "%s/csql.db.stmt1", Conf::config.getDbFile());
-    int fd = os::openFileForAppend(fName, O_CREAT|O_TRUNC);
-    char *iter = (char*)startAddr;
-    char *logStart = NULL, *logEnd = NULL;
-    int logType;
-    int stmtID;
-    int len =0, ret =0;
-    DbRetVal rv = OK;
-    while(true) {
-        if (iter - (char*)startAddr >= st.st_size) break;
-        logType = *(int*)iter;
-        logStart = iter;
-        if (logType == -1) { //prepare
-            iter = iter + sizeof(int);
-            len = *(int*) iter; 
-            iter = iter + 2 * sizeof(int);
-            stmtID = *(int*)iter;
-            iter = logStart+ len;
-            ret =0;
-            if (isStmtInHashTable(stmtID))
-                ret = os::write(fd, logStart, len);
-            if (-1 == ret) {
-                printError(ErrSysInternal, "Unable to write statement logs");
-            }
-        }
-        else if(logType == -3) { //free
-            iter = logStart + 4 *sizeof(int);
-        }else{
-            printError(ErrSysInternal, "Stmt Redo log file corrupted: logType:%d", logType);
-            rv = ErrSysInternal;
-            break;
-        }
-    }
-    os::closeFile(fd);
-    munmap((char*)startAddr, st.st_size);
-    close(fdRead);
-    char cmd[MAX_FILE_LEN *2];
-    sprintf(cmd, "mv %s/csql.db.stmt1 %s/csql.db.stmt", 
-                  Conf::config.getDbFile(), Conf::config.getDbFile());
-    ret = system(cmd);
-    return rv;
-}
-DbRetVal iterateStmtLogs(void *startAddr, int size)
-{
-    char *iter = (char*)startAddr;
-    void *value = NULL;
-    int logType, eType;
-    int stmtID;
-    int txnID;
-    int len, ret, retVal =0;
-    int loglen;
-    char stmtString[SQL_STMT_LEN];
-    DbRetVal rv = OK;
-    while(true) {
-        if (iter - (char*)startAddr >= size) break;
-        logType = *(int*)iter;
-        if (logType == -1) { //prepare
-            iter = iter + sizeof(int);
-            txnID = *(int*) iter; iter += sizeof(int);
-            loglen = *(int*) iter; iter += sizeof(int);
-            stmtID = *(int*)iter;
-            iter = iter + sizeof(int);
-            len = *(int*)iter;
-            iter = iter + sizeof(int);
-            strncpy(stmtString, iter, len);
-            iter = iter + len;
-            if (list) {
-                printf("PREPARE: SID:%d %s\n", stmtID, stmtString);
-                continue;
-            }
-            if (interactive) printf("STMTLOG PREPARE SID:%d %s\n", stmtID, stmtString);
-            AbsSqlStatement *stmt = SqlFactory::createStatement(CSqlDirect);
-            stmt->setConnection(conn);
-            SqlStatement *sqlStmt = (SqlStatement*)stmt;
-            sqlStmt->setStmtString(stmtString);
-            addToHashTable(stmtID, stmt);
-        }
-        else if(logType == -3) { //free
-            iter = iter + sizeof(int);
-            txnID = *(int*) iter; iter += sizeof(int);
-            loglen = *(int*) iter; iter += sizeof(int);
-            stmtID = *(int*)iter;
-            iter = iter + sizeof(int);
-            if (list) {
-                printf("FREE: SID:%d TID:%d \n", stmtID, txnID);
-                continue;
-            }
-        }else{
-            printError(ErrSysInternal, "Stmt Redo log file corrupted: logType:%d", logType);
-            rv = ErrSysInternal;
-            break;
-        }
-    }
-    return rv;
-}
 
 int main(int argc, char **argv)
 {
@@ -336,8 +51,14 @@ int main(int argc, char **argv)
         interactive=true;
     }
 
-    
-    Conf::config.readAllValues(os::getenv("CSQL_CONFIG_FILE"));
+    conn = SqlFactory::createConnection(CSqlDirect);
+    DbRetVal rv = conn->connect(I_USER, I_PASS);
+    if (rv != OK) {
+        printError(ErrNoConnection, "REDO: could not connect to DB.");
+        delete conn;
+        return 2;
+    }
+ 
     if (strcmp(fileName, "") ==0) {
         sprintf(fileName, "%s/csql.db.cur", Conf::config.getDbFile());
     }
@@ -346,16 +67,14 @@ int main(int argc, char **argv)
     if (fstat(fd, &st) == -1) {
         printError(ErrSysInternal, "Unable to retrieve undo log file size");
         close(fd);
-        return 1;
+        return 3;
     }
     if (st.st_size ==0) {
         printError(ErrNote, "No Redo logs found during recovery");
-        readAndPopulateStmts();
+        SqlStatement::readAndPopulateStmts(conn, stmtBuckets, list, interactive);
         close(fd);
         return 0;
     }
-    conn = SqlFactory::createConnection(CSqlDirect);
-    DbRetVal rv = conn->connect(I_USER, I_PASS);
     SqlConnection *sCon = (SqlConnection*) conn;
     if(!list) rv = sCon->getExclusiveLock();
     //during connection close, this exclusive lock will be automatically released
@@ -363,22 +82,22 @@ int main(int argc, char **argv)
         close(fd);
         conn->disconnect();
         delete conn;
-        return 1;
+        return 4;
     }
     void *startAddr = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     if (MAP_FAILED == startAddr) {
         printf("Unable to read undo log file:mmap failed.\n");
         conn->disconnect();
         delete conn;
-        return 2;
+        return 5;
     }
-    rv = readAndPopulateStmts();
+    rv = SqlStatement::readAndPopulateStmts(conn, stmtBuckets, list, interactive);
     if (OK != rv)
     {
         printf("Unable to read stmt log file\n");
         conn->disconnect();
         delete conn;
-        return 2;
+        return 6;
     }
 
     printf("Redo log filename is :%s\n", fileName);
@@ -420,7 +139,7 @@ int main(int argc, char **argv)
             }
             SqlStatement *sqlStmt = (SqlStatement*)stmt; 
             sqlStmt->setLoading(true);
-            addToHashTable(stmtID, stmt); 
+            SqlStatement::addToHashTable(stmtID, stmt,stmtBuckets, stmtString); 
         }    
         else if(logType == -2) { //commit
             conn->beginTrans();
@@ -444,7 +163,7 @@ int main(int argc, char **argv)
                 //printf("eType is %d\n", eType);
                 AbsSqlStatement *stmt = NULL;
                 if (!list) {
-                  stmt = getStmtFromHashTable(stmtID);
+                  stmt = SqlStatement::getStmtFromHashTable(stmtID,stmtBuckets);
                   if (NULL == stmt) {
                     printError(ErrSysInternal, "Unable to find in stmt hashtable");
                     retVal=2;
@@ -486,7 +205,7 @@ int main(int argc, char **argv)
                         if (*(int*)iter <0) break;
                         continue;
                     }
-                    setParam(stmt, pos, type, len, value);
+                    SqlStatement::setParamValues(stmt, pos, type, len, value);
                     if (*(int*)iter <0) break;
                 }
             }
@@ -503,11 +222,12 @@ int main(int argc, char **argv)
                continue;
             }
             if (interactive) printf("FREE %d:\n", stmtID);
-            AbsSqlStatement *stmt = getStmtFromHashTable(stmtID);
+            AbsSqlStatement *stmt = SqlStatement::getStmtFromHashTable(stmtID,
+                                                                  stmtBuckets);
             if (stmt) {
                 stmt->free();
                 delete stmt;
-                removeFromHashTable(stmtID);
+                SqlStatement::removeFromHashTable(stmtID,stmtBuckets);
             } else { printError(ErrSysInternal, "statement not found for %d\n",stmtID);}
         }    
         else if(logType == -4) { //prepare and execute
@@ -519,7 +239,6 @@ int main(int argc, char **argv)
             len = *(int*)iter;
             iter = iter + sizeof(int);
             strncpy(stmtString, iter, len);
-            stmtString[len+1] ='\0';
             iter = iter + len;
             if (list)  {
                printf("EXECDIRECT SID:%d TID:%d STMT:%s\n", stmtID, txnID, stmtString);
@@ -569,8 +288,8 @@ int main(int argc, char **argv)
     munmap((char*)startAddr, st.st_size);
     close(fd);
     if (!list) {
-        filterAndWriteStmtLogs();
-        freeAllStmtHandles();
+        SqlStatement::filterAndWriteStmtLogs(stmtBuckets);
+        SqlStatement::freeAllStmtHandles(stmtBuckets);
     }
     conn->disconnect();
     delete conn;
