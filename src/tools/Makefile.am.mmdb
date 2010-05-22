@@ -10,27 +10,27 @@ csql_LDADD = $(top_builddir)/src/storage/libcsql.la \
 csql_LDFLAGS = -lrt -lpthread -lcrypt -lreadline
 
 redo_SOURCES = redo.cxx
-redo_LDADD = $(top_builddir)/src/storage/.libs/libcsql.so \
-	$(top_builddir)/src/sql/.libs/libcsqlsql.so \
-	$(top_builddir)/src/sqllog/.libs/libcsqlsqllog.so \
-	$(top_builddir)/src/network/.libs/libcsqlnw.so \
-	$(top_builddir)/src/sqlnetwork/.libs/libcsqlsqlnw.so 
+redo_LDADD = $(top_builddir)/src/storage/libcsql.la \
+	$(top_builddir)/src/sql/libcsqlsql.la \
+	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la 
 redo_LDFLAGS = -lrt -lpthread -lcrypt 
 
 recover_SOURCES = recover.cxx
-recover_LDADD = $(top_builddir)/src/storage/.libs/libcsql.so \
-    $(top_builddir)/src/sql/.libs/libcsqlsql.so \
-    $(top_builddir)/src/sqllog/.libs/libcsqlsqllog.so \
-    $(top_builddir)/src/network/.libs/libcsqlnw.so \
-    $(top_builddir)/src/sqlnetwork/.libs/libcsqlsqlnw.so
+recover_LDADD = $(top_builddir)/src/storage/libcsql.la \
+    $(top_builddir)/src/sql/libcsqlsql.la \
+    $(top_builddir)/src/sqllog/libcsqlsqllog \
+    $(top_builddir)/src/network/libcsqlnw.la \
+    $(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la
 recover_LDFLAGS = -lrt -lpthread -lcrypt
 
 catalog_SOURCES = catalog.cxx
-catalog_LDADD = $(top_builddir)/src/storage/.libs/libcsql.so \
-     $(top_builddir)/src/sql/.libs/libcsqlsql.so \
-    $(top_builddir)/src/sqllog/.libs/libcsqlsqllog.so \
-    $(top_builddir)/src/network/.libs/libcsqlnw.so \
-    $(top_builddir)/src/sqlnetwork/.libs/libcsqlsqlnw.so
+catalog_LDADD = $(top_builddir)/src/storage/libcsql.la \
+     $(top_builddir)/src/sql/libcsqlsql.la \
+    $(top_builddir)/src/sqllog/libcsqlsqllog.la \
+    $(top_builddir)/src/network/libcsqlnw.la \
+    $(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la
 catalog_LDFLAGS = -lcrypt
 
 csqlserver_LDADD = $(top_builddir)/src/storage/libcsql.la 
