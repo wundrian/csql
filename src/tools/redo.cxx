@@ -63,16 +63,20 @@ int main(int argc, char **argv)
         sprintf(fileName, "%s/csql.db.cur", Conf::config.getDbFile());
     }
     int fd = open(fileName, O_RDONLY);
-    if (-1 == fd) { return OK; }
+    if (-1 == fd) { conn->disconnect(); delete conn; return OK; }
     if (fstat(fd, &st) == -1) {
         printError(ErrSysInternal, "Unable to retrieve undo log file size");
         close(fd);
+        conn->disconnect();
+        delete conn;
         return 3;
     }
     if (st.st_size ==0) {
         printError(ErrNote, "No Redo logs found during recovery");
         SqlStatement::readAndPopulateStmts(conn, stmtBuckets, list, interactive);
         close(fd);
+        conn->disconnect();
+        delete conn;
         return 0;
     }
     SqlConnection *sCon = (SqlConnection*) conn;

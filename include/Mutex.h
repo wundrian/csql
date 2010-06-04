@@ -30,6 +30,7 @@ class Mutex
     int releaseShareLock(int procSlot, bool procAccount=true);
     int destroy();
     int recoverMutex();
+    static int CASGen(void *ptr, InUse oldVal, InUse newVal);
     static int CASL(long *ptr, long oldVal, long newVal);
     static int CAS(int *ptr, int oldVal, int newVal);
     int getLockVal(){ return lock; }

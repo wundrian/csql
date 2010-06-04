@@ -89,8 +89,7 @@ DbRetVal TransactionManager::startTransaction(LockManager *lMgr, IsolationLevel 
         { 
             //the previous transaction shall be used again
             //trans->status_ = TransRunning;
-            if ( 0 != Mutex::CAS((int*)&trans->status_, 
-                                    TransReserved, TransRunning)) {
+            if ( 0 != Mutex::CASGen(&trans->status_, TransReserved, TransRunning)) {
                 printError(ErrLockTimeOut, "unable to get lock to reuse the transaction");
                 return ErrLockTimeOut;
             }
@@ -127,8 +126,7 @@ DbRetVal TransactionManager::startTransaction(LockManager *lMgr, IsolationLevel 
     //set the state
     trans = iter;
     //trans->status_ = TransRunning;
-    if ( 0 != Mutex::CAS((int*)&trans->status_ , 
-                           TransNotUsed, TransRunning)) {
+    if ( 0 != Mutex::CASGen(&trans->status_ , TransNotUsed, TransRunning)) {
         printError(ErrLockTimeOut, "Unable to start transaction. Timeout. Retry..");
         sysdb->releaseTransTableMutex();
         return ErrLockTimeOut;
@@ -165,7 +163,7 @@ DbRetVal TransactionManager::commit(LockManager *lockManager)
         printError(ErrSysInternal, "Fatal:Trans WaitLock is not null\n");
     }
     trans->removeUndoLogs(sysdb);
-    if ( 0 != Mutex::CAS((int*)&trans->status_, TransRunning, TransReserved))
+    if ( 0 != Mutex::CASGen(&trans->status_, TransRunning, TransReserved))
     {
         printError(ErrSysFatal, "Transaction state corrupted %d\n", trans->status_);
         return ErrSysFatal;
@@ -208,7 +206,7 @@ DbRetVal TransactionManager::rollback(LockManager *lockManager, Transaction *t)
     }
 
     //trans->status_ = TransNotUsed;
-    if ( 0 != Mutex::CAS((int*)&trans->status_, TransRunning, TransReserved))
+    if ( 0 != Mutex::CASGen(&trans->status_, TransRunning, TransReserved))
     {
         printError(ErrSysFatal, "Fatal:Unable to abort transaction %d\n", trans->status_);
         return ErrSysFatal;

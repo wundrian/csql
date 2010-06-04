@@ -24,11 +24,11 @@ class Transaction;
 class LockInfo
 {
     public:
-    int noOfReaders_;
+    InUse noOfReaders_;
     //-1 indicates write lock is taken
 
-    int waitReaders_;
-    int waitWriters_;
+    InUse waitReaders_;
+    InUse waitWriters_;
     LockInfo() { noOfReaders_ = 0; waitReaders_ = 0; waitWriters_ = 0; }
 
 };

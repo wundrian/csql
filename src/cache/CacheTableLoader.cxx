@@ -94,7 +94,7 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
     char dsn[72];
     DbRetVal rv = OK;
     FILE *fp;
-    fp = fopen(Conf :: config.getDsConfigFile(),"r");
+    fp = fopen(Conf::config.getDsConfigFile(),"r");
     if(fp==NULL) {
     	printError(ErrSysInit, "csqlds.conf file does not exist");
 	    return ErrSysInit;
@@ -923,8 +923,7 @@ DbRetVal CacheTableLoader::recoverAllCachedTables()
             printf("There is no table to be cached.\n");
             return OK;
         }
-        //if (mode ==2 )  //just replicated table and not cached
-        //continue;
+        if (!TableConf::config.isTableCached(mode)) continue;
         printDebug(DM_Gateway, "Recovering Table from target db: %s\n", tablename);
         setCondition(TableConf::config.getRealConditionFromFile(condition));
         if( (strcmp(Conf::config.getDSN(),dsnname)!=0) ){

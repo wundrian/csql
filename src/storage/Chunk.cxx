@@ -51,13 +51,12 @@ void* Chunk::allocateForLargeDataSize(Database *db)
     if (BITSET(pageInfo->flags, HAS_SPACE))
     {
         char *data = ((char*)curPage_) + sizeof(PageInfo);
-        int oldVal = pageInfo->flags;
-        int newVal = oldVal;
+        InUse oldVal = pageInfo->flags;
+        InUse newVal = oldVal;
         CLEARBIT(newVal, HAS_SPACE);
-        int retVal = Mutex::CAS(&pageInfo->flags, oldVal, newVal);
+        int retVal = Mutex::CASGen(&pageInfo->flags, oldVal, newVal);
         if (retVal !=0) printError(ErrSysFatal, "Unable to set flags");
         *((InUse*)data) = 1;
-        //Mutex::CAS((InUse*)data , 0, 1);
         db->releaseAllocDatabaseMutex();
         return data + sizeof(InUse);
     }
@@ -95,15 +94,14 @@ void* Chunk::allocateForLargeDataSize(Database *db)
     }
 
     char* data = ((char*)curPage_) + sizeof(PageInfo);
-    int oldVal = pageInfo->flags;
-    int newVal = oldVal;
+    InUse oldVal = pageInfo->flags;
+    InUse newVal = oldVal;
     CLEARBIT(newVal, HAS_SPACE);
-    retVal = Mutex::CAS(&pageInfo->flags, oldVal, newVal);
+    retVal = Mutex::CASGen(&pageInfo->flags, oldVal, newVal);
     if(retVal !=0) {
         printError(ErrLockTimeOut, "Fatal:Unable to set flags");
     }
     *((InUse*)data) = 1;
-    //Mutex::CASL((InUse*)data , 0, 1);
     db->releaseAllocDatabaseMutex();
     return data + sizeof(InUse);
 
@@ -142,12 +140,7 @@ void* Chunk::allocateFromFirstPage(Database *db, int noOfDataNodes, DbRetVal *st
     }
     printDebug(DM_Alloc,"ChunkID:%d Scan for free node End:Page :%x",
                                                   chunkID_, pageIter);
-    //*((InUse*)data) = 1;
-#if defined(__sparcv9)
-    int ret = Mutex::CASL((InUse*)data , 0, 1);
-#else
-    int ret = Mutex::CAS((InUse*)data , 0, 1);
-#endif
+    int ret = Mutex::CASGen(data, 0, 1);
     if(ret !=0) {
         *status = ErrLockTimeOut;
         //printError(ErrLockTimeOut, "Unable to allocate from first page. Retry...");
@@ -183,7 +176,6 @@ void* Chunk::allocateFromNewPage(Database *db, DbRetVal *status)
 
     char* data = ((char*)page) + sizeof(PageInfo);
     *((InUse*)data) = 1;
-    //Mutex::CAS((int*)data , 0, 1);
 
     //create the link between old page and the newly created page
     PageInfo* pageInfo = ((PageInfo*)curPage_);
@@ -275,10 +267,10 @@ void* Chunk::allocate(Database *db, DbRetVal *status)
 
         printDebug(DM_Alloc, "ChunkID:%d curPage does not have free nodes.", chunkID_);
         //there are no free data space in this page
-        int oldVal = pageInfo->flags;
-        int newVal = oldVal;
+        InUse oldVal = pageInfo->flags;
+        InUse newVal = oldVal;
         CLEARBIT(newVal, HAS_SPACE);
-        int ret = Mutex::CAS(&pageInfo->flags, oldVal, newVal);
+        int ret = Mutex::CASGen(&pageInfo->flags, oldVal, newVal);
         if(ret !=0) {
             *status = ErrLockTimeOut;
             printDebug(DM_Warning, "Unable to set hasFreespace");
@@ -301,12 +293,7 @@ void* Chunk::allocate(Database *db, DbRetVal *status)
         if (*status == OK) setPageDirty(db, data);
         return data;
     }
-    //*((InUse*)data) = 1;
-#if defined(__sparcv9)
-    int retVal = Mutex::CASL((InUse*)data , 0, 1);
-#else
-    int retVal = Mutex::CAS((InUse*)data , 0, 1);
-#endif
+    int retVal = Mutex::CASGen(data, 0, 1);
     if(retVal !=0) {
         *status = ErrLockTimeOut;
         //releaseChunkMutex(db->procSlot);
@@ -360,22 +347,17 @@ void* Chunk::allocateForLargeDataSize(Database *db, size_t size)
         ((PageInfo*)curPage_)->nextPage_ = (Page*) pageInfo;
         curPage_ = (Page*) pageInfo;
         char* data = ((char*)curPage_) + sizeof(PageInfo);
-        //*((InUse*)data) = 1;
-#if defined(__sparcv9) 
-        int ret = Mutex::CASL((InUse*)data , 0, 1);
-#else
-        int ret = Mutex::CAS((InUse*)data , 0, 1);
-#endif
+        int ret = Mutex::CASGen(data, 0, 1);
         if(ret !=0) {
              printError(ErrLockTimeOut, "Lock Timeout: retry...");
              return NULL;
         }
         pageInfo->isUsed_=1;
-        int oldVal = pageInfo->flags;
-        int newVal = oldVal;
+        InUse oldVal = pageInfo->flags;
+        InUse newVal = oldVal;
         CLEARBIT(newVal, HAS_SPACE);
         setPageDirty(pageInfo);
-        ret = Mutex::CAS(&pageInfo->flags, oldVal, newVal);
+        ret = Mutex::CASGen(&pageInfo->flags, oldVal, newVal);
         if (ret !=0) printError(ErrSysFatal, "Unable to set flags");
         return data + sizeof(InUse);
     }else{
@@ -385,7 +367,7 @@ void* Chunk::allocateForLargeDataSize(Database *db, size_t size)
         ((PageInfo*)curPage_)->nextPage_ = (Page*) pageInfo;
         curPage_ = (Page*) pageInfo;
         varInfo->size_= size;
-        int ret = Mutex::CAS(&varInfo->isUsed_ , varInfo->isUsed_, 1);
+        int ret = Mutex::CASGen(&varInfo->isUsed_ , varInfo->isUsed_, 1);
         if(ret !=0) {
              printError(ErrLockTimeOut, "Unable to get lock for var alloc. Retry...");
              return NULL;
@@ -502,7 +484,7 @@ void* Chunk::allocateFromCurPageForVarSize(size_t size, int pslot, DbRetVal *rv)
             }
             else if (size == varInfo->size_) {
                 //varInfo->isUsed_ = 1;
-                int ret = Mutex::CAS(&varInfo->isUsed_ , 0, 1);
+                int ret = Mutex::CASGen(&varInfo->isUsed_ , 0, 1);
                 if(ret !=0) {
                      printDebug(DM_Warning, "Unable to get lock for var alloc size:%d ", size);
                      *rv = ErrLockTimeOut;
@@ -605,7 +587,7 @@ void* Chunk::varSizeFirstFitAllocate(size_t size, int pslot, DbRetVal *rv)
                 }
                 else if (alignedSize == varInfo->size_) {
                     //varInfo->isUsed_ = 1;
-                    int ret = Mutex::CAS((int*)&varInfo->isUsed_, 0,  1);
+                    int ret = Mutex::CASGen(&varInfo->isUsed_, 0, 1);
                     if(ret !=0) {
                        printDebug(DM_Warning,"Unable to get lock to set isUsed flag.");
                        *rv = ErrLockTimeOut;
@@ -665,7 +647,7 @@ void Chunk::freeForVarSizeAllocator(Database *db, void *ptr, int pslot)
          SETBIT(pageInfo->flags, HAS_SPACE);
          prev->nextPage_ = pageInfo->nextPage_;
     }
-    int retVal = Mutex::CAS((int*)&varInfo->isUsed_, 1, 0);
+    int retVal = Mutex::CASGen(&varInfo->isUsed_, 1, 0);
     if(retVal !=0) {
         printError(ErrAlready, "Fatal: Varsize double free for %x", ptr);
     }
@@ -714,12 +696,12 @@ void Chunk::freeForLargeAllocator(void *ptr, int pslot)
     if(((PageInfo*)firstPage_)->nextPage_ != NULL){
       pageInfo->nextPageAfterMerge_ = NULL;
       //pageInfo->isUsed_ = 0;
-      ret = Mutex::CAS((int*)&pageInfo->isUsed_, pageInfo->isUsed_, 0);
+      ret = Mutex::CASGen(&pageInfo->isUsed_, pageInfo->isUsed_, 0);
       if (ret != 0) printError(ErrSysFatal, "Unable to set isUsed flag");
-      int oldVal = pageInfo->flags;
-      int newVal = oldVal;
+      InUse oldVal = pageInfo->flags;
+      InUse newVal = oldVal;
       SETBIT(newVal, HAS_SPACE);
-      ret = Mutex::CAS((int*)&pageInfo->flags, oldVal, newVal);
+      ret = Mutex::CASGen(&pageInfo->flags, oldVal, newVal);
       if (ret != 0) printError(ErrSysFatal, "Unable to set flags");
       if(pageInfo == firstPage_ && ((PageInfo*)firstPage_)->nextPage_ != NULL)
       {
@@ -765,18 +747,14 @@ void Chunk::free(Database *db, void *ptr)
     }*/
     //unset the used flag
     //*((int*)ptr -1 ) = 0;
-    int oldValue=1;
+    InUse oldValue=1;
     if (*((InUse*)ptr -1 ) == 0) {
         printError(ErrSysFatal, "Fatal:Data node already freed %x Chunk:%d value:%d", ptr, chunkID_, 
                                                                                     *((InUse*)ptr -1 ));
         oldValue=0;
         //return; 
     }
-#if defined(__sparcv9)
-    int retVal = Mutex::CASL(((InUse*)ptr -1), oldValue, 0);
-#else
-    int retVal = Mutex::CAS(((InUse*)ptr -1), oldValue, 0);
-#endif
+    int retVal = Mutex::CASGen(((InUse*)ptr -1), oldValue, 0);
     if(retVal !=0) {
         printError(ErrSysFatal, "Unable to get lock to free for %x", ptr);
         //releaseChunkMutex(db->procSlot);
@@ -791,10 +769,10 @@ void Chunk::free(Database *db, void *ptr)
         return;
     }
     //set the pageinfo where this ptr points
-    int oldVal = pageInfo->flags;
-    int newVal = oldVal;
+    InUse oldVal = pageInfo->flags;
+    InUse newVal = oldVal;
     SETBIT(newVal, HAS_SPACE);
-    retVal = Mutex::CAS((int*)&pageInfo->flags, oldVal, newVal);
+    retVal = Mutex::CASGen(&pageInfo->flags, oldVal, newVal);
     if(retVal !=0) {
         printError(ErrSysFatal, "Unable to get lock to set flags");
     }
@@ -990,19 +968,19 @@ int Chunk::destroyMutex()
 }
 int Chunk::splitDataBucket(VarSizeInfo *varInfo, size_t needSize, int pSlot, DbRetVal *rv)
 {
-    int remSpace = varInfo->size_ - sizeof(VarSizeInfo) - needSize;
+    InUse remSpace = varInfo->size_ - sizeof(VarSizeInfo) - needSize;
     //varInfo->isUsed_ = 1;
-    int ret = Mutex::CAS((int*)&varInfo->isUsed_ , 0, 1);
+    int ret = Mutex::CASGen(&varInfo->isUsed_ , 0, 1);
     if(ret !=0) {
         printDebug(DM_Warning, "Unable to set I isUsed flag");
         *rv = ErrLockTimeOut;
         return 1;
     }
     //varInfo->size_ = needSize;
-    ret = Mutex::CAS((int*)&varInfo->size_, varInfo->size_ , needSize);
+    ret = Mutex::CASGen(&varInfo->size_, varInfo->size_ , needSize);
     if(ret !=0) {
         printError(ErrSysFatal, "Unable to set I size flag");
-        ret = Mutex::CAS((int*)&varInfo->isUsed_ , varInfo->isUsed_, 0);
+        ret = Mutex::CASGen(&varInfo->isUsed_ , varInfo->isUsed_, 0);
         if (ret !=0) printError(ErrSysFatal, "Unable to reset isUsed flag");
         *rv = ErrSysFatal;
         return 1;    
@@ -1010,19 +988,19 @@ int Chunk::splitDataBucket(VarSizeInfo *varInfo, size_t needSize, int pSlot, DbR
     VarSizeInfo *varInfo2 = (VarSizeInfo*)((char*)varInfo +
                sizeof(VarSizeInfo) +  varInfo->size_);
     //varInfo2->isUsed_ = 0;
-    ret = Mutex::CAS((int*)&varInfo2->isUsed_ , varInfo2->isUsed_, 0);
+    ret = Mutex::CASGen(&varInfo2->isUsed_ , varInfo2->isUsed_, 0);
     if(ret !=0) {
         printError(ErrSysFatal, "Unable to set II isUsed flag");
-        ret = Mutex::CAS((int*)&varInfo->isUsed_ , varInfo->isUsed_, 0);
+        ret = Mutex::CASGen(&varInfo->isUsed_ , varInfo->isUsed_, 0);
         if (ret !=0) printError(ErrSysFatal, "Unable to reset isUsed flag");
         *rv = ErrSysFatal;
         return 1;
     }
     //varInfo2->size_  = remSpace;
-    ret = Mutex::CAS((int*)&varInfo2->size_, varInfo2->size_ , remSpace);
+    ret = Mutex::CASGen(&varInfo2->size_, varInfo2->size_ , remSpace);
     if(ret !=0) {
         printError(ErrSysFatal, "Unable to set II size flag");
-        ret = Mutex::CAS((int*)&varInfo->isUsed_ , varInfo->isUsed_, 0);
+        ret = Mutex::CASGen((int*)&varInfo->isUsed_ , varInfo->isUsed_, 0);
         if (ret !=0) printError(ErrSysFatal, "Unable to reset isUsed flag");
         *rv = ErrSysFatal;
         return 1;
@@ -1037,12 +1015,12 @@ int Chunk::createDataBucket(Page *page, size_t totalSize, size_t needSize, int p
     //already db alloc mutex is taken
     VarSizeInfo *varInfo = (VarSizeInfo*)(((char*)page) + sizeof(PageInfo));
     //varInfo->isUsed_ = 0;
-    int ret = Mutex::CAS((int*)&varInfo->isUsed_ , varInfo->isUsed_, 0);
+    int ret = Mutex::CASGen(&varInfo->isUsed_ , varInfo->isUsed_, 0);
     if(ret !=0) {
         printError(ErrSysFatal, "Fatal:Unable to get lock to set isUsed flag");
     }
     //varInfo->size_ = PAGE_SIZE - sizeof(PageInfo) - sizeof(VarSizeInfo);
-    ret = Mutex::CAS((int*)&varInfo->size_, varInfo->size_ , 
+    ret = Mutex::CASGen(&varInfo->size_, varInfo->size_ , 
                        PAGE_SIZE - sizeof(PageInfo) - sizeof(VarSizeInfo));
     if(ret !=0) {
         printError(ErrSysFatal, "Unable to get lock to set size");

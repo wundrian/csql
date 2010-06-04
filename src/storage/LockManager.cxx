@@ -174,7 +174,7 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
            {
 
                //iter->lInfo_.waitReaders_++;
-               int ret = Mutex::CAS((int*)&iter->lInfo_.waitReaders_, 
+               int ret = Mutex::CASGen(&iter->lInfo_.waitReaders_, 
                                        iter->lInfo_.waitReaders_,
                                        iter->lInfo_.waitReaders_+1);
                if (ret !=0) {
@@ -192,7 +192,7 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
                if(iter->lInfo_.waitWriters_ >0)
                {
                    //iter->lInfo_.waitReaders_++;
-                   int ret = Mutex::CAS((int*)&iter->lInfo_.waitReaders_, 
+                   int ret = Mutex::CASGen(&iter->lInfo_.waitReaders_, 
                                         iter->lInfo_.waitReaders_, 
                                         iter->lInfo_.waitReaders_+1);
                    if (ret !=0) {
@@ -214,7 +214,7 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
                        return ErrLockTimeOut;
                    }
                    //iter->lInfo_.noOfReaders_++;
-                   int ret = Mutex::CAS((int*)&iter->lInfo_.noOfReaders_, 
+                   int ret = Mutex::CASGen(&iter->lInfo_.noOfReaders_, 
                                         iter->lInfo_.noOfReaders_, 
                                         iter->lInfo_.noOfReaders_+1);
                    if (ret !=0) {
@@ -228,8 +228,7 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
                    printDebug(DM_Lock, "LockManager::getSharedLock End");
                    return rv;
                 }
-           }else
-           {
+           }else {
                DbRetVal rv = OK;
                if (trans != NULL) rv = (*trans)->insertIntoHasList(systemDatabase_, iter);
                if (rv != OK) {
@@ -237,7 +236,7 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
                    return ErrLockTimeOut;
                }
                //iter->lInfo_.noOfReaders_++;
-               int ret = Mutex::CAS((int*)&iter->lInfo_.noOfReaders_, 
+               int ret = Mutex::CASGen(&iter->lInfo_.noOfReaders_, 
                                         iter->lInfo_.noOfReaders_, 
                                         iter->lInfo_.noOfReaders_+1);
                if (ret !=0) {
@@ -334,7 +333,7 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
            if (trans != NULL) (*trans)->removeWaitLock();
            return ErrLockTimeOut;
        }*/
-       int oldValue = cachedLockNode->lInfo_.noOfReaders_;
+       InUse oldValue = cachedLockNode->lInfo_.noOfReaders_;
        if (cachedLockNode->lInfo_.noOfReaders_ == 0)
        {
            //if there are waiters allow then to take the lock
@@ -349,7 +348,7 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
               
                }
                //cachedLockNode->lInfo_.noOfReaders_++;
-               int ret = Mutex::CAS((int*)&cachedLockNode->lInfo_.noOfReaders_, 
+               int ret = Mutex::CASGen(&cachedLockNode->lInfo_.noOfReaders_, 
                                    0,cachedLockNode->lInfo_.noOfReaders_+1);
                if (ret !=0) {
                    printError(ErrLockTimeOut, "Unable to take S lock. TimeOut : Retry..");
@@ -358,7 +357,7 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
                    return ErrLockTimeOut;
                }
                //cachedLockNode->lInfo_.waitReaders_--;
-               ret = Mutex::CAS((int*)&cachedLockNode->lInfo_.waitReaders_, 
+               ret = Mutex::CASGen(&cachedLockNode->lInfo_.waitReaders_, 
                                         cachedLockNode->lInfo_.waitReaders_, 
                                         cachedLockNode->lInfo_.waitReaders_-1);
                if (ret !=0) {
@@ -389,7 +388,7 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
                return ErrLockTimeOut;
            }
            //cachedLockNode->lInfo_.noOfReaders_++;
-           int ret = Mutex::CAS((int*)&cachedLockNode->lInfo_.noOfReaders_, 
+           int ret = Mutex::CASGen(&cachedLockNode->lInfo_.noOfReaders_, 
                                         oldValue, oldValue+1);
            if (ret !=0) {
                printError(ErrLockTimeOut, "Unable to take S lock. Timeout : Retry..");
@@ -398,7 +397,7 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
                return ErrLockTimeOut;
            }
            //cachedLockNode->lInfo_.waitReaders_--;
-           ret = Mutex::CAS((int*)&cachedLockNode->lInfo_.waitReaders_, 
+           ret = Mutex::CASGen(&cachedLockNode->lInfo_.waitReaders_, 
                                         cachedLockNode->lInfo_.waitReaders_, 
                                         cachedLockNode->lInfo_.waitReaders_-1);
            if (ret !=0) {
@@ -479,7 +478,7 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
            if (iter->lInfo_.noOfReaders_ != 0)
            {
                //iter->lInfo_.waitWriters_++;
-               int ret = Mutex::CAS((int*)&iter->lInfo_.waitWriters_,
+               int ret = Mutex::CASGen(&iter->lInfo_.waitWriters_,
                                        iter->lInfo_.waitWriters_,
                                        iter->lInfo_.waitWriters_+1);
                if (ret !=0) {
@@ -502,7 +501,7 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
                    return ErrLockTimeOut;
                }
                //iter->lInfo_.noOfReaders_ = -1;
-               int ret = Mutex::CAS((int*)&iter->lInfo_.noOfReaders_, 0, -1);
+               int ret = Mutex::CASGen(&iter->lInfo_.noOfReaders_, 0, -1);
                if (ret !=0) {
                    if (trans!= NULL) (*trans)->removeFromHasList(systemDatabase_, tuple);
                    printError(ErrLockTimeOut, "Unable to take X lock on tuple. Timeout : Retry..");
@@ -590,7 +589,7 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
            printError(ErrLockTimeOut, "Unable to get bucket mutex");
            return ErrLockTimeOut;
        }*/
-       int oldValue = cachedLockNode->lInfo_.noOfReaders_;
+       InUse oldValue = cachedLockNode->lInfo_.noOfReaders_;
        if (cachedLockNode->lInfo_.noOfReaders_ == 0)
        {
            DbRetVal rv ;
@@ -601,8 +600,7 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
                return ErrLockTimeOut;
            }
            //cachedLockNode->lInfo_.noOfReaders_ = -1;
-           int ret = Mutex::CAS((int*)&cachedLockNode->lInfo_.noOfReaders_,
-                                        0, -1);
+           int ret = Mutex::CASGen(&cachedLockNode->lInfo_.noOfReaders_,0,-1);
            if (ret !=0) {
                if (trans != NULL) (*trans)->removeFromHasList(systemDatabase_, tuple);
                if (trans != NULL) (*trans)->removeWaitLock();
@@ -611,7 +609,7 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
            }
 
            //cachedLockNode->lInfo_.waitWriters_--;
-           ret = Mutex::CAS((int*)&cachedLockNode->lInfo_.waitWriters_,
+           ret = Mutex::CASGen(&cachedLockNode->lInfo_.waitWriters_,
                                         cachedLockNode->lInfo_.waitWriters_,
                                         cachedLockNode->lInfo_.waitWriters_-1);
            if (ret !=0) {
@@ -631,8 +629,7 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
                                                            cachedLockNode);
                //upgrade it to exclusive lock
                //cachedLockNode->lInfo_.noOfReaders_ = -1;
-               int ret = Mutex::CAS((int*)&cachedLockNode->lInfo_.noOfReaders_,
-                                        1, -1);
+               int ret = Mutex::CASGen(&cachedLockNode->lInfo_.noOfReaders_, 1, -1);
                if (ret !=0) {
                    if (trans != NULL) (*trans)->removeWaitLock();
                    printError(ErrLockTimeOut, "Unable to upgrade lock. Timeout : Retry..");
@@ -640,7 +637,7 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
                }
 
                //cachedLockNode->lInfo_.waitWriters_--;
-               ret = Mutex::CAS((int*)&cachedLockNode->lInfo_.waitWriters_,
+               ret = Mutex::CASGen(&cachedLockNode->lInfo_.waitWriters_,
                                         cachedLockNode->lInfo_.waitWriters_,
                                         cachedLockNode->lInfo_.waitWriters_-1);
                if (ret !=0) {
@@ -659,8 +656,7 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
                                                            cachedLockNode);
                //upgrade it to exclusive lock
                //cachedLockNode->lInfo_.noOfReaders_ = -1;
-               int ret = Mutex::CAS((int*)&cachedLockNode->lInfo_.noOfReaders_,
-                                        1, -1);
+               int ret = Mutex::CASGen(&cachedLockNode->lInfo_.noOfReaders_, 1, -1);
                if (ret !=0) {
                    printError(ErrLockTimeOut, "Unable to upgrade lock. Timeout : Retry..");
                    if (trans != NULL) (*trans)->removeWaitLock();
@@ -668,7 +664,7 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
                }
 
                //cachedLockNode->lInfo_.waitWriters_--;
-               ret = Mutex::CAS((int*)&cachedLockNode->lInfo_.waitWriters_,
+               ret = Mutex::CASGen(&cachedLockNode->lInfo_.waitWriters_,
                                         cachedLockNode->lInfo_.waitWriters_,
                                         cachedLockNode->lInfo_.waitWriters_-1);
                if (ret !=0) {
@@ -688,7 +684,7 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
                printDebug(DM_Lock, "You already have exclusive lock:%x",
                                                         cachedLockNode);
                //cachedLockNode->lInfo_.waitWriters_--;
-               ret = Mutex::CAS((int*)&cachedLockNode->lInfo_.waitWriters_,
+               ret = Mutex::CASGen(&cachedLockNode->lInfo_.waitWriters_,
                                         cachedLockNode->lInfo_.waitWriters_,
                                         cachedLockNode->lInfo_.waitWriters_-1);
                if (ret !=0) {
@@ -706,7 +702,7 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
                printDebug(DM_Lock, "You already have exclusive lock:%x",
                                                            cachedLockNode);
                //cachedLockNode->lInfo_.waitWriters_--;
-               ret = Mutex::CAS((int*)&cachedLockNode->lInfo_.waitWriters_,
+               ret = Mutex::CASGen(&cachedLockNode->lInfo_.waitWriters_,
                                         cachedLockNode->lInfo_.waitWriters_,
                                         cachedLockNode->lInfo_.waitWriters_-1);
                if (ret !=0) {
@@ -761,12 +757,11 @@ DbRetVal LockManager::releaseLock(void *tuple)
    {
        if(iter->ptrToTuple_ == tuple)
        {
-           int oldValue = iter->lInfo_.noOfReaders_;
+           InUse oldValue = iter->lInfo_.noOfReaders_;
            if (iter->lInfo_.noOfReaders_ == -1)
            {
                //iter->lInfo_.noOfReaders_ = 0;
-               int ret = Mutex::CAS((int*)&iter->lInfo_.noOfReaders_,
-                                        -1, 0);
+               int ret = Mutex::CASGen(&iter->lInfo_.noOfReaders_, -1, 0);
                if (ret !=0) {
                    printError(ErrLockTimeOut, "Unable to release X lock taken : Retry..");
                    return ErrLockTimeOut;
@@ -804,8 +799,7 @@ DbRetVal LockManager::releaseLock(void *tuple)
            else if (iter->lInfo_.noOfReaders_ == 1)
            {
                //iter->lInfo_.noOfReaders_ = 0;
-               int ret = Mutex::CAS((int*)&iter->lInfo_.noOfReaders_,
-                                        1, 0);
+               int ret = Mutex::CASGen(&iter->lInfo_.noOfReaders_, 1, 0);
                if (ret !=0) {
                    printError(ErrLockTimeOut, "Unable to release S lock taken. Timeout : Retry..");
                    return ErrLockTimeOut;
@@ -839,9 +833,7 @@ DbRetVal LockManager::releaseLock(void *tuple)
            else
            {
                //iter->lInfo_.noOfReaders_--;
-               int ret = Mutex::CAS((int*)&iter->lInfo_.noOfReaders_,
-                                        oldValue,
-                                        oldValue - 1);
+               int ret = Mutex::CASGen(&iter->lInfo_.noOfReaders_, oldValue, oldValue - 1);
                if (ret !=0) {
                    printError(ErrLockTimeOut, "Unable to release S lock taken : Retry..");
                    return ErrLockTimeOut;
@@ -986,8 +978,7 @@ DbRetVal LockManager::deallocLockNode(LockHashNode *node, Bucket *bucket)
     //delete the node by making previous element point to the next element 
     //of the deleted element in the list
     //prev->next_ = iter->next_;
-    if ( 0 != Mutex::CASL((long*)&prev->next_, (long)val, 
-                                             (long)iter->next_)) {
+    if ( 0 != Mutex::CASL((long*)&prev->next_, (long)val, (long)iter->next_)) {
         printError(ErrLockTimeOut, "Unable to remove lock node \n");
         return ErrLockTimeOut;
     }

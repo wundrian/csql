@@ -33,8 +33,8 @@ enum AllocType
 class VarSizeInfo
 {
     public:
-    int size_;
-    int isUsed_;
+    InUse size_;
+    InUse isUsed_;
 };
 
 //Each Page has this info.
@@ -50,8 +50,8 @@ class VarSizeInfo
 class PageInfo
 {
      public:
-     int isUsed_;
-     int flags; //stores hasFreeSpace and isDirty
+     InUse isUsed_;
+     InUse flags; //stores hasFreeSpace and isDirty
 
      Page *nextPageAfterMerge_; //used only in case of
      //where pages are merged to store data which are more than

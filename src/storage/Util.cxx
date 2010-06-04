@@ -67,10 +67,10 @@ DbRetVal GlobalUniqueID::destroy()
 
 int GlobalUniqueID::getID(UniqueIDType type)
 {
-    int *id = (int*)(((char*)ptr) + sizeof(int) * type);
-    int oldVal = *id;
-    int newVal = oldVal + 1;
-    int ret = Mutex::CAS(id, oldVal, newVal);
+    InUse *id = (int*)(((char*)ptr) + sizeof(int) * type);
+    InUse oldVal = *id;
+    InUse newVal = oldVal + 1;
+    int ret = Mutex::CASGen(id, oldVal, newVal);
     if (ret) return -1;
     return *id;
 }

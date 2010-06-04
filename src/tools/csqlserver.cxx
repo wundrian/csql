@@ -188,7 +188,96 @@ void startCheckpointServer()
     return;
 }
 
+int recoverAndCheckPoint()
+{
+    char dbRedoFileName[MAX_FILE_LEN];
+    char dbChkptSchema[MAX_FILE_LEN];
+    char dbChkptMap[MAX_FILE_LEN];
+    char dbChkptData[MAX_FILE_LEN];
+    char dbBackupFile[MAX_FILE_LEN];
+    char cmd[1024];
 
+    //check for check point file if present recover 
+    sprintf(dbChkptSchema, "%s/db.chkpt.schema1", Conf::config.getDbFile());
+    if (FILE *file = fopen(dbChkptSchema, "r")) {
+        fclose(file);
+        sprintf(cmd, "cp -f %s %s/db.chkpt.schema", dbChkptSchema,
+                                                     Conf::config.getDbFile());
+        int ret = system(cmd);
+        if (ret != 0) {
+            printError(ErrOS, "backup schema file: Recovery failed.");
+            return 1;
+        }
+    }
+
+    sprintf(dbChkptMap, "%s/db.chkpt.map1", Conf::config.getDbFile());
+    if (FILE *file = fopen(dbChkptMap, "r")) {
+        fclose(file);
+        sprintf(cmd, "cp -f %s %s/db.chkpt.map", dbChkptMap,
+                                                     Conf::config.getDbFile());
+        int ret = system(cmd);
+        if (ret != 0) {
+            printError(ErrOS, "backup map file: Recovery failed.");
+            return 2;
+        }
+    }
+
+    int chkptID= Database::getCheckpointID();
+    sprintf(dbChkptData, "%s/db.chkpt.data%d", Conf::config.getDbFile(),
+                                                                      chkptID);
+    sprintf(dbBackupFile, "%s/db.chkpt.data1", Conf::config.getDbFile());
+
+    FILE *fl = NULL;
+    if (!Conf::config.useMmap() && (fl = fopen(dbBackupFile, "r"))) {
+        fclose(fl);
+        sprintf(cmd, "cp -f %s/db.chkpt.data1 %s", Conf::config.getDbFile(),
+                                                                  dbChkptData);
+        int ret = system(cmd);
+        if (ret != 0) {
+            printError(ErrOS, "backup data file. Recovery failed.");
+            return 3;
+        }
+    }
+    if (FILE *file = fopen(dbChkptData, "r")) {
+        fclose(file);
+        int ret = system("recover");
+        if (ret != 0) {
+            printError(ErrSysInternal, "recover: Recovery failed\n");
+            return 4;
+        }
+    }
+
+    //check for redo log file if present apply redo logs
+    sprintf(dbRedoFileName, "%s/csql.db.cur", Conf::config.getDbFile());
+    if (FILE *file = fopen(dbRedoFileName, "r")) {
+        fclose(file);
+        int ret = system("redo -a");
+        if (ret != 0) {
+            printError(ErrSysInternal, "redo: Recovery failed.\n");
+            return 5;
+        }
+        DatabaseManager *dbMgr = session->getDatabaseManager();
+        DbRetVal rv = dbMgr->checkPoint();
+        if (rv != OK) {
+            printError(ErrSysInternal,"checkpoint: Recovery failed.");
+            return 6;
+        }
+    }
+    return 0;
+}
+
+DbRetVal recoverCachedTables()
+{
+    printf("Database server recovering cached tables...\n");
+    logFine(Conf::logger, "Recovering Cached tables");
+    int ret = system("cachetable -R");
+    if (ret != 0) {
+        printError(ErrSysInternal, "cachetable: Recovery failed %d\n", ret);
+        return ErrSysInternal;
+    }
+    printf("Cached Tables recovered\n");
+    logFine(Conf::logger, "Cache Tables Recovery Complete");
+}
 
 void printUsage()
 {
@@ -198,36 +287,46 @@ void printUsage()
    printf("Description: Start the csql server and initialize the database.\n");
    return;
 }
+
 int main(int argc, char **argv)
 {
-    int c = 0,opt = 0;
-    char cmd[1024];
-    while ((c = getopt(argc, argv, "cv?")) != EOF) 
+    int c = 0, opt = 0;
+    bool freshStart = false;
+    while ((c = getopt(argc, argv, "cvi?")) != EOF) 
     {
         switch (c)
         {
             case '?' : { opt = 10; break; } //print help 
             case 'c' : { opt = 1; break; } //recover all the tables from cache
             case 'v' : { opt = 2; break; } //print version
+            case 'i' : { freshStart = true; break; }
             default: opt=10; 
-
         }
     }//while options
 
-    if (opt == 10) {
-        printUsage();
-        return 0;
-    }else if (opt ==2) {
-        printf("%s\n",version);
-        return 0;
-    }
+    if (opt == 10) { printUsage(); return 0; }
+    else if (opt ==2) { printf("%s\n",version); return 0; }
+    
     session = new SessionImpl();
     DbRetVal rv = session->readConfigFile();
     if (rv != OK)
     {
         printf("Unable to read the configuration file \n");
+        delete session;
         return 1;
     }
+
+    if (freshStart) {
+        char cmd[1024];
+        sprintf(cmd, "rm -rf %s/*", Conf::config.getDbFile());
+        int ret = system(cmd);
+        if (ret != 0) { delete session; return 2; }
+        if (Conf::config.useDurability()) {
+            FILE *fp = fopen(Conf::config.getTableConfigFile(), "w+");
+            fclose(fp);
+        }
+    }
+
     os::signal(SIGINT, sigTermHandler);
     os::signal(SIGTERM, sigTermHandler);
     os::signal(SIGCHLD, sigChildHandler);
@@ -235,21 +334,25 @@ int main(int argc, char **argv)
     if (rv != OK)
     {
         printf("Unable to start the Conf::logger\n");
+        delete session;
         return 2;
     }
     bool isInit = true;
     logFine(Conf::logger, "Server Started");
-    int ret  = session->initSystemDatabase();
-    if (0  != ret)
-    {
-        //printf(" System Database Initialization failed\n");
+    int ret = session->initSystemDatabase();
+    if (0 != ret) {
         printf("Attaching to exising database\n");
+        logFine(Conf::logger, "Attaching to existing database instance");
         isInit = false;
         delete session;
         session = new SessionImpl();
         ret = session->open(DBAUSER, DBAPASS);
         if (ret !=0) {
-            printf("Unable to attach to existing database\n");
+            printError(ErrSysInternal,
+                                    "Unable to attach to existing database\n");
+            Conf::logger.stopLogger();
+            session->destroySystemDatabase();
+            delete session;
             return 3;
         }
     }
@@ -263,136 +366,44 @@ int main(int argc, char **argv)
     GlobalUniqueID UID;
     if (isInit) UID.create();
 
-    if(isInit && Conf::config.useDurability())
-    {
-        char dbRedoFileName[MAX_FILE_LEN];
-        char dbChkptSchema[MAX_FILE_LEN];
-        char dbChkptMap[MAX_FILE_LEN];
-        char dbChkptData[MAX_FILE_LEN];
-        char dbBackupFile[MAX_FILE_LEN];
-        
-        //check for check point file if present recover 
-        sprintf(dbChkptSchema, "%s/db.chkpt.schema1", Conf::config.getDbFile());
-        if (FILE *file = fopen(dbChkptSchema, "r")) {
-            fclose(file);
-            sprintf(cmd, "cp -f %s %s/db.chkpt.schema", dbChkptSchema, Conf::config.getDbFile());
-            int ret = system(cmd);
-            if (ret != 0) {
-                Conf::logger.stopLogger();
-                session->destroySystemDatabase();
-                delete session;
-                return 20;
-            }
-        }
-        sprintf(dbChkptMap, "%s/db.chkpt.map1", Conf::config.getDbFile());
-        if (FILE *file = fopen(dbChkptMap, "r")) {
-            fclose(file);
-            sprintf(cmd, "cp -f %s %s/db.chkpt.map", dbChkptMap, Conf::config.getDbFile());
-            int ret = system(cmd);
-            if (ret != 0) {
-                Conf::logger.stopLogger();
-                session->destroySystemDatabase();
-                delete session;
-                return 30;
-            }
-        }
-        int chkptID= Database::getCheckpointID();
-        sprintf(dbChkptData, "%s/db.chkpt.data%d", Conf::config.getDbFile(),
-                                                   chkptID);
-        sprintf(dbBackupFile, "%s/db.chkpt.data1", Conf::config.getDbFile());
-        FILE *fl = NULL;
-        if (!Conf::config.useMmap() && (fl = fopen(dbBackupFile, "r"))) {
-            fclose(fl);
-            sprintf(cmd, "cp %s/db.chkpt.data1 %s", Conf::config.getDbFile(), dbChkptData);
-            int ret = system(cmd);
-            if (ret != 0) {
-                printError(ErrOS, "Unable to take backup for chkpt data file");
-                return 40;
-            }
-        }
-        if (FILE *file = fopen(dbChkptData, "r")) {
-            fclose(file);
-            int ret = system("recover");
-            if (ret != 0) {
-                printf("Recovery failed\n");
-                Conf::logger.stopLogger();
-                session->destroySystemDatabase();
-                delete session;
-                return 50;
-            }
-        }
-
-        //check for redo log file if present apply redo logs
-        sprintf(dbRedoFileName, "%s/csql.db.cur", Conf::config.getDbFile());
-        if (FILE *file = fopen(dbRedoFileName, "r"))
-        {
-            fclose(file);
-            int ret = system("redo -a");
-            if (ret != 0) { 
-                printf("Recovery failed. Redo log file corrupted\n");
-                Conf::logger.stopLogger();
-                session->destroySystemDatabase();
-                delete session;
-                return 60;
-            }
-
-            // take check point at this moment 
-            DatabaseManager *dbMgr = session->getDatabaseManager();
-            rv = dbMgr->checkPoint();
-            if (rv != OK)
-            {
-                printError(ErrSysInternal, "checkpoint failed after redo log apply");
-                Conf::logger.stopLogger();
-                session->destroySystemDatabase();
-                delete session;
-                return 70;
-            }
-        }
-    }
-    bool isCacheReq = false, isSQLReq= false, isAsyncReq=false, isChkptReq=false;
-    recoverFlag = true;
-    if (opt == 1 && isInit && ! Conf::config.useDurability()) {
-        if (Conf::config.useCache()) {
-            printf("Database server recovering cached tables...\n");
-            int ret = system("cachetable -R");
-            if (ret != 0) { 
-                printf("Cached Tables recovery failed %d\n", ret);
-                Conf::logger.stopLogger();
-                session->destroySystemDatabase();
-                delete session;
-                return 2;
-            }
-            printf("Cached Tables recovered\n");
-        } else {
-            printf("Cache mode is not set in csql.conf. Cannot recover\n");
+    if(isInit && Conf::config.useDurability()) {
+        ret = recoverAndCheckPoint();
+        if (ret) {
             Conf::logger.stopLogger();
             session->destroySystemDatabase();
             delete session;
-            return 1;
+            return 4;
         }
     }
+    recoverFlag = true;
+
+    bool isAsyncReq = Conf::config.useCache() &&
+                                    Conf::config.getCacheMode() == ASYNC_MODE;
+    bool isCacheReq = Conf::config.useCache() && Conf::config.useTwoWayCache()
+                                && Conf::config.getCacheMode() != OFFLINE_MODE;
+    bool isSQLReq = Conf::config.useCsqlSqlServer();
+    bool isChkptReq = Conf::config.useDurability();
+
+    if (isInit && !Conf::config.useDurability() && Conf::config.useCache()) {
+        rv = recoverCachedTables();
+        if (rv != OK) {
+            Conf::logger.stopLogger();
+            session->destroySystemDatabase();
+            delete session;
+            return 5;
+        }
+    }
+
     //TODO:: kill all the child servers and restart if !isInit
     
-    if(Conf::config.useCsqlSqlServer()) {
-        isSQLReq = true;
-        startServiceClient();
-    }
-    if ( (Conf::config.useCache() && Conf::config.getCacheMode()==ASYNC_MODE)){
+    if(isSQLReq) startServiceClient();
+    if (isAsyncReq) {
         int msgid = os::msgget(Conf::config.getMsgKey(), 0666);
         if (msgid != -1) os::msgctl(msgid, IPC_RMID, NULL);
-        isAsyncReq = true;
         startAsyncServer();
     }
-    if (Conf::config.useCache() && Conf::config.useTwoWayCache() &&
-                              Conf::config.getCacheMode() != OFFLINE_MODE) {
-        isCacheReq = true;
-        startCacheServer();
-    }
-    if(Conf::config.useDurability())
-    {
-        isChkptReq = true;
-        startCheckpointServer();
-    }
+    if (isCacheReq) startCacheServer();
+    if(isChkptReq) startCheckpointServer();
 
     printf("Database Server Started...\n");
     logFine(Conf::logger, "Database Server Started");
@@ -437,11 +448,14 @@ reloop:
     if(asyncpid) os::kill(asyncpid, SIGTERM);
     if (sqlserverpid) os::kill(sqlserverpid, SIGTERM);
     if (chkptpid) os::kill(chkptpid, SIGTERM);
+
     if (Conf::config.useDurability() && Conf::config.useMmap()) {
         //ummap the memory 
         char *startAddr = (char *) sysdb->getMetaDataPtr();
-        msync(startAddr + Conf::config.getMaxSysDbSize(),Conf::config.getMaxDbSize(), MS_SYNC);
-        munmap(startAddr + Conf::config.getMaxSysDbSize(), Conf::config.getMaxDbSize());
+        msync(startAddr + Conf::config.getMaxSysDbSize(),
+                                         Conf::config.getMaxDbSize(), MS_SYNC);
+        munmap(startAddr + Conf::config.getMaxSysDbSize(), 
+                                                  Conf::config.getMaxDbSize());
     }
     logFine(Conf::logger, "Server Exiting");
     printf("Server Exiting\n");

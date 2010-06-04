@@ -88,7 +88,7 @@ class TreeUndoLogInfo
 class Transaction
 {
     public:
-    int status_;
+    InUse status_;
 
     IsolationLevel isoLevel_;
 

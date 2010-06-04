@@ -371,6 +371,15 @@ int Mutex::recoverMutex()
     return ret;
 }
 
+int Mutex::CASGen(void *ptr, InUse oldVal, InUse newVal)
+{
+#if defined(__sparcv9)
+    CASL((InUse *) ptr, oldVal, newVal);
+#else
+    CAS((InUse *) ptr, oldVal, newVal);
+#endif
+}
+
 int Mutex::CASL(long *ptr, long oldVal, long newVal)
 {
 #ifdef SOLARIS
