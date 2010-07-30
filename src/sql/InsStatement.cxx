@@ -17,6 +17,24 @@
 #include <Statement.h>
 #include <Info.h>
 
+DbRetVal DmlStatement::getFieldInfo(const char *tname, const char *fname, FieldInfo *& info)
+{
+    if (table) {
+        if (strcmp(tname, table->getName())==0)
+            return table->getFieldInfo(fname, info);
+    }
+    return ErrNotExists;
+}
+
+List DmlStatement::getFieldNameList(const char *tname, DbRetVal &rv)
+{
+    if (table) {
+        if (strcmp(tname, table->getName())==0)
+            return table->getFieldNameList();
+    }
+    rv = ErrNotExists;
+}
+
 InsStatement::InsStatement()
 {
     parsedData = NULL; 

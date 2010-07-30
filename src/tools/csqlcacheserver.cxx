@@ -16,6 +16,7 @@
 #include <AbsSqlConnection.h>
 #include <AbsSqlStatement.h>
 #include <SqlLogConnection.h>
+#include <SqlLogStatement.h>
 #include <SqlOdbcStatement.h>
 #include <SqlFactory.h>
 #include <SqlConnection.h>
@@ -23,25 +24,58 @@
 #include <CSql.h>
 #include <CacheTableLoader.h>
 
-// List which keeps all DS Information.
-struct MultiThreadDSN 
-{
-    char dsn[IDENTIFIER_LENGTH];
-    char user[IDENTIFIER_LENGTH];
-    char pwd[IDENTIFIER_LENGTH];
-    char tdb[IDENTIFIER_LENGTH];
-    struct MultiThreadDSN *next;
-};
+#define STMTBUCKETS 	dsnThrInfo->stmtBuckets
+#define CSQLCONNECT		dsnThrInfo->csqlcon
+#define	TRDBCONNECT 	dsnThrInfo->targetcon
+#define CACHELIST		dsnThrInfo->cacheTableList
+#define DSN				dsnThrInfo->dsn
+#define TSELSTMT		dsnThrInfo->targetSelStmt
+#define TDELSTMT		dsnThrInfo->targetDelStmt
+#define TABLENAME_ARRAY	dsnThrInfo->tableName
+#define PKID_ARRAY		dsnThrInfo->pkid
+#define OPERATION_ARRAY	dsnThrInfo->operation
+#define CACHEID_ARRAY	dsnThrInfo->cacheid
+#define AUTOID_ARRAY	dsnThrInfo->autoid
 
-int insert(char *table, long long pkid, AbsSqlConnection *targetconn, SqlStatement *sqlstmt, AbsSqlStatement *csqlstmt, AbsSqlConnection *csqlcon);
-int remove(char *table, long long pkid, AbsSqlConnection *targetconn, AbsSqlStatement *csqlstmt,AbsSqlConnection *csqlcon);
-int getRecordsFromTargetDb(AbsSqlConnection *targetconn, AbsSqlConnection *csqlcon,AbsSqlStatement *csqlstmt, SqlConnection *con, SqlStatement *sqlstmt);
-void createCacheTableList();
-DbRetVal getCacheField(char *tblName,char *fldName);
-DbRetVal getCacheProjField(char *tblName,char *fielflist);
-DbRetVal getCacheCondition(char *tblName,char *condition);
+#define PKID		PKID_ARRAY[row]
+#define OPERATION	OPERATION_ARRAY[row]
+#define CACHEID		CACHEID_ARRAY[row]
+#define AUTOID		AUTOID_ARRAY[row]
+
+typedef class CachedTableStmtNode
+{
+    public:
+    char tableName[IDENTIFIER_LENGTH];
+    AbsSqlStatement *adptStmt;
+    AbsSqlStatement *insStmt;
+    AbsSqlStatement *delStmt;
+    CachedTableStmtNode(const char *tname, AbsSqlStatement *ast, AbsSqlStatement *ist) 
+    { 
+        strcpy(tableName, tname); adptStmt = ast; 
+        insStmt = ist; delStmt = NULL;
+    }
+    CachedTableStmtNode(const char *tname, AbsSqlStatement *dst) 
+    {
+        strcpy(tableName, tname); adptStmt = NULL; 
+        insStmt = NULL; delStmt = dst;
+    }
+    ~CachedTableStmtNode()
+    { 
+        if (insStmt) { insStmt->free(); delete insStmt; }
+        if (delStmt) { delStmt->free(); delete delStmt; }
+        if (adptStmt) { adptStmt->free(); delete adptStmt; }
+    }
+} CTStmtNode;
+
+int insert(char *table, int pkid, void *thrInfo);
+int remove(char *table, int pkid, void *thrInfo);
+int getRecordsFromTargetDb(void *thrInfo);
+void createCacheTableList(AbsSqlConnection *tcon, List *cacheTableList);
+DbRetVal getPKFieldName(char *tblName,char *fldName, List *cacheTableList);
+DbRetVal getCacheField(char *tblName,char *fldName, List *cacheTableList);
+DbRetVal getCacheProjField(char *tblName,char *fielflist, List *cacheTableList);
+DbRetVal getCacheCondition(char *tblName,char *condition, List *cacheTableList);
 void *fillBindBuffer(TDBInfo tName, DataType type, void *valBuf, int length=0);
-List cacheTableList;
 int srvStop =0;
 static void sigTermHandler(int sig)
 {
@@ -56,23 +90,125 @@ void printUsage()
    return;
 }
 
-AbsSqlConnection *csqlcon = NULL;   
+void addToHashTable(char *tableName, AbsSqlStatement *adHdl, AbsSqlStatement *insHdl, void *stmtBuckets)
+{
+    unsigned int hval = Util::hashString(tableName);
+    int bucketNo = hval % STMT_BUCKET_SIZE;
+    StmtBucket *buck = (StmtBucket *) stmtBuckets;
+    StmtBucket *stmtBucket = &buck[bucketNo];
+    CTStmtNode *node = new CTStmtNode(tableName, adHdl, insHdl);
+    stmtBucket->bucketList.append(node);
+    return;
+}
 
+void addToHashTable(char *tableName, AbsSqlStatement *delHdl, void *stmtBuckets)
+{
+    unsigned int hval = Util::hashString(tableName);
+    int bucketNo = hval % STMT_BUCKET_SIZE;
+    StmtBucket *buck = (StmtBucket *) stmtBuckets;
+    StmtBucket *stmtBucket = &buck[bucketNo];
+    CTStmtNode *node = new CTStmtNode(tableName, delHdl);
+    stmtBucket->bucketList.append(node);
+    return;
+}
+
+void removeFromHashTable(char *tableName, void *stmtBuckets)
+{
+    unsigned int hval = Util::hashString(tableName);
+    int bucketNo = hval % STMT_BUCKET_SIZE;
+    StmtBucket *buck = (StmtBucket *) stmtBuckets;
+    StmtBucket *stmtBucket = &buck[bucketNo];
+    CTStmtNode *node = NULL, *delNode = NULL;
+    ListIterator it = stmtBucket->bucketList.getIterator();
+    while(it.hasElement()) {
+        node = (CTStmtNode *) it.nextElement();
+        if(strcmp(node->tableName, tableName) == 0) { delNode = node; break; }
+    }
+    it.reset();
+    if (delNode != NULL) {
+       stmtBucket->bucketList.remove(delNode);
+       delete delNode;
+    }
+    return;
+}
+
+CTStmtNode *getStmtFromHashTable(char *tableName, void *stmtBuckets)
+{
+    unsigned int hval = Util::hashString(tableName);
+    int bucketNo = hval % STMT_BUCKET_SIZE;
+    StmtBucket *buck = (StmtBucket *) stmtBuckets;
+    StmtBucket *stmtBucket = &buck[bucketNo];
+    if (stmtBucket == NULL) return NULL;
+    CTStmtNode *node = NULL;
+    ListIterator it = stmtBucket->bucketList.getIterator();
+    while(it.hasElement()) {
+        node = (CTStmtNode *) it.nextElement();
+        if(strcmp(node->tableName, tableName) == 0) return node; 
+    }
+    return NULL;
+}
+
+void freeAllStmtHandles(void *stmtBuckets)
+{
+    if (NULL == stmtBuckets) return;
+    StmtBucket *buck = (StmtBucket *) stmtBuckets;
+    CTStmtNode *node = NULL;
+    for (int i=0; i <STMT_BUCKET_SIZE; i++)
+    {
+        StmtBucket *stmtBucket = &buck[i];
+        if (stmtBucket == NULL) continue;
+        ListIterator it = stmtBucket->bucketList.getIterator();
+        while(it.hasElement()) {
+            node = (CTStmtNode *)it.nextElement();
+            delete node;
+        }
+        stmtBucket->bucketList.reset();
+    }
+    ::free(stmtBuckets);
+}
 
 //MultiDSN Section
-class MultiDsnThread
+class DsnThrInput
 {
     public:
-    char ds[IDENTIFIER_LENGTH]; 
-    char targetDb[IDENTIFIER_LENGTH];  
-    char userName[IDENTIFIER_LENGTH]; 
-    char pwdName[IDENTIFIER_LENGTH]; 
-    MultiDsnThread() { ds[0]='\0'; targetDb[0]='\0'; userName[0]='\0'; pwdName[0]='\0';}
+    char dsn[IDENTIFIER_LENGTH]; 
+    char tdb[IDENTIFIER_LENGTH];  
+    char uname[IDENTIFIER_LENGTH]; 
+    char pname[IDENTIFIER_LENGTH]; 
+    void *stmtBuckets;
+    AbsSqlConnection *csqlcon;
+    AbsSqlConnection *targetcon;
+    AbsSqlStatement *targetSelStmt;
+    AbsSqlStatement *targetDelStmt;
+    List cacheTableList;
+    //Arrays for result set fetch
+    char **tableName;
+    int *pkid;
+    int *operation;
+    int *cacheid;
+    int *autoid;
+    DsnThrInput *next;
+    DsnThrInput() 
+    { 
+       dsn[0]='\0'; tdb[0]='\0'; uname[0]='\0'; pname[0]='\0'; next = NULL; 
+       stmtBuckets = NULL; cacheTableList.init(); 
+       csqlcon = NULL; targetcon = NULL; 
+       targetSelStmt = NULL; targetDelStmt = NULL;
+       tableName = NULL; pkid = NULL; operation = NULL; cacheid = NULL;
+       autoid = NULL;
+    }
+    ~DsnThrInput()
+    {  
+        if (tableName) free(tableName);
+        if (pkid) free(pkid);
+        if (operation) free(operation);
+        if (cacheid) free(cacheid);
+        if (autoid) free(autoid);
+    }
 };
 
 void *startThread(void *p);// Function is used for Thread
-MultiDsnThread **multiDsnInput;
-
+DsnThrInput **multiDsnArray;
 
 int main(int argc, char **argv)
 {
@@ -94,25 +230,19 @@ int main(int argc, char **argv)
 
     os::signal(SIGINT, sigTermHandler);
     os::signal(SIGTERM, sigTermHandler);
+
+    Conf::config.readAllValues(os::getenv("CSQL_CONFIG_FILE"));
+
     DbRetVal rv=OK;
-    csqlcon = SqlFactory::createConnection(CSqlLog);
-    SqlLogConnection *logConn = (SqlLogConnection *) csqlcon;
-    logConn->setNoMsgLog(true);
-    rv = csqlcon->connect(I_USER, I_PASS);
-    if (rv != OK) {
-        printError(ErrSysInternal, "Unable to connect to CSQL");
-        return 1;
-    }
-    
+
     // Reading "csqlds.conf file"
     FILE *fp = NULL;
     fp = fopen(Conf::config.getDsConfigFile(),"r");
     if(fp==NULL){
         printError(ErrSysInit,"csqlds.conf file does not exist");
-        csqlcon->disconnect();
-        return 1;
+        exit(1);
     }
-    struct MultiThreadDSN *head=NULL, *pnode=NULL;
+    struct DsnThrInput *head=NULL, *pnode=NULL;
     
     char dsnname[IDENTIFIER_LENGTH];dsnname[0]='\0';
     char tdbname[IDENTIFIER_LENGTH];tdbname[0] = '\0';
@@ -120,303 +250,328 @@ int main(int argc, char **argv)
     char password[IDENTIFIER_LENGTH];password[0]='\0';
     int  totalDsn=0;
 
-   // Populate the List
-    while(!feof(fp)){
-        struct MultiThreadDSN *multiDsn = new struct MultiThreadDSN;
-        fscanf(fp,"%s %s %s %s\n",dsnname,username,password,tdbname);
+    // Populate the List
+    while (!feof(fp)) {
+        int inputItems = fscanf(fp,"%s %s %s %s\n",
+                                           dsnname,username,password,tdbname);
+        if (inputItems != 4) {
+            printError(ErrNotExists, "No Entry found in csqlds.conf file");
+            return 1;
+        }
+        DsnThrInput *dsnThrInput = new DsnThrInput();
         totalDsn++;
-        strcpy(multiDsn->dsn,dsnname);
-        strcpy(multiDsn->user,username);
-        strcpy(multiDsn->pwd,password);
-        strcpy(multiDsn->tdb,tdbname);
-        multiDsn->next=NULL;
+        strcpy(dsnThrInput->dsn,dsnname);
+        strcpy(dsnThrInput->uname,username);
+        strcpy(dsnThrInput->pname,password);
+        strcpy(dsnThrInput->tdb,tdbname);
+        dsnThrInput->next=NULL;
 
-        if(pnode==NULL) {head=multiDsn; pnode=multiDsn;}
-        else { pnode->next=multiDsn; pnode=pnode->next; }
+        if(pnode==NULL) {head=dsnThrInput; pnode=dsnThrInput;}
+        else { pnode->next=dsnThrInput; pnode=pnode->next; }
     }
     fclose(fp);
-    if (totalDsn == 1)
-    {
-        
-        MultiDsnThread *info = new MultiDsnThread();
-        strcpy(info->ds,pnode->dsn);
-        strcpy(info->targetDb,pnode->tdb);
-        strcpy(info->userName,pnode->user);
-        strcpy(info->pwdName,pnode->pwd);
-        startThread(info);
-        printf("Cache Server Exiting\n");
-        cacheTableList.reset();
-        csqlcon->disconnect();
-        return 0;
-    }
 
-
-        
-    // Declare number of thread
-    pthread_t *thrId =new pthread_t [totalDsn];
-    multiDsnInput = (MultiDsnThread **) malloc (sizeof(MultiDsnThread *) * totalDsn);
-    int i=0, status;
+    bool singleThread = (totalDsn == 1);
     
-    //Traversing the list 
+    pthread_t *thrId = NULL;
+    
     pnode=head;
-    while(pnode != NULL){
-        multiDsnInput[i] = new MultiDsnThread();
-        strcpy(multiDsnInput[i]->ds,pnode->dsn);
-        strcpy(multiDsnInput[i]->targetDb,pnode->tdb);
-        strcpy(multiDsnInput[i]->userName,pnode->user);
-        strcpy(multiDsnInput[i]->pwdName,pnode->pwd);
-      
-        //pthread_create 
-        pthread_create(&thrId[i], NULL, &startThread, multiDsnInput[i]);
-        i++;
-        pnode=pnode->next;
-     }
-
-     // Pthread_join     
-     for(int j=0; j<totalDsn; j++){
-         pthread_join(thrId[j], NULL);
-     }
-        
-    printf("Cache Server Exiting\n");
-    cacheTableList.reset();
-    csqlcon->disconnect();
-    // targetconn->disconnect();
-    // printf("Out of main\n");
-    delete[]thrId;
-    return 0;
     
+    if (!singleThread) { 
+        thrId =new pthread_t [totalDsn];
+        multiDsnArray = (DsnThrInput **) 
+                                     malloc (sizeof(DsnThrInput *) * totalDsn);
+        for (int i = 0; i < totalDsn; i++) {
+            multiDsnArray[i] = pnode;
+            pthread_create(&thrId[i], NULL, &startThread, multiDsnArray[i]);
+            pnode=pnode->next;
+        } 
+        // Pthread_join     
+        for(int i=0; i<totalDsn; i++) pthread_join(thrId[i], NULL);
+    } else {
+        startThread(pnode);
+    }
+   
+    printf("Cache Server Exiting\n");
+    if (!singleThread) {
+        for (int i = 0; i < totalDsn; i++) delete multiDsnArray[i];
+        free (multiDsnArray);
+        delete [] thrId;
+    } else { if (pnode) delete pnode; }
+    return 0;
 }
 
 // Function for THreads
 void *startThread(void *thrInfo)
 {
+    DsnThrInput *dsnThrInfo = (DsnThrInput *)thrInfo;
+    STMTBUCKETS = malloc (STMT_BUCKET_SIZE * sizeof(StmtBucket));
+    memset(STMTBUCKETS, 0, STMT_BUCKET_SIZE * sizeof(StmtBucket));
     DbRetVal rv = OK;   
-    AbsSqlConnection *targetconn;
-    //AbsSqlConnection *csqlcon = NULL;
-    AbsSqlStatement *csqlstmt = NULL;
-    SqlConnection *con = NULL;
-    SqlStatement *sqlstmt = NULL;
-
-    
-    MultiDsnThread *multiDsnInput = (MultiDsnThread *)thrInfo;
-/*  csqlcon = SqlFactory::createConnection(CSqlLog);
-    SqlLogConnection *logConn = (SqlLogConnection *) csqlcon;
+    CSQLCONNECT = SqlFactory::createConnection(CSqlLog);
+    SqlLogConnection *logConn = (SqlLogConnection *) CSQLCONNECT;
     logConn->setNoMsgLog(true);
-    rv = csqlcon->connect(I_USER, I_PASS);
+    rv = CSQLCONNECT->connect(I_USER, I_PASS);
     if (rv != OK) return NULL;
-*/
-    targetconn = SqlFactory::createConnection(CSqlAdapter);
-    SqlOdbcConnection *dsnAda = (SqlOdbcConnection*)targetconn;
-    dsnAda->setDsn(multiDsnInput->ds);//line added
-
+    TRDBCONNECT = SqlFactory::createConnection(CSqlAdapter);
+    SqlOdbcConnection *dsn = (SqlOdbcConnection*) TRDBCONNECT;
+    dsn->setDsName(DSN);//line added
     struct timeval timeout, tval;
     timeout.tv_sec = Conf::config.getCacheWaitSecs();
     timeout.tv_usec = 0;
+    CACHELIST.init();
 reconnect:
     while(!srvStop) {
-      rv = targetconn->connect(I_USER, I_PASS);
-      if (rv != OK) {
-         printError(ErrSysInternal, "Unable to connect to target database:%s", multiDsnInput->ds);
-        tval.tv_sec = timeout.tv_sec;
-        tval.tv_usec = timeout.tv_usec;
-        os::select(0, 0, 0, 0, &tval);
-      } else break;
-      if (srvStop) return NULL;
+        rv = TRDBCONNECT->connect(I_USER, I_PASS);
+        if (rv != OK) {
+            printError(ErrSysInternal, "Unable to connect to target database:%s", DSN);
+            tval.tv_sec = timeout.tv_sec;
+            tval.tv_usec = timeout.tv_usec;
+            os::select(0, 0, 0, 0, &tval);
+        } else break;
+        if (srvStop) { 
+            CSQLCONNECT->disconnect(); delete CSQLCONNECT; 
+            TRDBCONNECT->disconnect(); delete TRDBCONNECT; 
+            return NULL;
+        }
     }
-    if (srvStop) return NULL;
-
-    if (!Conf::config.useCache())
-    {
-        printf("Cache is set to OFF in csql.conf file\n");
+    if (srvStop) {
+        CSQLCONNECT->disconnect(); delete CSQLCONNECT;
+        TRDBCONNECT->disconnect(); delete TRDBCONNECT;
         return NULL;
     }
-    AbsSqlStatement *stmt = SqlFactory::createStatement(CSqlAdapter);
-    stmt->setConnection(targetconn);
-    csqlstmt = SqlFactory::createStatement(CSqlLog); 
-    csqlstmt->setConnection(csqlcon);
+    if (!Conf::config.useCache())
+    {
+        printError(ErrSysInternal, "Cache is set to OFF in csql.conf file\n");
+        CSQLCONNECT->disconnect(); delete CSQLCONNECT;
+        TRDBCONNECT->disconnect(); delete TRDBCONNECT;
+        return NULL;
+    }
 
     int ret = 0;
     struct stat ofstatus,nfstatus;
     ret=stat(Conf::config.getTableConfigFile(),&ofstatus);
-    timeout.tv_sec = Conf::config.getCacheWaitSecs();
-    timeout.tv_usec = 0;
-    createCacheTableList();
+    createCacheTableList(TRDBCONNECT, &CACHELIST);
     while(!srvStop)
     {
         tval.tv_sec = timeout.tv_sec;
         tval.tv_usec = timeout.tv_usec;
         ret = os::select(0, 0, 0, 0, &tval);
         printf("Checking for cache updates\n");
+        if (srvStop) break;
         ret=stat(Conf::config.getTableConfigFile(),&nfstatus);
         if(ofstatus.st_mtime != nfstatus.st_mtime)
         {
-            cacheTableList.reset();
-            createCacheTableList();
+            ListIterator it = CACHELIST.getIterator();
+            while (it.hasElement()) delete it.nextElement();
+            CACHELIST.reset();
+            createCacheTableList(TRDBCONNECT, &CACHELIST);
             ofstatus.st_mtime = nfstatus.st_mtime;
         }
-        if((ret = getRecordsFromTargetDb( targetconn, csqlcon, csqlstmt, con, sqlstmt )) == 1)  {
+        if((ret = getRecordsFromTargetDb(thrInfo)) == 1) {
             if (srvStop) break;
-            targetconn->disconnect();
+            TRDBCONNECT->disconnect();
+            ListIterator it = CACHELIST.getIterator();
+            while (it.hasElement()) delete it.nextElement();
+            CACHELIST.reset();
             goto reconnect;
         }
     }
-
-   //printf("Cache Server Exiting\n");
-   //cacheTableList.reset();
-   //csqlcon->disconnect();
-    targetconn->disconnect();
+     
+    freeAllStmtHandles(STMTBUCKETS);
+    TRDBCONNECT->disconnect(); delete TRDBCONNECT;
+    CSQLCONNECT->disconnect(); 
+    delete CSQLCONNECT;
+    
+    ListIterator it = CACHELIST.getIterator();
+    while (it.hasElement()) delete it.nextElement();
+    CACHELIST.reset();
     return NULL;
 }
 
-int getRecordsFromTargetDb(AbsSqlConnection *targetconn, AbsSqlConnection *csqlcon,AbsSqlStatement *csqlstmt, SqlConnection *con, SqlStatement *sqlstmt)
+int getRecordsFromTargetDb(void *thrInfo) 
 {
-    long long pkid=0;
-    char tablename[64];
-    long long op=0, id=0,cId=0;
-    int caId=0;
+    DsnThrInput *dsnThrInfo = (DsnThrInput *)thrInfo;
     int rows =0;
     DbRetVal rv = OK;
     int ret =0;
     char StmtStr[1024];
-    caId =Conf::config.getSiteID();
-    AbsSqlStatement *stmt = SqlFactory::createStatement(CSqlAdapter);
-    stmt->setConnection(targetconn);
-    AbsSqlStatement *delstmt = SqlFactory::createStatement(CSqlAdapter);
-    delstmt->setConnection(targetconn);
+    int cacheId = Conf::config.getSiteID();
+    TSELSTMT = SqlFactory::createStatement(CSqlAdapter);
+    TSELSTMT->setConnection(TRDBCONNECT);
+    TDELSTMT = SqlFactory::createStatement(CSqlAdapter);
+    TDELSTMT->setConnection(TRDBCONNECT);
     //rv = delstmt->prepare("DELETE from csql_log_int where id=?;");
-    sprintf(StmtStr, "SELECT * FROM csql_log_int where cacheid = %d;", caId);
-    rv = stmt->prepare(StmtStr);
-    if (rv != OK) {printf("Stmt prepare failed\n"); return 1; }
-    stmt->bindField(1, tablename);
-    stmt->bindField(2, &pkid);
-    stmt->bindField(3, &op);
-    stmt->bindField(4, &cId);
-    stmt->bindField(5, &id);
-
-    con = (SqlConnection *) csqlcon->getInnerConnection();
-    sqlstmt = (SqlStatement *)csqlstmt->getInnerStatement();
-    sqlstmt->setSqlConnection(con);
+    sprintf(StmtStr, "SELECT * FROM csql_log_int where cacheid = %d;", cacheId);
+    
+    SqlOdbcStatement *oselstmt = (SqlOdbcStatement *) TSELSTMT;
+    rv = oselstmt->prepareForResultSet(StmtStr);
+    if (rv != OK) {
+        printError(ErrSysInternal, "Statement prepare failed. TDB may be down"); 
+        return 1; 
+    }
+    
+    int noOfRowsFetched = 0;
+    int nLogRecords = Conf::config.getNoOfRowsToFetchFromTDB();
+    if (TABLENAME_ARRAY == NULL) {
+        TABLENAME_ARRAY = (char **) malloc(nLogRecords * IDENTIFIER_LENGTH);
+        PKID_ARRAY = (int *) malloc(nLogRecords * sizeof(int));
+        OPERATION_ARRAY = (int *) malloc(nLogRecords * sizeof(int));
+        CACHEID_ARRAY = (int *) malloc(nLogRecords * sizeof(int));
+        AUTOID_ARRAY = (int *) malloc(nLogRecords * sizeof(int));
+    }
+        memset(TABLENAME_ARRAY, 0, nLogRecords * IDENTIFIER_LENGTH);
+        memset(PKID_ARRAY, 0, nLogRecords * sizeof(int));
+        memset(OPERATION_ARRAY, 0, nLogRecords * sizeof(int));
+        memset(CACHEID_ARRAY, 0, nLogRecords * sizeof(int));
+        memset(AUTOID_ARRAY, 0, nLogRecords * sizeof(int));
+    
+    oselstmt->setResultSetInfo(nLogRecords);
+    
+    oselstmt->rsBindField(1, TABLENAME_ARRAY);
+    oselstmt->rsBindField(2, PKID_ARRAY);
+    oselstmt->rsBindField(3, OPERATION_ARRAY);
+    oselstmt->rsBindField(4, CACHEID_ARRAY);
+    oselstmt->rsBindField(5, AUTOID_ARRAY);
 
     sprintf(StmtStr, "DELETE from csql_log_int where id=?;");
-    rv = delstmt->prepare(StmtStr);
+    rv = TDELSTMT->prepare(StmtStr);
     if (rv != OK) {
-        stmt->free();
-        delstmt->free();
-        delete stmt;
-        delete delstmt;
-        printError(ErrSysInternal, "Statement prepare failed. TDB may be down");
+        printError(ErrSysInternal, "Statement prepare failed. TDB may be down"); 
+        TSELSTMT->free(); TDELSTMT->free(); delete TSELSTMT; delete TDELSTMT; 
         return 1;
     }
     int retVal =0; 
-    while(true){
-        rv = targetconn->beginTrans();
-        rv = stmt->execute(rows);
-        if (rv != OK) {
-            printError(ErrSysInit, "Unable to execute stmt in target db");
-            targetconn->rollback();
-            stmt->free();
-            delstmt->free();
-            delete stmt;
-            delete delstmt;
-            return 1;
-        }
-        bool found = false;
-        while ( stmt->fetch() != NULL) 
-        {
-            Util::trimEnd(tablename);
-            logFiner(Conf::logger, "Row value is Table:%s PK:%lld OP:%lld CID:%lld\n", tablename, pkid, op,cId);
-
-            if (op == 2) { //DELETE 
-                retVal = remove(tablename,pkid, targetconn, csqlstmt, csqlcon); 
+    TDBInfo tdbname = ((SqlOdbcConnection*)TRDBCONNECT)->getTrDbName();
+    rv = TRDBCONNECT->beginTrans();
+    rv = oselstmt->executeForResultSet();
+    if (rv != OK) {
+        printError(ErrSysInit, "Unable to execute stmt in target db");
+        TRDBCONNECT->rollback();
+        TSELSTMT->free(); TDELSTMT->free(); 
+        delete TSELSTMT; delete TDELSTMT;
+        return 1;
+    }
+    bool found = false;
+    do {
+        rv = oselstmt->fetchScroll(&noOfRowsFetched);
+        int row = 0;
+        /* display each row */
+        for (row = 0; row < noOfRowsFetched; row++) {
+            char *tblName = (char *) TABLENAME_ARRAY + IDENTIFIER_LENGTH * row; 
+            /*printf( "Row %d>", row );
+            printf( " %s <>", tblName);
+            printf( " %d <>", PKID);
+            printf( " %d <>", OPERATION);
+            printf( " %d <>", CACHEID);
+            printf( " %d <>", AUTOID);
+            printf( "\n" ); */
+            Util::trimEnd(tblName);
+            logFiner(Conf::logger, "Row value is Table:%s PK:%d OP:%d CID:%d\n", tblName, PKID, OPERATION, CACHEID);
+       
+            if (OPERATION == 2) { //DELETE 
+                retVal = remove(tblName,PKID, thrInfo); 
+                logFinest(Conf::logger, "DELETE %s %d", tblName, PKID);
             } //DELETE
             else {
-                retVal = insert(tablename, pkid, targetconn, sqlstmt, csqlstmt, csqlcon);
-             } 
-        //targetconn->commit();
-        //rv = targetconn->beginTrans();
+                retVal = insert(tblName, PKID, thrInfo);
+                logFinest(Conf::logger, "INSERT %s %d", tblName, PKID);
+
+            } 
             if (retVal) ret =2;
-            delstmt->setIntParam(1, id);
-            rv = delstmt->execute(rows);
+            TDELSTMT->setIntParam(1, AUTOID);
+            rv = TDELSTMT->execute(rows);
             if (rv != OK) {
-                    printf("log record not deleted from the target db %d\n", rv);
-                targetconn->rollback();
+                printError(ErrSysInternal, "Log record table:%s PK:%d RowID:%d not deleted from the target db %d\n", tblName, PKID, AUTOID, rv);
+                TRDBCONNECT->rollback();
                 break;
             }            
-            rv = targetconn->commit();
-            rv = targetconn->beginTrans();
-            found=true;
-        } 
-        stmt->close();
-        delstmt->close();
-        if(!found) break;
-    }
-    targetconn->rollback();
-    stmt->free();
-    delstmt->free();
-    delete stmt;
-    delete delstmt;
+        }    
+    } while (rv == OK && noOfRowsFetched == nLogRecords);
+    TSELSTMT->close(); 
+    TDELSTMT->close();
+    TRDBCONNECT->commit();
+    TSELSTMT->free(); TDELSTMT->free(); delete TSELSTMT; delete TDELSTMT;
     return ret;   
 }
 
-int insert(char *tablename, long long pkid, AbsSqlConnection *targetconn, SqlStatement *sqlstmt, AbsSqlStatement *csqlstmt, AbsSqlConnection *csqlcon)
+int insert(char *tablename, int pkid, void *thrInfo)
 {
-    AbsSqlStatement *stmt = SqlFactory::createStatement(CSqlAdapter);
-    stmt->setConnection(targetconn);
-    TDBInfo tdbname = ((SqlOdbcConnection*)targetconn)->getTrDbName();
-    SqlOdbcStatement *ostmt = (SqlOdbcStatement*) stmt;
-    char insStmt[1024];
-    char pkfieldname[128];
-    DbRetVal rv=getCacheField(tablename, pkfieldname);
-    if(rv!=OK){
-        ostmt->getPrimaryKeyFieldName(tablename, pkfieldname);
-    }
-    //Util::str_tolower(pkfieldname);
-    char fieldlist[IDENTIFIER_LENGTH];
-    char condition[IDENTIFIER_LENGTH];
-    char sbuf[1024];
-    rv=getCacheProjField(tablename,fieldlist);
-    if(rv!=OK){
-        rv=getCacheCondition(tablename,condition);
+    DsnThrInput *dsnThrInfo = (DsnThrInput *)thrInfo;
+    DbRetVal rv = OK;
+    List fNameList;
+    AbsSqlStatement *astmt = NULL;
+    SqlOdbcStatement *ostmt = NULL;
+    AbsSqlStatement *istmt = NULL;
+    SqlStatement *sqlstmt = NULL;
+    TDBInfo tdbname = ((SqlOdbcConnection*)TRDBCONNECT)->getTrDbName();
+    CTStmtNode *node = getStmtFromHashTable(tablename, STMTBUCKETS);
+    if ((node == NULL) || (node && node->insStmt == NULL)) {
+        astmt = SqlFactory::createStatement(CSqlAdapter);
+        astmt->setConnection(TRDBCONNECT);
+        istmt = SqlFactory::createStatement(CSqlLog);
+        istmt->setConnection(CSQLCONNECT);
+        sqlstmt = (SqlStatement *) istmt->getInnerStatement();
+        char insStmt[1024];
+        char pkfieldname[128]; pkfieldname[0]='\0';
+        DbRetVal rv=getCacheField(tablename, pkfieldname, &CACHELIST);
+        if (rv!=OK) {
+            rv = getPKFieldName(tablename, pkfieldname, &CACHELIST);
+            if (rv != OK) {
+            }
+        }
+        //Util::str_tolower(pkfieldname);
+        char fieldlist[IDENTIFIER_LENGTH];
+        char condition[IDENTIFIER_LENGTH];
+        char sbuf[1024];
+        rv=getCacheProjField(tablename,fieldlist, &CACHELIST);
         if(rv!=OK){
-            sprintf(sbuf, "SELECT * FROM %s where %s = %lld;", tablename, pkfieldname, pkid);
+            rv=getCacheCondition(tablename,condition, &CACHELIST);
+            if(rv!=OK){
+                sprintf(sbuf, "SELECT * FROM %s where %s = ?;", tablename, pkfieldname);
+            } else {
+                sprintf(sbuf, "SELECT * FROM %s where %s = ? and %s ;", tablename, pkfieldname, condition);
+            }
         } else {
-            sprintf(sbuf, "SELECT * FROM %s where %s = %lld and %s ;", tablename, pkfieldname, pkid,condition);
+            rv=getCacheCondition(tablename,condition, &CACHELIST);
+            if(rv!=OK){
+                sprintf(sbuf, "SELECT %s FROM %s where %s = ?;",fieldlist,tablename, pkfieldname);
+            }     else {
+                sprintf(sbuf, "SELECT %s FROM %s where %s = ? and %s;",fieldlist,tablename, pkfieldname, condition);
+            }
+        }
+        //TODO::get the primary key field name from the table interface. need to implement it
+        //printf("Select String from adapter\n: *****%s\n", sbuf);
+        rv = astmt->prepare(sbuf);
+        if (rv != OK) return 2;
+        char *ptr = insStmt;
+        sprintf(ptr,"INSERT INTO %s VALUES(", tablename); ptr += strlen(ptr);
+        bool firstFld = true;
+        fNameList = sqlstmt->getFieldNameList(tablename, rv);
+        int noOfFields = fNameList.size();
+        while (noOfFields--) {
+            if (firstFld) {
+                firstFld = false;
+                sprintf(ptr,"?", tablename); ptr += strlen(ptr);
+            } else {
+                sprintf(ptr, ",?"); ptr += strlen(ptr);
+            }
+        }
+        sprintf(ptr, ");"); ptr += strlen(ptr);
+        //printf("ins stmt: '%s'\n", insStmt); 
+        rv = istmt->prepare(insStmt);
+        if (rv != OK) { return 2; }
+        if(node == NULL) addToHashTable(tablename, astmt, istmt, STMTBUCKETS);
+        else { 
+            node->adptStmt = astmt; 
+            node->insStmt = istmt; 
         }
     } else {
-        rv=getCacheCondition(tablename,condition);
-        if(rv!=OK){
-            sprintf(sbuf, "SELECT %s FROM %s where %s = %lld;",fieldlist,tablename, pkfieldname, pkid);
-        } else {
-            sprintf(sbuf, "SELECT %s FROM %s where %s = %lld and %s;",fieldlist,tablename, pkfieldname, pkid,condition);
-        }
+        istmt = node->insStmt;
+        astmt = node->adptStmt;
+        sqlstmt = (SqlStatement *) istmt->getInnerStatement();
+        fNameList = sqlstmt->getFieldNameList(tablename, rv);
     }
-    //TODO::get the primary key field name from the table interface. need to implement it
-    //printf("InsertString: %s\n", sbuf);
-    rv = stmt->prepare(sbuf);
-    if (rv != OK) return 2;
-
-    char *ptr = insStmt;
-    sprintf(ptr,"INSERT INTO %s VALUES(", tablename);
-    ptr += strlen(ptr);
-    bool firstFld = true;
-    List fNameList = sqlstmt->getFieldNameList(tablename);
-    int noOfFields = fNameList.size();
-    while (noOfFields--) {
-        if (firstFld) {
-            firstFld = false;
-            sprintf(ptr,"?", tablename);
-            ptr += strlen(ptr);
-        } else {
-            sprintf(ptr, ",?");
-            ptr += strlen(ptr);
-        }
-    }
-    sprintf(ptr, ");");
-    ptr += strlen(ptr);
-    //printf("insert stmt: '%s'\n", insStmt);
-    
-    rv = csqlstmt->prepare(insStmt);
-    if (rv != OK) { return 2; }
     List valBufList;
     ListIterator fNameIter = fNameList.getIterator();
     FieldInfo *info = new FieldInfo();
@@ -429,27 +584,27 @@ int insert(char *tablename, long long pkid, AbsSqlConnection *targetconn, SqlSta
     while (fNameIter.hasElement()) {
         elem = (Identifier*) fNameIter.nextElement();
         sqlstmt->getFieldInfo(tablename, (const char*)elem->name, info);
-        valBuf = AllDataType::alloc(info->type, info->length+1);
+        valBuf = AllDataType::alloc(info->type, info->length);
         os::memset(valBuf,0,info->length);
-        bBuf = (BindBuffer *) fillBindBuffer(tdbname, info->type, valBuf, info->length);
-if (info->type == typeString) {
-}
+        bBuf = (BindBuffer *) SqlStatement::fillBindBuffer(tdbname, info->type, valBuf, info->length);
         valBufList.append(bBuf);
         dType[fcount] = info->type;
-        buf[fcount] = valBuf;
-        stmt->bindField(fcount+1, buf[fcount]);
+        buf[fcount] = bBuf->csql;
+        astmt->bindField(fcount+1, buf[fcount]);
         fcount++;
     }
     delete info;
     int rows=0;
-    int retValue = stmt->execute(rows);
+    astmt->setIntParam(1, pkid);
+    int retValue = astmt->execute(rows);
     if (retValue && rows != 1) {
         printError(ErrSysInit, "Unable to execute statement at target db\n"); 
         return ErrSysInit; 
     }
     ListIterator bindIter = valBufList.getIterator();
-    if (stmt->fetch() != NULL) {
-        ostmt->setNullInfo(csqlstmt);
+    if (astmt->fetch() != NULL) {
+        ostmt = (SqlOdbcStatement *) astmt;
+        ostmt->setNullInfo(istmt);
         if(tdbname == postgres){
             for (int i=0; i < fcount; i++) { 
                if(dType[i] == typeString) Util::trimRight((char *)buf[i]);
@@ -459,71 +614,88 @@ if (info->type == typeString) {
         int pos = 1;
         while (bindIter.hasElement()) {
             bBuf = (BindBuffer *) bindIter.nextElement();
-            SqlStatement::setParamValues(csqlstmt, pos++, bBuf->type, 
-                                             bBuf->length, (char *)bBuf->csql);
+            SqlStatement::setParamValues(istmt, pos++, bBuf->type, 
+                                                     bBuf->length, bBuf->csql);
         }
-        csqlcon->beginTrans();
+        CSQLCONNECT->beginTrans();
         int rows = 0;
-        rv = csqlstmt->execute(rows);
+        rv = istmt->execute(rows);
         if (rv != OK) { 
             printf ("execute failed \n"); 
-            printf(" STMT: %s\n",insStmt);
+            //printf(" STMT: %s\n",insStmt);
             return 3; 
         }
-        csqlcon->commit();      
+        CSQLCONNECT->commit();      
         //printf("successfully inserted value with pkid = %d\n", pkid);
         //Note:insert may fail if the record is inserted from this cache
     }
+    astmt->close();
     //for (int i=0; i < fcount; i++) free(buf[i]); 
     ListIterator iter = valBufList.getIterator();
     while (iter.hasElement()){
         bBuf = (BindBuffer*) iter.nextElement();
-if (bBuf->type == typeString)
-        //printf("Values %x %x \n", bBuf->csql, bBuf->targetdb);
         delete bBuf;
     }
-   
-    stmt->free();
-    delete stmt;
+    valBufList.reset();
+    iter = fNameList.getIterator();
+    while (iter.hasElement()) delete iter.nextElement();
+    fNameList.reset();
+
     return 0;
 }
-int remove(char *tablename, long long pkid, AbsSqlConnection *targetconn, AbsSqlStatement *csqlstmt,AbsSqlConnection *csqlcon)
+int remove(char *tablename, int pkid, void *thrInfo)
 {
+    DsnThrInput *dsnThrInfo = (DsnThrInput *)thrInfo;
     DbRetVal rv = OK;
-    char delStmt[1024];
-    AbsSqlStatement *stmt = SqlFactory::createStatement(CSqlAdapter);
-    stmt->setConnection(targetconn);
-    SqlOdbcStatement *ostmt = (SqlOdbcStatement*) stmt;
-    char pkfieldname[128];
-    rv=getCacheField(tablename, pkfieldname);
-    if(rv!=OK){
-        ostmt->getPrimaryKeyFieldName(tablename, pkfieldname);
-    }
-    Util::str_tolower(pkfieldname);
-    stmt->close();
-    stmt->free();
-    delete stmt;
-    sprintf(delStmt, "DELETE FROM %s where %s = %d", tablename, pkfieldname, pkid);
-    //printf("delStmt is %s\n", delStmt);
-    rv = csqlstmt->prepare(delStmt);
-    if (rv != OK) { return 2; }
-    rv = csqlcon->beginTrans();
+    List fNameList;
+    SqlOdbcStatement *ostmt = NULL;
+    AbsSqlStatement *dstmt = NULL;
+    SqlStatement *sqlstmt = NULL;
+    TDBInfo tdbname = ((SqlOdbcConnection*)TRDBCONNECT)->getTrDbName();
+    CTStmtNode *node = getStmtFromHashTable(tablename, STMTBUCKETS);
+    if (node == NULL || (node && node->delStmt == NULL)) {
+        dstmt = SqlFactory::createStatement(CSqlLog);
+        dstmt->setConnection(CSQLCONNECT);
+        sqlstmt = (SqlStatement *) dstmt->getInnerStatement();
+        char delStmt[1024];
+        char pkfieldname[128]; pkfieldname[0]='\0';
+        DbRetVal rv=getCacheField(tablename, pkfieldname, &CACHELIST);
+        if (rv!=OK) {
+            rv = getPKFieldName(tablename, pkfieldname, &CACHELIST);
+            if (rv != OK) {
+            }
+        }
+        Util::str_tolower(pkfieldname);
+        sprintf(delStmt, "DELETE FROM %s where %s = ?;", tablename, pkfieldname);
+        //printf("Delete stmt: %s\n", delStmt);
+        rv = dstmt->prepare(delStmt);
+        if (rv != OK) return 2; 
+        if (node == NULL) addToHashTable(tablename, dstmt, STMTBUCKETS);
+        else { node->delStmt = dstmt; } 
+    } else { dstmt = node->delStmt; }
+    dstmt->setIntParam(1, pkid);
+        
+    rv = CSQLCONNECT->beginTrans();
     if (rv != OK) return 2;
-    int rows = 0;
-    rv = csqlstmt->execute(rows);
+    int  rows = 0;
+    //printf("DEBUG: pkid = %d\n", pkid);
+    rv = dstmt->execute(rows);
     if (rv != OK || rows !=1)  
     {
-        csqlcon->rollback();
-        printf("Delete failed for stmt %s\n", delStmt);
+        CSQLCONNECT->rollback();
+         //printf("DEBUG: delete stmt execute failed in csql = %d\n", rv);
+//        printError(ErrSysInternal, "Delete failed for stmt %s\n", delStmt);
         return 3;
     }
-    rv = csqlcon->commit();
-    
+    rv = CSQLCONNECT->commit();
     return 0;
 }
 
-void createCacheTableList()
+void createCacheTableList(AbsSqlConnection *tcon, List *cacheTableList)
 {
+    AbsSqlStatement *stmt = SqlFactory::createStatement(CSqlAdapter);
+    stmt->setConnection(tcon);
+    SqlOdbcStatement *ostmt = (SqlOdbcStatement*) stmt;
     FILE *fp;
     fp = fopen(Conf::config.getTableConfigFile(),"r");
     if( fp == NULL ) {
@@ -535,26 +707,31 @@ void createCacheTableList()
     char condition[IDENTIFIER_LENGTH];
     char field[IDENTIFIER_LENGTH];
     char dsnName[IDENTIFIER_LENGTH];
+    char pkfield[IDENTIFIER_LENGTH];
 
     int mode;
     while(!feof(fp))
     {
-        fscanf(fp,"%d %s %s %s %s %s \n",&mode,tablename,fieldname,condition,field,dsnName);
-        CacheTableInfo  *cacheTable=new CacheTableInfo();
+        pkfield[0]='\0';
+        int items = fscanf(fp,"%d %s %s %s %s %s \n",&mode,tablename,fieldname,condition,field,dsnName);
+        if (items != 6) break;
+        CacheTableInfo *cacheTable=new CacheTableInfo();
         cacheTable->setTableName(tablename);
         cacheTable->setFieldName(fieldname);
         cacheTable->setProjFieldList(field);
         cacheTable->setCondition(condition);
-        cacheTableList.append(cacheTable);
+        ostmt->getPrimaryKeyFieldName(tablename, pkfield);
+        cacheTable->setPKField(pkfield);
+        cacheTableList->append(cacheTable);
     }
    // printf("Table %s is not cached\n",tabname);
     fclose(fp);
-   
+    delete stmt;
 }
 
-DbRetVal getCacheCondition(char *tblName,char *condition)
+DbRetVal getCacheCondition(char *tblName,char *condition, List *cacheTableList)
 {
-    ListIterator iter=cacheTableList.getIterator();
+    ListIterator iter=cacheTableList->getIterator();
     CacheTableInfo  *cacheTable;
     while(iter.hasElement())
     {
@@ -570,9 +747,9 @@ DbRetVal getCacheCondition(char *tblName,char *condition)
     return ErrNotExists;
 }
 
-DbRetVal getCacheProjField(char *tblName,char *fieldlist)
+DbRetVal getCacheProjField(char *tblName,char *fieldlist, List *cacheTableList)
 {
-    ListIterator iter=cacheTableList.getIterator();
+    ListIterator iter=cacheTableList->getIterator();
     CacheTableInfo  *cacheTable;
     while(iter.hasElement())
     {
@@ -587,9 +764,9 @@ DbRetVal getCacheProjField(char *tblName,char *fieldlist)
     }
     return ErrNotExists;
 }
-DbRetVal getCacheField(char *tblName,char *fldName)
+DbRetVal getCacheField(char *tblName,char *fldName, List *cacheTableList)
 {
-    ListIterator iter=cacheTableList.getIterator();
+    ListIterator iter=cacheTableList->getIterator();
     CacheTableInfo  *cacheTable;
     while(iter.hasElement())    
     {
@@ -606,6 +783,22 @@ DbRetVal getCacheField(char *tblName,char *fldName)
     return ErrNotExists;
 }
 
+DbRetVal getPKFieldName(char *tblName, char *pkFldName, List *cacheTableList)
+{
+    ListIterator iter=cacheTableList->getIterator();
+    CacheTableInfo  *cacheTable;
+    while(iter.hasElement())
+    {
+        cacheTable=(CacheTableInfo*)iter.nextElement();
+        if(strcmp(cacheTable->getTableName(),tblName)==0){
+            strcpy(pkFldName, cacheTable->getPKFieldName());
+            return OK;
+        }
+    }
+    return ErrNotExists;
+}
+
+/*
 void *fillBindBuffer(TDBInfo tdbName, DataType type, void *valBuf, int length)
 {
     BindBuffer *bBuf = NULL;
@@ -640,7 +833,7 @@ void *fillBindBuffer(TDBInfo tdbName, DataType type, void *valBuf, int length)
             break;
         case typeLongLong:
         {
-            if( tdbName == postgres )
+            if( tdbName == postgres || tdbName == oracle )
             {
                 bBuf = new BindBuffer();
                 bBuf->type = typeLongLong;
@@ -659,8 +852,8 @@ void *fillBindBuffer(TDBInfo tdbName, DataType type, void *valBuf, int length)
                 break;
             }
         }
+        case typeVarchar:
         case typeString:
-            if( tdbName == postgres )
             {
                 bBuf = new BindBuffer();
                 bBuf->type = typeString;
@@ -676,4 +869,4 @@ void *fillBindBuffer(TDBInfo tdbName, DataType type, void *valBuf, int length)
             break;
     }
     return bBuf;
-}
+}*/

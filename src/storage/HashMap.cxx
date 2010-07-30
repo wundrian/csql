@@ -69,12 +69,14 @@ bool HashMap::remove(void *element)
              delete node;
              return true;
           }
+          prev = node;
           node = node->next;
         }
     }
     else {
         hashVal = Util::hashBinary((char*)element, keySize) % bucketSize;
         HashMapNode *node = (HashMapNode*) bucket[hashVal];
+        head = node; prev = node;
         while(node != NULL) {
           if (AllDataType::compareVal(node->elem, element, OpEquals,
                                              typeBinary, keySize)) {
@@ -86,6 +88,7 @@ bool HashMap::remove(void *element)
               delete node;
               return true;
           }
+          prev = node;
           node = node->next;
         }
     }

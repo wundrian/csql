@@ -54,9 +54,14 @@ DbRetVal takeCheckpoint()
     int tries = 0, totalTries=10;
     while(tries < totalTries) {
        rv = dbMgr->checkPoint();
+           if (rv == ErrLoadingOn) {
+           conn.close();
+           timer.stop();
+           return rv;
+       }
        if (rv == ErrLockTimeOut) {
           os::sleep(1); //sleep for 1 second
-       }else if (rv != OK) {
+       } else if (rv != OK) {
           printError(rv, "checkpoint: failed");
           conn.close();
           timer.stop();

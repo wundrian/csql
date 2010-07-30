@@ -127,7 +127,7 @@ DbRetVal SqlGwConnection::connect (char *user, char * pass)
     while(node !=NULL ){
        adapter=getAdapterConnection(node->dsn);
        SqlOdbcConnection *dsnAda=(SqlOdbcConnection*) adapter;
-       dsnAda->setDsn(node->dsn);
+       dsnAda->setDsName(node->dsn);
        //Below function will connect to TDB
        if(adapter) rv = adapter->connect(user,pass);
        if(OK == rv) node->isConnected = true;

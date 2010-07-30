@@ -45,6 +45,7 @@ struct SQLFuncPtrs{
     SQLRETURN (*SQLExecutePtr)(SQLHSTMT);
     SQLRETURN (*SQLRowCountPtr)(SQLHSTMT, SQLLEN*);
     SQLRETURN (*SQLFetchPtr)(SQLHSTMT);
+    SQLRETURN (*SQLFetchScrollPtr)(SQLHSTMT, SQLSMALLINT, SQLLEN);
     SQLRETURN (*SQLCloseCursorPtr)(SQLHSTMT);
     SQLRETURN (*SQLPrimaryKeysPtr)( SQLHSTMT, SQLCHAR*, SQLSMALLINT, SQLCHAR*, SQLSMALLINT, SQLCHAR*, SQLSMALLINT);
     SQLRETURN (*SQLGetDataPtr)(SQLHSTMT,SQLUSMALLINT,SQLSMALLINT,SQLPOINTER, SQLLEN,SQLLEN*);
@@ -65,21 +66,28 @@ struct SQLFuncPtrs{
 class SqlOdbcConnection : public AbsSqlConnection
 {
     Connection dummyConn;
-    TDBInfo tdbName;
     char errState[STATE_LENGTH];
-    char dsnAdapter[IDENTIFIER_LENGTH];
+    char dsName[IDENTIFIER_LENGTH];
     bool isConnOpen;
+    TDBInfo tdbName;
     public:
     SQLHENV envHdl;
     SQLHDBC dbHdl;
-    char dsn[IDENTIFIER_LENGTH];
+    char dsString[IDENTIFIER_LENGTH];
     IsolationLevel prevIsoLevel;
     SqlOdbcConnection()
-    { strcpy(errState,"00000"); innerConn = NULL; tdbName = mysql; prevIsoLevel = READ_COMMITTED; dsnAdapter[0]='\0'; isConnOpen = false; }
+    { 
+        strcpy(errState,"00000"); 
+        innerConn = NULL; 
+        tdbName = mysql; 
+        prevIsoLevel = READ_COMMITTED; 
+        dsName[0]='\0'; 
+        isConnOpen = false; 
+    }
     ~SqlOdbcConnection(){}
     
-    void setDsn(char *dsn){ strcpy(dsnAdapter,dsn);}
-    char *getDsn(){return dsnAdapter;}
+    void setDsName(char *dsname){ strcpy(dsName,dsname);}
+    char *getDsName(){return dsName;}
     void setTrDbName(char *name);
     TDBInfo getTrDbName(){return tdbName;}
     static bool symbolsLoaded;

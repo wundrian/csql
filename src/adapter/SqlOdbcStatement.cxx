@@ -53,11 +53,11 @@ DbRetVal SqlOdbcStatement::prepare(char *stmtstr)
     //retValue = SQLPrepare (hstmt, sstr, SQL_NTS);
     retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLPreparePtr) (hstmt, sstr, SQL_NTS);
     if (retValue) { 
-    //    setErrorState(hstmt); 
+    //setErrorState(hstmt); 
         printError(ErrSysInternal, "Unable to prepare statement");
         return ErrSysInternal; 
     }
-    isSelStmt=chechStmtType(stmtstr);
+    isSelStmt=checkStmtType(stmtstr);
     isPrepared = true;
     if(strstr(stmtstr,"call ")!=NULL || strstr(stmtstr,"CALL ")!=NULL)
     {
@@ -437,16 +437,11 @@ DbRetVal SqlOdbcStatement::close()
     logFinest(Conf::logger, "CloseCursor");
     return OK;
 }
-bool SqlOdbcStatement::chechStmtType(char *buf)
+bool SqlOdbcStatement::checkStmtType(char *buf)
 {
     char c;
-    while(1)
-    {
-        c=*buf;
-        if(c !=' ') break;
-        buf++;
-    }
-    if (strncasecmp (buf, "SELECT", 6) == 0)  { return true;}
+    while(1) { c=*buf; if(c !=' ') break; buf++; }
+    if (strncasecmp (buf, "SELECT", 6) == 0)  { return true; }
     return false;
 }
 void* SqlOdbcStatement::getFieldValuePtr( int pos )
@@ -588,6 +583,7 @@ DbRetVal SqlOdbcStatement::free()
             ::free(elem->jdbcBindValue);
         delete elem;
     }
+    if (rowStatus) { ::free(rowStatus); rowStatus = NULL; }
     bindList.reset();
     ListIterator piter = paramList.getIterator();
     BindSqlField *bindField = NULL;
@@ -720,9 +716,9 @@ void SqlOdbcStatement::getPrimaryKeyFieldName(char *tablename, char *pkfieldname
     if (retValue) {
         printError(ErrSysInit, "Unable to allocate ODBC handle \n");
     }
-    retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLDriverConnectPtr)(hdbc, NULL, (SQLCHAR*)conn->dsn, SQL_NTS, outstr, sizeof(outstr), &outstrlen,SQL_DRIVER_NOPROMPT);
+    retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLDriverConnectPtr)(hdbc, NULL, (SQLCHAR*)conn->dsString, SQL_NTS, outstr, sizeof(outstr), &outstrlen,SQL_DRIVER_NOPROMPT);
     if (SQL_SUCCEEDED(retValue)) {
-        printDebug(DM_Gateway, "Connected to target database using dsn = %s\n", conn->dsn);
+        printDebug(DM_Gateway, "Connected to target database using dsn = %s\n", conn->dsString);
     } else {
         printError(ErrSysInit, "Failed to connect to target database\n");
     }
@@ -800,9 +796,9 @@ bool SqlOdbcStatement::isTableExists( char *name)
     if (retValue) {
         printError(ErrSysInit, "Unable to allocate ODBC handle \n");
     }
-    retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLDriverConnectPtr)(hdbc, NULL, (SQLCHAR*)conn->dsn, SQL_NTS, outstr, sizeof(outstr), &outstrlen,SQL_DRIVER_NOPROMPT);
+    retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLDriverConnectPtr)(hdbc, NULL, (SQLCHAR*)conn->dsString, SQL_NTS, outstr, sizeof(outstr), &outstrlen,SQL_DRIVER_NOPROMPT);
     if (SQL_SUCCEEDED(retValue)) {
-        printDebug(DM_Gateway, "Connected to target database using dsn = %s\n", conn->dsn);
+        printDebug(DM_Gateway, "Connected to target database using dsn = %s\n", conn->dsString);
     } else {
         printError(ErrSysInit, "Failed to connect to target database\n");
     }
@@ -927,3 +923,166 @@ DbRetVal SqlOdbcStatement::resolveForBindField(SQLHSTMT hstmt)
     return OK;
 }
 
+DbRetVal SqlOdbcStatement::resolveForResultSetBindField(SQLHSTMT hstmt)
+{
+    short totalFields=0;
+    int retValue = 0;
+    retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLNumResultColsPtr) (hstmt, &totalFields);
+    if (retValue){   return ErrBadCall;  }
+    BindSqlProjectField *bindProjField = NULL;
+    UWORD                   icol;
+    UCHAR                   colName[IDENTIFIER_LENGTH];
+    SWORD                   colNameMax;
+    SWORD                   nameLength;
+    SWORD                   colType;
+    SQLULEN                 colLength;
+    SWORD                   scale;
+    SWORD                   nullable;
+    icol = 1; colNameMax = IDENTIFIER_LENGTH;
+    if(totalFields != 0)
+    {
+        if(isProcedureCallStmt) isSelStmt = true;
+        len = (SQLINTEGER *)malloc((totalFields+1)*sizeof(SQLINTEGER));
+        for(int i=0;i<=totalFields;i++) { len[i] = SQL_NTS ;}
+    }
+    while (icol <= totalFields)
+    {
+        retValue = (*SqlOdbcConnection::ODBCFuncPtrs.SQLDescribeColPtr)(hstmt, icol, colName, colNameMax, &nameLength, &colType, &colLength, &scale, &nullable);
+        if (retValue) return ErrBadCall;
+        bindProjField = new BindSqlProjectField();
+        strcpy(bindProjField->fName, (char*)colName);
+
+        bindProjField->type = AllDataType::convertFromSQLType(colType,colLength,scale,tdbname);
+        bindProjField->length = AllDataType::size(bindProjField->type, colLength+1);
+        bindProjField->value = NULL;
+        bindProjField->targetvalue = NULL;
+        bindList.append(bindProjField);
+        icol++;
+    }
+    totalFld = totalFields;
+    return OK;
+}
+
+DbRetVal SqlOdbcStatement::prepareForResultSet(char *stmtstr)
+{
+    DbRetVal rv = OK;
+    if (innerStmt) { rv = ErrBadCall; return rv; }
+    SqlOdbcConnection *conn = (SqlOdbcConnection*)con;
+    SQLRETURN ret;
+    isPrepared = false;
+    //retValue=SQLAllocHandle (SQL_HANDLE_STMT, conn->dbHdl, &hstmt);
+    ret = (*SqlOdbcConnection::ODBCFuncPtrs.SQLAllocHandlePtr) (SQL_HANDLE_STMT, conn->dbHdl, &hstmt);
+    if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
+        return ErrBadCall;
+    }
+    SQLCHAR* sstr= (SQLCHAR*)stmtstr;
+    ret = (*SqlOdbcConnection::ODBCFuncPtrs.SQLPreparePtr) (hstmt, sstr, SQL_NTS);
+    if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
+        return ErrBadCall;
+    }
+    isSelStmt=checkStmtType(stmtstr);
+    isPrepared = true;
+    if(strstr(stmtstr,"call ")!=NULL || strstr(stmtstr,"CALL ")!=NULL)
+    {
+        isProcedureCallStmt=true;
+        logFinest(Conf::logger, "Procedure call statement =true");
+    }
+    short totalFields=0;
+    tdbname = conn->getTrDbName();
+    rv = resolveForResultSetBindField(hstmt);
+    if(rv!=OK) return rv;
+    UWORD                   icol;
+    SWORD                   colNameMax;
+    SWORD                   scale;
+    SWORD                   nullable;
+    BindSqlField *bindField;
+    //retValue = SQLNumParams (hstmt, &totalFields);
+    ret = (*SqlOdbcConnection::ODBCFuncPtrs.SQLNumParamsPtr) (hstmt, &totalFields);
+    if (ret) return ErrBadCall;
+    icol = 1; colNameMax = IDENTIFIER_LENGTH;
+    SWORD                   cType=0;
+    SQLULEN                 cLength=0;
+    scale=0;
+    if(totalFields != 0)
+    {
+        paramlen =(SQLINTEGER *) malloc((totalFields+1)*sizeof(SQLINTEGER));
+        for(int i=0;i<=totalFields;i++) { paramlen[i] = SQL_NTS; }
+    }
+    logFinest(Conf::logger, "NumParams %d", totalFields);
+    while (icol <= totalFields)
+    {
+        bindField = new BindSqlField();
+        bindField->type = typeString;
+        bindField->length = 512;
+        bindField->value = AllDataType::alloc(bindField->type,
+                                                           bindField->length);
+        bindField->targetvalue = AllDataType::alloc(bindField->type, cLength);
+        int fieldsize = 0;
+        ret = (*SqlOdbcConnection::ODBCFuncPtrs.SQLBindParameterPtr)(hstmt, icol, SQL_PARAM_INPUT, AllDataType::convertToSQL_C_Type(bindField->type,tdbname), AllDataType::convertToSQLType(bindField->type), fieldsize, scale, bindField->targetvalue, fieldsize, &paramlen[icol]);
+        if (ret) return ErrBadCall;
+        paramList.append(bindField);
+        icol++;
+    }
+    //TODO::deallocate memory and remove elements from list in case of any
+    //failure in any of the above ODBC functions
+    logFinest(Conf::logger, "Statement prepared %s", stmtstr);
+    return OK;
+}
+
+void SqlOdbcStatement::setResultSetInfo(int nrecs)
+{
+    rowStatus = (SQLUSMALLINT *) malloc(nrecs * sizeof(SQLUSMALLINT));
+    memset(rowStatus, 0, nrecs * sizeof(SQLUSMALLINT) );
+    SQLSetStmtAttr(hstmt, SQL_ATTR_ROW_BIND_TYPE, SQL_BIND_BY_COLUMN, 0);
+    SQLSetStmtAttr(hstmt, SQL_ATTR_ROW_ARRAY_SIZE, (void *) nrecs, 0);
+    SQLSetStmtAttr(hstmt, SQL_ATTR_ROW_STATUS_PTR, rowStatus, 0 );
+    SQLSetStmtAttr(hstmt, SQL_ATTR_ROWS_FETCHED_PTR, &nRecords, 0 );
+}
+
+DbRetVal SqlOdbcStatement::rsBindField(int pos, void *val)
+{
+    if (!isPrepared) return OK;
+    BindSqlProjectField *bindField = (BindSqlProjectField*)bindList.get(pos);
+    if (NULL == bindField)
+    {
+        printError(ErrBadArg, "Could not get the projection list. Should be called only for SELECT statement");
+        return ErrBadArg;
+    }
+    //get the sqlctype from bind list and send it to dsn
+
+    // Following is a work around done corresponding to AllDataType::convertToSQL_C_Type for typeLongLong type
+    SQLSMALLINT type = AllDataType::convertToSQL_C_Type(bindField->type, tdbname);
+    if (type == SQL_C_CHAR || type == SQL_C_BINARY) {
+        // length was increased by one for null character during prepare.
+        SQLBindCol(hstmt, pos, type, val, bindField->length-1, NULL);
+    }
+    else {
+        SQLBindCol(hstmt, pos, type, val, 0, NULL);
+    }
+}
+
+DbRetVal SqlOdbcStatement::executeForResultSet()
+{
+    SQLRETURN ret = (*SqlOdbcConnection::ODBCFuncPtrs.SQLExecutePtr) (hstmt);
+    if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
+        //setErrorState(hstmt); 
+        return ErrBadCall;
+    }
+    return OK;
+}
+
+DbRetVal SqlOdbcStatement::fetchScroll(void *nrows)
+{
+    DbRetVal rv = OK;
+    SQLRETURN ret = (*SqlOdbcConnection::ODBCFuncPtrs.SQLFetchScrollPtr)(hstmt, SQL_FETCH_NEXT, 0);
+    if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
+        *(int *) nrows = 0;
+        if (ret != SQL_NO_DATA) {
+            //setErrorState(hstmt); 
+            return ErrBadCall;
+        }
+        else return OK;
+    }
+    *(int *) nrows = nRecords;
+    return OK;
+}

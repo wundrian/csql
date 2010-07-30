@@ -78,6 +78,8 @@ class DatabaseManager
     virtual DbRetVal dropIndex(const char *name)=0;
     virtual DbRetVal checkPoint()=0;
     virtual DbRetVal recover()=0;
+    virtual void setCanTakeCheckPoint(bool ctcp)=0;
+    virtual bool getCanTakeCheckPoint()=0;
     virtual DbRetVal createForeignKey(char *fkName,ForeignKeyInfo *info)=0;
     virtual DbRetVal dropForeignKey(void *ctpr,bool trylock)=0;
     virtual void sendSignal(int sig)=0;

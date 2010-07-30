@@ -24,7 +24,8 @@ class CacheIndexInfo
 {
     public:
     char indexName[IDENTIFIER_LENGTH];
-    FieldNameList fieldList;
+    FieldNameList fieldNameList;
+    ~CacheIndexInfo() { fieldNameList.removeAll(); }
 };
 
 class CacheTableLoader
@@ -36,8 +37,11 @@ class CacheTableLoader
     char conditionVal[IDENTIFIER_LENGTH]; //added newly
     char fieldlistVal[IDENTIFIER_LENGTH];
     char dsnName[IDENTIFIER_LENGTH];
-   // char dsnId[IDENTIFIER_LENGTH];
-   // char dsnPwd[IDENTIFIER_LENGTH];
+    bool resolveForDSN(char *dsn, TDBInfo &tdbName, DbRetVal &rv);
+    void generateCacheTableStatement(char *stmtBuf);
+    bool prepareCreateIndexStatement(SQLHSTMT hstmtmeta, char *crtIdxStmt, TDBInfo tdbName, HashIndexInitInfo *inf);
+    DbRetVal prepareCreateTableStatement(char *crtTblStmt, SQLHSTMT hstmt, HashIndexInitInfo *inf, int totalFields, TDBInfo tdbName, bool &isKeyFld);
+    void prepareInsertStatement(AbsSqlStatement *stmt, List *fNameList, char *insStmt);
     bool shouldForce;
     public:
     CacheTableLoader()
@@ -51,7 +55,6 @@ class CacheTableLoader
 	//strcpy(dsnPwd,"");
 	shouldForce = false;
     }
-    DbRetVal checkSecondTimeSqlPrimaryKeys(SQLHSTMT hstmtmeta,char *tableName,char *ptr, HashIndexInitInfo *inf,bool &isPriIndex);
     DbRetVal createIndex(SQLHSTMT hstmtmeta, char *tableName, HashIndexInitInfo *inf,AbsSqlStatement *stmt,bool isPKFieldSpecified);
     void setForceFlag(bool flag){ shouldForce = flag;}
     void setConnParam(char *user, char *pass){ strcpy(userName, user); strcpy(password, pass); }
@@ -88,10 +91,15 @@ class BindBuffer
     public:
     void *csql;
     void *targetdb;
+    SQLLEN *nullData;
     DataType type;
     int length;
-    BindBuffer(){ csql = NULL; targetdb = NULL; type = typeUnknown; length =0; }
-    ~BindBuffer() { ::free(csql); ::free(targetdb); }
+    BindBuffer()
+    { 
+        csql = NULL; targetdb = NULL; type = typeUnknown; 
+        length =0; nullData = NULL; 
+    }
+    ~BindBuffer() { ::free(csql); ::free(targetdb); ::free(nullData); }
 };
 class CacheTableInfo
 {
@@ -101,6 +109,7 @@ class CacheTableInfo
     char projFieldlist[IDENTIFIER_LENGTH];
     char condition[IDENTIFIER_LENGTH];
     char dsnName[IDENTIFIER_LENGTH];
+    char pkField[IDENTIFIER_LENGTH];
      
     //char dsnId[IDENTIFIER_LENGTH];
     //char dsnPwd[IDENTIFIER_LENGTH];
@@ -113,8 +122,10 @@ class CacheTableInfo
     void setFieldName(char *fldName){strcpy(fieldName,fldName);}
     void setProjFieldList(char *fieldlist){ strcpy(projFieldlist,fieldlist);}
     void setCondition(char *cond){ strcpy(condition,cond);}
+    void setPKField(char *pkfield) { strcpy(pkField, pkfield); }
     char *getTableName(){return tableName;}
     char *getFieldName(){return fieldName;}
+    char *getPKFieldName(){return pkField;}
     char *getCondition(){ return condition;}
     char *getProjFieldList(){return projFieldlist;}
 };

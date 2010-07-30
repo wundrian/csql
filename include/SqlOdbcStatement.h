@@ -26,7 +26,19 @@
 class SqlOdbcStatement: public AbsSqlStatement
 {
     public:
-    SqlOdbcStatement() { innerStmt = NULL; con = NULL;  isSelStmt = false; len=NULL; paramlen=NULL; isPrepared = false; strcpy(errState,"00000");}
+    SqlOdbcStatement() 
+    { 
+        innerStmt = NULL; 
+        con = NULL;  
+        tdbname = mysql;
+        isSelStmt = false; 
+        len=NULL; 
+        paramlen=NULL; 
+        isPrepared = false; 
+        strcpy(errState,"00000");
+        rowStatus = NULL;
+        nRecords = 0;
+    }
 
     void setConnection(AbsSqlConnection *conn)
     {
@@ -36,14 +48,19 @@ class SqlOdbcStatement: public AbsSqlStatement
 
     DbRetVal executeDirect(char *stmt);    
     DbRetVal prepare(char *stmt);
+    DbRetVal prepareForResultSet(char *stmt);
 
     DbRetVal execute(int &rowsAffect);
+    DbRetVal executeForResultSet();
     DbRetVal bindParam(int pos, void*);
 
     DbRetVal bindField(int pos, void* val);
+    DbRetVal rsBindField(int pos, void* val);
 
     void* fetch();
     void* fetch(DbRetVal &rv);
+    DbRetVal fetchScroll(void *nrows);
+    void setResultSetInfo(int nrecs);
     void* fetchAndPrint(bool SQL);
     void* next();
     DbRetVal close();
@@ -78,7 +95,7 @@ class SqlOdbcStatement: public AbsSqlStatement
 //    void setNullInfo(Table *stmt);
     bool isFldNull(int pos);
     bool isFldNull(char *name);
-    bool chechStmtType(char *stmtstr);
+    bool checkStmtType(char *stmtstr);
     void setNull(int pos);
     int getFldPos(char *name){ return 0;} 
     List getAllTableNames(DbRetVal &ret){ List dummy; return dummy;}
@@ -91,8 +108,13 @@ class SqlOdbcStatement: public AbsSqlStatement
     StatementType getStmtType() { return UnknownStatement; }
     void setErrorState(SQLHSTMT hStmt);
     DbRetVal resolveForBindField(SQLHSTMT hstmt);
+    DbRetVal resolveForResultSetBindField(SQLHSTMT hstmt);
     void getProjFieldType(int *data);
-    long long getLastInsertedVal(DbRetVal &rv){ rv = ErrBadCall; return 0;} //TODO
+    TDBInfo getTdbInfo() { return tdbname; }
+    long long getLastInsertedVal(DbRetVal &rv) { rv = ErrBadCall; return 0;} 
+    //TODO
+    
+    SQLUSMALLINT *rowStatus;
     private:
     char errState[STATE_LENGTH];
     TDBInfo tdbname;
@@ -105,6 +127,8 @@ class SqlOdbcStatement: public AbsSqlStatement
     SQLINTEGER *paramlen;
     int totalFld;
     bool isProcedureCallStmt; 
+    //For result set retrieval
+    int nRecords;
     friend class SqlFactory;
 };
 

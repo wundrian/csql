@@ -1424,8 +1424,9 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
                 if (NULL != def->bindVal_)
                 {
 		            if(!isInsert && isFldNull(fldpos)){clearNullBit(fldpos);}
-                    strncpy((char*)colPtr, (char*)def->bindVal_, def->length_);
-                    *(((char*)colPtr) + (def->length_-1)) = '\0';
+                //    strncpy((char*)colPtr, (char*)def->bindVal_, def->length_);
+                //    *(((char*)colPtr) + (def->length_-1)) = '\0';
+                    strcpy((char*)colPtr, (char*)def->bindVal_);
                 } 
                 else if (!def->isNull_ && isInsert) setNullBit(fldpos);
                 colPtr = colPtr + def->length_;

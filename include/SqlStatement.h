@@ -239,7 +239,7 @@ class SqlStatement: public AbsSqlStatement
     * @return bool true if it is prepared, false otherwise
     */
     List getTableNameList();
-    List getFieldNameList(const char *tblName);
+    List getFieldNameList(const char *tblName, DbRetVal &rv);
     DbRetVal getFieldInfo(const char *tblName, const char *fldName, FieldInfo *&info);
     bool isPrepared();
     StatementType getStmtType() { return pData.getStmtType(); }
@@ -264,6 +264,8 @@ class SqlStatement: public AbsSqlStatement
     void resetStmtString();
     static void setParamValues(AbsSqlStatement *sqlStmt, int parampos,
                                        DataType type, int length, void *value);
+    static void *fillBindBuffer(TDBInfo tdbName, DataType type, void *&valBuf, 
+                                                   int length, int nRecords=1);
     static void addToHashTable(int stmtID, AbsSqlStatement* sHdl,
                                              void *stmtBuckets, char *stmtstr);
     static void removeFromHashTable(int stmtID, void *stmtBuckets);
@@ -273,7 +275,10 @@ class SqlStatement: public AbsSqlStatement
     static DbRetVal filterAndWriteStmtLogs(void *stmtBuckets);
     static DbRetVal readAndPopulateStmts(AbsSqlConnection *conn, void *&stmtBuckets, bool list = false, bool interactive = false);
     static DbRetVal iterateStmtLogs(AbsSqlConnection *conn, void *startAddr, int size, void *stmtBuckets, bool list=false, bool interactive = false);
+    void setDontCache(bool dntCache) { dontCache = dntCache; }
+    bool getDontCache() { return dontCache; }
     private:
+    bool dontCache;
     bool isMgmtStatement;
     SqlConnection *sqlCon;
     Statement *stmt;

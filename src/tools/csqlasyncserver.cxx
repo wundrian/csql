@@ -406,9 +406,9 @@ DbRetVal handleCommit(void *data, int len, void *conn, void *stmtBuckets,
     DbRetVal rv = OK;
     AbsSqlConnection *con = (AbsSqlConnection *)conn;
     // get dsn if adapter to write into conflict resolution file
-    char *dsn = NULL;
+    char *dsstring = NULL;
     SqlOdbcConnection *adCon = (SqlOdbcConnection *) con;
-    dsn = adCon->dsn;
+    dsstring = adCon->dsString;
     char *ptr = (char *) data; 
     int datalen = *(int *) ptr; ptr += sizeof(int);
     int txnId = *(int *) ptr; ptr += sizeof(int); 
@@ -431,15 +431,18 @@ DbRetVal handleCommit(void *data, int len, void *conn, void *stmtBuckets,
         if (type == SETPARAM) {
             int parampos = *(int *) ptr;
             ptr += sizeof(int);
-            DataType dataType = (DataType) ( *(int *) ptr);
-            ptr += sizeof(int);
-            int length = *(int *) ptr;
-            ptr += sizeof(int);
-            void *value = ptr; 
-            ptr += length;
-            if (stmt != NULL) 
-                SqlStatement::setParamValues(stmt, parampos, dataType, 
-                                                        length, (char *)value);
+            int isNull = *(int *) ptr;
+            if (isNull == 0) {
+                DataType dataType = (DataType) ( *(int *) ptr);
+                ptr += sizeof(int);
+                int length = *(int *) ptr;
+                ptr += sizeof(int);
+                void *value = ptr; 
+                ptr += length;
+                if (stmt != NULL) 
+                    SqlStatement::setParamValues(stmt, parampos, 
+                                              dataType, length, (char *)value);
+            } else { if (stmt != NULL) stmt->setNull(parampos); }
         } else {
             // start executing and committing for all active connections
             int rows;
@@ -449,7 +452,7 @@ DbRetVal handleCommit(void *data, int len, void *conn, void *stmtBuckets,
                 if (rv == ErrNoConnection) return rv;
                 else {
                     // write to conflict resolution file  
-                    writeToConfResFile(data, len, stmtBuckets, dsn);
+                    writeToConfResFile(data, len, stmtBuckets, dsstring);
                     con->rollback();
                     return OK;
                 }
@@ -467,7 +470,7 @@ DbRetVal handleCommit(void *data, int len, void *conn, void *stmtBuckets,
                     continue;
                 else {
                     // write to conflict resolution file  
-                    writeToConfResFile(data, len, stmtBuckets, dsn);
+                    writeToConfResFile(data, len, stmtBuckets, dsstring);
                     con->rollback();
                     return OK;
                 }

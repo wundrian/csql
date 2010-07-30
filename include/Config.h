@@ -58,6 +58,7 @@ class ConfigValues
     
     int durableMode;
     char dsn[IDENTIFIER_LENGTH];
+    int nRowsToFetch;
     CacheMode mode;
     long offlineLogFileSize;
     int cacheWaitSecs;
@@ -114,6 +115,7 @@ class ConfigValues
         
         durableMode=1;
         strcpy(dsn,"myodbc3");
+        nRowsToFetch=100;
         mode = SYNC_MODE;
         offlineLogFileSize = 1048576;
         cacheWaitSecs =10;
@@ -169,6 +171,7 @@ class Config
     inline int getCacheMode() { return (int) cVal.mode; }
     inline long getOfflineLogFileSize() { return cVal.offlineLogFileSize; }
     inline char* getDSN() { return cVal.dsn; }
+    inline int getNoOfRowsToFetchFromTDB() { return cVal.nRowsToFetch; }
     inline char* getDsConfigFile() { return cVal.dsConfigFile; } 
     inline char* getTableConfigFile() { return cVal.tableConfigFile; }
     inline char* getStderrFile() { return cVal.stderrFile; }

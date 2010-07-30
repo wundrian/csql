@@ -20,6 +20,7 @@
 #ifndef SQLLOGSTATEMENT_H
 #define SQLLOGSTATEMENT_H
 #include <AbsSqlStatement.h>
+#include <SqlStatement.h>
 #include <SqlLogConnection.h>
 #include <SqlFactory.h>
 #include <CSql.h>
@@ -98,6 +99,10 @@ class SqlLogStatement: public AbsSqlStatement
     ResultSetPlan getResultSetPlan(){ return innerStmt->getResultSetPlan();}
     long long getLastInsertedVal(DbRetVal &rv){return innerStmt->getLastInsertedVal(rv);}
     void getProjFieldType(int *data);
+    void setDontCache(bool dntCache)
+    {
+        ((SqlStatement *)innerStmt)->setDontCache(dntCache);
+    }
     TableSyncMode mode;
     bool isNonSelDML;
     GlobalUniqueID stmtUID;

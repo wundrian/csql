@@ -22,33 +22,6 @@
 #include<SqlStatement.h>
 #include<SqlFactory.h>
 
-
-
-DbRetVal CacheTableLoader::checkSecondTimeSqlPrimaryKeys(SQLHSTMT hstmtmeta,char *tableName,char *ptr,HashIndexInitInfo *inf,bool &isPriIndex)
-{
-        int retValue =0;
-        char columnname[IDENTIFIER_LENGTH];
-        retValue=SQLPrimaryKeys(hstmtmeta, NULL, SQL_NTS, NULL, SQL_NTS, (SQLCHAR*) tableName, SQL_NTS);
-        retValue = SQLBindCol(hstmtmeta, 4, SQL_C_CHAR,columnname, 129,NULL);
-        char indname[IDENTIFIER_LENGTH];
-        if(SQLFetch( hstmtmeta ) == SQL_SUCCESS)
-        {
-            Util::str_tolower(columnname);
-            inf->list.append(columnname);
-            sprintf(ptr, "%s ", columnname);
-            ptr += strlen(ptr);
-            while ( SQLFetch( hstmtmeta ) == SQL_SUCCESS ) {
-                Util::str_tolower(columnname);
-                inf->list.append(columnname);
-                sprintf(ptr, ", %s ", columnname);
-                ptr += strlen(ptr);
-            }
-            sprintf(ptr, ") PRIMARY SIZE 10007;");
-            isPriIndex=true;
-        }
-        return OK;
-}
-
 DbRetVal CacheTableLoader::load(bool tabDefinition)
 {
     AbsSqlConnection *conn = SqlFactory::createConnection(CSqlLog);
@@ -61,9 +34,11 @@ DbRetVal CacheTableLoader::load(bool tabDefinition)
     logConn->setNoOfflineLog(true);
     SqlConnection *con = (SqlConnection *) conn->getInnerConnection();
     DatabaseManager *dbMgr = con->getConnObject().getDatabaseManager();
+    dbMgr->setCanTakeCheckPoint(false);
     if (tabDefinition == false) {
         Table *tbl = dbMgr->openTable(tableName);
         if (tbl == NULL) {
+            dbMgr->setCanTakeCheckPoint(true);
             conn->disconnect(); 
             delete stmt;
             delete conn;
@@ -72,6 +47,7 @@ DbRetVal CacheTableLoader::load(bool tabDefinition)
         if (tbl->numTuples()) {
             printError(ErrNotEmpty, "The table '\%s\' is not empty", tableName);
             dbMgr->closeTable(tbl);
+            dbMgr->setCanTakeCheckPoint(true);
             conn->disconnect();
             delete stmt;
             delete conn;
@@ -83,6 +59,7 @@ DbRetVal CacheTableLoader::load(bool tabDefinition)
     rv = load(conn, stmt, tabDefinition);
     conn->commit();
     stmt->free();
+    dbMgr->setCanTakeCheckPoint(true);
     conn->disconnect();
     delete stmt;
     delete conn;
@@ -91,55 +68,13 @@ DbRetVal CacheTableLoader::load(bool tabDefinition)
 
 DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, bool tabDefinition)
 {
-    char dsn[72];
+    char dsn[IDENTIFIER_LENGTH];
+    TDBInfo tdbName = mysql;
     DbRetVal rv = OK;
-    FILE *fp;
-    fp = fopen(Conf::config.getDsConfigFile(),"r");
-    if(fp==NULL) {
-    	printError(ErrSysInit, "csqlds.conf file does not exist");
-	    return ErrSysInit;
-    }
-    char dsnId[IDENTIFIER_LENGTH]; dsnId[0]='\0';
-    char user[IDENTIFIER_LENGTH]; user[0] = '\0';
-    char passwd[IDENTIFIER_LENGTH]; passwd[0] = '\0';
-    char tdb[IDENTIFIER_LENGTH]; tdb[0]='\0';
-       
-    // STARTs Here: 
-    // DSN, user and password value is read here from csql.conf fiel and csqlds.conf file.
     
-    if(strcmp(dsnName,"")==0) { // it's true if -d option is specified and the DSN value not matched with csql.conf's DSN.
-        strcpy(dsnName, Conf::config.getDSN());
-    }
-    bool isDSNExist=false;
-    while(!feof(fp)) {
-        fscanf(fp,"%s %s %s %s\n",dsnId,user,passwd,tdb);
-	    if(strcmp(dsnId,dsnName)==0) {   // Both the DSN is matched here
-	        if( strcmp(user,"NULL")!=0 && strcmp(passwd,"NULL")!=0) {
-	            sprintf(dsn,"DSN=%s;UID=%s;PWD=%s;",dsnName,user,passwd);
-                isDSNExist=true; 
-                break;                     
-	        } else {
-	            sprintf(dsn,"DSN=%s;",dsnName);  
-                isDSNExist=true;
-                break;
-	        }	
-        }
-    }
-    if(!isDSNExist) {
-        printError(ErrNotExists,"Entries is not present in the csqlds.conf file\n");
-        fclose(fp);
-        return ErrNotExists;
-    } 
-    fclose(fp);
-    TDBInfo tdbName=mysql;
-    if (strcasecmp(tdb,"postgres")==0) tdbName=postgres;
-    else if (strcasecmp(tdb,"mysql")==0) tdbName=mysql;
-    else printError(ErrNotFound,"Target Database Name is not properly set.Tdb name could be mysql, postgres, sybase, db2, oracle\n");
-         
-    logFine(Conf::logger, "TDB Name:%s\n", tdb);
- 
-    //DatabaseManager *dbMgr = (DatabaseManager *) conn->getDatabaseManager();
-    //char dsn[72];  
+    bool isDSNExist = resolveForDSN(dsn, tdbName, rv);
+    if (!isDSNExist) return rv; 
+   
     SqlConnection *con = (SqlConnection *) conn->getInnerConnection();
     DatabaseManager *dbMgr = con->getConnObject().getDatabaseManager();
 
@@ -175,30 +110,23 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
         printError(ErrSysInit, "Unable to allocate ODBC handle \n"); 
         return ErrSysInit; 
     }
+
     char stmtBuf[1024];
-    
-    if(((strcmp(conditionVal,"")==0) || (strcmp(conditionVal,"NULL")==0)) && ((strcmp(fieldlistVal,"")==0) || (strcmp(fieldlistVal,"NULL")==0)))
-    {
-       sprintf(stmtBuf, "SELECT * FROM %s;", tableName);
-    }
-    else if(((strcmp(conditionVal,"")!=0) || (strcmp(conditionVal,"NULL")!=0)) && ((strcmp(fieldlistVal,"")==0) || (strcmp(fieldlistVal,"NULL")==0)))
-    {
-       sprintf(stmtBuf,"SELECT * FROM %s where %s;",tableName,conditionVal);
-
-    }
-    else if(((strcmp(conditionVal,"")==0) || (strcmp(conditionVal,"NULL")==0)) && ((strcmp(fieldlistVal,"")!=0) || (strcmp(fieldlistVal,"NULL")!=0)))
-    {
-    	sprintf(stmtBuf,"SELECT %s FROM %s;",fieldlistVal,tableName);
-    }	
-    else
-        sprintf(stmtBuf,"SELECT %s FROM %s where %s;",fieldlistVal,tableName,conditionVal);
-
+    generateCacheTableStatement(stmtBuf);
     retValue = SQLPrepare (hstmt, (unsigned char *) stmtBuf, SQL_NTS);
     if (retValue) {
         printError(ErrSysInit, "Unable to Prepare ODBC statement \n"); 
         return ErrSysInit; 
     }
-    logFinest(Conf::logger, "Cache Table Stmt %s", stmtBuf);
+    int nRecordsToFetch = Conf::config.getNoOfRowsToFetchFromTDB();
+    int nFetchedRecords = 0;
+    SQLUSMALLINT *rowStatus = (SQLUSMALLINT *)
+                                malloc(nRecordsToFetch * sizeof(SQLUSMALLINT));
+    memset(rowStatus, 0, nRecordsToFetch * sizeof(SQLUSMALLINT));
+    SQLSetStmtAttr(hstmt, SQL_ATTR_ROW_BIND_TYPE, SQL_BIND_BY_COLUMN, 0);
+    SQLSetStmtAttr(hstmt, SQL_ATTR_ROW_ARRAY_SIZE, (void *) nRecordsToFetch, 0);
+    SQLSetStmtAttr(hstmt, SQL_ATTR_ROW_STATUS_PTR, rowStatus, 0 );
+    SQLSetStmtAttr(hstmt, SQL_ATTR_ROWS_FETCHED_PTR, &nFetchedRecords, 0 );
     if (tabDefinition) {
         short totalFields=0;
         retValue = SQLNumResultCols (hstmt, &totalFields);
@@ -206,19 +134,17 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
             printError(ErrSysInit, "Unable to retrieve ODBC total columns\n"); 
             return ErrSysInit; 
         }
-        UWORD                   icol;
+        logFinest(Conf::logger, "Cache Table noOfFields %hd", totalFields);
+        UWORD                   icol=1;
         UCHAR                   colName[IDENTIFIER_LENGTH];
-        SWORD                   colNameMax;
-        SWORD                   nameLength;
-        SWORD                   colType;
+        SWORD                   colNameMax=0;
+        SWORD                   nameLength=0;
+        SWORD                   colType=0;
         SQLULEN                 colLength = 0;
-        SWORD                   scale;
-        SWORD                   nullable;
-        TableDef tabDef;
-        icol = 1; 
+        SWORD                   scale=0;
+        SWORD                   nullable=0;
         colNameMax = IDENTIFIER_LENGTH;
         char columnname[IDENTIFIER_LENGTH];
-        char indexname[IDENTIFIER_LENGTH];
         short type; short unique;
         SQLHSTMT hstmtmeta;
         retValue=SQLAllocHandle (SQL_HANDLE_STMT, hdbc, &hstmtmeta);
@@ -227,40 +153,15 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
             printError(ErrSysInit, "Unable to allocate ODBC handle \n");
             return ErrSysInit;
         }
-        
-        retValue=SQLPrimaryKeys(hstmtmeta, NULL, SQL_NTS, NULL, SQL_NTS, (SQLCHAR*) tableName, SQL_NTS);
-        retValue = SQLBindCol(hstmtmeta, 4, SQL_C_CHAR,columnname, 129,NULL);
-        HashIndexInitInfo *inf = new HashIndexInitInfo();
+       
         char crtIdxStmt[1024];
-        char *name = NULL;
         char *ptr=crtIdxStmt;
-        sprintf(ptr, "CREATE INDEX %s_PRIMARY on %s ( ", tableName, tableName); 
-        ptr += strlen(ptr); 
-        bool isPriIndex=false;
-        char indname[IDENTIFIER_LENGTH];
-        if(SQLFetch( hstmtmeta ) == SQL_SUCCESS)
-        {
-            Util::str_tolower(columnname);
-            inf->list.append(columnname);
-            sprintf(ptr, "%s ", columnname);
-            ptr += strlen(ptr); 
-            while ( SQLFetch( hstmtmeta ) == SQL_SUCCESS ) {
-                Util::str_tolower(columnname);
-                inf->list.append(columnname);
-                sprintf(ptr, ", %s ", columnname);
-                ptr += strlen(ptr); 
-            }
-            sprintf(ptr, ") PRIMARY SIZE 10007;"); 
-            inf->indType =  hashIndex;
-            inf->bucketSize = 10007;
-            inf->isUnique = true; inf->isPrimary = true;
-            strcpy(inf->tableName, tableName);
-            strcpy(indexname,"PRIMARY");
-            sprintf(indname, "%s_%s", tableName, indexname);
-            isPriIndex=true;
-        }
+        HashIndexInitInfo *inf = new HashIndexInitInfo();
+        bool isPriIndex = prepareCreateIndexStatement(hstmtmeta, crtIdxStmt, tdbName, inf);
+        
         bool iskeyfieldExist=false;
         bool isPKFieldSpecified = false;
+        char *name = NULL;
         if((strcmp(fieldName,"")!=0) && (strcmp(fieldName,"NULL")!=0) )
         {
             isPKFieldSpecified = true;
@@ -304,138 +205,19 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
             }
         } 
 
-/*        if(isPriIndex) ;
-        else if (Conf::config.useTwoWayCache() && !iskeyfieldExist) {
-            printError(ErrSysInit, "Bidirectonal caching fail for no primary key in %s \n", tableName);
+        bool isKeyFld=false;
+        char crtTblStmt[1024];
+        rv = prepareCreateTableStatement(crtTblStmt, hstmt, inf, totalFields,
+                                                            tdbName, isKeyFld);
+        if (rv != OK) {
             SQLFreeHandle (SQL_HANDLE_STMT, hstmtmeta);
             SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
             SQLDisconnect (hdbc);
             SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
             SQLFreeHandle (SQL_HANDLE_ENV, henv);
+            delete inf;
             return ErrSysInit;
         }
-*/
-        bool isKeyFld=false;
-        bool isNullfld=false;
-        bool firstFld = true;
-        char crtTblStmt[1024];
-        ptr = crtTblStmt;
-        sprintf(ptr, "CREATE TABLE %s ( ", tableName);
-        ptr += strlen(ptr);
-        while (icol <= totalFields) {
-            retValue = SQLDescribeCol(hstmt, icol, colName, colNameMax,
-                                        &nameLength, &colType, &colLength,
-                                        &scale, &nullable);
-            if (retValue) {
-                printError(ErrSysInit, "Unable to retrieve ODBC column info\n"); 
-                SQLFreeHandle (SQL_HANDLE_STMT, hstmtmeta);
-                SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
-                SQLDisconnect (hdbc);
-                SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
-                SQLFreeHandle (SQL_HANDLE_ENV, henv);
-                delete inf;
-                return ErrSysInit; 
-            }
-            Util::str_tolower((char*)colName);
-            printDebug(DM_Gateway, "Describe Column %s %d %d %d %d \n", colName, colType, colLength, scale, nullable);
-            logFinest(Conf::logger, "Describe Column colName:%s colType:%d colLen:%d scale:%d nullable:%d\n", colName, colType, colLength, scale, nullable);
-
-            icol++;
-            if(strcmp((char*)colName,fieldName)== 0)
-            {
-                isKeyFld=true;
-                isNullfld=true;
-            }
-            bool isPriFld=false;
-            if (nullable) {
-                inf->list.resetIter();
-                while ((name=inf->list.nextFieldName())!=NULL) {
-                    if(0==strcmp((char*)colName,name)) {
-                        if (firstFld) {
-                            firstFld = false;
-                            sprintf(ptr, "%s %s", colName, AllDataType::getSQLString(AllDataType::convertFromSQLType(colType,colLength,scale,tdbName))); 
-                            ptr += strlen(ptr);
-                            if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) 
-                            {
-                                sprintf(ptr, "(%d) NOT NULL",colLength+1);
-                            } else { sprintf(ptr, " NOT NULL"); } 
-                                ptr += strlen(ptr);
-                        } else {
-                            sprintf(ptr, ", %s %s", colName, AllDataType::getSQLString(AllDataType::convertFromSQLType(colType,colLength,scale,tdbName)));
-                            ptr += strlen(ptr);
-                            if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) 
-                            {
-                                sprintf(ptr, "(%d) NOT NULL",colLength+1);
-                            } else { sprintf(ptr, " NOT NULL"); }
-                            ptr += strlen(ptr);
-                        }
-                        //tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType,colLength,scale,tdbName), colLength +1, NULL, true);
-                        isPriFld=true;
-                        break;
-                    }
-                }
-                if(!isPriFld) { 
-                    if(!isNullfld) {
-                        if (firstFld) {
-                            firstFld = false;
-                            sprintf(ptr, "%s %s", colName, AllDataType::getSQLString(AllDataType::convertFromSQLType(colType,colLength,scale,tdbName)));   
-                            ptr += strlen(ptr);
-                            if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) {
-                                sprintf(ptr, "(%d)",colLength+1);
-                                ptr += strlen(ptr);
-                            } 
-                        } else {
-                            sprintf(ptr, ", %s %s", colName, AllDataType::getSQLString(AllDataType::convertFromSQLType(colType,colLength,scale,tdbName)));   
-                            ptr += strlen(ptr);
-                            if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) {
-                                sprintf(ptr, "(%d)",colLength+1);
-                                ptr += strlen(ptr);
-                            } 
-                        }
-                        //tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType,colLength,scale,tdbName), colLength+1); 
-                    } else {
-                        if (firstFld) {
-                            firstFld = false;
-                            sprintf(ptr, "%s %s", colName, AllDataType::getSQLString(AllDataType::convertFromSQLType(colType,colLength,scale,tdbName)));   
-                            ptr += strlen(ptr);
-                            if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) {
-                                sprintf(ptr, "(%d) NOT NULL",colLength+1);
-                            } else { sprintf(ptr, " NOT NULL"); }
-                            ptr += strlen(ptr);
-                        } else {
-                            sprintf(ptr, ", %s %s", colName, AllDataType::getSQLString(AllDataType::convertFromSQLType(colType,colLength,scale,tdbName)));   
-                            ptr += strlen(ptr);
-                            if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) {
-                                sprintf(ptr, "(%d) NOT NULL",colLength+1);
-                            } else { sprintf(ptr, " NOT NULL"); }
-                            ptr += strlen(ptr);
-                        }
-                        //tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType,colLength,scale,tdbName), colLength+1, NULL, true);
-                        isNullfld=false;
-                    }
-                }
-            } else {
-                if (firstFld) {
-                    firstFld = false;
-                    sprintf(ptr, "%s %s", colName, AllDataType::getSQLString(AllDataType::convertFromSQLType(colType,colLength,scale,tdbName)));   
-                    ptr += strlen(ptr);
-                    if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) {
-                        sprintf(ptr, "(%d) NOT NULL",colLength+1);
-                    } else { sprintf(ptr, " NOT NULL"); }
-                    ptr += strlen(ptr);
-                } else {
-                    sprintf(ptr, ", %s %s", colName, AllDataType::getSQLString(AllDataType::convertFromSQLType(colType,colLength, scale, tdbName)));   
-                    ptr += strlen(ptr);
-                    if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) {
-                        sprintf(ptr, "(%d) NOT NULL",colLength+1);
-                    } else { sprintf(ptr, " NOT NULL"); }
-                    ptr += strlen(ptr);
-                }
-                //tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType,colLength,scale, tdbName), colLength +1, NULL, true);
-            }
-        }
-        sprintf(ptr, ");");
-        ptr += strlen(ptr);
         //printf("table stmt '%s'\n", crtTblStmt);
         if(((strcmp(fieldName,"")!=0) && (strcmp(fieldName,"NULL")!=0))
                                                                && !isKeyFld) {
@@ -510,48 +292,35 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
             SQLDisconnect (hdbc);
             SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
             SQLFreeHandle (SQL_HANDLE_ENV, henv); 
-            //delete inf;
+            delete inf;
             return rv;
         }
-        //delete inf;
-    }else{
-           rv=checkingSchema(hdbc,hstmt,conn,stmt,tdbName);
-           if(rv != OK){
-                printError(ErrSysInit,"Unable to cache the '%s' table due to schema mismatched.",tableName);
-                SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
-                SQLDisconnect (hdbc);
-                SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
-                SQLFreeHandle (SQL_HANDLE_ENV, henv);
-                return ErrSysInit;
-           }
-    }
+        logFinest(Conf::logger, "Cache Table: Index :%s", crtIdxStmt);
+        delete inf;
+    } // tableDefinition scope finishes here
 
+    else { /***Checking for Table Schema between CSQL and TDB(cachetable -s option)***/
+        rv=checkingSchema(hdbc,hstmt,conn,stmt,tdbName);
+        if(rv != OK){
+            printError(ErrSysInit,"Unable to cache the '%s' table due to schema mismatched.",tableName);
+            SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
+            SQLDisconnect (hdbc);
+            SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
+            SQLFreeHandle (SQL_HANDLE_ENV, henv);
+            return ErrSysInit;
+        }
+    } //***Ends Here
 
     // Now load the table with records
+    stmt->free();
+
     char insStmt[1024];
-    char *ptr = insStmt;
-    sprintf(ptr,"INSERT INTO %s VALUES(", tableName);
-    ptr += strlen(ptr);
-    bool firstFld = true;
+    List fNameList;
+    fNameList.init();
     SqlStatement *sqlStmt = (SqlStatement *)stmt->getInnerStatement();
     sqlStmt->setConnection(con);
-    List fNameList = sqlStmt->getFieldNameList(tableName);
-    int noOfFields = fNameList.size();
-    int totalFields = noOfFields; 
-    while (noOfFields--) {
-        if (firstFld) {
-            firstFld = false;
-            sprintf(ptr,"?", tableName);
-            ptr += strlen(ptr);
-        } else {
-            sprintf(ptr, ",?");
-            ptr += strlen(ptr);
-        }
-    }
-    sprintf(ptr, ");");
-    ptr += strlen(ptr);
-    //printf("insert stmt: '%s'\n", insStmt);
-
+    prepareInsertStatement(sqlStmt, &fNameList, insStmt);
+    int totalFields = fNameList.size();
     rv = stmt->prepare(insStmt);
     if (rv != OK) {
         printError(ErrSysInit, "Unable to prepare create table stmt\n");
@@ -561,110 +330,53 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
         SQLFreeHandle (SQL_HANDLE_ENV, henv);
         return ErrSysInit;
     }
+    sqlStmt->setLoading(true);
     ListIterator fNameIter = fNameList.getIterator();
     FieldInfo *info = new FieldInfo();
-    int fcount =1; void *valBuf; 
+    int fcount =1; void *valBuf=NULL; 
     Identifier *elem = NULL;
     void *tembuf=NULL;//For postgre BigInt type
     BindBuffer *bBuf;
     List valBufList;
-    SQLLEN *len = (SQLLEN *)malloc((totalFields+1)*sizeof(SQLLEN));
-    for(int i=0;i<=totalFields;i++) { len[i] = SQL_NTS ;}
+    int i=0;
     while (fNameIter.hasElement()) {
         elem = (Identifier*) fNameIter.nextElement();
         sqlStmt->getFieldInfo(tableName, (const char*)elem->name, info);
+        int size = 0;
         if (info->type == typeString || info->type == typeVarchar) {
-            valBuf = AllDataType::alloc(info->type, info->length+1);
-            os::memset(valBuf,0,info->length+1);
+            size = nRecordsToFetch * AllDataType::size(info->type,info->length);
         } else {
-            valBuf = AllDataType::alloc(info->type);
-            os::memset(valBuf,0,AllDataType::size(info->type));
+            size = nRecordsToFetch * AllDataType::size(info->type);
         }
-        switch(info->type) 
-        {
-            case typeDate:
-                bBuf = new BindBuffer();
-                bBuf->csql = valBuf;
-                bBuf->type = typeDate;
-                bBuf->length = sizeof(DATE_STRUCT);
-                bBuf->targetdb = malloc(bBuf->length);
-                memset(bBuf->targetdb, 0, bBuf->length);
-                valBuf = bBuf->targetdb;
-                valBufList.append(bBuf);
-                break;
-            case typeTime:
-                bBuf = new BindBuffer();
-                bBuf->csql = valBuf;
-                bBuf->type = typeTime;
-                bBuf->length = sizeof(TIME_STRUCT);
-                bBuf->targetdb = malloc(bBuf->length);
-                memset(bBuf->targetdb, 0, bBuf->length);
-                valBuf = bBuf->targetdb;
-                valBufList.append(bBuf);
-                break;
-            case typeTimeStamp:
-                bBuf = new BindBuffer();
-                bBuf->csql = valBuf;
-                bBuf->type = typeTimeStamp;
-                bBuf->length = sizeof(TIMESTAMP_STRUCT);
-                bBuf->targetdb = malloc(bBuf->length);
-                memset(bBuf->targetdb, 0, bBuf->length);
-                valBuf = bBuf->targetdb;
-                valBufList.append(bBuf);
-                break;
-            case typeLongLong:
-            {
-                if( tdbName == postgres )
-                {
-                    bBuf = new BindBuffer();
-                    bBuf->type = typeLongLong;
-                    bBuf->length = 40;
-                    bBuf->csql = valBuf;
-                    bBuf->targetdb = AllDataType::alloc(typeString,bBuf->length);
-                    memset(bBuf->targetdb, 0, bBuf->length);
-                    valBuf = bBuf->targetdb;
-                    valBufList.append(bBuf);
-                    break;
-                }
-                else
-                {   
-                    bBuf = new BindBuffer();
-                    bBuf->type = info->type;
-                    bBuf->csql = valBuf;
-                    valBufList.append(bBuf);
-                    bBuf->length = info->length;
-                    break;
-                }
+        valBuf = malloc(size);
+        os::memset(valBuf,0,size);
+        int bindLen = 0;
+        if (info->type != typeDate && info->type != typeTime && info->type != typeTimeStamp) {
+            if (info->type == typeLongLong && tdbName == postgres)  
+                bindLen = 40;
+            else
+            bindLen =  AllDataType::size(info->type, 
+                                  AllDataType::size(info->type, info->length));
+        } else {
+            switch(info->type) {
+            case typeDate: bindLen = sizeof(DATE_STRUCT); break;
+            case typeTime: bindLen = sizeof(TIME_STRUCT); break;
+            case typeTimeStamp: bindLen = sizeof(TIMESTAMP_STRUCT); break;
             }
-            case typeString:
-                if( tdbName != mysql) 
-                {
-                    bBuf = new BindBuffer();
-                    bBuf->type = typeString;
-                    bBuf->csql = valBuf;
-                    bBuf->length = info->length+1;
-                    valBufList.append(bBuf);
-                    break;
-                }
-            default:
-                bBuf = new BindBuffer();
-                bBuf->type = info->type;
-                bBuf->csql = valBuf;
-                valBufList.append(bBuf);
-                bBuf->length = info->length;
-                break;
         }
-        //os::memset(valBuf,0,bBuf->length);
-        retValue = SQLBindCol (hstmt, fcount, AllDataType::convertToSQL_C_Type(info->type,tdbName), valBuf, bBuf->length, &len[fcount]);
+
+        bBuf = (BindBuffer *) SqlStatement::fillBindBuffer(tdbName, info->type, valBuf, bindLen, nRecordsToFetch);
+        valBufList.append(bBuf);
+        retValue = SQLBindCol (hstmt, fcount, AllDataType::convertToSQL_C_Type(info->type,tdbName), valBuf, bindLen, bBuf->nullData);
         fcount++;
         if (retValue) {
-            printError(ErrSysInit, "Unable to bind columns in ODBC\n"); 
+            if(tabDefinition) dbMgr->dropTable(tableName);
+            printError(ErrSysInit, "Unable to bind columns in ODBC\n");
             SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
             SQLDisconnect (hdbc);
             SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
             SQLFreeHandle (SQL_HANDLE_ENV, henv);
-            free(len);
-            return ErrSysInit; 
+            return ErrSysInit;
         }
     }
     delete info;
@@ -680,84 +392,94 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
         SQLDisconnect (hdbc);
         SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
         SQLFreeHandle (SQL_HANDLE_ENV, henv);
-        free(len);
         return ErrSysInit; 
     }
     int fldpos=0;
-    while(true) {
+    do {
         //TODO: if SQLFetch return other than record not found error
         //it should drop the table
-        retValue = SQLFetch (hstmt);
+        retValue = SQLFetchScroll(hstmt, SQL_FETCH_NEXT, 0);
         if (retValue) break;
-        ListIterator bindIter = valBufList.getIterator();
-        fldpos = 0;
-        while (bindIter.hasElement()) {
-            bBuf = (BindBuffer*) bindIter.nextElement();
-            switch (bBuf->type) {
-                case typeString: 
-                {
-                    if( tdbName != mysql)
-                    {
-                        Util::trimRight((char*)bBuf->csql);
+        for (int row = 0; row < nFetchedRecords; row++) {
+            fldpos = 0;
+            void *val = NULL;
+            ListIterator bindIter = valBufList.getIterator();
+            while (bindIter.hasElement()) {
+                bBuf = (BindBuffer*) bindIter.nextElement();
+                if (bBuf->nullData[row] == SQL_NULL_DATA) {
+                    stmt->setNull(fldpos+1);
+                } else {
+                    val = (void *) ((char *)bBuf->csql + row * bBuf->length);
+                    switch (bBuf->type) {
+                        case typeString: 
+                        {
+                            val = (void *) ((char *)bBuf->csql + row * bBuf->length);
+                            if( tdbName == postgres) 
+                                Util::trimRight((char*)val);
+                            break;
+                        }  
+                        case typeDate: 
+                        {
+                            val = (void *) ((char *)bBuf->csql + row * sizeof(Date));
+                            Date *dtCSQL = (Date*) val;
+                            void *tVal = (void *) ((char *)bBuf->targetdb + row * sizeof(DATE_STRUCT));
+                            DATE_STRUCT *dtTarget = (DATE_STRUCT*) tVal;
+                            dtCSQL->set(dtTarget->year,dtTarget->month,dtTarget->day);
+                            break;
+                        }
+                        case typeTime:
+                        {
+                            val = (void *) ((char *)bBuf->csql + row * sizeof(Time));
+                            Time *dtCSQL = (Time*) val;
+                            void *tVal = (void *) ((char *)bBuf->targetdb + row * sizeof(TIME_STRUCT));
+                            TIME_STRUCT *dtTarget = (TIME_STRUCT*) tVal;
+                            dtCSQL->set(dtTarget->hour,dtTarget->minute,dtTarget->second);
+                            break;
+                        }
+                        case typeTimeStamp:
+                        {
+                            val = (void *) ((char *)bBuf->csql + row * sizeof(TimeStamp));
+                            TimeStamp *dtCSQL = (TimeStamp*) val;
+                            void *tVal = (void *) ((char *)bBuf->targetdb + row * sizeof(TIMESTAMP_STRUCT));
+                            TIMESTAMP_STRUCT *dtTarget = (TIMESTAMP_STRUCT*) tVal;
+                            dtCSQL->setDate(dtTarget->year,dtTarget->month,dtTarget->day);
+                            dtCSQL->setTime(dtTarget->hour,dtTarget->minute,dtTarget->second, dtTarget->fraction);
+                            break;
+                        }
+                        case typeLongLong:
+                        {
+                            val = (void *) ((char *)bBuf->csql + row * sizeof(long long));
+                            void *tVal = (void *) ((char *)bBuf->targetdb + row * bBuf->length);
+                            if (tdbName == postgres) {
+                                sscanf((const char*)tVal,"%lld",(long long*) val);
+                            }
+                            break;
+                        }
                     }
-                    break;
-                }  
-                case typeDate: 
-                {
-                    Date *dtCSQL = (Date*) bBuf->csql;
-                    DATE_STRUCT *dtTarget = (DATE_STRUCT*) bBuf->targetdb;
-                    dtCSQL->set(dtTarget->year,dtTarget->month,dtTarget->day);
-                    break;
+                    SqlStatement::setParamValues(stmt, fldpos+1, bBuf->type, bBuf->length, val);
                 }
-                case typeTime: 
-                {
-                    Time *dtCSQL = (Time*) bBuf->csql;
-                    TIME_STRUCT *dtTarget = (TIME_STRUCT*) bBuf->targetdb;
-                    dtCSQL->set(dtTarget->hour,dtTarget->minute,dtTarget->second);
-                    break;
-                }
-                case typeTimeStamp: 
-                {
-                    TimeStamp *dtCSQL = (TimeStamp*) bBuf->csql;
-                    TIMESTAMP_STRUCT *dtTarget = (TIMESTAMP_STRUCT*) bBuf->targetdb;
-                    dtCSQL->setDate(dtTarget->year,dtTarget->month,dtTarget->day);
-                    dtCSQL->setTime(dtTarget->hour,dtTarget->minute,dtTarget->second, dtTarget->fraction);
-                    break;
-                }
-                case typeLongLong:
-                {
-                    if ( tdbName == postgres) {
-                        sscanf((const char*)bBuf->targetdb,"%lld",(long long*) bBuf->csql);
-                    }
-                    break;
-                }
+                fldpos++;
             }
-            SqlStatement::setParamValues(stmt, ++fldpos, bBuf->type, 
-                                            bBuf->length, (char *) bBuf->csql);
-        }
-        fldpos=0;
-        //table->resetNullinfo();
-        while(fldpos < fcount-1) {
-            if(len[++fldpos] == SQL_NULL_DATA) { 
-                stmt->setNull(fldpos);
+            int rows = 0;
+            rv = stmt->execute(rows);
+            if (rv != OK) {
+                printError(ErrSysInit, "Unable to cache record in CSQL.\n");
+                if(tabDefinition) dbMgr->dropTable(tableName);
+                SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
+                SQLDisconnect (hdbc);
+                SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
+                SQLFreeHandle (SQL_HANDLE_ENV, henv);
+                return ErrSysInit;
             }
+            conn->commit();
+            conn->beginTrans();
         }
-        int rows = 0;
-        rv = stmt->execute(rows);
-        if (rv != OK) {
-            printError(ErrSysInit, "Unable to cache record in CSQL.\n");
-            SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
-            SQLDisconnect (hdbc);
-            SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
-            SQLFreeHandle (SQL_HANDLE_ENV, henv);
-            free(len);
-            return ErrSysInit;
-        }
-        conn->commit();
-        conn->beginTrans();
-        //Note:one operation per txn gives best performance than 100/txn
-    }
-    free(len);
+    } while (SQL_SUCCEEDED(retValue) && nFetchedRecords == nRecordsToFetch);
+    conn->commit();
+    conn->beginTrans();
+
+    //PRABA::one operation per transaction gives the best 
+    //performance than 100 /Txn in case of durability
     //TODO::leak:: valBufList and its targetdb buffer
     ListIterator it = valBufList.getIterator();
     while(it.hasElement()) {
@@ -769,9 +491,11 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
     valBufList.reset();
     SQLCloseCursor (hstmt);
     SQLFreeHandle (SQL_HANDLE_STMT, hstmt);
+    ::free(rowStatus);
     SQLDisconnect (hdbc);
     SQLFreeHandle (SQL_HANDLE_DBC, hdbc);
     SQLFreeHandle (SQL_HANDLE_ENV, henv);
+    logFine(Conf::logger, "Cached Table: %s", tableName);
     return OK;
 }
 
@@ -973,34 +697,27 @@ DbRetVal CacheTableLoader::createIndex(SQLHSTMT hstmtmeta, char *tableName, Hash
         bool isSecondTime = false;
         CacheIndexInfo *info=NULL;
         while ((retValue = SQLFetch(hstmtmeta)) == SQL_SUCCESS) {
-        //if (type != SQL_TABLE_STAT)
-            {
-                printDebug(DM_Gateway, "Column: %-18s Index Name: %-18s unique:%hd type:%hd\n", columnname, indexname, unique, type);
-            }
+            printDebug(DM_Gateway, "Column: %-18s Index Name: %-18s unique:%hd type:%hd\n", columnname, indexname, unique, type);
 
-            if (type == 3) 
-            {
-                
+            if (type == 3) {
                 bool isFldAdd = false;
                 ListIterator iter = indexList.getIterator();
                 iter.reset();
-                while (iter.hasElement())
-                {
+                while (iter.hasElement()) {
                     CacheIndexInfo *indInfo = (CacheIndexInfo *)iter.nextElement();
                     if(0 == strcmp( indInfo->indexName, indexname))
                     {
-                         indInfo->fieldList.append(columnname);
+                         indInfo->fieldNameList.append(columnname);
                          isFldAdd = true;
                     }
                 }
                 if(!isFldAdd){
                     info = new CacheIndexInfo();
-                    info->fieldList.append(columnname);
+                    info->fieldNameList.append(columnname);
                     strcpy(info->indexName, indexname);
                     indexList.append(info);
                     isSecondTime = true;
                 }
-                 
             }
         }
         ListIterator iter = indexList.getIterator();
@@ -1008,42 +725,41 @@ DbRetVal CacheTableLoader::createIndex(SQLHSTMT hstmtmeta, char *tableName, Hash
         int noOfPkfield = inf->list.size();
         char *fName=NULL; 
         char *cptr = NULL;
-        while (iter.hasElement())
-        {
+        while (iter.hasElement()) {
             cptr = columnname;
             bool isFieldExistInCondition = false;
             bool isPrimary=false;
             CacheIndexInfo *indInfo = (CacheIndexInfo *)iter.nextElement();
-            int noOfFld= indInfo->fieldList.size();
-            indInfo->fieldList.resetIter();
-            while ((fName = indInfo->fieldList.nextFieldName())!=NULL)
-            {
-                if(( 1 == noOfFld) && (0 == strcmp(fName,fieldName))) { isKeyFld=true; }
+            int noOfFld= indInfo->fieldNameList.size();
+            indInfo->fieldNameList.resetIter();
+            while ((fName = indInfo->fieldNameList.nextFieldName())!=NULL) {
+                if(( 1 == noOfFld) && (0 == strcmp(fName,fieldName))) { 
+                    isKeyFld=true; 
+                }
                 inf->list.resetIter();
                 while ((name=inf->list.nextFieldName())!=NULL) 
                 {
                     if(0==strcmp(fName,name)) {  isPrimary = true;  break;  }
                     isPrimary = false;
                 }
-		if (!TableConf::config.isFieldExist(fName) && ( (strcmp(fieldlistVal,"")!=0) && (strcmp(fieldlistVal,"NULL")!=0) ))
-                { 
+		        if (!TableConf::config.isFieldExist(fName) && 
+                                     ( (strcmp(fieldlistVal,"")!=0) && 
+                                          (strcmp(fieldlistVal,"NULL")!=0) )) { 
                      isFieldExistInCondition =true; 
                      continue; 
                 }
                 sprintf(cptr, "%s ,",fName);
                 cptr += strlen(cptr);
-                
             }
             if(isFieldExistInCondition) continue;
             cptr -=1;
             *cptr = '\0'; 
-
             if (isPrimary) { continue; }
             char crtIdxStmt[1024];
             char indname[128];
             sprintf(indname, "%s_%s", tableName, indInfo->indexName);
             sprintf(crtIdxStmt, "CREATE INDEX %s on %s(%s) HASH SIZE 10007;", indname, tableName, columnname);
-                //printf("create index stmt \n'%s'\n", crtIdxStmt);
+            //printf("create index stmt \n'%s'\n", crtIdxStmt);
             rv = stmt->prepare(crtIdxStmt);
             if (rv != OK) {
                 printError(ErrSysInit, "Unable to prepare create table stmt\n");
@@ -1055,9 +771,13 @@ DbRetVal CacheTableLoader::createIndex(SQLHSTMT hstmtmeta, char *tableName, Hash
                 printError(ErrSysInit, "Unable to execute create table stmt\n");
                 return ErrSysInit;
             }
-            delete indInfo;
+            //delete indInfo;
         }// while meta data fetch for index creation
-        delete inf;
+
+        iter.reset();
+        while (iter.hasElement()) delete (CacheIndexInfo *) iter.nextElement();
+        indexList.reset();
+
         SQLCloseCursor (hstmtmeta);
         SQLFreeHandle (SQL_HANDLE_STMT, hstmtmeta);
         if( !isKeyFld && isPKFieldSpecified) {
@@ -1085,6 +805,7 @@ DbRetVal CacheTableLoader::createIndex(SQLHSTMT hstmtmeta, char *tableName, Hash
      return OK;
 }
 
+// Schema matching between CSQL and TDB table.(cachetable -t <tablename> -s)
 DbRetVal CacheTableLoader::checkingSchema(SQLHDBC hdbc,SQLHSTMT hstmt, AbsSqlConnection *conn, AbsSqlStatement *stmt,TDBInfo tdbName)
 {
     DbRetVal rv=OK;
@@ -1113,7 +834,7 @@ DbRetVal CacheTableLoader::checkingSchema(SQLHDBC hdbc,SQLHSTMT hstmt, AbsSqlCon
     sqlStmt->setConnection(con);
 
     List fNameList ;
-    fNameList = sqlStmt->getFieldNameList(tableName);
+    fNameList = sqlStmt->getFieldNameList(tableName, rv);
     ListIterator fNameIter = fNameList.getIterator();
     FieldInfo *info = new FieldInfo();
     Identifier *elem = NULL;
@@ -1125,7 +846,7 @@ DbRetVal CacheTableLoader::checkingSchema(SQLHDBC hdbc,SQLHSTMT hstmt, AbsSqlCon
        return ErrSysInit;
     }
     /* CSQL Table fields */
-    fNameList = sqlStmt->getFieldNameList(tableName);
+    fNameList = sqlStmt->getFieldNameList(tableName, rv);
     csqlFields = fNameList.size();
     /* noOfFields in both the database are same or not. */
     if(tdbFields!=csqlFields){
@@ -1406,3 +1127,267 @@ DbRetVal CacheTableLoader::cacheAllTablesFromDs(char *dsnName,bool tableDefiniti
     return OK;
 }/* -----------------------------End------------------------------- */
 
+bool CacheTableLoader::resolveForDSN(char *dsn, TDBInfo &tdbName, DbRetVal &rv)
+{
+    char dsnId[IDENTIFIER_LENGTH]; dsnId[0]='\0';
+    char user[IDENTIFIER_LENGTH]; user[0] = '\0';
+    char passwd[IDENTIFIER_LENGTH]; passwd[0] = '\0';
+    char tdb[IDENTIFIER_LENGTH]; tdb[0]='\0';
+    FILE *fp;
+
+    fp = fopen(Conf::config.getDsConfigFile(),"r");
+    if(fp==NULL) {
+        printError(ErrSysInit, "csqlds.conf file does not exist");
+        rv = ErrSysInit;
+        return false;
+    }
+
+    // STARTs Here: 
+    // DSN, user and password value is read here from csql.conf file and 
+    // csqlds.conf file.
+    // it's true if -d option is specified and the DSN value not matched with 
+    // csql.conf's DSN.
+    if(strcmp(dsnName,"")==0) strcpy(dsnName, Conf::config.getDSN());
+
+    bool isDSNExist=false;
+    while(!feof(fp)) {
+        fscanf(fp,"%s %s %s %s\n",dsnId,user,passwd,tdb);
+    if(strcmp(dsnId,dsnName)==0) {   // Both the DSN is matched here
+        if(strcmp(user,"NULL")!=0 && strcmp(passwd,"NULL")!=0) {
+                sprintf(dsn,"DSN=%s;UID=%s;PWD=%s;",dsnName,user,passwd);
+                isDSNExist=true;
+                break;
+            } else {
+                sprintf(dsn,"DSN=%s;",dsnName);
+                isDSNExist=true;
+                break;
+            }
+        }
+    }
+    if(!isDSNExist) {
+        printError(ErrNotExists,"Entries is not present in the csqlds.conf file\n");
+        fclose(fp);
+        rv = ErrNotExists;
+        return false;
+    }
+    fclose(fp);
+    if (strcasecmp(tdb,"mysql") == 0) tdbName=mysql;
+    else if (strcasecmp(tdb,"postgres")==0) tdbName=postgres;
+    else {
+        printError(ErrNotFound," Target Database Name is not properly set.Tdb name could be mysql, postgres\n");
+        rv = ErrNotFound;
+        return false;
+    }
+    logFine(Conf::logger, "TDB Name:%s\n", tdb);
+    return isDSNExist;
+}
+
+void CacheTableLoader::generateCacheTableStatement(char *stmtBuf)
+{
+    if(((strcmp(conditionVal,"")==0) || (strcmp(conditionVal,"NULL")==0)) && ((strcmp(fieldlistVal,"")==0) || (strcmp(fieldlistVal,"NULL")==0)))
+    {
+       sprintf(stmtBuf, "SELECT * FROM %s;", tableName);
+    }
+    else if(((strcmp(conditionVal,"")!=0) || (strcmp(conditionVal,"NULL")!=0)) && ((strcmp(fieldlistVal,"")==0) || (strcmp(fieldlistVal,"NULL")==0)))
+    {
+       sprintf(stmtBuf,"SELECT * FROM %s where %s;",tableName,conditionVal);
+
+    }
+    else if(((strcmp(conditionVal,"")==0) || (strcmp(conditionVal,"NULL")==0)) && ((strcmp(fieldlistVal,"")!=0) || (strcmp(fieldlistVal,"NULL")!=0)))
+    {
+        sprintf(stmtBuf,"SELECT %s FROM %s;",fieldlistVal,tableName);
+    }
+    else
+        sprintf(stmtBuf,"SELECT %s FROM %s where %s;",fieldlistVal,tableName,conditionVal);
+    logFinest(Conf::logger, "Cache Table Stmt %s", stmtBuf);
+}
+
+bool CacheTableLoader::prepareCreateIndexStatement(SQLHSTMT hstmtmeta, char *crtIdxStmt, TDBInfo tdbName, HashIndexInitInfo *inf)
+{
+    char columnname[IDENTIFIER_LENGTH];
+    char indexname[IDENTIFIER_LENGTH];
+    int retValue=SQLPrimaryKeys(hstmtmeta, NULL, SQL_NTS, NULL, SQL_NTS, (SQLCHAR*) tableName, SQL_NTS);
+    retValue = SQLBindCol(hstmtmeta, 4, SQL_C_CHAR,columnname, 129,NULL);
+//    char *name = NULL;
+    char *ptr=crtIdxStmt;
+    sprintf(ptr, "CREATE INDEX %s_PRIMARY on %s ( ", tableName, tableName);
+    ptr += strlen(ptr);
+    bool isPriIndex=false;
+    char indname[IDENTIFIER_LENGTH];
+    if(SQLFetch( hstmtmeta ) == SQL_SUCCESS)
+    {
+        Util::str_tolower(columnname);
+        inf->list.append(columnname);
+        sprintf(ptr, "%s ", columnname);
+        ptr += strlen(ptr);
+        while ( SQLFetch( hstmtmeta ) == SQL_SUCCESS ) {
+            Util::str_tolower(columnname);
+            inf->list.append(columnname);
+            sprintf(ptr, ", %s ", columnname);
+            ptr += strlen(ptr);
+        }
+        sprintf(ptr, ") PRIMARY SIZE 10007;");
+        inf->indType =  hashIndex;
+        inf->bucketSize = 10007;
+        inf->isUnique = true; inf->isPrimary = true;
+        strcpy(inf->tableName, tableName);
+        strcpy(indexname,"PRIMARY");
+        sprintf(indname, "%s_%s", tableName, indexname);
+        isPriIndex=true;
+    }
+    return isPriIndex;
+}
+
+DbRetVal CacheTableLoader::prepareCreateTableStatement(char *crtTblStmt, SQLHSTMT hstmt, HashIndexInitInfo *inf, int totalFields, TDBInfo tdbName, bool &isKeyFld)
+{
+    DbRetVal rv = OK;
+    UWORD icol=1;
+    UCHAR colName[IDENTIFIER_LENGTH];
+    SWORD colNameMax=IDENTIFIER_LENGTH;
+    SWORD nameLength=0;
+    SWORD colType=0;
+    SQLULEN colLength = 0;
+    SWORD scale=0;
+    SWORD nullable=0;
+    int retValue = 0;
+    bool isNullfld=false;
+    bool firstFld = true;
+    char *name = NULL;
+
+    char *ptr = crtTblStmt;
+    sprintf(ptr, "CREATE TABLE %s ( ", tableName);
+    ptr += strlen(ptr);
+    while (icol <= totalFields) {
+        retValue = SQLDescribeCol(hstmt, icol, colName, colNameMax,
+                                         &nameLength, &colType, &colLength,
+                                                            &scale, &nullable);
+        if (retValue) {
+            printError(ErrSysInit, "Unable to retrieve ODBC column info\n");
+            return ErrSysInit;
+        }
+        Util::str_tolower((char*)colName);
+        printDebug(DM_Gateway, "Describe Column %s %d %d %d %d\n", colName, colType, colLength, scale, nullable);
+        logFinest(Conf::logger, "Describe Column colName:%s colType:%d colLen:%d scale:%d nullable:%d\n", colName, colType, colLength, scale, nullable);
+        icol++;
+        if(strcmp((char*)colName,fieldName)== 0)
+        {
+            isKeyFld=true;
+            isNullfld=true;
+        }
+        bool isPriFld=false;
+        if (nullable) {
+            inf->list.resetIter();
+            while ((name=inf->list.nextFieldName())!=NULL) {
+                if(0==strcmp((char*)colName,name)) {
+                    if (firstFld) {
+                        firstFld = false;
+                        sprintf(ptr, "%s %s", colName, AllDataType::getSQLString(AllDataType::convertFromSQLType(colType,colLength,scale,tdbName)));
+                        ptr += strlen(ptr);
+                        if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY)
+                        {
+                            sprintf(ptr, "(%d) NOT NULL",colLength+1);
+                        } else { sprintf(ptr, " NOT NULL"); }
+                            ptr += strlen(ptr);
+                    } else {
+                        sprintf(ptr, ", %s %s", colName, AllDataType::getSQLString(AllDataType::convertFromSQLType(colType,colLength,scale,tdbName)));
+                        ptr += strlen(ptr);
+                        if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY)
+                        {
+                            sprintf(ptr, "(%d) NOT NULL",colLength+1);
+                        } else { sprintf(ptr, " NOT NULL"); }
+                        ptr += strlen(ptr);
+                    }
+                    //tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType,colLength,scale,tdbName), colLength +1, NULL, true);
+                    isPriFld=true;
+                    break;
+                }
+            }
+            if(!isPriFld) {
+                if(!isNullfld) {
+                    if (firstFld) {
+                        firstFld = false;
+                        sprintf(ptr, "%s %s", colName, AllDataType::getSQLString(AllDataType::convertFromSQLType(colType,colLength,scale,tdbName)));
+                        ptr += strlen(ptr);
+                        if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) {
+                            sprintf(ptr, "(%d)",colLength+1);
+                            ptr += strlen(ptr);
+                        }
+                    } else {
+                        sprintf(ptr, ", %s %s", colName, AllDataType::getSQLString(AllDataType::convertFromSQLType(colType,colLength,scale,tdbName)));
+                        ptr += strlen(ptr);
+                        if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) {
+                            sprintf(ptr, "(%d)",colLength+1);
+                            ptr += strlen(ptr);
+                        }
+                    }
+                    //tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType,colLength,scale,tdbName), colLength+1);
+                } else {
+                    if (firstFld) {
+                        firstFld = false;
+                        sprintf(ptr, "%s %s", colName, AllDataType::getSQLString(AllDataType::convertFromSQLType(colType,colLength,scale,tdbName)));
+                        ptr += strlen(ptr);
+                        if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) {
+                            sprintf(ptr, "(%d) NOT NULL",colLength+1);
+                        } else { sprintf(ptr, " NOT NULL"); }
+                        ptr += strlen(ptr);
+                    } else {
+                        sprintf(ptr, ", %s %s", colName, AllDataType::getSQLString(AllDataType::convertFromSQLType(colType,colLength,scale,tdbName)));
+                        ptr += strlen(ptr);
+                        if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) {
+                            sprintf(ptr, "(%d) NOT NULL",colLength+1);
+                        } else { sprintf(ptr, " NOT NULL"); }
+                        ptr += strlen(ptr);
+                    }
+                    //tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType,colLength,scale,tdbName), colLength+1, NULL, true);
+                    isNullfld=false;
+                }
+            }
+        } else {
+            if (firstFld) {
+                firstFld = false;
+                sprintf(ptr, "%s %s", colName, AllDataType::getSQLString(AllDataType::convertFromSQLType(colType,colLength,scale,tdbName)));
+                ptr += strlen(ptr);
+                if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) {
+                    sprintf(ptr, "(%d) NOT NULL",colLength+1);
+                } else { sprintf(ptr, " NOT NULL"); }
+                ptr += strlen(ptr);
+            } else {
+                sprintf(ptr, ", %s %s", colName, AllDataType::getSQLString(AllDataType::convertFromSQLType(colType,colLength, scale, tdbName)));
+                ptr += strlen(ptr);
+                if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) {
+                    sprintf(ptr, "(%d) NOT NULL",colLength+1);
+                } else { sprintf(ptr, " NOT NULL"); }
+                ptr += strlen(ptr);
+            }
+            //tabDef.addField((char*)colName, AllDataType::convertFromSQLType(colType,colLength,scale, tdbName), colLength +1, NULL, true);
+        }
+    }
+    sprintf(ptr, ");");
+    ptr += strlen(ptr);
+    //printf("table stmt '%s'\n", crtTblStmt);
+    return rv;
+}
+
+void CacheTableLoader::prepareInsertStatement(AbsSqlStatement *stmt, List *fNameList, char *insStmt)
+{
+    DbRetVal rv = OK;
+    char *ptr = insStmt;
+    sprintf(ptr,"INSERT INTO %s VALUES(", tableName);
+    ptr += strlen(ptr);
+    bool firstFld = true;
+    SqlStatement *sqlStmt = (SqlStatement *)stmt;
+    *fNameList = sqlStmt->getFieldNameList(tableName, rv);
+    int noOfFields = fNameList->size();
+    while (noOfFields--) {
+        if (firstFld) {
+            firstFld = false;
+            sprintf(ptr,"?", tableName);
+            ptr += strlen(ptr);
+        } else {
+            sprintf(ptr, ",?");
+            ptr += strlen(ptr);
+        }
+    }
+    sprintf(ptr, ");");
+    ptr += strlen(ptr);
+}

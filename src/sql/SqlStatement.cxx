@@ -89,6 +89,81 @@ void SqlStatement::setParamValues(AbsSqlStatement *sqlStmt, int parampos, DataTy
     return;
 }
 
+void *SqlStatement::fillBindBuffer(TDBInfo tdbName, DataType type, void *&valBuf, int length, int nRecords)
+{
+    BindBuffer *bBuf = NULL;
+    switch(type)
+    {
+        case typeDate:
+            bBuf = new BindBuffer();
+            bBuf->csql = valBuf;
+            bBuf->type = typeDate;
+            bBuf->length = sizeof(DATE_STRUCT);
+            bBuf->targetdb = malloc(nRecords * bBuf->length);
+            memset(bBuf->targetdb, 0, nRecords * bBuf->length);
+            valBuf = bBuf->targetdb;
+            break;
+        case typeTime:
+            bBuf = new BindBuffer();
+            bBuf->csql = valBuf;
+            bBuf->type = typeTime;
+            bBuf->length = sizeof(TIME_STRUCT);
+            bBuf->targetdb = malloc(nRecords * bBuf->length);
+            memset(bBuf->targetdb, 0, nRecords * bBuf->length);
+            valBuf = bBuf->targetdb;
+            break;
+        case typeTimeStamp:
+            bBuf = new BindBuffer();
+            bBuf->csql = valBuf;
+            bBuf->type = typeTimeStamp;
+            bBuf->length = sizeof(TIMESTAMP_STRUCT);
+            bBuf->targetdb = malloc(nRecords * bBuf->length);
+            memset(bBuf->targetdb, 0, nRecords * bBuf->length);
+            valBuf = bBuf->targetdb;
+            break;
+        case typeLongLong:
+        {
+            if( tdbName == postgres)
+            {
+                bBuf = new BindBuffer();
+                bBuf->type = typeLongLong;
+                bBuf->length = 40;
+                bBuf->csql = valBuf;
+                int size = nRecords*AllDataType::size(typeString,bBuf->length);
+                bBuf->targetdb = malloc(size);
+                memset(bBuf->targetdb, 0, size);
+                valBuf = bBuf->targetdb;
+                break;
+            }else
+            {
+                bBuf = new BindBuffer();
+                bBuf->type = type;
+                bBuf->csql = valBuf;
+                bBuf->length = length;
+                break;
+            }
+        }
+        case typeVarchar:
+        case typeString:
+            {
+                bBuf = new BindBuffer();
+                bBuf->type = typeString;
+                bBuf->csql = valBuf;
+                bBuf->length = length;
+                break;
+            }
+        default:
+            bBuf = new BindBuffer();
+            bBuf->type = type;
+            bBuf->csql = valBuf;
+            bBuf->length = length;
+            break;
+    }
+    bBuf->nullData = (SQLLEN *) malloc(nRecords * sizeof(SQLLEN));
+    for (int i = 0; i < nRecords; i++) bBuf->nullData[i] = SQL_NTS;
+    return bBuf;
+}
+
 void SqlStatement::addToHashTable(int stmtID, AbsSqlStatement* sHdl,
                                               void *stmtBuckets, char *stmtstr)
 {
@@ -193,6 +268,7 @@ SqlStatement::SqlStatement()
     isCachedStmt=false;
     isMgmtStatement = false;
     sqlStmtString = NULL;
+    dontCache = false;
 }
 void SqlStatement::setConnection(AbsSqlConnection *conn)
 {
@@ -215,6 +291,7 @@ DbRetVal SqlStatement::executeDirect(char *str)
     if (rv != OK) return rv;
     return rv;
 }
+
 void SqlStatement::setStmtString(char *ststr)
 {
     if (sqlStmtString) { ::free(sqlStmtString); sqlStmtString=NULL; }
@@ -300,19 +377,17 @@ DbRetVal SqlStatement::prepareInt(char *stmtstr)
         return rv;
     }
     isPrepd = true;
-    if (!isCachedStmt && Conf::config.getStmtCacheSize()) {
-      if (stmt->noOfParamFields() > 0) { 
-        isCachedStmt = true; 
-        sqlCon->addToCache(this, stmtstr); 
-      }else if (Conf::config.useCacheNoParam())
-      {
-        if (parsedData->getCacheWorthy())
-        {
-           isCachedStmt = true; 
-           sqlCon->addToCache(this, stmtstr); 
+    if (!isCachedStmt && Conf::config.getStmtCacheSize() && !getDontCache()) {
+        if (stmt->noOfParamFields() > 0) { 
+            isCachedStmt = true; 
+            sqlCon->addToCache(this, stmtstr); 
+        } else if (Conf::config.useCacheNoParam()) {
+            if (parsedData->getCacheWorthy()) {
+                isCachedStmt = true; 
+                sqlCon->addToCache(this, stmtstr); 
+            }
         }
-      }
-    }
+    } else { printf("stmtstring '%s' not cached\n", stmtstr); }
     parsedData = NULL;
     ProcessManager::prepareMutex.releaseLock(-1, false);
     return OK;
@@ -616,8 +691,10 @@ DbRetVal SqlStatement::free()
         stmt=NULL;
         pData.init();
         isPrepd = false;
-        if (sqlStmtString) sqlCon->setStmtNotInUse(sqlStmtString);
-        if (sqlStmtString) { ::free(sqlStmtString); sqlStmtString=NULL; }
+        if (sqlStmtString) {
+            sqlCon->setStmtNotInUse(sqlStmtString);
+            ::free(sqlStmtString); sqlStmtString=NULL; 
+        }
         isCachedStmt = false;
         return OK;
     }
@@ -713,8 +790,13 @@ List SqlStatement::getAllUserNames(DbRetVal &ret)
     ret = (DbRetVal) rv;
     return urNmList;
 }
-List SqlStatement::getFieldNameList(const char *tblName)
+List SqlStatement::getFieldNameList(const char *tblName, DbRetVal &rv)
 {
+    List fldNameList;
+    if (isPrepared()) {
+        fldNameList = stmt->getFieldNameList(tblName, rv);
+        return fldNameList;
+    }
     DatabaseManager *dbMgr = sqlCon->getConnObject().getDatabaseManager();
     Table *table = dbMgr->openTable(tblName);
     if (NULL == table) {
@@ -722,21 +804,26 @@ List SqlStatement::getFieldNameList(const char *tblName)
         printError(ErrLockTimeOut, "Unable to open table %s", tblName);
         return dummyList;
     }
-    List fldNameList = table->getFieldNameList();
+    fldNameList = table->getFieldNameList();
     dbMgr->closeTable(table);
     return fldNameList;
 }
 DbRetVal SqlStatement::getFieldInfo(const char *tblName, const char *fldName, FieldInfo *&info)
 {
+    DbRetVal rv = OK;
+    if (isPrepared()) {
+        rv = stmt->getFieldInfo(tblName, fldName, info);
+        return rv;
+    }
     DatabaseManager *dbMgr = sqlCon->getConnObject().getDatabaseManager();
     Table *table = dbMgr->openTable(tblName);
     if (NULL == table) {
         printError(ErrLockTimeOut, "Unable to open table %s", tblName);
         return ErrLockTimeOut;
     }
-    DbRetVal rv = table->getFieldInfo(fldName, info);
+    rv = table->getFieldInfo(fldName, info);
     dbMgr->closeTable(table);
-    return OK;
+    return rv;
 }
 void SqlStatement::setLoading(bool flag)
 {
@@ -774,6 +861,7 @@ void SqlStatement::flushCacheStmt()
 {
     return sqlCon->flushCacheStmt();
 }
+
 void SqlStatement::resetStmtString() {
     sqlStmtString=NULL; 
 }
@@ -824,7 +912,8 @@ void SqlConnection::flushCacheStmt()
         //do not delete when the statement is currently in use.
         //otherwise it leads to illegal memory access when application 
         //calls any method on this statement
-        if (node->inUse) continue;
+        //if (node->inUse) continue;
+        if (node->inUse) node->inUse = 0;
         free(node->sqlString);
         node->sqlStmt->setCachedStmt(false);
         node->sqlStmt->free();
@@ -847,6 +936,7 @@ void SqlConnection::setStmtNotInUse(char *stmtstr)
            if (0 == strcmp(node->sqlString, stmtstr))
            {
                node->inUse =0;
+               return;
            }
         }
     }
@@ -873,6 +963,7 @@ SqlStatement* SqlConnection::findInCache(char *stmtstr)
     }
     return NULL;
 }
+
 void SqlConnection::addToCache(SqlStatement *sqlStmt, char* stmtString)
 {
     SqlStatement *stmt = new SqlStatement();
@@ -893,6 +984,7 @@ void SqlConnection::addToCache(SqlStatement *sqlStmt, char* stmtString)
     logFinest(Conf::logger, "Statement added To Cache %s\n", node->sqlString);
     return ;
 }
+
 void SqlConnection::removeLeastUsed()
 {
     ListIterator iter = cachedStmts.getIterator();
@@ -913,8 +1005,10 @@ void SqlConnection::removeLeastUsed()
     //TODO::check whether there is memory leak for list elements
     logFiner(Conf::logger, "Statement removed from Cache %x\n", toRemove->sqlStmt);
     logFinest(Conf::logger, "Statement removed from Cache %s\n", toRemove->sqlString);
+    delete toRemove; toRemove = NULL;
     return;
 }
+
 SqlConnection::~SqlConnection()
 {
     flushCacheStmt();
@@ -1336,13 +1430,18 @@ int SqlConnection::applyRedoLogs(char *redoFile)
                     iter=iter+sizeof(int);
                     int pos = *(int*) iter;
                     iter=iter+sizeof(int);
-                    DataType type = (DataType)(*(int*)iter);
-                    iter=iter+sizeof(int);
-                    int len = *(int*) iter;
-                    iter=iter+sizeof(int);
-                    value = iter;
-                    iter=iter+len;
-                    SqlStatement::setParamValues(stmt, pos, type, len, value);
+                    int isNull = *(int *)iter;
+                    iter = iter + sizeof(int);
+                    if (isNull == 0) {
+                        DataType type = (DataType)(*(int*)iter);
+                        iter=iter+sizeof(int);
+                        int len = *(int*) iter;
+                        iter=iter+sizeof(int);
+                        value = iter;
+                        iter=iter+len;
+                        SqlStatement::setParamValues(stmt, pos, 
+                                                             type, len, value);
+                    } else stmt->setNull(pos);
                     if (*(int*)iter <0) break;
                 }
             }

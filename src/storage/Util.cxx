@@ -22,6 +22,25 @@ unsigned int Util::hashBinary(char *strVal, int length)
     return hval;
 }
 
+unsigned int Util::hashString(char *strVal)
+{
+    unsigned int hval, g;
+    hval = 0;
+    char *str =strVal;
+    while (*str != '\0')
+    {
+        hval <<= 4;
+        hval += (unsigned int) *str++;
+        g = hval & ((unsigned int) 0xf << (32 - 4));
+        if (g != 0)
+        {
+            hval ^= g >> (32 - 8);
+            hval ^= g;
+        }
+    }
+    return hval;
+}
+
 DbRetVal GlobalUniqueID::create()
 {
     int key = Conf::config.getShmIDKey();

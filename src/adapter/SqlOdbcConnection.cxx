@@ -150,6 +150,12 @@ DbRetVal SqlOdbcConnection::loadSymbols()
         return ErrSysInternal;
     }
 
+    ODBCFuncPtrs.SQLFetchScrollPtr = (SQLRETURN (*)(SQLHSTMT, SQLSMALLINT, SQLLEN))dlsym(handle, "SQLFetchScroll");
+    if (!ODBCFuncPtrs.SQLFetchScrollPtr){
+        printError(ErrSysInternal, "Symbol lookup failed\n");
+        return ErrSysInternal;
+    }
+
     ODBCFuncPtrs.SQLCloseCursorPtr = (SQLRETURN (*)(SQLHSTMT ))dlsym(handle, "SQLCloseCursor");
     if (!ODBCFuncPtrs.SQLCloseCursorPtr){
         printError(ErrSysInternal, "Symbol lookup failed\n");
@@ -187,14 +193,13 @@ DbRetVal SqlOdbcConnection::connect (char *user, char * pass)
 {
     DbRetVal rv = OK;
     char tdbname[IDENTIFIER_LENGTH];
-    char *dsnAda;
-    //Get the appropriate DSN
-    dsnAda=getDsn();    
+    char *dsname = getDsName();    
     
-    if(strcmp(dsnAda,"")==0) 
-        rv=TableConf::config.getDsnAndTdb(Conf::config.getDSN(),dsn,tdbname);
+    if(strcmp(dsname,"")==0) 
+        rv=TableConf::config.getDsnAndTdb(Conf::config.getDSN(), dsString,
+                                                                      tdbname);
     else
-        rv=TableConf::config.getDsnAndTdb(dsnAda,dsn,tdbname);
+        rv=TableConf::config.getDsnAndTdb(dsname,dsString,tdbname);
     
     if(rv!=OK){
         printError(rv,"Add Entry To csqlds.conf");
@@ -229,11 +234,10 @@ DbRetVal SqlOdbcConnection::connect (char *user, char * pass)
     }
     SQLCHAR outstr[1024];
     SQLSMALLINT outstrlen;
-    retVal = (*ODBCFuncPtrs.SQLDriverConnectPtr)(dbHdl, NULL, (SQLCHAR*)dsn,
-             SQL_NTS,outstr, sizeof(outstr), &outstrlen, SQL_DRIVER_NOPROMPT);
+    retVal = (*ODBCFuncPtrs.SQLDriverConnectPtr)(dbHdl, NULL, (SQLCHAR*)dsString, SQL_NTS,outstr, sizeof(outstr), &outstrlen, SQL_DRIVER_NOPROMPT);
 
     if (!SQL_SUCCEEDED(retVal)) {
-        printError(ErrSysInit, "Failed to connect to target database using dsn=%s\n", dsn);
+        printError(ErrSysInit, "Failed to connect to target database using dsn=%s\n", dsString);
 
     SQLINTEGER   i = 0;
     SQLINTEGER   native;
@@ -259,7 +263,7 @@ DbRetVal SqlOdbcConnection::connect (char *user, char * pass)
  rv = ErrNoConnection;
  //rv = OK; //masking the error:tmp
     }
-    logFine(Conf::logger, "Connecting with dsn=%s\n", dsn);
+    logFine(Conf::logger, "Connecting with dsn=%s\n", dsString);
     (*ODBCFuncPtrs.SQLSetConnectAttrPtr)(dbHdl, SQL_ATTR_AUTOCOMMIT, SQL_AUTOCOMMIT_OFF, 0);
     if (rv == OK) isConnOpen = true;
     return rv;

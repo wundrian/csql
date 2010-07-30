@@ -31,10 +31,10 @@ SqlLogConnection::~SqlLogConnection()
     if (fileSend) { delete fileSend; fileSend = NULL; }
     if (offlineLog) { delete offlineLog; offlineLog = NULL; }
     txnUID.close();
-    ListIterator it = cacheList.getIterator();
-    while(it.hasElement()) delete (CachedTable *) it.nextElement();
+    ListIterator iter = cacheList.getIterator();
+    while(iter.hasElement()) delete (CachedTable *) iter.nextElement();
     cacheList.reset();
-    it = execLogStore.getIterator();
+    ListIterator it = execLogStore.getIterator();
     while(it.hasElement()) ::free ((ExecLogInfo *) it.nextElement());
     execLogStore.reset();
 } 
@@ -51,7 +51,7 @@ DbRetVal SqlLogConnection::connect (char *user, char *pass)
 
 DbRetVal SqlLogConnection::disconnect()
 {
-    if (innerConn) return innerConn->disconnect();
+    if (innerConn) innerConn->disconnect();
     return OK;
 }
 
@@ -112,14 +112,19 @@ DbRetVal SqlLogConnection::commit()
             *(int *) ptr = elInfo->pos;
             printDebug(DM_SqlLog, "commit: PrmPos to marshall: %d", elInfo->pos);
             ptr += sizeof(int);
-            *(int *) ptr = (int) elInfo->dataType;
-            printDebug(DM_SqlLog, "commit: DtType to marshall: %d", elInfo->dataType);
+            *(int *) ptr = elInfo->isNull;
+            printDebug(DM_SqlLog, "commit: isNull to marshall: %d", elInfo->isNull);
             ptr += sizeof(int);
-            *(int *) ptr = elInfo->len;
-            printDebug(DM_SqlLog, "commit: length to marshall: %d", elInfo->len);
-            ptr += sizeof(int);
-            memcpy(ptr, &elInfo->value, elInfo->len);
-            ptr += elInfo->len;
+            if (elInfo->isNull == 0) {
+                *(int *) ptr = (int) elInfo->dataType;
+                printDebug(DM_SqlLog, "commit: DtType to marshall: %d", elInfo->dataType);
+                ptr += sizeof(int);
+                *(int *) ptr = elInfo->len;
+                printDebug(DM_SqlLog, "commit: length to marshall: %d", elInfo->len);
+                ptr += sizeof(int);
+                memcpy(ptr, &elInfo->value, elInfo->len);
+                ptr += elInfo->len;
+            }
         }
     }
     commitLogs(len, data);
@@ -141,7 +146,7 @@ DbRetVal SqlLogConnection::rollback()
     while (logStoreIter.hasElement())
     {
         elInfo = (ExecLogInfo *)logStoreIter.nextElement();
-        delete elInfo;
+        ::free(elInfo);
     }
     execLogStore.reset();
     execLogStoreSize =0;
@@ -170,7 +175,8 @@ DbRetVal SqlLogConnection::populateCachedTableList()
     CachedTable *node=NULL;
     while(!feof(fp))
     {
-        fscanf(fp, "%d %s %s %s %s %s\n", &cmode, tablename,fieldname,condition,field,dsnName);
+        int input = fscanf(fp, "%d %s %s %s %s %s\n", &cmode, tablename,fieldname,condition,field,dsnName);
+        if (input != 6) break;
         node = new CachedTable();
         strcpy(node->tableName, tablename);
         cacheList.append(node);

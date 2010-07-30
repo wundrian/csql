@@ -207,6 +207,7 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
     //Only for system db chunk array, trans array and proc array will be there
     if (0 == strcmp(name, SYSTEMDB))
     {
+        db_->setCanTakeCheckPoint(true);
         offset = offset + os::alignLong( MAX_CHUNKS  * sizeof (Chunk));
         offset = offset + os::alignLong( Conf::config.getMaxProcs()   * sizeof(Transaction));
         offset = offset + os::alignLong( Conf::config.getMaxProcs() * sizeof(ThreadInfo));
@@ -1796,8 +1797,18 @@ DbRetVal DatabaseManagerImpl::pasteRecords(char *tblName, void *buffer)
     return OK;
 }
 
+void DatabaseManagerImpl::setCanTakeCheckPoint(bool ctcp)
+{ systemDatabase_->setCanTakeCheckPoint(ctcp); }
+
+bool DatabaseManagerImpl::getCanTakeCheckPoint()
+{ return systemDatabase_->getCanTakeCheckPoint(); }
+
 DbRetVal DatabaseManagerImpl::checkPoint()
 {
+    if (!systemDatabase_->getCanTakeCheckPoint()) {
+        printf("Load / Cache / Replication process might be running. CheckPoint not taken\n");
+        return ErrLoadingOn;
+    }
     DbRetVal rv = systemDatabase_->getXCheckpointMutex();
     if (OK != rv ) {
         printError(rv, "Unable to get checkpoint mutex");

@@ -97,13 +97,14 @@ enum ExecType
 class ExecLogInfo
 {
     public:
-    ExecLogInfo() : pos(0), len(0) {}
+    ExecLogInfo() : pos(0), len(0), isNull(0) {}
     int stmtId;
     ExecType type;
     int pos;
+    int isNull;
     DataType dataType;
     int len;
-    int value; //Extendible value as per parameter type size
+    void *value; //Extendible value as per parameter type size
 };
 
 class SqlLogConnection : public AbsSqlConnection

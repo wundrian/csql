@@ -23,6 +23,7 @@
 
 class Bucket;
 class Transaction;
+class Database;
 
 class DatabaseMetaData
 {
@@ -66,7 +67,9 @@ class DatabaseMetaData
     //indexes in this database
     Chunk *hashIndexChunk_;
 
-    unsigned char reserved_[996];
+    bool canTakeCheckPoint_;
+
+    unsigned char reserved_[780];
 };
 
 
@@ -132,6 +135,7 @@ class Database
     Page* getFirstPage();
     Chunk* getHashIndexChunk();
     int getChkptfd() { return fdChkpt; }
+    bool getCanTakeCheckPoint() { return metaData_->canTakeCheckPoint_; }
 
     void setDatabaseID(int id);
     void setName(const char *name);
@@ -144,7 +148,8 @@ class Database
     void setHashIndexChunk(Chunk* chunk);
     void setUniqueChunkID(int id);
     void setChkptfd(int fd) { fdChkpt = fd; }
-
+    void setCanTakeCheckPoint(bool ctcp)
+    { metaData_->canTakeCheckPoint_ = ctcp; }
     // Gets the free page
     // Each page is segmented by PAGE_SIZE, so it checks the pageInfo
     // of each page to determine if the page is free

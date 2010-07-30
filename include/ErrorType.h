@@ -54,6 +54,7 @@ enum DbRetVal
     ErrForeignKeyDelete=-35,
     ErrNullValues      =-36, //used in evaluate on null values 
     ErrDefaultValue    =-37, //Added here to check Default value
+    ErrLoadingOn   = -38,
     ErrNote          = -97,  //  add new error type here
     ErrUnknown       = -98,
     ErrWarning       = -99,

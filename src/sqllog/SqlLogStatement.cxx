@@ -232,7 +232,7 @@ void SqlLogStatement::setShortParam(int paramPos, short value)
     if (!isNonSelDML) return; 
     if (!needLog) return;
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    int buffer = sizeof(ExecLogInfo) - sizeof(int) + sizeof(short);
+    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(short);
     ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
     elInfo->stmtId = sid;
     printDebug(DM_SqlLog, "setShort: stmtID: %d", elInfo->stmtId);
@@ -240,6 +240,8 @@ void SqlLogStatement::setShortParam(int paramPos, short value)
     printDebug(DM_SqlLog, "setShort: ExecTp: %d", elInfo->type);
     elInfo->pos = paramPos;
     printDebug(DM_SqlLog, "setShort: PrmPos: %d", elInfo->pos);
+    elInfo->isNull = 0;
+    printDebug(DM_SqlLog, "setShort: isNull: %d", elInfo->isNull);
     elInfo->dataType = typeShort;
     printDebug(DM_SqlLog, "setShort: DtType: %d", elInfo->dataType);
     elInfo->len = sizeof (short);
@@ -258,7 +260,7 @@ void SqlLogStatement::setIntParam(int paramPos, int value)
     if (!isNonSelDML) return; 
     if (!needLog) return;
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    int buffer = sizeof(ExecLogInfo) - sizeof(int) + sizeof(int);
+    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(int);
     ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
     elInfo->stmtId = sid;
     printDebug(DM_SqlLog, "setInt: stmtID: %d", elInfo->stmtId);
@@ -266,6 +268,8 @@ void SqlLogStatement::setIntParam(int paramPos, int value)
     printDebug(DM_SqlLog, "setInt: ExecTp: %d", elInfo->type);
     elInfo->pos = paramPos;
     printDebug(DM_SqlLog, "setInt: PrmPos: %d", elInfo->pos);
+    elInfo->isNull = 0;
+    printDebug(DM_SqlLog, "setInt: isNull: %d", elInfo->isNull);
     elInfo->dataType = typeInt;
     printDebug(DM_SqlLog, "setInt: DtType: %d", elInfo->dataType);
     elInfo->len = sizeof(int);
@@ -284,11 +288,12 @@ void SqlLogStatement::setLongParam(int paramPos, long value)
     if (!isNonSelDML) return; 
     if (!needLog) return;
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    int buffer = sizeof(ExecLogInfo) - sizeof(int) + sizeof(long);
+    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(long);
     ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
     elInfo->stmtId = sid;
     elInfo->type = SETPARAM;
     elInfo->pos = paramPos;
+    elInfo->isNull = 0;
     elInfo->dataType = typeLong;
     elInfo->len = sizeof(long);
     *(long *)&elInfo->value = value;
@@ -302,11 +307,12 @@ void SqlLogStatement::setLongLongParam(int paramPos, long long value)
     if (!isNonSelDML) return; 
     if (!needLog) return;
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    int buffer = sizeof(ExecLogInfo) - sizeof(int) + sizeof(long long);
+    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(long long);
     ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
     elInfo->stmtId = sid;
     elInfo->type = SETPARAM;
     elInfo->pos = paramPos;
+    elInfo->isNull = 0;
     elInfo->dataType = typeLongLong;
     elInfo->len = sizeof (long long);
     *(long long *)&elInfo->value = value;
@@ -320,11 +326,12 @@ void SqlLogStatement::setByteIntParam(int paramPos, ByteInt value)
     if (!isNonSelDML) return; 
     if (!needLog) return;
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    int buffer = sizeof(ExecLogInfo) - sizeof(int) + sizeof(ByteInt);
+    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(ByteInt);
     ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
     elInfo->stmtId = sid;
     elInfo->type = SETPARAM;
     elInfo->pos = paramPos;
+    elInfo->isNull = 0;
     elInfo->dataType = typeByteInt;
     elInfo->len = sizeof(ByteInt);
     *(ByteInt *)&elInfo->value = value;
@@ -338,11 +345,12 @@ void SqlLogStatement::setFloatParam(int paramPos, float value)
     if (!isNonSelDML) return; 
     if (!needLog) return;
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    int buffer = sizeof(ExecLogInfo) - sizeof(int) + sizeof(float);
+    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(float);
     ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
     elInfo->stmtId = sid;
     elInfo->type = SETPARAM;
     elInfo->pos = paramPos;
+    elInfo->isNull = 0;
     elInfo->dataType = typeFloat;
     elInfo->len = sizeof(float);
     *(float *)&elInfo->value = value;
@@ -356,11 +364,12 @@ void SqlLogStatement::setDoubleParam(int paramPos, double value)
     if (!isNonSelDML) return; 
     if (!needLog) return;
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    int buffer = sizeof(ExecLogInfo) - sizeof(int) + sizeof(double);
+    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(double);
     ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
     elInfo->stmtId = sid;
     elInfo->type = SETPARAM;
     elInfo->pos = paramPos;
+    elInfo->isNull = 0;
     elInfo->dataType = typeDouble;
     elInfo->len = sizeof(double);
     *(double *)&elInfo->value = value;
@@ -374,11 +383,12 @@ void SqlLogStatement::setStringParam(int paramPos, char *value)
     if (!isNonSelDML) return; 
     if (!needLog) return;
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    int buffer = sizeof(ExecLogInfo) - sizeof(int) + os::align(strlen(value) + 1);
+    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + os::align(strlen(value) + 1);
     ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
     elInfo->stmtId = sid;
     elInfo->type = SETPARAM;
     elInfo->pos = paramPos;
+    elInfo->isNull = 0;
     elInfo->dataType = typeString;
     elInfo->len = os::align(strlen(value) + 1);
     strcpy((char *) &elInfo->value, value);
@@ -392,11 +402,12 @@ void SqlLogStatement::setDateParam(int paramPos, Date value)
     if (!isNonSelDML) return; 
     if (!needLog) return;
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    int buffer = sizeof(ExecLogInfo) - sizeof(int) + sizeof(Date);
+    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(Date);
     ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
     elInfo->stmtId = sid;
     elInfo->type = SETPARAM;
     elInfo->pos = paramPos; 
+    elInfo->isNull = 0;
     elInfo->dataType = typeDate;
     elInfo->len = sizeof(Date);
     *(Date *)&elInfo->value = value;
@@ -410,11 +421,12 @@ void SqlLogStatement::setTimeParam(int paramPos, Time value)
     if (!isNonSelDML) return; 
     if (!needLog) return;
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    int buffer = sizeof(ExecLogInfo) - sizeof(int) + sizeof(Time);
+    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(Time);
     ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
     elInfo->stmtId = sid;
     elInfo->type = SETPARAM;
     elInfo->pos = paramPos; 
+    elInfo->isNull = 0;
     elInfo->dataType = typeTime;
     elInfo->len = sizeof (Time);
     *(Time *)&elInfo->value = value;
@@ -428,11 +440,12 @@ void SqlLogStatement::setTimeStampParam(int paramPos, TimeStamp value)
     if (!isNonSelDML) return; 
     if (!needLog) return;
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    int buffer = sizeof(ExecLogInfo) - sizeof(int) + sizeof(TimeStamp);
+    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + sizeof(TimeStamp);
     ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
     elInfo->stmtId = sid;
     elInfo->type = SETPARAM;
     elInfo->pos = paramPos; 
+    elInfo->isNull = 0;
     elInfo->dataType = typeTimeStamp;
     elInfo->len = sizeof(TimeStamp);
     *(TimeStamp *)&elInfo->value = value;
@@ -446,11 +459,12 @@ void SqlLogStatement::setBinaryParam(int paramPos, void *value, int length)
     if (!isNonSelDML) return; 
     if (!needLog) return;
     SqlLogConnection* logConn = (SqlLogConnection*)con;
-    int buffer = sizeof(ExecLogInfo) - sizeof(int) + os::align(length);
+    int buffer = sizeof(ExecLogInfo) - sizeof(void *) + os::align(length);
     ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
     elInfo->stmtId = sid;
     elInfo->type = SETPARAM;
     elInfo->pos = paramPos; 
+    elInfo->isNull = 0;
     elInfo->dataType = typeBinary;
     elInfo->len = os::align(length);
     memcpy(&elInfo->value, value, length);
@@ -460,11 +474,24 @@ void SqlLogStatement::setBinaryParam(int paramPos, void *value, int length)
 }
 bool SqlLogStatement::isFldNull(int pos)
 {
-    return innerStmt->isFldNull(pos);
+    if (innerStmt) return innerStmt->isFldNull(pos);
+    else return false;
 }
 void SqlLogStatement::setNull(int pos)
 {
-   if(innerStmt) innerStmt->setNull(pos);
+    if(innerStmt) innerStmt->setNull(pos);
+    if (!isNonSelDML) return;
+    if (!needLog) return;
+    SqlLogConnection* logConn = (SqlLogConnection*)con;
+    int buffer = sizeof(ExecLogInfo) - sizeof(void *) - 2 * sizeof(int);
+    ExecLogInfo *elInfo = (ExecLogInfo *) malloc (buffer);
+    elInfo->stmtId = sid;
+    elInfo->type = SETPARAM;
+    elInfo->pos = pos;
+    elInfo->isNull = 1;
+    logConn->addExecLog(elInfo);
+    logConn->addToExecLogSize(buffer);
+    return;
 }
 
 List SqlLogStatement::getAllTableNames(DbRetVal &ret)

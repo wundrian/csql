@@ -70,6 +70,8 @@ int Config::storeKeyVal(char *key, char *value)
            { cVal.logLevel = atoi(value);  }
     else if (os::strcasestr(key, "DSN") != NULL)
            { strcpy(cVal.dsn , value);  }
+    else if (os::strcasestr(key, "NO_OF_ROWS_TO_FETCH") != NULL)
+           { cVal.nRowsToFetch = atoi(value);  }
     else if (os::strcasestr(key,"DS_CONFIG_FILE") !=NULL)
            { strcpy(cVal.dsConfigFile,value);}
     else if (os::strcasestr(key, "TABLE_CONFIG_FILE") != NULL)
@@ -264,21 +266,10 @@ int Config::validateValues()
             printError(ErrBadArg,  "TABLE_CONFIG_FILE is set to NULL");
             return 1;
         }
-        /*FILE *fp = fopen(cVal.tableConfigFile,"r");
-        if( fp == NULL ) {
-            printError(ErrSysInit, "Invalid path/filename for TABLE_CONFIG_FILE.\n");
-            return 1;
-        }
-        int count =0;
-        int nwid, port;
-        char hostname[IDENTIFIER_LENGTH];
-        char nwmode;
- 
-        while(!feof(fp)) {
-            fscanf(fp, "%d:%d:%s\n", &nwid, &port, hostname);
-            count++;
-        }*/
-
+    }
+    if (cVal.isCache && (cVal.nRowsToFetch < 1 || cVal.nRowsToFetch > 1000)) {
+        printError(ErrBadArg, "Resultset cache is not in range [1 - 1000].");
+        return 1;
     }
     if (cVal.nwResponseTimeout <0 || cVal.nwResponseTimeout > 60)
     {
@@ -409,6 +400,7 @@ void Config::print()
     printf(" getLockRetries %d\n", getLockRetries());
     printf(" useCache %d\n", useCache());
     printf(" getDSN %s\n", getDSN());
+    printf(" No of rows to Fetch from TDB %d\n", getNoOfRowsToFetchFromTDB());
     printf(" getDsConfigFile %s\n",getDsConfigFile());
     printf(" getTableConfigFile %s\n", getTableConfigFile());
     printf(" isTwoWayCache %d\n", useTwoWayCache());

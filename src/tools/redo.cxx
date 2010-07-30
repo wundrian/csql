@@ -196,20 +196,30 @@ int main(int argc, char **argv)
                     iter=iter+sizeof(int);
                     int pos = *(int*) iter;
                     iter=iter+sizeof(int);
-                    DataType type = (DataType)(*(int*)iter);
+                    int isNull = *(int *) iter;
                     iter=iter+sizeof(int);
-                    int len = *(int*) iter;
-                    iter=iter+sizeof(int);
-                    value = iter;
-                    iter=iter+len;
-                    if (list) {
-                        printf("SET SID:%d POS:%d TYPE:%d LEN:%d Value:", stmtID, pos, type, len);
-                        AllDataType::printVal(value, type, len);
-                        printf("\n");
-                        if (*(int*)iter <0) break;
-                        continue;
+                    if (isNull == 0) {
+                        DataType type = (DataType)(*(int*)iter);
+                        iter=iter+sizeof(int);
+                        int len = *(int*) iter;
+                        iter=iter+sizeof(int);
+                        value = iter;
+                        iter=iter+len;
+                        if (list) {
+                            printf("SET SID:%d POS:%d ISNULL:FALSE TYPE:%d LEN:%d Value:", stmtID, pos, type, len);
+                            AllDataType::printVal(value, type, len);
+                            printf("\n");
+                            if (*(int*)iter <0) break;
+                            continue;
+                        }
+                        SqlStatement::setParamValues(stmt, pos, type, len, value);
+                    } else {
+                        if (list) {
+                            printf("SET SID:%d POS:%d ISNULL:TRUE\n", stmtID, pos);
+                            continue;
+                        }
+                        stmt->setNull(pos);
                     }
-                    SqlStatement::setParamValues(stmt, pos, type, len, value);
                     if (*(int*)iter <0) break;
                 }
             }

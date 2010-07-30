@@ -70,9 +70,10 @@ void AllDataType::cachecopyVal(void* dest, void *src, DataType type, int length,
     }else if (typeString == type || typeVarchar == type)
     {
         Util::trimRight((char*)src);
-        strncpy((char*)dest, (char*)src, length);
-        char *d =(char*)dest;
-        d[length-1] = '\0';
+        //strncpy((char*)dest, (char*)src, length);
+        //char *d =(char*)dest;
+        //d[length-1] = '\0';
+        strcpy((char *)dest, (char *)src);
         return;
     }else if (typeShort == type) {
         *(short*)dest = *(short*)src;
@@ -112,9 +113,10 @@ void AllDataType::copyVal(void* dest, void *src, DataType type, int length,int d
         return;
     }else if (typeString == type || typeVarchar == type)
     {
-        strncpy((char*)dest, (char*)src, length);
-        char *d =(char*)dest;
-        d[length-1] = '\0';
+        //strncpy((char*)dest, (char*)src, length);
+        //char *d =(char*)dest;
+        //d[length-1] = '\0';
+        strcpy((char*)dest, (char*)src);
         return;
     }else if (typeShort == type) {
         *(short*)dest = *(short*)src;

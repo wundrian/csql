@@ -12,10 +12,17 @@ enum UniqueIDType {
     STMT_ID=0,
     TXN_ID
 };
+
+enum HashFuncType {
+    HASH_INT=0,
+    HASH_BINARY,
+};
+
 class Util 
 {
     public:
     static unsigned int hashBinary(char *strVal, int length);
+    static unsigned int hashString(char *strVal);
     static void trimEnd(char *name)
     {
         while(*name!='\0')

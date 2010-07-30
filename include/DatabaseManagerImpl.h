@@ -104,6 +104,8 @@ class DatabaseManagerImpl : public DatabaseManager
     DbRetVal openDatabase(const char *name);
     DbRetVal closeDatabase();
 
+    void setCanTakeCheckPoint(bool ctcp);
+    bool getCanTakeCheckPoint();
 
     DbRetVal createTable(const char *name, TableDef &def);
     DbRetVal dropTable(const char *name);

@@ -131,7 +131,7 @@ DbRetVal verifyCount(const char *tblName, long numTuples)
     printf("-------------------+-------------------+-------------------+\n");
     printf("  Data             |  In CSQL          |  In TargetDB      |\n");
     printf("-------------------+-------------------+-------------------+\n");
-    printf("  No. Of Records   |  %-6ld           |  %-6ld          |\n", numTuples, count1);
+    printf("  No. Of Records   |  %-6ld           |  %-6ld           |\n", numTuples, count1);
     printf("-------------------+-------------------+-------------------+\n");
     delete adStmt; delete adConn;
     return OK;
@@ -373,7 +373,7 @@ DbRetVal verifyMismatchingRecords(const char *tblName, int option)
 
         // need to bind each field with buffer which is list of field values
         SqlStatement *sqlStmt = (SqlStatement *) stmt;
-        List fldNameList = sqlStmt->getFieldNameList(tblName);
+        List fldNameList = sqlStmt->getFieldNameList(tblName, rv);
         ListIterator iter = fldNameList.getIterator();
         Identifier *fname = NULL;
         FieldInfo *fldInfo = new FieldInfo();

@@ -48,6 +48,8 @@ class Statement
     virtual DbRetVal setTimeParam(int paramNo, Time value)=0;
     virtual DbRetVal setTimeStampParam(int paramNo, TimeStamp value)=0;
     virtual DbRetVal setBinaryParam(int paramNo, void *value, int length)=0;
+    virtual DbRetVal getFieldInfo(const char *tblName, const char *fldName, FieldInfo *&info) = 0;
+    virtual List getFieldNameList(const char *tblName, DbRetVal &rv)=0;
     virtual DbRetVal resolve()=0;
     virtual bool isFldNull(int pos)=0;
     virtual bool isFldNull(char *name)=0;
@@ -96,8 +98,11 @@ class DmlStatement : public Statement
     virtual int getFldPos(char *name)=0;
     virtual ~DmlStatement(){}
     virtual ResultSetPlan getResultSetPlan()=0;
-    virtual  long long getLastInsertedVal(DbRetVal &rv)=0;
+    virtual long long getLastInsertedVal(DbRetVal &rv)=0;
     void setLoading(bool flag) { table->setLoading(flag); }
+    DbRetVal getFieldInfo(const char *tblName, const char *fldName, 
+                                                             FieldInfo *&info);
+    List getFieldNameList(const char *tblName, DbRetVal &rv);
 };
 
 class InsStatement : public DmlStatement
@@ -139,7 +144,6 @@ class SelStatement : public DmlStatement
     DbRetVal setBindFieldAndValues();
     DbRetVal resolveForCondition();
     DbRetVal resolveDistinct();
-
 
     public:
     FieldValue **bindFields;
@@ -406,6 +410,10 @@ class DdlStatement : public Statement
     DbRetVal setTimeParam(int paramNo, Time value) { return ErrBadCall; }
     DbRetVal setTimeStampParam(int paramNo, TimeStamp value) {  return ErrBadCall;}
     DbRetVal setBinaryParam(int paramNo, void *value, int length) {  return ErrBadCall;}
+    DbRetVal getFieldInfo(const char *tblName, const char *fldName, FieldInfo *&info){return ErrBadCall; }
+    List getFieldNameList(const char *tblName, DbRetVal &rv) {
+        List dummylist; rv = ErrBadCall; return dummylist;
+    }
     bool isFldNull(int pos){  return false;}
     bool isFldNull(char *fldName ){ return false;}
     int getFldPos(char *name){ return -1;}
