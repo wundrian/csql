@@ -35,7 +35,7 @@ CopyTblStatement::~CopyTblStatement()
 {
     if (table) { table->close(); table = NULL; }
     SelStatement *stmt= (SelStatement *)innerSelStmt;
-    stmt->close();
+    if (stmt) stmt->close();
     if(totalFields){
        for(int i=0;i<totalFields;i++)
        {
@@ -50,12 +50,22 @@ CopyTblStatement::~CopyTblStatement()
 DbRetVal CopyTblStatement::resolve()
 {
     DbRetVal rv = OK;
+    ListIterator titer = parsedData->getTableNameList().getIterator();
+    while (titer.hasElement()) {
+        TableName *t  = (TableName*)titer.nextElement();
+        if (strcmp(t->tblName, parsedData->getPKTableName())==0) {
+            printError(ErrBadArg,
+                            "Source and Target table Names cannot be same.");
+            return ErrBadArg;
+        }
+    }
     strcpy(tblName,parsedData->getPKTableName());
     SelStatement *sStmt = new SelStatement();
     innerSelStmt = ( Statement *) sStmt;
     innerSelStmt->setDbMgr(dbMgr);
     innerSelStmt->setParsedData(parsedData);
-    innerSelStmt->resolve();
+    rv = innerSelStmt->resolve();
+    if (rv != OK) return rv;
     if(parsedData->getCreateTbl())
         rv = resolveForCreate();
     else 
