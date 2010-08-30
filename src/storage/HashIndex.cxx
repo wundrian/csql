@@ -188,20 +188,27 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
                                                                  def->length_);
             } else {
                 void *ptr = (void *) *(long *) keyPtr;
-                AllDataType::copyVal(keyBuffer, ptr, def->type_, def->length_);
+                if (ptr)
+                    AllDataType::copyVal(keyBuffer, ptr, def->type_, 
+                                                                 def->length_);
             }  
-            keyBuffer = keyBuffer + AllDataType::size(def->type_, def->length_);
+            keyBuffer = keyBuffer + AllDataType::size(def->type_,def->length_);
         }
-        bucketNo = computeHashBucket(type, keyStartBuffer, noOfBuckets, info->compLength);
+        bucketNo = computeHashBucket(type, keyStartBuffer, noOfBuckets, 
+                                                             info->compLength);
         ::free(keyStartBuffer);
     }
     else {
         if (type != typeVarchar)
             bucketNo =
                 computeHashBucket(type, keyPtr, noOfBuckets, info->compLength);
-        else bucketNo =
-            computeHashBucket(type, (void *) *(long *) keyPtr, noOfBuckets,
+        else {
+            void *ptr = (void *) *(long *) keyPtr;
+            if (ptr) 
+                bucketNo = computeHashBucket(type, ptr, noOfBuckets,
                                                              info->compLength);
+            else bucketNo = 0;
+        } 
     }
     printDebug(DM_HashIndex, "HashIndex insert bucketno %d", bucketNo);
     Bucket *bucket =  &(buckets[bucketNo]);
@@ -307,21 +314,33 @@ DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         FieldIterator iter = info->idxFldList.getIterator();
         while(iter.hasElement())
         {
-           FieldDef *def = iter.nextElement();
-           keyPtr = (char *)tuple + def->offset_;
-           AllDataType::copyVal(keyBuffer, keyPtr, def->type_, def->length_);
-           keyBuffer = keyBuffer + AllDataType::size(def->type_, def->length_);
+            FieldDef *def = iter.nextElement();
+            keyPtr = (char *)tuple + def->offset_;
+            if (def->type_ != typeVarchar) {
+                AllDataType::copyVal(keyBuffer, keyPtr, def->type_, 
+                                                                 def->length_);
+            } else {
+                void *ptr = (void *) *(long *) keyPtr;
+                if (ptr) 
+                    AllDataType::copyVal(keyBuffer, ptr, def->type_, 
+                                                                 def->length_);
+            }
+            keyBuffer = keyBuffer + AllDataType::size(def->type_,def->length_);
         }
         bucket = HashIndex::computeHashBucket(type, keyStartBuffer, noOfBuckets, info->compLength);
         ::free(keyStartBuffer);
     }
     else {
-         if (type != typeVarchar)
-             bucket = HashIndex::computeHashBucket(type, keyPtr, noOfBuckets,
+        if (type != typeVarchar)
+            bucket = HashIndex::computeHashBucket(type, keyPtr, noOfBuckets,
                                                              info->compLength);
-         else bucket =
-             HashIndex::computeHashBucket(type, (void *) *(long *)keyPtr,
-                                                noOfBuckets, info->compLength);
+        else {
+            void *ptr = (void *) *(long *) keyPtr;
+            if (ptr)
+                bucket = HashIndex::computeHashBucket(type, ptr, noOfBuckets, 
+                                                             info->compLength);
+            else bucket = 0;
+        }      
     }
 
     Bucket *bucket1 = &buckets[bucket];
