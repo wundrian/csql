@@ -7,7 +7,7 @@ csql_LDADD = $(top_builddir)/src/storage/libcsql.la \
 	 $(top_builddir)/src/sqllog/libcsqlsqllog.la \
 	 $(top_builddir)/src/network/libcsqlnw.la \
 	 $(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la 
-csql_LDFLAGS = -lrt -lpthread -lcrypt -lreadline
+csql_LDFLAGS = -lrt -lpthread -lcrypt -lreadline -lcurses
 
 redo_SOURCES = redo.cxx
 redo_LDADD = $(top_builddir)/src/storage/libcsql.la \

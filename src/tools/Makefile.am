@@ -11,7 +11,7 @@ csql_LDADD = $(top_builddir)/src/storage/libcsql.la \
         $(top_builddir)/src/gateway/libcsqlgw.la \
         $(top_builddir)/src/cache/libcacheload.la \
         $(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la 
-csql_LDFLAGS = -lrt -lpthread -lcrypt -lodbc -lreadline
+csql_LDFLAGS = -lrt -lpthread -lcrypt -lodbc -lreadline -lcurses
 
 redo_SOURCES = redo.cxx
 redo_LDADD = $(top_builddir)/src/storage/libcsql.la  \
@@ -22,7 +22,7 @@ redo_LDADD = $(top_builddir)/src/storage/libcsql.la  \
         $(top_builddir)/src/gateway/libcsqlgw.la \
         $(top_builddir)/src/cache/libcacheload.la \
         $(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la
-redo_LDFLAGS = -lrt -lpthread -lcrypt -lodbc -lreadline
+redo_LDFLAGS = -lrt -lpthread -lcrypt -lodbc -lreadline -lcurses
 
 applyofflinelogs_SOURCES = applyofflinelogs.cxx
 applyofflinelogs_LDADD = $(top_builddir)/src/storage/libcsql.la \
