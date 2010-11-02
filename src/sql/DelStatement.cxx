@@ -329,6 +329,7 @@ DbRetVal DelStatement::resolveForCondition()
 	           for(int n=0;n<len;n++){
 	               int p=value->parsedString[n];
 	               if(!(p>=48 && p<=57 || p==45))
+                           delete fInfo;
 	                   return ErrBadArg;
 	           }
 	    }
@@ -337,11 +338,16 @@ DbRetVal DelStatement::resolveForCondition()
                  int len=strlen(value->parsedString);
                  if(len > 8000){
                      printError(ErrBadRange, "Char DataType length should be less than 8kb(8000).");
+                     delete fInfo;
                      return ErrBadRange;
                  }
              }
              // Here for binary dataType it is not strcpy'd bcos internally memcmp is done for predicates like f2 = 'abcd' where f2 is binary
-            AllDataType::strToValue(value->value, value->parsedString, fInfo->type, fInfo->length);
+            rv = AllDataType::strToValue(value->value, value->parsedString, fInfo->type, fInfo->length);
+            if (rv != OK) {
+                delete fInfo;
+                return ErrBadArg;
+            }
        }	
     }
     delete fInfo;

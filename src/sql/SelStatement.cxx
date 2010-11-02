@@ -878,12 +878,20 @@ DbRetVal SelStatement::resolveForCondition()
 	            int len=strlen(value->parsedString);
 	            for(int n=0;n<len;n++){
 	                int p=value->parsedString[n];
-	                if(!(p>=48 && p<=57 || p==45)) return ErrBadArg;
+	                if(!(p>=48 && p<=57 || p==45)) {
+                            delete fInfo;
+                            return ErrBadArg;
+                        }
 	            }
 	        }
 		     		    
-	        // Here for binary dataType it is not strcpy'd bcos internally memcmp is done for predicates like f2 = 'abcd' where f2 is binary
-            AllDataType::strToValue(value->value, value->parsedString, value->type, value->length);
+	        // Here for binary dataType it is not strcpy'd bcos internally 
+                // memcmp is done for predicates like f2 = 'abcd' where f2 is binary
+                rv = AllDataType::strToValue(value->value, value->parsedString, value->type, value->length);
+                if (OK != rv) {
+                    delete fInfo;
+                    return ErrBadArg;
+                }
 	    }	
     }
     delete fInfo;

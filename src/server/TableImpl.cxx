@@ -607,9 +607,9 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
                 break;
             case typeBinary:
                 if (NULL != def.bindVal_ ) {
-			        DbRetVal rv = AllDataType::strToValue(colPtr, (char *) def.bindVal_, def.type_, def.length_);
+                    DbRetVal rv = AllDataType::strToValue(colPtr, (char *) def.bindVal_, def.type_, def.length_);
                     if (rv != OK) return ErrBadArg;
-				}
+		}
                 else if (!def.isNull_ && isInsert)  setNullBit(fldpos);
                 colPtr = colPtr + os::align(def.length_);
                 break;

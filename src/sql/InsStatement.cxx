@@ -366,18 +366,28 @@ DbRetVal InsStatement::resolve()
 	         for(int n=0;n<len;n++){
 	            int p=value->parsedString[n];
 	            if(!(p>=48 && p<=57 || p==45) )
+                        delete fInfo;
 	                return ErrBadArg;
 	         }
 	     }
-	    // for binary datatype buffer is just strcpy'd. It will be converted into binary datatype in copyValuesToBindBuffer in DBAPI
+	    // for binary datatype buffer is just strcpy'd. 
+            //It will be converted into binary datatype in copyValuesToBindBuffer in DBAPI
                 if (value->type == typeBinary)
                    strncpy((char *)value->value, value->parsedString, 2 * fInfo->length);   
-                else AllDataType::strToValue(value->value, value->parsedString, fInfo->type, fInfo->length);
+                else {
+                   rv = AllDataType::strToValue(value->value, value->parsedString, fInfo->type, fInfo->length);
+                   if (OK != rv) {
+                       delete fInfo;
+                       return ErrBadArg;
+                   }
+                }
+
                  /* Checking range for char data type 8kb(8000) */
                  if(value->type==typeString){
                    int len=strlen(value->parsedString);
                    if(len > 8000){
                        printError(ErrBadRange,"Char data type length should be less than 8kb(8000).");
+                       delete fInfo;
                        return ErrBadRange;
                    }
                 }
@@ -393,8 +403,8 @@ DbRetVal InsStatement::resolve()
                 delete (Identifier *) iter.nextElement();
             fieldNameList.reset();
         }
-		return OK;
-	}	
+	return OK;
+    }	
     params = (void**) malloc ( totalParams * sizeof(FieldValue*));
     paramValues = (char**) malloc( totalParams * sizeof(char*));
     memset(params, 0, totalParams * sizeof(FieldValue*));

@@ -1758,6 +1758,7 @@ DbRetVal AllDataType::strToValue(void* dest, char *src, DataType type, int lengt
             if(!date.isValidDate(y, m, d)){
                 fprintf(stderr,"Error reading date. The value \"%d-%d-%d\" is inappropriate.",y,m,d);
                 d=m=y=0;
+                return ErrBadArg;
             }
             Date dateObj(y,m,d);
             *(Date*)dest = dateObj;
@@ -1777,12 +1778,14 @@ DbRetVal AllDataType::strToValue(void* dest, char *src, DataType type, int lengt
                 if(res!=6){
                     fprintf(stderr, "Error reading time, hh:mm:ss is the valid format.");
                     h=m=s=0;
+                    return ErrBadArg;
                 }
             }
             /* validate time */
             if(!time.isValidTime(h, m, s)){
                 fprintf(stderr,"Error reading Time. The value \"%d-%d-%d\" is inappropriate.",h,m,s);
                 h=m=s=0;
+                return ErrBadArg;
             }
 	    Time timeObj(h,m,s);
             *(Time*)dest = timeObj;
@@ -1810,16 +1813,19 @@ DbRetVal AllDataType::strToValue(void* dest, char *src, DataType type, int lengt
             {
                 fprintf(stderr, "Error reading timestamp, yyyy{-/}mm{-/}dd[,] hh:mm:ss is the valid format.");
                 d=m=y=h=mn=s=0;
+                return ErrBadArg;
             }
              /* Looking up at 'YY-MM-DD' */
             if(!date.isValidDate(y, m, d)){
                 fprintf(stderr,"Error reading date. The value \"%d-%d-%d\" is inappropriate.",y,m,d);
                 d=m=y=h=mn=s=0;
+                return ErrBadArg;
             }
             /* Looking up at 'Hour-Min-Sec' */
             if(!time.isValidTime(h, m, s)){
                 fprintf(stderr,"Error reading Time. The value \"%d-%d-%d\" is inappropriate.",h,m,s);
                 d=m=y=h=mn=s=0;
+                return ErrBadArg;
             }
             TimeStamp timeStampObj(y,m,d,h,mn,s);
             *(TimeStamp*)dest = timeStampObj;

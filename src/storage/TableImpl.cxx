@@ -1434,11 +1434,11 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
             case typeBinary:
                 if (NULL != def->bindVal_ ) 
                 {
-		            if(!isInsert && isFldNull(fldpos)){clearNullBit(fldpos);}
-		            DbRetVal rv = AllDataType::strToValue(colPtr, 
+		     if(!isInsert && isFldNull(fldpos)){clearNullBit(fldpos);}
+		     DbRetVal rv = AllDataType::strToValue(colPtr, 
                              (char *) def->bindVal_, def->type_, def->length_);
-                    if (rv != OK) return ErrBadArg;
-		        } else if (!def->isNull_ && isInsert && !def->bindVal_) {
+                      if (rv != OK) return ErrBadArg;
+		} else if (!def->isNull_ && isInsert && !def->bindVal_) {
                     setNullBit(fldpos);
                 }
                 colPtr = colPtr + def->length_;

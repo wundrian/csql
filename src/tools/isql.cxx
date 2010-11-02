@@ -45,7 +45,7 @@ bool gateway=false, silent=false;
 bool autocommitmode = true;
 bool isTimer = false;
 bool network = false;
-bool firstPrepare = false;
+bool firstPrepare = true;
 IsolationLevel isoLevel = READ_COMMITTED;
 void printHelp();
 bool getInput(bool);
@@ -502,13 +502,13 @@ bool getInput(bool fromFile)
     NanoTimer timer;
     DbRetVal rv;
     if (autocommitmode) {
-        if (firstPrepare) aconStmt->free(); 
+        if (!firstPrepare) aconStmt->free(); 
         rv  = aconStmt->prepare(buf);
         if (rv != OK) {
             printf("Statement prepare failed with error %d\n", rv); 
             return true; 
         }
-        firstPrepare = true;
+        firstPrepare = false;
         stmt=aconStmt;
     }
     else {
@@ -534,7 +534,7 @@ bool getInput(bool fromFile)
         if (autocommitmode) {
             conn->rollback();
             aconStmt->free();
-            firstPrepare = false; //set this so that it does not free again
+            firstPrepare = true; //set this so that it does not free again
             conn->beginTrans(isoLevel);
         }
         else {
@@ -545,14 +545,14 @@ bool getInput(bool fromFile)
         return true; 
     }
     timer.stop();
-    if (stmtType == OTHER && stmt->isSelect()) stmtType = SELECT;
-    if (stmtType == OTHER )
-    {
-        if (!silent) printf("Statement Executed: Rows Affected = %d\n", rows);
-    }
-    else if (stmtType == EXPLAIN)
+    if (stmtType == EXPLAIN)
     {
         stmt->close();
+    }
+    else if (stmtType == OTHER && stmt->isSelect()) stmtType = SELECT;
+    else if (stmtType == OTHER )
+    {
+        if (!silent) printf("Statement Executed: Rows Affected = %d\n", rows);
     }
     else if (stmtType == DDL)
     {
@@ -588,7 +588,7 @@ bool getInput(bool fromFile)
         conn->commit();
         //conn->beginTrans(isoLevel, TSYNC);
         stmt->free();
-        firstPrepare = false; //set this so that it does not free again
+        firstPrepare = true; //set this so that it does not free again
         conn->beginTrans(isoLevel);
         return true;
     }
