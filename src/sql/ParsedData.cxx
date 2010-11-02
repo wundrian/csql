@@ -393,6 +393,7 @@ void ParsedData::reset()
 
     orderFieldNameList.reset();
     isDistinct = false;
+    isExplain = false;
 
     iter = tableNameList.getIterator();
     TableName *tname;  

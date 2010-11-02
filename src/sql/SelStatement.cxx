@@ -604,7 +604,9 @@ DbRetVal SelStatement::resolve()
     }
     rv = resolveDistinct();
     delete fInfo;
-    if(parsedData->getExplain())  isExplain = true;
+    if(parsedData->getExplain())  isExplain = true; 
+    else
+        isExplain= false;
     return rv;
 }
 DbRetVal SelStatement::resolveDistinct()
@@ -1032,6 +1034,7 @@ void* SelStatement::fetch(DbRetVal &rv)
 DbRetVal SelStatement::close()
 {
     isPointReturned = false;
+    isExplain = false;
     if (table) return table->closeScan();
     else return OK;
 }
