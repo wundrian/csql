@@ -1,0 +1,551 @@
+Index: include/Parser.h
+===================================================================
+RCS file: /cvsroot/csql/csql/include/Parser.h,v
+retrieving revision 1.22
+diff -r1.22 Parser.h
+33a34
+>     SetSelectStatement,
+120a122,127
+> enum SubQueryType
+> {
+>     UNION_TYPE = 1,
+>     UNION_ALL_TYPE,
+>     UNKNOWN_QUERY_TYPE = 100
+> };
+161a169,174
+> class ParsedData;
+> class ParsedDataSub {
+>     public:
+>     List parsedDataList;
+>     void append(ParsedData *data);
+> };
+248a262,263
+>     SubQueryType qType;
+>     ParsedData *innerParsedData;
+251c266
+<     shouldCreateTbl=false; userNode = NULL; isWorthyToCache=false; ftype = UNKNOWN_FUNCTION;
+---
+>     shouldCreateTbl=false; userNode = NULL; isWorthyToCache=false; ftype = UNKNOWN_FUNCTION; qType=UNKNOWN_QUERY_TYPE; innerParsedData = NULL;
+252a268,269
+>     void setSubQueryType(SubQueryType type) { qType = type; }
+>     void setInnerParsedData(ParsedData *data) { innerParsedData = data; }
+397a415
+>     void print();
+Index: include/SqlStatement.h
+===================================================================
+RCS file: /cvsroot/csql/csql/include/SqlStatement.h,v
+retrieving revision 1.36
+diff -r1.36 SqlStatement.h
+245c245
+<     StatementType getStmtType() { return pData.getStmtType(); }
+---
+>     StatementType getStmtType() { return pData->getStmtType(); }
+285c285
+<     ParsedData pData;
+---
+>     ParsedData *pData;
+Index: include/Statement.h
+===================================================================
+RCS file: /cvsroot/csql/csql/include/Statement.h,v
+retrieving revision 1.21
+diff -r1.21 Statement.h
+31,32c31,32
+<     void setParsedData(ParsedData *pData) {  parsedData = pData; }
+<     void setDbMgr(DatabaseManager *dbmgr) { dbMgr = dbmgr; }
+---
+>     virtual void setParsedData(ParsedData *pData) {  parsedData = pData; }
+>     virtual void setDbMgr(DatabaseManager *dbmgr) { dbMgr = dbmgr; }
+139d138
+< 
+211,214c210,213
+<     void *fetch();
+<     void *fetch(DbRetVal &rv);
+<     void *fetchAndPrint(bool SQL);
+<     void *next();
+---
+>     virtual void *fetch();
+>     virtual void *fetch(DbRetVal &rv);
+>     virtual void *fetchAndPrint(bool SQL);
+>     virtual void *next();
+220a220,261
+> class SetStatement : public SelStatement
+> {
+>    public:
+>     int curStmt;
+>     SelStatement *rightStmt;
+>     bool baseRecOver;
+>     void setParsedData(ParsedData *pData);
+>     void setRightStmt(SelStatement *stmt){ rightStmt = stmt; }
+>     DbRetVal execute(int &rowsAffected);
+>     void *fetch();
+>     void *fetch(DbRetVal &rv);
+>     void *fetchAndPrint(bool SQL);
+>     void *next();
+>     void setDbMgr(DatabaseManager *dbmgr);
+> 
+>     DbRetVal setBindField(int pos, void* value);
+>     DbRetVal setShortParam(int paramNo, short value);
+>     DbRetVal setParam(int paramNo, void *value);
+>     DbRetVal setIntParam(int paramNo, int value);
+>     DbRetVal setLongParam(int paramNo, long value);
+>     DbRetVal setLongLongParam(int paramNo, long long value);
+>     DbRetVal setByteIntParam(int paramNo, ByteInt value);
+>     DbRetVal setFloatParam(int paramNo, float value);
+>     DbRetVal setDoubleParam(int paramNo, double value);
+>     DbRetVal setStringParam(int paramNo, char *value);
+>     DbRetVal setDateParam(int paramNo, Date value);
+>     DbRetVal setTimeParam(int paramNo, Time value);
+>     DbRetVal setTimeStampParam(int paramNo, TimeStamp value);
+>     DbRetVal setBinaryParam(int paramNo, void *value, int length);
+>     bool isFldNull(int pos);
+>     bool isFldNull(char *fldName);
+>     int getFldPos(char *name);
+> 
+>     DbRetVal getProjFldInfo (int projpos, FieldInfo *&fInfo);
+>     DbRetVal getParamFldInfo(int paramPos, FieldInfo *&info);
+> 
+>     DbRetVal close();
+>     DbRetVal resolve();
+>     SetStatement();
+>     ~SetStatement();
+> };
+> 
+Index: src/Makefile.am
+===================================================================
+RCS file: /cvsroot/csql/csql/src/Makefile.am,v
+retrieving revision 1.15
+diff -r1.15 Makefile.am
+6c6
+< SUBDIRS = storage adapter gateway sqllog sqlnetwork sql cache network jdbc odbc tools 
+---
+> SUBDIRS = storage adapter gateway sqllog sqlnetwork sql cache network jdbc odbc tools
+Index: src/sql/DelStatement.cxx
+===================================================================
+RCS file: /cvsroot/csql/csql/src/sql/DelStatement.cxx,v
+retrieving revision 1.22
+diff -r1.22 DelStatement.cxx
+331c331
+< 	               if(!(p>=48 && p<=57 || p==45))
+---
+> 	               if(!(p>=48 && p<=57 || p==45)) {
+333a334
+>                        }
+Index: src/sql/InsStatement.cxx
+===================================================================
+RCS file: /cvsroot/csql/csql/src/sql/InsStatement.cxx,v
+retrieving revision 1.28
+diff -r1.28 InsStatement.cxx
+368c368
+< 	            if(!(p>=48 && p<=57 || p==45) )
+---
+> 	            if(!(p>=48 && p<=57 || p==45) ) {
+370a371
+>                     }
+Index: src/sql/Makefile.am
+===================================================================
+RCS file: /cvsroot/csql/csql/src/sql/Makefile.am,v
+retrieving revision 1.13
+diff -r1.13 Makefile.am
+11c11
+< 	AlterTblStatement.cxx
+---
+> 	AlterTblStatement.cxx SetStatement.cxx
+Index: src/sql/ParsedData.cxx
+===================================================================
+RCS file: /cvsroot/csql/csql/src/sql/ParsedData.cxx,v
+retrieving revision 1.35
+diff -r1.35 ParsedData.cxx
+613a614,631
+> void ParsedData::print()
+> {
+>     printf("PARSED DATA - START \n");
+>     if (getTableName() != NULL) printf ("Table Name : %s\n", getTableName());
+>     printf ("Statement Type : %d\n", getStmtType());
+>     printf ("Query Type : %d\n", qType);
+>     ListIterator iter = tableNameList.getIterator();
+>     TableName *tname;
+>     while (iter.hasElement())
+>     {
+>         tname = (TableName*)iter.nextElement();
+>         printf("TABLE NAME %s Alias %s\n", tname->tblName, tname->aliasName);
+>     }
+>     printf ("INNER=START\n");
+>     if (innerParsedData) innerParsedData->print();
+>     printf ("INNER=END\n");
+>     printf("PARSED DATA - END \n");
+> }
+Index: src/sql/SqlStatement.cxx
+===================================================================
+RCS file: /cvsroot/csql/csql/src/sql/SqlStatement.cxx,v
+retrieving revision 1.44
+diff -r1.44 SqlStatement.cxx
+39a40
+>     if (pData){ delete pData; }
+260c261
+<     return pData.getTableNameList();
+---
+>     return pData->getTableNameList();
+270a272
+>     pData= new ParsedData();
+326c328
+<         this->stmt->setParsedData(&this->pData);
+---
+>         this->stmt->setParsedData(this->pData);
+342c344
+<     parsedData = &pData;
+---
+>     parsedData = pData;
+398c400
+<     return pData.getTableName();
+---
+>     return pData->getTableName();
+403c405,407
+<     if ((pData.getStmtType() == SelectStatement) || (pData.getStmtType() == MetaStatement)) return true;
+---
+>     if ((pData->getStmtType() == SelectStatement) || 
+>         (pData->getStmtType() == SetSelectStatement) ||
+>         (pData->getStmtType() == MetaStatement)) return true;
+427c431,434
+<     if (rv == ErrAlready  && pData.getStmtType() == SelectStatement )  
+---
+>     if (rv == ErrAlready  && (
+>        ( pData->getStmtType() == SelectStatement ) || 
+>        ( pData->getStmtType() == SetSelectStatement )))
+>                                                
+447c454,455
+<     if (pData.getStmtType() == SelectStatement ) {
+---
+>     if (pData->getStmtType() == SelectStatement || 
+>         pData->getStmtType() == SetSelectStatement ) {
+451c459
+<     else if(pData.getStmtType() == MetaStatement){
+---
+>     else if(pData->getStmtType() == MetaStatement){
+469c477,478
+<     if (pData.getStmtType() == SelectStatement ) {
+---
+>     if (pData->getStmtType() == SelectStatement || 
+>         pData->getStmtType() == SetSelectStatement ) {
+473c482
+<     else if(pData.getStmtType() == MetaStatement){
+---
+>     else if(pData->getStmtType() == MetaStatement){
+490c499,500
+<     if (pData.getStmtType() != SelectStatement) return NULL;
+---
+>     if (pData->getStmtType() != SelectStatement &&
+>         pData->getStmtType() != SetSelectStatement ) return NULL;
+505c515,516
+<     if (pData.getStmtType() == SelectStatement ) {
+---
+>     if (pData->getStmtType() == SelectStatement || 
+>         pData->getStmtType() == SetSelectStatement ) {
+509c520
+<     else if(pData.getStmtType() == MetaStatement){
+---
+>     else if(pData->getStmtType() == MetaStatement){
+517c528,529
+<     if (pData.getStmtType() == SelectStatement ) {
+---
+>     if (pData->getStmtType() == SelectStatement ||
+>         pData->getStmtType() == SetSelectStatement) {
+521c533
+<     else if(pData.getStmtType() == MetaStatement){
+---
+>     else if(pData->getStmtType() == MetaStatement){
+530c542,543
+<     if (pData.getStmtType() != SelectStatement) return 0;
+---
+>     if (pData->getStmtType() != SelectStatement && 
+>         pData->getStmtType() != SetSelectStatement ) return 0;
+536c549,550
+<     if (pData.getStmtType() != SelectStatement) return 0;
+---
+>     if (pData->getStmtType() != SelectStatement && 
+>         pData->getStmtType() != SetSelectStatement ) return 0;
+542c556,557
+<     if (pData.getStmtType() == SelectStatement ) {
+---
+>     if (pData->getStmtType() == SelectStatement ||
+>         pData->getStmtType() == SetSelectStatement ) {
+547c562
+<     else if(pData.getStmtType() == MetaStatement){
+---
+>     else if(pData->getStmtType() == MetaStatement){
+557c572
+<     //if (pData.getStmtType() != SelectStatement) return 0;
+---
+>     //if (pData->getStmtType() != SelectStatement) return 0;
+564c579,580
+<     if (pData.getStmtType() == SelectStatement ) {
+---
+>     if (pData->getStmtType() == SelectStatement ||
+>         pData->getStmtType() == SetSelectStatement ) {
+568c584
+<     else if(pData.getStmtType() == MetaStatement){
+---
+>     else if(pData->getStmtType() == MetaStatement){
+577c593,594
+<     if (pData.getStmtType() == SelectStatement ) {
+---
+>     if (pData->getStmtType() == SelectStatement ||
+>         pData->getStmtType() == SetSelectStatement ) {
+581c598
+<     else if(pData.getStmtType() == MetaStatement){
+---
+>     else if(pData->getStmtType() == MetaStatement){
+589c606,607
+<     if (pData.getStmtType() == SelectStatement ) {
+---
+>     if (pData->getStmtType() == SelectStatement ||
+>         pData->getStmtType() == SetSelectStatement ) {
+593c611
+<     else if(pData.getStmtType() == MetaStatement){
+---
+>     else if(pData->getStmtType() == MetaStatement){
+602c620,621
+<     if (pData.getStmtType() == SelectStatement ) {
+---
+>     if (pData->getStmtType() == SelectStatement ||
+>         pData->getStmtType() == SetSelectStatement ) {
+606c625
+<     else if(pData.getStmtType() == MetaStatement){
+---
+>     else if(pData->getStmtType() == MetaStatement){
+614c633,634
+<     if (pData.getStmtType() == SelectStatement ) {
+---
+>     if (pData->getStmtType() == SelectStatement ||
+>         pData->getStmtType() == SetSelectStatement ) {
+618c638
+<     else if(pData.getStmtType() == MetaStatement){
+---
+>     else if(pData->getStmtType() == MetaStatement){
+627c647,648
+<     if (pData.getStmtType() == SelectStatement ) {
+---
+>     if (pData->getStmtType() == SelectStatement ||
+>         pData->getStmtType() == SetSelectStatement ) {
+631c652
+<     else if(pData.getStmtType() == MetaStatement){
+---
+>     else if(pData->getStmtType() == MetaStatement){
+640c661,662
+<     if (pData.getStmtType() == SelectStatement ) {
+---
+>     if (pData->getStmtType() == SelectStatement ||
+>         pData->getStmtType() == SetSelectStatement ) {
+644c666
+<     else if(pData.getStmtType() == MetaStatement){
+---
+>     else if(pData->getStmtType() == MetaStatement){
+661c683,684
+<     if (pData.getStmtType() == SelectStatement ) {
+---
+>     if (pData->getStmtType() == SelectStatement ||
+>         pData->getStmtType() == SetSelectStatement ) {
+665c688
+<     else if(pData.getStmtType() == MetaStatement){
+---
+>     else if(pData->getStmtType() == MetaStatement){
+675,678c698,702
+<     if (pData.getStmtType() ==SelectStatement ||
+<         pData.getStmtType() ==InsertStatement ||
+<         pData.getStmtType() ==UpdateStatement ||
+<         pData.getStmtType() ==DeleteStatement)
+---
+>     if (pData->getStmtType() ==SelectStatement ||
+>         pData->getStmtType() ==SetSelectStatement ||
+>         pData->getStmtType() ==InsertStatement ||
+>         pData->getStmtType() ==UpdateStatement ||
+>         pData->getStmtType() ==DeleteStatement)
+692c716
+<         pData.init();
+---
+>         pData->init();
+703c727
+<     pData.reset();
+---
+>     pData->reset();
+830,832c854,856
+<     if (pData.getStmtType() == InsertStatement||
+<         pData.getStmtType() == UpdateStatement||
+<         pData.getStmtType() == DeleteStatement)
+---
+>     if (pData->getStmtType() == InsertStatement||
+>         pData->getStmtType() == UpdateStatement||
+>         pData->getStmtType() == DeleteStatement)
+Index: src/sql/StatementFactory.cxx
+===================================================================
+RCS file: /cvsroot/csql/csql/src/sql/StatementFactory.cxx,v
+retrieving revision 1.6
+diff -r1.6 StatementFactory.cxx
+28a29,49
+>         case SetSelectStatement: {
+>             ParsedData *iter = data;
+>             Statement *subStmt = new SetStatement();
+>             SelStatement *inStmt = NULL;
+>             //TODO:: the below works only for two table union
+>             while(iter->innerParsedData)
+>             {
+>                 if (iter->innerParsedData->innerParsedData) {
+>                    inStmt = new SetStatement();
+>                    inStmt->setParsedData(iter->innerParsedData);
+>                    ((SetStatement*)subStmt)->setRightStmt(inStmt);
+>                 } else {
+>                    inStmt = new SelStatement();
+>                    inStmt->setParsedData(iter->innerParsedData);
+>                    ((SetStatement*)subStmt)->setRightStmt(inStmt);
+>                 }
+>                 iter = iter->innerParsedData;
+>             }
+>             stmt = subStmt;
+>             break;
+>         }
+Index: src/sql/dmllex.lxx
+===================================================================
+RCS file: /cvsroot/csql/csql/src/sql/dmllex.lxx,v
+retrieving revision 1.23
+diff -r1.23 dmllex.lxx
+205a206,207
+>                 if(strcasecmp(yytext,"UNION") ==0) token = UNION;
+>                 if(strcasecmp(yytext,"ALL") ==0) token = ALL;
+Index: src/sql/dmlyacc.h
+===================================================================
+RCS file: /cvsroot/csql/csql/src/sql/dmlyacc.h,v
+retrieving revision 1.30
+diff -r1.30 dmlyacc.h
+99,119c99,121
+< #define USER 355
+< #define PASSWORD 356
+< #define ALTER 357
+< #define FLUSH 358
+< #define ADD 359
+< #define COLUMN 360
+< #define MODIFY 361
+< #define RENAME 362
+< #define TO 363
+< #define MIN 364
+< #define MAX 365
+< #define AVG 366
+< #define SUM 367
+< #define COUNT 368
+< #define GROUP 369
+< #define BY 370
+< #define HAVING 371
+< #define ORDER 372
+< #define ASC 373
+< #define DESC 374
+< #define DISTINCT 375
+---
+> #define UNION 355
+> #define ALL 356
+> #define USER 357
+> #define PASSWORD 358
+> #define ALTER 359
+> #define FLUSH 360
+> #define ADD 361
+> #define COLUMN 362
+> #define MODIFY 363
+> #define RENAME 364
+> #define TO 365
+> #define MIN 366
+> #define MAX 367
+> #define AVG 368
+> #define SUM 369
+> #define COUNT 370
+> #define GROUP 371
+> #define BY 372
+> #define HAVING 373
+> #define ORDER 374
+> #define ASC 375
+> #define DESC 376
+> #define DISTINCT 377
+125a128,129
+>    void *pData;
+>    int intVal;
+Index: src/sql/dmlyacc.yxx
+===================================================================
+RCS file: /cvsroot/csql/csql/src/sql/dmlyacc.yxx,v
+retrieving revision 1.48
+diff -r1.48 dmlyacc.yxx
+19a20,21
+>    void *pData;
+>    int intVal;
+34c36
+< %token <stringval> DATE_DIFF DATE_ADD DATE_SUB HOUR MINUTE SECOND YEAR MONTH DAY INTERVAL TIME_DIFF TIME_ADD TIME_SUB TIMESTAMP_DIFF TIMESTAMP_ADD TIMESTAMP_SUB EXTRACT NOW
+---
+> %token <stringval> DATE_DIFF DATE_ADD DATE_SUB HOUR MINUTE SECOND YEAR MONTH DAY INTERVAL TIME_DIFF TIME_ADD TIME_SUB TIMESTAMP_DIFF TIMESTAMP_ADD TIMESTAMP_SUB EXTRACT NOW UNION ALL
+39a42
+> %type <pData> select_statement select_query_term select_query_expression subquery
+42a46
+> %type <intVal> set_op
+44c48
+< command:  select_statement { YYACCEPT; }
+---
+> command:  select_query_expression { YYACCEPT; }
+191c195,240
+< select_statement: opt_explain SELECT opt_distinct field_list FROM table_list where_clause_opt group_by_opt having_opt order_by_opt limit_opt semicolon_opt
+---
+> select_query_expression: select_query_term semicolon_opt
+>         {
+>            printf("select_query_expression evaluated\n");
+>            *parsedData = *(ParsedData*)$1;
+>            $$=$1;
+>         }
+>         |select_query_term set_op select_query_term semicolon_opt
+>         //|select_query_expression set_op select_query_term semicolon_opt
+>         {
+>            printf("UNION evaluated %s\n", ((ParsedData*)$3)->getTableName());
+>            //parsedData->print();
+>            *parsedData = * ((ParsedData*)$1);
+>            parsedData->setInnerParsedData((ParsedData*)$3);
+>            parsedData->setSubQueryType((SubQueryType)$2);
+>            parsedData->setStmtType(SetSelectStatement);
+>            $$=parsedData;
+>         }
+>         ;
+> set_op: UNION
+>         {
+>             $$=UNION_TYPE;
+>         }
+>         |
+>         UNION ALL
+>         {
+>             $$=UNION_TYPE;
+>         }
+>         ;
+> select_query_term: select_statement 
+>         {
+>            printf("select_query_term evaluated\n");
+>            $$=$1;
+>         }
+>         | '(' select_statement ')' 
+>         {
+>            printf("select_query_term bracket evaluated\n");
+>            $$=$2;
+>         }
+>         ;
+> subquery: '(' select_statement ')'
+>         {
+>            printf("subquery evaluated\n");
+>            $$=$2;
+>         }
+>         ;
+> select_statement: opt_explain SELECT opt_distinct field_list FROM table_list where_clause_opt group_by_opt having_opt order_by_opt limit_opt
+192a242
+>             printf("select_statement evaluated\n");
+194a245,248
+>             ParsedData *newP = new ParsedData();
+>             *newP = *parsedData;
+>             parsedData->init();
+>             $$=newP;
+805a860,867
+>         | ident not_opt IN subquery 
+>         {
+>             printf("IN SUBQUERY TODO\n");
+>         }
+>         | ident OPERATOR subquery 
+> 	{
+> 	    printf("OPERATOR SUBQUERY TODO\n");
+> 	}
