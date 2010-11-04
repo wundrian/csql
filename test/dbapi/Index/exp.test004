@@ -1,0 +1,37 @@
+Table created
+Index created for f1
+size of index field list 1
+size of index field list 0
+size of index field list 1
+Index created for f2
+Total tuples inserted: 10
+I:tuple value is 0 100 
+I:tuple value is 1 101 
+I:tuple value is 2 102 
+I:tuple value is 3 103 
+I:tuple value is 4 104 
+I:tuple value is 5 105 
+I:tuple value is 6 106 
+I:tuple value is 7 107 
+I:tuple value is 8 108 
+I:tuple value is 9 109 
+II:tuple value is 0 100 
+II:tuple value is 1 101 
+II:tuple value is 2 102 
+II:tuple value is 3 103 
+II:tuple value is 4 104 
+II:tuple value is 5 105 
+II:tuple value is 6 106 
+II:tuple value is 7 107 
+II:tuple value is 8 108 
+II:tuple value is 9 109 
+deleted record
+tuple value is 0 100 
+tuple value is 3 103 
+tuple value is 4 104 
+tuple value is 5 105 
+tuple value is 6 106 
+tuple value is 7 107 
+tuple value is 8 108 
+tuple value is 9 109 
+Total rows selected 8

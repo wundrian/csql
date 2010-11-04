@@ -1,0 +1,26 @@
+Table created
+Scan before updation
+********************
+Binded Tuple value is 0 PRABA 
+Binded Tuple value is 1 PRABA 
+Binded Tuple value is 2 PRABA 
+Binded Tuple value is 3 PRABA 
+Binded Tuple value is 4 PRABA 
+Binded Tuple value is 5 PRABA 
+Binded Tuple value is 6 PRABA 
+Binded Tuple value is 7 PRABA 
+Binded Tuple value is 8 PRABA 
+Binded Tuple value is 9 PRABA 
+    f1=5 f2=Kanchana
+Scan After updation
+********************
+Binded Tuple value is 0 PRABA 
+Binded Tuple value is 1 PRABA 
+Binded Tuple value is 2 PRABA 
+Binded Tuple value is 3 PRABA 
+Binded Tuple value is 4 PRABA 
+Binded Tuple value is 5 Kanchana 
+Binded Tuple value is 6 PRABA 
+Binded Tuple value is 7 PRABA 
+Binded Tuple value is 8 PRABA 
+Binded Tuple value is 9 PRABA 

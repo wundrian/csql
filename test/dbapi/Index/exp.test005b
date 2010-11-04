@@ -1,0 +1,36 @@
+Table created
+Index created for f1
+size of index field list 1
+size of index field list 0
+size of index field list 1
+Index created for f2
+Total tuples inserted: 10
+I:tuple value is 0 Aruna:0 
+I:tuple value is 1 Aruna:1 
+I:tuple value is 2 Aruna:2 
+I:tuple value is 3 Aruna:3 
+I:tuple value is 4 Aruna:4 
+I:tuple value is 5 Aruna:5 
+I:tuple value is 6 Aruna:6 
+I:tuple value is 7 Aruna:7 
+I:tuple value is 8 Aruna:8 
+I:tuple value is 9 Aruna:9 
+II:tuple value is 0 Aruna:0 
+II:tuple value is 1 Aruna:1 
+II:tuple value is 2 Aruna:2 
+II:tuple value is 3 Aruna:3 
+II:tuple value is 4 Aruna:4 
+II:tuple value is 5 Aruna:5 
+II:tuple value is 6 Aruna:6 
+II:tuple value is 7 Aruna:7 
+II:tuple value is 8 Aruna:8 
+II:tuple value is 9 Aruna:9 
+tuple value is 0 Aruna:0 
+tuple value is 3 Aruna:3 
+tuple value is 4 Aruna:4 
+tuple value is 5 Aruna:5 
+tuple value is 6 Aruna:6 
+tuple value is 7 Aruna:7 
+tuple value is 8 Aruna:8 
+tuple value is 9 Aruna:9 
+Total rows selected 8

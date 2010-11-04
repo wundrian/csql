@@ -1,0 +1,8 @@
+Table created
+Total Tuples inserted is 10
+Predicate: (f1 ==3 AND  f2 > 2) OR (f3 !=3 AND f4 <5) ) 
+tuple value is 0 0 0 0 0
+tuple value is 1 1 1 1 1
+tuple value is 2 2 2 2 2
+tuple value is 3 3 3 3 3
+tuple value is 4 4 4 4 4

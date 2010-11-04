@@ -1,0 +1,26 @@
+Table created
+Index created for f1
+Index created for f2
+Total Tuples inserted is 10
+Predicate: NOT(f1 ==4 OR f2 >3) 
+tuple value is 0 0 0 0 0
+tuple value is 1 1 1 1 1
+tuple value is 2 2 2 2 2
+tuple value is 3 3 3 3 3
+Predicate: NOT( f1 ==4 OR f2 ==4) 
+tuple value is 0 0 0 0 0
+tuple value is 1 1 1 1 1
+tuple value is 2 2 2 2 2
+tuple value is 3 3 3 3 3
+tuple value is 5 5 5 5 5
+tuple value is 6 6 6 6 6
+tuple value is 7 7 7 7 7
+tuple value is 8 8 8 8 8
+tuple value is 9 9 9 9 9
+Predicate: NOT( f1 <4 OR f1 >2) 
+Predicate: NOT( f1 <4 OR f2 >3) 
+Predicate: ( f1 <4 OR (NOT(f2 >3)) 
+tuple value is 0 0 0 0 0
+tuple value is 1 1 1 1 1
+tuple value is 2 2 2 2 2
+tuple value is 3 3 3 3 3

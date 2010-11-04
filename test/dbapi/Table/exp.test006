@@ -1,0 +1,12 @@
+Table created
+Tuples inserted in 1/txn is 5
+Column 3 is null
+Binded Tuple value is 0 5 unchangedvalue 
+Column 3 is null
+Binded Tuple value is 1 5 unchangedvalue 
+Column 3 is null
+Binded Tuple value is 2 5 unchangedvalue 
+Column 3 is null
+Binded Tuple value is 3 5 unchangedvalue 
+Column 3 is null
+Binded Tuple value is 4 5 unchangedvalue 
