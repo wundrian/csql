@@ -1,0 +1,2 @@
+1.create two threads, two READ_REPEATABLE trans, select 10 tuples, check noOfReaders
+2.

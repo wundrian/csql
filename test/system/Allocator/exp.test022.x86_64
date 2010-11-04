@@ -1,0 +1,10 @@
+Table created
+  <TableName> t1 </TableName>
+  <TupleCount> 0 </TupleCount>
+  <PagesUsed> 1 </PagesUsed>
+  <SpaceUsed> 24 </SpaceUsed>
+  <Indexes> 0 <Indexes>
+  <TupleLength> 16 </TupleLength>
+  <Fields> 2 </Fields>
+  <Indexes>
+  </Indexes>

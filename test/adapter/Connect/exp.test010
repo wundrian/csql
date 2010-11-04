@@ -1,0 +1,9 @@
+Connection opened
+Table t1 CREATED
+One record inserted
+update t1 set f2=100
+One row updated
+f2= 100
+Total reccord fetchec=1
+TABLE t1 DROPPED SUCCESSFULLY
+Connection closed successfully

@@ -1,0 +1,2 @@
+test008.ksh - 
+dbsize to 100 MB, insert 1 million tuples, select 1 million tuples (READ_REPEATED) which generaes lot of lock nodes. check whether that returns proper error

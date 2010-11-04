@@ -1,0 +1,24 @@
+1.create table
+.insert 10 tuples
+.check for 0 index nodes
+.create index
+.insert 10 tuples
+.check for 20 index nodes
+
+2.create table
+.create index
+.insert 10 tuples
+.drop index
+.check for 0 index nodes
+
+3.create table
+.create two index
+.insert 10 tuples
+.check for 10 index nodes in both indexes
+
+4.create table
+.create two index
+.insert 10 tuples
+.drop index idx2
+.insert 10 tuples
+.check for 20 nodes in idx1 and 0 nodes in idx2

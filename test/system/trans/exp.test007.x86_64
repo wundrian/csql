@@ -1,0 +1,142 @@
+Table created
+Total Tuples inserted is 10
+Total Tuples updated is 10
+Before commit
+<TransactionTable>
+<TransactionInfo>
+<UndoLogs>
+  <TotalPages> 1 </TotalPages>
+<UndoLogInfo>
+  <Size> 16 </Size>
+  <OperationType> 2 </OperationType>
+  <TuplePtr> 17e7a0f4 </TuplePtr>
+</UndoLogInfo>
+<UndoLogInfo>
+  <Size> 16 </Size>
+  <OperationType> 2 </OperationType>
+  <TuplePtr> 17e7a0dc </TuplePtr>
+</UndoLogInfo>
+<UndoLogInfo>
+  <Size> 16 </Size>
+  <OperationType> 2 </OperationType>
+  <TuplePtr> 17e7a0c4 </TuplePtr>
+</UndoLogInfo>
+<UndoLogInfo>
+  <Size> 16 </Size>
+  <OperationType> 2 </OperationType>
+  <TuplePtr> 17e7a0ac </TuplePtr>
+</UndoLogInfo>
+<UndoLogInfo>
+  <Size> 16 </Size>
+  <OperationType> 2 </OperationType>
+  <TuplePtr> 17e7a094 </TuplePtr>
+</UndoLogInfo>
+<UndoLogInfo>
+  <Size> 16 </Size>
+  <OperationType> 2 </OperationType>
+  <TuplePtr> 17e7a07c </TuplePtr>
+</UndoLogInfo>
+<UndoLogInfo>
+  <Size> 16 </Size>
+  <OperationType> 2 </OperationType>
+  <TuplePtr> 17e7a064 </TuplePtr>
+</UndoLogInfo>
+<UndoLogInfo>
+  <Size> 16 </Size>
+  <OperationType> 2 </OperationType>
+  <TuplePtr> 17e7a04c </TuplePtr>
+</UndoLogInfo>
+<UndoLogInfo>
+  <Size> 16 </Size>
+  <OperationType> 2 </OperationType>
+  <TuplePtr> 17e7a034 </TuplePtr>
+</UndoLogInfo>
+<UndoLogInfo>
+  <Size> 16 </Size>
+  <OperationType> 2 </OperationType>
+  <TuplePtr> 17e7a01c </TuplePtr>
+</UndoLogInfo>
+</TotalNodes> 10 </TotalNodes>
+</UndoLogs>
+<TransHasList>
+  <TotalPages> 1 </TotalPages>
+<Lock Node>
+  <Tuple> 17e7a01c </Tuple>
+  <NoOfReaders> -1 </NoOfReaders>
+  <WaitReaders> 0 </WaitReaders>
+  <WaitWriters> 0 </WaitWriters>
+</Lock Node>
+<Lock Node>
+  <Tuple> 17e7a034 </Tuple>
+  <NoOfReaders> -1 </NoOfReaders>
+  <WaitReaders> 0 </WaitReaders>
+  <WaitWriters> 0 </WaitWriters>
+</Lock Node>
+<Lock Node>
+  <Tuple> 17e7a04c </Tuple>
+  <NoOfReaders> -1 </NoOfReaders>
+  <WaitReaders> 0 </WaitReaders>
+  <WaitWriters> 0 </WaitWriters>
+</Lock Node>
+<Lock Node>
+  <Tuple> 17e7a064 </Tuple>
+  <NoOfReaders> -1 </NoOfReaders>
+  <WaitReaders> 0 </WaitReaders>
+  <WaitWriters> 0 </WaitWriters>
+</Lock Node>
+<Lock Node>
+  <Tuple> 17e7a07c </Tuple>
+  <NoOfReaders> -1 </NoOfReaders>
+  <WaitReaders> 0 </WaitReaders>
+  <WaitWriters> 0 </WaitWriters>
+</Lock Node>
+<Lock Node>
+  <Tuple> 17e7a094 </Tuple>
+  <NoOfReaders> -1 </NoOfReaders>
+  <WaitReaders> 0 </WaitReaders>
+  <WaitWriters> 0 </WaitWriters>
+</Lock Node>
+<Lock Node>
+  <Tuple> 17e7a0ac </Tuple>
+  <NoOfReaders> -1 </NoOfReaders>
+  <WaitReaders> 0 </WaitReaders>
+  <WaitWriters> 0 </WaitWriters>
+</Lock Node>
+<Lock Node>
+  <Tuple> 17e7a0c4 </Tuple>
+  <NoOfReaders> -1 </NoOfReaders>
+  <WaitReaders> 0 </WaitReaders>
+  <WaitWriters> 0 </WaitWriters>
+</Lock Node>
+<Lock Node>
+  <Tuple> 17e7a0dc </Tuple>
+  <NoOfReaders> -1 </NoOfReaders>
+  <WaitReaders> 0 </WaitReaders>
+  <WaitWriters> 0 </WaitWriters>
+</Lock Node>
+<Lock Node>
+  <Tuple> 17e7a0f4 </Tuple>
+  <NoOfReaders> -1 </NoOfReaders>
+  <WaitReaders> 0 </WaitReaders>
+  <WaitWriters> 0 </WaitWriters>
+</Lock Node>
+</TotalNodes> 10 </TotalNodes>
+</TransHasList>
+</TransactionInfo>
+  <UsedSlots> 1 </UsedSlots>
+  <FreeSlots> 99 </FreeSlots>
+  <UndoLogs>
+    <TotalNodes> 10 </TotalNodes>
+    <TotalPages> 1 </TotalPages>
+  </UndoLogs>
+</TransactionTable>
+After commit
+<TransactionTable>
+  <UsedSlots> 0 </UsedSlots>
+  <FreeSlots> 100 </FreeSlots>
+  <UndoLogs>
+    <TotalNodes> 0 </TotalNodes>
+    <TotalPages> 1 </TotalPages>
+  </UndoLogs>
+</TransactionTable>
+Table Dropped

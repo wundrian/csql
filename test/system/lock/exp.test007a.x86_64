@@ -1,0 +1,115 @@
+Table created
+Index created for f1
+Total Tuples inserted is 10
+Total Tuples updated is 10
+Before abort
+<LockTable>
+<Lock Node>
+  <Tuple> 17e7a01c </Tuple>
+  <NoOfReaders> -1 </NoOfReaders>
+  <WaitReaders> 0 </WaitReaders>
+  <WaitWriters> 0 </WaitWriters>
+</Lock Node>
+  <LockBucket> 
+    <BucketNo> 28 </BucketNo> 
+    <TotalNodes> 1 </TotalNodes>
+  <LockBucket>
+<Lock Node>
+  <Tuple> 17e7a034 </Tuple>
+  <NoOfReaders> -1 </NoOfReaders>
+  <WaitReaders> 0 </WaitReaders>
+  <WaitWriters> 0 </WaitWriters>
+</Lock Node>
+  <LockBucket> 
+    <BucketNo> 52 </BucketNo> 
+    <TotalNodes> 1 </TotalNodes>
+  <LockBucket>
+<Lock Node>
+  <Tuple> 17e7a04c </Tuple>
+  <NoOfReaders> -1 </NoOfReaders>
+  <WaitReaders> 0 </WaitReaders>
+  <WaitWriters> 0 </WaitWriters>
+</Lock Node>
+  <LockBucket> 
+    <BucketNo> 76 </BucketNo> 
+    <TotalNodes> 1 </TotalNodes>
+  <LockBucket>
+<Lock Node>
+  <Tuple> 17e7a064 </Tuple>
+  <NoOfReaders> -1 </NoOfReaders>
+  <WaitReaders> 0 </WaitReaders>
+  <WaitWriters> 0 </WaitWriters>
+</Lock Node>
+  <LockBucket> 
+    <BucketNo> 100 </BucketNo> 
+    <TotalNodes> 1 </TotalNodes>
+  <LockBucket>
+<Lock Node>
+  <Tuple> 17e7a07c </Tuple>
+  <NoOfReaders> -1 </NoOfReaders>
+  <WaitReaders> 0 </WaitReaders>
+  <WaitWriters> 0 </WaitWriters>
+</Lock Node>
+  <LockBucket> 
+    <BucketNo> 124 </BucketNo> 
+    <TotalNodes> 1 </TotalNodes>
+  <LockBucket>
+<Lock Node>
+  <Tuple> 17e7a094 </Tuple>
+  <NoOfReaders> -1 </NoOfReaders>
+  <WaitReaders> 0 </WaitReaders>
+  <WaitWriters> 0 </WaitWriters>
+</Lock Node>
+  <LockBucket> 
+    <BucketNo> 148 </BucketNo> 
+    <TotalNodes> 1 </TotalNodes>
+  <LockBucket>
+<Lock Node>
+  <Tuple> 17e7a0ac </Tuple>
+  <NoOfReaders> -1 </NoOfReaders>
+  <WaitReaders> 0 </WaitReaders>
+  <WaitWriters> 0 </WaitWriters>
+</Lock Node>
+  <LockBucket> 
+    <BucketNo> 172 </BucketNo> 
+    <TotalNodes> 1 </TotalNodes>
+  <LockBucket>
+<Lock Node>
+  <Tuple> 17e7a0c4 </Tuple>
+  <NoOfReaders> -1 </NoOfReaders>
+  <WaitReaders> 0 </WaitReaders>
+  <WaitWriters> 0 </WaitWriters>
+</Lock Node>
+  <LockBucket> 
+    <BucketNo> 196 </BucketNo> 
+    <TotalNodes> 1 </TotalNodes>
+  <LockBucket>
+<Lock Node>
+  <Tuple> 17e7a0dc </Tuple>
+  <NoOfReaders> -1 </NoOfReaders>
+  <WaitReaders> 0 </WaitReaders>
+  <WaitWriters> 0 </WaitWriters>
+</Lock Node>
+  <LockBucket> 
+    <BucketNo> 220 </BucketNo> 
+    <TotalNodes> 1 </TotalNodes>
+  <LockBucket>
+<Lock Node>
+  <Tuple> 17e7a0f4 </Tuple>
+  <NoOfReaders> -1 </NoOfReaders>
+  <WaitReaders> 0 </WaitReaders>
+  <WaitWriters> 0 </WaitWriters>
+</Lock Node>
+  <LockBucket> 
+    <BucketNo> 244 </BucketNo> 
+    <TotalNodes> 1 </TotalNodes>
+  <LockBucket>
+  <TotalUsedBuckets> 10 </TotalUsedBuckets>
+  <TotalPages> 1 </TotalPages>
+</LockTable>
+After abort
+<LockTable>
+  <TotalUsedBuckets> 0 </TotalUsedBuckets>
+  <TotalPages> 1 </TotalPages>
+</LockTable>
+Table Dropped
