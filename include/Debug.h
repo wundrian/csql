@@ -7,6 +7,7 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 #include<ErrorType.h>
+#include<FaultTest.h>
 //#define DEBUG 1
 extern int DebugDM_Alloc;
 extern int DebugDM_VarAlloc;
