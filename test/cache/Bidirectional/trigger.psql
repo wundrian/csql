@@ -1,0 +1,7 @@
+DROP LANGUAGE IF EXISTS plpgsql CASCADE ;
+CREATE LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION log_insert_t1() RETURNS trigger AS $triggerinsertt1$ BEGIN insert into csql_log_int (tablename, pkid, operation, cacheid) values ('t1', NEW.f1, 1, 1); insert into csql_log_int (tablename, pkid, operation, cacheid) values ('t1', NEW.f1, 1, 2); RETURN NEW; END; $triggerinsertt1$ LANGUAGE plpgsql; 
+create trigger triggerinsertt1 AFTER INSERT on t1 FOR EACH ROW EXECUTE PROCEDURE log_insert_t1(); 
+CREATE OR REPLACE FUNCTION log_update_t1() RETURNS trigger AS $triggerupdatet1$ BEGIN insert into csql_log_int (tablename, pkid, operation, cacheid) values ('t1', OLD.f1, 2, 1); insert into csql_log_int (tablename, pkid, operation, cacheid) values ('t1', NEW.f1, 1, 1); insert into csql_log_int (tablename, pkid, operation, cacheid) values ('t1', OLD.f1, 2, 2); insert into csql_log_int (tablename, pkid, operation, cacheid) values ('t1', NEW.f1, 1, 2); RETURN NEW; END; $triggerupdatet1$ LANGUAGE plpgsql; 
+create trigger triggerupdatet1 AFTER UPDATE on t1 FOR EACH ROW EXECUTE PROCEDURE log_update_t1();
+CREATE OR REPLACE FUNCTION log_delete_t1() RETURNS trigger AS $triggerdeletet1$ BEGIN insert into csql_log_int (tablename, pkid, operation, cacheid) values ('t1', OLD.f1, 2, 1); insert into csql_log_int (tablename, pkid, operation, cacheid) values ('t1', OLD.f1, 2, 2); RETURN NEW; END; $triggerdeletet1$ LANGUAGE plpgsql; create trigger triggerdeletet1 AFTER DELETE on t1  FOR EACH ROW EXECUTE PROCEDURE log_delete_t1();

@@ -1,0 +1,6 @@
+CREATE TABLE t1(f1 INT NOT NULL,f2 CHAR(10),f3 INT,f4 CHAR(10),f5 INT,primary key(f1));
+INSERT INTO t1 VALUES(1,'test',111,'mode',1111);
+INSERT INTO t1 VALUES(2,'test',222,'mode',2222);
+INSERT INTO t1 VALUES(3,'test',333,'mode',3333);
+INSERT INTO t1 VALUES(4,'test',444,'mode',4444);
+INSERT INTO t1 VALUES(5,'test',555,'mode',5555);

@@ -1,0 +1,1 @@
+UPDATE t1 SET f5=150 WHERE f1 <=2;

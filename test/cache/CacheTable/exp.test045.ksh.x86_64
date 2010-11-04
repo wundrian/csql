@@ -1,0 +1,67 @@
+CREATING TABLE t1 and INSERTING 1 RECORDS IN TARGET DB
++---------------------------------------+
+| Connected!                            |
+|                                       |
+| sql-statement                         |
+| help [tablename]                      |
+| quit                                  |
+|                                       |
++---------------------------------------+
+SQL> echo create table t1(f1 int);
+SQL> create table t1(f1 int);
+SQLRowCount returns 0
+SQL> echo insert into t1 values(1);
+SQL> insert into t1 values(1);
+SQLRowCount returns 1
+SQL> echo select * from t1;
+SQL> select * from t1;
++-----------+
+| f1        |
++-----------+
+| 1         |
++-----------+
+SQLRowCount returns 1
+1 rows fetched
+SQL> CREATING TABLE t1 and INSERTING 1 RECORDS AT CSQL
+echo create table t1(f1 int);
+Statement Executed
+echo insert into t1 values(2);
+Statement Executed: Rows Affected = 1
+echo select * from t1;
+---------------------------------------------------------
+	t1.f1	
+---------------------------------------------------------
+	2	
+	
+AFTER INSERT AT CSQL DATA IN TDB
++---------------------------------------+
+| Connected!                            |
+|                                       |
+| sql-statement                         |
+| help [tablename]                      |
+| quit                                  |
+|                                       |
++---------------------------------------+
+SQL> echo select * from t1;
+SQL> select * from t1;
++-----------+
+| f1        |
++-----------+
+| 1         |
++-----------+
+SQLRowCount returns 1
+1 rows fetched
+SQL> echo drop table t1;
+Statement Executed
++---------------------------------------+
+| Connected!                            |
+|                                       |
+| sql-statement                         |
+| help [tablename]                      |
+| quit                                  |
+|                                       |
++---------------------------------------+
+SQL> echo drop table t1;
+SQL> drop table t1;
+SQLRowCount returns 0
+SQL> 

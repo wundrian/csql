@@ -1,0 +1,4 @@
+drop table t1;
+CREATE TABLE t1 (f1 SMALLINT NOT NULL, f2 INT, primary key (f1));
+INSERT INTO t1 VALUES(1, 1111);
+INSERT INTO t1 VALUES(2, 2222);
