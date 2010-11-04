@@ -1,0 +1,25 @@
+#List of cache module directories which needs to be run by cache test executor
+#Note:  To exclude modules, comment out using # 
+adapter/Connect
+adapter/Parameter
+adapter/Select
+sqlgw/Parameter
+sqlgw/Select
+odbc/Adapter
+odbc/Gateway
+jdbc/Gateway
+jdbc/Adapter
+jdbc/network/Adapter
+jdbc/network/Gateway
+cache/Recovery
+cache/DDL
+cache/Gateway
+cache/FailOver
+cache/CacheTable
+cache/CacheStatement
+cache/Bidirectional
+cache/CacheVerify
+cache/Durability
+cache/MultiDsn/Connection
+cache/MultiDsn/Gateway
+cache/MultiDsn/CacheTableOptions

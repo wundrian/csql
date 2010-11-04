@@ -1,0 +1,1 @@
+UPDATE t2 SET f3=60 WHERE f1<=5;

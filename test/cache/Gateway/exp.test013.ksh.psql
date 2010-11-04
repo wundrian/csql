@@ -1,0 +1,23 @@
+t1create.sql file created
+select file created
+Select * from t1 in CSQL
+---------------------------------------------------------
+	f1	f2	
+---------------------------------------------------------
+	1	INDIA1    	
+	11	NULL
+	2	INDIA2    	
+	12	NULL
+	3	INDIA3    	
+	13	NULL
+	4	INDIA4    	
+	14	NULL
+	5	INDIA5    	
+	15	NULL
+	
+Checking for table created or not
+<Table Information of all tables>
+  <No tables exist></No tables exist>
+</Table Information of all tables>
+<Index Information of all Indexs>
+</Index Information of all Indexs>

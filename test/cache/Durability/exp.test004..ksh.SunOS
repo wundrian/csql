@@ -1,0 +1,105 @@
+INSERTING 1 RECORDS IN TARGET DB
++---------------------------------------+
+| Connected!                            |
+|                                       |
+| sql-statement                         |
+| help [tablename]                      |
+| quit                                  |
+|                                       |
++---------------------------------------+
+SQL> SQLRowCount returns 0
+SQL> SQLRowCount returns 1
+SQL> +---------------------------------------+
+| Connected!                            |
+|                                       |
+| sql-statement                         |
+| help [tablename]                      |
+| quit                                  |
+|                                       |
++---------------------------------------+
+SQL> +-----------+
+| f1        |
++-----------+
+| 1         |
++-----------+
+SQLRowCount returns 1
+1 rows fetched
+SQL> CACHING THROUGH SITE1
+cachetable -U root -P manager -t t1
+---------------------------------------------------------
+	t1.f1	
+---------------------------------------------------------
+	1	
+	
+INSERTING 1 RECORD IN CACHED TABLE t1 AT CSQL
+Statement Executed: Rows Affected = 1
+AFTER INSERT AT CSQL DATA IN CSQL
+---------------------------------------------------------
+	t1.f1	
+---------------------------------------------------------
+	1	
+	2	
+	
+AFTER INSERT AT CSQL DATA IN TDB
++---------------------------------------+
+| Connected!                            |
+|                                       |
+| sql-statement                         |
+| help [tablename]                      |
+| quit                                  |
+|                                       |
++---------------------------------------+
+SQL> +-----------+
+| f1        |
++-----------+
+| 1         |
+| 2         |
++-----------+
+SQLRowCount returns 2
+2 rows fetched
+SQL> Server Killed
+
+Durablity = TRUE
+Cache_table = FALSE
+Server Started
+Checking Durability
+Durability Works Fine
+INSERTING ANOTHER RECORD IN CACHED TABLE t1 AT CSQL
+Statement Executed: Rows Affected = 1
+AFTER INSERT AT CSQL DATA IN CSQL
+---------------------------------------------------------
+	t1.f1	
+---------------------------------------------------------
+	1	
+	2	
+	3	
+	
+AFTER INSERT AT CSQL DATA IN TDB
++---------------------------------------+
+| Connected!                            |
+|                                       |
+| sql-statement                         |
+| help [tablename]                      |
+| quit                                  |
+|                                       |
++---------------------------------------+
+SQL> +-----------+
+| f1        |
++-----------+
+| 1         |
+| 2         |
+| 3         |
++-----------+
+SQLRowCount returns 3
+3 rows fetched
+SQL> Statement Executed
++---------------------------------------+
+| Connected!                            |
+|                                       |
+| sql-statement                         |
+| help [tablename]                      |
+| quit                                  |
+|                                       |
++---------------------------------------+
+SQL> SQLRowCount returns 0
+SQL> 

@@ -1,0 +1,7 @@
+CREATE TABLE t1(f1 int,f2 char(20),f3 int,primary key(f1));
+INSERT INTO t1 VALUES(1,'Bijay',10);
+INSERT INTO t1 VALUES(2,'Jiten',20);
+INSERT INTO t1 VALUES(3,'Praba',30);
+INSERT INTO t1 VALUES(4,'Kisor',40);
+INSERT INTO t1 VALUES(5,'Nihar',50);
+COMMIT;

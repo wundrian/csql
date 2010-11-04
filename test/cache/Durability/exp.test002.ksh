@@ -1,0 +1,84 @@
+INSERTING 5 RECORDS IN TARGET DB
++---------------------------------------+
+| Connected!                            |
+|                                       |
+| sql-statement                         |
+| help [tablename]                      |
+| quit                                  |
+|                                       |
++---------------------------------------+
+[?1034hSQL> SELECT * FROM t1;
++-----------+---------------------+-----------+
+| f1        | f2                  | f3        |
++-----------+---------------------+-----------+
+| 1         | Bijay               | 10        |
+| 2         | Jiten               | 20        |
+| 3         | Praba               | 30        |
+| 4         | Kisor               | 40        |
+| 5         | Nihar               | 50        |
++-----------+---------------------+-----------+
+SQLRowCount returns 5
+5 rows fetched
+SQL> CACHING THROUGH SITE1
+cachetable -U root -P manager -t t1
+Statement Executed
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Server Killed
+
+Durablity = TRUE
+Server Started
+Checking Durability
+Durability Works Fine
+INSERTING 5 RECORDS IN CACHED TABLE t1 AT CSQL
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+INSERTING 5 RECORDS AT NON CACHED TABLE t2 AT CSQL
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Statement Executed: Rows Affected = 1
+Server Killed
+
+Durablity = TRUE
+Server Started
+Checking Durability
+Durability Works Fine
+UPDATING 5 RECORDS IN CACHED TABLE t1 AT CSQL
+Statement Executed: Rows Affected = 5
+UPDATING 5 RECORDS AT NON CACHED TABLE t2 AT CSQL
+Statement Executed: Rows Affected = 5
+Server Killed
+
+Durablity = TRUE
+Server Started
+Checking Durability
+Durability Works Fine
+DELETING 7 RECORDS IN CACHED TABLE t1 AT CSQL
+Statement Executed: Rows Affected = 7
+DELETING 7 RECORDS AT NON CACHED TABLE t2 AT CSQL
+Statement Executed: Rows Affected = 7
+Server Killed
+
+Durablity = TRUE
+Server Started
+Checking Durability
+Durability Works Fine
++---------------------------------------+
+| Connected!                            |
+|                                       |
+| sql-statement                         |
+| help [tablename]                      |
+| quit                                  |
+|                                       |
++---------------------------------------+
+[?1034hSQL> DROP TABLE t1;
+SQLRowCount returns 0
+SQL> Statement Executed
