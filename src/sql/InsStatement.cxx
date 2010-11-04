@@ -365,9 +365,10 @@ DbRetVal InsStatement::resolve()
 	         int len=strlen(value->parsedString);
 	         for(int n=0;n<len;n++){
 	            int p=value->parsedString[n];
-	            if(!(p>=48 && p<=57 || p==45) )
+	            if(!(p>=48 && p<=57 || p==45) ) {
                         delete fInfo;
 	                return ErrBadArg;
+                    }
 	         }
 	     }
 	    // for binary datatype buffer is just strcpy'd. 

@@ -328,9 +328,10 @@ DbRetVal DelStatement::resolveForCondition()
 	           int len=strlen(value->parsedString);
 	           for(int n=0;n<len;n++){
 	               int p=value->parsedString[n];
-	               if(!(p>=48 && p<=57 || p==45))
+	               if(!(p>=48 && p<=57 || p==45)) {
                            delete fInfo;
 	                   return ErrBadArg;
+                       }
 	           }
 	    }
             /* Checking for char data type 8kb(8000) */
