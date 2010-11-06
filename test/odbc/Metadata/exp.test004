@@ -1,0 +1,16 @@
+
+Connected to the Data Source..
+
+TABLE CREATED
+No of columns in resultset = 18
+szCatalog =CSQL 	 szSchema=CSQL 	 szTableName=T1 	 szColumnName= F1 	 DataType = 4 ColumnSize = 4  Nullable =0 szRemarks = Columns Catalog, OrdinalPosition =1 szIsNullable =NO
+ szCatalog =CSQL 	 szSchema=CSQL 	 szTableName=T1 	 szColumnName= F2 	 DataType = 5 ColumnSize = 4  Nullable =0 szRemarks = Columns Catalog, OrdinalPosition =2 szIsNullable =NO
+ szCatalog =CSQL 	 szSchema=CSQL 	 szTableName=T1 	 szColumnName= F3 	 DataType = 1 ColumnSize = 32  Nullable =1 szRemarks = Columns Catalog, OrdinalPosition =3 szIsNullable =YES
+ szCatalog =CSQL 	 szSchema=CSQL 	 szTableName=T1 	 szColumnName= F4 	 DataType = 7 ColumnSize = 4  Nullable =1 szRemarks = Columns Catalog, OrdinalPosition =4 szIsNullable =YES
+ szCatalog =CSQL 	 szSchema=CSQL 	 szTableName=T1 	 szColumnName= F5 	 DataType = 7 ColumnSize = 4  Nullable =1 szRemarks = Columns Catalog, OrdinalPosition =5 szIsNullable =YES
+ szCatalog =CSQL 	 szSchema=CSQL 	 szTableName=T1 	 szColumnName= F6 	 DataType = 91 ColumnSize = 4  Nullable =1 szRemarks = Columns Catalog, OrdinalPosition =6 szIsNullable =YES
+ szCatalog =CSQL 	 szSchema=CSQL 	 szTableName=T1 	 szColumnName= F7 	 DataType = 92 ColumnSize = 4  Nullable =0 szRemarks = Columns Catalog, OrdinalPosition =7 szIsNullable =NO
+ szCatalog =CSQL 	 szSchema=CSQL 	 szTableName=T1 	 szColumnName= F8 	 DataType = 93 ColumnSize = 8  Nullable =1 szRemarks = Columns Catalog, OrdinalPosition =8 szIsNullable =YES
+ szCatalog =CSQL 	 szSchema=CSQL 	 szTableName=T1 	 szColumnName= F9 	 DataType = -6 ColumnSize = 4  Nullable =1 szRemarks = Columns Catalog, OrdinalPosition =9 szIsNullable =YES
+ szCatalog =CSQL 	 szSchema=CSQL 	 szTableName=T1 	 szColumnName= F10 	 DataType = -5 ColumnSize = 8  Nullable =1 szRemarks = Columns Catalog, OrdinalPosition =10 szIsNullable =YES
+ Table  dropped successfully

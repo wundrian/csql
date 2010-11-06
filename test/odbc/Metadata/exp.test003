@@ -1,0 +1,9 @@
+
+Connected to the Data Source..
+
+TABLE CREATED
+No of columns in resultset = 5
+F1=CSQL 	 F2=CSQL 	 F3=T1 	 F4= TABLE 	 F5=TABLE Catalog 
+ F1=CSQL 	 F2=CSQL 	 F3=t2 	 F4= TABLE 	 F5=TABLE Catalog 
+ F1=CSQL 	 F2=CSQL 	 F3=t3 	 F4= TABLE 	 F5=TABLE Catalog 
+ Tables  dropped successfully

@@ -1,0 +1,28 @@
+
+Connected to the Data Source..
+
+TABLE CREATED
+Total row inserted=20
+No of columns in resultset = 10
+Name F1 len 2 type 4 collen 4 scale 0 nullable 1
+Name F2 len 2 type 5 collen 4 scale 0 nullable 1
+Name F3 len 2 type 1 collen 31 scale 0 nullable 1
+Name F4 len 2 type 6 collen 4 scale 0 nullable 1
+Name F5 len 2 type 6 collen 4 scale 0 nullable 1
+Name F6 len 2 type 9 collen 4 scale 0 nullable 1
+Name F7 len 2 type 10 collen 4 scale 0 nullable 1
+Name F8 len 2 type 11 collen 8 scale 0 nullable 1
+Name F9 len 2 type -6 collen 4 scale 0 nullable 1
+Name F10 len 3 type -5 collen 8 scale 0 nullable 1
+F1=91	F2=21	F3=jitendra	F4=3.500000	F5=10.500000	DATE=2008/3/18	TIME=5-22-10	TIMESTAMP=2008/3/18 5-22-10	F9=5	F10=15000
+ F1=91	F2=21	F3=jitendra	F4=3.500000	F5=10.500000	DATE=2008/3/18	TIME=5-22-10	TIMESTAMP=2008/3/18 5-22-10	F9=5	F10=15000
+ F1=91	F2=21	F3=jitendra	F4=3.500000	F5=10.500000	DATE=2008/3/18	TIME=5-22-10	TIMESTAMP=2008/3/18 5-22-10	F9=5	F10=15000
+ F1=91	F2=21	F3=jitendra	F4=3.500000	F5=10.500000	DATE=2008/3/18	TIME=5-22-10	TIMESTAMP=2008/3/18 5-22-10	F9=5	F10=15000
+ F1=91	F2=21	F3=jitendra	F4=3.500000	F5=10.500000	DATE=2008/3/18	TIME=5-22-10	TIMESTAMP=2008/3/18 5-22-10	F9=5	F10=15000
+ F1=91	F2=21	F3=jitendra	F4=3.500000	F5=10.500000	DATE=2008/3/18	TIME=5-22-10	TIMESTAMP=2008/3/18 5-22-10	F9=5	F10=15000
+ F1=91	F2=21	F3=jitendra	F4=3.500000	F5=10.500000	DATE=2008/3/18	TIME=5-22-10	TIMESTAMP=2008/3/18 5-22-10	F9=5	F10=15000
+ F1=91	F2=21	F3=jitendra	F4=3.500000	F5=10.500000	DATE=2008/3/18	TIME=5-22-10	TIMESTAMP=2008/3/18 5-22-10	F9=5	F10=15000
+ F1=91	F2=21	F3=jitendra	F4=3.500000	F5=10.500000	DATE=2008/3/18	TIME=5-22-10	TIMESTAMP=2008/3/18 5-22-10	F9=5	F10=15000
+ F1=91	F2=21	F3=jitendra	F4=3.500000	F5=10.500000	DATE=2008/3/18	TIME=5-22-10	TIMESTAMP=2008/3/18 5-22-10	F9=5	F10=15000
+ Total row fetched=10
+Table 'T1' dropped successfully

@@ -1,0 +1,8 @@
+
+Connected to the Data Source..
+
+TABLE CREATED
+No of columns in resultset = 13
+ Unique =1 	IndexName = T1_idx1_Primary 	 Type=2 ColumnName = F2 
+  Unique =0 	IndexName = INDS 	 Type=3 ColumnName = F3 
+ Tables  dropped successfully

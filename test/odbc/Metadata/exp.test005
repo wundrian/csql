@@ -1,0 +1,7 @@
+
+Connected to the Data Source..
+
+TABLE CREATED
+No of columns in resultset = 6
+catalogNameCSQL 	 SchemaName=CSQL 	 TableName=T1 	 ColumnName = F2 	 KEY_SEQ=2	 Primarykey = T1_idx1_Primary 
+ Tables  dropped successfully
