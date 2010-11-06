@@ -1,0 +1,12 @@
+Load Test Run
+---------------
+set the following in csql.conf file
+MAX_SYS_DB_SIZE=104857600
+MAX_DB_SIZE=34359738368
+MAP=true
+
+For wisc small table schema 
+Run . ./runsuiteWiscSchema.ksh
+
+For table having two integer
+Run . ./runsuite.ksh
