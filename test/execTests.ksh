@@ -141,6 +141,14 @@ if [ "$MODULE" = "system/lock" -o "$MODULE" = "system/trans" -o "$MODULE" = "sys
 then
     restart_csqlserver
 fi
+
+if [ "$MODULE" = "dbapi/Threads" ]
+then
+HANG_TIMEOUT=1000
+else
+HANG_TIMEOUT=150
+fi
+
 echo "Running $test" 
 echo "Running $test" >>$TEST_LOG
 echo "Test started at : `date` " 
