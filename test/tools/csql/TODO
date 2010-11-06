@@ -1,0 +1,17 @@
+update t1 set f1 = f2 where f1 =100;
+update t1 set f1 = 10, f2 = 20 where f1 =100;
+update t1 set f1 = 10+ 20 where f1 =100;
+update t1 set f1 = 200;
+delete from t1;
+AND with two different data types (int and char)
+OR with two different data types (int and char)
+BETWEEN with all data types
+IN with all data types
+Test -ve values for integer and with between operator
+comparison (f1>f2) with two different data types (int and short, int and float, int and char)
+
+
+
+Later
+1.Total columns in unique, primary key constraint
+

@@ -1,0 +1,18 @@
+echo CREATE TABLE t1 (f1 INT , f2 VARCHAR (12));
+CREATE TABLE t1 (f1 INT , f2 VARCHAR (12));
+INSERT INTO t1 VALUES(1, 'ABCD');
+INSERT INTO t1 VALUES(2, 'NULL');
+INSERT INTO t1 VALUES(3, NULL);
+INSERT INTO t1 VALUES(4, 'ABCEF');
+INSERT INTO t1 (f1) VALUES (5);
+INSERT INTO t1 VALUES(6, 'ABCFF');
+echo select * from t1;
+select * from t1;
+echo Update t1 set f1= 15, f2=NULL where f2 IS NOT NULL;
+Update t1 set f1= 15, f2=NULL where f2 IS NOT NULL;
+echo select * from t1;
+select * from t1;
+echo Update t1 set f1= 25, f2='CSQL_LAKSHYA' where f2 IS NULL and f1 <= 3;
+Update t1 set f1= 25, f2='CSQL_LAKSHYA' where f2 IS NULL and f1 <= 3;
+echo select * from t1;
+select * from t1;

@@ -1,0 +1,11 @@
+create table t1(f1 int,f2 int,f3 int);
+insert into t1 values(1, 10, 100);
+insert into t1 values(2, 20, 200);
+insert into t1 values(3, 30, 300);
+insert into t1 values(NULL, 20, 500);
+insert into t1 values(12, 20, 500);
+insert into t1 values(1, NULL, 400);
+insert into t1 values(1, 11, 500);
+insert into t1 values(13, 30, 200);
+insert into t1 values(14, 31, 300);
+select * from t1;

@@ -1,0 +1,23 @@
+echo Create table t1(f1 tinyint, f2 smallint, f3 int, f4 bigint, f5 char(10), f6 varchar(10), f7 float, f8 double,f9 Date, f10 Time, f11 Timestamp);
+Create table t1(f1 tinyint, f2 smallint, f3 int, f4 bigint, f5 char(10), f6 varchar(10), f7 float, f8 double,f9 Date, f10 Time, f11 Timestamp);
+echo create index hashidxtinyvar on t1(f1, f6);
+create index hashidxtinyvar on t1(f1, f6);
+echo create index hashidxsmallvar on t1(f2, f6);
+create index hashidxsmallvar on t1(f2, f6);
+echo create index hashidxvarint on t1(f6, f3);
+create index hashidxvarint on t1(f6, f3);
+echo create index hashidxvarbig on t1(f6, f4);
+create index hashidxvarbig on t1(f6, f4);
+echo create index hashidxcharvar on t1(f5, f6);
+create index hashidxcharvar on t1(f5, f6);
+echo create index hashidxvardate on t1(f6, f9);
+create index hashidxvardate on t1(f6, f9);
+echo create index hashidxvartime on t1(f6, f10);
+create index hashidxvartime on t1(f6, f10);
+echo create index hashidxvarfloat on t1(f6, f7);
+create index hashidxvarfloat on t1(f6, f7);
+echo create index hashidxvardouble on t1(f6, f8);
+create index hashidxvardouble on t1(f6, f8);
+echo create index hashidxvartimestamp on t1(f6, f11);
+create index hashidxvartimestamp on t1(f6, f11);
+

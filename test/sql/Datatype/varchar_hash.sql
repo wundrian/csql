@@ -1,0 +1,15 @@
+echo create table t1 (f1 varchar(10), f2 smallint);
+create table t1 (f1 varchar(10), f2 smallint);
+echo create table t2 (f1 varchar(10), f2 smallint);
+create table t2 (f1 varchar(10), f2 smallint);
+echo create index idx1 on t1(f1) hash;
+create index idx1 on t1(f1) hash;
+echo create index idx2 on t2(f1) hash unique;
+create index idx2 on t2(f1) hash unique;
+insert into t2 values('Lakshya1',10);
+echo insert into t2 values('Lakshya1',20);
+insert into t2 values('Lakshya1',20);
+echo select * from t1;
+select * from t1;
+echo select * from t2;
+select * from t2;

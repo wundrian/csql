@@ -1,0 +1,17 @@
+echo Create table t1(f1 date, f2 date);
+Create table t1(f1 date, f2 date);
+insert into t1 values('2001-01-01', '2005-01-01');
+insert into t1 values('2002-01-01', '2006-01-01');
+insert into t1 values('2003-01-01', '2007-01-01');
+insert into t1 values('2004-01-01', '2009-01-01');
+insert into t1 values('2005-01-01', '2010-01-01');
+echo select * from t1;
+select * from t1;
+echo select * from t1 where date_add(f1 interval 4 year) = '2007-01-01';
+select * from t1 where date_add(f1 interval 4 year) = '2007-01-01';
+echo select * from t1 where date_add(f1 interval 4 year) = f2;
+select * from t1 where date_add(f1 interval 4 year) = f2;
+echo select * from t1 where date_add(f1 interval 4 year) <= '2007-01-01';
+select * from t1 where date_add(f1 interval 4 year) <= '2007-01-01';
+echo select * from t1 where date_add(f1 interval 4 year) > '2007-01-01';
+select * from t1 where date_add(f1 interval 4 year) > '2007-01-01';

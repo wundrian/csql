@@ -1,0 +1,10 @@
+echo drop table sales_order_details;
+drop table sales_order_details;
+echo drop table sales_order;
+drop table sales_order;
+echo drop table salesman_master;
+drop table salesman_master;
+echo drop table product_master;
+drop table product_master;
+echo drop table client_master;
+drop table client_master;

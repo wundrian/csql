@@ -1,0 +1,21 @@
+echo CREATE TABLE t1 (f1 INT , f2 VARCHAR (12));
+CREATE TABLE t1 (f1 INT , f2 VARCHAR (12));
+echo INSERT INTO t1 VALUES(1, 'ABCD');
+INSERT INTO t1 VALUES(1, 'ABCD');
+echo INSERT INTO t1 VALUES(2, 'NULL');
+INSERT INTO t1 VALUES(2, 'NULL');
+echo INSERT INTO t1 VALUES(3, NULL);
+INSERT INTO t1 VALUES(3, NULL);
+echo INSERT INTO t1 VALUES(4, 'ABCEF');
+INSERT INTO t1 VALUES(4, 'ABCEF');
+echo INSERT INTO t1 (f1) VALUES (5);
+INSERT INTO t1 (f1) VALUES (5);
+echo INSERT INTO t1 VALUES(6, 'ABCFF');
+INSERT INTO t1 VALUES(6, 'ABCFF');
+echo select * from t1;
+select * from t1;
+echo select * from t1 where f2 is null;
+select * from t1 where f2 is null;
+echo select * from t1 where f2 is not null;
+select * from t1 where f2 is not null;
+

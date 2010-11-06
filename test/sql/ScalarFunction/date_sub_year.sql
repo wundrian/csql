@@ -1,0 +1,17 @@
+echo Create table t1(f1 date, f2 date);
+Create table t1(f1 date, f2 date);
+insert into t1 values('2001-01-01', '2001-01-03');
+insert into t1 values('2001-01-01', '2001-02-01');
+insert into t1 values('2001-01-01', '2001-03-01');
+insert into t1 values('2001-01-01', '2002-01-01');
+insert into t1 values('2001-01-01', '2002-02-02');
+echo select * from t1;
+select * from t1;
+echo select * from t1 where date_sub(f2 interval 6 year) = '1995-03-01';
+select * from t1 where date_sub(f2 interval 6 year) = '1995-03-01';
+echo select * from t1 where date_sub(f2 interval 6 year) <= '1995-03-01';
+select * from t1 where date_sub(f2 interval 6 year) <= '1995-03-01';
+echo select * from t1 where date_sub(f2 interval 6 year) >= '1995-03-01';
+select * from t1 where date_sub(f2 interval 6 year) >= '1995-03-01';
+echo select * from t1 where date_sub(f2 interval 6 year) != '1995-03-01';
+select * from t1 where date_sub(f2 interval 6 year) != '1995-03-01';

@@ -1,0 +1,18 @@
+echo select t1.f1, t1.f2, t2.f1, t2.f2, t3.f1, t3.f2 from t1 inner join t2 on t1.f1 = t2.f1 inner join t3 on t2.f1 = t3.f1 inner join t1 on t3.f1 = t1.f1;
+select t1.f1, t1.f2, t2.f1, t2.f2, t3.f1, t3.f2 from t1 inner join t2 on t1.f1 = t2.f1 inner join t3 on t2.f1 = t3.f1 inner join t1 on t3.f1 = t1.f1;
+echo select t1.f1, t1.f2, t2.f1, t2.f2, t3.f1, t3.f2 from t1 inner join t2 on t1.f2 = t2.f2 inner join t3 on t2.f2 = t3.f2 inner join t1 on t3.f1 = t1.f1;
+select t1.f1, t1.f2, t2.f1, t2.f2, t3.f1, t3.f2 from t1 inner join t2 on t1.f2 = t2.f2 inner join t3 on t2.f2 = t3.f2 inner join t1 on t3.f1 = t1.f1;
+echo select t1.f1, t1.f3, t2.f1, t2.f3, t3.f1, t3.f3 from t1 inner join t2 on t1.f3 = t2.f3 inner join t3 on t2.f3 = t3.f3 inner join t1 on t3.f1 = t1.f1;
+select t1.f1, t1.f3, t2.f1, t2.f3, t3.f1, t3.f3 from t1 inner join t2 on t1.f3 = t2.f3 inner join t3 on t2.f3 = t3.f3 inner join t1 on t3.f1 = t1.f1;
+echo select t1.f1, t1.f4, t2.f1, t2.f4, t3.f1, t3.f4 from t1 inner join t2 on t1.f4 = t2.f4 inner join t3 on t2.f4 = t3.f4 inner join t1 on t3.f1 = t1.f1;
+select t1.f1, t1.f4, t2.f1, t2.f4, t3.f1, t3.f4 from t1 inner join t2 on t1.f4 = t2.f4 inner join t3 on t2.f4 = t3.f4 inner join t1 on t3.f1 = t1.f1;
+echo select t1.f1, t1.f5, t2.f1, t2.f5, t3.f1, t3.f5 from t1 inner join t2 on t1.f5 = t2.f5 inner join t3 on t2.f5 = t3.f5 inner join t1 on t3.f1 = t1.f1;
+select t1.f1, t1.f5, t2.f1, t2.f5, t3.f1, t3.f5 from t1 inner join t2 on t1.f5 = t2.f5 inner join t3 on t2.f5 = t3.f5 inner join t1 on t3.f1 = t1.f1;
+echo select t1.f1, t1.f6, t2.f1, t2.f6, t3.f1, t3.f6 from t1 inner join t2 on t1.f6 = t2.f6 inner join t3 on t2.f6 = t3.f6 inner join t1 on t3.f1 = t1.f1;
+select t1.f1, t1.f6, t2.f1, t2.f6, t3.f1, t3.f6 from t1 inner join t2 on t1.f6 = t2.f6 inner join t3 on t2.f6 = t3.f6 inner join t1 on t3.f1 = t1.f1;
+echo select t1.f1, t1.f7, t2.f1, t2.f7, t3.f1, t3.f7 from t1 inner join t2 on t1.f7 = t2.f7 inner join t3 on t2.f7 = t3.f7 inner join t1 on t3.f1 = t1.f1;
+select t1.f1, t1.f7, t2.f1, t2.f7, t3.f1, t3.f7 from t1 inner join t2 on t1.f7 = t2.f7 inner join t3 on t2.f7 = t3.f7 inner join t1 on t3.f1 = t1.f1;
+echo select t1.f1, t1.f8, t2.f1, t2.f8, t3.f1, t3.f8 from t1 inner join t2 on t1.f8 = t2.f8 inner join t3 on t2.f8 = t3.f8 inner join t1 on t3.f1 = t1.f1;
+select t1.f1, t1.f8, t2.f1, t2.f8, t3.f1, t3.f8 from t1 inner join t2 on t1.f8 = t2.f8 inner join t3 on t2.f8 = t3.f8 inner join t1 on t3.f1 = t1.f1;
+echo select t1.f1, t1.f9, t2.f1, t2.f9, t3.f1, t3.f9 from t1 inner join t2 on t1.f9 = t2.f9 inner join t3 on t2.f9 = t3.f9 inner join t1 on t3.f1 = t1.f1;
+select t1.f1, t1.f9, t2.f1, t2.f9, t3.f1, t3.f9 from t1 inner join t2 on t1.f9 = t2.f9 inner join t3 on t2.f9 = t3.f9 inner join t1 on t3.f1 = t1.f1;

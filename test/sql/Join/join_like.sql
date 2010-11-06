@@ -1,0 +1,10 @@
+echo select * from emp,dept;
+select * from emp,dept;
+echo select * from emp,dept where emp.ename LIKE 'K%';
+select * from emp,dept where emp.ename LIKE 'K%';
+echo select * from emp,dept where dept.dname LIKE 'S%';
+select * from emp,dept where dept.dname LIKE 'S%';
+echo select * from emp,dept where emp.ename LIKE 'K%' and dept.dname LIKE 'S%';
+select * from emp,dept where emp.ename LIKE 'K%' and dept.dname LIKE 'S%';
+echo select * from emp,dept where emp.ename LIKE 'K%' or dept.dname LIKE 'S%';
+select * from emp,dept where emp.ename LIKE 'K%' or dept.dname LIKE 'S%';

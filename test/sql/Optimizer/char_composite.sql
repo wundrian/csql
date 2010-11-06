@@ -1,0 +1,27 @@
+echo create table t1(f1 char, f2 char, f3 char, f4 char);
+create table t1(f1 char, f2 char, f3 char, f4 char);
+echo create index hashcharf1f2f3 on t1(f2,f3,f1) hash;
+create index hashcharf1f2f3 on t1(f2,f3,f1) hash;
+echo explain plan select * from t1;
+explain plan select * from t1;
+echo explain plan select * from t1 where f1 = 'a';
+explain plan select * from t1 where f1 = 'a';
+echo explain plan select * from t1 where f1 = 'a' and f2='a';
+explain plan select * from t1 where f1 = 'a' and f2='a';
+echo explain plan select * from t1 where f1 = 'a' and f2='a' and f3='a';
+explain plan select * from t1 where f1 = 'a' and f2='a' and f3='a';
+echo explain plan select * from t1 where f1 = 'a' or f2='a' or f3='a';
+explain plan select * from t1 where f1 = 'a' or f2='a' or f3='a';
+echo explain plan select * from t1 where f1 = 'a' and f2='a' or f3='a';
+explain plan select * from t1 where f1 = 'a' and f2='a' or f3='a';
+echo explain plan select * from t1 where f1 = 'a' and f2='a' and not(f3='a');
+explain plan select * from t1 where f1 = 'a' and f2='a' and not(f3='a');
+echo explain plan select * from t1 where f1 in('a','a','a') and f2='a' and not(f3='a');
+explain plan select * from t1 where f1 in('a','a','a') and f2='a' and not(f3='a');
+echo explain plan select * from t1 where f1 in('a','b','c') and f2 like 'a%' and not(f3='d');
+explain plan select * from t1 where f1 in('a','b','c') and f2 like 'a%' and not(f3='d');
+echo explain plan select * from t1 where f1 in('b','c','a') or f2 like 'a%' or not(f3='d');
+explain plan select * from t1 where f1 in('b','c','a') or f2 like 'a%' or not(f3='d');
+echo explain plan select * from t1 where f1 in('a','c','b') or f2 like 'a%' and not(f3='d');
+explain plan select * from t1 where f1 in('a','c','b') or f2 like 'a%' and not(f3='d');
+

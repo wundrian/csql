@@ -1,0 +1,12 @@
+create table t1(f1 int,f2 int,f3 int,primary key(f1));
+insert into t1 values(98,13,108);
+insert into t1 values(99,14,109);
+insert into t1 values(100,15,109);
+create table t2(f1 int,f2 int,f3 int,primary key(f1));
+insert into t2 values(98,13,108);
+insert into t2 values(99,14,109);
+insert into t2 values(100,15,109);
+create table t3(f1 int,f2 int,f3 int,primary key(f1));
+insert into t3 values(98,13,108);
+insert into t3 values(100,109,109);
+insert into t3 values(102,17,111);

@@ -1,0 +1,18 @@
+echo SELECT * FROM t1 INNER JOIN t2 ON t1.f1 = t2.f1 ORDER BY t1.f1;
+SELECT * FROM t1 INNER JOIN t2 ON t1.f1 = t2.f1 ORDER BY t1.f1;
+echo SELECT t1.f1, t2.f1, t3.f1 FROM t1 INNER JOIN t2 ON t1.f1 = t2.f1 INNER JOIN t3 ON t2.f1 = t3.f1 ORDER BY t1.f1;
+SELECT t1.f1, t2.f1, t3.f1 FROM t1 INNER JOIN t2 ON t1.f1 = t2.f1 INNER JOIN t3 ON t2.f1 = t3.f1 ORDER BY t1.f1;
+echo SELECT * FROM t1 INNER JOIN t2 ON t1.f1 = t2.f1 ORDER BY t1.f1,t2.f1;
+SELECT * FROM t1 INNER JOIN t2 ON t1.f1 = t2.f1 ORDER BY t1.f1,t2.f1;
+echo SELECT t1.f1, t3.f1, t2.f1 FROM t1 INNER JOIN t2 ON t1.f1 = t2.f1 INNER JOIN t3 ON t3.f1 = t1.f1 ORDER BY t1.f1,t3.f1,t2.f1;
+SELECT t1.f1, t3.f1, t2.f1 FROM t1 INNER JOIN t2 ON t1.f1 = t2.f1 INNER JOIN t3 ON t3.f1 = t1.f1 ORDER BY t1.f1,t3.f1,t2.f1;
+echo SELECT t1.f1, t3.f1, t2.f1 FROM t1 INNER JOIN t2 ON t1.f1 = t2.f1 INNER JOIN t3 ON t3.f1 = t1.f1 ORDER BY t1.f1 DESC,t3.f1 DESC,t2.f1 DESC;
+SELECT t1.f1, t3.f1, t2.f1 FROM t1 INNER JOIN t2 ON t1.f1 = t2.f1 INNER JOIN t3 ON t3.f1 = t1.f1 ORDER BY t1.f1 DESC,t3.f1 DESC,t2.f1 DESC;
+echo SELECT t1.f1, t2.f1, t1.f4, t2.f4 FROM t1 INNER JOIN t2 ON t1.f1 < 2 OR t1.f3 < 2.5 ORDER BY t1.f4, t2.f4;
+SELECT t1.f1, t2.f1, t1.f4, t2.f4 FROM t1 INNER JOIN t2 ON t1.f1 < 2 OR t1.f3 < 2.5 ORDER BY t1.f4, t2.f4;
+echo SELECT t1.f1, t2.f1, t1.f4, t2.f4 FROM t1 INNER JOIN t2 ON t1.f1 < 2 OR t1.f3 < 2.5 ORDER BY t1.f1, t1.f4 DESC ;
+SELECT t1.f1, t2.f1, t1.f4, t2.f4 FROM t1 INNER JOIN t2 ON t1.f1 < 2 OR t1.f3 < 2.5 ORDER BY t1.f1, t1.f4 DESC ;
+echo SELECT t1.f1, t2.f4, t2.f1 FROM t1 INNER JOIN t2 ON t1.f1 < 2 OR t2.f1 < 2 ORDER BY t1.f1, t2.f4 ;
+SELECT t1.f1, t2.f4, t2.f1 FROM t1 INNER JOIN t2 ON t1.f1 < 2 OR t2.f1 < 2 ORDER BY t1.f1, t2.f4 ;
+echo SELECT t1.f1, t2.f4, t2.f1 FROM t1 INNER JOIN t2 ON t1.f1 < 2 OR t2.f1 < 2 ORDER BY t1.f1 DESC, t2.f4 ;
+SELECT t1.f1, t2.f4, t2.f1 FROM t1 INNER JOIN t2 ON t1.f1 < 2 OR t2.f1 < 2 ORDER BY t1.f1 DESC, t2.f4 ;

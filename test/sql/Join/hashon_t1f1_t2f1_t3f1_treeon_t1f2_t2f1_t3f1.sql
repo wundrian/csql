@@ -1,0 +1,12 @@
+echo create index idx1 on t1(f1) hash;
+create index idx1 on t1(f1) hash;
+echo create index idx2 on t2(f1) hash;
+create index idx2 on t2(f1) hash;
+echo create index idx3 on t3(f1) hash;
+create index idx3 on t3(f1) hash;
+echo create index idx4 on t1(f2) tree;
+create index idx4 on t1(f2) tree;
+echo create index idx5 on t2(f2) tree;
+create index idx5 on t2(f2) tree;
+echo create index idx6 on t3(f2) tree;
+create index idx6 on t3(f2) tree;

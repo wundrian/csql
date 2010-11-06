@@ -1,0 +1,3 @@
+CREATE TABLE soakTable (f1 SMALLINT , f2 INT  NOT NULL , f3 BIGINT , f4 CHAR (28));
+CREATE INDEX indx on soakTable (  f2  )  TREE  UNIQUE ;
+SET AUTOCOMMIT OFF;

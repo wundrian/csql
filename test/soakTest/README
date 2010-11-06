@@ -1,0 +1,38 @@
+SET the following
+------------------
+Set missing configuration parameters in csql.conf file in this directory.
+
+LOG_FILE=
+DATABASE_FILE
+STDERR_FILE
+TABLE_CONFIG_FILE
+DS_CONFIG_FILE
+
+Make sure that the directory and files created be present before running the server.
+
+Run 
+$ . ./setupenv.ksh
+
+This is a soak test suit where csqlserver will run forever.
+The size of USERDB is 1073741824 bytes. (1GB);
+
+Set kernel.shmmax=1610612736  (1.5GB)
+Table of the following schema should be created in csql and TDB
+
+CREATE TABLE soakTable(f1 smallint, f2 int, f3 bigint, f4 char(28), primary key(f2));
+
+Size of each record will be 64kB.
+The total number of pages = 131068.
+One page will have 127 records.
+Hence there can be (131068 * 127) = 16645636 records in the database.
+
+There will be following processes that will be working on the 't1' table doing vvarious operations.
+
+1. csqlInsert: (SqlApi Script)
+   This process will be inserting a record every 200 ms picking a random integer the value between 1 and 16645636.
+
+2. odbcInsert: (odbc script)
+   This process will be inserting a record every 200 ms picking a random integer between 1 and 100000.
+
+3. jdbcDelete: (jdbc script)
+   This process will delete first record fetched in the table every 200 ms.

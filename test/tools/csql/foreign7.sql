@@ -1,0 +1,47 @@
+echo CREATE TABLE t1(f1 int,f2 int,primary key(f1));
+CREATE TABLE t1(f1 int,f2 int,primary key(f1));
+echo CREATE TABLE t2(f3 int,f4 int,primary key(f3));
+CREATE TABLE t2(f3 int,f4 int,primary key(f3));
+echo CREATE TABLE t3(f5 int,f6 int,foreign key(f5) references t1(f1),foreign key(f6) references t2(f3) );
+CREATE TABLE t3(f5 int,f6 int,foreign key(f5) references t1(f1),foreign key(f6) references t2(f3) );
+
+echo INSERT INTO t1 values(1,10);
+INSERT INTO t1 values(1,10);
+echo INSERT INTO t1 values(2,20);
+INSERT INTO t1 values(2,20);
+
+echo INSERT INTO t2 values(3,30);
+INSERT INTO t2 values(3,30);
+echo INSERT INTO t2 values(4,40);
+INSERT INTO t2 values(4,40);
+
+echo INSERT INTO t3 values(1,3);
+INSERT INTO t3 values(1,3);
+echo INSERT INTO t3 values(1,4);
+INSERT INTO t3 values(1,4);
+echo INSERT INTO t3 values(2,3);
+INSERT INTO t3 values(2,3);
+echo INSERT INTO t3 values(2,4);
+INSERT INTO t3 values(2,4);
+echo INSERT INTO t3 values(2,4);
+INSERT INTO t3 values(2,4);
+echo INSERT INTO t3 values(1,5);
+INSERT INTO t3 values(1,5);
+echo SELECT * FROM t1;
+SELECT * FROM t1;
+echo SELECT * FROM t2;
+SELECT * FROM t2;
+echo SELECT * FROM t3;
+SELECT * FROM t3;
+echo DELETE FROM t3;
+DELETE FROM t3;
+echo DELETE FROM t2;
+DELETE FROM t2;
+echo DELETE FROM t1;
+DELETE FROM t1;
+echo SELECT * FROM t1;
+SELECT * FROM t1;
+echo SELECT * FROM t2;
+SELECT * FROM t2;
+echo SELECT * FROM t3;
+SELECT * FROM t3;

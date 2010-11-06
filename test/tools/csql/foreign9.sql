@@ -1,0 +1,16 @@
+echo CREATE TABLE t1(f1 int,f2 int,primary key(f1));
+CREATE TABLE t1(f1 int,f2 int,primary key(f1));
+echo CREATE TABLE t2(f1 int NOT NULL,f2 int,foreign key(f1) references t1(f1));
+CREATE TABLE t2(f1 int NOT NULL,f2 int,foreign key(f1) references t1(f1));
+echo CREATE INDEX idx1 on t2(f1) Hash Unique;
+CREATE INDEX idx1 on t2(f1) Hash Unique;
+echo INSERT INTO t1 VALUES(1,10);
+INSERT INTO t1 VALUES(1,10);
+echo INSERT INTO t2 VALUES(1,10);
+INSERT INTO t2 VALUES(1,10);
+SELECT * FROM t1;
+SELECT * FROM t2;
+echo INSERT INTO t2 VALUES(1,20);
+INSERT INTO t2 VALUES(1,20);
+SELECT * FROM t1;
+SELECT * FROM t2;

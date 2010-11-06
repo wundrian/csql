@@ -1,0 +1,16 @@
+echo CREATE TABLE writer (poet char(50) , anthology char(40) , copies_in_stock tinyint(4)) ;
+CREATE TABLE writer (poet char(50) , anthology char(40) , copies_in_stock tinyint(4)) ;
+echo INSERT INTO writer VALUES ('Mongane Wally Serote','Tstetlo',3);
+INSERT INTO writer VALUES ('Mongane Wally Serote','Tstetlo',3);
+echo INSERT INTO writer VALUES ('Douglas Livingstone', 'The Skull in the Mud',21);
+INSERT INTO writer VALUES ('Douglas Livingstone', 'The Skull in the Mud',21);
+echo INSERT INTO writer VALUES ('Mongane Wally Serote', 'No Baby Must Weep',8);
+INSERT INTO writer VALUES ('Mongane Wally Serote', 'No Baby Must Weep',8);
+echo INSERT INTO writer VALUES ('Douglas Livingstone', 'A Littoral Zone',2);
+INSERT INTO writer VALUES ('Douglas Livingstone', 'A Littoral Zone',2);
+echo INSERT INTO writer VALUES ('Mongane Wally Serote', 'A Tough Tale',2);
+INSERT INTO writer VALUES ('Mongane Wally Serote', 'A Tough Tale',2);
+echo SELECT * FROM writer;
+SELECT * FROM writer;
+echo SELECT poet, MAX(copies_in_stock) , MIN(copies_in_stock) , AVG(copies_in_stock) , SUM(copies_in_stock)  FROM writer GROUP BY poet;
+SELECT poet, MAX(copies_in_stock) , MIN(copies_in_stock) , AVG(copies_in_stock) , SUM(copies_in_stock)  FROM writer GROUP BY poet;

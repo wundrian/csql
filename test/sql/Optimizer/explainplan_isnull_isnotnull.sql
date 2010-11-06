@@ -1,0 +1,14 @@
+echo create table t1(f1 int, f2 int, f3 varchar(20),f4 date);
+create table t1(f1 int, f2 int, f3 varchar(20),f4 date);
+echo create index idx on t1(f3,f4,f2) hash;
+create index idx on t1(f3,f4,f2) hash;
+echo explain plan select * from t1 where f2 is null;
+explain plan select * from t1 where f2 is null;
+echo explain plan select * from t1 where f2 is not null;
+explain plan select * from t1 where f2 is not null;
+echo explain plan select * from t1 where f2 is null and f3 is not null;
+explain plan select * from t1 where f2 is null and f3 is not null;
+echo explain plan select * from t1 where f1 is null or f2 is not null or f3 is null or f4 is not null;
+explain plan select * from t1 where f1 is null or f2 is not null or f3 is null or f4 is not null;
+echo explain plan select * from t1 where f1 is null and f2 is not null and f3 is null and f4 is not null;
+explain plan select * from t1 where f1 is null and f2 is not null and f3 is null and f4 is not null;

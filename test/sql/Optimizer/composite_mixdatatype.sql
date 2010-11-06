@@ -1,0 +1,18 @@
+echo create table t1 (f1 smallint, f2 int, f3 bigint, f4 varchar, f5 date);
+create table t1 (f1 smallint, f2 int, f3 bigint, f4 varchar, f5 date);
+echo create index compositehashindex on t1(f2,f3,f4,f5) hash;
+create index compositehashindex on t1(f2,f3,f4,f5) hash;
+echo explain plan select * from t1;
+explain plan select * from t1;
+echo explain plan select * from t1 where f2=1 and f3=10 and f4='abc' and f5='2001-01-01';
+explain plan select * from t1 where f2=1 and f3=10 and f4='abc' and f5='2001-01-01';
+echo explain plan select * from t1 where f2=1 and f3=10 and f4='abc' and f5='2001-01-01';
+explain plan select * from t1 where f2=1 and f3=10 and f4='abc' and f5='2001-01-01';
+echo explain plan select * from t1 where f2<=10 and f3>=10 and f4 like 'abc%' and f5 in ('2001-01-01','2001-03-03');
+explain plan select * from t1 where f2<=10 and f3>=10 and f4 like 'abc%' and f5 in ('2001-01-01','2001-03-03');
+echo explain plan select * from t1 where f2<=10 and f3>=10 and f4 like 'abc%' and f5 in ('2001-01-01','2001-03-03');
+explain plan select * from t1 where f2<=10 and f3>=10 and f4 like 'abc%' and f5 in ('2001-01-01','2001-03-03');
+echo explain plan select * from t1 where f2<=10 or f3>=10 or f4 like 'abc%' or f5 in ('2001-01-01','2001-03-03');
+explain plan select * from t1 where f2<=10 or f3>=10 or f4 like 'abc%' or f5 in ('2001-01-01','2001-03-03');
+echo explain plan select * from t1 where f2<=10 or f3>=10 or f4 like 'abc%' or f5 in ('2001-01-01','2001-03-03');
+explain plan select * from t1 where f2<=10 or f3>=10 or f4 like 'abc%' or f5 in ('2001-01-01','2001-03-03');

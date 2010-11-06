@@ -1,0 +1,30 @@
+1.create a table 
+  Insert 10 records
+  test limit and offset conditionally
+  test limit and offset field wise applying condition.
+  test limit and offset field wise on multiple conditions using or,and.
+  test limit and offset field wise on in operator.
+  test limit and offset field wise on between operator.
+  test limit and offset field wise on like operator.
+
+2.create three tables emp,dept and loc
+  Join the three tables in different combination apply limit on them.
+
+3. Create emp table with id int,name char(20),job char(10),salary double,doj date, deptno int,mgrno int
+a) Apply self join and limit on emp.
+
+4. create table t1, t2 , t3 
+   take 5-6 field in each
+   Apply join on aggregate fields the apply limit on them.
+
+4. create table t1, t2 , t3 
+   take 5-6 field in each
+   Apply join on aggregate fields the apply limit on them.
+
+4. create table t1, t2 , t3 
+   take 5-6 field in each
+   Apply join on aggregate fields the apply limit on them.
+
+5. new case wwill be written according to Ivan Bayross page-426 no:2(d),(e)  (by Nihar)
+ 
+   

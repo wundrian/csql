@@ -1,0 +1,21 @@
+create table t1(f1 int,f2 int);
+insert into t1 values(12,23);
+insert into t1 values(13,24);
+insert into t1 values(14,25);
+insert into t1 values(15,26);
+insert into t1 values(NULL,27);
+insert into t1 values(NULL,28);
+insert into t1 values(16,29);
+insert into t1 values(12,NULL);
+insert into t1 values(17,NULL);
+insert into t1 values(NULL,31);
+insert into t1 values(12,32);
+select * from t1;
+select * from t1 where f1 is null;
+select * from t1 where f1 is not null;
+select * from t1 where f2 is null;
+select * from t1 where f2 is not null;
+select * from t1 where f1 is null or f2 is not null;
+select * from t1 where f2 is null or f1 is not null;
+drop table t1;
+

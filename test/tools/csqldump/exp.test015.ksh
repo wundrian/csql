@@ -1,0 +1,3 @@
+CREATE TABLE t1 (f1 CHAR (4) NOT NULL , f2 INT );
+CREATE INDEX t1_idx1_Primary on t1 (  f1  )  HASH  UNIQUE;
+CREATE TABLE t2 (f1 CHAR (4), f2 INT , FOREIGN KEY ( f1 ) REFERENCES t1 ( f1 ));

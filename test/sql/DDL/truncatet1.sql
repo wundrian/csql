@@ -1,0 +1,11 @@
+echo create table t1(f1 bigint, f2 int, f3 smallint, f4 tinyint, f5 char(10), f6 varchar(10), f7 float,f8 double, f9 time, f10 date, f11 timestamp);
+create table t1(f1 bigint, f2 int, f3 smallint, f4 tinyint, f5 char(10), f6 varchar(10), f7 float,f8 double, f9 time, f10 date, f11 timestamp);
+insert into t1 values(1001,101,11,1,'CSQL1','Lakshya1',2010,05012010,'10:00:00','2010-01-05','2010-01-05 10:00:00');
+insert into t1 values(1002,102,12,2,'CSQL2','Lakshya2',2010,05012010,'10:00:00','2010-02-05','2010-02-05 10:00:00');
+insert into t1 values(1003,103,13,3,'CSQL3','Lakshya3',2010,05012010,'10:00:00','2010-03-05','2010-03-05 10:00:00');
+echo select * from t1;
+select * from t1;
+echo truncate table t1;
+truncate table t1;
+echo select * from t1;
+select * from t1;

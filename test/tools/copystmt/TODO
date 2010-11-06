@@ -1,0 +1,5 @@
+1. Create table t1 with 3 fields.
+insert some records with null vaues.
+use copy statement to create a table from t1 .
+check the schema of new table.
+
