@@ -1,0 +1,15 @@
+This module runs SQLGwTest cases for with and without parameterized statements.
+
+All the ksh scripts first create the table in target database.
+The table so created is cached into the csql database cache.
+The binary executable is run under this script corresponding to the script.
+once executable is run the results are compared with the expected file.
+The cached table is unloaded.
+
+VALGRIND can also be run on each of the executable for LEAK Checks by setting
+an environmental variable VALGRIND to true and run the script.
+
+$ export VALGRIND=true
+$ testXXX.ksh
+
+An output file testXXX.ksh.valgr is created for leak reference.
