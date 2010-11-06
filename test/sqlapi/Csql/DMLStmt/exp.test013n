@@ -1,0 +1,15 @@
+Connection opened
+CREATE TABLE t1(f1 TINYINT,f2 SMALLINT,f3 INT AUTO_INCREMENT,f4 BIGINT);
+Table Name is t1
+INSERT INTO t1 VALUES(1, 10, 100, 1000);
+INSERT INTO t1 VALUES(1, 10, NULL, 1000);
+INSERT INTO t1 VALUES(1, 10, 200, 1000);
+INSERT INTO t1 VALUES(1, 10, 150, 1000);
+INSERT INTO t1 VALUES(1, 10, 100, 1000);
+f1(tinyint)=1 | f2(smallint)=10 | f3(int)=100 | f4(bigint)=1000 | 
+f1(tinyint)=1 | f2(smallint)=10 | f3(int)=101 | f4(bigint)=1000 | 
+f1(tinyint)=1 | f2(smallint)=10 | f3(int)=200 | f4(bigint)=1000 | 
+f1(tinyint)=1 | f2(smallint)=10 | f3(int)=150 | f4(bigint)=1000 | 
+4 rows selected
+Table dropped
+Connection Closed

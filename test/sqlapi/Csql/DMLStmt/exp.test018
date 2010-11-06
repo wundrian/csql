@@ -1,0 +1,18 @@
+Connection opened
+CREATE TABLE t1(f1 TINYINT,f2 SMALLINT,f3 INT,f4 BIGINT,f5 CHAR(20),f6 FLOAT,f7 DOUBLE,f8 DATE,f9 TIME,f10 TIMESTAMP);
+create index idxbigint on t1(f4) unique;
+Table Name is t1
+INSERT INTO t1 VALUES(1,11,111,1111,'CSQL1',11.11,1111.11,'2001-01-01','01:01:01','2001-01-01 01:01:01');
+INSERT INTO t1 VALUES(2,22,222,2222,'CSQL2',22.22,2222.22,'2002-02-02','02:02:02','2002-02-02 02:02:02');
+INSERT INTO t1 VALUES(2,22,333,2222,'CSQL2',22.22,2222.22,'2002-02-02','02:02:02','2002-02-02 02:02:02');
+Insertion of duplicate record failed
+f1(tinyint)=1 | f2(smallint)=11 | f3(int)=111 | f4(bigint)=1111 | f5(char)=CSQL1 | f6(float)=11.110000 | f7(double)=1111.110000 | f8(date)=2001-01-01 | f9(time)=01:01:01 | f10(timestamp)=2001-1-1 1:1:1 | 
+f1(tinyint)=2 | f2(smallint)=22 | f3(int)=222 | f4(bigint)=2222 | f5(char)=CSQL2 | f6(float)=22.219999 | f7(double)=2222.220000 | f8(date)=2002-02-02 | f9(time)=02:02:02 | f10(timestamp)=2002-2-2 2:2:2 | 
+2 rows selected
+UPDATE t1 SET f4=1111 WHERE f4=2222;
+Update Failed due to unique key can not be updated
+f1(tinyint)=1 | f2(smallint)=11 | f3(int)=111 | f4(bigint)=1111 | f5(char)=CSQL1 | f6(float)=11.110000 | f7(double)=1111.110000 | f8(date)=2001-01-01 | f9(time)=01:01:01 | f10(timestamp)=2001-1-1 1:1:1 | 
+f1(tinyint)=2 | f2(smallint)=22 | f3(int)=222 | f4(bigint)=2222 | f5(char)=CSQL2 | f6(float)=22.219999 | f7(double)=2222.220000 | f8(date)=2002-02-02 | f9(time)=02:02:02 | f10(timestamp)=2002-2-2 2:2:2 | 
+2 rows selected
+Table t1 dropped
+Connection Closed

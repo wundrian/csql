@@ -1,0 +1,18 @@
+Connection opened
+CREATE TABLE t1(f1 TINYINT DEFAULT 1,f2 SMALLINT DEFAULT 11,f3 INT DEFAULT 111,f4 BIGINT DEFAULT 1111,f5 CHAR(20) DEFAULT 'CSQL1',f6 VARCHAR(30) DEFAULT 'Lakshya1',f7 FLOAT DEFAULT 11.11,f8 DOUBLE DEFAULT 1111.11,f9 DATE DEFAULT '2001-01-01',f10 TIME DEFAULT '01:01:01',f11 TIMESTAMP DEFAULT '2001-01-01 01:01:01');
+Table Name is t1
+INSERT INTO t1(f1) VALUES(1);
+INSERT INTO t1 VALUES(2,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
+INSERT INTO t1 VALUES(NULL,33,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
+f1(tinyint)=1 | f2(smallint)=11 | f3(int)=111 | f4(bigint)=1111 | f5(char)= | f6(varchar)=Lakshya1 | f7(float)=11.110000 | f8(double)=1111.110000 | f9(date)=2001-01-01 | f10(time)=01:01:01 | f11(timestamp)=2001-1-1 1:1:1 | 
+f1(tinyint)=2 | f2(smallint)=NULL | f3(int)=NULL | f4(bigint)=NULL | f5(char)=NULL | f6(varchar)=NULL | f7(float)=NULL | f8(double)=NULL | f9(date)=NULL | f10(time)=NULL | f11(timestamp)=NULL | 
+f1(tinyint)=1 | f2(smallint)=NULL | f3(int)=NULL | f4(bigint)=NULL | f5(char)=NULL | f6(varchar)=NULL | f7(float)=NULL | f8(double)=NULL | f9(date)=NULL | f10(time)=NULL | f11(timestamp)=NULL | 
+3 rows selected
+Prepared
+Executed
+f1(tinyint)=NULL | f2(smallint)=NULL | f3(int)=NULL | f4(bigint)=NULL | f5(char)=NULL | f6(varchar)=NULL | f7(float)=NULL | f8(double)=NULL | f9(date)=NULL | f10(time)=NULL | f11(timestamp)=NULL | 
+f1(tinyint)=2 | f2(smallint)=NULL | f3(int)=NULL | f4(bigint)=NULL | f5(char)=NULL | f6(varchar)=NULL | f7(float)=NULL | f8(double)=NULL | f9(date)=NULL | f10(time)=NULL | f11(timestamp)=NULL | 
+f1(tinyint)=NULL | f2(smallint)=NULL | f3(int)=NULL | f4(bigint)=NULL | f5(char)=NULL | f6(varchar)=NULL | f7(float)=NULL | f8(double)=NULL | f9(date)=NULL | f10(time)=NULL | f11(timestamp)=NULL | 
+3 rows selected
+Table dropped
+Connection Closed

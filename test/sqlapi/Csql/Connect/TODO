@@ -1,0 +1,26 @@
+* 1. connect ,disconnect and again connect, it should pass. (conntest1.c)  -> (conntest1.c)
+
+2. Pass correct username and  incorrect  password ,it should fail.(conntest9.c) 
+   Pass incorrect user name and password ,it should fail.(conntest8.c)
+   Pass correct user name and password ,it should pass. (conntest7.c)    -> (userauthentication.c)
+
+3. connect twice without closing the connection.
+   second conection should return "user already logged in". (conntest6.c) ->(connecttwicewithoutclose.c)
+
+4. closing the connection twice with single connect.
+   second close should return "User not logged in". (new case.)           -> (closetwicewithoutconnect.c)
+
+5. close the connection and call prepare ,it should fail. (conntest3.c)   -> (prepareafterclose.c)
+
+6. close the connection and call execute,it should fail. (conntest4.c)    -> (executeafterclose.c)
+
+7. create table T1 ,Insert some records in it.
+   Close the connection Fetch should fail. (conntest5.c )   		   -> (fetchafterclose.c)
+
+8. close the connection and call commit, it should fail. (conntest2.c)
+   close the connection and call rollback, it should fail. (conntest2.c to be modified for rollback)
+                                                                          -> (transactionafterclose.c)
+
+9. Connect and dissconnect 5000 times. it should pass.(new case. follow jdbc/Con/ConnTest2.java)
+									   -> (connect5000times.c)
+

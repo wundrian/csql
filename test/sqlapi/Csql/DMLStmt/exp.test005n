@@ -1,0 +1,25 @@
+Connection opened
+CREATE TABLE t1(f1 TINYINT,f2 SMALLINT,f3 INT,f4 BIGINT,f5 CHAR(20),f6 VARCHAR(30),f7 FLOAT,f8 DOUBLE,f9 DATE,f10 TIME,f11 TIMESTAMP);
+Table Name is t1
+INSERT INTO t1 VALUES(1,11,111,1111,'CSQL1','LAKSHYA1',11.00,1111.00,'2001-01-01','01:01:01','2001-01-01 01:01:01');
+INSERT INTO t1 VALUES(2,22,222,2222,'CSQL2','LAKSHYA2',22.00,2222.00,'2002-02-02','02:02:02','2002-02-02 02:02:02');
+INSERT INTO t1 VALUES(3,33,333,3333,'CSQL3','LAKSHYA3',33.00,3333.00,'2003-03-03','03:03:03','2003-03-03 03:03:03');
+INSERT INTO t1 VALUES(4,44,444,4444,'CSQL4','LAKSHYA4',44.00,4444.00,'2004-04-04','04:04:04','2004-04-04 04:04:04');
+INSERT INTO t1 VALUES(5,55,555,5555,'CSQL5','LAKSHYA5',55.00,5555.00,'2005-05-05','05:05:05','2005-05-05 05:05:05');
+f1(tinyint)=1 | f2(smallint)=11 | f3(int)=111 | f4(bigint)=1111 | f5(char)= | f6(varchar)=LAKSHYA1 | f7(float)=11.000000 | f8(double)=1111.000000 | f9(date)=2001-01-01 | f10(time)=01:01:01 | f11(timestamp)=2001-1-1 1:1:1 | 
+f1(tinyint)=2 | f2(smallint)=22 | f3(int)=222 | f4(bigint)=2222 | f5(char)= | f6(varchar)=LAKSHYA2 | f7(float)=22.000000 | f8(double)=2222.000000 | f9(date)=2002-02-02 | f10(time)=02:02:02 | f11(timestamp)=2002-2-2 2:2:2 | 
+f1(tinyint)=3 | f2(smallint)=33 | f3(int)=333 | f4(bigint)=3333 | f5(char)= | f6(varchar)=LAKSHYA3 | f7(float)=33.000000 | f8(double)=3333.000000 | f9(date)=2003-03-03 | f10(time)=03:03:03 | f11(timestamp)=2003-3-3 3:3:3 | 
+f1(tinyint)=4 | f2(smallint)=44 | f3(int)=444 | f4(bigint)=4444 | f5(char)= | f6(varchar)=LAKSHYA4 | f7(float)=44.000000 | f8(double)=4444.000000 | f9(date)=2004-04-04 | f10(time)=04:04:04 | f11(timestamp)=2004-4-4 4:4:4 | 
+f1(tinyint)=5 | f2(smallint)=55 | f3(int)=555 | f4(bigint)=5555 | f5(char)= | f6(varchar)=LAKSHYA5 | f7(float)=55.000000 | f8(double)=5555.000000 | f9(date)=2005-05-05 | f10(time)=05:05:05 | f11(timestamp)=2005-5-5 5:5:5 | 
+5 rows selected
+UPDATE t1 SET f1=f1+10, f2=f2+100, f3=f3+1000, f4=f4+10000, f5='CSQLMMDB1', f6='LAKSHYA_BANGALORE1', f7=f7+100, f8=f8+10000,f9='2001-01-11', f10='01:01:11', f11='2001-01-11 01:01:11' WHERE f1 in (20,1,30) and (f2 between 10 and 12) and f3 in (110,111) and (f4 between 1000 and 1112);
+UPDATE t1 SET f1=f1+40, f2=f2+400, f3=f3+4000, f4=f4+40000, f5='CSQLMMDB4', f6='LAKSHYA_BANGALORE4', f7=f7+400, f8=f8+40000,f9='2004-04-14', f10='04:04:14', f11='2004-04-14 04:04:14' WHERE f3<=3333 and f6<='LAKSHYA6' and not(f3 = 3333 or f3 = 555) and (f6 = 'LAKSHYA4' or f6='LAKSHYA_BANGALORE3') or f9 in ('2004/4/4','2002-02-02','2001-01-01');
+UPDATE t1 SET f1=f1+50, f2=f2+500, f3=f3+5000, f4=f4+50000, f5='CSQLMMDB5', f6='LAKSHYA_BANGALORE5', f7=f7+500, f8=f8+50000,f9='2005-05-15', f10='05:05:15', f11='2005-05-15 05:05:15' WHERE (f1=5 and f2=55 and f3=555 and f4=5555 and f5='CSQL5' and f6 like 'LAKSHYA_' and f7=55 and f8=5555 and f9='2005/05/05' and f10 in ('05:05:05')) or f11 in ('2005/05/05 05:05:05','2004-04-14 04:04:14');
+f1(tinyint)=11 | f2(smallint)=111 | f3(int)=1111 | f4(bigint)=11111 | f5(char)=CSQLMMDB1 | f6(varchar)=LAKSHYA_BANGALORE1 | f7(float)=111.000000 | f8(double)=11111.000000 | f9(date)=2001-01-11 | f10(time)=01:01:11 | f11(timestamp)=2001-1-11 1:1:11 |
+f1(tinyint)=92 | f2(smallint)=922 | f3(int)=9222 | f4(bigint)=92222 | f5(char)=CSQLMMDB5 | f6(varchar)=LAKSHYA_BANGALORE5 | f7(float)=922.000000 | f8(double)=92222.000000 | f9(date)=2005-05-15 | f10(time)=05:05:15 | f11(timestamp)=2005-5-15 5:5:15 |
+f1(tinyint)=3 | f2(smallint)=33 | f3(int)=333 | f4(bigint)=3333 | f5(char)=CSQL3 | f6(varchar)=LAKSHYA3 | f7(float)=33.000000 | f8(double)=3333.000000 | f9(date)=2003-03-3 | f10(time)=03:03:3 | f11(timestamp)=2003-3-13 3:3:3 |
+f1(tinyint)=94 | f2(smallint)=944 | f3(int)=9444 | f4(bigint)=94444 | f5(char)=CSQLMMDB5 | f6(varchar)=LAKSHYA_BANGALORE5 | f7(float)=944.000000 | f8(double)=94444.000000 | f9(date)=2005-05-15 | f10(time)=05:05:15 | f11(timestamp)=2005-5-15 5:5:15 |
+f1(tinyint)=55 | f2(smallint)=555 | f3(int)=5555 | f4(bigint)=55555 | f5(char)=CSQLMMDB5 | f6(varchar)=LAKSHYA_BANGALORE5 | f7(float)=555.000000 | f8(double)=55555.000000 | f9(date)=2005-05-15 | f10(time)=05:05:15 | f11(timestamp)=2005-5-15 5:5:15 |
+5 rows selected
+Table dropped
+Connection Closed

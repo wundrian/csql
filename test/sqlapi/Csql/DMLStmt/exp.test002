@@ -1,0 +1,12 @@
+Connection opened
+CREATE TABLE t1(f1 TINYINT,f2 SMALLINT,f3 INT,f4 BIGINT,f5 CHAR(20),f6 VARCHAR(30),f7 FLOAT,f8 DOUBLE,f9 DATE,f10 TIME,f11 TIMESTAMP);
+Table Name is t1
+INSERT INTO t1 VALUES(1,11,111,1111,'CSQL1','LAKSHYA1',11.11,1111.11,'2001-01-01','01:01:01','2001-01-01 01:01:01');
+INSERT INTO t1 (f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11) VALUES(2,22,222,2222,'CSQL2','LAKSHYA2',22.22,2222.22,'2002-02-02','02:02:02','2002-02-02 02:02:02');
+INSERT INTO t1 (f1,f2,f3,f4,f5,f6,f7,f8,f9,f10) VALUES(3,33,333,3333,'CSQL3','LAKSHYA3',33.33,3333.33,'2003-03-03','03:03:03');
+f1(tinyint)=1 | f2(smallint)=11 | f3(int)=111 | f4(bigint)=1111 | f5(char)=CSQL1 | f6(varchar)=LAKSHYA1 | f7(float)=11.110000 | f8(double)=1111.110000 | f9(date)=2001-01-01 | f10(time)=01:01:01 | f11(timestamp)=2001-1-1 1:1:1 | 
+f1(tinyint)=2 | f2(smallint)=22 | f3(int)=222 | f4(bigint)=2222 | f5(char)=CSQL2 | f6(varchar)=LAKSHYA2 | f7(float)=22.219999 | f8(double)=2222.220000 | f9(date)=2002-02-02 | f10(time)=02:02:02 | f11(timestamp)=2002-2-2 2:2:2 | 
+f1(tinyint)=3 | f2(smallint)=33 | f3(int)=333 | f4(bigint)=3333 | f5(char)=CSQL3 | f6(varchar)=LAKSHYA3 | f7(float)=33.330002 | f8(double)=3333.330000 | f9(date)=2003-03-03 | f10(time)=03:03:03 | f11(timestamp)=NULL | 
+3 rows selected
+Table dropped
+Connection Closed

@@ -1,0 +1,44 @@
+Connection opened
+Pkey table pkeyTINY can not be dropped withouting dropping Fkey Table fkeyTINY
+Pkey table pkeySMALL can not be dropped withouting dropping Fkey Table fkeySMALL
+Pkey table pkeyINT can not be dropped withouting dropping Fkey Table fkeyINT
+Pkey table pkeyBIG can not be dropped withouting dropping Fkey Table fkeyBIG
+Pkey table pkeyCHAR can not be dropped withouting dropping Fkey Table fkeyCHAR
+Pkey table pkeyVARCHAR can not be dropped withouting dropping Fkey Table fkeyVARCHAR
+Pkey table pkeyDATE can not be dropped withouting dropping Fkey Table fkeyDATE
+Pkey table pkeyTIME can not be dropped withouting dropping Fkey Table fkeyTIME
+	 TABLES
+	--------
+	pkeyTINY
+	fkeyTINY
+	pkeySMALL
+	fkeySMALL
+	pkeyINT
+	fkeyINT
+	pkeyBIG
+	fkeyBIG
+	pkeyCHAR
+	fkeyCHAR
+	pkeyVARCHAR
+	fkeyVARCHAR
+	pkeyDATE
+	fkeyDATE
+	pkeyTIME
+	fkeyTIME
+fkeyTINY Table Dropped
+pkeyTINY Table Dropped
+fkeySMALL Table Dropped
+pkeySMALL Table Dropped
+fkeyINT Table Dropped
+pkeyINT Table Dropped
+fkeyBIG Table Dropped
+pkeyBIG Table Dropped
+fkeyCHAR Table Dropped
+pkeyCHAR Table Dropped
+fkeyVARCHAR Table Dropped
+pkeyVARCHAR Table Dropped
+fkeyDATE Table Dropped
+pkeyDATE Table Dropped
+fkeyTIME Table Dropped
+pkeyTIME Table Dropped
+Connection Closed

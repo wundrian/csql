@@ -1,0 +1,30 @@
+Connection opened
+CREATE TABLE t1(f1 INT,f2 BIGINT,f3 DOUBLE,f4 DATE);
+Table Name is t1
+INSERT INTO t1 VALUES(100,100,100,'2009-11-23');
+INSERT INTO t1 VALUES(200,200,200,'2009-11-25');
+INSERT INTO t1 VALUES(100,300,300,'2009-11-27');
+INSERT INTO t1 VALUES(200,400,400,'2009-11-29');
+INSERT INTO t1 VALUES(300,500,500,'2009-12-01');
+SELECT * FROM t1;
+f1(int)=100 | f2(bigint)=100 | f3(double)=100.000000 | f4(date)=2009-11-23 | 
+f1(int)=200 | f2(bigint)=200 | f3(double)=200.000000 | f4(date)=2009-11-25 | 
+f1(int)=100 | f2(bigint)=300 | f3(double)=300.000000 | f4(date)=2009-11-27 | 
+f1(int)=200 | f2(bigint)=400 | f3(double)=400.000000 | f4(date)=2009-11-29 | 
+f1(int)=300 | f2(bigint)=500 | f3(double)=500.000000 | f4(date)=2009-12-1 | 
+5 rows selected
+select count(f4) from t1 = 5
+
+select f1, sum(f2), avg(f3), max(f4) from t1 group by f1;
+f1=100 | sum(f2)=400 | avg(f3)=200.000000 | max(f4)=2009-11-27 | 
+f1=200 | sum(f2)=600 | avg(f3)=300.000000 | max(f4)=2009-11-29 | 
+f1=300 | sum(f2)=500 | avg(f3)=500.000000 | max(f4)=2009-12-1 | 
+
+select f1, sum(f2), avg(f3), max(f4) from t1 group by f1 having max(f4)>'2009/11/29';
+f1=300 | sum(f2)=500 | avg(f3)=500.000000 | max(f4)=2009-12-1 | 
+
+select f1, sum(f2), avg(f3), max(f4) from t1 group by f1 having (max(f4) >'2009/11/26' and max(f4) < '2009-11-28') or avg(f3) > 400;
+f1=100 | sum(f2)=400 | avg(f3)=200.000000 | max(f4)=2009-11-27 | 
+f1=300 | sum(f2)=500 | avg(f3)=500.000000 | max(f4)=2009-12-1 | 
+Table dropped
+Connection Closed

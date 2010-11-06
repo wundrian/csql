@@ -1,0 +1,26 @@
+* 1.Creating table using all Datatypes.
+ Create table t1 with all datatypes(TINYINT,SMALLINT,INT,BIGINT,CHAR,VARCHAR,FLOAT,DOUBLE,DATE,TIME,TIMESTAMP).
+ It should pass. (createtablewithalldatatype.c)
+
+* 2. Default value testing with all datatypes.(TINYINT,SMALLINT,INT,BIGINT,CHAR,VARCHAR,FLOAT,DOUBLE,DATE,TIME,TIMESTAMP))
+   Insert a record say (insert into t1 (f1) values(1); It should insert default values in all other fields.
+   Insert null values in all the fields , it should accept null values.
+   Update all the inserted default field values to null. it should update. (defaultwithalldatatype.c)
+
+* 3. NOT NULL Constraint Testing with all datatypes. Try to put null values in Not Null fields,it should not be allowed. (notnullonalldatatype.c)
+
+* 4. Primary key(t1) and foreign key(t2) testing.
+   try to drop t1 . it should fail.
+
+* 5. Autoincrement key should not be allowed for the datatypes other than all int types.
+
+* 6. CopyStatement Testing.(field level and table level).
+
+* 7. Create Hash indexes on the fields which are (TINYINT,SMALLINT,INT,BIGINT,CHAR,VARCHAR,DATE,TIME).
+
+* 8. Create Tree indexes on all datatypes(TINYINT,SMALLINT,INT,BIGINT,CHAR,VARCHAR,FLOAT,DOUBLE,DATE,TIME,TIMESTAMP).
+
+* 9. Create composite hash indexes in different combinations taking datatypes like (TINYINT,SMALLINT,INT,BIGINT,CHAR,VARCHAR,DATE,TIME).
+
+* 10.Char and varchar field length should not be more than 8000 bytes. 
+exp file needs to be created

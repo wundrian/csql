@@ -1,0 +1,19 @@
+Connection opened
+Auto_increment can not be applied on char datatype
+Auto_increment can not be applied on varchar datatype
+Auto_increment can not be applied on float datatype
+Auto_increment can not be applied on double datatype
+Auto_increment can not be applied on date datatype
+Auto_increment can not be applied on time datatype
+Auto_increment can not be applied on timestamp datatype
+	 TABLES
+	--------
+	AUTOINCTINY
+	AUTOINCSMALL
+	AUTOINCINT
+	AUTOINCBIG
+AUTOINCTINY Table Dropped
+AUTOINCSMALL Table Dropped
+AUTOINCINT Table Dropped
+AUTOINCBIG Table Dropped
+Connection Closed

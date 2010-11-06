@@ -1,0 +1,14 @@
+Connection opened
+Table MASTER Created
+Table COPYMASTER Created
+Table COPYMASTER_FIELDLEVEL Created
+Table COPYMASTER_DUPLICATEFIELD can not be Created because of duplicate fields
+	 TABLES
+	--------
+	MASTER
+	COPYMASTER
+	COPYMASTER_FIELDLEVEL
+MASTER Table Dropped
+COPYMASTER Table Dropped
+COPYMASTER_FIELDLEVEL Table Dropped
+Connection Closed

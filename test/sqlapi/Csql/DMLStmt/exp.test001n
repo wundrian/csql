@@ -1,0 +1,28 @@
+Connection opened
+CREATE TABLE t1(f1 TINYINT,f2 SMALLINT,f3 INT,f4 BIGINT,f5 CHAR(20),f6 VARCHAR(30),f7 FLOAT,f8 DOUBLE,f9 DATE,f10 TIME,f11 TIMESTAMP);
+Table Name is t1
+INSERT INTO t1 VALUES(1,11,111,1111,'CSQL1','LAKSHYA1',11.11,1111.11,'2001-01-01','01:01:01','2001-01-01 01:01:01');
+INSERT INTO t1 VALUES(2,22,222,2222,'CSQL2','LAKSHYA2',22.22,2222.22,'2002-02-02','02:02:02','2002-02-02 02:02:02');
+INSERT INTO t1 VALUES(3,33,333,3333,'CSQL3','LAKSHYA3',33.33,3333.33,'2003-03-03','03:03:03','2003-03-03 03:03:03');
+INSERT INTO t1 VALUES(4,44,444,4444,'CSQL4','LAKSHYA4',44.44,4444.44,'2004-04-04','04:04:04','2004-04-04 04:04:04');
+INSERT INTO t1 VALUES(5,55,555,5555,'CSQL5','LAKSHYA5',55.55,5555.55,'2005-05-05','05:05:05','2005-05-05 05:05:05');
+f1(tinyint)=1 | f2(smallint)=11 | f3(int)=111 | f4(bigint)=1111 | f5(char)= | f6(varchar)=LAKSHYA1 | f7(float)=11.110000 | f8(double)=1111.110000 | f9(date)=2001-01-01 | f10(time)=01:01:01 | f11(timestamp)=2001-1-1 1:1:1 | 
+f1(tinyint)=2 | f2(smallint)=22 | f3(int)=222 | f4(bigint)=2222 | f5(char)= | f6(varchar)=LAKSHYA2 | f7(float)=22.219999 | f8(double)=2222.220000 | f9(date)=2002-02-02 | f10(time)=02:02:02 | f11(timestamp)=2002-2-2 2:2:2 | 
+f1(tinyint)=3 | f2(smallint)=33 | f3(int)=333 | f4(bigint)=3333 | f5(char)= | f6(varchar)=LAKSHYA3 | f7(float)=33.330002 | f8(double)=3333.330000 | f9(date)=2003-03-03 | f10(time)=03:03:03 | f11(timestamp)=2003-3-3 3:3:3 | 
+f1(tinyint)=4 | f2(smallint)=44 | f3(int)=444 | f4(bigint)=4444 | f5(char)= | f6(varchar)=LAKSHYA4 | f7(float)=44.439999 | f8(double)=4444.440000 | f9(date)=2004-04-04 | f10(time)=04:04:04 | f11(timestamp)=2004-4-4 4:4:4 | 
+f1(tinyint)=5 | f2(smallint)=55 | f3(int)=555 | f4(bigint)=5555 | f5(char)= | f6(varchar)=LAKSHYA5 | f7(float)=55.549999 | f8(double)=5555.550000 | f9(date)=2005-05-05 | f10(time)=05:05:05 | f11(timestamp)=2005-5-5 5:5:5 | 
+5 rows selected
+UPDATE t1 SET f1=f1+10, f2=f2+100, f3=f3+1000, f4=f4+10000, f5='CSQLMMDB', f6='LAKSHYA_BANGALORE', f7=f7+100, f8=f8+10000,f9='2009-11-20', f10='12:01:01', f11='2009-11-20 12:01:01' WHERE f1<=3;
+f1(tinyint)=11 | f2(smallint)=111 | f3(int)=1111 | f4(bigint)=11111 | f5(char)= | f6(varchar)=LAKSHYA_BANGALORE | f7(float)=111.110001 | f8(double)=11111.110000 | f9(date)=2009-11-20 | f10(time)=12:01:01 | f11(timestamp)=2009-11-20 12:1:1 | 
+f1(tinyint)=12 | f2(smallint)=122 | f3(int)=1222 | f4(bigint)=12222 | f5(char)= | f6(varchar)=LAKSHYA_BANGALORE | f7(float)=122.220001 | f8(double)=12222.220000 | f9(date)=2009-11-20 | f10(time)=12:01:01 | f11(timestamp)=2009-11-20 12:1:1 | 
+f1(tinyint)=13 | f2(smallint)=133 | f3(int)=1333 | f4(bigint)=13333 | f5(char)= | f6(varchar)=LAKSHYA_BANGALORE | f7(float)=133.330002 | f8(double)=13333.330000 | f9(date)=2009-11-20 | f10(time)=12:01:01 | f11(timestamp)=2009-11-20 12:1:1 | 
+f1(tinyint)=4 | f2(smallint)=44 | f3(int)=444 | f4(bigint)=4444 | f5(char)= | f6(varchar)=LAKSHYA4 | f7(float)=44.439999 | f8(double)=4444.440000 | f9(date)=2004-04-04 | f10(time)=04:04:04 | f11(timestamp)=2004-4-4 4:4:4 | 
+f1(tinyint)=5 | f2(smallint)=55 | f3(int)=555 | f4(bigint)=5555 | f5(char)= | f6(varchar)=LAKSHYA5 | f7(float)=55.549999 | f8(double)=5555.550000 | f9(date)=2005-05-05 | f10(time)=05:05:05 | f11(timestamp)=2005-5-5 5:5:5 | 
+5 rows selected
+DELETE FROM t1 WHERE f1=12 OR f1=4;
+f1(tinyint)=11 | f2(smallint)=111 | f3(int)=1111 | f4(bigint)=11111 | f5(char)= | f6(varchar)=LAKSHYA_BANGALORE | f7(float)=111.110001 | f8(double)=11111.110000 | f9(date)=2009-11-20 | f10(time)=12:01:01 | f11(timestamp)=2009-11-20 12:1:1 | 
+f1(tinyint)=13 | f2(smallint)=133 | f3(int)=1333 | f4(bigint)=13333 | f5(char)= | f6(varchar)=LAKSHYA_BANGALORE | f7(float)=133.330002 | f8(double)=13333.330000 | f9(date)=2009-11-20 | f10(time)=12:01:01 | f11(timestamp)=2009-11-20 12:1:1 | 
+f1(tinyint)=5 | f2(smallint)=55 | f3(int)=555 | f4(bigint)=5555 | f5(char)= | f6(varchar)=LAKSHYA5 | f7(float)=55.549999 | f8(double)=5555.550000 | f9(date)=2005-05-05 | f10(time)=05:05:05 | f11(timestamp)=2005-5-5 5:5:5 | 
+3 rows selected
+Table dropped
+Connection Closed

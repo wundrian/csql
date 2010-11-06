@@ -1,0 +1,27 @@
+1. Default autocommit mode.
+   create table with all datatypes.
+   Insert 5 records .
+   Rollback the transaction.
+   Records should not be rolled back
+   update records
+   Records should not be rolled back
+   delete records 
+   Records should not be rolled back
+
+2. Autocommit mode off
+   create table with all datatypes.
+   Insert 5 records .
+   Commit the transaction.
+   Rollback after commit should not have any effect.
+   update records 
+   Rollback the transaction
+   Transaction should be rolled back
+   update records 
+   insert some records
+   delete some records.
+   All the 3 transactions should be rolled back with rollback statement.
+   update records
+   insert some records
+   delete some records.
+   All the 3 transactions should be committed back with commit statement.
+

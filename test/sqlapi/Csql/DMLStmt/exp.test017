@@ -1,0 +1,9 @@
+Connection opened
+CREATE TABLE t1(f1 TINYINT,f2 SMALLINT,f3 INT,f4 BIGINT,f5 CHAR(10),f6 FLOAT,f7 DOUBLE,f8 DATE,f9 TIME,f10 TIMESTAMP);
+Table Name is t1
+SELECT COUNT(*) FROM t1;
+t1.COUNT(*)
+-----------
+  5000 
+Table t1 dropped
+Connection Closed

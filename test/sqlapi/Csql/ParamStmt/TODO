@@ -1,0 +1,54 @@
+1. create table T1 with 11 fields.
+   insert some records into it.
+   noOfParamFields() should return 11.
+   getParamFldInfo() for all fields and print the field info.
+   select * from T1; (sqlapi/Parameter/paratest1.c to be modified for varchar field)
+
+2. create table T1 with 11 fields.
+   insert some records into it.
+   select * from T1 with where clause; (sqlapi/Parameter/paratest2.c to be modified for varchar field)
+
+3. create table T1 with 11 fields.
+   insert some records into it.
+   delete records from T1 with where clause
+   select * from T1; (sqlapi/Parameter/paratest3.c to be modified for varchar field)
+
+4. create table T1 with 11 fields.
+   insert some records into it.
+   update T1 WITH ALL PARAMETERS.
+   noOfParamFields() should return 11.  
+   select * from T1; (sqlapi/Parameter/paratest4.c to be modified for varchar field)
+
+5. create table T1 with 11 fields.
+   insert some records into it with null values
+   delete records from T1 with where clause.
+   select * from T1;
+   for the below 3 line (sqlapi/Parameter/paratest5.c and to be modified for varchar field)
+   update records into some value using where with is null, is not null.
+   delete some records using where with is null, is not null.
+   select * from T1;
+
+6. create table T1 with 11 fields.
+   insert some records into it.
+   update T1 with some Null values in the parameter.
+   noOfParamFields() should return 11.   
+   select * from T1; (sqlapi/Parameter/paratest6.c to be modified for varchar field)
+
+7. select tuple with WHERE clause having param for some fields
+   Create a table having f1 date, f2 tnt and f3 string
+   Insert 5-6 records
+   Execute SELECT * FROM T1 WHERE f1='Date Value' AND f2=? AND f3=?; (sqlapi/Parameter/paratest7date.c)
+
+8. select tuple with WHERE clause having param for some fields
+   Create a table having f1 date, f2 tnt and f3 string
+   Insert 5-6 records
+   Execute SELECT * FROM T1 WHERE f1='now' AND f2=? AND f3=?; (sqlapi/Parameter/paratest7now.c)
+
+9. Primary key foreign key test (insert , update, delete ) using parameterised statement for all. (new script to be written)
+
+10. Insert,update,delete records of copied table, should be passed using parameterised statement. (new script to be written)
+
+11. All Predicate test for all all datatypes using parameterised statement on select statement. (new script to be written)
+
+12. Aggregate with having using parameterised statement. (new script to be written)
+

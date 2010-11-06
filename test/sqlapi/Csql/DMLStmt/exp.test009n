@@ -1,0 +1,12 @@
+Connection opened
+CREATE TABLE t1(f1 TINYINT,f2 SMALLINT,f3 INT,f4 BIGINT,f5 CHAR(20),f6 VARCHAR(30),f7 FLOAT,f8 DOUBLE,f9 DATE,f10 TIME,f11 TIMESTAMP,primary key(f3));
+CREATE TABLE t2(f1 TINYINT,f2 SMALLINT,f3 INT,f4 BIGINT,f5 CHAR(20),f6 VARCHAR(30),f7 FLOAT,f8 DOUBLE,f9 DATE,f10 TIME,f11 TIMESTAMP, foreign key(f3) references t1(f3));
+Table Name is t1
+Table Name is t2
+INSERT INTO t1 VALUES(1,11,111,1111,'CSQL1','LAKSHYA1',11.00,1111.00,'2001-01-01','01:01:01','2001-01-01 01:01:01');
+INSERT INTO t2 VALUES(10,110,111,11110,'CSQL10','LAKSHYA10',110.00,1111.00,'2010-10-10','10:10:10','2010-10-10 10:10:10');
+DELETE FROM t1 WHERE f3=111;
+Record can not be deleted from parrent because there exist a record in child record
+Table dropped
+Table dropped
+Connection Closed
