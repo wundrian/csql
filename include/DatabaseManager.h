@@ -47,6 +47,7 @@ class DatabaseManager
     */
     virtual DbRetVal dropTable(const char *name)=0;
     virtual DbRetVal renameTable(const char *oldName,const char *newName)=0;
+    virtual DbRetVal renameIndex(const char *oldName,const char *newName)=0;
     virtual DbRetVal renameField(const char *tableName, const char *oldName, const char *newName)=0;
     /** opens a table for processing
     *   @param name name of the table

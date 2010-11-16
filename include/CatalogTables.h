@@ -109,6 +109,7 @@ class CatalogTableTABLE
     //pointer to the removed tuple
     DbRetVal remove(const char *name, void *&chunk, void *&tptr);
     DbRetVal renameTable(const char *oldName,const char *newName);
+    DbRetVal renameIndex(const char *oldName,const char *newName);
     DbRetVal getChunkAndTblPtr(const char *name, void *&chunk, void *&tptr, void*&vcchunk);
     DbRetVal setChunkPtr(const char *name, void *firstPage, void *curPage);
     List getTableList();

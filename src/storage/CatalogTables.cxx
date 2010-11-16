@@ -83,6 +83,35 @@ DbRetVal CatalogTableTABLE::renameTable( const char *oldName,const char *newName
      }
     return OK;
 }
+DbRetVal CatalogTableTABLE::renameIndex( const char *oldName,const char *newName)
+{
+     Chunk *tChunk = systemDatabase_->getSystemDatabaseChunk(IndexTableId);
+     ChunkIterator iter = tChunk->getIterator();
+     void *data = NULL;
+     bool isIndexExits = false ;
+     CINDEX *oldIndex = NULL;
+     while ((data = iter.nextElement())!= NULL)
+     {
+         if (0 == strcmp(((CINDEX*)data)->indName_, oldName))
+         {
+             oldIndex=(CINDEX*)data;
+             isIndexExits = true;
+         }
+         if (0 == strcmp(((CINDEX*)data)->indName_,newName))
+         {
+             printError(ErrNotExists,"A Index with name %s already exists", newName);
+             return ErrNotExists;
+         }
+     }
+     if(!isIndexExits){
+        printError(ErrNotExists,"Index %s not exists in INDEX catalog table", oldName);
+        return ErrNotExists;
+     }
+     strcpy(oldIndex->indName_, newName);
+
+    return OK;
+}
+
 DbRetVal CatalogTableTABLE::remove(const char *name, void *&chunk, void *&tptr)
 {
     Chunk *tChunk = systemDatabase_->getSystemDatabaseChunk(TableTableId);

@@ -39,12 +39,6 @@ AlterTblStatement::~AlterTblStatement()
 DbRetVal AlterTblStatement::resolve()
 {
     DbRetVal rv = OK;
-    table = dbMgr->openTable(parsedData->getTableName());
-    if (table == NULL)
-    {
-        printError(ErrNotExists, "Unable to open the table:Table not exists");
-        return ErrNotExists;
-    }
     altType = parsedData->getAlterType();
     if(altType == ALTERMODIFY)
     {
@@ -68,6 +62,9 @@ DbRetVal AlterTblStatement::execute(int &rowsAffected)
             return OK;
        rv = dbMgr->renameField(parsedData->getTableName(), parsedData->getIndexName(),parsedData->getPKTableName());
        return rv;
+    }else if(ALTERINDEXRENAME == altType){
+        rv = dbMgr->renameIndex(parsedData->getTableName(), parsedData->getIndexName());
+        return rv;
     }
     rv = executeForAddDropColumn(rowsAffected);
     return rv;
@@ -76,7 +73,13 @@ DbRetVal AlterTblStatement::execute(int &rowsAffected)
 DbRetVal AlterTblStatement::resolveForAddDropColumn()
 {
     DbRetVal rv = OK;
-    if( altType == ALTERTABLERENAME || altType == ALTERFIELDRENAME) return OK;
+    if( altType == ALTERTABLERENAME || altType == ALTERFIELDRENAME || altType == ALTERINDEXRENAME) return OK;
+    table = dbMgr->openTable(parsedData->getTableName());
+    if (table == NULL)
+    {
+        printError(ErrNotExists, "Unable to open the table:Table not exists");
+        return ErrNotExists;
+    }
     List fNameList = table->getFieldNameList();
     FieldList extraFldList = parsedData->getCreFldList() ; 
     ListIterator fNameIter = fNameList.getIterator();

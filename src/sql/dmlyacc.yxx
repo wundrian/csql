@@ -93,6 +93,14 @@ alter_statement: ALTER TABLE ident ADD '(' create_defn_list_con ')' semicolon_op
             parsedData->setPKTableName($8);
             free($3); free($5); free($8);
         }
+        | ALTER INDEX ident RENAME TO ident semicolon_opt
+        {
+            parsedData->setStmtType(AlterStatement);
+            parsedData->setAlterType(ALTERINDEXRENAME);
+            parsedData->setTableName($3);
+            parsedData->setIndexName($6); 
+            free($3); free($5);
+        }
 	;
 management_statement: FLUSH CACHE semicolon_opt
 	{

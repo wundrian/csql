@@ -645,6 +645,24 @@ DbRetVal DatabaseManagerImpl::renameTable(const char *oldName,const char *newNam
     systemDatabase_->releaseCheckpointMutex();
     return OK;
 }
+DbRetVal DatabaseManagerImpl::renameIndex(const char *oldName,const char *newName)
+{
+    void *chunk = NULL;
+    DbRetVal rv = systemDatabase_->getXCheckpointMutex();
+    if (OK != rv) {
+        printError(ErrSysInternal, "Unable to get database mutex for rename table");
+        return ErrSysInternal;
+    }
+    CatalogTableTABLE cTable(systemDatabase_);
+    rv = cTable.renameIndex(oldName,newName);
+    if (OK != rv) {
+        printError(ErrSysInternal, "Unable to rename table");
+        systemDatabase_->releaseCheckpointMutex();
+        return ErrSysInternal;
+    }
+    systemDatabase_->releaseCheckpointMutex();
+    return OK;
+}
 
 DbRetVal DatabaseManagerImpl::renameField(const char *tableName,const char *oldName,const char *newName)
 {
