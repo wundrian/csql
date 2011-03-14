@@ -31,7 +31,7 @@ class Table;
 * <br/>
 * 
 */
-class DatabaseManager
+class DllExport DatabaseManager
 {
     public:
     /** creates a table in the database

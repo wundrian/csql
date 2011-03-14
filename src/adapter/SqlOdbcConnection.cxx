@@ -17,169 +17,179 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-#include<os.h>
+#include <os.h>
 #include <SqlOdbcConnection.h>
 #include <CSql.h>
-#include<TableConfig.h>
-#include <dlfcn.h>
+#include <TableConfig.h>
 bool SqlOdbcConnection::symbolsLoaded= false;
 struct SQLFuncPtrs SqlOdbcConnection::ODBCFuncPtrs;
 
 DbRetVal SqlOdbcConnection::loadSymbols()
 {
-#ifdef x86_64
-    void *handle =  RTLD_DEFAULT;
-#else
-    void *handle =  (void*) -1l;
-#endif
-    ODBCFuncPtrs.SQLAllocHandlePtr = (SQLRETURN (*)(SQLSMALLINT,SQLHANDLE,SQLHANDLE*))dlsym(handle, "SQLAllocHandle");
-    if (!ODBCFuncPtrs.SQLAllocHandlePtr){
 
+#ifdef WINNT
+HMODULE this_process;
+GetModuleHandleEx(0,0,&this_process);
+HMODULE handle = GetModuleHandle(0);
+#else 
+  #ifdef x86_64
+    void *handle =  RTLD_DEFAULT;
+  #else
+    void *handle =  (void*) -1l;
+  #endif
+#endif
+
+    ODBCFuncPtrs.SQLAllocHandlePtr = (SQLRETURN (*)(SQLSMALLINT,SQLHANDLE,SQLHANDLE*))os::dlsym(
+																		handle, "SQLAllocHandle");
+    if (!ODBCFuncPtrs.SQLAllocHandlePtr){
+#ifndef WINNT
         if (handle == RTLD_DEFAULT) handle = (void*) -1l; else handle = RTLD_DEFAULT;
-        ODBCFuncPtrs.SQLAllocHandlePtr = (SQLRETURN (*)(SQLSMALLINT,SQLHANDLE,SQLHANDLE*))dlsym(handle, "SQLAllocHandle");
+#endif
+        ODBCFuncPtrs.SQLAllocHandlePtr = (SQLRETURN (*)(SQLSMALLINT,SQLHANDLE,SQLHANDLE*))os::dlsym(
+																			handle, "SQLAllocHandle");
         if (!ODBCFuncPtrs.SQLAllocHandlePtr) {
            printError(ErrSysInternal, "Symbol lookup failed\n");
            return ErrSysInternal;
         }
     }
-    ODBCFuncPtrs.SQLSetEnvAttrPtr = (SQLRETURN (*)(SQLHENV, SQLINTEGER, SQLPOINTER, SQLINTEGER ))dlsym(handle, "SQLSetEnvAttr");
+    ODBCFuncPtrs.SQLSetEnvAttrPtr = (SQLRETURN (*)(SQLHENV, SQLINTEGER, SQLPOINTER, SQLINTEGER ))os::dlsym(handle, "SQLSetEnvAttr");
     if (!ODBCFuncPtrs.SQLSetEnvAttrPtr){
         printError(ErrSysInternal, "Symbol lookup failed\n");
         return ErrSysInternal;
     }
 
-    ODBCFuncPtrs.SQLDriverConnectPtr = (SQLRETURN (*)(SQLHDBC, SQLHWND, SQLCHAR*, SQLSMALLINT, SQLCHAR*, SQLSMALLINT, SQLSMALLINT*, SQLUSMALLINT ))dlsym(handle, "SQLDriverConnect");
+    ODBCFuncPtrs.SQLDriverConnectPtr = (SQLRETURN (*)(SQLHDBC, SQLHWND, SQLCHAR*, SQLSMALLINT, SQLCHAR*, SQLSMALLINT, SQLSMALLINT*, SQLUSMALLINT ))os::dlsym(handle, "SQLDriverConnect");
     if (!ODBCFuncPtrs.SQLDriverConnectPtr){
         printError(ErrSysInternal, "Symbol lookup failed\n");
         return ErrSysInternal;
     }
 
-    ODBCFuncPtrs.SQLGetDiagRecPtr = (SQLRETURN (*)(SQLSMALLINT, SQLHANDLE, SQLSMALLINT, SQLCHAR*, SQLINTEGER*, SQLCHAR*, SQLSMALLINT, SQLSMALLINT*))dlsym(handle, "SQLGetDiagRec");
+    ODBCFuncPtrs.SQLGetDiagRecPtr = (SQLRETURN (*)(SQLSMALLINT, SQLHANDLE, SQLSMALLINT, SQLCHAR*, SQLINTEGER*, SQLCHAR*, SQLSMALLINT, SQLSMALLINT*))os::dlsym(handle, "SQLGetDiagRec");
     if (!ODBCFuncPtrs.SQLGetDiagRecPtr){
         printError(ErrSysInternal, "Symbol lookup failed\n");
         return ErrSysInternal;
     }
 
-    ODBCFuncPtrs.SQLSetConnectAttrPtr = (SQLRETURN (*)(SQLHDBC, SQLINTEGER, SQLPOINTER, SQLINTEGER ))dlsym(handle, "SQLSetConnectAttr");
+    ODBCFuncPtrs.SQLSetConnectAttrPtr = (SQLRETURN (*)(SQLHDBC, SQLINTEGER, SQLPOINTER, SQLINTEGER ))os::dlsym(handle, "SQLSetConnectAttr");
     if (!ODBCFuncPtrs.SQLSetConnectAttrPtr){
         printError(ErrSysInternal, "Symbol lookup failed\n");
         return ErrSysInternal;
     }
 
-    ODBCFuncPtrs.SQLProcedureColumnsPtr = (SQLRETURN (*)(SQLHSTMT, SQLCHAR *, SQLSMALLINT, SQLCHAR *, SQLSMALLINT, SQLCHAR *, SQLSMALLINT, SQLCHAR *, SQLSMALLINT))dlsym(handle, "SQLProcedureColumns");
+    ODBCFuncPtrs.SQLProcedureColumnsPtr = (SQLRETURN (*)(SQLHSTMT, SQLCHAR *, SQLSMALLINT, SQLCHAR *, SQLSMALLINT, SQLCHAR *, SQLSMALLINT, SQLCHAR *, SQLSMALLINT))os::dlsym(handle, "SQLProcedureColumns");
     if (!ODBCFuncPtrs.SQLProcedureColumnsPtr){
         printError(ErrSysInternal, "Symbol lookup failed\n");
         return ErrSysInternal;
     }
 
-    ODBCFuncPtrs.SQLFreeHandlePtr = (SQLRETURN (*)(SQLSMALLINT,SQLHANDLE))dlsym(handle, "SQLFreeHandle");
+    ODBCFuncPtrs.SQLFreeHandlePtr = (SQLRETURN (*)(SQLSMALLINT,SQLHANDLE))os::dlsym(handle, "SQLFreeHandle");
     if (!ODBCFuncPtrs.SQLFreeHandlePtr){
         printError(ErrSysInternal, "Symbol lookup failed\n");
         return ErrSysInternal;
     }
 
-    ODBCFuncPtrs.SQLTransactPtr = (SQLRETURN (*)(SQLHENV, SQLHDBC, SQLUSMALLINT ))dlsym(handle, "SQLTransact");
+    ODBCFuncPtrs.SQLTransactPtr = (SQLRETURN (*)(SQLHENV, SQLHDBC, SQLUSMALLINT ))os::dlsym(handle, "SQLTransact");
     if (!ODBCFuncPtrs.SQLTransactPtr){
         printError(ErrSysInternal, "Symbol lookup failed\n");
         return ErrSysInternal;
     }
 
-    ODBCFuncPtrs.SQLExecDirectPtr = (SQLRETURN (*)(SQLHSTMT, SQLCHAR*, SQLINTEGER ))dlsym(handle, "SQLExecDirect");
+    ODBCFuncPtrs.SQLExecDirectPtr = (SQLRETURN (*)(SQLHSTMT, SQLCHAR*, SQLINTEGER ))os::dlsym(handle, "SQLExecDirect");
     if (!ODBCFuncPtrs.SQLExecDirectPtr){
         printError(ErrSysInternal, "Symbol lookup failed\n");
         return ErrSysInternal;
     }
 
-    ODBCFuncPtrs.SQLPreparePtr = (SQLRETURN (*)(SQLHSTMT, SQLCHAR*, SQLINTEGER ))dlsym(handle, "SQLPrepare");
+    ODBCFuncPtrs.SQLPreparePtr = (SQLRETURN (*)(SQLHSTMT, SQLCHAR*, SQLINTEGER ))os::dlsym(handle, "SQLPrepare");
     if (!ODBCFuncPtrs.SQLPreparePtr){
         printError(ErrSysInternal, "Symbol lookup failed\n");
         return ErrSysInternal;
     }
 
-    ODBCFuncPtrs.SQLNumResultColsPtr = (SQLRETURN (*)(SQLHSTMT, SQLSMALLINT* ))dlsym(handle, "SQLNumResultCols");
+    ODBCFuncPtrs.SQLNumResultColsPtr = (SQLRETURN (*)(SQLHSTMT, SQLSMALLINT* ))os::dlsym(handle, "SQLNumResultCols");
     if (!ODBCFuncPtrs.SQLNumResultColsPtr){
         printError(ErrSysInternal, "Symbol lookup failed\n");
         return ErrSysInternal;
     }
 
-    ODBCFuncPtrs.SQLDescribeColPtr = (SQLRETURN (*)(SQLHSTMT, SQLUSMALLINT, SQLCHAR*, SQLSMALLINT, SQLSMALLINT*, SQLSMALLINT*, SQLULEN*,SQLSMALLINT*, SQLSMALLINT* ))dlsym(handle, "SQLDescribeCol");
+    ODBCFuncPtrs.SQLDescribeColPtr = (SQLRETURN (*)(SQLHSTMT, SQLUSMALLINT, SQLCHAR*, SQLSMALLINT, SQLSMALLINT*, SQLSMALLINT*, SQLULEN*,SQLSMALLINT*, SQLSMALLINT* ))os::dlsym(handle, "SQLDescribeCol");
     if (!ODBCFuncPtrs.SQLDescribeColPtr){
         printError(ErrSysInternal, "Symbol lookup failed\n");
         return ErrSysInternal;
     }
     
-    ODBCFuncPtrs.SQLBindColPtr = (SQLRETURN (*)(SQLHSTMT, SQLUSMALLINT, SQLSMALLINT, SQLPOINTER, SQLLEN, SQLLEN* ))dlsym(handle, "SQLBindCol");
+    ODBCFuncPtrs.SQLBindColPtr = (SQLRETURN (*)(SQLHSTMT, SQLUSMALLINT, SQLSMALLINT, SQLPOINTER, SQLLEN, SQLLEN* ))os::dlsym(handle, "SQLBindCol");
     if (!ODBCFuncPtrs.SQLBindColPtr){
         printError(ErrSysInternal, "Symbol lookup failed\n");
         return ErrSysInternal;
     }
 
-    ODBCFuncPtrs.SQLNumParamsPtr = (SQLRETURN (*)(SQLHSTMT, SQLSMALLINT* ))dlsym(handle, "SQLNumParams");
+    ODBCFuncPtrs.SQLNumParamsPtr = (SQLRETURN (*)(SQLHSTMT, SQLSMALLINT* ))os::dlsym(handle, "SQLNumParams");
     if (!ODBCFuncPtrs.SQLNumParamsPtr){
         printError(ErrSysInternal, "Symbol lookup failed\n");
         return ErrSysInternal;
     }
 
-    ODBCFuncPtrs.SQLDescribeParamPtr = (SQLRETURN (*)(SQLHSTMT, SQLUSMALLINT, SQLSMALLINT*, SQLULEN*, SQLSMALLINT*, SQLSMALLINT* ))dlsym(handle, "SQLDescribeParam");
+    ODBCFuncPtrs.SQLDescribeParamPtr = (SQLRETURN (*)(SQLHSTMT, SQLUSMALLINT, SQLSMALLINT*, SQLULEN*, SQLSMALLINT*, SQLSMALLINT* ))os::dlsym(handle, "SQLDescribeParam");
     if (!ODBCFuncPtrs.SQLDescribeParamPtr){
         printError(ErrSysInternal, "Symbol lookup failed\n");
         return ErrSysInternal;
     }
 
-    ODBCFuncPtrs.SQLBindParameterPtr = (SQLRETURN (*)(SQLHSTMT, SQLUSMALLINT, SQLSMALLINT, SQLSMALLINT, SQLSMALLINT, SQLULEN, SQLSMALLINT, SQLPOINTER, SQLLEN, SQLLEN* ))dlsym(handle, "SQLBindParameter");
+    ODBCFuncPtrs.SQLBindParameterPtr = (SQLRETURN (*)(SQLHSTMT, SQLUSMALLINT, SQLSMALLINT, SQLSMALLINT, SQLSMALLINT, SQLULEN, SQLSMALLINT, SQLPOINTER, SQLLEN, SQLLEN* ))os::dlsym(handle, "SQLBindParameter");
     if (!ODBCFuncPtrs.SQLBindParameterPtr){
         printError(ErrSysInternal, "Symbol lookup failed\n");
         return ErrSysInternal;
     }
 
-    ODBCFuncPtrs.SQLExecutePtr = (SQLRETURN (*)(SQLHSTMT ))dlsym(handle, "SQLExecute");
+    ODBCFuncPtrs.SQLExecutePtr = (SQLRETURN (*)(SQLHSTMT ))os::dlsym(handle, "SQLExecute");
     if (!ODBCFuncPtrs.SQLExecutePtr){
         printError(ErrSysInternal, "Symbol lookup failed\n");
         return ErrSysInternal;
     }
 
-    ODBCFuncPtrs.SQLRowCountPtr = (SQLRETURN (*)(SQLHSTMT, SQLLEN* ))dlsym(handle, "SQLRowCount");
+    ODBCFuncPtrs.SQLRowCountPtr = (SQLRETURN (*)(SQLHSTMT, SQLLEN* ))os::dlsym(handle, "SQLRowCount");
     if (!ODBCFuncPtrs.SQLRowCountPtr){
         printError(ErrSysInternal, "Symbol lookup failed\n");
         return ErrSysInternal;
     }
 
-    ODBCFuncPtrs.SQLFetchPtr = (SQLRETURN (*)(SQLHSTMT ))dlsym(handle, "SQLFetch");
+    ODBCFuncPtrs.SQLFetchPtr = (SQLRETURN (*)(SQLHSTMT ))os::dlsym(handle, "SQLFetch");
     if (!ODBCFuncPtrs.SQLFetchPtr){
         printError(ErrSysInternal, "Symbol lookup failed\n");
         return ErrSysInternal;
     }
 
-    ODBCFuncPtrs.SQLFetchScrollPtr = (SQLRETURN (*)(SQLHSTMT, SQLSMALLINT, SQLLEN))dlsym(handle, "SQLFetchScroll");
+    ODBCFuncPtrs.SQLFetchScrollPtr = (SQLRETURN (*)(SQLHSTMT, SQLSMALLINT, SQLLEN))os::dlsym(handle, "SQLFetchScroll");
     if (!ODBCFuncPtrs.SQLFetchScrollPtr){
         printError(ErrSysInternal, "Symbol lookup failed\n");
         return ErrSysInternal;
     }
 
-    ODBCFuncPtrs.SQLCloseCursorPtr = (SQLRETURN (*)(SQLHSTMT ))dlsym(handle, "SQLCloseCursor");
+    ODBCFuncPtrs.SQLCloseCursorPtr = (SQLRETURN (*)(SQLHSTMT ))os::dlsym(handle, "SQLCloseCursor");
     if (!ODBCFuncPtrs.SQLCloseCursorPtr){
         printError(ErrSysInternal, "Symbol lookup failed\n");
         return ErrSysInternal;
     }
 
-    ODBCFuncPtrs.SQLPrimaryKeysPtr = (SQLRETURN (*)(SQLHSTMT, SQLCHAR*, SQLSMALLINT, SQLCHAR*, SQLSMALLINT, SQLCHAR*, SQLSMALLINT ))dlsym(handle, "SQLPrimaryKeys");
+    ODBCFuncPtrs.SQLPrimaryKeysPtr = (SQLRETURN (*)(SQLHSTMT, SQLCHAR*, SQLSMALLINT, SQLCHAR*, SQLSMALLINT, SQLCHAR*, SQLSMALLINT ))os::dlsym(handle, "SQLPrimaryKeys");
     if (!ODBCFuncPtrs.SQLPrimaryKeysPtr){
         printError(ErrSysInternal, "Symbol lookup failed\n");
         return ErrSysInternal;
     }
 
-    ODBCFuncPtrs.SQLGetDataPtr = (SQLRETURN (*)(SQLHSTMT,SQLUSMALLINT,SQLSMALLINT,SQLPOINTER, SQLLEN,SQLLEN* ))dlsym(handle, "SQLGetData");
+    ODBCFuncPtrs.SQLGetDataPtr = (SQLRETURN (*)(SQLHSTMT,SQLUSMALLINT,SQLSMALLINT,SQLPOINTER, SQLLEN,SQLLEN* ))os::dlsym(handle, "SQLGetData");
     if (!ODBCFuncPtrs.SQLGetDataPtr){
         printError(ErrSysInternal, "Symbol lookup failed\n");
         return ErrSysInternal;
     }
 
-    ODBCFuncPtrs.SQLDisconnectPtr = (SQLRETURN (*)(SQLHDBC))dlsym(handle, "SQLDisconnect");
+    ODBCFuncPtrs.SQLDisconnectPtr = (SQLRETURN (*)(SQLHDBC))os::dlsym(handle, "SQLDisconnect");
     if (!ODBCFuncPtrs.SQLDisconnectPtr){
         printError(ErrSysInternal, "Symbol lookup failed\n");
         return ErrSysInternal;
     }
-     ODBCFuncPtrs.SQLTablesPtr =(SQLRETURN (*)(SQLHSTMT ,SQLCHAR *, SQLSMALLINT , SQLCHAR * , SQLSMALLINT, SQLCHAR *,  SQLSMALLINT, SQLCHAR*,SQLSMALLINT))dlsym(handle,"SQLTables");
+     ODBCFuncPtrs.SQLTablesPtr =(SQLRETURN (*)(SQLHSTMT ,SQLCHAR *, SQLSMALLINT , SQLCHAR * , SQLSMALLINT, SQLCHAR *,  SQLSMALLINT, SQLCHAR*,SQLSMALLINT))os::dlsym(handle,"SQLTables");
     if (!ODBCFuncPtrs.SQLTablesPtr){
         printError(ErrSysInternal, "Symbol lookup failed\n");
         return ErrSysInternal;

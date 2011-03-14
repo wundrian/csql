@@ -16,11 +16,7 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 #include <CSql.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
+#include <os.h>
 #include <AbsSqlStatement.h>
 #include <Parser.h>
 

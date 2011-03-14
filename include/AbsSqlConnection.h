@@ -10,7 +10,7 @@
 #include<Session.h>
 #include<Util.h>
 class Connection; 
-class CachedTable{
+class DllExport CachedTable{
     public:
     char tableName[IDENTIFIER_LENGTH];
     CachedTable() { tableName[0] = '\0'; }
@@ -42,7 +42,7 @@ enum TableSyncMode {
 *  Note: \n
 *  SERIALIZABLE isolation level is not supported. \n
 */
-class AbsSqlConnection
+class DllExport AbsSqlConnection
 {
     protected:
     AbsSqlConnection *innerConn;

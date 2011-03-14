@@ -28,7 +28,7 @@
 #include<TableImpl.h>
 #include<OrderByTree.h>
 
-class OrderTableImpl:public Table
+class DllExport OrderTableImpl:public Table
 {
     private:
     char tblName_[IDENTIFIER_LENGTH];

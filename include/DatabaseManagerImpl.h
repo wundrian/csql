@@ -43,7 +43,7 @@ class CSqlProcInfo
 //Global object
 static CSqlProcInfo csqlProcInfo;
 
-class DatabaseManagerImpl : public DatabaseManager
+class DllExport DatabaseManagerImpl : public DatabaseManager
 {
     private:
     Database* systemDatabase_;

@@ -85,7 +85,7 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
         return ErrBadArg;
     }
 */
-    int fd = -1;
+    file_desc fd = (file_desc)-1;
     char cmd[1024];
     char dbMapFile[MAX_FILE_LEN];
     struct stat st;
@@ -148,24 +148,33 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
         */
 
         
-        fd = open(dbMapFile, O_CREAT | O_RDWR, 0660);
-        if (-1 == fd) { 
+        fd = os::openFile(dbMapFile, fileOpenCreat, 0660);
+        if ((file_desc) -1 == fd) { 
             printError(ErrOS, "Mmap file could not be opened");
             return ErrOS;
         }
-        if(fstat(fd, &st) == -1) {
+        if(::stat(dbMapFile, &st) == -1) {
             printf("Unable to retrieve the db File data\n");
-            close(fd);
-            db_->setChkptfd(-1);
+            os::closeFile(fd);
+            db_->setChkptfd((file_desc)-1);
             return ErrOS;
         }
-        if (st.st_size == 0 || st.st_size < size) {
+#ifdef WINNT
+        int localfd = os::open(dbMapFile, fileOpenCreat,0);
+#else
+		int localfd = fd;
+#endif
+		if (st.st_size == 0 || st.st_size < size) {
             firstTimeServer = true;
-            off_t flSize = lseek(fd, size - 1, SEEK_SET); 
+            off_t flSize = os::lseek(localfd, size - 1, SEEK_SET); 
         }
         char *a = "0";
-        int wSize = write(fd, a, 1);
-        mapAddr = os::mmap((void *)(fixAddr + Conf::config.getMaxSysDbSize()), size, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_SHARED, fd, 0);
+        int wSize = os::write(localfd, a, 1);
+#ifdef WINNT
+	    os::close(localfd);
+#endif
+        mapAddr = os::mmap((void *)(fixAddr + Conf::config.getMaxSysDbSize()), size, 
+				mapProtRead | mapProtWrite, mapFixed | mapShared, fd, 0);
         rtnAddr = (caddr_t) mapAddr;
         printDebug(DM_Database, "Mapped db file address = %x", mapAddr); 
     }
@@ -240,12 +249,12 @@ DbRetVal DatabaseManagerImpl::deleteDatabase(const char *name)
     if (0 == strcmp(name, SYSTEMDB))
     {
         shm_id = os::shm_open(Conf::config.getSysDbKey(), 100, 0660);
-        os::shmctl(shm_id, IPC_RMID);
+        os::shm_remove(shm_id);
 		delete systemDatabase_;
 		systemDatabase_ = NULL;
     } else {
         shm_id = os::shm_open(Conf::config.getUserDbKey(), 100, 0660);
-        os::shmctl(shm_id, IPC_RMID);
+        os::shm_remove(shm_id);
 		delete db_;
 		db_ = NULL;
     }
@@ -256,7 +265,7 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
 {
     bool isMmapNeeded = Conf::config.useMmap();
     char dbMapFile[1024];
-    int fd = -1;
+    file_desc fd = (file_desc)-1;
     long size = Conf::config.getMaxSysDbSize();
     char *startaddr = (char*)Conf::config.getMapAddress();
     long fixAddr = 399998976L;
@@ -307,12 +316,13 @@ DbRetVal DatabaseManagerImpl::openDatabase(const char *name)
             int curChkptID = Database::getCheckpointID();
             sprintf(dbMapFile, "%s/db.chkpt.data%d", Conf::config.getDbFile(), 
                                                      curChkptID);
-            fd = open(dbMapFile, O_RDWR, 0660);
-            if (-1 == fd) {
+            fd = os::openFile(dbMapFile, fileOpenReadWrite, 0660);
+            if ((file_desc)-1 == fd) {
                 printError(ErrOS, "Mmap file could not be opened");
                 return ErrOS;
             }
-            mapAddr = os::mmap((void *)fixAddr, size, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_SHARED, fd, 0);
+            mapAddr = os::mmap((void *)fixAddr, size, mapProtRead | mapProtWrite, 
+				mapFixed | mapShared, fd, 0);
 
             shm_ptr= (caddr_t) mapAddr;
             printDebug(DM_Database, "Mapped db file address = %x", mapAddr);
@@ -380,8 +390,8 @@ DbRetVal DatabaseManagerImpl::closeDatabase()
     //If you are not getting lock ret !=0, it means somebody else is there.
     //he will close the database.
     if (0 != strcmp((char*)db_->getName(),  SYSTEMDB)) {
-        int fd = db_->getChkptfd();
-        close(fd);
+        file_desc fd = db_->getChkptfd();
+        os::closeFile(fd);
     }
     if (ret == 0) {
     if (ProcessManager::noThreads == 0 && 0 == strcmp((char*)db_->getName(), SYSTEMDB)

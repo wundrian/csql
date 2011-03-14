@@ -46,7 +46,7 @@ enum IsolationLevel
 * 
 */
 
-class Connection
+class DllExport Connection
 {
     Session *session;
     public:
@@ -108,7 +108,7 @@ class Connection
 };
 
 
-class Session
+class DllExport Session
 {
     public:
     virtual DbRetVal open(const char*username, const char*password)=0;

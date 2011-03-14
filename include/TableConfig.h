@@ -24,7 +24,7 @@
 #define    DIRECT_CACHE    0x08
 
 
-class TableConfig
+class DllExport TableConfig
 {
     char tableName[IDENTIFIER_LENGTH];
     char fieldName[IDENTIFIER_LENGTH];

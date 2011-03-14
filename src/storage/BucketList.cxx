@@ -13,6 +13,7 @@
  *   GNU General Public License for more details.                          *
  *                                                                         *
   ***************************************************************************/
+#include<os.h>
 #include<Index.h>
 #include<Allocator.h>
 #include<Database.h>

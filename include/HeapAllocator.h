@@ -11,7 +11,7 @@
 #define PAGEINFOSIZE 4
 #define BLOCKINFOSIZE 4
 
-class VarHeapAllocator
+class DllExport VarHeapAllocator
 {
     void *top;
     void *last;
@@ -46,7 +46,7 @@ class VarHeapAllocator
     void print();
     void itirate();
 };
-class FixedHeapAllocator
+class DllExport FixedHeapAllocator
 {
     int blockSize;
     int usedBytes;
@@ -77,7 +77,7 @@ class FixedHeapAllocator
      void deAllocate(void *ptr);
      void destroy();
 };
-class HashMapNode
+class DllExport HashMapNode
 {
    public:
    void *elem;
@@ -85,7 +85,7 @@ class HashMapNode
    HashMapNode() { elem = NULL; next = NULL; }
    void print() { printf("elem:%x next %x\n", elem, next); }
 };
-class HashMap
+class DllExport HashMap
 {
     void **bucket;
     int keySize;

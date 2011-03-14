@@ -47,7 +47,7 @@ enum StatementType
 * <br/>
 * 
 */
-class AbsSqlStatement
+class DllExport AbsSqlStatement
 {
     protected:
     AbsSqlStatement(){}
@@ -261,7 +261,7 @@ class AbsSqlStatement
 
 //used to store the binded field values and parameters from derived clases of
 //AbsSqlStatement class
-class BindSqlField
+class DllExport BindSqlField
 {
     public:
     char fName[IDENTIFIER_LENGTH];
@@ -278,7 +278,7 @@ class BindSqlField
     BindSqlField(){ value = NULL; targetvalue = NULL; }
 };
 
-class BindSqlProjectField
+class DllExport BindSqlProjectField
 {
     public:
     char fName[IDENTIFIER_LENGTH];
@@ -301,13 +301,13 @@ class BindSqlProjectField
     }
 };
 
-class StmtBucket
+class DllExport StmtBucket
 {
     public:
     List bucketList;
 };
 
-class StmtNode
+class DllExport StmtNode
 {
     public:
     int stmtId;

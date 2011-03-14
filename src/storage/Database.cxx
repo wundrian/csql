@@ -629,7 +629,7 @@ DbRetVal Database::writeDirtyPages(char *dataFile)
     lseek(fd, 0, SEEK_SET);
     void *buf = (void *) metaData_;
     int sizeToWrite = os::alignLong(sizeof(DatabaseMetaData));
-    ssize_t retSize = os::write(fd, (char*)buf, sizeToWrite);
+    size_t retSize = os::write(fd, (char*)buf, sizeToWrite);
     if (-1 == retSize)
     {
        printError(ErrWarning, "Warning:Unable to write metadata");
@@ -701,9 +701,9 @@ DbRetVal Database::checkPoint()
         }
         int fd = open(dataFile, O_WRONLY|O_CREAT, 0644);
         void *buf = (void *) metaData_;
-        lseek(fd, 0, SEEK_SET);
-        write(fd, buf, Conf::config.getMaxDbSize());
-        close(fd);  
+        os::lseek(fd, 0, SEEK_SET);
+        os::write(fd, (char*) buf, Conf::config.getMaxDbSize());
+        os::close(fd);  
         sprintf(cmd, "cp -f %s/db.chkpt.data %s/db.chkpt.data1", Conf::config.getDbFile(), Conf::config.getDbFile());
         int ret = system(cmd);
         if (ret != 0) {
@@ -711,14 +711,14 @@ DbRetVal Database::checkPoint()
             return ErrOS;
         }
     } else {
-        int fd = getChkptfd();
+        file_desc fd = getChkptfd();
         if (!os::fdatasync(fd)) { 
             logFine(Conf::logger, "fsync succedded"); 
         }
         filterAndRemoveStmtLogs();
-        int ret = truncate(dbRedoFileName,0);
+        int ret = os::truncate(dbRedoFileName);
         if (ret != 0) {
-            close(fd);  
+            os::closeFile(fd);  
             printError(ErrSysInternal, "Unable to truncate redo log file");
             printError(ErrSysInternal, "Delete %s manually and restart the server", dbRedoFileName);
             return ErrOS;
@@ -738,7 +738,7 @@ DbRetVal Database::checkPoint()
         if (OK != rv)
         {
             printError(ErrSysInternal, "Unable to write dirty pages");
-            close(fd);  
+            os::closeFile(fd);  
             return rv;
         }
 
@@ -751,11 +751,11 @@ DbRetVal Database::checkPoint()
         else
             Database::setCheckpointID(0);
 
-        close(fd);  
+        os::closeFile(fd);  
         return OK;
     }
     filterAndRemoveStmtLogs();
-    int ret = ::truncate(dbRedoFileName,0);
+    int ret = os::truncate(dbRedoFileName);
     if (ret != 0) {
         printError(ErrSysInternal, "Unable to truncate redo log file. Delete and restart the server\n");
        return ErrOS;
@@ -767,19 +767,19 @@ DbRetVal Database::filterAndRemoveStmtLogs()
     struct stat st;
     char fName[MAX_FILE_LEN];
     sprintf(fName, "%s/csql.db.stmt", Conf::config.getDbFile());
-    int fdRead = open(fName, O_RDONLY);
-    if (-1 == fdRead) { return OK; }
-    if (fstat(fdRead, &st) == -1) {
+    file_desc fdRead = os::openFile(fName, fileOpenReadOnly,0);
+    if ((file_desc)-1 == fdRead) { return OK; }
+    if (::stat(fName, &st) == -1) {
         printError(ErrSysInternal, "Unable to retrieve stmt log file size");
-        close(fdRead);
+        os::closeFile(fdRead);
         return ErrSysInternal;
     }
     if (st.st_size ==0) {
-        close(fdRead);
+        os::closeFile(fdRead);
         return OK;
     }
-   void *startAddr = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fdRead, 0);
-    if (MAP_FAILED == startAddr) {
+   void *startAddr = os::mmap(NULL, st.st_size, mapProtRead, mapPrivate, fdRead, 0);
+    if ((void*) MAP_FAILED == startAddr) {
         printError(ErrSysInternal, "Unable to mmap stmt log file\n");
         return ErrSysInternal;
     }
@@ -849,9 +849,9 @@ DbRetVal Database::filterAndRemoveStmtLogs()
         }
     }
 
-    os::closeFile(fd);
-    munmap((char*)startAddr, st.st_size);
-    close(fdRead);
+    os::close(fd);
+    os::munmap((char*)startAddr, st.st_size);
+    os::closeFile(fdRead);
     stmtMap.removeAll();
     char cmd[MAX_FILE_LEN *2];
     sprintf(cmd, "mv %s/csql.db.stmt1 %s/csql.db.stmt",

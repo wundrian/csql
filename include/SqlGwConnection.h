@@ -43,7 +43,7 @@ enum GwHandler
     CSqlAndAdapterHandler =3
 };
 
-class SqlGwConnection : public AbsSqlConnection
+class DllExport SqlGwConnection : public AbsSqlConnection
 {
     Connection dummyConn;
     AbsSqlConnection *adapter;

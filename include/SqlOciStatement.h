@@ -23,7 +23,7 @@
 #include <SqlOciConnection.h>
 #include <SqlFactory.h>
 #include <CSql.h>
-class SqlOciStatement: public AbsSqlStatement
+class DllExport SqlOciStatement: public AbsSqlStatement
 {
     public:
     SqlOciStatement(){innerStmt = NULL; con = NULL;}

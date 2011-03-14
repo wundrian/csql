@@ -28,7 +28,7 @@ enum SqlApiImplType
 * @brief Factory class to create appropriate implementation of SQL API
 * 
 */
-class SqlFactory
+class DllExport SqlFactory
 {
     public:
 

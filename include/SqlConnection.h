@@ -36,7 +36,7 @@ struct CachedStmtNode{
     }
     
 };
-class SqlConnection : public AbsSqlConnection
+class DllExport SqlConnection : public AbsSqlConnection
 {
     Connection conn;
     bool isConnOpen;

@@ -81,7 +81,7 @@ DbRetVal GlobalUniqueID::destroy()
 //        printError(ErrOS, "Unable to open shared memory");
         return ErrOS;
     }
-    os::shmctl(id, IPC_RMID);
+    os::shm_remove(id);
 }
 
 int GlobalUniqueID::getID(UniqueIDType type)

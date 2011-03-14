@@ -85,7 +85,7 @@ class TreeUndoLogInfo
     { metaData_ = tuple_ = cIndex_ = NULL; }
 };
 
-class Transaction
+class DllExport Transaction
 {
     public:
     InUse status_;
@@ -121,7 +121,7 @@ class Transaction
     void printDebugInfo(Database *sysdb);
 };
 
-class TransactionManager
+class DllExport TransactionManager
 {
     public:
     TransactionManager() {  }

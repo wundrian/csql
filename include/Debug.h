@@ -6,6 +6,7 @@
 
 #ifndef DEBUG_H
 #define DEBUG_H
+#include<os.h>
 #include<ErrorType.h>
 #include<FaultTest.h>
 //#define DEBUG 1
@@ -33,8 +34,11 @@ extern int DebugDM_TEST;
 extern int DebugDM_Warning;
 
 int printStackTrace();
+#ifdef WINNT
+DllExport int printError1(DbRetVal val, char* fname, int lno, char *format, ...);
+#else
 extern int printError1(DbRetVal val, char* fname, int lno, char *format, ...);
-
+#endif
 #define printError(a, ...) printError1(a, __FILE__, __LINE__, __VA_ARGS__)
 
 enum DebugModule
@@ -96,7 +100,7 @@ static char     levelNames[][10] =
      "OFF", "FINE", "FINER", "FINEST"
 };
 #include<Mutex.h>
-class Logger
+class DllExport Logger
 {
     int fdLog;  //file descriptor
     LogLevel configLevel;   //configuration file setting is cached here.

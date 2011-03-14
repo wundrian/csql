@@ -47,7 +47,7 @@ enum ScanType
 */
 
 class FieldInfo;
-class Table
+class DllExport Table
 {
     public:
     /** sets condition for the select, update and delete operations

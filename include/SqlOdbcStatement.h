@@ -23,7 +23,7 @@
 #include <SqlOdbcConnection.h>
 #include <SqlFactory.h>
 #include <CSql.h>
-class SqlOdbcStatement: public AbsSqlStatement
+class DllExport SqlOdbcStatement: public AbsSqlStatement
 {
     public:
     SqlOdbcStatement() 

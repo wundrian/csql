@@ -19,11 +19,15 @@
  ***************************************************************************/
 #ifndef SQLODBCCONNECTION_H
 #define SQLODBCCONNECTION_H
-#include<CSql.h>
-#include<AbsSqlConnection.h>
-#include<SqlFactory.h>
+#include <CSql.h>
+#include <AbsSqlConnection.h>
+#include <SqlFactory.h>
 #include <sql.h>
 #include <sqlext.h>
+
+#ifdef WINNT
+typedef signed short int        SWORD;
+#endif
 
 struct SQLFuncPtrs{
     SQLRETURN (*SQLAllocHandlePtr)(SQLSMALLINT, SQLHANDLE, SQLHANDLE*);
@@ -52,7 +56,6 @@ struct SQLFuncPtrs{
     SQLRETURN (*SQLDisconnectPtr)(SQLHDBC);    
     SQLRETURN (*SQLTablesPtr)(SQLHSTMT ,SQLCHAR *, SQLSMALLINT , SQLCHAR * , SQLSMALLINT, SQLCHAR *,  SQLSMALLINT, SQLCHAR*,SQLSMALLINT);
     SQLRETURN (*SQLProcedureColumnsPtr)(SQLHSTMT, SQLCHAR *, SQLSMALLINT, SQLCHAR *, SQLSMALLINT, SQLCHAR *, SQLSMALLINT,SQLCHAR *, SQLSMALLINT);
-
 };
 
 /**
@@ -63,7 +66,7 @@ struct SQLFuncPtrs{
 //    public:
 //};
 
-class SqlOdbcConnection : public AbsSqlConnection
+class DllExport SqlOdbcConnection : public AbsSqlConnection
 {
     Connection dummyConn;
     char errState[STATE_LENGTH];

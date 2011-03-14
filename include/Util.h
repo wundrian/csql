@@ -18,7 +18,7 @@ enum HashFuncType {
     HASH_BINARY,
 };
 
-class Util 
+class DllExport Util 
 {
     public:
     static unsigned int hashBinary(char *strVal, int length);
@@ -105,7 +105,7 @@ class ListNode
     
 };
 
-class ListIterator
+class DllExport ListIterator
 {
     ListNode *iter;
     ListNode *start;
@@ -159,7 +159,7 @@ class Identifier
     char name[IDENTIFIER_LENGTH];
 };
 
-class List
+class DllExport List
 {
     ListNode *head;
     int totalElements;
@@ -289,7 +289,7 @@ class List
 
 };
 #define MAX_UNIQUE_ID 10
-class GlobalUniqueID
+class DllExport GlobalUniqueID
 {
    void *ptr;
    public:
@@ -301,7 +301,7 @@ class GlobalUniqueID
    int getID(UniqueIDType type);
 };
 
-class UniqueID
+class DllExport UniqueID
 {
    int startID;
    Mutex mutex;

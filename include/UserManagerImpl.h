@@ -18,7 +18,7 @@
 #include<UserManager.h>
 #include<os.h>
 class Database;
-class UserManagerImpl: public UserManager
+class DllExport UserManagerImpl: public UserManager
 {
     private:
     bool isDba;

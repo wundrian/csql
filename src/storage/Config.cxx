@@ -34,7 +34,7 @@ int Config::readLine(FILE *fp, char * buffer)
 }
 int Config::storeKeyVal(char *key, char *value)
 {
-    if (os::os::strcasestr(key, "PAGE_SIZE") != NULL )
+    if (os::strcasestr(key, "PAGE_SIZE") != NULL )
            { cVal.pageSize = atoi(value);  }
     else if (os::strcasestr(key, "MAX_PROCS") != NULL)
            { cVal.maxProcs = atoi(value);  }

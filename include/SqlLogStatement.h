@@ -25,7 +25,7 @@
 #include <SqlFactory.h>
 #include <CSql.h>
 
-class SqlLogStatement: public AbsSqlStatement
+class DllExport SqlLogStatement: public AbsSqlStatement
 {
     public:
     SqlLogStatement() {

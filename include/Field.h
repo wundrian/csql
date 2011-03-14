@@ -90,7 +90,7 @@ class FieldInfo;
 
 //Internal class used to implement the field list information
 //to create the table
-class FieldList
+class DllExport FieldList
 {
     public:
     FieldNode *head;

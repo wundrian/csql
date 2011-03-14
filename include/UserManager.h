@@ -32,7 +32,7 @@
 * 
 */
 
-class UserManager
+class DllExport UserManager
 {
     public:
     /** creates new User in the system.<br/>

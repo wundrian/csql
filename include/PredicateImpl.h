@@ -22,7 +22,7 @@ class TableImpl;
 class Table;
 class List;
 class AggTableImpl;
-class PredicateImpl:public Predicate
+class DllExport PredicateImpl:public Predicate
 {
     //Members set during initialization of the term
     char fldName1[IDENTIFIER_LENGTH];

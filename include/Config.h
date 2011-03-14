@@ -21,7 +21,7 @@ enum TDBInfo
     postgres
 };
 
-class ConfigValues
+class DllExport ConfigValues
 {
     public:
     //All the members of the configuration file
@@ -137,7 +137,7 @@ class ConfigValues
     }
 };
 
-class Config
+class DllExport Config
 {
     ConfigValues cVal;
     bool isLoaded;
@@ -198,7 +198,7 @@ class Config
 
 };
 
-class Conf
+class DllExport Conf
 {
     public:
     static Config config;

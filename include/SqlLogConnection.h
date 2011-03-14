@@ -35,7 +35,7 @@ typedef struct my_msgbuffer {
     void *data;
 } Message;
 
-class AbsSqlLogSend
+class DllExport AbsSqlLogSend
 {
     public:
     virtual DbRetVal prepare(int tId, int sId, int len, char *st, char *tn,
@@ -44,7 +44,7 @@ class AbsSqlLogSend
     virtual DbRetVal free(int txnId, int stmtId, bool hasParam)=0;
 };
 
-class MsgQueueSend : public AbsSqlLogSend
+class DllExport MsgQueueSend : public AbsSqlLogSend
 {
     int msgQId;
     public:
@@ -55,7 +55,7 @@ class MsgQueueSend : public AbsSqlLogSend
     DbRetVal free(int txnId, int stmtId, bool hasParam);
 };
 
-class FileSend : public AbsSqlLogSend
+class DllExport FileSend : public AbsSqlLogSend
 {
     int fdRedoLog;
     int fdStmtLog;
@@ -70,7 +70,7 @@ class FileSend : public AbsSqlLogSend
 };
 
 
-class OfflineLog : public AbsSqlLogSend
+class DllExport OfflineLog : public AbsSqlLogSend
 {
     int fdOfflineLog;
     void *metadata;
@@ -107,7 +107,7 @@ class ExecLogInfo
     void *value; //Extendible value as per parameter type size
 };
 
-class SqlLogConnection : public AbsSqlConnection
+class DllExport SqlLogConnection : public AbsSqlConnection
 {
     Connection dummyConn;
 

@@ -91,7 +91,7 @@ class TupleIterator
     void reset();
     DbRetVal close();
 };
-class TableImpl:public Table
+class DllExport TableImpl:public Table
 {
     private:
     LockManager *lMgr_;

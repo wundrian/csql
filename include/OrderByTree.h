@@ -20,7 +20,7 @@
 #include<DataType.h>
 #include<HeapAllocator.h>
 
-class OrderByFldDef
+class DllExport OrderByFldDef
 {
     public:
     char fldName[IDENTIFIER_LENGTH];
@@ -50,7 +50,7 @@ enum OrderByType
     Desc,
     UnKnown,
 };
-class OrderByTree
+class DllExport OrderByTree
 {
     OrderByType type;
     int keySize;

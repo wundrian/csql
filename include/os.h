@@ -1,5 +1,5 @@
-/***************************************************************************
- *                                                                         *
+/*************************************************************************
+ *                                                                      *
  *    Copyright (C) Lakshya Solutions Ltd. All rights reserved.            *
  *                                                                         *
  ***************************************************************************/
@@ -8,23 +8,68 @@
 #define OS_H
 #include<build.h>
 
-#if defined(SOLARIS) || defined(LINUX) || defined(FreeBSD)
+//Added for gettimeofday impl for windows
+#if defined(_MSC_VER) || defined(_MSC_EXTENSIONS)
+  #define DELTA_EPOCH_IN_MICROSECS  11644473600000000Ui64
+#else
+  #define DELTA_EPOCH_IN_MICROSECS  11644473600000000ULL
+#endif
+
+
+#define SQL_STMT_LEN 8192
+#define MAX_FILE_LEN 1024
+#define IDENTIFIER_LENGTH 64
+#define ERROR_STRING_LENGTH 128
+#define DEFAULT_VALUE_BUF_LENGTH 32
+#define STATE_LENGTH 8
+#define SYSTEMDB "SYSTEMDB"
+#define DBAUSER "root"
+#define DBAPASS "manager"
+#define I_USER "i@1r4D_f$_a"
+#define I_PASS "a_$f_D4r1@i"
+#define DEFAULT_CONFIG_FILE "/etc/csql/csql.conf"
+#define LOCK_BUCKET_SIZE 2048
+#define STMT_BUCKET_SIZE 1023
+#define MAX_CHUNKS 20
+#define PAGE_SIZE Conf::config.getPageSize()
+#define MAX_MUTEX_PER_THREAD 5
+#define MAX_THREADS_PER_PROCESS 30
+#define MAX_FILE_PATH_LEN 1024
+#define CHUNK_NAME_LEN 64
+#define LOG_ROLLOVER_SIZE 20*1024*1024
+#define SIGCSQL1 SIGUSR1
+#define MIN_VARCHAR_ALLOC_SIZE 30
+
+#define BIT(x) (1 << (x))
+#define SETBITS(x,y) ((x) |= (y))
+#define CLEARBITS(x,y) ((x) &= (~(y)))
+#define SETBIT(x,y) SETBITS((x), (BIT((y))))
+#define CLEARBIT(x,y) CLEARBITS((x), (BIT((y))))
+#define BITSET(x,y) ((x) & (BIT(y))) 
+#define DllExport 
+typedef void (*sighandler_t)(int);
+#define LHANDLE void*
 
 #include <stdio.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <math.h>
+#include <string.h>
+#include <stdlib.h>
+#include <limits.h>
+#include <dlfcn.h>
+
+
+#if defined(SOLARIS) || defined(LINUX) || defined(FreeBSD)
+
 #include <sys/mman.h>
 #include <sys/msg.h>
 #include <sys/shm.h>
 #include <unistd.h>
-#include <string.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <pthread.h>
-#include <math.h>
 #include <signal.h>
 #include <ctype.h>
-#include <limits.h>
 #include <sys/socket.h>
 #include <fnmatch.h>
 #include <sys/time.h>
@@ -35,6 +80,7 @@
 #include <netinet/tcp.h>
 #include <sys/file.h>
 #include <sys/wait.h>
+#include <netdb.h>
 #if defined(SOLARIS)
     #include <sys/varargs.h>
     #include <crypt.h>
@@ -54,7 +100,6 @@
     #include <sys/errno.h>
 #endif
 
-typedef void (*sighandler_t)(int);
 
 enum FileOpenMode
 {
@@ -92,39 +137,7 @@ enum MapMode
     mapASync = MS_ASYNC
 
 };
-
-#define SQL_STMT_LEN 8192
-#define MAX_FILE_LEN 1024
-#define IDENTIFIER_LENGTH 64
-#define ERROR_STRING_LENGTH 128
-#define DEFAULT_VALUE_BUF_LENGTH 32
-#define STATE_LENGTH 8
-#define SYSTEMDB "SYSTEMDB"
-#define DBAUSER "root"
-#define DBAPASS "manager"
-#define I_USER "i@1r4D_f$_a"
-#define I_PASS "a_$f_D4r1@i"
-#define DEFAULT_CONFIG_FILE "/etc/csql/csql.conf"
-#define LOCK_BUCKET_SIZE 2048
-#define STMT_BUCKET_SIZE 1023
-#define MAX_CHUNKS 20
-#define PAGE_SIZE Conf::config.getPageSize()
-#define MAX_MUTEX_PER_THREAD 5
-#define MAX_THREADS_PER_PROCESS 30
-#define MAX_FILE_PATH_LEN 1024
-#define CHUNK_NAME_LEN 64
-#define LOG_ROLLOVER_SIZE 20*1024*1024
-#define SIGCSQL1 SIGUSR1
-#define MIN_VARCHAR_ALLOC_SIZE 30
-
-#define BIT(x) (1 << (x))
-#define SETBITS(x,y) ((x) |= (y))
-#define CLEARBITS(x,y) ((x) &= (~(y)))
-#define SETBIT(x,y) SETBITS((x), (BIT((y))))
-#define CLEARBIT(x,y) CLEARBITS((x), (BIT((y))))
-#define BITSET(x,y) ((x) & (BIT(y))) 
-
-
+typedef int file_desc;
 typedef key_t shared_memory_key;
 typedef int   shared_memory_id;
 #if defined(__sparcv9)
@@ -133,17 +146,78 @@ typedef int   shared_memory_id;
     typedef int InUse;
 #endif
 
+#elif defined(WINNT)
+#include <io.h>
+#include <time.h>
+#include <winsock2.h>
+#include <errno.h>
+#define snprintf sprintf_s 
+#define strncasecmp _strnicmp
+#define strcasecmp strcmpi
+#define vsnprintf vsnprintf_s
+typedef HANDLE file_desc;
+typedef  long off_t;
+typedef void* caddr_t;
+typedef int InUse;
+typedef int pid_t;
+typedef int pthread_t;
+typedef int mode_t;
+typedef int key_t;
+typedef int shared_memory_key;
+typedef int shared_memory_id;
+#define MAP_FAILED -1 
+#define SHM_RND 0
+#define SQL_API
+#define ALLREADY_HAVE_WINDOWS_TYPE
+#define SIGCSQL1 0
+#define LHANDLE HMODULE
+#define DllExport   __declspec( dllexport ) 
+
+enum FileOpenMode
+{
+    fileOpenReadOnly = _O_RDONLY,
+    fileOpenWriteOnly = _O_WRONLY,
+    fileOpenReadWrite = _O_RDWR,
+    fileOpenAppend = _O_CREAT| _O_APPEND |_O_RDWR,
+    fileOpenCreat = _O_CREAT |_O_RDWR,
+    // If set and fileOpenExcl is set, the
+    // open will fail if the file already exists.
+    fileOpenExcl = _O_EXCL,
+    fileOpenTrunc = _O_TRUNC
+};
+enum MapProtMode
+{
+    mapProtRead = PAGE_READONLY,
+    mapProtWrite = PAGE_READWRITE,
+    mapProcExec = PAGE_READWRITE, //execute is not supported in win2k
+    mapProcNone = PAGE_READWRITE // exec and none mode is not used in code
+};
+
+//Mapping all modes to dummy for now
+enum MapMode
+{
+    mapShared = PAGE_READWRITE ,
+    mapPrivate = PAGE_READWRITE ,
+    mapFixed = PAGE_READWRITE ,
+    mapNoReserve = PAGE_READWRITE ,
+    mapSync = PAGE_READWRITE ,
+    mapASync = PAGE_READWRITE 
+};
+
 #endif
 
-class os
+class DllExport os
 {
     public:
-    static void* mmap(void* addr, size_t len, int prot, int flags, int fildes, off_t off);
+    static void* mmap(void* addr, size_t len, int prot, int flags, file_desc fildes, off_t off);
     static int munmap(caddr_t addr, size_t len);
-    static int openFile(const char *name, FileOpenMode flags, size_t size);
-    static int closeFile(int fd);
+    static int open(const char *name, FileOpenMode flags, size_t size);
+    static int close(int fd);
+	static file_desc openFile(const char *name, FileOpenMode flags, size_t size);
+    static int closeFile(file_desc fd);
     static int lockFile(int fd);
     static int unlockFile(int fd);
+	static int truncate(const char* fname);
     static off_t lseek(int fildes, off_t offset, int whence);
     static int openFileForAppend(const char* fname, int flags);
     static int getFileSize(const char* fname);
@@ -168,16 +242,15 @@ class os
     static void*  shm_attach(shared_memory_id id, const void *ptr, int flag);
     static int shm_detach (void*);
     static int shmctl(int shmid, int cmd);
+	static int shm_remove(int shmid);
     inline static double floor(double val)
         { return ::floor(val); }
     static sighandler_t signal(int signum, sighandler_t handler);
 
     static int gettimeofday(struct timeval *tp);
     static struct tm* localtime(long *secs);
-    static pid_t getpid()
-       { return ::getpid(); }
-    static pthread_t getthrid()
-       { return ::pthread_self(); }
+    static pid_t getpid();
+    static pthread_t getthrid();
     static char* getenv(const char *envVarName);
     static int setenv(const char *envVarName, const char *value);
 
@@ -191,15 +264,16 @@ class os
     static int strmatch(char *pattern, char *str);
     static int msgget(key_t key, int oflag);
     static int msgsnd(int msqid, const void *ptr, size_t len, int flag);
-    static ssize_t msgrcv(int msqid, void *ptr, size_t len, long type, int flag);
+    static int msgrcv(int msqid, void *ptr, size_t len, long type, int flag);
     static int msgctl(int msqid, int cmd, struct msqid_ds *buff);
     static int isValidIP(char ipstr[] );
     static bool fileExists(char *fileName);
     static char* strcasestr(char *s1, const char *s2);
     static int getNoOfProcessors();
     static mode_t umask(mode_t mask);
-    static int fdatasync(int fd);
+    static int fdatasync(file_desc fd);
     static int atexit(void (*exitHndlr)(void));
+    static void* dlsym(LHANDLE hdl, char* funcName);
 };
 
 #endif

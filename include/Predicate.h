@@ -54,7 +54,7 @@ enum AggType
 *    table->setCondition(rootCondition);<br/>
 * 
 */
-class Condition
+class DllExport Condition
 {
     Predicate *pred;
     public:
@@ -115,7 +115,7 @@ class Condition
 *
 * 
 */
-class Predicate
+class DllExport Predicate
 {
     public:
     virtual void setTerm(const char* fName1, ComparisionOp op, const char *fName2)=0;

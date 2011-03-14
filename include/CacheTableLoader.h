@@ -20,7 +20,7 @@
 #include <sqlext.h>
 #include <Network.h>
 
-class CacheIndexInfo
+class DllExport CacheIndexInfo
 {
     public:
     char indexName[IDENTIFIER_LENGTH];
@@ -28,7 +28,7 @@ class CacheIndexInfo
     ~CacheIndexInfo() { fieldNameList.removeAll(); }
 };
 
-class CacheTableLoader
+class DllExport CacheTableLoader
 {
     char tableName[IDENTIFIER_LENGTH];
     char fieldName[IDENTIFIER_LENGTH];
@@ -86,7 +86,7 @@ class CacheTableLoader
 
 };
 
-class BindBuffer
+class DllExport BindBuffer
 {
     public:
     void *csql;
@@ -101,7 +101,7 @@ class BindBuffer
     }
     ~BindBuffer() { ::free(csql); ::free(targetdb); ::free(nullData); }
 };
-class CacheTableInfo
+class DllExport CacheTableInfo
 {
     public:
     char tableName[IDENTIFIER_LENGTH];

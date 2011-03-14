@@ -70,7 +70,7 @@ void Logger::rollOverIfRequired()
     if (ret != 0) {
         printError(ErrWarning, "Unable to rollover the log file");
     }else {
-       truncate(fileName, 0);
+       os::truncate(fileName);
     }
     os::unlockFile(fdLog);
     return;
@@ -100,7 +100,7 @@ int Logger::log(LogLevel level, char* filename,
             ret = os::lockFile(fdLog);
             if (ret ==0) break;
             if (ret !=0 && errno == EBADF) {
-                fdLog = os::openFile(filename, fileOpenAppend,0);
+                fdLog = os::open(filename, fileOpenAppend,0);
                 if (fdLog == -1)
                 {
                     printError(ErrSysInit,"Unable to open log file");
@@ -137,7 +137,7 @@ DbRetVal Logger::startLogger(char *filename, bool isCreate)
     int ret =0;
     if (isCreate)
     {
-       if (::access(filename, F_OK) == 0 ) {
+       if (os::fileExists(filename)) {
           //move the existing log file with timestamp and create new file
           time_t cnow = ::time(NULL);
 #ifdef SOLARIS
@@ -153,10 +153,10 @@ DbRetVal Logger::startLogger(char *filename, bool isCreate)
           if (ret != 0) {
             printError(ErrWarning, "Unable to copy old log file");
           }
-          truncate(filename, 0);
+          os::truncate(filename);
        }
     }
-    fdLog = os::openFile(filename, fileOpenAppend,0);
+    fdLog = os::open(filename, fileOpenAppend,0);
     if (fdLog == -1)
     {
         printError(ErrSysInit,"Unable to open log file");
@@ -168,5 +168,5 @@ DbRetVal Logger::startLogger(char *filename, bool isCreate)
 void Logger::stopLogger()
 {
     if (configLevel == 0) return ;
-    os::closeFile(fdLog);
+    os::close(fdLog);
 }

@@ -6,8 +6,12 @@
 
 #ifndef DATATYPE_H
 #define DATATYPE_H
-#include<sqlext.h>
-#include<sqltypes.h>
+
+#ifndef WINNT
+//#include<sqlext.h>
+//#include<sqltypes.h>
+#endif
+
 #include<ErrorType.h>
 #include<Config.h>
 #include<Function.h>
@@ -86,15 +90,15 @@ static char LogOpNames[][10] =
     "AND", "OR", "NOT", "Invalid"
 };
 
-class AllDataType
+class DllExport AllDataType
 {
     public:
     inline static long size(DataType type, int length =0);
     static char* getSQLString(DataType type);
-    static SQLSMALLINT convertToSQLType(DataType type);
-    static SQLSMALLINT convertToCSQLSQLType(DataType type);
-    static SQLSMALLINT convertToSQL_C_Type(DataType type,TDBInfo tdbname=mysql);
-    static DataType convertFromSQLType(SQLSMALLINT type,int length=0, int scale=0, TDBInfo tdbname=mysql);
+    static short convertToSQLType(DataType type);
+    static short convertToCSQLSQLType(DataType type);
+    static short convertToSQL_C_Type(DataType type,TDBInfo tdbname=mysql);
+    static DataType convertFromSQLType(short type,int length=0, int scale=0, TDBInfo tdbname=mysql);
 
     inline static void copyVal(void* dest, void *src, DataType type, int length = 0,int dbFlag=0);
     inline static void copyZeroVal(void* dest, DataType type, int length = 0);
@@ -156,7 +160,7 @@ class AllDataType
 * <br/>
 * 
 */
-class ByteInt {
+class DllExport ByteInt {
 
     public:
     ByteInt() { }
@@ -207,7 +211,7 @@ class ByteInt {
 * <br/>
 * 
 */
-class Date {  // The class a user would declare to hold date
+class DllExport Date {  // The class a user would declare to hold date
 
     public:
     Date() {julianDate = 0;}
@@ -374,7 +378,7 @@ class Date {  // The class a user would declare to hold date
 * <br/>
 * 
 */
-class Time {  // The class a user would declare to hold time
+class DllExport Time {  // The class a user would declare to hold time
     public:
     Time() {timeVal = 0;}
 
@@ -492,7 +496,7 @@ class Time {  // The class a user would declare to hold time
 * <br/>
 * 
 */
-class TimeStamp {
+class DllExport TimeStamp {
 
     public:
     TimeStamp() {}

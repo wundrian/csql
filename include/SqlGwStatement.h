@@ -24,7 +24,7 @@
 #include <SqlGwConnection.h>
 #include <SqlFactory.h>
 #include <CSql.h>
-class SqlGwStatement: public AbsSqlStatement
+class DllExport SqlGwStatement: public AbsSqlStatement
 {
     AbsSqlStatement *adapter;
     GwHandler stmtHdlr;

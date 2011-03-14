@@ -16,9 +16,18 @@
 #include <os.h>
 #include <Debug.h>
 
-void* os::mmap(void* addr, size_t len, int prot, int flags, int fildes, off_t off)
+void* os::mmap(void* addr, size_t len, int prot, int flags, file_desc fildes, off_t off)
 {
-#ifdef SOLARIS
+#ifdef WINNT
+	HANDLE hFile = ::CreateFileMapping(fildes, 
+		NULL, prot, 0, off, NULL);
+	if (hFile == NULL)
+	{
+		 printf("unable to do mmap\n");
+		 return NULL;
+	}
+	return  ::MapViewOfFileEx(hFile, FILE_MAP_WRITE, 0, 0, off, addr);
+#elif defined	SOLARIS
     return ((void*)::mmap((char*)addr,len,prot,flags,fildes,off));
 #else
     return ((void*)::mmap(addr,len,prot,flags,fildes,off));
@@ -27,7 +36,11 @@ void* os::mmap(void* addr, size_t len, int prot, int flags, int fildes, off_t of
 
 int os::munmap(caddr_t addr, size_t len)
 {
+#ifdef WINNT
+	return ::UnmapViewOfFile(addr);
+#else
     return ::munmap(addr, len);
+#endif
 }
 
 int os::atexit(void (*exitHndlr)(void))
@@ -37,47 +50,158 @@ int os::atexit(void (*exitHndlr)(void))
 
 shared_memory_id os::shm_create(shared_memory_key key, size_t size, int flag)
 {
+#ifdef WINNT
+	char fName[MAX_FILE_PATH_LEN];
+	sprintf(fName, "SHM_ID_%d", key);
+	HANDLE hFile = ::CreateFileMapping(INVALID_HANDLE_VALUE, 
+		NULL, PAGE_READWRITE, 0, size, NULL);
+	if (hFile == NULL)
+	{
+		 printf("unable to do shm_create\n");
+		 return -1;
+	}
+	return key;
+#else
     return ::shmget(key, size, IPC_CREAT | IPC_EXCL | flag);
-    //return ::shmget(key, size, IPC_CREAT | flag);
+#endif
 }
 
 shared_memory_id os::shm_open(shared_memory_key key, size_t size, int flag)
 {
+#ifdef WINNT
+	return shm_create(key, size, flag);
+#else
     return ::shmget(key, size, flag);
+#endif
 }
 int os::shmctl(int shmid, int cmd)
 {
+#ifdef WINNT
+	printf("WINDOWS shm_open not implemented\n");
+	return 0;
+#else
     return ::shmctl(shmid, cmd, NULL);
+#endif
+}
+int os::shm_remove(int shmid)
+{
+#ifdef WINNT
+	printf("WINDOWS shmremove not implemented\n");
+	return 0;
+#else
+    return ::shmctl(shmid, IPC_RMID, NULL);
+#endif
 }
 
 void*  os::shm_attach(shared_memory_id id, const void *ptr, int flag)
 {
+#ifdef WINNT
+	char fName[MAX_FILE_PATH_LEN];
+	sprintf(fName, "SHM_ID_%d", id);
+	HANDLE hFile = ::OpenFileMapping(FILE_MAP_ALL_ACCESS,false, fName);
+	if (hFile == NULL)
+	{
+		 printf("unable to do mmap\n");
+		 return NULL;
+	}
+	return  ::MapViewOfFileEx(hFile, FILE_MAP_WRITE, 0, 0, 0, (void*)ptr);
+#else
     return ::shmat(id, ptr, flag);
+#endif
 }
 
 int os::shm_detach (void* addr)
 {
+#ifdef WINNT
+	return ::UnmapViewOfFile(addr);
+#else
     return ::shmdt((char*)addr);
+#endif
 }
 
 int os::gettimeofday(struct timeval *tp)
 {
-    int retval;
-    retval=::gettimeofday(tp, NULL);
-    return retval;
+    int retval=0;
+#ifdef WINNT
+    FILETIME ft;
+    unsigned __int64 tmpres = 0;
+    GetSystemTimeAsFileTime(&ft);
+ 
+    // The GetSystemTimeAsFileTime returns the number of 100 nanosecond 
+    // intervals since Jan 1, 1601 in a structure. Copy the high bits to 
+    // the 64 bit tmpres, shift it left by 32 then or in the low 32 bits.
+    tmpres |= ft.dwHighDateTime;
+    tmpres <<= 32;
+    tmpres |= ft.dwLowDateTime;
+ 
+    // Convert to microseconds by dividing by 10
+    tmpres /= 10;
+ 
+    // The Unix epoch starts on Jan 1 1970.  Need to subtract the difference 
+    // in seconds from Jan 1 1601.
+    tmpres -= DELTA_EPOCH_IN_MICROSECS;
+ 
+    // Finally change microseconds to seconds and place in the seconds value. 
+    // The modulus picks up the microseconds.
+    tp->tv_sec = (long)(tmpres / 1000000UL);
+    tp->tv_usec = (long)(tmpres % 1000000UL);
+#else
+	retval=::gettimeofday(tp, NULL);
+#endif
+	return retval;
 }
 
 struct tm* os::localtime(long *secs)
 {
 #ifdef SOLARIS
     return (struct tm*) ::localtime(secs);
+#elif defined WINNT
+    return ::localtime((const time_t*)secs);
 #else
     return ::localtime(secs);
 #endif
 }
-
-int os::openFile(const char *name, FileOpenMode flags, size_t size)
+int os::open(const char *name, FileOpenMode flags, size_t size)
 {
+    int retval = -1;
+    mode_t oldMode = umask(0000);
+    mode_t mode = (mode_t)0644 ;
+    retval=::open(name, flags, mode);
+    umask(oldMode);
+    if (0 == size)
+        return (int) retval;
+    os::lseek(retval, size-1, SEEK_SET);
+    char *buf = (char*)" ";
+    os::write(retval, buf, 1);
+    return (int) retval;
+}
+int os::close(int fd)
+{
+	return ::close(fd);
+}
+
+file_desc os::openFile(const char *name, FileOpenMode flags, size_t size)
+{
+
+#ifdef WINNT
+	HANDLE hFile = CreateFile(name, GENERIC_READ | GENERIC_WRITE,
+                       FILE_SHARE_WRITE, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+    if (hFile == INVALID_HANDLE_VALUE) 
+    { 
+        printf("Unable to open file %s \n", name);
+        return (file_desc) -1;
+    }
+	if (0 == size)
+        return (file_desc) hFile;
+    mode_t mode = (mode_t)0644 ;
+    int retval=::open(name, flags, mode);
+    os::lseek(retval, size-1, SEEK_SET);
+    char *buf = (char*)" ";
+    os::write(retval, buf, 1);
+	::close(retval);
+    return (file_desc) retval;
+#else
     int retval = -1;
     //mode_t mode = S_IRWXU | S_IRGRP | S_IWGRP ;
     mode_t oldMode = umask(0000);
@@ -85,11 +209,12 @@ int os::openFile(const char *name, FileOpenMode flags, size_t size)
     retval=::open(name, flags, mode);
     umask(oldMode);
     if (0 == size)
-        return retval;
+        return (file_desc) retval;
     os::lseek(retval, size-1, SEEK_SET);
     char *buf = (char*)" ";
     os::write(retval, buf, 1);
-    return retval;
+    return (file_desc) retval;
+#endif
 }
 int os::openFileForAppend(const char *name, int flag)
 {
@@ -98,14 +223,22 @@ int os::openFileForAppend(const char *name, int flag)
     return  ::open(name, flags, mode);
 }
 
-int os::closeFile(int fd)
+int os::closeFile(file_desc fd)
 {
+#ifdef WINNT
+	return ::CloseHandle(fd);
+#else
     return ::close(fd);
+#endif
 }
 int os::lockFile(int fd)
 {
 #ifdef SOLARIS
     //TODO
+	printf("SOLARIS lockFile not implemented\n");
+    return 0;
+#elif defined WINNT
+	printf("WINDOWS lockFile not implemented\n");
     return 0;
 #else
     return flock(fd, LOCK_EX);
@@ -114,7 +247,11 @@ int os::lockFile(int fd)
 int os::unlockFile(int fd)
 {
 #ifdef SOLARIS
+	printf("Solaris unlockFile not implemented\n");
     //TODO
+    return 0;
+#elif defined WINNT
+	printf("WINDOWS unlockFile not implemented\n");
     return 0;
 #else
     return ::flock(fd, LOCK_UN);
@@ -133,16 +270,31 @@ size_t os::write(int fildes, char *buf, size_t size)
 
 int os::msync(caddr_t addr, size_t len, int flags)
 {
-    return ::msync(addr, len, flags);
+#ifdef WINNT
+	printf("WINDOWS msync not implemented\n");
+	return 1;
+#else
+	return ::msync(addr, len, flags);
+#endif
 }
 int os::fsync(int fildes)
 {
+#ifdef WINNT
+	printf("WINDOWS fsync not implemented\n");
+	return 0;
+#else
     return ::fsync(fildes);
+#endif
 }
 
 char* os::encrypt(const char *key, const char *salt)
 {
+#ifdef WINNT
+	printf("WINDOWS encrypt not implemented\n");
+	return (char*)key;
+#else
     return ::crypt(key, salt);
+#endif
 }
 
 void* os::memset(void *src, int c, size_t size)
@@ -161,7 +313,12 @@ int os::memcmp(const void *s1, const void *s2, size_t size)
 }
 sighandler_t os::signal(int signum, sighandler_t handler)
 {
-    return ::signal(signum, handler);
+#ifdef WINNT
+	printf("WINDOWS signal not implemented\n");
+	return NULL;
+#else
+	return ::signal(signum, handler);
+#endif
 }
 
 int os::select(int nfds, fd_set *readfds, fd_set *writefds,
@@ -171,7 +328,12 @@ int os::select(int nfds, fd_set *readfds, fd_set *writefds,
 }
 int os::sleep(int secs)
 { 
+#ifdef WINNT
+    ::Sleep(secs *1000);
+	return 0;
+#else
     return ::sleep(secs);
+#endif
 }
 int os::usleep(int msecs)
 { 
@@ -201,6 +363,9 @@ int os::setenv(const char *envVarName, const char *value)
     char str[IDENTIFIER_LENGTH*3];
     sprintf(str, "%s=%s", envVarName, value);
     return putenv(str);
+#elif defined WINNT
+	printf("WINDOWS setenv not implemented \n");
+	return 0;
 #else
     return ::setenv(envVarName, value,1);
 #endif
@@ -208,7 +373,12 @@ int os::setenv(const char *envVarName, const char *value)
 
 int os::kill(pid_t pid, int sig)
 {
-    return ::kill(pid, sig);
+#ifdef WINNT
+	printf("WINDOWS kill not implemented\n");
+	return 0;
+#else
+	return ::kill(pid, sig);
+#endif
 }
 bool os::atobool(char *value)
 {
@@ -220,6 +390,21 @@ bool os::atobool(char *value)
 }
 pid_t os::createProcess(const char* cmdName, const char* execName)
 {
+#if defined WINNT
+	printf("WINDOWS: createProcess implemented partially\n");
+	STARTUPINFO sinfo;
+    PROCESS_INFORMATION pinfo;
+    ZeroMemory( &sinfo, sizeof(sinfo) );
+    sinfo.cb = sizeof(sinfo);
+    ZeroMemory( &pinfo, sizeof(pinfo) );
+
+    if (!::CreateProcess(cmdName, NULL, NULL, NULL, FALSE, 0, NULL, NULL,
+        &sinfo, &pinfo))
+    {
+        return -1;
+    }
+	return (pid_t)pinfo.dwProcessId;
+#else
     pid_t pid;
     pid = ::fork();
     if (pid == (pid_t) -1 )
@@ -236,15 +421,21 @@ pid_t os::createProcess(const char* cmdName, const char* execName)
     if (pid < 0)
         printf("Exec failed\n");
     return pid;
+#endif
 }
 pid_t os::fork()
 {
+#if defined WINNT
+	printf("WINDOWS: fork not implemented\n");
+	return 0;
+#else
     return ::fork();
+#endif
 }
 size_t os::send(int fd, const void *buf, size_t len, int flags)
 {
     size_t totalLen = len;
-    size_t nbytes = ::send(fd, buf, len, flags);
+    size_t nbytes = ::send(fd, (char*)buf, len, flags);
     while (nbytes != -1 && nbytes != len) {
         len = len - nbytes;
         nbytes = ::send(fd, ((char *)buf)+nbytes, len, flags);
@@ -255,7 +446,7 @@ size_t os::send(int fd, const void *buf, size_t len, int flags)
 size_t os::recv(int fd, void *buf, size_t len, int flags)
 {
     size_t totalLen = len;
-    size_t nbytes = ::recv(fd, buf, len, flags);
+    size_t nbytes = ::recv(fd, (char*)buf, len, flags);
     if (!nbytes) return 0;
     while (nbytes != -1 && nbytes != len) {
         len = len - nbytes;
@@ -270,32 +461,62 @@ int os::gethostname(char *hostname, size_t len)
 }
 int os::strmatch(char *pattern, char *str)
 {
-    return ::fnmatch(pattern, str, 0);
+#if defined WINNT
+	printf("WINDOWS: strmatch not implemented\n");
+	return 0;
+#else
+	return ::fnmatch(pattern, str, 0);
+#endif
 }
 
 int os::msgget(key_t key, int oflag) 
 {
+#if defined WINNT
+	printf("WINDOWS: msgget not implemented\n");
+	return 0;
+#else
     return ::msgget(key, oflag | IPC_CREAT);
+#endif
 }
 
 int os::msgsnd(int msqid, const void *ptr, size_t len, int flag) 
 {
+#if defined WINNT
+	printf("WINDOWS: msgsnd not implemented\n");
+	return 0;
+#else
     return ::msgsnd(msqid, ptr, len, flag);
+#endif
 }
 
-ssize_t os::msgrcv(int msqid, void *ptr, size_t len, long type, int flag) 
+int os::msgrcv(int msqid, void *ptr, size_t len, long type, int flag) 
 {
+#if defined WINNT
+	printf("WINDOWS: msgrcv not implemented\n");
+	return 0;
+#else
     return ::msgrcv(msqid, ptr, len, type, flag);
+#endif
 };
 
 int os::msgctl(int msqid, int cmd, struct msqid_ds *buff)
 {
+#if defined WINNT
+	printf("WINDOWS: msgctl not implemented\n");
+	return 0;
+#else
     return ::msgctl(msqid, cmd, buff);
+#endif
 }
 bool os::fileExists(char *fileName)
 {
+#if defined WINNT
+	int ret = _access(fileName, 04);
+	if (0 == ret) return true; else return false;
+#else
     int ret = access(fileName, R_OK);
     if (0 == ret) return true; else return false;
+#endif
 }
 int os::isValidIP(char ipstr[] )
 {
@@ -349,18 +570,66 @@ char* os::strcasestr(char *str1, const char *str2)
 }
 int os::getNoOfProcessors()
 {
+#if defined WINNT
+	printf("WINDOWS: getNoOfProcessors not implemented\n");
+	return 1;
+#else
     return ::sysconf(_SC_NPROCESSORS_ONLN);
+#endif
 }
 mode_t os::umask(mode_t mask)
 {
     return::umask(mask);
 }
-int os::fdatasync(int fd)
+int os::fdatasync(file_desc fd)
 {
 #ifdef FreeBSD
     return ::fsync(fd);
+#elif defined WINNT
+	printf("WINDOWS: fdatasync not implemented\n");
+	return 0;
 #else
     return ::fdatasync(fd);
+#endif
+}
+pid_t os::getpid()
+{
+#ifdef WINNT
+    return ::GetCurrentThreadId();
+#else
+	return ::getpid();
+#endif   
+}
+pthread_t os::getthrid()
+{
+#ifdef WINNT
+    return ::GetCurrentThreadId();
+#else
+	return ::pthread_self();
+#endif   
+}
+
+int os::truncate(const char* filename)
+{
+#ifdef WINNT
+    int fh, result=0;
+    if (fh = ::_open(filename, _O_RDWR) == 0)
+    {
+       result = _chsize(fh, 0);
+	   ::_close(fh);
+    }
+	return result;
+#else
+	return ::truncate(filename, 0);
+#endif   
+}
+ 
+void* os::dlsym(LHANDLE hdl, char *fname)
+{
+#ifdef WINNT
+	return ::GetProcAddress(hdl, fname);
+#else
+	return ::dlsym(hdl, fname);
 #endif
 }
 

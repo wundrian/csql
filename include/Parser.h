@@ -148,7 +148,8 @@ enum AlterTableType
     ALTERDROP,
     ALTERMODIFY,
     ALTERFIELDRENAME,
-    ALTERTABLERENAME
+    ALTERTABLERENAME,
+	ALTERINDEXRENAME
 };
 
 
@@ -160,7 +161,7 @@ class UserNode
     UserNodeType type;
 };
 
-class ParsedData
+class DllExport ParsedData
 {
     private:
     char tblName[IDENTIFIER_LENGTH];

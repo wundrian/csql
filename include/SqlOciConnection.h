@@ -28,7 +28,7 @@
 * @class SqlOciConnection
 *
 */
-class SqlOciConnection : public AbsSqlConnection
+class DllExport SqlOciConnection : public AbsSqlConnection
 {
     Connection dummyConn;
     public:

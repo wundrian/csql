@@ -40,7 +40,7 @@ enum AggType
 #define AGGTYPE
 #endif
 #include<TableImpl.h>
-class AggFldDef
+class DllExport AggFldDef
 {
     public:
     char fldName[IDENTIFIER_LENGTH];
@@ -64,7 +64,7 @@ class AggFldDef
     }
 };
 
-class AggTableImpl:public Table
+class DllExport AggTableImpl:public Table
 {
     private:
     char tblName_[IDENTIFIER_LENGTH];

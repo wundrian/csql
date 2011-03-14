@@ -22,7 +22,7 @@
 class DatabaseManagerImpl;
 class Database;
 
-class SessionImpl : public Session
+class DllExport SessionImpl : public Session
 {
     DatabaseManagerImpl *dbMgr;
     UserManager *uMgr;

@@ -19,11 +19,12 @@
  ***************************************************************************/
 #ifndef SQLNWSTATEMENT_H
 #define SQLNWSTATEMENT_H
+#include <os.h>
 #include <AbsSqlStatement.h>
 #include <SqlNwConnection.h>
 #include <SqlFactory.h>
 #include <CSql.h>
-class SqlNwStatement: public AbsSqlStatement
+class DllExport SqlNwStatement: public AbsSqlStatement
 {
     public:
     SqlNwStatement(){innerStmt = NULL; con = NULL; isPrepared=false; isSel = true; nullInfoDml = NULL; nullInfoSel = NULL; }

@@ -28,7 +28,7 @@
 * @class SqlNwConnection
 *
 */
-class SqlNwConnection : public AbsSqlConnection
+class DllExport SqlNwConnection : public AbsSqlConnection
 {
     Connection dummyConn;
     bool isConnOpen;

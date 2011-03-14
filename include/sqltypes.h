@@ -273,10 +273,10 @@ typedef double                  SDOUBLE;
 typedef double            		LDOUBLE;
 typedef float                   SFLOAT;
 typedef void*              		PTR;
-typedef signed short            RETCODE;
-typedef void*                   SQLHWND;
-
 #endif
+typedef signed char             SQLSCHAR;
+typedef void*                   SQLHWND;
+typedef signed short            RETCODE;
 
 /****************************
  * standard structs for working with date/times

@@ -115,6 +115,9 @@ int TSL(Lock *lock)
     Lock res;
     res = atomic_cas_32((unsigned*)lock, 0, 1);
     return (res);
+#elif defined (WINNT)
+	printf("WINDOWS TSL not yet implemented\n");
+	return 0;
 #endif
 }
 #endif
@@ -375,8 +378,10 @@ int Mutex::CASGen(void *ptr, InUse oldVal, InUse newVal)
 {
 #if defined(__sparcv9)
     CASL((InUse *) ptr, oldVal, newVal);
+	return 0;
 #else
     CAS((InUse *) ptr, oldVal, newVal);
+	return 0;
 #endif
 }
 
@@ -413,7 +418,11 @@ int Mutex::CASL(long *ptr, long oldVal, long newVal)
         return CAS((int*)ptr, (int)oldVal, (int)newVal);
 #endif
 #endif
-
+#ifdef WINNT
+	//TODO:: 64 bit support not done.simply routed to CAS
+	//printf("WINDOWS CASL routed to CAS\n");
+	return CAS((int*)ptr, (int)oldVal, (int)newVal);
+#endif
 }
 int Mutex::CAS(int *ptr, int oldVal, int newVal)
 {
@@ -443,10 +452,13 @@ int Mutex::CAS(int *ptr, int oldVal, int newVal)
                 : "memory");
         //if (ret) return 0;  else {printf("DEBUG::CAS Fails %d-\n", ret); return 1; }
         if (ret) return 0;  else return 1;
-#else //for solaris
+#elif defined SOLARIS //for solaris
     unsigned int ret;
     ret = atomic_cas_32((unsigned int*)ptr, (unsigned int) oldVal, 
                         (unsigned int) newVal);
     if (ret == oldVal) return 0; else return 1;
+#elif defined WINNT
+	printf("WINDOWS Mutex::CAS not implemented\n");
+	return 0;
 #endif
 }

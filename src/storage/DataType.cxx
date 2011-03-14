@@ -16,6 +16,12 @@
 #include<os.h>
 #include<DataType.h>
 #include<Debug.h>
+#ifdef WINNT
+#define ALLREADY_HAVE_WINDOWS_TYPE
+#endif
+#include<sqlext.h>
+#include<sqltypes.h>
+
 //#include<Config.h>
 #define SmallestValJulDate (1721426)
 #if defined(SOLARIS)
@@ -779,7 +785,7 @@ char* AllDataType::getSQLString(DataType type)
 }
 
 
-SQLSMALLINT AllDataType::convertToSQLType(DataType type)
+short AllDataType::convertToSQLType(DataType type)
 {
     switch(type)
     {

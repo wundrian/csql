@@ -25,7 +25,7 @@ class Bucket;
 class Transaction;
 class Database;
 
-class DatabaseMetaData
+class DllExport DatabaseMetaData
 {
     public:
     int dbID_;
@@ -79,15 +79,15 @@ class ProcInfo;
 class ThreadInfo;
 class Transaction;
 
-class Database
+class DllExport Database
 {
     private:
     //Only DatabaseManager creates this object
     //initialization is done only in DatabaseManager during
     //create, delete, open, close database methods
-    Database() { metaData_ = NULL; procSlot = -1; fdChkpt = -1; thrInfoOffset=0;}
+    Database() { metaData_ = NULL; procSlot = -1; fdChkpt = (file_desc)-1; thrInfoOffset=0;}
     DatabaseMetaData *metaData_;
-    int fdChkpt;
+    file_desc fdChkpt;
     int thrInfoOffset;
 
 
@@ -97,7 +97,7 @@ class Database
                                       size_t size = 0, int chunkID=-1);
     DbRetVal deleteSystemDatabaseChunk(int id);
 
-    Chunk* getSystemDatabaseChunk(int id);
+    inline Chunk*  getSystemDatabaseChunk(int id);
     Transaction* getSystemDatabaseTrans(int slot);
     inline void setThrInfoOffset() {
         thrInfoOffset = os::alignLong(sizeof (DatabaseMetaData)) +
@@ -134,7 +134,7 @@ class Database
     DatabaseMetaData* getMetaDataPtr() { return metaData_; }
     Page* getFirstPage();
     Chunk* getHashIndexChunk();
-    int getChkptfd() { return fdChkpt; }
+    file_desc getChkptfd() { return fdChkpt; }
     bool getCanTakeCheckPoint() { return metaData_->canTakeCheckPoint_; }
 
     void setDatabaseID(int id);
@@ -147,7 +147,7 @@ class Database
     void setFirstPage(Page *ptr);
     void setHashIndexChunk(Chunk* chunk);
     void setUniqueChunkID(int id);
-    void setChkptfd(int fd) { fdChkpt = fd; }
+    void setChkptfd(file_desc fd) { fdChkpt = fd; }
     void setCanTakeCheckPoint(bool ctcp)
     { metaData_->canTakeCheckPoint_ = ctcp; }
     // Gets the free page

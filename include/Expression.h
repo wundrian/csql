@@ -29,7 +29,7 @@ enum ArithOperator {
     division,
     modulus
 };
-class Expression
+class DllExport Expression
 {
     char fldName[IDENTIFIER_LENGTH];
     void *tuple;
@@ -58,7 +58,7 @@ class Expression
     void setTable(Table *tbl);
     void setTuple(void *tpl);
     bool isSingleTerm();
-    bool setDataType(DataType type){dType = type;};
+    void setDataType(DataType type){dType = type;};
     DataType getDataType(){ return dType;};
     void setFunctionType(FunctionType type);
     FunctionType getFunctionType() {return fType;}

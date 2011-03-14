@@ -27,7 +27,7 @@
 class Statement;
 class ParsedData;
 
-class SqlStatement: public AbsSqlStatement
+class DllExport SqlStatement: public AbsSqlStatement
 {
     public:
     SqlStatement();

@@ -38,7 +38,7 @@ enum JoinType
 };
 #endif
 
-class JoinProjFieldInfo
+class DllExport JoinProjFieldInfo
 {
     public:
     char tabFieldName[IDENTIFIER_LENGTH*2];
@@ -54,7 +54,7 @@ class JoinProjFieldInfo
         type= typeUnknown; length =0; appBuf= NULL; bindBuf=NULL;
     }
 };
-class JoinCondition
+class DllExport JoinCondition
 {
     public:
     char tableName1[IDENTIFIER_LENGTH];
@@ -80,7 +80,7 @@ class JoinCondition
     }
     
 };
-class JoinTableImpl:public Table
+class DllExport JoinTableImpl:public Table
 {
     private:
     void *curTuple; //holds the current tuple ptr. moved during fetch() calls

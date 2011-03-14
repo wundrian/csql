@@ -8,7 +8,7 @@
 #define MUTEX_H
 #include<os.h>
 typedef int Lock;
-class Mutex
+class DllExport Mutex
 {
 
     #if defined(sparc) || defined(i686) || defined (x86_64)
