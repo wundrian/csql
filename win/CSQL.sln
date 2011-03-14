@@ -1,0 +1,35 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "storage", "CSQL.vcxproj", "{8F1A3D45-B9B0-CAB3-C784-7F15348F1B00}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sql", "sql\sql.vcxproj", "{8041AA09-3320-4397-AAA5-F274DB2E4CC3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{8F1A3D45-B9B0-CAB3-C784-7F15348F1B00} = {8F1A3D45-B9B0-CAB3-C784-7F15348F1B00}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "adapter", "adapter\adapter.vcxproj", "{E58DDE15-159C-41B4-8392-8F8A2505D16F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8F1A3D45-B9B0-CAB3-C784-7F15348F1B00}.Debug|Win32.ActiveCfg = Debug|Win32
+		{8F1A3D45-B9B0-CAB3-C784-7F15348F1B00}.Debug|Win32.Build.0 = Debug|Win32
+		{8F1A3D45-B9B0-CAB3-C784-7F15348F1B00}.Release|Win32.ActiveCfg = Release|Win32
+		{8F1A3D45-B9B0-CAB3-C784-7F15348F1B00}.Release|Win32.Build.0 = Release|Win32
+		{8041AA09-3320-4397-AAA5-F274DB2E4CC3}.Debug|Win32.ActiveCfg = Debug|Win32
+		{8041AA09-3320-4397-AAA5-F274DB2E4CC3}.Debug|Win32.Build.0 = Debug|Win32
+		{8041AA09-3320-4397-AAA5-F274DB2E4CC3}.Release|Win32.ActiveCfg = Release|Win32
+		{8041AA09-3320-4397-AAA5-F274DB2E4CC3}.Release|Win32.Build.0 = Release|Win32
+		{E58DDE15-159C-41B4-8392-8F8A2505D16F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E58DDE15-159C-41B4-8392-8F8A2505D16F}.Debug|Win32.Build.0 = Debug|Win32
+		{E58DDE15-159C-41B4-8392-8F8A2505D16F}.Release|Win32.ActiveCfg = Release|Win32
+		{E58DDE15-159C-41B4-8392-8F8A2505D16F}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
