@@ -6,6 +6,7 @@
 
 #ifndef NANO_TIMER_H
 #define NANO_TIMER_H
+#include<os.h>
 #include<time.h>
 #include<limits.h>
 class DllExport NanoTimer 
