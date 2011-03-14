@@ -9,13 +9,13 @@ endif
 ifeq ($(OSNAME), Linux)
   CPlus = g++
   CPlusFlags = -g -w
-  SYSLIBS= -rdynamic -lrt -lpthread -lcrypt
+  SYSLIBS= -rdynamic -lrt -lpthread -lcrypt -ldl
   PlatForm=supported
 endif
 ifeq ($(OSNAME), FreeBSD)
   CPlus = g++
   CPlusFlags = -g -w
-  SYSLIBS= -rdynamic -lrt -lpthread -lcrypt
+  SYSLIBS= -rdynamic -lrt -lpthread -lcrypt -ldl
   PlatForm=supported
 endif
 

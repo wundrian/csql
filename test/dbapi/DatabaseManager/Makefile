@@ -3,19 +3,19 @@ PlatForm=notsupported
 ifeq ($(OSNAME), SunOS)
   CPlus = CC
   CPlusFlags = -O2 -w $(COMPILER_FLAG)
-  SYSLIBS=-ldl -lnsl -lsocket  -lposix4
+  SYSLIBS=-ldl -lnsl -lsocket  -lposix4 -ldl
   PlatForm=supported
 endif
 ifeq ($(OSNAME), Linux)
   CPlus = g++
   CPlusFlags = -g -w
-  SYSLIBS= -rdynamic -lrt -lpthread -lcrypt
+  SYSLIBS= -rdynamic -lrt -lpthread -lcrypt  -ldl
   PlatForm=supported
 endif
 ifeq ($(OSNAME), FreeBSD)
   CPlus = g++
   CPlusFlags = -g -w
-  SYSLIBS= -rdynamic -lrt -lpthread -lcrypt
+  SYSLIBS= -rdynamic -lrt -lpthread -lcrypt  -ldl
   PlatForm=supported
 endif
 

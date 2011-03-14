@@ -6,8 +6,8 @@
 //Note: Set following parameters in csql.conf for this test
 //MAX_SYS_DB_SIZE=10485760
 //MAX_DB_SIZE=335544320
-//you may have to set the kernel.shmmax kernel paremeter(login as root) using 
-//$sysctl -w kernel.shmmax=1000000000
+//you may have to set the kernel.shmmaxc kernel paremeter(login as root) using 
+//$sysctl -w kernel.shmmaxc=1000000000
 #define LOAD 0
 int main()
 {
@@ -94,7 +94,7 @@ int main()
         conn.commit();
         timer.stop();
     }
-   printf("%d rows inserted %lld %lld %lld\n",icount, timer.min(), timer.max(), timer.avg());
+   printf("%d rows inserted %lld %lld %lld\n",icount, timer.minc(), timer.maxc(), timer.avg());
 
     int offset1= os::align(sizeof(int));
     Condition p1;
@@ -120,7 +120,7 @@ int main()
         conn.commit();
         timer.stop();
     }
-    printf("%d rows selected %lld %lld %lld\n", icount, timer.min(), timer.max(), timer.avg());
+    printf("%d rows selected %lld %lld %lld\n", icount, timer.minc(), timer.maxc(), timer.avg());
     timer.reset();
 
     for(i = LOAD; i< LOAD+ITERATIONS; i++)
@@ -138,7 +138,7 @@ int main()
         conn.commit();
         timer.stop();
     }
-    printf("%d rows updated %lld %lld %lld\n", i- LOAD, timer.min(), timer.max(), timer.avg());
+    printf("%d rows updated %lld %lld %lld\n", i- LOAD, timer.minc(), timer.maxc(), timer.avg());
 
 
     icount=0;
@@ -157,7 +157,7 @@ int main()
         conn.commit();
         timer.stop();
     }
-    printf("%d rows deleted %lld %lld %lld\n", icount, timer.min(), timer.max(), timer.avg());
+    printf("%d rows deleted %lld %lld %lld\n", icount, timer.minc(), timer.maxc(), timer.avg());
 
 
     dbMgr->closeTable(table);

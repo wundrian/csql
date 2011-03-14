@@ -472,7 +472,7 @@ void *runDeleteTest (void *massage)
 	  timer.stop ();
     }
     printf("Thread No %d\t No Of Record Delete %d\n",thno,i);
-  //printf ("Delete: 1 %lld %lld %lld\n", timer.min (), timer.max (), timer.avg ());
+  //printf ("Delete: 1 %lld %lld %lld\n", timer.minc (), timer.maxc (), timer.avg ());
   rc = SQLEndTran(SQL_HANDLE_DBC, hdbc, SQL_COMMIT );
   checkrc (rc, __LINE__);
 

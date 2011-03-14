@@ -133,7 +133,7 @@ runInsertTest (SQLHANDLE henv, SQLHANDLE hdbc, SQLHANDLE hstmt)
 	  timer.stop ();
     }
 
-  printf ("Insert: 1 %lld %lld %lld\n", timer.min (), timer.max (),
+  printf ("Insert: 1 %lld %lld %lld\n", timer.minc (), timer.maxc (),
 	  timer.avg ());
 
   return 0;
@@ -189,7 +189,7 @@ runReadTest (SQLHANDLE henv, SQLHANDLE hdbc, SQLHANDLE hstmt)
 	  checkrc (rc, __LINE__);
 	  timer.stop ();
     }
-  printf ("Read: 1 %lld %lld %lld\n", timer.min (), timer.max (),
+  printf ("Read: 1 %lld %lld %lld\n", timer.minc (), timer.maxc (),
 	  timer.avg ());
   /* Set read-write transaction type */
   readWriteTrans (hdbc);
@@ -235,7 +235,7 @@ runUpdateTest (SQLHANDLE henv, SQLHANDLE hdbc, SQLHANDLE hstmt)
 	  checkrc (rc, __LINE__);
 	  timer.stop ();
     }
-  printf ("Update: 1 %lld %lld %lld\n", timer.min (), timer.max (),
+  printf ("Update: 1 %lld %lld %lld\n", timer.minc (), timer.maxc (),
 	  timer.avg ());
 
   return 0;
@@ -268,7 +268,7 @@ runDeleteTest (SQLHANDLE henv, SQLHANDLE hdbc, SQLHANDLE hstmt)
 	  checkrc (rc, __LINE__);
 	  timer.stop ();
     }
-  printf ("Delete: 1 %lld %lld %lld\n", timer.min (), timer.max (),
+  printf ("Delete: 1 %lld %lld %lld\n", timer.minc (), timer.maxc (),
 	  timer.avg ());
   return 0;
 

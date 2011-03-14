@@ -171,7 +171,7 @@ runInsertTest (SQLHANDLE henv, SQLHANDLE hdbc, SQLHANDLE hstmt)
 	  checkrc (rc, __LINE__);
 	  timer.stop();
       }
-      printf ("Insert: %lld  %lld  %lld\n", timer.min(), timer.max(),timer.avg());
+      printf ("Insert: %lld  %lld  %lld\n", timer.minc(), timer.maxc(),timer.avg());
       return 0;
 }
 //From prepare to Commit (Inserting)
@@ -209,7 +209,7 @@ int InsertTest(SQLHANDLE henv, SQLHANDLE hdbc, SQLHANDLE hstmt)
 	  timer.stop ();
 
       }
-      printf("Insert: %lld  %lld  %lld\n", timer.min(), timer.max(),timer.avg());
+      printf("Insert: %lld  %lld  %lld\n", timer.minc(), timer.maxc(),timer.avg());
       return 0;
 }
 
@@ -259,7 +259,7 @@ int ReadTest(SQLHANDLE henv, SQLHANDLE hdbc, SQLHANDLE hstmt)
 	  timer.stop();
   
    }
-   printf("Select: %lld  %lld  %lld\n", timer.min(), timer.max(),timer.avg());
+   printf("Select: %lld  %lld  %lld\n", timer.minc(), timer.maxc(),timer.avg());
    readWriteTrans (hdbc);
    return rc;
 
@@ -343,7 +343,7 @@ runReadTest (SQLHANDLE henv, SQLHANDLE hdbc, SQLHANDLE hstmt)
 	  timer.stop();
   
    }
-   printf("Select: %lld  %lld  %lld\n", timer.min(), timer.max(),timer.avg());
+   printf("Select: %lld  %lld  %lld\n", timer.minc(), timer.maxc(),timer.avg());
    return rc;
 
 }
@@ -382,7 +382,7 @@ int UpdateTest(SQLHANDLE henv, SQLHANDLE hdbc, SQLHANDLE hstmt)
 	  checkrc (rc, __LINE__);
 	  timer.stop ();
      }
-     printf ("Update: %lld  %lld  %lld\n", timer.min (), timer.max (),timer.avg ());
+     printf ("Update: %lld  %lld  %lld\n", timer.minc (), timer.maxc (),timer.avg ());
 }
 
 int
@@ -447,7 +447,7 @@ runUpdateTest (SQLHANDLE henv, SQLHANDLE hdbc, SQLHANDLE hstmt)
 	  checkrc (rc, __LINE__);
 	  timer.stop ();
      }
-     printf ("Update: %lld  %lld  %lld\n", timer.min (), timer.max (),timer.avg ());
+     printf ("Update: %lld  %lld  %lld\n", timer.minc (), timer.maxc (),timer.avg ());
      return 0;
 }
 
@@ -476,7 +476,7 @@ int DeleteTest(SQLHANDLE henv, SQLHANDLE hdbc, SQLHANDLE hstmt)
 
 	  timer.stop ();
   }
-  printf ("Delete: %lld  %lld  %lld\n", timer.min (), timer.max (),timer.avg ());
+  printf ("Delete: %lld  %lld  %lld\n", timer.minc (), timer.maxc (),timer.avg ());
   return 0;
 }
 
@@ -539,7 +539,7 @@ runDeleteTest (SQLHANDLE henv, SQLHANDLE hdbc, SQLHANDLE hstmt)
 
 	  timer.stop ();
   }
-  printf ("Delete: %lld  %lld  %lld\n", timer.min (), timer.max (),timer.avg ());
+  printf ("Delete: %lld  %lld  %lld\n", timer.minc (), timer.maxc (),timer.avg ());
   return 0;
 
 }

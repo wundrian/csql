@@ -3,8 +3,8 @@
 #include<TableImpl.h>
 //MAX_SYS_DB_SIZE=10485760
 //MAX_DB_SIZE=335544320
-//you may have to set the kernel.shmmax kernel paremeter(login as root) using 
-//$sysctl -w kernel.shmmax=1000000000
+//you may have to set the kernel.shmmaxc kernel paremeter(login as root) using 
+//$sysctl -w kernel.shmmaxc=1000000000
 #define LOAD 0
 int main()
 {
@@ -71,7 +71,7 @@ int main()
         timer.stop();
         printf("Insert: %d %lld\n", icount, timer.last());
     }
-   printf("%d rows inserted %lld %lld %lld\n",icount, timer.min(), timer.max(), timer.avg());
+   printf("%d rows inserted %lld %lld %lld\n",icount, timer.minc(), timer.maxc(), timer.avg());
 
     int offset1= os::align(sizeof(int));
     Condition p1;
@@ -101,7 +101,7 @@ int main()
         timer.stop();
         printf("Select: %d %lld\n", icount, timer.last());
     }
-    printf("%d rows selected %lld %lld %lld\n", icount, timer.min(), timer.max(), timer.avg());
+    printf("%d rows selected %lld %lld %lld\n", icount, timer.minc(), timer.maxc(), timer.avg());
     timer.reset();
 
     dbMgr->closeTable(table);

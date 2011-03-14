@@ -52,8 +52,8 @@ int main()
        timer.stop();
        count++;
     }
-    printf("Total Rows Inserted %d %lld %lld %lld\n", count, timer.min(), 
-                                timer.max(), timer.avg());
+    printf("Total Rows Inserted %d %lld %lld %lld\n", count, timer.minc(), 
+                                timer.maxc(), timer.avg());
     stmt->free();
 
     strcpy(statement, "SELECT * FROM t1 where f1 = ?;");
@@ -78,8 +78,8 @@ int main()
        count++;
     }
     stmt->free();
-    printf("Total Rows Selected %d %lld %lld %lld\n", count, timer.min(), 
-                                timer.max(), timer.avg());
+    printf("Total Rows Selected %d %lld %lld %lld\n", count, timer.minc(), 
+                                timer.maxc(), timer.avg());
     
     strcpy(statement, "UPDATE t1 set f2=? where f1=?;");
     rv = stmt->prepare(statement);
@@ -103,8 +103,8 @@ int main()
        count++;
     }
     stmt->free();
-    printf("Total Rows Updated %d %lld %lld %lld\n", count, timer.min(), 
-                                timer.max(), timer.avg());
+    printf("Total Rows Updated %d %lld %lld %lld\n", count, timer.minc(), 
+                                timer.maxc(), timer.avg());
 
     strcpy(statement, "DELETE FROM t1 where f1=?;");
     rv = stmt->prepare(statement);
@@ -126,8 +126,8 @@ int main()
        count++;
     }
     stmt->free();
-    printf("Total Rows Deleted %d %lld %lld %lld\n", count, timer.min(), 
-                                timer.max(), timer.avg());
+    printf("Total Rows Deleted %d %lld %lld %lld\n", count, timer.minc(), 
+                                timer.maxc(), timer.avg());
 
     strcpy(statement, "DROP TABLE t1;");
     rv = stmt->prepare(statement);
