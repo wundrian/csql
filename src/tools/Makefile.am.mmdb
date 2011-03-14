@@ -20,7 +20,7 @@ redo_LDFLAGS = -lrt -lpthread -lcrypt
 recover_SOURCES = recover.cxx
 recover_LDADD = $(top_builddir)/src/storage/libcsql.la \
     $(top_builddir)/src/sql/libcsqlsql.la \
-    $(top_builddir)/src/sqllog/libcsqlsqllog \
+    $(top_builddir)/src/sqllog/libcsqlsqllog.la \
     $(top_builddir)/src/network/libcsqlnw.la \
     $(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la
 recover_LDFLAGS = -lrt -lpthread -lcrypt
