@@ -119,6 +119,11 @@ class DllExport Transaction
     DbRetVal applyUndoLogs(Database *sysdb);
     int noOfUndoLogs();
     void printDebugInfo(Database *sysdb);
+
+    private:
+    DbRetVal handleVarcharUndoInsert(Database *sysdb, char *data);
+    DbRetVal handleVarcharUndoDelete(Database *sysdb, char *data);
+    DbRetVal handleVarcharUndoUpdate(Database *sysdb, char *data,void *ptrToTuple);
 };
 
 class DllExport TransactionManager
