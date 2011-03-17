@@ -75,7 +75,12 @@ HMODULE handle = GetModuleHandle(0);
         printError(ErrSysInternal, "Symbol lookup failed\n");
         return ErrSysInternal;
     }
-
+	ODBCFuncPtrs.SQLSetStmtAttrPtr = (SQLRETURN (*)(SQLHSTMT, SQLINTEGER, SQLPOINTER, SQLINTEGER ))os::dlsym(handle, "SQLSetStmtAttr");
+    if (!ODBCFuncPtrs.SQLSetStmtAttrPtr){
+        printError(ErrSysInternal, "Symbol lookup failed\n");
+        return ErrSysInternal;
+    }
+	
     ODBCFuncPtrs.SQLProcedureColumnsPtr = (SQLRETURN (*)(SQLHSTMT, SQLCHAR *, SQLSMALLINT, SQLCHAR *, SQLSMALLINT, SQLCHAR *, SQLSMALLINT, SQLCHAR *, SQLSMALLINT))os::dlsym(handle, "SQLProcedureColumns");
     if (!ODBCFuncPtrs.SQLProcedureColumnsPtr){
         printError(ErrSysInternal, "Symbol lookup failed\n");
@@ -194,6 +199,7 @@ HMODULE handle = GetModuleHandle(0);
         printError(ErrSysInternal, "Symbol lookup failed\n");
         return ErrSysInternal;
     }
+
 
     symbolsLoaded=true;
     return OK;

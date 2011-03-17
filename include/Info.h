@@ -78,7 +78,7 @@ class FieldNameNode;
 * @brief Field name list used to specify composite key while creating index. <br/>
 * 
 */
-class FieldNameList
+class DllExport FieldNameList
 {
     FieldNameNode *head;
     FieldNameNode *iter;
@@ -116,7 +116,7 @@ class FieldIterator;
 * twice. Passed as argument to createTable method of DatabaseManager to create table.<br/>
 * 
 */
-class TableDef
+class DllExport TableDef
 {
     private:
     FieldList fldList;
@@ -161,7 +161,7 @@ class TableDef
     bool isVarcharPresentInSchema(FieldIterator &iter);
 };
 
-class FieldInfo
+class DllExport FieldInfo
 {
     public:
     char fldName[IDENTIFIER_LENGTH];

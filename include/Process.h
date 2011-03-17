@@ -32,7 +32,7 @@ class ProcInfo
 
 };
 
-struct ThreadTrans{
+struct DllExport ThreadTrans{
     pid_t pid_;
     pthread_t thrid_;
     Transaction *trans_;
@@ -42,7 +42,7 @@ struct ThreadTrans{
 };
 
 
-class ThreadInfo
+class DllExport ThreadInfo
 {
     public:
 
@@ -59,7 +59,7 @@ class ThreadInfo
     void print();
 
 };
-class ProcessManager
+class DllExport ProcessManager
 {
     public:
     static int noThreads;

@@ -1066,9 +1066,9 @@ DbRetVal SqlStatement::filterAndWriteStmtLogs(void *stmtBuckets)
     struct stat st;
     char fName[MAX_FILE_LEN];
     sprintf(fName, "%s/csql.db.stmt", Conf::config.getDbFile());
-    int fdRead = open(fName, O_RDONLY);
-    if (-1 == fdRead) { return OK; }
-    if (fstat(fdRead, &st) == -1) {
+    file_desc fdRead = os::openFile(fName, fileOpenReadOnly,0);
+    if ((file_desc)-1 == fdRead) { return OK; }
+    if (::stat(fName, &st) == -1) {
         printError(ErrSysInternal, "Unable to retrieve stmt log file size");
         os::closeFile(fdRead);
         return ErrSysInternal;
@@ -1077,8 +1077,8 @@ DbRetVal SqlStatement::filterAndWriteStmtLogs(void *stmtBuckets)
         os::closeFile(fdRead);
         return OK;
     }
-    void *startAddr = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fdRead, 0);
-    if (MAP_FAILED == startAddr) {
+    void *startAddr = os::mmap(NULL, st.st_size, mapProtRead, mapPrivate, fdRead, 0);
+    if ((void*)MAP_FAILED == startAddr) {
         printError(ErrSysInternal, "Unable to mmap stmt log file\n");
         return ErrSysInternal;
     }
@@ -1115,13 +1115,13 @@ DbRetVal SqlStatement::filterAndWriteStmtLogs(void *stmtBuckets)
             break;
         }
     }
-    os::closeFile(fd);
-    munmap((char*)startAddr, st.st_size);
+    os::close(fd);
+    os::munmap((char*)startAddr, st.st_size);
     os::closeFile(fdRead);
     char cmd[MAX_FILE_LEN *2];
     sprintf(cmd, "mv %s/csql.db.stmt1 %s/csql.db.stmt",
                   Conf::config.getDbFile(), Conf::config.getDbFile());
-    ret = system(cmd);
+    ret = ::system(cmd);
     return rv;
 }
 
@@ -1131,9 +1131,9 @@ DbRetVal SqlStatement::readAndPopulateStmts(AbsSqlConnection *conn, void *&stmtB
     char fName[MAX_FILE_LEN];
     sprintf(fName, "%s/csql.db.stmt", Conf::config.getDbFile());
     printf("Statement Redo log filename is :%s\n", fName);
-    int fd = open(fName, O_RDONLY);
-    if (-1 == fd) { return OK; }
-    if (fstat(fd, &st) == -1) {
+    file_desc fd = os::openFile(fName, fileOpenReadOnly, 0);
+    if ((file_desc)-1 == fd) { return OK; }
+    if (::stat(fName, &st) == -1) {
         printError(ErrSysInternal, "Unable to retrieve stmt log file size");
         os::closeFile(fd);
         return ErrSysInternal;
@@ -1141,22 +1141,26 @@ DbRetVal SqlStatement::readAndPopulateStmts(AbsSqlConnection *conn, void *&stmtB
     if (NULL != stmtBuckets)
     {
         printError(ErrSysInternal, "stmtBuckets already populated");
+		os::closeFile(fd);
         return ErrSysInternal;
     }
     stmtBuckets = malloc (STMT_BUCKET_SIZE * sizeof(StmtBucket));
     memset(stmtBuckets, 0, STMT_BUCKET_SIZE * sizeof(StmtBucket));
     if (st.st_size ==0) {
         printError(ErrNote, "No Statement logs found during recovery");
+		::free(stmtBuckets);
         os::closeFile(fd);
         return OK;
     }
-    void *startAddr = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-    if (MAP_FAILED == startAddr) {
+    void *startAddr = os::mmap(NULL, st.st_size, mapProtRead, mapPrivate, fd, 0);
+    if ((void*)MAP_FAILED == startAddr) {
         printError(ErrSysInternal, "Unable to mmap stmt log file\n");
+		::free(stmtBuckets);
+		os::closeFile(fd);
         return ErrSysInternal;
     }
     DbRetVal rv = iterateStmtLogs(conn, startAddr, st.st_size, stmtBuckets, list, interactive);
-    munmap((char*)startAddr, st.st_size);
+    os::munmap((char*)startAddr, st.st_size);
     os::closeFile(fd);
     return rv;
 }

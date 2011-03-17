@@ -58,7 +58,7 @@ typedef void (*sighandler_t)(int);
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
-#include <dlfcn.h>
+#include <signal.h>
 
 
 #if defined(SOLARIS) || defined(LINUX) || defined(FreeBSD)
@@ -68,7 +68,6 @@ typedef void (*sighandler_t)(int);
 #include <sys/shm.h>
 #include <unistd.h>
 #include <pthread.h>
-#include <signal.h>
 #include <ctype.h>
 #include <sys/socket.h>
 #include <fnmatch.h>
@@ -99,6 +98,7 @@ typedef void (*sighandler_t)(int);
 #if defined(FreeBSD)
     #include <sys/errno.h>
 #endif
+#include <dlfcn.h>
 
 
 enum FileOpenMode
@@ -151,6 +151,8 @@ typedef int   shared_memory_id;
 #include <time.h>
 #include <winsock2.h>
 #include <errno.h>
+#include <tchar.h>
+
 #define snprintf sprintf_s 
 #define strncasecmp _strnicmp
 #define strcasecmp strcmpi
@@ -165,14 +167,24 @@ typedef int mode_t;
 typedef int key_t;
 typedef int shared_memory_key;
 typedef int shared_memory_id;
+typedef size_t socklen_t;
 #define MAP_FAILED -1 
+#define MSG_NOSIGNAL 0
 #define SHM_RND 0
+#define IPC_RMID 0
 #define SQL_API
 #define ALLREADY_HAVE_WINDOWS_TYPE
-#define SIGCSQL1 0
+#define SIGCSQL1 0 //drop table signal wont work for windoes
+#define SIGCHLD SIGTERM
+#define MS_SYNC 0
+#define O_SYNC 0
+#define O_DIRECT 0
 #define LHANDLE HMODULE
+#ifndef APP_BUILD
 #define DllExport   __declspec( dllexport ) 
-
+#endif
+typedef signed short int        SWORD;
+#define SQL_NOUNICODEMAP //Note: to suppress mapping to unicode APIs
 enum FileOpenMode
 {
     fileOpenReadOnly = _O_RDONLY,
@@ -203,6 +215,9 @@ enum MapMode
     mapSync = PAGE_READWRITE ,
     mapASync = PAGE_READWRITE 
 };
+
+extern DllExport int optind, opterr;
+extern DllExport TCHAR *optarg;
 
 #endif
 
@@ -274,6 +289,7 @@ class DllExport os
     static int fdatasync(file_desc fd);
     static int atexit(void (*exitHndlr)(void));
     static void* dlsym(LHANDLE hdl, char* funcName);
+	static char getopt(int argc, char *argv[], char *opt);
 };
 
 #endif

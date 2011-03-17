@@ -28,7 +28,7 @@ DbRetVal SqlOdbcStatement::executeDirect(char *stmtstr)
     DbRetVal rv = OK;
     int retValue = 0;
     SqlOdbcConnection *conn = (SqlOdbcConnection*)con;
-    retValue=SQLAllocHandle (SQL_HANDLE_STMT, conn->dbHdl, &hstmt);
+    retValue=(*SqlOdbcConnection::ODBCFuncPtrs.SQLAllocHandlePtr) (SQL_HANDLE_STMT, conn->dbHdl, &hstmt);
     if (retValue) return ErrBadCall;
     SQLCHAR* sstr= (SQLCHAR*)stmtstr;
     retValue=(*SqlOdbcConnection::ODBCFuncPtrs.SQLExecDirectPtr) (hstmt, sstr, SQL_NTS);
@@ -1033,10 +1033,10 @@ void SqlOdbcStatement::setResultSetInfo(int nrecs)
 {
     rowStatus = (SQLUSMALLINT *) malloc(nrecs * sizeof(SQLUSMALLINT));
     memset(rowStatus, 0, nrecs * sizeof(SQLUSMALLINT) );
-    SQLSetStmtAttr(hstmt, SQL_ATTR_ROW_BIND_TYPE, SQL_BIND_BY_COLUMN, 0);
-    SQLSetStmtAttr(hstmt, SQL_ATTR_ROW_ARRAY_SIZE, (void *) nrecs, 0);
-    SQLSetStmtAttr(hstmt, SQL_ATTR_ROW_STATUS_PTR, rowStatus, 0 );
-    SQLSetStmtAttr(hstmt, SQL_ATTR_ROWS_FETCHED_PTR, &nRecords, 0 );
+    (*SqlOdbcConnection::ODBCFuncPtrs.SQLSetStmtAttrPtr)(hstmt, SQL_ATTR_ROW_BIND_TYPE, SQL_BIND_BY_COLUMN, 0);
+    (*SqlOdbcConnection::ODBCFuncPtrs.SQLSetStmtAttrPtr)(hstmt, SQL_ATTR_ROW_ARRAY_SIZE, (void *) nrecs, 0);
+    (*SqlOdbcConnection::ODBCFuncPtrs.SQLSetStmtAttrPtr)(hstmt, SQL_ATTR_ROW_STATUS_PTR, rowStatus, 0 );
+    (*SqlOdbcConnection::ODBCFuncPtrs.SQLSetStmtAttrPtr)(hstmt, SQL_ATTR_ROWS_FETCHED_PTR, &nRecords, 0 );
 }
 
 DbRetVal SqlOdbcStatement::rsBindField(int pos, void *val)
@@ -1054,10 +1054,10 @@ DbRetVal SqlOdbcStatement::rsBindField(int pos, void *val)
     SQLSMALLINT type = AllDataType::convertToSQL_C_Type(bindField->type, tdbname);
     if (type == SQL_C_CHAR || type == SQL_C_BINARY) {
         // length was increased by one for null character during prepare.
-        SQLBindCol(hstmt, pos, type, val, bindField->length-1, NULL);
+        (*SqlOdbcConnection::ODBCFuncPtrs.SQLBindColPtr)(hstmt, pos, type, val, bindField->length-1, NULL);
     }
     else {
-        SQLBindCol(hstmt, pos, type, val, 0, NULL);
+        (*SqlOdbcConnection::ODBCFuncPtrs.SQLBindColPtr)(hstmt, pos, type, val, 0, NULL);
     }
 }
 

@@ -72,7 +72,7 @@ class DatabaseManagerImpl;
 //singleton
 //DatabaseManager has this object and give reference to it to
 //Table interface and so on.
-class LockManager
+class DllExport LockManager
 {
     public:
     Database *systemDatabase_;
