@@ -56,7 +56,7 @@ DbRetVal TCPClient::send(NetworkPacketType type)
             return ErrNoConnection;
         }
         printError(ErrOS, "Unable to send the packet");
-        close(sockfd);
+        os::close(sockfd);
         sockfd = -1;
         isConnectedFlag = false;
         return ErrNoConnection;
@@ -149,7 +149,7 @@ DbRetVal TCPClient::receive()
     int ret = os::select(sockfd+1, &fdset, 0, 0, &timeout);
     if (ret <= 0) {
         printError(ErrPeerTimeOut,"Response timeout for peer site");
-        close(sockfd);
+        os::close(sockfd);
         sockfd = -1;
         isConnectedFlag = false;
         return ErrPeerTimeOut;
@@ -159,7 +159,7 @@ DbRetVal TCPClient::receive()
     if (numbytes == -1)
     {
        printError(ErrOS, "Unable to receive response from peer");
-        close(sockfd);
+        os::close(sockfd);
         sockfd = -1;
         isConnectedFlag = false;
         return ErrNoConnection;

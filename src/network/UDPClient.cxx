@@ -57,7 +57,7 @@ DbRetVal UDPClient::send(NetworkPacketType type, char *buf, int len)
     }
 */
     int numbytes=0;
-    if ((numbytes=sendto(sockfd, hdr, sizeof(PacketHeader), 0,
+    if ((numbytes=sendto(sockfd, (const char*)hdr, sizeof(PacketHeader), 0,
            (struct sockaddr *)&srvAddr, sizeof(struct sockaddr))) == -1) {
         printError(ErrOS, "Unable to send the packet\n");
         return ErrOS;
@@ -91,7 +91,7 @@ DbRetVal UDPClient::receive()
 
     int response =0;
     socklen_t len = sizeof(struct sockaddr);
-    int numbytes = recvfrom(sockfd, &response, 4, 0,
+    int numbytes = recvfrom(sockfd, (char*)&response, 4, 0,
                    (struct sockaddr *)&fromAddr, &len);
     if (numbytes !=4)
     {
@@ -136,7 +136,7 @@ DbRetVal UDPClient::connect()
     hdr->packetLength = 0;
     hdr->srcNetworkID = 
     hdr->version = 1;
-    if ((numbytes=sendto(sockfd, hdr, sizeof(PacketHeader), 0,
+    if ((numbytes=sendto(sockfd, (const char*) hdr, sizeof(PacketHeader), 0,
            (struct sockaddr *)&srvAddr, sizeof(struct sockaddr))) == -1) {
         printError(ErrOS, "Unable to send the packet\n");
         return ErrOS;
@@ -157,8 +157,8 @@ DbRetVal UDPClient::connect()
 
     int response =0;
     socklen_t len = sizeof(struct sockaddr);
-    numbytes = recvfrom(sockfd, &response, 4, 0,
-                   (struct sockaddr *)&fromAddr, &len);
+    numbytes = recvfrom(sockfd, (char*)&response, 4, 0,
+                   (struct sockaddr *)&fromAddr,  &len);
     if (numbytes !=4)
     {
        printf("Unable to receive response from peer\n");

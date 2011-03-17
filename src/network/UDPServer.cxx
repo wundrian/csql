@@ -59,7 +59,7 @@ DbRetVal UDPServer::handleClient()
    PacketHeader header;
    socklen_t addressLen = sizeof(struct sockaddr);
    //printf("UDP Server receives packet\n");
-   int numbytes = recvfrom(sockfd, &header,  sizeof(PacketHeader), 0,
+   int numbytes = recvfrom(sockfd, (char*) &header,  sizeof(PacketHeader), 0,
                         (struct sockaddr*) &clientAddress, &addressLen);
    if (numbytes == -1)
    {
@@ -71,7 +71,7 @@ DbRetVal UDPServer::handleClient()
    if (header.packetType == NW_PKT_CONNECT)
    {
        int response =1;
-       numbytes = sendto(sockfd, &response, 4, 0,
+       numbytes = sendto(sockfd, (const char*) &response, 4, 0,
               (struct sockaddr*) &clientAddress, addressLen);
        if (numbytes != 4)
        {
@@ -94,7 +94,7 @@ DbRetVal UDPServer::handleClient()
     }
 
    numbytes = recvfrom(sockfd, buffer, header.packetLength, 0,
-                        (struct sockaddr*) &clientAddress, &addressLen);
+                        (struct sockaddr*) &clientAddress,  &addressLen);
 
    //printf("Bytes read %d\n", numbytes);
    if (numbytes == -1)
@@ -105,7 +105,7 @@ DbRetVal UDPServer::handleClient()
    SqlNetworkHandler handler;
    // following line is changed may  not work
    void * response = (void *) handler.process(header, buffer); 
-   numbytes = sendto(sockfd, &response, 4, 0,
+   numbytes = ::sendto(sockfd, (const char*) &response, 4, 0,
               (struct sockaddr*) &clientAddress, addressLen);
    if (numbytes != 4)
    {
