@@ -36,24 +36,14 @@ DbRetVal CacheTableLoader::load(bool tabDefinition)
     DatabaseManager *dbMgr = con->getConnObject().getDatabaseManager();
     dbMgr->setCanTakeCheckPoint(false);
     if (tabDefinition == false) {
-        Table *tbl = dbMgr->openTable(tableName);
-        if (tbl == NULL) {
-            dbMgr->setCanTakeCheckPoint(true);
-            conn->disconnect(); 
-            delete stmt;
-            delete conn;
-            return ErrNotExists;
-        }
-        if (tbl->numTuples()) {
-            printError(ErrNotEmpty, "The table '\%s\' is not empty", tableName);
-            dbMgr->closeTable(tbl);
+        rv = hasRecords(dbMgr, tableName);
+        if (OK != rv) {
             dbMgr->setCanTakeCheckPoint(true);
             conn->disconnect();
             delete stmt;
             delete conn;
             return ErrNotEmpty;
         }
-        dbMgr->closeTable(tbl);
     }
     conn->beginTrans();
     rv = load(conn, stmt, tabDefinition);
@@ -64,6 +54,60 @@ DbRetVal CacheTableLoader::load(bool tabDefinition)
     delete stmt;
     delete conn;
     return rv;
+}
+DbRetVal CacheTableLoader::hasRecords(DatabaseManager *dbMgr, const char* tableName)
+{
+    Table *tbl = dbMgr->openTable(tableName);
+    if (tbl == NULL) {
+        printError(ErrNotEmpty, "The table '\%s\' is not found", tableName);
+        return ErrNotExists;
+    }
+    if (tbl->numTuples()) {
+        printError(ErrNotEmpty, "The table '\%s\' is not empty", tableName);
+        dbMgr->closeTable(tbl);
+        return ErrNotEmpty;
+    }
+    dbMgr->closeTable(tbl);
+    return OK;
+}
+DbRetVal CacheTableLoader::connect(SQLHENV &henv, SQLHDBC &hdbc, SQLHSTMT &hstmt, char *dsn, char* stmtBuf)
+{
+    SQLCHAR outstr[1024];
+    SQLSMALLINT outstrlen;
+    int retValue =0;
+    retValue = SQLAllocHandle (SQL_HANDLE_ENV, SQL_NULL_HANDLE, &henv);
+    if (retValue) {
+        printError(ErrSysInit, "Unable to allocate ODBC handle \n");
+        return ErrSysInit;
+    }
+    SQLSetEnvAttr(henv, SQL_ATTR_ODBC_VERSION, (void *) SQL_OV_ODBC3, 0);
+    retValue = SQLAllocHandle (SQL_HANDLE_DBC, henv, &hdbc);
+    if (retValue) {
+        printError(ErrSysInit, "Unable to allocate ODBC handle \n");
+        return ErrSysInit;
+    }
+    retValue = SQLDriverConnect(hdbc, NULL, (SQLCHAR*)dsn, SQL_NTS,
+                         outstr, sizeof(outstr), &outstrlen,
+                         SQL_DRIVER_NOPROMPT);
+    if (SQL_SUCCEEDED(retValue)) {
+        printDebug(DM_Gateway, "Connected to target database using dsn = %s\n", dsn);
+    } else {
+        printError(ErrSysInit, "Failed to connect to target database\n");
+        return ErrSysInit;
+    }
+
+    retValue=SQLAllocHandle (SQL_HANDLE_STMT, hdbc, &hstmt);
+    if (retValue) {
+        printError(ErrSysInit, "Unable to allocate ODBC handle \n");
+        return ErrSysInit;
+    }
+
+    retValue = SQLPrepare (hstmt, (unsigned char *) stmtBuf, SQL_NTS);
+    if (retValue) {
+        printError(ErrSysInit, "Unable to Prepare ODBC statement \n");
+        return ErrSysInit;
+    }
+    return OK;
 }
 
 DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, bool tabDefinition)
@@ -77,10 +121,13 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
    
     SqlConnection *con = (SqlConnection *) conn->getInnerConnection();
     DatabaseManager *dbMgr = con->getConnObject().getDatabaseManager();
-
-    SQLCHAR outstr[1024];
-    SQLSMALLINT outstrlen;
+    SQLHENV henv; 
+    SQLHDBC hdbc;
+    SQLHSTMT hstmt;
     int retValue =0;
+
+    /*SQLCHAR outstr[1024];
+    SQLSMALLINT outstrlen;
     SQLHENV henv; 
     SQLHDBC hdbc;
     SQLHSTMT hstmt;
@@ -111,13 +158,14 @@ DbRetVal CacheTableLoader::load(AbsSqlConnection *conn, AbsSqlStatement *stmt, b
         return ErrSysInit; 
     }
 
-    char stmtBuf[1024];
-    generateCacheTableStatement(stmtBuf);
     retValue = SQLPrepare (hstmt, (unsigned char *) stmtBuf, SQL_NTS);
     if (retValue) {
         printError(ErrSysInit, "Unable to Prepare ODBC statement \n"); 
         return ErrSysInit; 
-    }
+    }*/
+    char stmtBuf[1024];
+    generateCacheTableStatement(stmtBuf);
+    connect(henv, hdbc, hstmt, dsn, stmtBuf);
     int nRecordsToFetch = Conf::config.getNoOfRowsToFetchFromTDB();
     int nFetchedRecords = 0;
     SQLUSMALLINT *rowStatus = (SQLUSMALLINT *)

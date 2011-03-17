@@ -42,6 +42,8 @@ class DllExport CacheTableLoader
     bool prepareCreateIndexStatement(SQLHSTMT hstmtmeta, char *crtIdxStmt, TDBInfo tdbName, HashIndexInitInfo *inf);
     DbRetVal prepareCreateTableStatement(char *crtTblStmt, SQLHSTMT hstmt, HashIndexInitInfo *inf, int totalFields, TDBInfo tdbName, bool &isKeyFld);
     void prepareInsertStatement(AbsSqlStatement *stmt, List *fNameList, char *insStmt);
+    DbRetVal hasRecords(DatabaseManager *dbMgr,const char* tableName);
+    DbRetVal connect(void *&, void*&, void*&, char*, char*);
     bool shouldForce;
     public:
     CacheTableLoader()
