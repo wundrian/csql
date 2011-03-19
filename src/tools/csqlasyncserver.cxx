@@ -64,7 +64,7 @@ typedef class queueIterator
              } else { return NULL; }
          }
          processed = elem;
-         printDebug(DM_ReplServer, "Processed ITEM: %X", processed);
+         printDebug(DM_CacheServer, "Processed ITEM: %X", processed);
          iter = iter->next;
          return &elem->data;
      }
@@ -164,10 +164,10 @@ class queue
             toFree = elem;
             elem = elem->next;
             if (toFree) { ::free(toFree); nItems--; }
-            printDebug(DM_ReplServer, "FREED %X", toFree);
+            printDebug(DM_CacheServer, "FREED %X", toFree);
         }
         if (elem) { ::free(elem); nItems--; }
-        printDebug(DM_ReplServer, "FREED %X", elem);
+        printDebug(DM_CacheServer, "FREED %X", elem);
         lastFreedIndex = minIndex;
     }
 };
@@ -262,11 +262,11 @@ int main(int argc, char **argv)
         timeout.tv_sec = 5;
         timeout.tv_usec = 0;
         os::select(0, 0, 0, 0, &timeout);
-        printDebug(DM_ReplServer, "waiting for message");
+        printDebug(DM_CacheServer, "waiting for message");
         while(true) {
            // pick messages from message que with key msgKey
            long size = os::msgrcv(msgKey, str, msgSize, 0, 0666|IPC_NOWAIT);
-           printDebug(DM_ReplServer, "Received msg size = %d", size);
+           printDebug(DM_CacheServer, "Received msg size = %d", size);
            if (size == -1 || srvStop) break;
            // push the received msg to the repl server queue
            que->push(str, size);   
@@ -286,12 +286,12 @@ void *startThread(void *thrInfo)
     List prepareFailList;
     SqlApiImplType flag = CSqlAdapter;
     int thrInd = thrInput->thrIndex;
-    printDebug(DM_ReplServer, "SqlAdapter Thread created");
+    printDebug(DM_CacheServer, "SqlAdapter Thread created");
     AbsSqlConnection *conn = SqlFactory::createConnection(flag);
     
     void *stmtBuckets = malloc (STMT_BUCKET_SIZE * sizeof(StmtBucket));
     memset(stmtBuckets, 0, STMT_BUCKET_SIZE * sizeof(StmtBucket));
-    printDebug(DM_ReplServer, "stmtbuckets: %x", stmtBuckets);
+    printDebug(DM_CacheServer, "stmtbuckets: %x", stmtBuckets);
     
     struct timeval timeout, tval;
     while (1) {
@@ -315,19 +315,19 @@ void *startThread(void *thrInfo)
                 os::select(0, 0, 0, 0, &tval);
             }
             long long index = *(long long *) msg;
-            printDebug(DM_ReplServer, "Received message with index: %lld",
+            printDebug(DM_CacheServer, "Received message with index: %lld",
                                                                         index);
             int length = *(int *)((char *)msg+sizeof(long long));             
             char *msgptr = (char *)msg + sizeof(long long) + sizeof(int);
-            printDebug(DM_ReplServer, "entering process message");
+            printDebug(DM_CacheServer, "entering process message");
             proMsgRetVal = processMessage(msgptr, length, conn, stmtBuckets, 
                                                        flag, &prepareFailList);
             if (proMsgRetVal == ErrNoConnection) break;
-            printDebug(DM_ReplServer, "Processed message with index: %lld",
+            printDebug(DM_CacheServer, "Processed message with index: %lld",
                                                                         index);
             //store processed index in the processed index array
             que->updateProcessedIndex(thrInd, index);
-            printDebug(DM_ReplServer, "Updated processed index %lld", index);
+            printDebug(DM_CacheServer, "Updated processed index %lld", index);
         }
     }
     return NULL;
@@ -337,7 +337,7 @@ DbRetVal processMessage(void *str, int len, void *conn, void *stmtBuckets,
                     SqlApiImplType flag, List *prepareFailList)
 {
     long type = *(long *) str;
-    printDebug(DM_ReplServer, "type = %d\n", type);
+    printDebug(DM_CacheServer, "type = %d\n", type);
     char *data = (char *) str + sizeof(long);
     if (type == 1) return handlePrepare(data, conn, stmtBuckets, flag, 
                                                               prepareFailList);
@@ -350,7 +350,7 @@ void *freeMsgFromQueue(void *nAsync)
 {
     int asySites = (int)nAsync;
     struct timeval tval;
-    printDebug(DM_ReplServer, "Waiting for free the q elements");
+    printDebug(DM_CacheServer, "Waiting for free the q elements");
     while (1) {
         que->freeMessagesFromQueue(asySites);
         tval.tv_sec = 5;
@@ -386,7 +386,7 @@ DbRetVal handlePrepare(void *data, void *conn, void *stmtBuckets,
         return OK;
     }
 
-    printDebug(DM_ReplServer, "stmt str: %s", stmtstr);
+    printDebug(DM_CacheServer, "stmt str: %s", stmtstr);
     rv = stmt->prepare(stmtstr);
     if (rv != OK) { 
         FailStmt *fst = new FailStmt();
@@ -396,7 +396,7 @@ DbRetVal handlePrepare(void *data, void *conn, void *stmtBuckets,
         return rv;
     }
     SqlStatement::addToHashTable(stmtId, stmt, stmtBuckets, stmtstr);
-    printDebug(DM_ReplServer, "returning from prepare");
+    printDebug(DM_CacheServer, "returning from prepare");
     return rv;
 }; 
 
@@ -423,9 +423,9 @@ DbRetVal handleCommit(void *data, int len, void *conn, void *stmtBuckets,
         ptr += sizeof(int);
         AbsSqlStatement *stmt = SqlStatement::getStmtFromHashTable(stmtId, 
                                                                   stmtBuckets);
-        printDebug(DM_ReplServer, "commit: stmtId: %d", stmtId);
-        printDebug(DM_ReplServer, "commit: stmtbuckets: %x", stmtBuckets);
-        printDebug(DM_ReplServer, "commit: stmt: %x", stmt);
+        printDebug(DM_CacheServer, "commit: stmtId: %d", stmtId);
+        printDebug(DM_CacheServer, "commit: stmtbuckets: %x", stmtBuckets);
+        printDebug(DM_CacheServer, "commit: stmt: %x", stmt);
         ExecType type = (ExecType) (*(int *) ptr);
         ptr += sizeof(int);
         if (type == SETPARAM) {
@@ -478,8 +478,8 @@ DbRetVal handleCommit(void *data, int len, void *conn, void *stmtBuckets,
         }
     }
     rv = con->commit();
-    if (rv != OK) { printDebug(DM_ReplServer, "commit failed"); }
-    else { printDebug(DM_ReplServer, "commit passed"); }
+    if (rv != OK) { printDebug(DM_CacheServer, "commit failed"); }
+    else { printDebug(DM_CacheServer, "commit passed"); }
     return OK;
 }
 
@@ -509,7 +509,7 @@ DbRetVal handleFree(void *data, void *stmtBuckets, List *prepareFailList)
         return rv;
     }
     SqlStatement::removeFromHashTable(stmtId, stmtBuckets);
-    printDebug(DM_ReplServer, "Freed the statement from hashTable");
+    printDebug(DM_CacheServer, "Freed the statement from hashTable");
     return OK;
 }
 
