@@ -21,10 +21,11 @@
 #include <CSql.h>
 #include <Network.h>
 #include <DataType.h>
-#include <SqlLogStatement.h>
+//#include <SqlLogStatement.h>
 #include <SqlNwStatement.h>
+#ifndef CSQL_CLIENT_LIB
 #include <SqlNetworkHandler.h>
-
+#endif
 DbRetVal PacketPrepare::marshall()
 {
     printDebug(DM_Network, "PacketPrepare::marshall called\n");
@@ -431,6 +432,7 @@ DbRetVal SqlPacketExecute::unmarshall()
 
 DbRetVal SqlPacketParamMetadata::marshall()
 {
+#ifndef CSQL_CLIENT_LIB
     printDebug(DM_Network, "SqlPacketParamMetadata::marshall called\n");
     bufferSize  = sizeof(int) * 2;
     printDebug(DM_Network, "NOOFPARAMS %d buffer size %d\n", noParams, bufferSize);
@@ -466,7 +468,8 @@ DbRetVal SqlPacketParamMetadata::marshall()
     }     
     delete fldInfo;
     printDebug(DM_Network, "SqlPacketParamMetadata::marshall ended\n");
-    return OK;
+#endif
+	return OK;
 }
 
 DbRetVal SqlPacketParamMetadata::unmarshall()
@@ -484,6 +487,7 @@ DbRetVal SqlPacketParamMetadata::unmarshall()
 
 DbRetVal SqlPacketProjMetadata::marshall()
 {
+#ifndef CSQL_CLIENT_LIB
     printDebug(DM_Network, "SqlPacketParamMetadata::marshall called\n");
     bufferSize  = sizeof(int) * 2;
     printDebug(DM_Network, "NOOFPROJS %d buffer size %d\n", noProjs, bufferSize);
@@ -520,7 +524,8 @@ DbRetVal SqlPacketProjMetadata::marshall()
     }
     delete fldInfo;
     printDebug(DM_Network, "SqlPacketParamMetadata::marshall ended\n");
-    return OK;
+#endif
+	return OK;
 }
 
 DbRetVal SqlPacketProjMetadata::unmarshall()
@@ -609,6 +614,7 @@ DbRetVal SqlPacketResultSet::unmarshall()
 
 DbRetVal SqlPacketShowTables::marshall()
 {
+#ifndef CSQL_CLIENT_LIB
     bufferSize = numOfTables * IDENTIFIER_LENGTH;
     buffer = (char*) malloc(bufferSize);
     char *bufIter = buffer;
@@ -619,6 +625,7 @@ DbRetVal SqlPacketShowTables::marshall()
         strncpy(bufIter, elem->name, IDENTIFIER_LENGTH);
         bufIter += IDENTIFIER_LENGTH;
     }
+#endif
     return OK;
 }
 

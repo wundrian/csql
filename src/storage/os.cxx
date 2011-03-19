@@ -98,7 +98,7 @@ void*  os::shm_attach(shared_memory_id id, const void *ptr, int flag)
 #ifdef WINNT
 	char fName[MAX_FILE_PATH_LEN];
 	sprintf(fName, "SHM_ID_%d", id);
-	HANDLE hFile = ::OpenFileMapping(FILE_MAP_ALL_ACCESS,false, fName);
+	HANDLE hFile = ::OpenFileMapping(FILE_MAP_ALL_ACCESS,false, (LPCWSTR)fName);
 	if (hFile == NULL)
 	{
 		 printf("unable to do mmap\n");
@@ -179,12 +179,20 @@ int os::close(int fd)
 {
 	return ::close(fd);
 }
+int os::closeSocket(int fd)
+{
+#ifdef WINNT
+	return ::closesocket(fd);
+#else
+	return ::close(fd);
+#endif
+}
 
 file_desc os::openFile(const char *name, FileOpenMode flags, size_t size)
 {
 
 #ifdef WINNT
-	HANDLE hFile = CreateFile(name, GENERIC_READ | GENERIC_WRITE,
+	HANDLE hFile = CreateFile((LPCWSTR)name, GENERIC_READ | GENERIC_WRITE,
                        FILE_SHARE_WRITE, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
     if (hFile == INVALID_HANDLE_VALUE) 
@@ -398,7 +406,7 @@ pid_t os::createProcess(const char* cmdName, const char* execName)
     sinfo.cb = sizeof(sinfo);
     ZeroMemory( &pinfo, sizeof(pinfo) );
 
-    if (!::CreateProcess(cmdName, NULL, NULL, NULL, FALSE, 0, NULL, NULL,
+    if (!::CreateProcess((LPCWSTR)cmdName, NULL, NULL, NULL, FALSE, 0, NULL, NULL,
         &sinfo, &pinfo))
     {
         return -1;

@@ -105,19 +105,19 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
         if (numbytes == -1) {
             printError(ErrOS, "Error reading from socket\n");
             conn->setConnClosed(false);
-            os::close(fd);
+            os::closeSocket(fd);
             ((TCPClient *)(conn->nwClient))->sockfd = -1;
             conn->setIsConnectedFlag(false);
             delete pkt;
             return ErrNoConnection;
         }
-//        printf("HEADER says packet type is %d\n", header.packetType);
+        printDebug(DM_Network, "HEADER says packet type is %d\n", header.packetType);
         buffer = (char*) malloc(header.packetLength);
         numbytes = os::recv(fd,buffer,header.packetLength,0);
         if (numbytes == -1) {
             printError(ErrOS, "Error reading from socket\n");
             conn->setConnClosed(false);
-            os::close(fd);
+            os::closeSocket(fd);
             ((TCPClient *)(conn->nwClient))->sockfd = -1;
             conn->setIsConnectedFlag(false);
             delete pkt;
@@ -165,7 +165,7 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
         if (numbytes == -1) {
             printError(ErrOS, "Error reading from socket\n");
             conn->setConnClosed(false);
-            os::close(fd);
+            os::closeSocket(fd);
             ((TCPClient *)(conn->nwClient))->sockfd = -1;
             conn->setIsConnectedFlag(false);
             delete pkt;
@@ -177,7 +177,7 @@ DbRetVal SqlNwStatement::prepare(char *stmtstr)
         if (numbytes == -1) {
             printError(ErrOS, "Error reading from socket\n");
             conn->setConnClosed(false);
-            os::close(fd);
+            os::closeSocket(fd);
             ((TCPClient *)(conn->nwClient))->sockfd = -1;
             conn->setIsConnectedFlag(false);
             ::free (buffer);
@@ -305,7 +305,7 @@ void* SqlNwStatement::fetch(DbRetVal &ret)
     if (numbytes == -1) {
         printError(ErrOS, "Connection lost with peer\n");
         conn->setConnClosed(false);
-        os::close(fd);
+        os::closeSocket(fd);
         ((TCPClient *)(conn->nwClient))->sockfd = -1;
         conn->setIsConnectedFlag(false);
         ret = ErrNoConnection;
@@ -318,7 +318,7 @@ void* SqlNwStatement::fetch(DbRetVal &ret)
     if (numbytes == -1) {
         printError(ErrOS, "Connection lost with peer\n");
         conn->setConnClosed(false);
-        os::close(fd);
+        os::closeSocket(fd);
         ((TCPClient *)(conn->nwClient))->sockfd = -1;
         conn->setIsConnectedFlag(false);
         ret = ErrNoConnection;
@@ -651,7 +651,7 @@ List SqlNwStatement::getAllTableNames(DbRetVal &ret)
     if (numbytes == -1) {
         printError(ErrOS, "Connection lost with peer.");
         conn->setConnClosed(false);
-        os::close(fd);
+        os::closeSocket(fd);
         ((TCPClient *)(conn->nwClient))->sockfd = -1;
         conn->setIsConnectedFlag(false);
         ret = ErrNoConnection;
@@ -663,7 +663,7 @@ List SqlNwStatement::getAllTableNames(DbRetVal &ret)
     if (numbytes == -1) {
         printError(ErrOS, "Connection lost with peer.");
         conn->setConnClosed(false);
-        os::close(fd);
+        os::closeSocket(fd);
         ((TCPClient *)(conn->nwClient))->sockfd = -1;
         conn->setIsConnectedFlag(false);
         ret = ErrNoConnection;
@@ -756,7 +756,7 @@ void *SqlNwStatement::getLoadedRecords(char *tblName, DbRetVal &ret)
     if (numbytes == -1) {
         printError(ErrOS, "Connection lost with peer");
         conn->setConnClosed(false);
-        os::close(fd);
+        os::closeSocket(fd);
         ((TCPClient *)(conn->nwClient))->sockfd = -1;
         conn->setIsConnectedFlag(false);
         ret = ErrNoConnection;
@@ -768,7 +768,7 @@ void *SqlNwStatement::getLoadedRecords(char *tblName, DbRetVal &ret)
     if (numbytes == -1) {
         printError(ErrOS, "Connection lost with peer");
         conn->setConnClosed(false);
-        os::close(fd);
+        os::closeSocket(fd);
         ((TCPClient *)(conn->nwClient))->sockfd = -1;
         conn->setIsConnectedFlag(false);
         ret = ErrNoConnection;

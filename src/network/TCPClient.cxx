@@ -56,7 +56,7 @@ DbRetVal TCPClient::send(NetworkPacketType type)
             return ErrNoConnection;
         }
         printError(ErrOS, "Unable to send the packet");
-        os::close(sockfd);
+        os::closeSocket(sockfd);
         sockfd = -1;
         isConnectedFlag = false;
         return ErrNoConnection;
@@ -79,10 +79,11 @@ DbRetVal TCPClient::send(NetworkPacketType type, int stmtid)
         if (errno == EPIPE) {
             printError(ErrNoConnection, "connection not present");
             isConnectedFlag = false;
+			os::closeSocket(sockfd);
             return ErrNoConnection;
         }
         printError(ErrOS, "Unable to send the packet");
-        close(sockfd);
+        os::closeSocket(sockfd);
         sockfd = -1;
         isConnectedFlag = false;
         return ErrNoConnection;
@@ -110,10 +111,11 @@ DbRetVal TCPClient::send(NetworkPacketType type, char *buf, int len)
         if (errno == EPIPE) {
             printError(ErrNoConnection, "connection not present");
             isConnectedFlag = false;
+			os::closeSocket(sockfd);
             return ErrNoConnection;
         }
         printError(ErrOS, "Unable to send the packet");
-        close(sockfd);
+        os::closeSocket(sockfd);
         sockfd = -1;
         isConnectedFlag = false;
         return ErrNoConnection;
@@ -123,10 +125,11 @@ DbRetVal TCPClient::send(NetworkPacketType type, char *buf, int len)
         if (errno == EPIPE) {
             printError(ErrNoConnection, "connection not present");
             isConnectedFlag = false;
+			os::closeSocket(sockfd);
             return ErrNoConnection;
         }
         printError(ErrOS, "Unable to send the packet");
-        close(sockfd);
+        os::closeSocket(sockfd);
         sockfd = -1;
         isConnectedFlag = false;
         return ErrNoConnection;
@@ -139,7 +142,7 @@ DbRetVal TCPClient::send(NetworkPacketType type, char *buf, int len)
 DbRetVal TCPClient::receive()
 {
     DbRetVal rv = OK;
-//    printf("NW:TCP receive\n");
+    printDebug(DM_Network, "NW:TCP receive\n");
     fd_set fdset; 
     FD_ZERO(&fdset);
     FD_SET(sockfd, &fdset);
@@ -149,17 +152,19 @@ DbRetVal TCPClient::receive()
     int ret = os::select(sockfd+1, &fdset, 0, 0, &timeout);
     if (ret <= 0) {
         printError(ErrPeerTimeOut,"Response timeout for peer site");
-        os::close(sockfd);
+        os::closeSocket(sockfd);
         sockfd = -1;
         isConnectedFlag = false;
         return ErrPeerTimeOut;
     }
     socklen_t len = sizeof(struct sockaddr);
+	printDebug(DM_Network, "Sizeof response packet %d\n",  sizeof(ResponsePacket));
     int numbytes = os::recv(sockfd, respPkt, sizeof(ResponsePacket), 0);
+    printDebug(DM_Network, " NUMBYTES packet %d\n",  numbytes);
     if (numbytes == -1)
     {
        printError(ErrOS, "Unable to receive response from peer");
-        os::close(sockfd);
+        os::closeSocket(sockfd);
         sockfd = -1;
         isConnectedFlag = false;
         return ErrNoConnection;
@@ -169,10 +174,16 @@ DbRetVal TCPClient::receive()
 
 DbRetVal TCPClient::connect()
 {
-    //printf("NW:TCP connect %s %d %d\n", hostName, port, networkid);
+    printDebug(DM_Network, "NW:TCP connect %s %d %d\n", hostName, port, networkid);
     //TODO::send endian to the peer site
     //do not do endian conversion here. it will be done at the server side
-    isConnectedFlag = false;
+	int iResult=0;
+	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+    if (iResult != 0) {
+        printf("WSAStartup failed: %d\n", iResult);
+        return ErrSysInit;
+    }
+	isConnectedFlag = false;
     struct hostent *he;
     int numbytes;
     if ((he=gethostbyname(hostName)) == NULL) { // get the host info
@@ -213,8 +224,7 @@ DbRetVal TCPClient::connect()
        printError(ErrOS, "Unable to receive response from peer");
        return ErrOS;
     }
-//    printf("Response from peer site is %d\n", response);
-//    if (response != 1) return ErrPeerResponse;
+    //    if (response != 1) return ErrPeerResponse;
 
     //packet header information
     pktHdr->srcNetworkID = networkid;
@@ -226,26 +236,29 @@ DbRetVal TCPClient::connect()
 DbRetVal TCPClient::disconnect()
 {
     if (isConnectedFlag) {
-//        printf("NW:TCP disconnect %s %d\n", hostName, port);
         pktHdr->packetType = SQL_NW_PKT_DISCONNECT;
         pktHdr->packetLength = 0;
         int numbytes=0;
         if ((numbytes=os::send(sockfd, pktHdr, sizeof(PacketHeader), MSG_NOSIGNAL)) == -1) {
             if (errno == EPIPE) {
                 printError(ErrNoConnection, "connection not present");
+				os::closeSocket(sockfd);
+				WSACleanup();
                 isConnectedFlag = false;
                 return ErrNoConnection;
             }
             printError(ErrOS, "Unable to send the packet");
-            close(sockfd);
+            os::closeSocket(sockfd);
+			WSACleanup();
             sockfd = -1;
             isConnectedFlag = false;
             return ErrNoConnection;   
         } else {
-//            printf("Sent bytes %d\n", numbytes);
+            printDebug(DM_Network,"Sent bytes %d\n", numbytes);
             DbRetVal rv = receive();
             isConnectedFlag = false;
-            close(sockfd);
+            os::closeSocket(sockfd);
+			WSACleanup();
             sockfd = -1;
         }
     }

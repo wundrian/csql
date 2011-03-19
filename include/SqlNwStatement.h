@@ -27,7 +27,8 @@
 class DllExport SqlNwStatement: public AbsSqlStatement
 {
     public:
-    SqlNwStatement(){innerStmt = NULL; con = NULL; isPrepared=false; isSel = true; nullInfoDml = NULL; nullInfoSel = NULL; }
+    SqlNwStatement(){innerStmt = NULL; con = NULL; isPrepared=false; 
+	                 isSel = true; nullInfoDml = NULL; nullInfoSel = NULL; }
     void setConnection(AbsSqlConnection *conn)
     {
         if (innerStmt) innerStmt->setConnection(conn->getInnerConnection());

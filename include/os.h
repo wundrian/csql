@@ -230,6 +230,7 @@ class DllExport os
     static int close(int fd);
 	static file_desc openFile(const char *name, FileOpenMode flags, size_t size);
     static int closeFile(file_desc fd);
+    static int closeSocket(int fd);
     static int lockFile(int fd);
     static int unlockFile(int fd);
 	static int truncate(const char* fname);

@@ -22,14 +22,17 @@
 #include<CSql.h>
 #include<Network.h>
 #include<AbsSqlConnection.h>
-#include<SqlConnection.h>
+#include<SqlFactory.h>
+
 class SqlNetworkHandler
 {
     DbRetVal applyExecPackets(List sList, List pList);
     public:
+#ifndef CSQL_CLIENT_LIB
     static List stmtList;
     static List tableNameList;
     static AbsSqlConnection *conn;
+#endif
     static SqlApiImplType type;
     static int stmtID;
     static int sockfd;

@@ -46,7 +46,8 @@ DbRetVal SqlNwConnection::connect (char *user, char * pass)
     pkt->setBuffer(buffer);
     pkt->marshall();
     rv = nwClient->send(SQL_NW_PKT_CONNECT, buffer, bufsize);
-    if (rv != OK) {
+    printDebug(DM_Network, "DEBUG:::NWCONNECT send connect pkt %d\n", rv);
+	if (rv != OK) {
         printError(rv, "Data could not be sent");
         delete pkt;
         delete nwClient; 
@@ -54,7 +55,8 @@ DbRetVal SqlNwConnection::connect (char *user, char * pass)
         return rv;
     }
     rv = nwClient->receive();
-    if (rv == ErrPeerTimeOut) { 
+    printDebug(DM_Network, "DEBUG:::NWCONNECT receive connect pkt %d \n", rv);
+	if (rv == ErrPeerTimeOut) { 
         delete pkt;
         delete nwClient; 
         nwClient = NULL;
@@ -67,7 +69,7 @@ DbRetVal SqlNwConnection::connect (char *user, char * pass)
 	    nwClient = NULL;
         return rpkt->errRetVal;
     }
-    isConnOpen = true;
+	isConnOpen = true;
     delete pkt;
     return OK;
 }
@@ -132,5 +134,4 @@ DbRetVal SqlNwConnection::rollback()
         return ErrNoConnection;
     }
     return rv;
-
 }

@@ -14,6 +14,7 @@
  *                                                                         *
   ***************************************************************************/
 #include <SqlFactory.h>
+#ifndef CSQL_CLIENT_LIB
 #include <SqlStatement.h>
 #include <SqlConnection.h>
 #include <SqlLogConnection.h>
@@ -21,10 +22,12 @@
 #include <SqlOdbcConnection.h>
 #include <SqlOdbcStatement.h>
 #include <SqlGwStatement.h>
+#endif
 #include <SqlNwConnection.h>
 #include <SqlNwStatement.h>
-
+#ifndef CSQL_CLIENT_LIB
 Config Conf::config;
+#endif
 
 AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
 {
@@ -42,6 +45,7 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
 #endif
     switch(implFlag)
     {
+#ifndef CSQL_CLIENT_LIB
         case CSql:
             if (!isSqlLogNeeded) conn = new SqlConnection();
             else {
@@ -55,6 +59,7 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
                conn->setInnerConnection(sqlCon);
             }
             break;
+#endif
         case CSqlNetwork:
             {
             SqlNwConnection *sqlNwCon = new SqlNwConnection(CSqlNetwork);
@@ -62,6 +67,7 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
             conn = sqlNwCon;
             break;
             }
+#ifndef CSQL_CLIENT_LIB
         case CSqlDirect:
             conn = new SqlConnection();
             break;
@@ -73,7 +79,9 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
             conn->setInnerConnection(sqlCon);
             break;
             }
+#endif
 #ifndef MMDB
+#ifndef CSQL_CLIENT_LIB
         case CSqlAdapter:
             {
             conn = new SqlOdbcConnection();
@@ -106,6 +114,7 @@ AbsSqlConnection* SqlFactory::createConnection(SqlApiImplType implFlag)
             conn = gwconn;
             break;
             }
+#endif
         case CSqlNetworkAdapter:
             {
             SqlNwConnection *sqlNwCon = new SqlNwConnection(CSqlNetworkAdapter);
@@ -142,7 +151,8 @@ AbsSqlStatement* SqlFactory::createStatement(SqlApiImplType implFlag)
 #endif
     switch(implFlag)
     {
-        case CSql:
+#ifndef CSQL_CLIENT_LIB
+	case CSql:
             if (!isSqlLogNeeded) stmt = new SqlStatement();
             else {
                AbsSqlStatement *sqlStmt = new SqlStatement();
@@ -150,6 +160,7 @@ AbsSqlStatement* SqlFactory::createStatement(SqlApiImplType implFlag)
                stmt->setInnerStatement(sqlStmt);
             }
             break;
+#endif
         case CSqlNetwork:
             {
             SqlNwStatement *sqlNwStmt = new SqlNwStatement();
@@ -157,6 +168,8 @@ AbsSqlStatement* SqlFactory::createStatement(SqlApiImplType implFlag)
             stmt = sqlNwStmt;
             break;
             }
+#ifndef CSQL_CLIENT_LIB
+
         case CSqlDirect:
             stmt = new SqlStatement();
             break;
@@ -168,8 +181,11 @@ AbsSqlStatement* SqlFactory::createStatement(SqlApiImplType implFlag)
             stmt->setInnerStatement(sqlStmt);
             break;
             }
+#endif
 #ifndef MMDB
-        case CSqlAdapter:
+#ifndef CSQL_CLIENT_LIB
+
+		case CSqlAdapter:
             {
             stmt = new SqlOdbcStatement();
             stmt->setInnerStatement(NULL);
@@ -190,7 +206,8 @@ AbsSqlStatement* SqlFactory::createStatement(SqlApiImplType implFlag)
             stmt = gwstmt;
             break;
             }
-        case CSqlNetworkAdapter:
+#endif
+		case CSqlNetworkAdapter:
             {
             SqlNwStatement *sqlNwStmt = new SqlNwStatement();
             sqlNwStmt->setInnerStatement(NULL);

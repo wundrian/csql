@@ -68,9 +68,10 @@ class ResponsePacket
     DbRetVal errRetVal;
     int stmtID;
     int rows;
-    long long lastAutoIncVal;
     bool isSelect;
     char errorString[ERROR_STRING_LENGTH];
+    long lastAutoIncVal;
+	long lastAutoIncVal1; //Added for VC Windows to work. For long long , it pads another 4 bytes to structure
     DbRetVal marshall();
     DbRetVal unmarshall();
 };
@@ -129,6 +130,7 @@ class UDPClient : public NetworkClient{
 struct PacketHeader;
 class TCPClient : public NetworkClient{
     public:
+    WSADATA wsaData;
     int sockfd;
     struct sockaddr_in srvAddr;
     ResponsePacket *respPkt;
@@ -157,7 +159,7 @@ class NetworkTable
     DbRetVal initialize();
     void destroy(){}
     DbRetVal readNetworkConfig();
-    NetworkClient* getNetworkClient() { return nwClient; }
+    NetworkClient* getetworkClient() { return nwClient; }
     DbRetVal connect();
     DbRetVal disconnect();
     DbRetVal connectIfNotConnected();
