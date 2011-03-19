@@ -1,0 +1,200 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{437FB04C-9FA4-4C0B-9061-30F0553BF372}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>storage</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>C:\prabakaran\csql\include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IncludePath>c:\prabakaran\csql\include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <None Include="..\..\..\include\Makefile.am" />
+    <None Include="..\..\..\include\Makefile.in" />
+    <None Include="..\..\..\src\storage\Makefile.am" />
+    <None Include="..\..\..\src\storage\Makefile.in" />
+    <None Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\storage\AggTableImpl.cxx" />
+    <ClCompile Include="..\..\..\src\storage\BucketIter.cxx" />
+    <ClCompile Include="..\..\..\src\storage\BucketList.cxx" />
+    <ClCompile Include="..\..\..\src\storage\CatalogTables.cxx" />
+    <ClCompile Include="..\..\..\src\storage\Chunk.cxx" />
+    <ClCompile Include="..\..\..\src\storage\ChunkIterator.cxx" />
+    <ClCompile Include="..\..\..\src\storage\Condition.cxx" />
+    <ClCompile Include="..\..\..\src\storage\Config.cxx" />
+    <ClCompile Include="..\..\..\src\storage\Connection.cxx" />
+    <ClCompile Include="..\..\..\src\storage\Database.cxx" />
+    <ClCompile Include="..\..\..\src\storage\DatabaseManagerImpl.cxx" />
+    <ClCompile Include="..\..\..\src\storage\DataType.cxx" />
+    <ClCompile Include="..\..\..\src\storage\Debug.cxx" />
+    <ClCompile Include="..\..\..\src\storage\Expression.cxx" />
+    <ClCompile Include="..\..\..\src\storage\FieldList.cxx" />
+    <ClCompile Include="..\..\..\src\storage\FixedHeapAllocator.cxx" />
+    <ClCompile Include="..\..\..\src\storage\HashIndex.cxx" />
+    <ClCompile Include="..\..\..\src\storage\HashMap.cxx" />
+    <ClCompile Include="..\..\..\src\storage\Index.cxx" />
+    <ClCompile Include="..\..\..\src\storage\JoinTableImpl.cxx" />
+    <ClCompile Include="..\..\..\src\storage\LockListIter.cxx" />
+    <ClCompile Include="..\..\..\src\storage\LockManager.cxx" />
+    <ClCompile Include="..\..\..\src\storage\Logger.cxx" />
+    <ClCompile Include="..\..\..\src\storage\Mutex.cxx" />
+    <ClCompile Include="..\..\..\src\storage\OrderByTree.cxx" />
+    <ClCompile Include="..\..\..\src\storage\OrderTableImpl.cxx" />
+    <ClCompile Include="..\..\..\src\storage\os.cxx" />
+    <ClCompile Include="..\..\..\src\storage\PageInfo.cxx" />
+    <ClCompile Include="..\..\..\src\storage\PredicateImpl.cxx" />
+    <ClCompile Include="..\..\..\src\storage\Process.cxx" />
+    <ClCompile Include="..\..\..\src\storage\SessionImpl.cxx" />
+    <ClCompile Include="..\..\..\src\storage\TableConfig.cxx" />
+    <ClCompile Include="..\..\..\src\storage\TableDef.cxx" />
+    <ClCompile Include="..\..\..\src\storage\TableImpl.cxx" />
+    <ClCompile Include="..\..\..\src\storage\Transaction.cxx" />
+    <ClCompile Include="..\..\..\src\storage\TransactionManager.cxx" />
+    <ClCompile Include="..\..\..\src\storage\TreeIndex.cxx" />
+    <ClCompile Include="..\..\..\src\storage\TreeIter.cxx" />
+    <ClCompile Include="..\..\..\src\storage\TupleIterator.cxx" />
+    <ClCompile Include="..\..\..\src\storage\UserManagerImpl.cxx" />
+    <ClCompile Include="..\..\..\src\storage\Util.cxx" />
+    <ClCompile Include="..\..\..\src\storage\VarHeapAllocator.cxx" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\include\AbsSqlConnection.h" />
+    <ClInclude Include="..\..\..\include\AbsSqlStatement.h" />
+    <ClInclude Include="..\..\..\include\AggTableImpl.h" />
+    <ClInclude Include="..\..\..\include\Allocator.h" />
+    <ClInclude Include="..\..\..\include\build.h" />
+    <ClInclude Include="..\..\..\include\CacheTableLoader.h" />
+    <ClInclude Include="..\..\..\include\CatalogTables.h" />
+    <ClInclude Include="..\..\..\include\Config.h" />
+    <ClInclude Include="..\..\..\include\CSql.h" />
+    <ClInclude Include="..\..\..\include\Database.h" />
+    <ClInclude Include="..\..\..\include\DatabaseManager.h" />
+    <ClInclude Include="..\..\..\include\DatabaseManagerImpl.h" />
+    <ClInclude Include="..\..\..\include\DataType.h" />
+    <ClInclude Include="..\..\..\include\DataTypeInline.h" />
+    <ClInclude Include="..\..\..\include\Debug.h" />
+    <ClInclude Include="..\..\..\include\dmllex.h" />
+    <ClInclude Include="..\..\..\include\dmlyacc.h" />
+    <ClInclude Include="..\..\..\include\ErrorType.h" />
+    <ClInclude Include="..\..\..\include\Expression.h" />
+    <ClInclude Include="..\..\..\include\FaultTest.h" />
+    <ClInclude Include="..\..\..\include\Field.h" />
+    <ClInclude Include="..\..\..\include\Function.h" />
+    <ClInclude Include="..\..\..\include\Globals.h" />
+    <ClInclude Include="..\..\..\include\HeapAllocator.h" />
+    <ClInclude Include="..\..\..\include\Index.h" />
+    <ClInclude Include="..\..\..\include\Info.h" />
+    <ClInclude Include="..\..\..\include\JoinTableImpl.h" />
+    <ClInclude Include="..\..\..\include\Lock.h" />
+    <ClInclude Include="..\..\..\include\Mutex.h" />
+    <ClInclude Include="..\..\..\include\NanoTimer.h" />
+    <ClInclude Include="..\..\..\include\Network.h" />
+    <ClInclude Include="..\..\..\include\OrderByTree.h" />
+    <ClInclude Include="..\..\..\include\OrderTableImpl.h" />
+    <ClInclude Include="..\..\..\include\os.h" />
+    <ClInclude Include="..\..\..\include\Parser.h" />
+    <ClInclude Include="..\..\..\include\Predicate.h" />
+    <ClInclude Include="..\..\..\include\PredicateImpl.h" />
+    <ClInclude Include="..\..\..\include\Process.h" />
+    <ClInclude Include="..\..\..\include\Session.h" />
+    <ClInclude Include="..\..\..\include\SessionImpl.h" />
+    <ClInclude Include="..\..\..\include\sql.h" />
+    <ClInclude Include="..\..\..\include\SqlConnection.h" />
+    <ClInclude Include="..\..\..\include\sqlext.h" />
+    <ClInclude Include="..\..\..\include\SqlFactory.h" />
+    <ClInclude Include="..\..\..\include\SqlGwConnection.h" />
+    <ClInclude Include="..\..\..\include\SqlGwStatement.h" />
+    <ClInclude Include="..\..\..\include\SqlLogConnection.h" />
+    <ClInclude Include="..\..\..\include\SqlLogStatement.h" />
+    <ClInclude Include="..\..\..\include\SqlLogStore.h" />
+    <ClInclude Include="..\..\..\include\SqlNetworkHandler.h" />
+    <ClInclude Include="..\..\..\include\SqlNwConnection.h" />
+    <ClInclude Include="..\..\..\include\SqlNwStatement.h" />
+    <ClInclude Include="..\..\..\include\SqlOciConnection.h" />
+    <ClInclude Include="..\..\..\include\SqlOciStatement.h" />
+    <ClInclude Include="..\..\..\include\SqlOdbcConnection.h" />
+    <ClInclude Include="..\..\..\include\SqlOdbcStatement.h" />
+    <ClInclude Include="..\..\..\include\SqlStatement.h" />
+    <ClInclude Include="..\..\..\include\sqltypes.h" />
+    <ClInclude Include="..\..\..\include\sqlucode.h" />
+    <ClInclude Include="..\..\..\include\Statement.h" />
+    <ClInclude Include="..\..\..\include\Table.h" />
+    <ClInclude Include="..\..\..\include\TableConfig.h" />
+    <ClInclude Include="..\..\..\include\TableImpl.h" />
+    <ClInclude Include="..\..\..\include\timecsql.h" />
+    <ClInclude Include="..\..\..\include\Transaction.h" />
+    <ClInclude Include="..\..\..\include\UserManager.h" />
+    <ClInclude Include="..\..\..\include\UserManagerImpl.h" />
+    <ClInclude Include="..\..\..\include\Util.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
