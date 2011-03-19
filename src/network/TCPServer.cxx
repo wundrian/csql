@@ -67,7 +67,7 @@ DbRetVal TCPServer::handleClient()
    printf("DEBUG::handling client\n");
    DbRetVal rv = OK;
    socklen_t addressLen = sizeof(struct sockaddr);
-   clientfd = accept(sockfd, (struct sockaddr*) &clientAddress, (int*)&addressLen);
+   clientfd = accept(sockfd, (struct sockaddr*) &clientAddress, (LENGTH*)&addressLen);
    int ret = os::fork();
    if (ret) {
        //parent

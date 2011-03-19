@@ -177,12 +177,14 @@ DbRetVal TCPClient::connect()
     printDebug(DM_Network, "NW:TCP connect %s %d %d\n", hostName, port, networkid);
     //TODO::send endian to the peer site
     //do not do endian conversion here. it will be done at the server side
+#ifdef WINNT
 	int iResult=0;
 	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (iResult != 0) {
         printf("WSAStartup failed: %d\n", iResult);
         return ErrSysInit;
     }
+#endif
 	isConnectedFlag = false;
     struct hostent *he;
     int numbytes;
@@ -243,13 +245,17 @@ DbRetVal TCPClient::disconnect()
             if (errno == EPIPE) {
                 printError(ErrNoConnection, "connection not present");
 				os::closeSocket(sockfd);
-				WSACleanup();
+#ifdef WINNT
+                WSACleanup();
+#endif
                 isConnectedFlag = false;
                 return ErrNoConnection;
             }
             printError(ErrOS, "Unable to send the packet");
             os::closeSocket(sockfd);
-			WSACleanup();
+#ifdef WINNT
+            WSACleanup();
+#endif
             sockfd = -1;
             isConnectedFlag = false;
             return ErrNoConnection;   
@@ -258,7 +264,9 @@ DbRetVal TCPClient::disconnect()
             DbRetVal rv = receive();
             isConnectedFlag = false;
             os::closeSocket(sockfd);
-			WSACleanup();
+#ifdef WINNT
+            WSACleanup();
+#endif
             sockfd = -1;
         }
     }

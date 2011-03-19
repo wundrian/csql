@@ -49,6 +49,7 @@
 #define DllExport 
 typedef void (*sighandler_t)(int);
 #define LHANDLE void*
+#define LENGTH socklen_t
 
 #include <stdio.h>
 #include <fcntl.h>
@@ -179,6 +180,7 @@ typedef size_t socklen_t;
 #define MS_SYNC 0
 #define O_SYNC 0
 #define O_DIRECT 0
+#define LENGTH int
 #define LHANDLE HMODULE
 #ifndef APP_BUILD
 #define DllExport   __declspec( dllexport ) 
@@ -290,7 +292,7 @@ class DllExport os
     static int fdatasync(file_desc fd);
     static int atexit(void (*exitHndlr)(void));
     static void* dlsym(LHANDLE hdl, char* funcName);
-	static char getopt(int argc, char *argv[], char *opt);
+    static char getopt(int argc, char *argv[], char *opt);
 };
 
 #endif

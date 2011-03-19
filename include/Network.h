@@ -130,7 +130,9 @@ class UDPClient : public NetworkClient{
 struct PacketHeader;
 class TCPClient : public NetworkClient{
     public:
+#ifdef WINNT
     WSADATA wsaData;
+#endif
     int sockfd;
     struct sockaddr_in srvAddr;
     ResponsePacket *respPkt;
