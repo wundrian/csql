@@ -871,7 +871,7 @@ JNIEXPORT jintArray JNICALL Java_csql_jdbc_JSqlStatement_getProjFldTypeArray__
     int noOfFld = s->noOfProjFields();
     jintArray result = env->NewIntArray(noOfFld+1);
     jint *resultInt = env->GetIntArrayElements(result, NULL);
-    s->getProjFieldType(resultInt);
+    s->getProjFieldType((int*)resultInt);
     //for(int i=1; i< noOfFld+1; i++)
     //    printf("TYpe In ARRAY  %d \n",resultInt[i]);
     //printf("\n");
