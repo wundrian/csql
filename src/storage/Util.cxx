@@ -47,15 +47,16 @@ DbRetVal GlobalUniqueID::create()
     int id = os::shm_create(key, MAX_UNIQUE_ID *sizeof(int), 0666);
     if (-1 == id) {
         if (errno != EEXIST)
-	        printError(ErrOS, "Unable to create shared memory");
-	    return ErrOS;
+            printError(ErrOS, "Unable to create shared memory");
+        return ErrOS;
     }
     ptr = os::shm_attach(id, NULL, 0);
     if ((void*)-1 == ptr) {
         printError(ErrOS, "Unable to attach shared memory");
-	    return ErrOS;
+        return ErrOS;
     }
     memset(ptr, 0, MAX_UNIQUE_ID *sizeof(int));
+    return OK;
 }
    
 DbRetVal GlobalUniqueID::open() 
@@ -82,6 +83,7 @@ DbRetVal GlobalUniqueID::destroy()
         return ErrOS;
     }
     os::shm_remove(id);
+    return OK;
 }
 
 int GlobalUniqueID::getID(UniqueIDType type)

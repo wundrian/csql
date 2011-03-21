@@ -102,8 +102,7 @@ List UserManagerImpl::getAllUserNames(int *retval)
     //to store the tuple pointer of the table
     void *tptr =NULL;
     CatalogTableUSER cUser(systemDatabase_);
-    List userList = cUser.getUserList();
-    return userList;
+    return cUser.getUserList();
 }
 
 
