@@ -222,8 +222,6 @@ DbRetVal Database::releaseProcessTableMutex(bool procAccount)
     return OK;
 }
 
-
-
 int Database::initCheckpointMutex()
 {
     return metaData_->ckptMutex_.init("checkpoint");
@@ -312,7 +310,10 @@ Page* Database::getFreePage()
         
         if((((char*) pageInfo) + pageSize) >= endAddr )
         {
-            if(!isEndAddchk){ isEndAddchk=true; pageInfo=(PageInfo *)getFirstPage(); }
+            if(!isEndAddchk){ 
+                isEndAddchk=true; 
+                pageInfo=(PageInfo *)getFirstPage(); 
+            }
             else
                break;
         }
@@ -360,7 +361,10 @@ Page* Database::getFreePage(size_t size)
             }
             if((((char*) pageInfo) + offset) >= endAddr )
             {
-                if(!isEndAddchk){ isEndAddchk=true; pageInfo=(PageInfo *)getFirstPage(); }
+                if(!isEndAddchk){ 
+                    isEndAddchk=true; 
+                    pageInfo=(PageInfo *)getFirstPage(); 
+                }
                 else
                    break;
             }
@@ -466,7 +470,7 @@ DbRetVal Database::createSystemDatabaseChunk(AllocType type, size_t size, int id
     chunk->setChunkID(id);
     chunk->setAllocType(type);
     printDebug(DM_Database, "Creating System Database Chunk:%d Size:%d",id, chunk->allocSize_);
-    if (chunk->allocSize_ > PAGE_SIZE)
+    if (chunk->allocSize_ >= (PAGE_SIZE -sizeof(PageInfo)))
     {
         int multiple = os::floor(chunk->allocSize_ / PAGE_SIZE);
         int offset = ((multiple + 1) * PAGE_SIZE);
@@ -609,12 +613,12 @@ Bucket* Database::getLockHashBuckets()
 }
 void Database::setUniqueChunkID(int id)
 {
-        (metaData_->chunkUniqueID_).setID(id);
+    (metaData_->chunkUniqueID_).setID(id);
 }
 
 int Database::getUniqueIDForChunk()
 {
-        return ((metaData_->chunkUniqueID_).getID());
+    return ((metaData_->chunkUniqueID_).getID());
 }
 
 DbRetVal Database::recoverMutex(Mutex *mut)
@@ -625,7 +629,7 @@ DbRetVal Database::recoverMutex(Mutex *mut)
 }
 DbRetVal Database::writeDirtyPages(char *dataFile)
 {
-    int fd = open(dataFile, O_WRONLY|O_CREAT, 0644);
+    int fd = os::openFile(dataFile, fileOpenCreat, 0);
     lseek(fd, 0, SEEK_SET);
     void *buf = (void *) metaData_;
     int sizeToWrite = os::alignLong(sizeof(DatabaseMetaData));
@@ -644,10 +648,10 @@ DbRetVal Database::writeDirtyPages(char *dataFile)
         if ( NULL == pageInfo ) break;
         if (pageInfo > getCurrentPage()) {
            char *a="0";
-           lseek(fd, getMaxSize() -1, SEEK_SET);
+           ::lseek(fd, getMaxSize() -1, SEEK_SET);
            if ( -1 == os::write(fd, a, 1)) {
                printError(ErrSysInternal, "Unable to extend chkpt file");
-               close(fd);
+               os::close(fd);
                return ErrSysInternal;
            }
            break;
@@ -658,12 +662,12 @@ DbRetVal Database::writeDirtyPages(char *dataFile)
             else
                 pageSize = (long)pageInfo->nextPageAfterMerge_ - (long)pageInfo;
             writeOffset = (long) pageInfo - (long) metaData_;
-            lseek(fd, writeOffset, SEEK_SET);
+            ::lseek(fd, writeOffset, SEEK_SET);
             CLEARBIT(pageInfo->flags, IS_DIRTY);
             retSize = os::write(fd, (char*)pageInfo, pageSize);
             if ( -1  == retSize ) {
                 printError(ErrSysInternal, "Unable to write dirty page %x", pageInfo);
-                close(fd);
+                os::close(fd);
                 return ErrSysInternal;
             }
             totalBytesWritten= totalBytesWritten + retSize;
@@ -677,7 +681,7 @@ DbRetVal Database::writeDirtyPages(char *dataFile)
     }
     //printf("Total Dirty pages written %d %lld\n", pagesWritten, totalBytesWritten);
     logFine(Conf::logger, "Total Dirty pages written %d\n", pagesWritten);
-    close(fd);
+    os::close(fd);
     return OK;
 }
 
@@ -693,13 +697,13 @@ DbRetVal Database::checkPoint()
         FILE *fp = NULL;
         if (fp = fopen(dataFile, "r")) {
             fclose(fp);
-            int ret = unlink(dataFile);
+            int ret = ::unlink(dataFile);
             if (ret != OK) {
                 printError(ErrOS, "Unable to delete old chkpt file. Failure");
                 return ErrOS;
             }
         }
-        int fd = open(dataFile, O_WRONLY|O_CREAT, 0644);
+        int fd = ::open(dataFile, O_WRONLY|O_CREAT, 0644);
         void *buf = (void *) metaData_;
         os::lseek(fd, 0, SEEK_SET);
         os::write(fd, (char*) buf, Conf::config.getMaxDbSize());
@@ -718,7 +722,7 @@ DbRetVal Database::checkPoint()
         filterAndRemoveStmtLogs();
         int ret = os::truncate(dbRedoFileName);
         if (ret != 0) {
-            os::closeFile(fd);  
+            os::close(fd);  
             printError(ErrSysInternal, "Unable to truncate redo log file");
             printError(ErrSysInternal, "Delete %s manually and restart the server", dbRedoFileName);
             return ErrOS;
@@ -893,12 +897,12 @@ DbRetVal Database::recoverUserDB()
     char dataFile[MAX_FILE_LEN];
     char cmd[MAX_FILE_LEN];
     sprintf(dataFile, "%s/db.chkpt.data", Conf::config.getDbFile());
-    int fd = open(dataFile, O_RDONLY);
+    int fd = os::openFile(dataFile, fileOpenReadOnly, 0);
     if (-1 == fd) { return OK; }
     void *buf = (void *) metaData_;
     int readbytes = read(fd, buf, Conf::config.getMaxDbSize());
-    if (readbytes == -1) { close(fd); return ErrOS; }
-    close(fd);
+    if (readbytes == -1) { os::closeFile(fd); return ErrOS; }
+    os::closeFile(fd);
     return OK;
 }
 
@@ -916,7 +920,6 @@ DbRetVal Database::recoverSystemDB()
         if (buf.type == Tbl) {
             cTable.setChunkPtr(buf.name, buf.firstPage, buf.curPage);
         }
-
         else if (buf.type == hIdx || buf.type == tIdx) {
             cIndex.setChunkPtr(buf.name, buf.type, buf.bucketChunk, buf.firstPage, buf.curPage);
         }
