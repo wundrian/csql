@@ -100,3 +100,17 @@ CSQL- Version 3.0 - GA
 1.Bug Fixes
 2.Performance Improvements
 3.Improved Test Coverage
+
+CSQL- Version 3.1
+-----------------------
+1.Bug Fixes
+
+CSQL- Version 3.2
+-----------------------
+1.Bug Fixes
+
+CSQL- Version 3.3
+-----------------------
+1.Windows ODBC/JDBC Client Driver
+2.Trie Index Support
+3.Bug Fixes
