@@ -132,7 +132,6 @@ int Config::storeKeyVal(char *key, char *value)
            { cVal.chkptRedoLimit = ::atoi(value);  }
 
 
-
     else  return 1;
     return 0;
 }
