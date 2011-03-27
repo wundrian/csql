@@ -336,8 +336,12 @@ DbRetVal TableImpl::createPlan()
                 {
                   if (!isAllFldPointLookup) break;
                   printDebug(DM_Predicate, "point lookup involved for field %s",def->fldName_);
-                  if(hashIndex == info->indType) scanType_ = hashIndexScan;
-                  else scanType_ = treeIndexScan;
+                  if(hashIndex == info->indType) 
+                      scanType_ = hashIndexScan;
+                  else if (trieIndex == info->indType)
+                      scanType_ = trieIndexScan;
+                  else 
+                      scanType_ = treeIndexScan;
                   isPointLook = true;
                   useIndex_ = i;
                 }
@@ -1560,6 +1564,7 @@ void TableImpl::printSQLIndexString(FILE *fp, int fd)
                     obj.bucketChunk = cIter.nextElement();
                 } else obj.bucketChunk = NULL;
             } 
+            //TODO::Trie
             void *buf = &obj;
             write(fd, buf, sizeof(obj));
         }
@@ -1576,10 +1581,15 @@ void TableImpl::printSQLIndexString(FILE *fp, int fd)
         }
         fldList.removeAll(); 
         fprintf(fp, " ) ");
+
         if (iptr->indexType_ == hashIndex) fprintf(fp, " HASH ");
-        else fprintf(fp, " TREE ");
-        if (((HashIndexInfo*) idxInfo[i])->isUnique) fprintf(fp, " UNIQUE"); 
-        if(((HashIndexInfo*) idxInfo[i])->noOfBuckets != 1009 ) fprintf(fp, " SIZE %d ",((HashIndexInfo*) idxInfo[i])->noOfBuckets ); 
+        else if (iptr->indexType_ == treeIndex) fprintf(fp, " TREE ");
+        else fprintf(fp, " TRIE ");
+
+        HashIndexInfo* hInfo = (HashIndexInfo*)idxInfo[i];
+        if (hInfo->isUnique) fprintf(fp, " UNIQUE"); 
+        if(hInfo->noOfBuckets != 1009  &&
+           hInfo->noOfBuckets !=0) fprintf(fp, " SIZE %d ",((HashIndexInfo*) idxInfo[i])->noOfBuckets ); 
         fprintf(fp, ";\n");
     }
 }
@@ -2088,9 +2098,19 @@ DbRetVal TableImpl::compactIndexNode( void *indexPtr)
         if(ret1!=0){
             return ErrLockTimeOut;
         }
-    }else
+    }else if (treeIndex == (iptr->indexType_))
     {
         ret1 =((Chunk*)iptr->chunkPtr_)->compact(db_->procSlot);
+        if(ret1!=0){
+            return ErrLockTimeOut;
+        }
+    } else if ( trieIndex == (iptr->indexType_))
+    {
+        ret1 =((Chunk*)iptr->chunkPtr_)->compact(db_->procSlot);
+        if(ret1!=0){
+            return ErrLockTimeOut;
+        }
+        ret1 =((Chunk*)iptr->hashNodeChunk_)->compact(db_->procSlot);
         if(ret1!=0){
             return ErrLockTimeOut;
         }

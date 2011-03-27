@@ -304,6 +304,25 @@ void* Chunk::allocate(Database *db, DbRetVal *status)
     //releaseChunkMutex(db->procSlot);
     return data + sizeof(InUse);
 }
+void* Chunk::tryAllocate(Database *db, DbRetVal *status)
+{
+    int tries=0;
+    int totalTries = Conf::config.getMutexRetries();
+    void *node = NULL;
+    while (tries < totalTries)
+    {
+        *status = OK;
+        node= allocate(db, status);
+        if (NULL != node) break;
+        if (*status != ErrLockTimeOut)
+        {
+            printError(*status, "Unable to allocate node");
+            return NULL;
+        }
+        tries++;
+    }
+    return node;
+}
 
 void Chunk::setPageDirty(Database *db, void *ptr)
 {

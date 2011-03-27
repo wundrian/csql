@@ -19,6 +19,7 @@ extern int DebugDM_RedoLog;
 extern int DebugDM_Index;
 extern int DebugDM_HashIndex;
 extern int DebugDM_TreeIndex;
+extern int DebugDM_TrieIndex;
 extern int DebugDM_SystemDatabase;
 extern int DebugDM_Database;
 extern int DebugDM_Table;
@@ -35,9 +36,9 @@ extern int DebugDM_Warning;
 
 int printStackTrace();
 #ifdef WINNT
-DllExport int printError1(DbRetVal val, char* fname, int lno, char *format, ...);
+DllExport int printError1(DbRetVal val, char* fname, int lno, const char *format, ...);
 #else
-extern int printError1(DbRetVal val, char* fname, int lno, char *format, ...);
+extern int printError1(DbRetVal val, char* fname, int lno, const char *format, ...);
 #endif
 #define printError(a, ...) printError1(a, __FILE__, __LINE__, __VA_ARGS__)
 
@@ -52,6 +53,7 @@ enum DebugModule
     DM_Index,
     DM_HashIndex,
     DM_TreeIndex,
+    DM_TrieIndex,
     DM_SystemDatabase,
     DM_Database,
     DM_Table,
@@ -69,12 +71,12 @@ enum DebugModule
 static char moduleNames[][20] =
 {
     "Alloc", "VariableAlloc", "Lock", "Trans", "UndoLog", "RedoLog", "Index",
-    "HashIndex", "TreeIndex", "SysDb", "Db", "Table", "Predicate", "Iter", 
+    "HashIndex", "TreeIndex", "TrieIndex", "SysDb", "Db", "Table", "Predicate", "Iter", 
     "Procmgmt", "Network", "Gateway", "Adapter", "SqlLog",
     "CacheServer", "TEST", "Warning"
 };
 
-extern int printDebug1(int module, char *fname, int lineno, char *format, ...);
+extern int printDebug1(int module, char *fname, int lineno, const char *format, ...);
 
 
 #ifdef DEBUG

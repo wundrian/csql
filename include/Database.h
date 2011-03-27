@@ -198,6 +198,7 @@ class DllExport Database
     friend class Table;
     friend class TreeIndex;
     friend class HashIndex;
+    friend class TrieIndex;
     friend class Transaction;
 
 };

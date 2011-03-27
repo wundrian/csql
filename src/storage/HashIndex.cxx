@@ -107,14 +107,14 @@ unsigned int HashIndex::computeHashBucket(DataType type, void *key, int noOfBuck
     return -1;
 }
 
-bool HashIndex::checkForUniqueKey(HashIndexNode *head, HashIndexInfo *info, void *tuple)
+bool HashIndex::checkForUniqueKey(IndexNode *head, HashIndexInfo *info, void *tuple)
 {
     if (!head) return false;
     int offset = info->fldOffset;
     DataType type = info->type;
         BucketList list(head);
         BucketIter iter = list.getIterator();
-        HashIndexNode *node;
+        IndexNode *node;
         void *bucketTuple;
         printDebug(DM_HashIndex, "HashIndex insert Checking for unique");
         bool res = false;
@@ -219,7 +219,7 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     hInfo.hChunk_ = ((CINDEX *)indexPtr)->hashNodeChunk_;
     hInfo.keyPtr_ = keyPtr;
 
-    HashIndexNode *head = (HashIndexNode*) bucket->bucketList_;
+    IndexNode *head = (IndexNode*) bucket->bucketList_;
     if (info->isUnique)
     {
         bool isKeyPresent = checkForUniqueKey(head, info, tuple);
@@ -231,14 +231,14 @@ DbRetVal HashIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     {
         printDebug(DM_HashIndex, "HashIndex insert head is empty");
         DbRetVal rv = OK;
-        HashIndexNode *firstNode= NULL; 
+        IndexNode *firstNode= NULL; 
 
         int tries=0;
         int totalTries = Conf::config.getMutexRetries();
         while (tries < totalTries)
         {
             rv = OK;
-            firstNode= (HashIndexNode*) hIdxNodeChunk->allocate(tbl->db_, &rv);
+            firstNode= (IndexNode*) hIdxNodeChunk->allocate(tbl->db_, &rv);
             if (firstNode !=NULL) break;
             if (rv != ErrLockTimeOut)
             {
@@ -351,7 +351,7 @@ DbRetVal HashIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     hInfo.hChunk_ = ((CINDEX *)indexPtr)->hashNodeChunk_;
     hInfo.keyPtr_ = keyPtr;
     
-    HashIndexNode *head = (HashIndexNode*) bucket1->bucketList_;
+    IndexNode *head = (IndexNode*) bucket1->bucketList_;
 
     if (!head) { printError(ErrNotExists, "Hash index does not exist:should never happen\n"); 
        return ErrNotExists; 
@@ -528,7 +528,7 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         return ErrLockTimeOut;
     }
 
-    HashIndexNode *head1 = (HashIndexNode*) bucket->bucketList_;
+    IndexNode *head1 = (IndexNode*) bucket->bucketList_;
     if (head1)
     {
         BucketList list1(head1);
@@ -552,7 +552,7 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
          rc = tr->appendLogicalHashUndoLog(tbl->sysDB_, DeleteHashIndexOperation, hInfo1, sizeof(HashUndoLogInfo));
         if (rc !=OK) 
         { 
-            BucketList list((HashIndexNode*) bucket->bucketList_);
+            BucketList list((IndexNode*) bucket->bucketList_);
             rc = list.insert((Chunk*)iptr->hashNodeChunk_, tbl->db_, keyPtr, tuple);
             if (rc !=OK) printError(ErrSysFatal, "double failure on undo log remove followed by hash bucket list insert\n");
             bucket->bucketList_ = list.getBucketListHead();
@@ -565,7 +565,7 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
             return rc; 
         }
     }
-    HashIndexNode *head2 = (HashIndexNode*) bucket1->bucketList_;
+    IndexNode *head2 = (IndexNode*) bucket1->bucketList_;
     //Note:: the tuple will be in the same address location
     //so not changing the keyptr and tuple during append
     //only bucket where this node resides will only change
@@ -573,7 +573,7 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     if (!head2)
     {
         DbRetVal rv = OK;
-        HashIndexNode *firstNode= (HashIndexNode*)(((Chunk*)iptr->hashNodeChunk_)->allocate(tbl->db_, &rv));
+        IndexNode *firstNode= (IndexNode*)(((Chunk*)iptr->hashNodeChunk_)->allocate(tbl->db_, &rv));
         if (firstNode == NULL)
         { 
             printError(rv, "Error in allocating hash node");
@@ -588,7 +588,7 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         firstNode->ptrToKey_ = keyPtr;
         firstNode->ptrToTuple_ = tuple;
         firstNode->next_ = NULL;
-        bucket1->bucketList_ = (HashIndexNode*)firstNode;
+        bucket1->bucketList_ = (IndexNode*)firstNode;
         printDebug(DM_HashIndex, "Updating hash index node: Adding new node %x:Head is empty", firstNode);
     }
     else
@@ -605,8 +605,8 @@ DbRetVal HashIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         {
             //reverting back the changes:delete new node and add the old 
             //node + remove logical undo log of the  DeleteHashIndexOperation
-            BucketList list1((HashIndexNode*) bucket->bucketList_);
-            BucketList list2((HashIndexNode*) bucket1->bucketList_);
+            BucketList list1((IndexNode*) bucket->bucketList_);
+            BucketList list2((IndexNode*) bucket1->bucketList_);
             list1.insert((Chunk*)iptr->hashNodeChunk_, tbl->db_, keyPtr, tuple);
             list2.remove((Chunk*)iptr->hashNodeChunk_, tbl->db_, keyPtr);
             bucket->bucketList_ = list1.getBucketListHead();
@@ -633,7 +633,7 @@ DbRetVal HashIndex::insertLogicalUndoLog(Database *sysdb, void *data)
     Database db; 
     db.setMetaDataPtr((DatabaseMetaData *) info->metaData_);
     db.setProcSlot(sysdb->procSlot);
-    HashIndexNode *head = (HashIndexNode *)((Bucket *)info->bucket_)->bucketList_; 
+    IndexNode *head = (IndexNode *)((Bucket *)info->bucket_)->bucketList_; 
     BucketList list(head);
     DbRetVal rv = list.insert(hChunk, &db, info->keyPtr_, info->tuple_);
     if (rv != OK)
@@ -659,7 +659,7 @@ DbRetVal HashIndex::deleteLogicalUndoLog(Database *sysdb, void *data)
     Database db; 
     db.setMetaDataPtr((DatabaseMetaData *)info->metaData_);
     db.setProcSlot(sysdb->procSlot);
-    HashIndexNode *head = (HashIndexNode *)((Bucket *)info->bucket_)->bucketList_;
+    IndexNode *head = (IndexNode *)((Bucket *)info->bucket_)->bucketList_;
     BucketList list(head);
     DbRetVal rc = list.remove(hChunk, &db, info->keyPtr_);
     //((Bucket *)info->bucket_)->bucketList_ = list.getBucketListHead();

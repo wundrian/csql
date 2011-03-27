@@ -25,6 +25,7 @@ int DebugDM_RedoLog = 0;
 int DebugDM_Index = 0;
 int DebugDM_HashIndex = 0;
 int DebugDM_TreeIndex = 0;
+int DebugDM_TrieIndex = 1;
 int DebugDM_SystemDatabase = 0;
 int DebugDM_Database = 0;
 int DebugDM_Table = 0;
@@ -48,7 +49,7 @@ int printStackTrace()
   return 0;
 }
 
-int printError1(DbRetVal val, char* fname, int lno, char *format, ...)
+int printError1(DbRetVal val, char* fname, int lno, const char *format, ...)
 {
     va_list ap;
     int fd = -1;
@@ -86,7 +87,7 @@ int printError1(DbRetVal val, char* fname, int lno, char *format, ...)
     return 0;
 }
 
-int printDebug1(int module, char *fname, int lno, char *format, ...)
+int printDebug1(int module, char *fname, int lno, const char *format, ...)
 {
   switch(module) {
      case DM_Alloc: { if (!DebugDM_Alloc) return 1; break; }

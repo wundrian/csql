@@ -43,7 +43,10 @@ enum OperationType
     DeleteHashIndexOperation = 5,
     InsertTreeIndexOperation = 6,
     UpdateTreeIndexOperation = 7,
-    DeleteTreeIndexOperation = 8
+    DeleteTreeIndexOperation = 8,
+    InsertTrieIndexOperation = 9,
+    UpdateTrieIndexOperation = 10,
+    DeleteTrieIndexOperation = 11
 };
 class UndoLogInfo
 {
@@ -84,6 +87,9 @@ class TreeUndoLogInfo
     TreeUndoLogInfo()
     { metaData_ = tuple_ = cIndex_ = NULL; }
 };
+class TrieUndoLogInfo:public HashUndoLogInfo
+{
+};
 
 class DllExport Transaction
 {
@@ -110,6 +116,7 @@ class DllExport Transaction
     DbRetVal appendLogicalUndoLog(Database *sysdb, OperationType type, void *data, size_t size, void *indexPtr);
     DbRetVal appendLogicalHashUndoLog(Database *sysdb, OperationType type, void *data, size_t size);
     DbRetVal appendLogicalTreeUndoLog(Database *sysdb, OperationType type, void *data, size_t size);
+    DbRetVal appendLogicalTrieUndoLog(Database *sysdb, OperationType type, void *data, size_t size);
     UndoLogInfo* createUndoLog(Database *sysdb, OperationType type, void *data,
                        size_t size, DbRetVal *rv);
     void addAtBegin(UndoLogInfo* logInfo);

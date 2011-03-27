@@ -175,6 +175,7 @@ class Chunk
     void setFirstPage(void *fp) { firstPage_ = fp;}
     void setCurPage(void *cp) { curPage_ = cp;}
     PageInfo* getPageInfo(Database *db, void *ptr);
+    void* tryAllocate(Database *db, DbRetVal *status);
     void* allocate(Database *db, DbRetVal *status);
 
     void* allocate(Database *db, size_t size, DbRetVal *status);

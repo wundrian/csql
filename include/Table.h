@@ -26,6 +26,7 @@ enum ScanType
     fullTableScan = 0,
     hashIndexScan,
     treeIndexScan,
+    trieIndexScan,
     unknownScan
 };
 #define SCANTYPE

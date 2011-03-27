@@ -181,6 +181,17 @@ DbRetVal Transaction::appendLogicalTreeUndoLog(Database *sysdb, OperationType ty
     printDebug(DM_Transaction, "creating logical undo log and append %x optype:%d", logInfo, type);
     return rv;
 }
+DbRetVal Transaction::appendLogicalTrieUndoLog(Database *sysdb, OperationType type, void *data, size_t size)
+{
+    DbRetVal rv = OK;
+    TrieUndoLogInfo *hInfo = (TrieUndoLogInfo *) data;
+    UndoLogInfo *logInfo = createUndoLog(sysdb, type, hInfo->tuple_, size, &rv);
+    if (logInfo == NULL) return rv;
+    memcpy((char*)logInfo + sizeof(UndoLogInfo), data, sizeof(TrieUndoLogInfo));
+    addAtBegin(logInfo);
+    printDebug(DM_Transaction, "creating logical undo log and append %x optype:%d", logInfo, type);
+    return rv;
+}
 
 UndoLogInfo* Transaction::createUndoLog(Database *sysdb, OperationType type, void *data,
                        size_t size, DbRetVal *rv)
@@ -368,6 +379,18 @@ DbRetVal Transaction::applyUndoLogs(Database *sysdb)
              case DeleteTreeIndexOperation:
              {
                 TreeIndex::insertLogicalUndoLog(sysdb, (char *)logInfo
+                                                 + sizeof(UndoLogInfo));
+                break;
+             }
+             case InsertTrieIndexOperation:
+             {
+                TrieIndex::deleteLogicalUndoLog(sysdb, (char *)logInfo
+                                                 + sizeof(UndoLogInfo));
+                break;
+             }
+             case DeleteTrieIndexOperation:
+             {
+                TrieIndex::insertLogicalUndoLog(sysdb, (char *)logInfo
                                                  + sizeof(UndoLogInfo));
                 break;
              }

@@ -59,7 +59,6 @@ DbRetVal TupleIterator::open()
     }else if (hashIndexScan == scanType_)
     {
         HashIndexInfo *hIdxInfo = (HashIndexInfo*)info;
-        bool isPtr = false;
         FieldIterator iter = hIdxInfo->idxFldList.getIterator();
         int offset = hIdxInfo->fldOffset;
         if(!keyBuffer) keyBuffer = (char*) malloc(hIdxInfo->compLength);
@@ -81,7 +80,7 @@ DbRetVal TupleIterator::open()
         int bucketNo = HashIndex::computeHashBucket(hIdxInfo->type,
                       keyBuffer, hIdxInfo->noOfBuckets, hIdxInfo->compLength);
         Bucket *bucket =  &(hIdxInfo->buckets[bucketNo]);
-        HashIndexNode *head = (HashIndexNode*) bucket->bucketList_;
+        IndexNode *head = (IndexNode*) bucket->bucketList_;
         if (!head)
         {
             bIter->setHead(head);
@@ -89,6 +88,45 @@ DbRetVal TupleIterator::open()
         }
         printDebug(DM_HashIndex, "open:head for bucket %x is :%x", bucket, head);
         bIter->setHead(head);
+    }else if (trieIndexScan == scanType_)
+    {
+        HashIndexInfo *indInfo = (HashIndexInfo*)info;
+        char hashValue[TRIE_MAX_LENGTH];
+        FieldIterator iter = indInfo->idxFldList.getIterator();
+        FieldDef *def = iter.nextElement();
+        void* keyPtr = (void*)predImpl->valPtrForIndexField(def->fldName_,false);
+        if (NULL == keyPtr) {
+           printError(ErrSysFatal, "Fatal: Should not come here");
+        }
+        TrieIndex::computeHashValues(indInfo->type, keyPtr, hashValue, indInfo->compLength);
+        TrieNode* start = (TrieNode*)indInfo->buckets;
+        if (NULL == start)
+        {
+           bIter->setHead(NULL);
+           return OK;
+        }
+        char **next = NULL;
+        int cnt  = 0;
+        while(-1 != hashValue[cnt+1]) {
+            next = (char**)&(start->next_[hashValue[cnt]]);
+            if (! *next)
+            {
+                printError(ErrNotFound, "No trie node found \n");
+                return ErrNotFound;
+            }
+            //traverse till the end
+            start = (TrieNode*) *next;
+            cnt++;
+        }
+        void **ptr = (void**)&(start->head_[hashValue[cnt]]);
+        IndexNode *head = (IndexNode*) *ptr;
+        if (!head)
+        {
+            bIter->setHead(head);
+            return OK;
+        }
+        bIter->setHead(head);
+
     }else if (treeIndexScan == scanType_)
     {
         HashIndexInfo *hIdxInfo = (HashIndexInfo*)info;
@@ -190,15 +228,15 @@ void* TupleIterator::next()
                 predImpl->evaluateForTable(result, (char*)tuple);
             }
         }
-    }else if (hashIndexScan == scanType_)
+    }else if (hashIndexScan == scanType_ || trieIndexScan == scanType_)
     {
         //evaluate till it succeeds
         bool result = false;
         while (!result)
         {
-            HashIndexNode *node = bIter->next();
+            IndexNode *node = bIter->next();
             if (node == NULL) return NULL;
-            printDebug(DM_HashIndex, "next: returned HashIndexNode: %x", node);
+            printDebug(DM_HashIndex, "next: returned IndexNode: %x", node);
             tuple = node->ptrToTuple_;
             if(NULL == tuple) {
                 printDebug(DM_HashIndex, "next::tuple is null");

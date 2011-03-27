@@ -21,13 +21,13 @@
 DbRetVal BucketList::insert(Chunk *chunk, Database *db, void *key, void*tuple)
 {
     DbRetVal rv = OK;
-    HashIndexNode *newNode;// (HashIndexNode*) chunk->allocate(db, &rv);
+    IndexNode *newNode;// (IndexNode*) chunk->allocate(db, &rv);
     int tries=0;
     int totalTries = Conf::config.getMutexRetries();
     while (tries < totalTries)
     {
         rv = OK;
-        newNode= (HashIndexNode*) chunk->allocate(db, &rv);
+        newNode= (IndexNode*) chunk->allocate(db, &rv);
         if (newNode !=NULL) break;
         if (rv != ErrLockTimeOut) 
         {
@@ -59,7 +59,7 @@ DbRetVal BucketList::insert(Chunk *chunk, Database *db, void *key, void*tuple)
         return OK;
     }
 
-    HashIndexNode *it = head;
+    IndexNode *it = head;
     while (NULL != it->next_) it = it->next_;
     //it->next_ = newNode;
     if ( 0 != Mutex::CASL((long*)&it->next_, 0, (long)newNode)) {
@@ -71,11 +71,22 @@ DbRetVal BucketList::insert(Chunk *chunk, Database *db, void *key, void*tuple)
     if (rv != OK) printError(ErrSysFatal, "rv is not OK %d\n", rv);
     return rv;
 }
+void BucketList::print()
+{
+    if (NULL == head) return ;
+    IndexNode *ite = head, *prev = head;
+    while (ite != NULL)
+    {
+        printf( "%d ", *((int*)ite->ptrToKey_));
+        ite = ite->next_;
+    }
+    return;
+}
 //Returns 2 if the head itself is removed.
 DbRetVal BucketList::remove(Chunk *chunk, Database *db, void *keyPtr)
 {
     if (NULL == head) return ErrNotFound;
-    HashIndexNode *ite = head, *prev = head;
+    IndexNode *ite = head, *prev = head;
     while (ite != NULL)
     {
         if (ite->ptrToKey_ ==  keyPtr)

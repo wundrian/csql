@@ -20,6 +20,7 @@
 
 HashIndex* Index::hIdx = NULL;
 TreeIndex* Index::tIdx = NULL;
+TrieIndex* Index::iIdx = NULL;
 long Index::usageCount = 0;
 
 Index* Index::getIndex(IndexType type)
@@ -31,6 +32,9 @@ Index* Index::getIndex(IndexType type)
     }else if (type == treeIndex) {
         if (NULL == tIdx) tIdx = new TreeIndex();
         return tIdx;
+    }else if (type == trieIndex) {
+        if (NULL == iIdx) iIdx = new TrieIndex();
+        return iIdx;
     }
     return NULL;
 }
@@ -40,6 +44,7 @@ void Index::destroy()
      if(!usageCount) {
         if(!hIdx) { delete hIdx; hIdx=NULL; }
         if(!tIdx) { delete tIdx; tIdx=NULL; }
+        if(!iIdx) { delete tIdx; iIdx=NULL; }
      }
 }
 

@@ -81,10 +81,20 @@ class DllExport DatabaseManagerImpl : public DatabaseManager
                         FieldNameList &fldList, int bucketSize, bool isUnique, bool isPrimary = false);
     DbRetVal createTreeIndex(const char *indName, const char *tableName,
              FieldNameList &fldList, int bucketSize, bool isUnique, bool isPrimary = false);
+    DbRetVal createTrieIndex(const char *indName, const char *tableName,
+             FieldNameList &fldList, bool isUnique, bool isPrimary = false);
     void initHashBuckets(Bucket *buck, int bucketSize);
 
     DbRetVal dropIndexInt(const char *name, bool takeLock);
     DbRetVal writeSchemaFile();
+    DbRetVal updateIndexCatalogTables(const char *indName,void *tptr,
+                        char **fptr, FieldNameList &fldList, bool isUnique,
+                        Chunk* chunkInfo, Chunk* hChunk);
+    DbRetVal validateIndex(const char *tblName, FieldNameList &fldList, 
+                           void **tptr, char ***fptr, bool isPrimary);
+    DbRetVal removeIndexCatalogTables(const char *name, void *chunk, void* hchunk, void *tptr);
+    DbRetVal removeIndexChunks(void* chunk, void* hchunk, IndexType iType);
+
     public:
 
     Database* db() { return db_; }

@@ -230,7 +230,7 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
     if (0 == strcmp(name, SYSTEMDB)) return OK;
 
     /*Allocate new chunk to store hash index nodes
-    Chunk *chunkInfo = createUserChunk(sizeof(HashIndexNode));
+    Chunk *chunkInfo = createUserChunk(sizeof(IndexNode));
     if (NULL == chunkInfo)
     {
         printError(ErrSysInternal, "Failed to allocate hash index nodes chunk");
@@ -1048,6 +1048,12 @@ DbRetVal DatabaseManagerImpl::createIndex(const char *indName, IndexInitInfo *in
         HashIndexInitInfo *hInfo = (HashIndexInitInfo*) info;
         rv = createTreeIndex(indName, info->tableName, info->list, 
                           hInfo->bucketSize, info->isUnique, info->isPrimary);
+    }
+    else if (info->indType == trieIndex)
+    {
+        HashIndexInitInfo *hInfo = (HashIndexInitInfo*) info;
+        rv = createTrieIndex(indName, info->tableName, info->list, 
+                          info->isUnique, info->isPrimary);
 
     }else {
         printError(ErrBadCall, "Index type not supported\n");
@@ -1163,7 +1169,7 @@ DbRetVal DatabaseManagerImpl::createHashIndex(const char *indName, const char *t
     initHashBuckets(buck, bucketSize);
 
     //create chunk to store the hash index nodes
-    Chunk* hChunk = createUserChunk(sizeof(HashIndexNode));
+    Chunk* hChunk = createUserChunk(sizeof(IndexNode));
     if (NULL == hChunk)
     {
         delete[] fptr;
@@ -1393,7 +1399,172 @@ DbRetVal DatabaseManagerImpl::createTreeIndex(const char *indName, const char *t
     return OK;
 }
 
+DbRetVal DatabaseManagerImpl::createTrieIndex(const char *indName, const char *tblName,
+                      FieldNameList &fldList, bool isUnique, bool isPrimary)
+{
+    int totFlds = fldList.size();
+    void *tptr =NULL;
+    char **fptr = new char* [totFlds];
+    DbRetVal rv = validateIndex(tblName, fldList, &tptr, &fptr, isPrimary);
+    if (OK != rv)
+    {
+        delete[] fptr;
+        return rv;
+    }
+    rv = systemDatabase_->getXCheckpointMutex();
+    if (OK != rv)
+    {
+        printError(ErrSysInternal, "Unable to get database mutex");
+        return ErrSysInternal;
+    }
 
+    //below statements are actually setting values in the catalog table
+    //thats why mutex is taken before this stmt. Do not change the order
+    CFIELD* fInfo = (CFIELD*)fptr[0];
+    if(isPrimary){fInfo->isPrimary_=true;fInfo->isUnique_=true;}
+    if(isUnique){fInfo->isUnique_=true;}
+
+    printDebug(DM_TrieIndex, "Creating chunk for storing trie nodes\n" );
+    Chunk* chunkInfo = createUserChunk(sizeof(TrieNode));
+
+    //chunk to store the linked list of trie values 
+    Chunk* hChunk = createUserChunk(sizeof(IndexNode));
+    if (NULL == chunkInfo || NULL == hChunk)
+    {
+        delete[] fptr;
+        if (chunkInfo) deleteUserChunk(chunkInfo);
+        systemDatabase_->releaseCheckpointMutex();
+        printError(ErrSysInternal, "Unable to create trie node chunk");
+        return ErrSysInternal;
+    }
+    chunkInfo->setChunkName(indName);
+    hChunk->setChunkName(indName);
+    rv = updateIndexCatalogTables(indName,tptr, fptr, fldList, isUnique,
+                                  chunkInfo, hChunk );
+    delete[] fptr;
+    if (OK != rv) {
+        printError(ErrSysInternal, "Catalog table updation failed");
+        deleteUserChunk(chunkInfo);
+        deleteUserChunk(hChunk);
+        systemDatabase_->releaseCheckpointMutex();
+        return rv;
+    }
+    systemDatabase_->releaseCheckpointMutex();
+    //TODO:: create index nodes if records already exist in the table
+    return OK;
+}
+DbRetVal DatabaseManagerImpl::validateIndex(const char *tblName, 
+                             FieldNameList &fldList, void **tptr, char ***fptr,
+                             bool isPrimary)
+{
+    int totFlds = fldList.size();
+    if (totFlds != 1)
+    {
+        printError(ErrBadCall, "No Field name specified or composite fields specified");
+        return ErrBadCall;
+    }
+    void *chunk = NULL;
+    void *vcchunk = NULL;
+    //check whether table exists
+    CatalogTableTABLE cTable(systemDatabase_);
+    cTable.getChunkAndTblPtr(tblName, chunk, *tptr, vcchunk);
+    if (NULL == tptr)
+    {
+        printError(ErrNotExists, "Table does not exist %s", tblName);
+        return ErrNotExists;
+    }
+
+    //check whether field exists
+    CatalogTableFIELD cField(systemDatabase_);
+    DbRetVal rv = cField.getFieldPtrs(fldList, *tptr, *fptr);
+    if (OK != rv)
+    {
+        if (rv != ErrBadCall) {
+            printError(ErrNotExists, "Field does not exist");
+            return ErrNotExists;
+        }
+    }
+    CFIELD* fInfo = (CFIELD*)fptr[0];
+    if (fInfo->type_ == typeFloat || fInfo->type_ == typeDouble || fInfo->type_ == typeTimeStamp)
+    {
+        printError(ErrBadArg, "Trie Index cannot be created for float or double or timestamp type");
+        return ErrBadArg;
+    }
+    if (!fInfo->isNull_ && isPrimary )
+    {
+        printError(ErrBadArg, "Primary Index cannot be created on field without NOTNULL constraint");
+        return ErrBadArg;
+    }
+
+    return OK;
+}
+
+DbRetVal DatabaseManagerImpl::updateIndexCatalogTables(const char *indName,
+                        void *tptr, char **fptr, FieldNameList &fldList, 
+                        bool isUnique, Chunk* chunkInfo, Chunk* hChunk ) 
+{
+    void *tupleptr = NULL;
+    CatalogTableINDEX cIndex(systemDatabase_);
+    DbRetVal rv = cIndex.insert(indName, tptr, fldList.size(), isUnique,
+                        chunkInfo, 0, hChunk, tupleptr);
+    if (OK != rv)
+    {
+        printError(ErrSysInternal, "Catalog table updation failed in INDEX table");
+        return ErrSysInternal;
+    }
+    CatalogTableINDEXFIELD cIndexField(systemDatabase_);
+    rv = cIndexField.insert(fldList, tupleptr, tptr, fptr);
+    if (OK != rv)
+    {
+        //rollback the previous operation
+        cIndex.remove(indName, (void *&)chunkInfo, (void *&)hChunk, (void *&)tupleptr);
+        printError(ErrSysInternal, "Catalog table updation failed in INDEXFIELD table");
+        return ErrSysInternal;
+    }
+    return rv;
+}
+
+DbRetVal DatabaseManagerImpl::removeIndexCatalogTables(const char *name, void *chunk, void* hchunk, void *tptr)
+{
+    //remove the entry in INDEX
+    CatalogTableINDEX cIndex(systemDatabase_);
+    DbRetVal rv = cIndex.remove(name, chunk, hchunk, tptr);
+    if (OK != rv)
+    {
+        printError(ErrSysInternal, "Catalog table updation failed for INDEX table");
+        return ErrSysInternal;
+    }
+    printDebug(DM_Database, "Removing from INDEX %s",name);
+    //remove the entries in the INDEXFIELD table
+    CatalogTableINDEXFIELD cIndexField(systemDatabase_);
+    rv = cIndexField.remove(tptr);
+    if (OK != rv)
+    {
+        printError(ErrSysInternal, "Catalog table updation failed for INDEX table");
+        return ErrSysInternal;
+    }
+    printDebug(DM_Database, "Removing from INDEXFIELD %s",name);
+    return OK;
+}
+DbRetVal DatabaseManagerImpl::removeIndexChunks(void* chunk, void* hchunk, IndexType iType)
+{
+    DbRetVal rv = deleteUserChunk((Chunk*)chunk);
+    if (OK != rv)
+    {
+        printError(ErrSysInternal, "Unable to delete the index chunk");
+        return ErrSysInternal;
+    }
+    //delete the index hash node chunk
+    if (iType == hashIndex || iType == trieIndex) {
+        rv = deleteUserChunk((Chunk*)hchunk);
+        if (OK != rv)
+        {
+            printError(ErrSysInternal, "Unable to delete the index hash node chunk");
+            return ErrSysInternal;
+        }
+    }
+    return OK;
+}
 
 void DatabaseManagerImpl::initHashBuckets(Bucket *buck, int bucketSize)
 {
@@ -1425,55 +1596,23 @@ DbRetVal DatabaseManagerImpl::dropIndexInt(const char *name, bool takeLock)
             return ErrSysInternal;
         }
     }
-
-    //remove the entry in INDEX
-    CatalogTableINDEX cIndex(systemDatabase_);
-    rv = cIndex.remove(name, chunk, hchunk, tptr);
+    rv = removeIndexCatalogTables(name, chunk, hchunk, tptr);
     if (OK != rv)
     {
         if (takeLock) systemDatabase_->releaseCheckpointMutex();
-        printError(ErrSysInternal, "Catalog table updation failed for INDEX table");
-        return ErrSysInternal;
+        return rv;
     }
-    printDebug(DM_Database, "Removing from INDEX %s",name);
-    //remove the entries in the INDEXFIELD table
-    CatalogTableINDEXFIELD cIndexField(systemDatabase_);
-    rv = cIndexField.remove(tptr);
-    if (OK != rv)
-    {
-        if (takeLock) systemDatabase_->releaseCheckpointMutex();
-        printError(ErrSysInternal, "Catalog table updation failed for INDEX table");
-        return ErrSysInternal;
-    }
-    printDebug(DM_Database, "Removing from INDEXFIELD %s",name);
 
-    //delete the index chunk
     CINDEX *iptr = (CINDEX*)tptr;
-    rv = deleteUserChunk((Chunk*)chunk);
+    rv = removeIndexChunks(chunk, hchunk, iptr->indexType_);
     if (OK != rv)
     {
         if (takeLock) systemDatabase_->releaseCheckpointMutex();
-        printError(ErrSysInternal, "Unable to delete the index chunk");
-        return ErrSysInternal;
-    }
-    //delete the index hash node chunk
-    if (iptr->indexType_ == hashIndex) {
-        rv = deleteUserChunk((Chunk*)hchunk);
-        if (OK != rv)
-        {
-            if (takeLock) systemDatabase_->releaseCheckpointMutex();
-            printError(ErrSysInternal, "Unable to delete the index hash node chunk");
-            return ErrSysInternal;
-        }
+        return rv;
     }
     if (takeLock) systemDatabase_->releaseCheckpointMutex();
 
-    //TODO::If tuples present in this table, then
-    //free all hash index nodes for this table.
-    //free all nodes in list of all buckets
-    //Take table lock
-
-    printDebug(DM_Database, "Dropped hash index %s",name);
+    printDebug(DM_Database, "Dropped index %s",name);
     logFinest(Conf::logger, "Deleted Index %s", name);
     return OK;
 }
@@ -1657,6 +1796,8 @@ DbRetVal DatabaseManagerImpl::printIndexInfo(char *name)
         printf("<Type> Hash Index </Type>\n");
     else if (treeIndex == iType)
         printf("<Type> Tree Index </Type>\n");
+    else if (trieIndex == iType)
+        printf("<Type> Trie Index </Type>\n");
     else
         printf("<Type> Unknown Index </Type>\n");
 
@@ -1665,21 +1806,32 @@ DbRetVal DatabaseManagerImpl::printIndexInfo(char *name)
     printf("  <TotalPages> %d </TotalPages>\n", ch->totalPages());
     printf("  <TotalBuckets> %d </TotalBuckets> \n", CatalogTableINDEX::getNoOfBuckets(tptr));
     printf("</HashBucket>\n");
-    if(treeIndex != iType){
+    printf("<IndexNodes>\n");
+    if(hashIndex == iType){
         ch = (Chunk*) hchunk;
-        printf("<IndexNodes>\n");
         printf("  <TotalPages> %d </TotalPages>\n", ch->totalPages());
         printf("  <TotalNodes> %d </TotalNodes>\n", ch->getTotalDataNodes());
-        printf("<IndexNodes>\n");
-    }else{
-        printf("<IndexNodes>\n");
+    } else if (treeIndex == iType) {
         printf("  <TotalNodes> %d </TotalNodes>\n", ch->getTotalDataNodes());
         if(hchunk)
             printf("  <TotalElements> %lld </TotalElements>\n",((TreeNode*) hchunk)->getTotalElements());
         else
             printf("  <TotalElements> 0 </TotalElements>\n");
-        printf("<IndexNodes>\n");
+    } else if (trieIndex == iType)
+    {
+        printf(" <TrieNodes> \n");
+        printf("  <TotalPages> %d </TotalPages>\n", ch->totalPages());
+        printf("  <TotalNodes> %d </TotalNodes>\n", ch->getTotalDataNodes());
+        printf(" </TrieNodes> \n <TrieValues>\n");
+        ch = (Chunk*) hchunk;
+        printf("  <TotalPages> %d </TotalPages>\n", ch->totalPages());
+        printf("  <TotalNodes> %d </TotalNodes>\n", ch->getTotalDataNodes());
+        printf(" </TrieValues>\n");
+    } else 
+    {
+        printf("Unknown Index type\n");
     }
+    printf("<IndexNodes>\n");
     return OK;
 }
 

@@ -191,6 +191,7 @@ enum IndexType
 {
     hashIndex = 0, /**<hash index*/
     treeIndex,      /**<tree index*/
+    trieIndex,      /**<trie index*/
     unknownIndex      /**<no index*/
 };
 

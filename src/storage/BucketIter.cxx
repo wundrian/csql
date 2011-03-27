@@ -15,11 +15,11 @@
   ***************************************************************************/
 #include<Index.h>
 
-HashIndexNode* BucketIter::next()
+IndexNode* BucketIter::next()
 {
     if (iter == NULL) return NULL;
     if(recordsOver) return NULL;
-    HashIndexNode *node = iter;
+    IndexNode *node = iter;
     iter = iter ->next_;
     printDebug(DM_HashIndex,"BucketIter::next returns %x",node);
     if (isUnique) recordsOver = true;

@@ -18,6 +18,8 @@
 #include<DataType.h>
 #include<Debug.h>
 #include<Info.h>
+#define TRIE_SIZE 10
+#define TRIE_MAX_LENGTH 64
 
 class Database;
 class Chunk;
@@ -31,12 +33,19 @@ class Bucket
     Mutex mutex_;
     void *bucketList_;
 };
-class HashIndexNode
+class IndexNode
 {
     public:
     void *ptrToKey_;
     void *ptrToTuple_;
-    HashIndexNode *next_;
+    IndexNode *next_;
+};
+
+class TrieNode
+{
+    public:
+    IndexNode *head_[TRIE_SIZE];
+    TrieNode *next_[TRIE_SIZE];
 };
 
 class IndexInfo;
@@ -65,31 +74,32 @@ class TreeNode
 
 class BucketIter
 {
-    HashIndexNode *iter;
-    HashIndexNode *head;
+    IndexNode *iter;
+    IndexNode *head;
     bool isUnique;
     bool recordsOver;
     public:
     BucketIter(){iter = head = NULL;
                  isUnique=false; recordsOver = false;}
-    void setHead(HashIndexNode *hd) { iter = head = hd; recordsOver=false;}
-    BucketIter(HashIndexNode *head) { iter = head = head;
+    void setHead(IndexNode *hd) { iter = head = hd; recordsOver=false;}
+    BucketIter(IndexNode *head) { iter = head = head;
                  isUnique=false; recordsOver = false;}
     void setUnique() { isUnique = true; }
     bool getUnique() { return isUnique; }
-    HashIndexNode* next();
+    IndexNode* next();
     void reset() { iter = head; recordsOver=false;}
     friend class BucketList;
 };
 class BucketList
 {
-    HashIndexNode *head;
+    IndexNode *head;
     public:
     BucketList(){ head = NULL;}
-    BucketList(HashIndexNode *h){ head = h; }
+    BucketList(IndexNode *h){ head = h; }
     void *getBucketListHead(){ return head;}
     DbRetVal insert(Chunk *chunk, Database *db, void *key, void *tuple);
     DbRetVal remove(Chunk *chunk, Database *db, void *key);
+    void print();
     BucketIter getIterator()
     {
         BucketIter it;
@@ -101,6 +111,7 @@ class HashIndex;
 class IndexInfo;
 class HashIndexInfo;
 class TreeIndex;
+class TrieIndex;
 class Index
 {
     // create (one) object for each indexing mechanisms here 
@@ -108,6 +119,7 @@ class Index
     // accordingly for new index machanism.
     static HashIndex *hIdx;
     static TreeIndex *tIdx;
+    static TrieIndex *iIdx;
     static long usageCount;
     public:
     static Index* getIndex(IndexType type);
@@ -124,7 +136,7 @@ class HashIndex : public Index
     DbRetVal insert(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool undoFlag);
     DbRetVal remove(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool undoFlag);
     DbRetVal update(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool undoFlag);
-    bool checkForUniqueKey(HashIndexNode *head,HashIndexInfo *info, void *tuple);
+    bool checkForUniqueKey(IndexNode *head,HashIndexInfo *info, void *tuple);
     static unsigned int computeHashBucket(DataType type, void *key, int noOfBuckets, int length=0);
     static DbRetVal insertLogicalUndoLog(Database *sysdb, void *info);
     static DbRetVal deleteLogicalUndoLog(Database *sysdb, void *info);
@@ -143,6 +155,24 @@ class TreeIndex : public Index
     static DbRetVal deleteLogicalUndoLog(Database *sysdb, void *info);
     static DbRetVal getTreeNodeMutex(TreeNode*, int procSlot, bool isX=false);
     static DbRetVal upgradeTreeNodeMutex(TreeNode*, int procSlot);
+
+};
+
+class TrieIndex: public Index
+{
+    public:
+    DbRetVal insert(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool undoFlag);
+    DbRetVal remove(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool undoFlag);
+    DbRetVal update(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool undoFlag);
+    //bool checkForUniqueKey(IndexNode *head, HashIndexInfo *info, void *tuple);
+    static void computeHashValues(DataType type, void *key, char *in, int length=0);
+    static DbRetVal insertLogicalUndoLog(Database *sysdb, void *info);
+    static DbRetVal deleteLogicalUndoLog(Database *sysdb, void *info);
+    void displayAll(TrieNode *node, int level =1);
+    void printTrieNode(TrieNode *node, int level);
+    private:
+    DbRetVal addToValueList(Database*, void**, Chunk*, void*, void*);
+    DbRetVal removeFromValueList(Database*, void**, Chunk*, void*, void*);
 
 };
 class TreeIter
@@ -188,7 +218,8 @@ enum IndexIntType
 {
         hashOneField = 1,
         hash = 2,
-        tree = 3
+        tree = 3,
+        trie = 4
 
 };
 class IndexInfo
