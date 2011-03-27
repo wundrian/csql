@@ -215,7 +215,7 @@ int main(int argc, char **argv)
     }else if (opt == 6)
     {
         printf("<Index Info> \n");
-        rv = dbMgr->printIndexInfo(name);//TODO::handle no index case to return 1
+        rv = dbMgr->printIndexInfo(name);
         if (rv != OK)
         {
            printf("  <Index Not Found> %s </Index Not Found>\n", name);
