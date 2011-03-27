@@ -97,7 +97,7 @@ class DllExport Database
                                       size_t size = 0, int chunkID=-1);
     DbRetVal deleteSystemDatabaseChunk(int id);
 
-    inline Chunk*  getSystemDatabaseChunk(int id);
+    Chunk*  getSystemDatabaseChunk(int id);
     Transaction* getSystemDatabaseTrans(int slot);
     inline void setThrInfoOffset() {
         thrInfoOffset = os::alignLong(sizeof (DatabaseMetaData)) +
