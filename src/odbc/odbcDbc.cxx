@@ -7,7 +7,9 @@
                 CSqlOdbcDbc::SQLConnect();
 */
 
-#define strtok_r strtok_s
+#ifdef WINNT
+#define strtok_r strtok
+#endif
 #include "odbcCommon.h"
 #include <SqlNwConnection.h>
 
