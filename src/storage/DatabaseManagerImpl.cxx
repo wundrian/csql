@@ -1524,7 +1524,7 @@ DbRetVal DatabaseManagerImpl::updateIndexCatalogTables(const char *indName,
     return rv;
 }
 
-DbRetVal DatabaseManagerImpl::removeIndexCatalogTables(const char *name, void *chunk, void* hchunk, void *tptr)
+DbRetVal DatabaseManagerImpl::removeIndexCatalogTables(const char *name, void *&chunk, void *&hchunk, void *&tptr)
 {
     //remove the entry in INDEX
     CatalogTableINDEX cIndex(systemDatabase_);

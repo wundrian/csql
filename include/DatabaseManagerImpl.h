@@ -92,7 +92,7 @@ class DllExport DatabaseManagerImpl : public DatabaseManager
                         Chunk* chunkInfo, Chunk* hChunk);
     DbRetVal validateIndex(const char *tblName, FieldNameList &fldList, 
                            void **tptr, char ***fptr, bool isPrimary);
-    DbRetVal removeIndexCatalogTables(const char *name, void *chunk, void* hchunk, void *tptr);
+    DbRetVal removeIndexCatalogTables(const char *name, void *&chunk, void *&hchunk, void *&tptr);
     DbRetVal removeIndexChunks(void* chunk, void* hchunk, IndexType iType);
 
     public:
