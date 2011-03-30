@@ -1,4 +1,4 @@
-/***************************************************************************
+/**************************************************************************
  *   Copyright (C) 2007 by Prabakaran Thirumalai   *
  *   praba_tuty@yahoo.com   *
  *                                                                         *
@@ -1148,15 +1148,17 @@ DbRetVal SqlStatement::readAndPopulateStmts(AbsSqlConnection *conn, void *&stmtB
     memset(stmtBuckets, 0, STMT_BUCKET_SIZE * sizeof(StmtBucket));
     if (st.st_size ==0) {
         printError(ErrNote, "No Statement logs found during recovery");
-		::free(stmtBuckets);
+        ::free(stmtBuckets);
+        stmtBuckets = NULL;
         os::closeFile(fd);
         return OK;
     }
     void *startAddr = os::mmap(NULL, st.st_size, mapProtRead, mapPrivate, fd, 0);
     if ((void*)MAP_FAILED == startAddr) {
         printError(ErrSysInternal, "Unable to mmap stmt log file\n");
-		::free(stmtBuckets);
-		os::closeFile(fd);
+        ::free(stmtBuckets);
+        stmtBuckets = NULL;
+        os::closeFile(fd);
         return ErrSysInternal;
     }
     DbRetVal rv = iterateStmtLogs(conn, startAddr, st.st_size, stmtBuckets, list, interactive);
