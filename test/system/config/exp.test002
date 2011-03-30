@@ -17,6 +17,7 @@ ConfigValues
  getLockRetries 10
  useCache 0
  getDSN myodbc3
+ getNoOfRowsToFetchFromTDB 100
  getDsConfigFile /tmp/csql/csqlds.conf
  getTableConfigFile /tmp/csql/csqltable.conf
  isTwoWayCache 0
@@ -24,9 +25,7 @@ ConfigValues
  getCacheWaitSecs 10
  useCsqlSqlServer 0
  getPort 5678
- useReplication 0
  isDurable 0
- getReplConfigFile /tmp/csql/csqlnw.conf
  getSiteID 1
  getMsgKey 2525
  getShmIDKey 1947
