@@ -23,7 +23,7 @@ Statement Executed: Rows Affected = 1
 echo INSERT INTO t3 values(2,4);
 Statement Executed: Rows Affected = 1
 echo INSERT INTO t3 values(1,5);
-Statement execute failed with error -35
+Statement execute failed with error -34
 echo SELECT * FROM t1;
 ---------------------------------------------------------
 	t1.f1	t1.f2	

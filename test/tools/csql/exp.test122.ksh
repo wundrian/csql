@@ -48,6 +48,6 @@ echo SELECT * FROM t2;
 	4	1000	30	
 	
 echo UPDATE t2 SET f3=20 WHERE f1=4;
-Statement execute failed with error -35
+Statement execute failed with error -34
 Statement Executed
 Statement Executed

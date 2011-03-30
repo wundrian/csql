@@ -8,6 +8,6 @@ Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 2
-Statement execute failed with error -35
+Statement execute failed with error -34
 Statement Executed
 Statement Executed

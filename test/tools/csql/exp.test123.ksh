@@ -47,9 +47,9 @@ echo SELECT * FROM t3;
 	200	1000	
 	
 echo INSERT INTO t2 values(3,100);
-Statement execute failed with error -35
+Statement execute failed with error -34
 echo INSERT INTO t3 values(400,1000);
-Statement execute failed with error -35
+Statement execute failed with error -34
 echo SELECT * FROM t1;
 ---------------------------------------------------------
 	t1.f1	t1.f2	
@@ -75,7 +75,7 @@ echo SELECT * FROM t3;
 	200	1000	
 	
 echo UPDATE t3 SET f5=400 where f5=200;
-Statement execute failed with error -35
+Statement execute failed with error -34
 echo UPDATE t1 SET f1=3 where f1=2;
 Statement prepare failed with error -21
 echo UPDATE t2 SET f4=400 where f5=200;
@@ -107,7 +107,7 @@ echo SELECT * FROM t3;
 	300	1000	
 	
 echo DELETE FROM t1 WHERE f1=2;
-Statement execute failed with error -36
+Statement execute failed with error -35
 echo DELETE FROM t2 where f4=200;
 Statement Executed: Rows Affected = 1
 echo DELETE FROM t3 WHERE f5=300;

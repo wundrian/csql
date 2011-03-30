@@ -19,6 +19,6 @@ Statement Executed: Rows Affected = 1
 echo INSERT INTO t2 VALUES(3,1000,30);
 Statement Executed: Rows Affected = 1
 echo DELETE FROM t1 WHERE f1=1;
-Statement execute failed with error -36
+Statement execute failed with error -35
 Statement Executed
 Statement Executed

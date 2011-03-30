@@ -5,8 +5,8 @@ Statement Executed
 echo INSERT INTO t1 VALUES(1,10,100);
 Statement Executed: Rows Affected = 1
 echo INSERT INTO t2 VALUES(1,10,100);
-Statement execute failed with error -35
+Statement execute failed with error -34
 echo INSERT INTO t2 VALUES(2,20,10);
-Statement execute failed with error -35
+Statement execute failed with error -34
 Statement Executed
 Statement Executed
