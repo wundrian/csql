@@ -7,7 +7,6 @@ Statement Executed: Rows Affected = 1
 Statement Executed
 Statement Executed: Rows Affected = 1
 Statement Redo log filename is :/tmp/csql/db/csql.db.stmt
-Redo log filename is :/tmp/csql/db/csql.db.cur
 EXECDIRECT SID:1 TID:64 STMT:CREATE TABLE laks(f1 int not null, f2 int);
 PREPARE: SID:2 INSERT INTO laks values (10, 10);
 EXEC SID:2 TID:16
@@ -26,7 +25,6 @@ Server Killed
 
 Checking Durability
 Server Started
-Statement Redo log filename is :/tmp/csql/db/csql.db.stmt
 CREATE TABLE laks (f1 INT  NOT NULL , f2 INT );
 INSERT INTO laks VALUES(10,10);
 INSERT INTO laks VALUES(50,50);
