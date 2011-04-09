@@ -1,7 +1,6 @@
 Server Started
 Statement Executed
 Tuple value 200
-Statement Redo log filename is :/tmp/csql/db/csql.db.stmt
 PREPARE: SID:2 INSERT INTO t1 VALUES(1234,?);
 FREE: SID:2 TID:12 
 PREPARE: SID:3 UPDATE t1 set f1=? where f2=200;

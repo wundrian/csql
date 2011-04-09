@@ -6,7 +6,6 @@ Statement execute failed with error -21
 Statement Executed: Rows Affected = 1
 Statement Executed
 Statement Executed: Rows Affected = 1
-Statement Redo log filename is :/tmp/csql/db/csql.db.stmt
 EXECDIRECT SID:1 TID:64 STMT:CREATE TABLE laks(f1 int not null, f2 int);
 PREPARE: SID:2 INSERT INTO laks values (10, 10);
 EXEC SID:2 TID:16

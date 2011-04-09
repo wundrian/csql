@@ -14,7 +14,6 @@ Statement Executed: Rows Affected = 1
 	40	40	
 	50	50	
 	
-Statement Redo log filename is :/tmp/csql/db/csql.db.stmt
 EXECDIRECT SID:1 TID:56 STMT:CREATE TABLE laks(f1 int, f2 int);
 PREPARE: SID:2 INSERT INTO laks values (10, 10);
 EXEC SID:2 TID:16
