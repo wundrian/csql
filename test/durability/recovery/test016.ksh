@@ -3,7 +3,7 @@
 # set DURABILITY=true and MMAP=false in csql.conf
 # Start csqlserver. 
 # Then create a table t1 in CSQL Client.
-# Set MAX_SYS_DB_SIZE=10MB and MAX_DB_SIZE=100MB 
+# Set MAX_SYS_DB_SIZE=10MB and MAX_DB_SIZE=33554432
 # Create a table say t1 having 10k record with no index.
 # Create a table say t1 having 10k record with UNIQUE HASH Index.
 # Create a table say t1 having 10k record with UNIQUE TREE Index.
@@ -43,7 +43,7 @@ cp -f $REL_PATH/csql.conf /tmp
 echo SYS_DB_KEY=5555 >>/tmp/csql.conf
 echo USER_DB_KEY=7777 >>/tmp/csql.conf
 echo MAX_SYS_DB_SIZE=10485760 >>/tmp/csql.conf
-echo MAX_DB_SIZE=104857600 >>/tmp/csql.conf
+echo MAX_DB_SIZE=33554432 >>/tmp/csql.conf
 echo DURABILITY=true >>/tmp/csql.conf
 echo MMAP=false >>/tmp/csql.conf
 export CSQL_CONFIG_FILE=/tmp/csql.conf

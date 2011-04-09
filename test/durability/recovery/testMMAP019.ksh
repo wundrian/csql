@@ -5,7 +5,7 @@
 # Then create a table t1 with record size 20. 
 # Insert 1k Records
 # kill the currently running Server. 
-# set DURABILITY to true and MMAP=false in csql.conf
+# set DURABILITY to true and MMAP=true in csql.conf
 # Start csqlserver. 
 # Insert another 1k Records. 
 # All inserted records should be durable
@@ -74,18 +74,19 @@ if [ $? -eq 0 ]
        echo Durability Works Fine
 fi
 rm -f before.sql after.sql
+echo "I-Pass Test over"
 
 $CSQL_INSTALL_ROOT/bin/csqldump >before.sql
 kill -9 $pid
 ipcrm -M 4444 
 echo "Server Killed"
 
-echo "DURABILITY=true and MMAP=false"
+echo "DURABILITY=true and MMAP=true"
 
 echo SYS_DB_KEY=4444 >>/tmp/csql.conf
 echo USER_DB_KEY=6666 >>/tmp/csql.conf
 echo "DURABILITY=true" >>/tmp/csql.conf
-echo "MMAP=false" >>/tmp/csql.conf
+echo "MMAP=true" >>/tmp/csql.conf
 export CSQL_CONFIG_FILE=/tmp/csql.conf
 
 $CSQL_INSTALL_ROOT/bin/csqlserver >/dev/null 2>&1 &
@@ -100,6 +101,7 @@ if [ $? -eq 0 ]
        echo Durability Works Fine
 fi
 rm -f before.sql after.sql
+echo "II-Pass Test over"
 
 
 $CSQL_INSTALL_ROOT/bin/csql -s ${REL_PATH}/ins_1000.sql >/dev/null 2>&1
@@ -108,12 +110,12 @@ if [ $? -ne 0 ]
    rm -f ${REL_PATH}/cre_t1.sql
    rm -f ${REL_PATH}/ins_1000.sql 
    kill -9 $pid
-   ipcrm -M 4444 -M 6666
+   ipcrm -M 4444 
  exit 1;
 fi     
 $CSQL_INSTALL_ROOT/bin/csqldump >before.sql
 kill -9 $pid
-ipcrm -M 4444 -M 6666
+ipcrm -M 4444 
 echo "Server Killed"
 $CSQL_INSTALL_ROOT/bin/csqlserver >/dev/null 2>&1 &
 pid=$!
@@ -127,6 +129,7 @@ if [ $? -eq 0 ]
        echo Durability Works Fine
 fi
 rm -f before.sql after.sql
+echo "III-Pass Test over"
 
 echo "DROP TABLE t1;" >drp.sql
 $CSQL_INSTALL_ROOT/bin/csql -s ${REL_PATH}/drp.sql >/dev/null 2>&1
@@ -135,5 +138,5 @@ rm -f ${REL_PATH}/sel.sql
 rm -f ${REL_PATH}/cre_t1.sql
 rm -f ${REL_PATH}/ins_1000.sql
 kill -9 $pid
-ipcrm -M 4444 -M 6666
+ipcrm -M 4444 
 exit 0;

@@ -9,8 +9,9 @@ Server Started
 	1000	
 	
 Durability Works Fine
+I-Pass Test over
 Server Killed
-DURABILITY=true and MMAP=false
+DURABILITY=true and MMAP=true
 Server Started
 ---------------------------------------------------------
 	COUNT(*)	
@@ -18,6 +19,7 @@ Server Started
 	1000	
 	
 Durability Works Fine
+II-Pass Test over
 Server Killed
 Server Started
 ---------------------------------------------------------
@@ -26,3 +28,4 @@ Server Started
 	2000	
 	
 Durability Works Fine
+III-Pass Test over
