@@ -822,8 +822,8 @@ void SqlConnection::flushCacheStmt()
         //do not delete when the statement is currently in use.
         //otherwise it leads to illegal memory access when application 
         //calls any method on this statement
-        //if (node->inUse) continue;
-        if (node->inUse) node->inUse = 0;
+        if (node->inUse) continue;
+        //if (node->inUse) node->inUse = 0;
         free(node->sqlString);
         node->sqlStmt->setCachedStmt(false);
         node->sqlStmt->free();
