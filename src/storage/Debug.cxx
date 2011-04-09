@@ -22,10 +22,11 @@ int DebugDM_Lock = 0;
 int DebugDM_Transaction = 0;
 int DebugDM_UndoLog = 0;
 int DebugDM_RedoLog = 0;
+int DebugDM_Recovery = 0;
 int DebugDM_Index = 0;
 int DebugDM_HashIndex = 0;
 int DebugDM_TreeIndex = 0;
-int DebugDM_TrieIndex = 1;
+int DebugDM_TrieIndex = 0;
 int DebugDM_SystemDatabase = 0;
 int DebugDM_Database = 0;
 int DebugDM_Table = 0;
@@ -96,7 +97,9 @@ int printDebug1(int module, char *fname, int lno, const char *format, ...)
      case DM_Transaction: { if (!DebugDM_Transaction) return 1; break; }
      case DM_UndoLog: { if (!DebugDM_UndoLog) return 1; break; }
      case DM_RedoLog: { if (!DebugDM_RedoLog) return 1; break; }
+     case DM_Recovery: { if (!DebugDM_Recovery) return 1; break; }
      case DM_HashIndex: { if (!DebugDM_HashIndex) return 1; break; }
+     case DM_TrieIndex: { if (!DebugDM_TrieIndex) return 1; break; }
      case DM_TreeIndex: { if (!DebugDM_TreeIndex) return 1; break; }
      case DM_SystemDatabase: { if (!DebugDM_SystemDatabase) return 1; break; }
      case DM_Database: { if (!DebugDM_Database) return 1; break; }

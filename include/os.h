@@ -230,7 +230,7 @@ class DllExport os
     static int munmap(caddr_t addr, size_t len);
     static int open(const char *name, FileOpenMode flags, size_t size);
     static int close(int fd);
-	static file_desc openFile(const char *name, FileOpenMode flags, size_t size);
+    static file_desc openFile(const char *name, FileOpenMode flags, size_t size=0);
     static int closeFile(file_desc fd);
     static int closeSocket(int fd);
     static int lockFile(int fd);

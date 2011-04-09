@@ -17,8 +17,7 @@
 #include <Statement.h>
 #include <SqlFactory.h>
 #include <SqlStatement.h>
-#define DEBUG 1
-
+#include <Recover.h>
 AbsSqlConnection *conn;
 void *stmtBuckets;
 
@@ -71,7 +70,9 @@ int main(int argc, char **argv)
         counter++;
     }
     printf("All the applied log files have been successfully removed.\n");
-    SqlStatement::freeAllStmtHandles(stmtBuckets);
+    Recovery recovery;
+    recovery.setStmtBucket(stmtBuckets);
+    recovery.freeAllStmtHandles();
     conn->disconnect();
     delete conn;
     return 0;
@@ -110,6 +111,8 @@ int applyOfflinelogs(char *fileName, bool interactive)
     int loglen;
     char stmtString[SQL_STMT_LEN];
     //printf("size of file %d\n", st.st_size);
+    Recovery recovery;
+    recovery.setStmtBucket(stmtBuckets);
     while(true) {
         //printf("OFFSET HERE %d\n", iter - (char*)startAddr);
         if (iter - (char*)startAddr >= st.st_size) break;
@@ -134,7 +137,7 @@ int applyOfflinelogs(char *fileName, bool interactive)
                 retVal=1;
                 break;
             }
-            SqlStatement::addToHashTable(stmtID, stmt, stmtBuckets, stmtString);
+            recovery.addToHashTable(stmtID, stmt, stmtString);
         }    
         else if(logType == -2) { //commit
             conn->beginTrans();
@@ -157,7 +160,7 @@ int applyOfflinelogs(char *fileName, bool interactive)
                 eType = *(int*)iter;
                 //printf("eType is %d\n", eType);
                 AbsSqlStatement *stmt = 
-                       SqlStatement::getStmtFromHashTable(stmtID, stmtBuckets);
+                       recovery.getStmtFromHashTable(stmtID);
                 if (0 == eType) { //execute type
                     iter = iter + sizeof(int);
                     //printf("EXEC: %d\n", stmtID);
@@ -197,11 +200,10 @@ int applyOfflinelogs(char *fileName, bool interactive)
             stmtID = *(int*)iter;
             iter = iter + sizeof(int);
             if (interactive) printf("FREE %d:\n", stmtID);
-            AbsSqlStatement *stmt = SqlStatement::getStmtFromHashTable(stmtID, 
-                                                                  stmtBuckets);
+            AbsSqlStatement *stmt = recovery.getStmtFromHashTable(stmtID);
             if (stmt) {
                 stmt->free();
-                SqlStatement::removeFromHashTable(stmtID, stmtBuckets);
+                recovery.removeFromHashTable(stmtID);
             } else { printError(ErrSysInternal, "statement not found for %d\n",stmtID);}
         }    
         else if(logType == -4) { //prepare and execute

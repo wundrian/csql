@@ -29,6 +29,7 @@
 #include <Network.h>
 #include <SqlLogStatement.h> //for BindSqlField
 #include <SqlNetworkHandler.h>
+#include <Recover.h>
 
 typedef struct FailedStmtObject {
     int stmtId;
@@ -395,10 +396,12 @@ DbRetVal handlePrepare(void *data, void *conn, void *stmtBuckets,
         prepareFailList->append(fst);
         return rv;
     }
-    SqlStatement::addToHashTable(stmtId, stmt, stmtBuckets, stmtstr);
+    Recovery recovery;
+    recovery.setStmtBucket(stmtBuckets);
+    recovery.addToHashTable(stmtId, stmt, stmtstr);
     printDebug(DM_CacheServer, "returning from prepare");
     return rv;
-}; 
+}
 
 DbRetVal handleCommit(void *data, int len, void *conn, void *stmtBuckets, 
                                          List *prepareFailList)
@@ -418,11 +421,12 @@ DbRetVal handleCommit(void *data, int len, void *conn, void *stmtBuckets,
         printError(rv, "Begin trans failed"); 
         return rv;
     } 
+    Recovery recovery;
+    recovery.setStmtBucket(stmtBuckets);
     while ((ptr - (char *)data) < len) {
         int stmtId = *(int *)ptr;
         ptr += sizeof(int);
-        AbsSqlStatement *stmt = SqlStatement::getStmtFromHashTable(stmtId, 
-                                                                  stmtBuckets);
+        AbsSqlStatement *stmt = recovery.getStmtFromHashTable(stmtId);
         printDebug(DM_CacheServer, "commit: stmtId: %d", stmtId);
         printDebug(DM_CacheServer, "commit: stmtbuckets: %x", stmtBuckets);
         printDebug(DM_CacheServer, "commit: stmt: %x", stmt);
@@ -490,8 +494,9 @@ DbRetVal handleFree(void *data, void *stmtBuckets, List *prepareFailList)
     int len = *(int *) ptr; ptr += sizeof(int);
     int txnId = *(int *) ptr; ptr += sizeof(int);
     int stmtId = *(int *)ptr;
-    AbsSqlStatement *stmt = SqlStatement::getStmtFromHashTable(stmtId, 
-                                                                  stmtBuckets);
+    Recovery recovery;
+    recovery.setStmtBucket(stmtBuckets);
+    AbsSqlStatement *stmt = recovery.getStmtFromHashTable(stmtId);
     FailStmt *elem = NULL;
     if (stmt == NULL) {
         ListIterator failListIter = prepareFailList->getIterator();
@@ -508,7 +513,7 @@ DbRetVal handleFree(void *data, void *stmtBuckets, List *prepareFailList)
         printError(rv, "HandleFree failed with return vlaue %d", rv);
         return rv;
     }
-    SqlStatement::removeFromHashTable(stmtId, stmtBuckets);
+    recovery.removeFromHashTable(stmtId);
     printDebug(DM_CacheServer, "Freed the statement from hashTable");
     return OK;
 }

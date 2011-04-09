@@ -28,6 +28,14 @@ static void sigTermHandler(int sig)
     printf("Received signal %d\nStopping the server\n", sig);
     srvStop = 1;
 }
+static void sigChildHandler(int sig)
+{
+    os::signal(SIGCHLD, sigChildHandler);
+    int stat;
+    waitpid(-1, &stat, WNOHANG);
+    //TODO::move waitpid to os wrapper
+}
+
 
 void printUsage()
 {
@@ -105,7 +113,7 @@ int main(int argc, char **argv)
     }
     os::signal(SIGINT, sigTermHandler);
     os::signal(SIGTERM, sigTermHandler);
-    os::signal(SIGCHLD, SIG_IGN);
+    os::signal(SIGCHLD, sigChildHandler);
 
     if (!Conf::config.useDurability())
     {

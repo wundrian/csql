@@ -9,13 +9,14 @@
 #include<os.h>
 #include<ErrorType.h>
 #include<FaultTest.h>
-//#define DEBUG 1
+#define DEBUG 1
 extern int DebugDM_Alloc;
 extern int DebugDM_VarAlloc;
 extern int DebugDM_Lock;
 extern int DebugDM_Transaction;
 extern int DebugDM_UndoLog;
 extern int DebugDM_RedoLog;
+extern int DebugDM_Recovery;
 extern int DebugDM_Index;
 extern int DebugDM_HashIndex;
 extern int DebugDM_TreeIndex;
@@ -50,6 +51,7 @@ enum DebugModule
     DM_Transaction,
     DM_UndoLog,
     DM_RedoLog,
+    DM_Recovery,
     DM_Index,
     DM_HashIndex,
     DM_TreeIndex,
@@ -70,7 +72,7 @@ enum DebugModule
 };
 static char moduleNames[][20] =
 {
-    "Alloc", "VariableAlloc", "Lock", "Trans", "UndoLog", "RedoLog", "Index",
+    "Alloc", "VariableAlloc", "Lock", "Trans", "UndoLog", "RedoLog", "Recovery", "Index",
     "HashIndex", "TreeIndex", "TrieIndex", "SysDb", "Db", "Table", "Predicate", "Iter", 
     "Procmgmt", "Network", "Gateway", "Adapter", "SqlLog",
     "CacheServer", "TEST", "Warning"
