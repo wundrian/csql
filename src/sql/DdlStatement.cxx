@@ -336,12 +336,16 @@ DbRetVal DropTblStatement::execute(int &rowsAffected)
 DbRetVal DropIdxStatement::execute(int &rowsAffected)
 {
     DbRetVal rv = OK;
-    rv = dbMgr->dropIndex(parsedData->getIndexName());
-     if (rv == OK) dbMgr->sendSignal(SIGCSQL1);
+    DatabaseManagerImpl *dmgr = (DatabaseManagerImpl *)dbMgr;
+    IsolationLevel iso = dmgr->txnMgr()->getIsoLevel();
+    rv = dmgr->txnMgr()->rollback(dmgr->lockMgr());
+    rv = dmgr->txnMgr()->startTransaction(dmgr->lockMgr(),iso);
+    rv = dmgr->dropIndex(parsedData->getIndexName());
+    if (rv == OK) dbMgr->sendSignal(SIGCSQL1);
     return rv;
 }
 
-//================== Trunctate Table Statement ===============
+//================== Truncate Table Statement ===============
 
 
 DbRetVal TruncateTblStatement::execute(int &rowsAffected)

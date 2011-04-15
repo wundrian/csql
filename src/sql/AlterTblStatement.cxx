@@ -52,6 +52,11 @@ DbRetVal AlterTblStatement::resolve()
 DbRetVal AlterTblStatement::execute(int &rowsAffected)
 {
     DbRetVal rv = OK;
+    DatabaseManagerImpl *dmgr = (DatabaseManagerImpl *)dbMgr;
+    IsolationLevel iso = dmgr->txnMgr()->getIsoLevel();
+    rv = dmgr->txnMgr()->rollback(dmgr->lockMgr());
+    rv = dmgr->txnMgr()->startTransaction(dmgr->lockMgr(),iso);
+
     if( altType == ALTERTABLERENAME)
     {
        rv = dbMgr->renameTable(parsedData->getTableName(), parsedData->getIndexName());
