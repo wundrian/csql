@@ -233,14 +233,14 @@ table_list: table_list table_list_L
 join_exp: INNER opt_join table ON conditions join_exp
         {
            parsedData->insertJoinType(INNER_JOIN);
-
            Condition *cond = parsedData->getCondition();
            Predicate *pred = cond->getPredicate();
-           if (pred == NULL) parsedData->setCondition((Predicate*)$5);
-           else {
-                Predicate *newPred;
-                newPred = parsedData->insertPredicate(pred, OpAnd, (Predicate*)$5);
-                parsedData->setCondition(newPred);
+           if (pred == NULL) {
+               parsedData->setCondition((Predicate*)$5);
+           } else {
+               Predicate *newPred;
+               newPred = parsedData->insertPredicate(pred, OpAnd, (Predicate*)$5);
+               parsedData->setCondition(newPred);
            }
 
         }
@@ -249,11 +249,12 @@ join_exp: INNER opt_join table ON conditions join_exp
            parsedData->insertJoinType(LEFT_JOIN);
            Condition *cond = parsedData->getCondition();
            Predicate *pred = cond->getPredicate();
-           if (pred == NULL) parsedData->setCondition((Predicate*)$6);
-           else {
-                Predicate *newPred;
-                newPred = parsedData->insertPredicate(pred, OpAnd, (Predicate*)$6);
-                parsedData->setCondition(newPred);
+           if (pred == NULL) {
+               parsedData->setCondition((Predicate*)$6);
+           } else {
+               Predicate *newPred;
+               newPred = parsedData->insertPredicate(pred, OpAnd, (Predicate*)$6);
+               parsedData->setCondition(newPred);
            }
         }
         | CROSS opt_join table join_exp
@@ -566,7 +567,16 @@ atom    :  ident
 
 where_clause_opt:  WHERE conditions
         {
-           parsedData->setCondition((Predicate*)$2);
+           Condition *cond = parsedData->getCondition();
+           Predicate *pred = cond->getPredicate();
+           if (pred == NULL) {
+               parsedData->setCondition((Predicate*)$2);
+           } else {
+                Predicate *newPred;
+                newPred = parsedData->insertPredicate(pred, OpAnd, (Predicate*)$2);
+                parsedData->setCondition(newPred);
+           }
+
         }
         |
         ;
