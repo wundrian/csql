@@ -96,7 +96,7 @@ int cmpStringRecord (const void *pkfv1, const void *pkfv2)
 
 DbRetVal verifyCount(const char *tblName, long numTuples)
 {
-    char statement[200];
+    char statement[SQL_STMT_LEN];
     AbsSqlConnection *adConn = SqlFactory::createConnection(CSqlAdapter);
     DbRetVal rv = adConn->connect(I_USER,I_PASS);
     if (rv != OK) { delete adConn; return ErrSysInit; }
@@ -108,7 +108,9 @@ DbRetVal verifyCount(const char *tblName, long numTuples)
     rv = adConn->beginTrans();
     rv = adStmt->prepare(statement);
     if(rv != OK) {
-        delete adStmt; delete adConn;
+        delete adStmt; 
+        adConn->disconnect();
+        delete adConn;
         printError(rv, "Prepare failed");
         return rv;
     }
@@ -116,12 +118,18 @@ DbRetVal verifyCount(const char *tblName, long numTuples)
     adStmt->bindField(1, &count1);
     rv  = adStmt->execute(rows);
     if(rv != OK) {
-        delete adStmt; delete adConn;
+        adStmt->free();
+        delete adStmt; 
+        adConn->disconnect();
+        delete adConn;
         printError(rv, "Execute failed");
         return rv;
     }
     if (adStmt->fetch()== NULL) {
-        delete adStmt; delete adConn;
+        adStmt->free();
+        delete adStmt; 
+        adConn->disconnect();
+        delete adConn;
         printError(ErrSysInternal, "Fetch failed");
         return ErrSysInternal;
     }
@@ -133,18 +141,21 @@ DbRetVal verifyCount(const char *tblName, long numTuples)
     printf("-------------------+-------------------+-------------------+\n");
     printf("  No. Of Records   |  %-6ld           |  %-6ld           |\n", numTuples, count1);
     printf("-------------------+-------------------+-------------------+\n");
-    delete adStmt; delete adConn;
+    delete adStmt; 
+    adConn->disconnect();
+    delete adConn;
     return OK;
 }
 
 DbRetVal verifyMismatchingRecords(const char *tblName, int option)
 {
-    char csqlstatement[256];
-    char tdbstatement[256];
+    char csqlstatement[SQL_STMT_LEN];
+    char tdbstatement[SQL_STMT_LEN];
     AbsSqlConnection *trgtDbCon = SqlFactory::createConnection(CSqlAdapter);
     DbRetVal rv = trgtDbCon->connect(I_USER,I_PASS);
     if (rv != OK) {
-        delete trgtDbCon; return ErrSysInit;
+        delete trgtDbCon; 
+        return ErrSysInit;
     }
     AbsSqlStatement *trgtDbStmt =  SqlFactory::createStatement(CSqlAdapter);
     trgtDbStmt->setConnection(trgtDbCon);
@@ -154,7 +165,9 @@ DbRetVal verifyMismatchingRecords(const char *tblName, int option)
     SqlOdbcStatement *ostmt = (SqlOdbcStatement*) trgtDbStmt;
     ostmt->getPrimaryKeyFieldName((char*)tblName, fieldName);
     if (fieldName[0] == '\0') {
-        delete trgtDbStmt; delete trgtDbCon;
+        delete trgtDbStmt; 
+        trgtDbCon->disconnect();
+        delete trgtDbCon;
         printError(ErrSysInternal, "Primary key does not exist on table %s", tblName);
         return ErrNotExists;
     }
@@ -166,8 +179,12 @@ DbRetVal verifyMismatchingRecords(const char *tblName, int option)
     FieldInfo *fInfo = new FieldInfo();
     ((SqlStatement *)stmt)->getFieldInfo(tblName, fieldName, fInfo);
     pkFldType = fInfo->type;
-    if (pkFldType == typeString) pkFldLen = os::align(fInfo->length + 1);
-    else pkFldLen = fInfo->length;
+
+    if (pkFldType == typeString) 
+        pkFldLen = os::align(fInfo->length + 1);
+    else 
+        pkFldLen = fInfo->length;
+
     void *pkval = AllDataType::alloc(pkFldType, pkFldLen);
     memset(pkval, 0, pkFldLen);
     //List for primary key field values present in csql server
@@ -180,13 +197,19 @@ DbRetVal verifyMismatchingRecords(const char *tblName, int option)
     sprintf(tdbstatement, "select %s from %s where %s=?;", fieldName, tblName, fieldName);
     rv = stmt->prepare(csqlstatement);
     if (rv != OK) {
-        delete trgtDbStmt; delete trgtDbCon;
+        delete trgtDbStmt; 
+        trgtDbCon->disconnect();
+        free(pkval);
+        delete trgtDbCon;
         printError(rv, "Prepare failed");
         return rv;
     }
     rv = trgtDbStmt->prepare(tdbstatement);
     if (rv != OK) {
-        delete trgtDbStmt; delete trgtDbCon;
+        delete trgtDbStmt; 
+        trgtDbCon->disconnect();
+        free(pkval);
+        delete trgtDbCon;
         printError(rv, "Prepare failed");
         return rv;
     }
@@ -195,14 +218,20 @@ DbRetVal verifyMismatchingRecords(const char *tblName, int option)
     rv = conn->beginTrans();
     if (rv != OK) {
         stmt->free();
-        delete trgtDbStmt; delete trgtDbCon;
+        trgtDbStmt->free();
+        delete trgtDbStmt; 
+        trgtDbCon->disconnect();
+        delete trgtDbCon;
         printError(rv, "BeginTrans failed");
         return rv;
     }
     rv = stmt->execute(rows);
     if(rv != OK) {
         stmt->free();
-        delete trgtDbStmt; delete trgtDbCon;
+        trgtDbStmt->free();
+        delete trgtDbStmt; 
+        trgtDbCon->disconnect();
+        delete trgtDbCon;
         printError(ErrSysInternal, "Execute failed");
         return rv;
     }
@@ -236,7 +265,8 @@ DbRetVal verifyMismatchingRecords(const char *tblName, int option)
     rv = trgtDbCon->beginTrans();
     rv = trgtDbStmt->prepare(tdbstatement);
     if(rv != OK) {
-        delete trgtDbStmt; delete trgtDbCon;
+        delete trgtDbStmt; 
+        delete trgtDbCon;
         printError(rv, "Prepare failed");
         return rv;
     }
@@ -245,7 +275,11 @@ DbRetVal verifyMismatchingRecords(const char *tblName, int option)
     trgtDbStmt->bindField(1, pkval);
     rv  = trgtDbStmt->execute(rows);
     if(rv != OK) {
-        delete trgtDbStmt; delete trgtDbCon;
+        stmt->free();
+        trgtDbStmt->free();
+        delete trgtDbStmt; 
+        trgtDbCon->disconnect();
+        delete trgtDbCon;
         printError(rv, "Execute failed\n");
         return rv;
     }
@@ -366,7 +400,9 @@ DbRetVal verifyMismatchingRecords(const char *tblName, int option)
         rv = stmt->prepare(csqlstatement);
         rv = trgtDbStmt->prepare(csqlstatement);
         if(rv != OK) {
-            delete trgtDbStmt; delete trgtDbCon;
+            delete trgtDbStmt; 
+            trgtDbCon->disconnect();
+            delete trgtDbCon;
             printError(rv, "Prepare failed");
             return rv;
         }
@@ -386,14 +422,18 @@ DbRetVal verifyMismatchingRecords(const char *tblName, int option)
         while (iter.hasElement()) {
             fname = (Identifier *) iter.nextElement();
             if (NULL == fname) {
-                delete trgtDbStmt; delete trgtDbCon;
+                delete trgtDbStmt; 
+                trgtDbCon->disconnect();
+                delete trgtDbCon;
                 delete fldInfo;
                 printError(ErrSysFatal, "Fatal:Field Name list has NULL");
                 return ErrSysFatal;
             }
             rv = sqlStmt->getFieldInfo(tblName, fname->name, fldInfo);
             if (ErrNotFound == rv) {
-                delete trgtDbStmt; delete trgtDbCon;
+                delete trgtDbStmt; 
+                trgtDbCon->disconnect();
+                delete trgtDbCon;
                 delete fldInfo;
                 printError(ErrSysInternal, "Field %s does not exist in table", fname->name);
                 return ErrSyntaxError;
@@ -434,7 +474,9 @@ DbRetVal verifyMismatchingRecords(const char *tblName, int option)
             rv  = stmt->execute(rows);
             rv  = trgtDbStmt->execute(rows);
             if(rv != OK) {
-                delete trgtDbStmt; delete trgtDbCon;
+                delete trgtDbStmt; 
+                trgtDbCon->disconnect();
+                delete trgtDbCon;
                 printError(rv, "Execute failed");
                 return rv;
             }
@@ -597,17 +639,23 @@ DbRetVal verifyMismatchingRecords(const char *tblName, int option)
         while((itm = (Record *) recIter.nextElement()) != NULL) {
             ListIterator cit = (ListIterator) itm->csqlFldValList.getIterator();
             ListIterator tit = (ListIterator) itm->tdbFldValList.getIterator();
-            FldVal *cfldVal = NULL; FldVal *tfldVal = NULL;
+            FldVal *cfldVal = NULL; 
+            FldVal *tfldVal = NULL;
             while( (cfldVal = (FldVal *) cit.nextElement()) != NULL && 
                    (tfldVal = (FldVal *) tit.nextElement()) != NULL ) {
-                free (cfldVal->value); free (tfldVal->value);
-                delete cfldVal; delete tfldVal;
+                free (cfldVal->value); 
+                free (tfldVal->value);
+                delete cfldVal; 
+                delete tfldVal;
             }
-            cit.reset(); tit.reset();
+            cit.reset(); 
+            tit.reset();
         }
         recordList.reset();
     }
-    delete trgtDbStmt; delete trgtDbCon;
+    delete trgtDbStmt; 
+    trgtDbCon->disconnect();
+    delete trgtDbCon;
     return OK;
 }
 
@@ -680,7 +728,8 @@ int main(int argc, char **argv)
     fp = fopen(Conf::config.getTableConfigFile(),"r");
     if( fp == NULL ) {
         conn->disconnect();
-        delete stmt; delete conn;
+        delete stmt; 
+        delete conn;
         printError(ErrSysInternal, "csqltable.conf file does not exist");
         return 2;
     }
@@ -703,25 +752,28 @@ int main(int argc, char **argv)
     long numTuples = 0;
     int rows;
     
-    char statement[200];
+    char statement[SQL_STMT_LEN];
     sprintf(statement, "select count(*) from %s;", tableName);
     rv = stmt->prepare(statement);
     if (rv != OK) {
         conn->disconnect();
-        delete stmt; delete conn;
+        delete stmt; 
+        delete conn;
         return 3;
     }
     rv = conn->beginTrans();
     if (rv != OK) {
         conn->disconnect();
-        delete stmt; delete conn;
+        delete stmt; 
+        delete conn;
         return 4;
     }
     stmt->bindField(1, &numTuples);
     stmt->execute(rows);
     if (rv != OK) {
         conn->disconnect();
-        delete stmt; delete conn;
+        delete stmt; 
+        delete conn;
         return 5;
     }
     void *tuple = stmt->fetch(rv);
@@ -732,26 +784,39 @@ int main(int argc, char **argv)
     if (isCached == false) { 
         conn->disconnect();
         printError(ErrSysInternal, "The table \'%s\' is not cached", tableName);
-        delete stmt; delete conn; return 5;
+        delete stmt; 
+        delete conn; 
+        return 5;
     }
 
     if (opt == 2) { 
         rv = verifyCount(tableName, numTuples); 
         if (rv != OK) { 
-            conn->disconnect(); delete stmt; delete conn; return 7; 
+            conn->disconnect(); 
+            delete stmt; 
+            delete conn; 
+            return 7; 
         }
     }
  
     if (opt == 3 || opt == 4) { 
         rv = verifyCount(tableName, numTuples); 
         if (rv != OK) { 
-            conn->disconnect(); delete stmt; delete conn; return 8; 
+            conn->disconnect(); 
+            delete stmt; 
+            delete conn; 
+            return 8; 
         }
         rv = verifyMismatchingRecords(tableName, opt);
         if (rv != OK) { 
-            conn->disconnect(); delete stmt; delete conn; return 9; 
+            conn->disconnect(); 
+            delete stmt; 
+            delete conn; 
+            return 9; 
         }
     }
-    conn->disconnect(); delete stmt; delete conn;
+    conn->disconnect(); 
+    delete stmt; 
+    delete conn;
     return 0;
 }
