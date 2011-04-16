@@ -603,7 +603,8 @@ DbRetVal SqlStatement::free()
         isPrepd = false;
         if (sqlStmtString) {
             sqlCon->setStmtNotInUse(sqlStmtString);
-            ::free(sqlStmtString); sqlStmtString=NULL; 
+            ::free(sqlStmtString); 
+            sqlStmtString=NULL; 
         }
         isCachedStmt = false;
         return OK;
