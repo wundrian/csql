@@ -395,6 +395,7 @@ class DllExport ParsedData
     char *getFldName();
     void setAutoFldName(char *fldName);
     void reset();
+    void resetInValueList();
     void init();
 
 };

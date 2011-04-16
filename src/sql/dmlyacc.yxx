@@ -815,6 +815,7 @@ condition: ident OPERATOR value
                finalPred = parsedData->insertPredicate(pred1, OpOr, pred2);
                pred1= finalPred;     
             }
+            parsedData->resetInValueList();
             if( $2 == (char*)1)
                 finalPred = parsedData->insertPredicate(finalPred, OpNot, NULL);
 

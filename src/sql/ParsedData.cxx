@@ -284,6 +284,18 @@ void ParsedData::init()
     isExplain=false;
     plan = Normal;
 }
+void ParsedData::resetInValueList()
+{
+    FieldValue *value;
+    ListIterator inIter = inValueList.getIterator();
+    while (inIter.hasElement()) {
+        value = (FieldValue *) inIter.nextElement();
+        if (value->parsedString) free(value->parsedString);
+        delete value;
+    }
+    inValueList.reset();
+    return;
+}
 
 //NOTE::when you add members to reset() check whether it needs to be added in init() as it is used for statement caching when it contains parameters
 void ParsedData::reset()
@@ -329,13 +341,8 @@ void ParsedData::reset()
         delete value;
     }
     fieldValueList.reset();
-    ListIterator inIter = inValueList.getIterator();
-    while (inIter.hasElement()) {
-        value = (FieldValue *) inIter.nextElement();    
-        if (value->parsedString) free(value->parsedString);
-        delete value;
-    }
-    inValueList.reset();
+
+    resetInValueList();
 
     predicate.reset();
     havingPredicate.reset();
