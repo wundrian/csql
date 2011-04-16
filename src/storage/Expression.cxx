@@ -123,7 +123,8 @@ void *Expression::evaluate(DataType type,bool &result)
         }
         if(constVal!= NULL && strcmp(fldName,"\0")!=0)
         {
-            os::memcpy(calVal,val,table->getFieldLength(fldName));
+            AllDataType::convert(table->getFieldType(fldName), val,
+                                 type, calVal, table->getFieldLength(fldName));
             solve(calVal, constVal, type, arOp);  
         } 
         else if(constVal!= NULL && 0==strcmp(fldName,"\0"))   
@@ -132,7 +133,8 @@ void *Expression::evaluate(DataType type,bool &result)
         }
         else if( NULL==constVal && strcmp(fldName,"\0")!=0)
         {
-            os::memcpy(calVal,val,table->getFieldLength(fldName));
+            AllDataType::convert(table->getFieldType(fldName), val,
+                                 type, calVal, table->getFieldLength(fldName));
         }
         return calVal;
     }
