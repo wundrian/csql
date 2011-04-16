@@ -1192,6 +1192,7 @@ void* SelStatement::next()
 void* SelStatement::getFieldValuePtr( int pos )
 {
     FieldValue *v = bindFields[pos];
+    if (NULL == v ) return v;
     return ( (void*) v->value );
 }
 
