@@ -173,7 +173,7 @@ typedef size_t socklen_t;
 #define MSG_NOSIGNAL 0
 #define SHM_RND 0
 #define IPC_RMID 0
-#define SQL_API
+#define SQL_API __declspec(dllexport)
 #define ALLREADY_HAVE_WINDOWS_TYPE
 #define SIGCSQL1 0 //drop table signal wont work for windoes
 #define SIGCHLD SIGTERM
@@ -184,6 +184,8 @@ typedef size_t socklen_t;
 #define LHANDLE HMODULE
 #ifndef APP_BUILD
 #define DllExport   __declspec( dllexport ) 
+#else
+#define DllExport
 #endif
 typedef signed short int        SWORD;
 #define SQL_NOUNICODEMAP //Note: to suppress mapping to unicode APIs
