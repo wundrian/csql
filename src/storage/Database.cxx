@@ -629,8 +629,8 @@ DbRetVal Database::recoverMutex(Mutex *mut)
 }
 DbRetVal Database::writeDirtyPages(char *dataFile)
 {
-    int fd = os::openFile(dataFile, fileOpenCreat, 0);
-    lseek(fd, 0, SEEK_SET);
+    int fd = os::open(dataFile, fileOpenCreat, 0);
+    os::lseek(fd, 0, SEEK_SET);
     void *buf = (void *) metaData_;
     int sizeToWrite = os::alignLong(sizeof(DatabaseMetaData));
     size_t retSize = os::write(fd, (char*)buf, sizeToWrite);
@@ -648,7 +648,7 @@ DbRetVal Database::writeDirtyPages(char *dataFile)
         if ( NULL == pageInfo ) break;
         if (pageInfo > getCurrentPage()) {
            char *a="0";
-           ::lseek(fd, getMaxSize() -1, SEEK_SET);
+           os::lseek(fd, getMaxSize() -1, SEEK_SET);
            if ( -1 == os::write(fd, a, 1)) {
                printError(ErrSysInternal, "Unable to extend chkpt file");
                os::close(fd);
@@ -722,7 +722,7 @@ DbRetVal Database::checkPoint()
         filterAndRemoveStmtLogs();
         int ret = os::truncate(dbRedoFileName);
         if (ret != 0) {
-            os::close(fd);  
+            os::closeFile(fd);  
             printError(ErrSysInternal, "Unable to truncate redo log file");
             printError(ErrSysInternal, "Delete %s manually and restart the server", dbRedoFileName);
             return ErrOS;
@@ -897,12 +897,12 @@ DbRetVal Database::recoverUserDB()
     char dataFile[MAX_FILE_LEN];
     char cmd[MAX_FILE_LEN];
     sprintf(dataFile, "%s/db.chkpt.data", Conf::config.getDbFile());
-    int fd = os::openFile(dataFile, fileOpenReadOnly, 0);
+    int fd = os::open(dataFile, fileOpenReadOnly, 0);
     if (-1 == fd) { return OK; }
     void *buf = (void *) metaData_;
     int readbytes = read(fd, buf, Conf::config.getMaxDbSize());
-    if (readbytes == -1) { os::closeFile(fd); return ErrOS; }
-    os::closeFile(fd);
+    if (readbytes == -1) { os::close(fd); return ErrOS; }
+    os::close(fd);
     return OK;
 }
 
