@@ -41,7 +41,7 @@
     <IncludePath>C:\prabakaran\csql\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>c:\prabakaran\csql\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -119,6 +119,7 @@
     <ClCompile Include="..\..\..\src\storage\TransactionManager.cxx" />
     <ClCompile Include="..\..\..\src\storage\TreeIndex.cxx" />
     <ClCompile Include="..\..\..\src\storage\TreeIter.cxx" />
+    <ClCompile Include="..\..\..\src\storage\TrieIndex.cxx" />
     <ClCompile Include="..\..\..\src\storage\TupleIterator.cxx" />
     <ClCompile Include="..\..\..\src\storage\UserManagerImpl.cxx" />
     <ClCompile Include="..\..\..\src\storage\Util.cxx" />

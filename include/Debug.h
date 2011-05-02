@@ -37,7 +37,7 @@ extern int DebugDM_Warning;
 
 int printStackTrace();
 #ifdef WINNT
-DllExport int printError1(DbRetVal val, char* fname, int lno, const char *format, ...);
+DllExport int printError1(DbRetVal val, char* fname, int lno, char *format, ...);
 #else
 extern int printError1(DbRetVal val, char* fname, int lno, const char *format, ...);
 #endif
@@ -77,9 +77,11 @@ static char moduleNames[][20] =
     "Procmgmt", "Network", "Gateway", "Adapter", "SqlLog",
     "CacheServer", "TEST", "Warning"
 };
-
-extern int printDebug1(int module, char *fname, int lineno, const char *format, ...);
-
+#ifdef WINNT
+DllExport int printDebug1(int module, char* fname, int lno, char *format, ...);
+#else
+extern int printDebug1(int module, char *fname, int lineno, char *format, ...);
+#endif
 
 #ifdef DEBUG
 #define printDebug(a, ...) printDebug1(a, __FILE__, __LINE__, __VA_ARGS__)

@@ -156,6 +156,9 @@
     <ClCompile Include="..\..\..\src\storage\VarHeapAllocator.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\storage\TrieIndex.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\include\AbsSqlConnection.h">

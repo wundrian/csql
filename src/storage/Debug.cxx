@@ -50,19 +50,27 @@ int printStackTrace()
   return 0;
 }
 
-int printError1(DbRetVal val, char* fname, int lno, const char *format, ...)
+int printError1(DbRetVal val, char* fname, int lno, char *format, ...)
 {
     va_list ap;
     int fd = -1;
-    char tempBuffer[25];
+    char tempBuffer[64];
     struct timeval timeStamp;
-    os::gettimeofday(&timeStamp);
-    struct tm *tempTm = os::localtime(&timeStamp.tv_sec);
     char mesgBuf[1024];
 #if defined(SOLARIS) && defined(REMOTE_SOLARIS)
-    strftime(tempBuffer, 25, "%d/%m/%Y %H:%M:%S", (struct std::tm*) tempTm);
+    os::gettimeofday(&timeStamp);
+    struct tm *tempTm = os::localtime(&timeStamp.tv_sec);
+    strftime(tempBuffer, 64, "%d/%m/%Y %H:%M:%S", (struct std::tm*) tempTm);
+#elif defined WINNT
+	time_t ltime;
+    struct tm today;
+	time( &ltime);
+	_localtime64_s( &today, &ltime );
+    strftime(tempBuffer, 64, "%d/%m/%Y %H:%M:%S", &today);
 #else
-    strftime(tempBuffer, 25, "%d/%m/%Y %H:%M:%S", tempTm);
+    os::gettimeofday(&timeStamp);
+    struct tm *tempTm = os::localtime(&timeStamp.tv_sec);
+    trftime(tempBuffer, 64, "%d/%m/%Y %H:%M:%S", tempTm);
 #endif
 
     if (strncasecmp(Conf::config.getStderrFile(),"stderr", 6) == 0) fd = 2;
@@ -70,7 +78,7 @@ int printError1(DbRetVal val, char* fname, int lno, const char *format, ...)
         fd = os::openFileForAppend(Conf::config.getStderrFile(), O_CREAT);
         if (fd == -1) fd = 2;
     }
-
+	
     snprintf(mesgBuf, MAX_TRACE_LOG_LENGTH, "%s.%6d:%5d:%10lu:%s:%d:",
          tempBuffer, timeStamp.tv_usec, os::getpid(), os::getthrid(), fname, lno);
 
@@ -88,7 +96,7 @@ int printError1(DbRetVal val, char* fname, int lno, const char *format, ...)
     return 0;
 }
 
-int printDebug1(int module, char *fname, int lno, const char *format, ...)
+int printDebug1(int module, char *fname, int lno, char *format, ...)
 {
   switch(module) {
      case DM_Alloc: { if (!DebugDM_Alloc) return 1; break; }

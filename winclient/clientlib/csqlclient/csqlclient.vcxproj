@@ -43,8 +43,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Prabakaran\csql\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Prabakaran\csql\winclient\clientlib\Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\..\..\include;$(IncludePath)</IncludePath>
+    <LibraryPath>..\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

@@ -44,8 +44,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Prabakaran\csql\include;C:\Prabakaran\projects\prabakaran_t_suu_7.0.0\rt_jdk_win\include;C:\Prabakaran\projects\prabakaran_t_suu_7.0.0\rt_jdk_win\include\win32;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Prabakaran\csql\winclient\clientlib\Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\..\..\include;C:\Prabakaran\projects\prabakaran_t_suu_7.0.0\rt_jdk_win\include;C:\Prabakaran\projects\prabakaran_t_suu_7.0.0\rt_jdk_win\include\win32;$(IncludePath)</IncludePath>
+    <LibraryPath>..\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
