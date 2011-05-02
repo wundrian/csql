@@ -158,6 +158,7 @@ typedef int   shared_memory_id;
 #define strncasecmp _strnicmp
 #define strcasecmp strcmpi
 #define vsnprintf vsnprintf_s
+#define strtok_r strtok_s
 typedef HANDLE file_desc;
 typedef  long off_t;
 typedef void* caddr_t;
