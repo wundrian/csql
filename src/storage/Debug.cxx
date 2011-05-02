@@ -70,7 +70,7 @@ int printError1(DbRetVal val, char* fname, int lno, char *format, ...)
 #else
     os::gettimeofday(&timeStamp);
     struct tm *tempTm = os::localtime(&timeStamp.tv_sec);
-    trftime(tempBuffer, 64, "%d/%m/%Y %H:%M:%S", tempTm);
+    strftime(tempBuffer, 64, "%d/%m/%Y %H:%M:%S", tempTm);
 #endif
 
     if (strncasecmp(Conf::config.getStderrFile(),"stderr", 6) == 0) fd = 2;

@@ -39,7 +39,7 @@ int printStackTrace();
 #ifdef WINNT
 DllExport int printError1(DbRetVal val, char* fname, int lno, char *format, ...);
 #else
-extern int printError1(DbRetVal val, char* fname, int lno, const char *format, ...);
+extern int printError1(DbRetVal val, char* fname, int lno, char *format, ...);
 #endif
 #define printError(a, ...) printError1(a, __FILE__, __LINE__, __VA_ARGS__)
 
