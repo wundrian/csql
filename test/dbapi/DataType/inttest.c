@@ -58,6 +58,17 @@ int main()
     printf("Index created\n");
     delete idxInfo;
 #endif
+#ifdef WITHTRIEINDEX
+    HashIndexInitInfo *idxInfo = new HashIndexInitInfo();
+    strcpy(idxInfo->tableName, "t1");
+    idxInfo->list.append("f1");
+    idxInfo->indType = trieIndex;
+    rv = dbMgr->createIndex("indx1", idxInfo);
+    if (rv != OK) { printf("Index creation failed\n"); return -1; }
+    printf("Index created\n");
+    delete idxInfo;
+#endif
+
     Table *table = dbMgr->openTable("t1");
     if (table == NULL) { printf("Unable to open table\n"); return 4; }
     table->bindFld("f1", &id);

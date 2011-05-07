@@ -29,7 +29,8 @@ TARGETS = \
         test008  test009  test010  test011  test012  test013   test014  \
         test015  test016  test017  test018  test019  test020   test021  \
         test022  test002a test004a test006a test008a test010a \
-        test012a test014a test016a test018a test020a test022a       
+        test012a test014a test016a test018a test020a test022a test002b \
+	test004b test006b test016b
  
 ifeq ($(PlatForm), supported)
 all: $(TARGETS)
@@ -45,18 +46,24 @@ test002: inttest.c
 	$(CPlus) -DWITHINDEX $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test002a: inttest.c
 	$(CPlus) -DWITHTREEINDEX $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test002b: inttest.c
+	$(CPlus) -DWITHTRIEINDEX $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test003: longtest.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test004: longtest.c
 	$(CPlus) -DWITHINDEX $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test004a: longtest.c
 	$(CPlus) -DWITHTREEINDEX $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test004b: longtest.c
+	$(CPlus) -DWITHTRIEINDEX $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test005: longlongtest.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test006: longlongtest.c
 	$(CPlus)  $(CPlusFlags) -DWITHINDEX -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test006a: longlongtest.c
 	$(CPlus)  $(CPlusFlags) -DWITHTREEINDEX -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test006b: longlongtest.c
+	$(CPlus)  $(CPlusFlags) -DWITHTRIEINDEX -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test007: shorttest.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test008: shorttest.c
@@ -87,6 +94,8 @@ test016: chartest.c
 	$(CPlus)  -DWITHINDEX $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test016a: chartest.c
 	$(CPlus)  -DWITHTREEINDEX $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
+test016b: chartest.c
+	$(CPlus)  -DWITHTRIEINDEX $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test017: datetest.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test018: datetest.c
