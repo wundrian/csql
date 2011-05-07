@@ -26,9 +26,14 @@ int main()
     idxInfo->indType = hashIndex;
 #ifdef TREEINDEX
     idxInfo->indType = treeIndex;
+#elif TRIEINDEX
+    idxInfo->indType = treeIndex;
 #endif
     rv = dbMgr->createIndex("indx1", idxInfo);
 #ifdef TREEINDEX
+    if(rv == OK) { printf("Composite Index creation Passed\n"); return 1; } 
+    printf("Composite Index failed as expected\n");
+#elif TRIEINDEX
     if(rv == OK) { printf("Composite Index creation Passed\n"); return 1; } 
     printf("Composite Index failed as expected\n");
 #else

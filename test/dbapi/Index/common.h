@@ -7,7 +7,9 @@ int createIndex(DatabaseManager *dbMgr, bool unique)
     idxInfo->list.append("f1");
 #ifdef TREEINDEX
     idxInfo->indType = treeIndex;
-#else 
+#elif TRIEINDEX
+    idxInfo->indType = trieIndex;
+#else
     idxInfo->indType = hashIndex;
 #endif
 #ifndef DEFAULT
@@ -106,6 +108,8 @@ int createIndex(DatabaseManager *dbMgr)
     idxInfo->list.append("f1");
 #ifdef TREEINDEX
     idxInfo->indType = treeIndex;
+#elif TRIEINDEX
+    idxInfo->indType = trieIndex;
 #else
     idxInfo->indType = hashIndex;
 #endif
@@ -120,6 +124,8 @@ int createIndex(DatabaseManager *dbMgr)
     idxInfo->list.append("f2");
 #ifdef TREEINDEX
     idxInfo->indType = treeIndex;
+#elif TRIEINDEX
+    idxInfo->indType = trieIndex;
 #else
     idxInfo->indType = hashIndex;
 #endif

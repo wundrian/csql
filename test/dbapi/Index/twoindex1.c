@@ -26,6 +26,9 @@ int main()
 #ifdef F1TREE
     idxInfo->indType = treeIndex;
 #endif
+#ifdef F1TRIE
+    idxInfo->indType = trieIndex;
+#endif
     rv = dbMgr->createIndex("indx1", idxInfo);
     if (rv != OK) { printf("Index creation failed\n"); return -1; }
     printf("Index created for f1\n");
@@ -37,6 +40,9 @@ int main()
     idxInfo->indType = hashIndex;
 #ifdef F2TREE
     idxInfo->indType = treeIndex;
+#endif
+#ifdef F2TRIE
+    idxInfo->indType = trieIndex;
 #endif
     rv = dbMgr->createIndex("indx2", idxInfo);
     if (rv != OK) { printf("Index creation failed\n"); return -1; }

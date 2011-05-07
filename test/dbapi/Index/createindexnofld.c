@@ -24,6 +24,8 @@ int main()
     idxInfo->indType = hashIndex;
 #ifdef TREEINDEX
     idxInfo->indType = treeIndex;
+#elif TRIEINDEX
+    idxInfo->indType = trieIndex;
 #endif
     int ret =0;
     rv = dbMgr->createIndex("indx1", idxInfo);
