@@ -35,7 +35,7 @@ char hashString(char value)
 
 void TrieIndex::computeHashValues(DataType type, void *key, char *in, int length)
 {
-    if (typeInt == type) {
+    if (typeInt == type ) {
         int val = *(int*)key;
         sprintf(in, "%d", val);
         int i=0;
@@ -93,7 +93,7 @@ DbRetVal TrieIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     Chunk *chunk = (Chunk*) iptr->chunkPtr_;
     ChunkIterator citer = CatalogTableINDEX::getIterator(indexPtr);
     TrieNode* start = (TrieNode*)citer.nextElement();
-    if(start) displayAll(start);
+    //if(start) displayAll(start);
     int cnt=0;
     if (NULL == start) {
         //first value is inserted into the trie index
