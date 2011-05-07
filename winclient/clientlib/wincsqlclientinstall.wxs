@@ -1,0 +1,30 @@
+<?xml version='1.0'?>
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
+   <Product Id='12345678-1234-1234-1234-123456789012' Name='CSQL Client Package' Language='1033'
+            Version='3.3' Manufacturer='Open Source'>
+      <Package Id='12345678-1234-1234-1234-123456789013'
+                Description='Windows CSQL Client Installer package'
+                Comments='Nil'
+                Manufacturer='Open Source' InstallerVersion='200' Compressed='yes' />
+
+      <Media Id='1' Cabinet='product.cab' EmbedCab='yes' />
+
+      <Directory Id='TARGETDIR' Name='SourceDir' >
+        <Directory Id="ProgramFilesFolder">
+         <Directory Id='CSQLClient' Name='CSQLClient' >
+            <Component Id='CSQLClient' Guid='12345678-1234-1234-1234-123456789013'>
+                  <File Id='csqlodbc' Name='csqlodbc.dll' DiskId='1' src='Release\csqlodbc.dll' />
+                  <File Id='csqljdbc' Name='csqljdbc.dll' DiskId='1' src='Release\csqljdbc.dll' />
+                  <File Id='csqlclient' Name='csqlclient.dll' DiskId='1' src='Release\csqlclient.dll' />
+                  <File Id='csqlodbclib' Name='csqlodbc.lib' DiskId='1' src='Release\csqlodbc.lib' />
+	          <File Id='csqljdbclib' Name='csqljdbc.lib' DiskId='1' src='Release\csqljdbc.lib' />
+	          <File Id='csqlclientlib' Name='csqlclient.lib' DiskId='1' src='Release\csqlclient.lib' />
+                </Component>
+         </Directory>
+        </Directory>
+      </Directory>
+      <Feature Id='csqlclient' Title='Client Libraries' Level='1'>
+         <ComponentRef Id='CSQLClient' />
+      </Feature>
+   </Product>
+</Wix>
