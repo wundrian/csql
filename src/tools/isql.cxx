@@ -21,8 +21,10 @@
 #include <SqlStatement.h>
 #include <SqlNwConnection.h>
 #include <SqlNwStatement.h>
+#ifndef NO_READLINE_LIB
 #include <readline/readline.h>
 #include <readline/history.h>
+#endif
 #include <NanoTimer.h>
 #define SQL_STMT_LEN 8192
 void printVariables();
@@ -434,7 +436,8 @@ char getQueryFromStdIn(char *buf)
 {
     char    c, *bufBegin=buf;
     int    ln, charCnt=0;
-    /*ln=1;
+#ifdef NO_READLINE_LIB
+    ln=1;
     printf("CSQL>");
     while( (c=(char ) getchar()) != EOF && c != ';')
     {
@@ -448,16 +451,17 @@ char getQueryFromStdIn(char *buf)
             *bufBegin ='\0';
 	    return 0;
 	}
-        printf("=%d=\n", c);
+        //printf("=%d=\n", c);
     }
     *buf++ = ';';
     *buf = '\0';
-    */
+#else 
     strcpy(buf, "");
     char *line = readline("CSQL>");
     if (line) {strcpy(buf, line); add_history(line); }
     else { free(line); return EOF; }
     free(line);
+#endif
     return 0;
 }
 char getQueryFromFile(char *buf)
