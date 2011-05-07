@@ -32,8 +32,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = csql$(EXEEXT) catalog$(EXEEXT) cachetable$(EXEEXT) \
-	csqlserver$(EXEEXT) csqlsqlserver$(EXEEXT) \
+bin_PROGRAMS = csql$(EXEEXT) icsql$(EXEEXT) catalog$(EXEEXT) \
+	cachetable$(EXEEXT) csqlserver$(EXEEXT) csqlsqlserver$(EXEEXT) \
 	csqlcacheserver$(EXEEXT) csqldump$(EXEEXT) \
 	cacheverify$(EXEEXT) redo$(EXEEXT) recover$(EXEEXT) \
 	checkpoint$(EXEEXT) csqlds$(EXEEXT) csqlasyncserver$(EXEEXT) \
@@ -218,6 +218,19 @@ csqlsqlserver_DEPENDENCIES = $(top_builddir)/src/sql/libcsqlsql.la \
 csqlsqlserver_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
 	$(CXXFLAGS) $(csqlsqlserver_LDFLAGS) $(LDFLAGS) -o $@
+am_icsql_OBJECTS = icsql-isql.$(OBJEXT)
+icsql_OBJECTS = $(am_icsql_OBJECTS)
+icsql_DEPENDENCIES = $(top_builddir)/src/storage/libcsql.la \
+	$(top_builddir)/src/sql/libcsqlsql.la \
+	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la \
+	$(top_builddir)/src/cache/libcacheload.la \
+	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la
+icsql_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+	--mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
+	$(icsql_LDFLAGS) $(LDFLAGS) -o $@
 am_recover_OBJECTS = recover.$(OBJEXT)
 recover_OBJECTS = $(am_recover_OBJECTS)
 recover_DEPENDENCIES = $(top_builddir)/src/storage/libcsql.la \
@@ -262,14 +275,16 @@ SOURCES = $(applyofflinelogs_SOURCES) $(cachetable_SOURCES) \
 	$(csqlasyncserver_SOURCES) $(csqlcacheserver_SOURCES) \
 	$(csqlcheckpointserver_SOURCES) $(csqlds_SOURCES) \
 	$(csqldump_SOURCES) $(csqlserver_SOURCES) \
-	$(csqlsqlserver_SOURCES) $(recover_SOURCES) $(redo_SOURCES)
+	$(csqlsqlserver_SOURCES) $(icsql_SOURCES) $(recover_SOURCES) \
+	$(redo_SOURCES)
 DIST_SOURCES = $(applyofflinelogs_SOURCES) $(cachetable_SOURCES) \
 	$(cacheverify_SOURCES) $(catalog_SOURCES) \
 	$(checkpoint_SOURCES) $(csql_SOURCES) \
 	$(csqlasyncserver_SOURCES) $(csqlcacheserver_SOURCES) \
 	$(csqlcheckpointserver_SOURCES) $(csqlds_SOURCES) \
 	$(csqldump_SOURCES) $(csqlserver_SOURCES) \
-	$(csqlsqlserver_SOURCES) $(recover_SOURCES) $(redo_SOURCES)
+	$(csqlsqlserver_SOURCES) $(icsql_SOURCES) $(recover_SOURCES) \
+	$(redo_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -399,6 +414,18 @@ csql_LDADD = $(top_builddir)/src/storage/libcsql.la \
         $(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la 
 
 csql_LDFLAGS = -lrt -lpthread -lcrypt -lodbc -lreadline -lcurses -ldl
+icsql_SOURCES = isql.cxx
+icsql_CPPFLAGS = -DNO_READLINE_LIB
+icsql_LDADD = $(top_builddir)/src/storage/libcsql.la \
+	$(top_builddir)/src/sql/libcsqlsql.la \
+        $(top_builddir)/src/sqllog/libcsqlsqllog.la \
+        $(top_builddir)/src/network/libcsqlnw.la \
+        $(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+        $(top_builddir)/src/gateway/libcsqlgw.la \
+        $(top_builddir)/src/cache/libcacheload.la \
+        $(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la 
+
+icsql_LDFLAGS = -lrt -lpthread -lcrypt -lodbc -lcurses -ldl
 redo_SOURCES = redo.cxx
 redo_LDADD = $(top_builddir)/src/storage/libcsql.la  \
 	$(top_builddir)/src/sql/libcsqlsql.la \
@@ -649,6 +676,9 @@ csqlserver$(EXEEXT): $(csqlserver_OBJECTS) $(csqlserver_DEPENDENCIES)
 csqlsqlserver$(EXEEXT): $(csqlsqlserver_OBJECTS) $(csqlsqlserver_DEPENDENCIES) 
 	@rm -f csqlsqlserver$(EXEEXT)
 	$(csqlsqlserver_LINK) $(csqlsqlserver_OBJECTS) $(csqlsqlserver_LDADD) $(LIBS)
+icsql$(EXEEXT): $(icsql_OBJECTS) $(icsql_DEPENDENCIES) 
+	@rm -f icsql$(EXEEXT)
+	$(icsql_LINK) $(icsql_OBJECTS) $(icsql_LDADD) $(LIBS)
 recover$(EXEEXT): $(recover_OBJECTS) $(recover_DEPENDENCIES) 
 	@rm -f recover$(EXEEXT)
 	$(recover_LINK) $(recover_OBJECTS) $(recover_LDADD) $(LIBS)
@@ -674,6 +704,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/csqldump.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/csqlserver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/csqlsqlserver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/icsql-isql.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/isql.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/recover.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/redo.Po@am__quote@
@@ -698,6 +729,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
+
+icsql-isql.o: isql.cxx
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icsql_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT icsql-isql.o -MD -MP -MF $(DEPDIR)/icsql-isql.Tpo -c -o icsql-isql.o `test -f 'isql.cxx' || echo '$(srcdir)/'`isql.cxx
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/icsql-isql.Tpo $(DEPDIR)/icsql-isql.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='isql.cxx' object='icsql-isql.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icsql_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o icsql-isql.o `test -f 'isql.cxx' || echo '$(srcdir)/'`isql.cxx
+
+icsql-isql.obj: isql.cxx
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icsql_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT icsql-isql.obj -MD -MP -MF $(DEPDIR)/icsql-isql.Tpo -c -o icsql-isql.obj `if test -f 'isql.cxx'; then $(CYGPATH_W) 'isql.cxx'; else $(CYGPATH_W) '$(srcdir)/isql.cxx'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/icsql-isql.Tpo $(DEPDIR)/icsql-isql.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='isql.cxx' object='icsql-isql.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(icsql_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o icsql-isql.obj `if test -f 'isql.cxx'; then $(CYGPATH_W) 'isql.cxx'; else $(CYGPATH_W) '$(srcdir)/isql.cxx'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

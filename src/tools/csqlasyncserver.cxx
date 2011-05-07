@@ -349,7 +349,7 @@ DbRetVal processMessage(void *str, int len, void *conn, void *stmtBuckets,
 
 void *freeMsgFromQueue(void *nAsync)
 {
-    int asySites = (int)nAsync;
+    int asySites = (int)(long)nAsync;
     struct timeval tval;
     printDebug(DM_CacheServer, "Waiting for free the q elements");
     while (1) {
