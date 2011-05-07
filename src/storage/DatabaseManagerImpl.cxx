@@ -1485,8 +1485,8 @@ DbRetVal DatabaseManagerImpl::validateIndex(const char *tblName,
         }
     }
     CFIELD* fInfo = (CFIELD*)fptr[0];
-    if (!(fInfo->type_ == typeInt || fInfo->type_ == typeLong || fInfo->type_ == typeLongLong || fInfo->type == typeString 
-|| fInfo->type == typeVarchar))
+    if (!(fInfo->type_ == typeInt || fInfo->type_ == typeLong || fInfo->type_ == typeLongLong || fInfo->type_ == typeString 
+|| fInfo->type_ == typeVarchar))
     {
         printError(ErrBadArg, "Trie Index cannot be created for float or double or timestamp type");
         return ErrBadArg;
