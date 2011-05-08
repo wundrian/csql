@@ -40,20 +40,12 @@ class DllExport SqlConnection : public AbsSqlConnection
 {
     Connection conn;
     bool isConnOpen;
-#if (defined MMDB && defined EMBED)
-    DbRetVal recoverCsqlDB();
-    DbRetVal recoverSystemAndUserDB();
-    DbRetVal applySchemaFile(FILE *fp);
-    char getQueryFromSchemaFile(FILE *fp, char *buf);
-    int applyRedoLogs(char *redoFile);
-#endif
     public:
     static List connList;
     static bool isInit;
 #if (defined MMDB && EMBED)
     static bool firstThread;
     static GlobalUniqueID UID;
-    void *stmtBuckets;
 #endif
     void initialize();
     List cachedStmts;

@@ -52,9 +52,9 @@ class DllExport Recovery
     int applyRedoLogs(char *redoFile, AbsSqlConnection *conn, bool list = false, bool interactive = false);
 
 #if (defined MMDB && defined EMBED)
-    DbRetVal recoverCsqlDB();
-    DbRetVal recoverSystemAndUserDB();
-    DbRetVal applySchemaFile(FILE *fp);
+    DbRetVal recoverCsqlDB(SqlConnection *conn);
+    DbRetVal recoverSystemAndUserDB(SqlConnection *conn);
+    DbRetVal applySchemaFile(FILE *fp, SqlConnection *conn);
     char getQueryFromSchemaFile(FILE *fp, char *buf);
 #endif
 

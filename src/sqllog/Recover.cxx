@@ -276,7 +276,7 @@ DbRetVal Recovery::iterateStmtLogs(AbsSqlConnection *conn, void *startAddr, int 
 
 #if (defined MMDB && defined EMBED)
 
-DbRetVal Recovery::recoverCsqlDB()
+DbRetVal Recovery::recoverCsqlDB(SqlConnection *conn)
 {
     DbRetVal rv = OK;
     char dbRedoFileName[MAX_FILE_LEN];
@@ -316,7 +316,7 @@ DbRetVal Recovery::recoverCsqlDB()
     }
     if (FILE *file = fopen(dbChkptData, "r")) {
         fclose(file);
-        rv = recoverSystemAndUserDB();
+        rv = recoverSystemAndUserDB(conn);
         if (rv != OK) return rv;
     }
 
@@ -325,9 +325,9 @@ DbRetVal Recovery::recoverCsqlDB()
     if (FILE *file = fopen(dbRedoFileName, "r"))
     {
         fclose(file);
-        rv = (DbRetVal) applyRedoLogs(dbRedoFileName);
+        rv = (DbRetVal) applyRedoLogs(dbRedoFileName, conn);
         if (rv != OK) return rv;
-        DatabaseManager *dbMgr = getConnObject().getDatabaseManager();
+        DatabaseManager *dbMgr = conn->getConnObject().getDatabaseManager();
         rv = dbMgr->checkPoint();
         if (rv != OK)
         {
@@ -338,28 +338,28 @@ DbRetVal Recovery::recoverCsqlDB()
     return OK;   
 }
 
-DbRetVal Recovery::recoverSystemAndUserDB()
+DbRetVal Recovery::recoverSystemAndUserDB(SqlConnection *conn)
 {
     DbRetVal rv = OK;
     char schFile[1024];
     sprintf(schFile, "%s/db.chkpt.schema", Conf::config.getDbFile());
     if (FILE *file = fopen(schFile, "r")) {
-        rv = applySchemaFile(file);
+        rv = applySchemaFile(file, conn);
         if (rv != OK) { fclose(file); return rv; }
     }
-    DatabaseManager *dbMgr = getConnObject().getDatabaseManager();
+    DatabaseManager *dbMgr = conn->getConnObject().getDatabaseManager();
     rv = dbMgr->recover();
     return rv; 
 }
 
-DbRetVal Recovery::applySchemaFile(FILE *fp)
+DbRetVal Recovery::applySchemaFile(FILE *fp, SqlConnection *conn)
 {
     char buf[8192];
     char eof;
     DbRetVal rv = OK;
     SqlStatement *stmt = new SqlStatement();
     while ((eof = getQueryFromSchemaFile(fp,buf)) != EOF) {
-        stmt->setConnection(this);
+        stmt->setConnection(conn);
         rv = stmt->prepare(buf);
         if (rv != OK) { delete stmt; return rv; }
         int rows = 0;
