@@ -113,6 +113,7 @@ operator        "<"|">"|">="|"<="|"="|"\!="|"<>"|"LIKE"|"like"
                 if(strcasecmp(yytext,"ON") == 0) token = ON;
                 if(strcasecmp(yytext,"HASH") == 0) token = HASH;
                 if(strcasecmp(yytext,"TREE") == 0) token = TREE;
+                if(strcasecmp(yytext,"TRIE") == 0) token = TRIE;
 
                 if(strcasecmp(yytext,"KEY") == 0) token = KEY;
                 if(strcasecmp(yytext,"DEFAULT") == 0) token = DEFAULT;

@@ -164,14 +164,14 @@ class TrieIndex: public Index
     DbRetVal insert(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool undoFlag);
     DbRetVal remove(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool undoFlag);
     DbRetVal update(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *info, void *tuple, bool undoFlag);
-    //bool checkForUniqueKey(IndexNode *head, HashIndexInfo *info, void *tuple);
+    bool checkForUniqueKey(IndexNode *head, IndexInfo *info, void *tuple);
     static void computeHashValues(DataType type, void *key, char *in, int length=0);
     static DbRetVal insertLogicalUndoLog(Database *sysdb, void *info);
     static DbRetVal deleteLogicalUndoLog(Database *sysdb, void *info);
     void displayAll(TrieNode *node, int level =1);
     void printTrieNode(TrieNode *node, int level);
     private:
-    DbRetVal addToValueList(Database*, void**, Chunk*, void*, void*);
+    DbRetVal addToValueList(Database*, void**, Chunk*, IndexInfo*, void*, void*);
     DbRetVal removeFromValueList(Database*, void**, Chunk*, void*, void*);
 
 };
@@ -226,6 +226,10 @@ class IndexInfo
 {
     public:
     IndexType indType;
+    int fldOffset;
+    bool isUnique;
+    DataType type;
+    int compLength;
     virtual ~IndexInfo() {}
 };
 
@@ -237,10 +241,6 @@ class HashIndexInfo :public IndexInfo
     char *indexPtr;
     int noOfBuckets;
     Bucket* buckets;
-    int fldOffset;
-    bool isUnique;
-    DataType type;
-    int compLength;
     void print() 
     {
         printf("HashIndexInfo indexPtr:%x noOfBuckets:%d buckets:%x \n",indexPtr, noOfBuckets, buckets);

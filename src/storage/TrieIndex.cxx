@@ -72,12 +72,36 @@ void TrieIndex::computeHashValues(DataType type, void *key, char *in, int length
         printError(ErrSysFatal,"Type not supported for trie hashing\n");
     return ;
 }
-/*
-bool HashIndex::checkForUniqueKey(IndexNode *head, HashIndexInfo *info, void *tuple)
+
+bool TrieIndex::checkForUniqueKey(IndexNode *head, IndexInfo *info, void *tuple)
 {
+    if (!head) return false;
+    int offset = info->fldOffset;
+    DataType type = info->type;
+    BucketList list(head);
+    BucketIter iter = list.getIterator();
+    IndexNode *node;
+    void *bucketTuple;
+    printDebug(DM_TrieIndex, "TrieIndex insert Checking for unique");
+    bool res = false;
+    while((node = iter.next()) != NULL)
+    {
+        bucketTuple = node->ptrToTuple_;
+        if (type != typeVarchar)
+           res = AllDataType::compareVal((void*)((char*)bucketTuple +offset), 
+                   (void*)((char*)tuple +offset), OpEquals,type, info->compLength);
+        else 
+           res = AllDataType::compareVal((void*)*(long *)((char*)bucketTuple +offset), 
+                   (void*)*(long *)((char*)tuple +offset), OpEquals,type, info->compLength);
+        if (res)
+        {
+            printError(ErrUnique, "Unique key violation");
+            return true;
+        }
+    }
     return false;
 }
-*/
+
 
 DbRetVal TrieIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *indInfo, void *tuple, bool loadFlag)
 {
@@ -124,7 +148,7 @@ DbRetVal TrieIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
         cnt++;
     }
     void **ptr = (void**)&(start->head_[hashValue[cnt]]);
-    rv = addToValueList(tbl->db_, ptr, hIdxNodeChunk, tuple, keyPtr);
+    rv = addToValueList(tbl->db_, ptr, hIdxNodeChunk, indInfo, tuple, keyPtr);
     if (OK != rv) return rv;
     
     //create logical undo log
@@ -140,9 +164,15 @@ DbRetVal TrieIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     }
     return rv;
 }
-DbRetVal TrieIndex::addToValueList(Database *db, void **ptr, Chunk *hIdxNodeChunk, void *tuple, void *keyPtr)
+DbRetVal TrieIndex::addToValueList(Database *db, void **ptr, Chunk *hIdxNodeChunk, 
+                                   IndexInfo *info, void *tuple, void *keyPtr)
 {
     IndexNode *head = (IndexNode*) *ptr;
+    if (info->isUnique)
+    {
+        bool isKeyPresent = checkForUniqueKey(head, info, tuple);
+        if (isKeyPresent) return ErrUnique;
+    }
     printDebug(DM_TrieIndex, "TrieIndex insert into bucket list");
     DbRetVal rv = OK;
     if (!head)
@@ -292,7 +322,14 @@ DbRetVal TrieIndex::deleteLogicalUndoLog(Database *sysdb, void *data)
     BucketList list(head);
     DbRetVal rc = list.remove(hChunk, &db, info->keyPtr_);
     if (SplCase == rc) {
-     ;//TODO
+        if (0 != Mutex::CASL((long*)& (((Bucket *)info->bucket_)->bucketList_),
+            (long)(((Bucket *)info->bucket_)->bucketList_),
+            (long)list.getBucketListHead()))
+         {
+             printError(ErrLockTimeOut, "Unable to set the head of trie index bucket\n");
+             return ErrLockTimeOut;
+         }
+
     }else if (rc != OK) {
          printError(ErrLockTimeOut, "Unable to remove hash index node");
          return ErrLockTimeOut;
