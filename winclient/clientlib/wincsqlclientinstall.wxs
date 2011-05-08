@@ -19,6 +19,11 @@
                   <File Id='csqlodbclib' Name='csqlodbc.lib' DiskId='1' src='Release\csqlodbc.lib' />
 	          <File Id='csqljdbclib' Name='csqljdbc.lib' DiskId='1' src='Release\csqljdbc.lib' />
 	          <File Id='csqlclientlib' Name='csqlclient.lib' DiskId='1' src='Release\csqlclient.lib' />
+	          <File Id='sqlh1' Name='sql.h' DiskId='1' src='..\..\include\sql.h' />
+	          <File Id='sqlh2' Name='sqlext.h' DiskId='1' src='..\..\include\sqlext.h' />
+	          <File Id='sqlh3' Name='sqltypes.h' DiskId='1' src='..\..\include\sqltypes.h' />
+	          <File Id='sqlh4' Name='sqlucode.h' DiskId='1' src='..\..\include\sqlucode.h' />
+	          <File Id='jdbcjar' Name='CSqlJdbcDriver.jar' DiskId='1' src='CSqlJdbcDriver.jar' />
                 </Component>
          </Directory>
         </Directory>
