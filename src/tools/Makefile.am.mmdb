@@ -8,15 +8,13 @@ csql_LDADD = $(top_builddir)/src/storage/libcsql.la \
 	 $(top_builddir)/src/network/libcsqlnw.la \
 	 $(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la 
 csql_LDFLAGS = -lrt -lpthread -lcrypt -lreadline -lcurses -ldl
-csql_SOURCES = isql.cxx
+
+icsql_SOURCES = isql.cxx
 icsql_CPPFLAGS = -DNO_READLINE_LIB
 icsql_LDADD = $(top_builddir)/src/storage/libcsql.la \
         $(top_builddir)/src/sql/libcsqlsql.la \
         $(top_builddir)/src/sqllog/libcsqlsqllog.la \
         $(top_builddir)/src/network/libcsqlnw.la \
-        $(top_builddir)/src/adapter/libcsqlodbcadapter.la \
-        $(top_builddir)/src/gateway/libcsqlgw.la \
-        $(top_builddir)/src/cache/libcacheload.la \
         $(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la
 icsql_LDFLAGS = -lrt -lpthread -lcrypt -lodbc -ldl
 
