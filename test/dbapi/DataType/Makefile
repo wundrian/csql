@@ -30,7 +30,7 @@ TARGETS = \
         test015  test016  test017  test018  test019  test020   test021  \
         test022  test002a test004a test006a test008a test010a \
         test012a test014a test016a test018a test020a test022a test002b \
-	test004b test006b test016b
+	test006b test016b
  
 ifeq ($(PlatForm), supported)
 all: $(TARGETS)
@@ -54,8 +54,6 @@ test004: longtest.c
 	$(CPlus) -DWITHINDEX $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test004a: longtest.c
 	$(CPlus) -DWITHTREEINDEX $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
-test004b: longtest.c
-	$(CPlus) -DWITHTRIEINDEX $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test005: longlongtest.c
 	$(CPlus) $(CPlusFlags) -o $@ $< $(INCL) $(LIBS) $(SYSLIBS)
 test006: longlongtest.c
