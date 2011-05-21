@@ -88,6 +88,16 @@ DbRetVal SessionImpl::initSystemDatabase()
         printError(ErrSysInit, "Allocation of Lock buckets failed");
         return ErrSysInit;
     }
+    Bucket* buckets = dbMgr->sysDb()->getLockHashBuckets();
+    Bucket* bucket;
+    char mutName[IDENTIFIER_LENGTH];
+    for (int i =0; i< LOCK_BUCKET_SIZE; i++)
+    {
+       bucket = &(buckets[i]);
+       sprintf(mutName, "LOCKBKT:%d", i);
+       bucket->mutex_.init(mutName);
+    }
+
     db->releaseCheckpointMutex();
 #if !(defined MMDB && defined EMBED)
     printf("Sys_DB  [Size=%4.4ldMB] \nUser_DB [Size=%4.4ldMB]\n", Conf::config.getMaxSysDbSize()/1048576, Conf::config.getMaxDbSize()/1048576);
