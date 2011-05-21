@@ -26,7 +26,7 @@ DbRetVal Transaction::insertIntoHasList(Database *sysdb, LockHashNode *node)
     //allocate lock node
     Chunk *chunk = sysdb->getSystemDatabaseChunk(TransHasTableId);
     DbRetVal rv = OK;
-    TransHasNode *hasNode = chunk->tryallocate(sysdb, &rv, 1000);
+    TransHasNode *hasNode =(TransHasNode*)chunk->tryAllocate(sysdb, &rv, 1000);
     if (NULL == hasNode)
     {
         return rv;
