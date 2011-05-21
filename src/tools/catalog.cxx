@@ -236,52 +236,14 @@ int main(int argc, char **argv)
         {
             dbMgr->printDebugProcInfo();
         }
-         else if(strcmp(name,"chunk") ==0)
+        else if(strcmp(name,"chunk") ==0)
     	{
-	Database *db = dbMgr->sysDb();
-	Chunk *chunk;
-	int id=1;
-	printf("<Chunk information>\n");
-	printf("  <System Chunk >\n");
-	chunk=db->getSystemDatabaseChunk(UserChunkTableId);
-	chunk->print();
-	while(id<MAX_CHUNKS)
-	{
-		chunk=db->getSystemDatabaseChunk(id);
-		if((chunk->getChunkID())!=0){
-			chunk->print();
-		}
-		id++;
+            dbMgr->printDebugChunkInfo();
 	}
-	printf("  </System Chunk >\n");
-	printf("  <User Chunk >\n");
-	chunk=db->getSystemDatabaseChunk(UserChunkTableId);
-	size_t size=chunk->getSize();
-	int noOfDataNodes=os::floor((PAGE_SIZE - sizeof(PageInfo))/size);
-	Page* page=chunk->getFirstPage();
-	int i=0;
-	Chunk *chk;
-	while(page)
-	{
-		char *data = ((char*)page) + sizeof(PageInfo);
-		for (i = 0; i< noOfDataNodes; i++)
-		{
-			if (*((InUse*)data) == 1) 
-			{
-				chk=(Chunk*)((InUse*)data+1);
-				chk->print(); 
-			}
-			data = data + size;
-		}
-		page = (PageInfo*)(((PageInfo*)page)->nextPage_) ;
-			
-	}
-
-	printf("  </User Chunk >\n");
-	printf("</Chunk information>\n");
-    	}
-        else {
-           printf("Wrong argument passed\n");
+        else if(strcmp(name,"mutex") ==0)
+    	{
+            dbMgr->printDebugMutexInfo();
+        }else {
            printUsage();
            ret =1;
         }
