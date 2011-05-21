@@ -90,7 +90,7 @@ class queue
         nItems = 0; head = NULL; processedMsgIndexArray = NULL;
         qIndex = 0; qIter = NULL;  minProcessedMsgIndex = 0;
         lastFreedIndex = 0;
-        qMutex.init();
+        qMutex.init("Q");
         int size = sizeof (long long) * asySites;
         processedMsgIndexArray = (long long *) malloc(size);
         memset(processedMsgIndexArray, 0, size);
