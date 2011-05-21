@@ -26,24 +26,9 @@ DbRetVal Transaction::insertIntoHasList(Database *sysdb, LockHashNode *node)
     //allocate lock node
     Chunk *chunk = sysdb->getSystemDatabaseChunk(TransHasTableId);
     DbRetVal rv = OK;
-    TransHasNode *hasNode = NULL; //(TransHasNode*)chunk->allocate(sysdb, &rv);
-    int tries=0;
-    int totalTries = Conf::config.getMutexRetries();
-    while (tries < totalTries)
-    {
-        rv = OK;
-        hasNode= (TransHasNode*)chunk->allocate(sysdb, &rv);
-        if (hasNode !=NULL) break;
-        if (rv != ErrLockTimeOut)
-        {
-            printError(rv, "Unable to allocate trans has node");
-            return rv;
-        }
-        tries++;
-    }
+    TransHasNode *hasNode = chunk->tryallocate(sysdb, &rv, 1000);
     if (NULL == hasNode)
     {
-        printError(rv, "Could not allocate Trans has node after %d retry", tries);
         return rv;
     }
     printDebug(DM_Transaction, "insertIntoHasList new TransHasNode created:%x",
@@ -56,15 +41,27 @@ DbRetVal Transaction::insertIntoHasList(Database *sysdb, LockHashNode *node)
         hasLockList_ = hasNode;
         return OK;
     }
-
     TransHasNode *it = hasLockList_;
-    while (NULL != it->next_) { it = it->next_; }
+    while (NULL != it->next_) 
+    { 
+        it = it->next_; 
+    }
     it->next_ = hasNode;
     printDebug(DM_Transaction, "Added to hasLockList at end:%x",it);
     logFinest(Conf::logger, "Added locknode:%x to hasLockList", hasNode->node_);
     return OK;
 }
-
+void Transaction::printTotalNodes()
+{
+    TransHasNode *iter = hasLockList_;
+    int cnt=0;
+    while(iter != NULL)
+    {
+        cnt++;
+        iter = iter->next_;
+    }
+    //printf("TOTAL Lock Nodes %d\n", cnt);
+}
 DbRetVal Transaction::removeFromHasList(Database *sysdb, void *tuple)
 {
     Chunk *chunk = sysdb->getSystemDatabaseChunk(TransHasTableId);

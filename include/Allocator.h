@@ -175,7 +175,7 @@ class Chunk
     void setFirstPage(void *fp) { firstPage_ = fp;}
     void setCurPage(void *cp) { curPage_ = cp;}
     PageInfo* getPageInfo(Database *db, void *ptr);
-    void* tryAllocate(Database *db, DbRetVal *status);
+    void* tryAllocate(Database *db, DbRetVal *status, int totalTries=10);
     void* allocate(Database *db, DbRetVal *status);
 
     void* allocate(Database *db, size_t size, DbRetVal *status);
@@ -183,6 +183,7 @@ class Chunk
     void  free(Database *db, void* ptr);
     ChunkIterator getIterator();
     void print();
+    void printMutexInfo() { chunkMutex_.print(); }
 
     long getTotalDataNodes();
     int totalPages();
@@ -191,7 +192,7 @@ class Chunk
 
     private:
 
-    int initMutex();
+    int initMutex(int i=-1);
     int getChunkMutex(int procSlot);
     int releaseChunkMutex(int procSlot);
     int destroyMutex();

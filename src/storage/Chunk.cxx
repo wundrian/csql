@@ -239,15 +239,15 @@ void* Chunk::allocate(Database *db, DbRetVal *status)
         return data;
     }
 
-    //Chunk Mutex is not required as atomic instructions are instead used.
-    //This improves the concurrency
-    /*int ret = getChunkMutex(db->procSlot);
+    //Chunk Mutex is required as atomic instructions are not giving
+    // consistent results.  Need more investigation to improve concurrency
+    int ret = getChunkMutex(db->procSlot);
     if (ret != 0)
     {
         if (status != NULL) *status = ErrLockTimeOut;
         printError(ErrLockTimeOut,"Unable to acquire chunk Mutex");
         return NULL;
-    }*/
+    }
     int i = noOfDataNodes;
     if (BITSET(pageInfo->flags, HAS_SPACE))
     {
@@ -274,12 +274,12 @@ void* Chunk::allocate(Database *db, DbRetVal *status)
         if(ret !=0) {
             *status = ErrLockTimeOut;
             printDebug(DM_Warning, "Unable to set hasFreespace");
-            //releaseChunkMutex(db->procSlot);
+            releaseChunkMutex(db->procSlot);
             return NULL;
         }
        *status = OK;
        data = (char*) allocateFromFirstPage(db, noOfDataNodes, status);
-       //releaseChunkMutex(db->procSlot);
+       releaseChunkMutex(db->procSlot);
        if (NULL == data && *status != ErrLockTimeOut)
        {
           *status = OK;
@@ -296,18 +296,17 @@ void* Chunk::allocate(Database *db, DbRetVal *status)
     int retVal = Mutex::CASGen(data, 0, 1);
     if(retVal !=0) {
         *status = ErrLockTimeOut;
-        //releaseChunkMutex(db->procSlot);
+        releaseChunkMutex(db->procSlot);
         printDebug(DM_Warning, "Unable to set isUsed : retry...");
         return NULL;
     }
     setPageDirty(db, data);
-    //releaseChunkMutex(db->procSlot);
+    releaseChunkMutex(db->procSlot);
     return data + sizeof(InUse);
 }
-void* Chunk::tryAllocate(Database *db, DbRetVal *status)
+void* Chunk::tryAllocate(Database *db, DbRetVal *status, int totalTries)
 {
     int tries=0;
-    int totalTries = Conf::config.getMutexRetries();
     void *node = NULL;
     while (tries < totalTries)
     {
@@ -320,6 +319,8 @@ void* Chunk::tryAllocate(Database *db, DbRetVal *status)
             return NULL;
         }
         tries++;
+        if (0 == tries %10 ) 
+            printError(ErrWarning, "Unable to allocate after %d tries", tries);
     }
     return node;
 }
@@ -357,7 +358,7 @@ void* Chunk::allocateForLargeDataSize(Database *db, size_t size)
         printError(ErrNoMemory,"No more free pages in the database:Increase db size");
         return NULL;
     }
-    printDebug(DM_VarAlloc,"Chunk::alnextPageAfterMerge_locate Large Data Item id:%d Size:%d curPage:%x ",
+    printDebug(DM_VarAlloc,"Chunk::Large Data Item id:%d Size:%d curPage:%x ",
                                             chunkID_, size, curPage_);
     //TODO:: logic pending
     if(allocSize_!=0){
@@ -406,7 +407,8 @@ void* Chunk::allocateForLargeDataSize(Database *db, size_t size)
 }
 
 
-
+//Will check from first page to current page and do first fit allocate
+//if no space available, allocates new page
 void* Chunk::allocFromNewPageForVarSize(Database *db, size_t size, int pslot, DbRetVal *rv)
 {
     //Should be called only for data items <PAGE_SIZE
@@ -480,7 +482,7 @@ void* Chunk::allocateFromCurPageForVarSize(size_t size, int pslot, DbRetVal *rv)
                                                chunkID_, size, curPage_);
     VarSizeInfo *varInfo = (VarSizeInfo*)(((char*)page) +
                                                 sizeof(PageInfo));
-    if ( 0 != getChunkMutex(pslot)) { *rv = ErrLockTimeOut; return NULL; }
+    //if ( 0 != getChunkMutex(pslot)) { *rv = ErrLockTimeOut; return NULL; }
     int pageSize = PAGE_SIZE;
     bool hasSpace= false;
     while ((char*) varInfo < ((char*)page + pageSize))
@@ -493,12 +495,12 @@ void* Chunk::allocateFromCurPageForVarSize(size_t size, int pslot, DbRetVal *rv)
                 if (1 == splitDataBucket(varInfo, size, pslot, rv))
                 {
                     printDebug(DM_Warning, "Unable to split the data bucket");
-                    releaseChunkMutex(pslot);
+                    //releaseChunkMutex(pslot);
                     return NULL;
                 }
                 printDebug(DM_VarAlloc, "Chunkid:%d splitDataBucket: Size: %d Item:%x ",
                                                          chunkID_, size, varInfo);
-                releaseChunkMutex(pslot);
+                //releaseChunkMutex(pslot);
                 return (char*)varInfo + sizeof(VarSizeInfo);
             }
             else if (size == varInfo->size_) {
@@ -507,10 +509,10 @@ void* Chunk::allocateFromCurPageForVarSize(size_t size, int pslot, DbRetVal *rv)
                 if(ret !=0) {
                      printDebug(DM_Warning, "Unable to get lock for var alloc size:%d ", size);
                      *rv = ErrLockTimeOut;
-                      releaseChunkMutex(pslot);
+                     //releaseChunkMutex(pslot);
                      return NULL;
                 }
-                releaseChunkMutex(pslot);
+                //releaseChunkMutex(pslot);
                 return (char *) varInfo + sizeof(VarSizeInfo);
             }
 
@@ -521,7 +523,7 @@ void* Chunk::allocateFromCurPageForVarSize(size_t size, int pslot, DbRetVal *rv)
     if (!hasSpace) CLEARBIT(((PageInfo*)curPage_)->flags, HAS_SPACE);
     if (hasSpace && size < MIN_VARCHAR_ALLOC_SIZE) 
                    CLEARBIT(((PageInfo*)curPage_)->flags, HAS_SPACE);
-    releaseChunkMutex(pslot);
+    //releaseChunkMutex(pslot);
     return NULL;
 }
 
@@ -543,13 +545,13 @@ void* Chunk::allocate(Database *db, size_t size, DbRetVal *status)
 
     size_t alignedSize = os::alignLong(size);
     void *data = NULL;
-    /*int ret = getChunkMutex(db->procSlot);
+    int ret = getChunkMutex(db->procSlot);
     if (ret != 0)
     {
         printError(ErrLockTimeOut,"Unable to acquire chunk Mutex");
         *status = ErrLockTimeOut;
         return NULL;
-    }*/
+    }
     if (alignedSize > PAGE_SIZE )
     {
         data =  allocateForLargeDataSize(db, alignedSize);
@@ -568,7 +570,7 @@ void* Chunk::allocate(Database *db, size_t size, DbRetVal *status)
             }
         }
     }
-    //releaseChunkMutex(db->procSlot);
+    releaseChunkMutex(db->procSlot);
     return data;
 }
 
@@ -580,7 +582,7 @@ void* Chunk::varSizeFirstFitAllocate(size_t size, int pslot, DbRetVal *rv)
 
     Page *page = ((PageInfo*)firstPage_);
     size_t alignedSize = os::alignLong(size);
-    if ( 0 != getChunkMutex(pslot)) { *rv = ErrLockTimeOut; return NULL; }
+    //if ( 0 != getChunkMutex(pslot)) { *rv = ErrLockTimeOut; return NULL; }
     int pageSize = PAGE_SIZE;
     bool hasSpace=false;
     while(NULL != page)
@@ -598,10 +600,10 @@ void* Chunk::varSizeFirstFitAllocate(size_t size, int pslot, DbRetVal *rv)
                     if( 1 == splitDataBucket(varInfo, alignedSize, pslot, rv))
                     {
                         printDebug(DM_Warning, "Unable to split the data bucket");
-                        releaseChunkMutex(pslot);
+                        //releaseChunkMutex(pslot);
                         return NULL;
                     }
-                    releaseChunkMutex(pslot);
+                    //releaseChunkMutex(pslot);
                     return ((char*)varInfo) + sizeof(VarSizeInfo);
                 }
                 else if (alignedSize == varInfo->size_) {
@@ -610,11 +612,11 @@ void* Chunk::varSizeFirstFitAllocate(size_t size, int pslot, DbRetVal *rv)
                     if(ret !=0) {
                        printDebug(DM_Warning,"Unable to get lock to set isUsed flag.");
                        *rv = ErrLockTimeOut;
-                       releaseChunkMutex(pslot);
+                       //releaseChunkMutex(pslot);
                        return NULL;
                     }
                     printDebug(DM_VarAlloc, "VarSizeFirstFitAllocate returning %x", ((char*)varInfo) +sizeof(VarSizeInfo));
-                    releaseChunkMutex(pslot);
+                    //releaseChunkMutex(pslot);
                     return ((char *) varInfo) + sizeof(VarSizeInfo);
                 }
             }
@@ -628,7 +630,7 @@ void* Chunk::varSizeFirstFitAllocate(size_t size, int pslot, DbRetVal *rv)
       printDebug(DM_VarAlloc, "Chunk:This page does not have free data nodes page:%x", page);
       page = ((PageInfo*) page)->nextPage_;
     }
-    releaseChunkMutex(pslot);
+    //releaseChunkMutex(pslot);
     return NULL;
 }
 
@@ -656,7 +658,7 @@ void Chunk::freeForVarSizeAllocator(Database *db, void *ptr, int pslot)
         if (!found)
         {
              printError(ErrSysFatal,"Page %x not found in page list:Logical error", pageInfo );
-              releaseChunkMutex(pslot);
+             releaseChunkMutex(pslot);
              return ;
         }
          if(curPage_== pageInfo) {curPage_ = prev ; }
@@ -758,12 +760,12 @@ void Chunk::free(Database *db, void *ptr)
         freeForLargeAllocator(ptr, db->procSlot);
         return;
     }
-    /*int ret = getChunkMutex(db->procSlot);
+    int ret = getChunkMutex(db->procSlot);
     if (ret != 0)
     {
         printError(ErrLockTimeOut,"Unable to acquire chunk Mutex");
         return;
-    }*/
+    }
     //unset the used flag
     //*((int*)ptr -1 ) = 0;
     InUse oldValue=1;
@@ -776,7 +778,7 @@ void Chunk::free(Database *db, void *ptr)
     int retVal = Mutex::CASGen(((InUse*)ptr -1), oldValue, 0);
     if(retVal !=0) {
         printError(ErrSysFatal, "Unable to get lock to free for %x", ptr);
-        //releaseChunkMutex(db->procSlot);
+        releaseChunkMutex(db->procSlot);
         return; 
     }
     PageInfo *pageInfo;
@@ -784,7 +786,7 @@ void Chunk::free(Database *db, void *ptr)
     if (NULL == pageInfo)
     {
         printError(ErrSysFatal,"Fatal: pageInfo is NULL", pageInfo );
-        //releaseChunkMutex(db->procSlot);
+        releaseChunkMutex(db->procSlot);
         return;
     }
     //set the pageinfo where this ptr points
@@ -796,7 +798,7 @@ void Chunk::free(Database *db, void *ptr)
         printError(ErrSysFatal, "Unable to get lock to set flags");
     }
     setPageDirty(pageInfo);
-    //releaseChunkMutex(db->procSlot);
+    releaseChunkMutex(db->procSlot);
     return;
 }
 
@@ -969,9 +971,14 @@ int Chunk::totalDirtyPages()
 }
 
 
-int Chunk::initMutex()
+int Chunk::initMutex(int id)
 {
-    return chunkMutex_.init("Chunk");
+    char mutName[IDENTIFIER_LENGTH];
+    if (-1 == id)
+       sprintf(mutName, "Chunk");
+    else
+       sprintf(mutName, "Chunk:%d",id);
+    return chunkMutex_.init(mutName);
 }
 int Chunk::getChunkMutex(int procSlot)
 {
@@ -1049,7 +1056,7 @@ int Chunk::createDataBucket(Page *page, size_t totalSize, size_t needSize, int p
 }
 void Chunk::setChunkNameForSystemDB(int id)
 {
-                strcpy(chunkName,ChunkName[id]);
+    strcpy(chunkName,ChunkName[id]);
 }
 
 void Chunk::print()

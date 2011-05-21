@@ -43,19 +43,23 @@ int Mutex::init()
     pthread_mutex_init(&mutex_, &attr);
     pthread_mutexattr_destroy(&attr);
 #endif
+    pSlot = -1;
     return 0;
 }
 int Mutex::init(char *mname)
 {
     init();
-    if (strlen(mname) > 19 ) return 0;
+    if (strlen(mname) > 19 ) {
+       printError(ErrNote, "Mutex name cannot exceeed 20 characters\n");
+       return 0;
+    }
     strcpy(name, mname);
     return 0;
 
 }
 
 #if defined(sparc) || defined(i686) || defined (x86_64)
-int TSL(Lock *lock)
+int TSL(volatile Lock *lock)
 {
 /*
     if (lock == 0) {
@@ -130,7 +134,10 @@ int Mutex::tryShareLock(int tryTimes, int waitmsecs,bool share, bool upgrade)
     }else if ((oldValue == 1 && upgrade ) || ( !share && oldValue == 0) ){
         ret = CAS((int*)&lock, oldValue, -1);
     }else { ret = 1;} 
-    if (0 == ret) return 0; 
+    if (0 == ret) {
+       printDebug(DM_Mutex, "tryShareLock:%x %s acquired lock:%d", this, name,lock);
+       return 0; 
+    }
     int tries = 1;
     struct timeval timeout;
     timeout.tv_sec = 0;
@@ -145,7 +152,7 @@ int Mutex::tryShareLock(int tryTimes, int waitmsecs,bool share, bool upgrade)
     while (tries < tryTimes)
     {
 #if defined(sparc) || defined(i686) || defined (x86_64)
-    if (Conf::config.getNoOfProcessors() >1) {
+    //if (Conf::config.getNoOfProcessors() >1) {
         cnt=0;
         while(true) {
             oldValue = (int)lock;
@@ -155,11 +162,14 @@ int Mutex::tryShareLock(int tryTimes, int waitmsecs,bool share, bool upgrade)
                 ret = CAS((int*)&lock, oldValue, -1);
             }else { ret = 1; }
          
-            if(0 == ret ) return 0;
+            if (0 == ret) {
+                printDebug(DM_Mutex, "tryShareLock:%x %s acquired times:%d lock:%d", this, name, cnt, lock);
+                return 0; 
+            }
             cnt++;
             if (cnt == tryTimes * 100) break;
          }
-    }else {
+    /*}else {
             oldValue = (int)lock;
             if (oldValue >= 0  && share) {
                 ret = CAS((int*)&lock, oldValue, oldValue+1);
@@ -167,7 +177,7 @@ int Mutex::tryShareLock(int tryTimes, int waitmsecs,bool share, bool upgrade)
                 ret = CAS((int*)&lock, oldValue, -1);
             } else { ret =1;}
             if(ret==0) return 0;
-    }
+    }*/
 #else
     ret = pthread_mutex_trylock(&mutex_);
     if (EBUSY  != ret) return 0;
@@ -176,7 +186,7 @@ int Mutex::tryShareLock(int tryTimes, int waitmsecs,bool share, bool upgrade)
         os::select(0, 0, 0, 0, &timeout);
         tries++;
     }
-    //printError(ErrLockTimeOut, "Unable to get the mutex %s, tried %d times", name,tries);
+    printDebug(DM_Mutex, "Unable to get the mutex %x %s, tried %d times", this, name,tries);
     return 1;
 }
 
@@ -184,6 +194,7 @@ int Mutex::tryLock(int tryTimes, int waitmsecs)
 {
     if (TSL(&lock) == 0) 
     {
+        printDebug(DM_Mutex, "tryLock:%x %s acquired lock:%d", this, name, lock);
         return 0; 
     }
     int tries = 1;
@@ -206,13 +217,17 @@ int Mutex::tryLock(int tryTimes, int waitmsecs)
         while(true) {
             if (TSL(&lock) == 0) 
             {
+               printDebug(DM_Mutex, "tryLock:%x %s acquired times:%d lock:%d", this, name, cnt, lock);
                return 0; 
             }
             cnt++;
             if (cnt == tryTimes * 100) break;
         }
     }else {
-        if (TSL(&lock) == 0)  return 0; 
+        if (TSL(&lock) == 0) {
+            printDebug(DM_Mutex, "tryLock:%x %s acquired times:%d lock:%d", this, name, cnt, lock);
+            return 0; 
+        }
     }
 #else
     ret = pthread_mutex_trylock(&mutex_);
@@ -222,7 +237,7 @@ int Mutex::tryLock(int tryTimes, int waitmsecs)
         os::select(0, 0, 0, 0, &timeout);
         tries++;
     }
-    //printError(ErrLockTimeOut, "Unable to get the mutex %s, val:%d tried %d times", name, lock, tries);
+    printDebug(DM_Mutex, "Unable to get the mutex %x %s, val:%d tried %d times", this, name, lock, tries);
     return 1;
 }
 
@@ -233,7 +248,7 @@ int Mutex::getLock(int procSlot, bool procAccount)
     ret = tryLock();
     //add it to the has_ of the ThreadInfo
     if (ret ==0 && procAccount) ProcessManager::addMutex(this, procSlot);
-
+    pSlot = procSlot;
     return ret;
 #else
     ret = pthread_mutex_lock(&mutex_);
@@ -259,6 +274,8 @@ int Mutex::releaseLock(int procSlot, bool procAccount)
 #else
     ret = pthread_mutex_unlock(&mutex_);
 #endif
+    printDebug(DM_Mutex, "releaseLock:%x %s lock:%d", this, name, lock);
+    pSlot = -1;
     if (ret == 0 && procAccount) 
     {
         ProcessManager::removeMutex(this, procSlot);
@@ -275,6 +292,7 @@ int Mutex::getShareLock(int procSlot, bool procAccount)
     ret = tryShareLock(0,0,true,false);
     //add it to the has_ of the ThreadInfo
     if (ret ==0 && procAccount) ProcessManager::addMutex(this, procSlot);
+    pSlot = procSlot;
     return ret;
 #else
     ret = pthread_mutex_lock(&mutex_);
@@ -291,6 +309,7 @@ int Mutex::getExclusiveLock(int procSlot, bool procAccount, bool upgrade)
     ret = tryShareLock(0,0,false,upgrade);
     //add it to the has_ of the ThreadInfo
     if (ret ==0 && procAccount) ProcessManager::addMutex(this, procSlot);
+    pSlot = procSlot;
     return ret;
 #else
     ret = pthread_mutex_lock(&mutex_);
@@ -338,6 +357,7 @@ int Mutex::releaseShareLock(int procSlot, bool procAccount)
 #else
     ret = pthread_mutex_unlock(&mutex_);
 #endif
+    pSlot = -1;
     if (ret == 0 && procAccount )
     {
         ProcessManager::removeMutex(this, procSlot);
@@ -374,7 +394,7 @@ int Mutex::recoverMutex()
     return ret;
 }
 
-int Mutex::CASGen(void *ptr, InUse oldVal, InUse newVal)
+int Mutex::CASGen(volatile void *ptr, InUse oldVal, InUse newVal)
 {
 #if defined(__sparcv9)
     CASL((InUse *) ptr, oldVal, newVal);
@@ -385,7 +405,7 @@ int Mutex::CASGen(void *ptr, InUse oldVal, InUse newVal)
 #endif
 }
 
-int Mutex::CASL(long *ptr, long oldVal, long newVal)
+int Mutex::CASL(volatile long *ptr, long oldVal, long newVal)
 {
 #ifdef SOLARIS
 #if defined(__sparcv9) || defined(x86_64) || defined (__x86_64)
@@ -424,7 +444,7 @@ int Mutex::CASL(long *ptr, long oldVal, long newVal)
 	return CAS((int*)ptr, (int)oldVal, (int)newVal);
 #endif
 }
-int Mutex::CAS(int *ptr, int oldVal, int newVal)
+int Mutex::CAS(volatile int *ptr, int oldVal, int newVal)
 {
 #if defined(LINUX) || defined (FreeBSD)
         unsigned char ret;

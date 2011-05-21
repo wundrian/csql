@@ -306,12 +306,13 @@ class DllExport UniqueID
    int startID;
    Mutex mutex;
    public:
-   UniqueID() { startID = 1; mutex.init(); }
+   UniqueID() { startID = 1; mutex.init("UID"); }
 
 
    void setID(int id)
    {
-        startID = id;mutex.init();
+      startID = id;
+      mutex.init("UID");
    }
 
 
@@ -322,6 +323,12 @@ class DllExport UniqueID
       startID++;
       mutex.releaseLock(-1, false); 
       return startID;
+   }
+   void print()
+   {
+       printf("<UID value=%d>\n", startID);
+       mutex.print();
+       printf("</UID>\n");
    }
 };
 

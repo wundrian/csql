@@ -12,6 +12,7 @@
 #define DEBUG 1
 extern int DebugDM_Alloc;
 extern int DebugDM_VarAlloc;
+extern int DebugDM_Mutex;
 extern int DebugDM_Lock;
 extern int DebugDM_Transaction;
 extern int DebugDM_UndoLog;
@@ -47,6 +48,7 @@ enum DebugModule
 {
     DM_Alloc = 0,
     DM_VarAlloc,
+    DM_Mutex,
     DM_Lock,
     DM_Transaction,
     DM_UndoLog,
@@ -72,7 +74,7 @@ enum DebugModule
 };
 static char moduleNames[][20] =
 {
-    "Alloc", "VariableAlloc", "Lock", "Trans", "UndoLog", "RedoLog", "Recovery", "Index",
+    "Alloc", "VariableAlloc", "Mutex", "Lock", "Trans", "UndoLog", "RedoLog", "Recovery", "Index",
     "HashIndex", "TreeIndex", "TrieIndex", "SysDb", "Db", "Table", "Predicate", "Iter", 
     "Procmgmt", "Network", "Gateway", "Adapter", "SqlLog",
     "CacheServer", "TEST", "Warning"

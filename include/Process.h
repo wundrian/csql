@@ -68,7 +68,6 @@ class DllExport ProcessManager
     static caddr_t sysAddr;
     static caddr_t usrAddr;
     static Database *systemDatabase;
-    static List hasLockList;
 
     //ThreadInfo *thrInfo;
     ProcessManager() { }

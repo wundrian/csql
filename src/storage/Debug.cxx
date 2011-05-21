@@ -18,6 +18,7 @@
 
 int DebugDM_Alloc = 0;
 int DebugDM_VarAlloc = 0;
+int DebugDM_Mutex = 0;
 int DebugDM_Lock = 0;
 int DebugDM_Transaction = 0;
 int DebugDM_UndoLog = 0;
@@ -101,6 +102,7 @@ int printDebug1(int module, char *fname, int lno, char *format, ...)
   switch(module) {
      case DM_Alloc: { if (!DebugDM_Alloc) return 1; break; }
      case DM_VarAlloc: { if (!DebugDM_VarAlloc) return 1; break; }
+     case DM_Mutex: { if (!DebugDM_Mutex) return 1; break; }
      case DM_Lock: { if (!DebugDM_Lock) return 1; break; }
      case DM_Transaction: { if (!DebugDM_Transaction) return 1; break; }
      case DM_UndoLog: { if (!DebugDM_UndoLog) return 1; break; }

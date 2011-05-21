@@ -50,14 +50,36 @@ class LockHashNode
     }
 };
 
-class LockListIter
+class LockTable
 {
-    LockHashNode *iter;
+    Bucket *lockBuckets;
+    Database *systemDatabase_;
+
+    //Each thread contains its own DatabaseManager object which inturn contains
+    //LockManager and which inturn contains LockTable. So this is thread 
+    //specific and contains cached current bucket for which lock needs to be 
+    //obtained or released
+    Bucket *curBucket;
+
     public:
-    LockListIter(){}
-    LockListIter(LockHashNode *head) { iter = head;}
-    LockHashNode* next();
-    friend class LockList;
+    LockHashNode* allocLockNode(LockInfo &info, void *tuple, DbRetVal *rv);
+    DbRetVal deallocLockNode(LockHashNode *head, Bucket *bucket);
+    void deallocLockNode(LockHashNode *head);
+    DbRetVal addNewLockNode(void *tuple, Transaction **trans,
+                                   LockInfo &info);
+    DbRetVal releaseLock(LockHashNode *node);
+    LockHashNode* getLockNode(void *tuple, DbRetVal &rv, bool takeLock=true);
+
+    LockTable();
+    ~LockTable();
+    void setDb(Database *sysDb);
+    Bucket* getLockBucket(void *tuple);
+
+    DbRetVal getBucketMutex();
+    void releaseBucketMutex();
+    void printUsageStatistics();
+    void printDebugInfo();
+    void printMutexInfo();
 };
 
 class TransHasNode
@@ -76,13 +98,23 @@ class DllExport LockManager
 {
     public:
     Database *systemDatabase_;
-    Bucket *lockBuckets;
+    LockTable lockTable;
 
     private:
     LockHashNode* allocLockNode(LockInfo &info, void *tuple, DbRetVal *rv);
     DbRetVal deallocLockNode(LockHashNode *head, Bucket *bucket);
     void deallocLockNode(LockHashNode *head);
     Bucket* getLockBucket(void *tuple);
+    DbRetVal createFirstNodeInBucket(void *tuple, Transaction **trans, 
+                                     Bucket *bucket, LockInfo &info);
+    DbRetVal addNewNodeToBucket(void *tuple, Transaction **trans, 
+                                     Bucket *bucket, LockInfo &info);
+    DbRetVal retryExclusiveLock(Transaction **trans, 
+                                     LockHashNode *node);
+    DbRetVal takeXLockNotInUse(Transaction **trans, LockHashNode *node);
+    bool takeXLockOneReader(Transaction **trans, LockHashNode *node);
+    bool takeXLockOneWriter(Transaction **trans, LockHashNode *node);
+    DbRetVal releaseLock(Bucket *bucket, LockHashNode *node);
 
     public:
 
@@ -94,6 +126,7 @@ class DllExport LockManager
     DbRetVal getBucketMutex(Bucket *bucket, int procslot);
     void printUsageStatistics();
     void printDebugInfo();
+    void printMutexInfo();
 };
 
 

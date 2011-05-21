@@ -5,7 +5,7 @@ libcsql_la_LDFLAGS = -avoid-version -module
 libcsql_la_SOURCES = Util.cxx FixedHeapAllocator.cxx VarHeapAllocator.cxx Config.cxx HashMap.cxx \
 	BucketIter.cxx TreeIter.cxx BucketList.cxx CatalogTables.cxx Chunk.cxx TableConfig.cxx\
 	ChunkIterator.cxx Condition.cxx Connection.cxx Database.cxx DatabaseManagerImpl.cxx DataType.cxx \
-	Debug.cxx FieldList.cxx Index.cxx LockListIter.cxx LockManager.cxx Logger.cxx Mutex.cxx os.cxx \
+	Debug.cxx FieldList.cxx Index.cxx LockManager.cxx LockTable.cxx Logger.cxx Mutex.cxx os.cxx \
 	PageInfo.cxx PredicateImpl.cxx SessionImpl.cxx TableDef.cxx TableImpl.cxx Transaction.cxx \
 	TransactionManager.cxx TupleIterator.cxx UserManagerImpl.cxx HashIndex.cxx TreeIndex.cxx TrieIndex.cxx \
 	Process.cxx AggTableImpl.cxx JoinTableImpl.cxx Expression.cxx OrderTableImpl.cxx OrderByTree.cxx

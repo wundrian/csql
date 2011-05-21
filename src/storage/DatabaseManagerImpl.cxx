@@ -417,7 +417,9 @@ Chunk* DatabaseManagerImpl::createUserChunk(size_t size)
          return NULL;
     }
     Chunk *chunkInfo = (Chunk*)ptr;
-    chunkInfo->initMutex();
+    int id = db_->getUniqueIDForChunk();
+    db_->incrementChunk();
+    chunkInfo->initMutex(id);
     if (0 != size) chunkInfo->setSize(size);
     if (chunkInfo->allocSize_ > PAGE_SIZE)
         chunkInfo->curPage_ = db_->getFreePage(chunkInfo->allocSize_);
@@ -457,9 +459,7 @@ Chunk* DatabaseManagerImpl::createUserChunk(size_t size)
     else
         chunkInfo->setAllocType(FixedSizeAllocator);
 
-    //TODO::Generate chunkid::use tableid
-    chunkInfo->setChunkID(db_->getUniqueIDForChunk());
-    db_->incrementChunk();
+    chunkInfo->setChunkID(id);
     chunkInfo->setPageDirty(firstPageInfo);
     printDebug(DM_Database, "Creating new User chunk chunkID:%d size: %d firstPage:%x",
                                -1, chunkInfo->allocSize_, firstPageInfo);
@@ -723,7 +723,8 @@ DbRetVal DatabaseManagerImpl::dropTable(const char *name)
         systemDatabase_->releaseCheckpointMutex();
         return ErrSysInternal;
     }
-    rv = lMgr_->getExclusiveLock(chunk, NULL);
+    Transaction **trans = ProcessManager::getThreadTransAddr(systemDatabase_->procSlot);
+    rv = lMgr_->getExclusiveLock(chunk, trans);
     if (rv !=OK)
     {
         systemDatabase_->releaseCheckpointMutex();
@@ -1569,10 +1570,11 @@ DbRetVal DatabaseManagerImpl::removeIndexChunks(void* chunk, void* hchunk, Index
 void DatabaseManagerImpl::initHashBuckets(Bucket *buck, int bucketSize)
 {
     os::memset((void*)buck, 0, bucketSize * sizeof(Bucket));
-
+    char mutName[IDENTIFIER_LENGTH];
     for (int i=0; i < bucketSize ; i++)
     {
-        buck[i].mutex_.init("Bucket");
+        sprintf(mutName, "BKT:%d",i);
+        buck[i].mutex_.init(mutName);
     }
     return;
 }
@@ -1892,9 +1894,87 @@ void DatabaseManagerImpl::printDebugProcInfo()
 {
     pMgr_->printDebugInfo();
 }
+void DatabaseManagerImpl::printDebugMutexInfo()
+{
+    Database *db = sysDb();
+    db->printDebugMutexInfo();
+    Chunk *chunk;
+    int id=1;
+    printf("<Chunk Mutexes>\n");
+    chunk=db->getSystemDatabaseChunk(UserChunkTableId);
+    while(id<MAX_CHUNKS)
+    {
+       chunk=db->getSystemDatabaseChunk(id);
+       if((chunk->getChunkID())!=0){
+          chunk->printMutexInfo();
+       }
+       id++;
+    }
+    chunk=db->getSystemDatabaseChunk(UserChunkTableId);
+    size_t size=chunk->getSize();
+    int noOfDataNodes=os::floor((PAGE_SIZE - sizeof(PageInfo))/size);
+    Page* page=chunk->getFirstPage();
+    int i=0;
+    Chunk *chk;
+    while(page)
+    {
+        char *data = ((char*)page) + sizeof(PageInfo);
+        for (i = 0; i< noOfDataNodes; i++)
+        {
+            if (*((InUse*)data) == 1)
+            {
+                chk=(Chunk*)((InUse*)data+1);
+                chk->printMutexInfo();
+            }
+            data = data + size;
+        }
+        page = (PageInfo*)(((PageInfo*)page)->nextPage_) ;
+    }
+    printf("</Chunk Mutexes>\n");
+    lMgr_->printMutexInfo();
+}
 void DatabaseManagerImpl::printDebugChunkInfo()
 {
-    printf("<NotYetImplemented> </NotYetImplemented>\n");
+    Database *db = sysDb();
+    Chunk *chunk;
+    int id=1;
+    printf("<Chunk information>\n");
+    printf("  <System Chunk >\n");
+    chunk=db->getSystemDatabaseChunk(UserChunkTableId);
+    chunk->print();
+    while(id<MAX_CHUNKS)
+    {
+       chunk=db->getSystemDatabaseChunk(id);
+       if((chunk->getChunkID())!=0){
+          chunk->print();
+       }
+       id++;
+    }
+    printf("  </System Chunk >\n");
+    printf("  <User Chunk >\n");
+    chunk=db->getSystemDatabaseChunk(UserChunkTableId);
+    size_t size=chunk->getSize();
+    int noOfDataNodes=os::floor((PAGE_SIZE - sizeof(PageInfo))/size);
+    Page* page=chunk->getFirstPage();
+    int i=0;
+    Chunk *chk;
+    while(page)
+    {
+        char *data = ((char*)page) + sizeof(PageInfo);
+        for (i = 0; i< noOfDataNodes; i++)
+        {
+            if (*((InUse*)data) == 1)
+            {
+                chk=(Chunk*)((InUse*)data+1);
+                chk->print();
+            }
+            data = data + size;
+        }
+        page = (PageInfo*)(((PageInfo*)page)->nextPage_) ;
+    }
+    printf("  </User Chunk >\n");
+    printf("</Chunk information>\n");
+    return;
 }
 ChunkIterator DatabaseManagerImpl::getSystemTableIterator(CatalogTableID id)
 {

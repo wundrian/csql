@@ -105,8 +105,7 @@ DbRetVal TreeIndex::insertLogicalUndoLog(Database *sysdb, void *data)
             delete info;
             return rc;
         }
-        tnode->mutex_.init();
-        strcpy(tnode->mutex_.name, "Tree");
+        tnode->mutex_.init("TNODE-R");
         tnode->min_ = tUndoInfo->tuple_;
         tnode->max_ = tUndoInfo->tuple_;
         tnode->noElements_ =1;
@@ -127,8 +126,7 @@ DbRetVal TreeIndex::insertLogicalUndoLog(Database *sysdb, void *data)
             delete info;
             return rc;
         }
-        ftnode->mutex_.init();
-        strcpy(ftnode->mutex_.name, "I-Tree");
+        ftnode->mutex_.init("TNODE-I");
         ftnode->min_= NULL;
         ftnode->max_ = NULL;
         ftnode->noElements_ =1;
@@ -183,8 +181,7 @@ DbRetVal TreeIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
             printError(rc, "Unable to allocate tree node");
             return rc;
         }
-        tnode->mutex_.init();
-        strcpy(tnode->mutex_.name, "Tree");
+        tnode->mutex_.init("TNODE-R");
         tnode->min_ = tuple;
         tnode->max_ = tuple;
         tnode->noElements_ =1;
@@ -203,8 +200,7 @@ DbRetVal TreeIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
             chunk->free(tbl->db_, tnode);
             return rc;
         }
-        ftnode->mutex_.init();
-        strcpy(ftnode->mutex_.name, "I-Tree");
+        ftnode->mutex_.init("TNODE-I");
         ftnode->min_= NULL;
         ftnode->max_ = NULL;
         ftnode->noElements_ =1;
@@ -419,8 +415,7 @@ DbRetVal TreeNode::insertNodeIntoFirstLevel(Database * db, IndexInfo * indInfo, 
                  tempNode->mutex_.releaseShareLock(db->procSlot);
                  return rv;
             }
-            ftnode->mutex_.init();
-            strcpy(ftnode->mutex_.name, "I-Tree");
+            ftnode->mutex_.init("TNODE-I");
             ftnode->min_= NULL;
             ftnode->max_ = NULL;
             ftnode->noElements_ =1;
@@ -1030,8 +1025,7 @@ DbRetVal TreeNode::insert(Database *db,IndexInfo *indInfo,void *indexPtr,void *t
             printDebug(DM_TreeIndex, "Exit TreeNode firstlevel allocate fail");
             return rv;
         }
-        ftnode->mutex_.init();
-        strcpy(ftnode->mutex_.name, "I-Tree");
+        ftnode->mutex_.init("TNODE-I");
         ftnode->min_= NULL;
         ftnode->max_ = NULL;
         ftnode->noElements_ =1;

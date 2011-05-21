@@ -96,7 +96,15 @@ void Database::setHashIndexChunk(Chunk *ch)
     metaData_->hashIndexChunk_ = ch;
 }
 
-
+void Database::printDebugMutexInfo()
+{
+   metaData_->dbAllocMutex_.print();
+   metaData_->ckptMutex_.print();
+   metaData_->dbTransTableMutex_.print();
+   metaData_->dbProcTableMutex_.print();
+   metaData_->dbPrepareStmtMutex_.print();
+   metaData_->chunkUniqueID_.print();
+}
 int Database::initAllocDatabaseMutex()
 {
     return metaData_->dbAllocMutex_.init("allocdb");
@@ -469,6 +477,7 @@ DbRetVal Database::createSystemDatabaseChunk(AllocType type, size_t size, int id
     firstPageInfo->setFirstPageAsUsed();
     chunk->setChunkID(id);
     chunk->setAllocType(type);
+    chunk->initMutex(id);
     printDebug(DM_Database, "Creating System Database Chunk:%d Size:%d",id, chunk->allocSize_);
     if (chunk->allocSize_ > PAGE_SIZE)
     {

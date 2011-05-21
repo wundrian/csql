@@ -139,6 +139,7 @@ class DllExport DatabaseManagerImpl : public DatabaseManager
     void printDebugTransInfo();
     void printDebugChunkInfo();
     void printDebugProcInfo();
+    void printDebugMutexInfo();
     int getNoOfPagesForTable(char *tblName);
     DbRetVal loadRecords(char *tblName, char *buffer);
     DbRetVal pasteRecords(char *tblName, void *buffer);

@@ -157,6 +157,7 @@ class DllExport Database
     Page* getFreePage(size_t size);
 
     void printStatistics();
+    void printDebugMutexInfo();
 
     int initAllocDatabaseMutex();
     DbRetVal getAllocDatabaseMutex(bool procAccount = true);

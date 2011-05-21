@@ -126,6 +126,7 @@ class DllExport Transaction
     DbRetVal applyUndoLogs(Database *sysdb);
     int noOfUndoLogs();
     void printDebugInfo(Database *sysdb);
+    void printTotalNodes();
 
     private:
     DbRetVal handleVarcharUndoInsert(Database *sysdb, char *data);

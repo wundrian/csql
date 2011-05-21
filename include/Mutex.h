@@ -12,12 +12,13 @@ class DllExport Mutex
 {
 
     #if defined(sparc) || defined(i686) || defined (x86_64)
-    Lock lock;
+    volatile Lock lock;
     #else
     pthread_mutex_t mutex_;
     #endif
     public:
     char name[20];
+    int pSlot;
     Mutex();
     int init();
     int init(char *name);
@@ -30,12 +31,12 @@ class DllExport Mutex
     int releaseShareLock(int procSlot, bool procAccount=true);
     int destroy();
     int recoverMutex();
-    static int CASGen(void *ptr, InUse oldVal, InUse newVal);
-    static int CASL(long *ptr, long oldVal, long newVal);
-    static int CAS(int *ptr, int oldVal, int newVal);
+    static int CASGen(volatile void *ptr, InUse oldVal, InUse newVal);
+    static int CASL(volatile long *ptr, long oldVal, long newVal);
+    static int CAS(volatile int *ptr, int oldVal, int newVal);
     int getLockVal(){ return lock; }
     void print() {
-        printf("Mutex: %d %s\n", lock, name);
+        printf("<MUTEX name=%s lock=%d pslot=%d> </MUTEX>\n", name, lock,pSlot);
     }
 };
 

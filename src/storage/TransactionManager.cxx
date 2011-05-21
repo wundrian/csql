@@ -83,6 +83,7 @@ DbRetVal TransactionManager::startTransaction(LockManager *lMgr, IsolationLevel 
     Transaction *trans = ProcessManager::getThreadTransaction(sysdb->procSlot);
     if (NULL != trans)
     {
+        trans->printTotalNodes();
         // 
         if (trans->status_ != TransReserved) return ErrAlready;
         else if (trans->status_ == TransReserved) 
@@ -134,6 +135,7 @@ DbRetVal TransactionManager::startTransaction(LockManager *lMgr, IsolationLevel 
     trans->isoLevel_ = level;
     ProcessManager::setThreadTransaction(trans, sysdb->procSlot);
     sysdb->releaseTransTableMutex();
+    //trans->printTotalNodes();
     logFinest(Conf::logger, "Transaction Start:Using :%x", trans);
     return OK;
 }
@@ -142,7 +144,6 @@ void TransactionManager::setFirstTrans(Transaction *trans)
 {
     firstTrans = trans;
 }
-
 
 DbRetVal TransactionManager::commit(LockManager *lockManager)
 {
