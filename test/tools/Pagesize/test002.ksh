@@ -1,8 +1,8 @@
 #!/bin/ksh
 # Checking page size
 # Increase PAGE_SIZE 10 times of the default (i.e 10 KB)
-# Set MAX_SYS_DB_SIZE=31457280 (30 MB)
-# Set MAX_DB_SIZE=314572800 (300 MB)
+# Set MAX_SYS_DB_SIZE=33554432 (30 MB)
+# Set MAX_DB_SIZE=33554432 (300 MB)
 # check all DDL Operations on bigger tables taking recordsize more than 1k
 # DDL (create table,create index,drop table, drop index)
 #
@@ -20,8 +20,8 @@ cp -f $REL_PATH/csql.conf /tmp
 echo SYS_DB_KEY=4444 >>/tmp/csql.conf
 echo USER_DB_KEY=6666 >>/tmp/csql.conf
 echo PAGE_SIZE=81920 >>/tmp/csql.conf
-echo MAX_SYS_DB_SIZE=31457280 >>/tmp/csql.conf
-echo MAX_DB_SIZE=314572800 >>/tmp/csql.conf
+echo MAX_SYS_DB_SIZE=33554432 >>/tmp/csql.conf
+echo MAX_DB_SIZE=33554432 >>/tmp/csql.conf
 
 export CSQL_CONFIG_FILE=/tmp/csql.conf
 $CSQL_INSTALL_ROOT/bin/csqlserver >/dev/null 2>&1 &

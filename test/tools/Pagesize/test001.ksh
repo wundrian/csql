@@ -2,7 +2,7 @@
 # Checking page size
 # Increase PAGE_SIZE 2 times of the default
 # Set MAX_SYS_DB_SIZE=10485760
-# Set MAX_DB_SIZE=104857600
+# Set MAX_DB_SIZE=33554432
 # check all DDL Operations on bigger tables taking recordsize more than 1k
 # DDL (create table,create index,drop table, drop index)
 #
@@ -21,7 +21,7 @@ echo SYS_DB_KEY=4444 >>/tmp/csql.conf
 echo USER_DB_KEY=6666 >>/tmp/csql.conf
 echo PAGE_SIZE=16384 >>/tmp/csql.conf
 echo MAX_SYS_DB_SIZE=10485760 >>/tmp/csql.conf
-echo MAX_DB_SIZE=104857600 >>/tmp/csql.conf
+echo MAX_DB_SIZE=33554432 >>/tmp/csql.conf
 
 export CSQL_CONFIG_FILE=/tmp/csql.conf
 $CSQL_INSTALL_ROOT/bin/csqlserver >/dev/null 2>&1 &
