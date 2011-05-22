@@ -21,19 +21,19 @@ echo COMMIT;
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > UserChunkTableId </ChunkName> 
                 <TotalDataNodes> 3 </TotalDataNodes> 
-                <SizeOfDataNodes> 112 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 116 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 1 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > LockTableHashBucketId </ChunkName> 
                 <TotalDataNodes> 1 </TotalDataNodes> 
-                <SizeOfDataNodes> 57348 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 65540 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 2 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > LockTableMutexId </ChunkName> 
                 <TotalDataNodes> 0 </TotalDataNodes> 
-                <SizeOfDataNodes> 49156 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 57348 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 3 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
@@ -119,7 +119,7 @@ echo COMMIT;
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > idx1 </ChunkName> 
                 <TotalDataNodes> 1 </TotalDataNodes> 
-                <SizeOfDataNodes> 28256 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 32292 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 103 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
@@ -148,19 +148,19 @@ echo ROLLBACK;
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > UserChunkTableId </ChunkName> 
                 <TotalDataNodes> 3 </TotalDataNodes> 
-                <SizeOfDataNodes> 112 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 116 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 1 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > LockTableHashBucketId </ChunkName> 
                 <TotalDataNodes> 1 </TotalDataNodes> 
-                <SizeOfDataNodes> 57348 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 65540 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 2 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > LockTableMutexId </ChunkName> 
                 <TotalDataNodes> 0 </TotalDataNodes> 
-                <SizeOfDataNodes> 49156 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 57348 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 3 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
@@ -246,7 +246,7 @@ echo ROLLBACK;
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > idx1 </ChunkName> 
                 <TotalDataNodes> 1 </TotalDataNodes> 
-                <SizeOfDataNodes> 28256 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 32292 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 103 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
