@@ -5,7 +5,7 @@ Case 1: With -d option before table creation:
   <Database Name>  SYSTEMDB </Database Name>
   <Max Size> 1048576 </Max Size>
   <First Page> 17d7c000 </First Page>
-  <Total Pages> 113 </Total Pages>
+  <Total Pages> 111 </Total Pages>
   <Used Normal Pages> 13 </Used Normal Pages>
   <Used Merged Pages> 2 </Used Merged Pages>
   <Chunks Used> 15 </Chunks Used>
@@ -44,19 +44,19 @@ Case 2: With -D chunk option after table creation:
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > UserChunkTableId </ChunkName> 
                 <TotalDataNodes> 4 </TotalDataNodes> 
-                <SizeOfDataNodes> 112 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 116 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 1 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > LockTableHashBucketId </ChunkName> 
                 <TotalDataNodes> 1 </TotalDataNodes> 
-                <SizeOfDataNodes> 57348 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 65540 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 2 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > LockTableMutexId </ChunkName> 
                 <TotalDataNodes> 0 </TotalDataNodes> 
-                <SizeOfDataNodes> 49156 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 57348 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 3 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
@@ -142,7 +142,7 @@ Case 2: With -D chunk option after table creation:
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > t1_idx1_Primary </ChunkName> 
                 <TotalDataNodes> 1 </TotalDataNodes> 
-                <SizeOfDataNodes> 28256 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 32292 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 103 </Chunk Id> 
                 <TotalPages> 10 </TotalPages> 
@@ -151,10 +151,10 @@ Case 2: With -D chunk option after table creation:
                 <SizeOfDataNodes> 16 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 104 </Chunk Id> 
-                <TotalPages> 3 </TotalPages> 
+                <TotalPages> 6 </TotalPages> 
                 <ChunkName >  </ChunkName> 
                 <TotalDataNodes> 6 </TotalDataNodes> 
-                <SizeOfDataNodes> 4088 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 4092 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
   </User Chunk >
 </Chunk information>
@@ -167,19 +167,19 @@ Case 3: With -D chunk  option after record deleted:
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > UserChunkTableId </ChunkName> 
                 <TotalDataNodes> 4 </TotalDataNodes> 
-                <SizeOfDataNodes> 112 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 116 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 1 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > LockTableHashBucketId </ChunkName> 
                 <TotalDataNodes> 1 </TotalDataNodes> 
-                <SizeOfDataNodes> 57348 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 65540 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 2 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > LockTableMutexId </ChunkName> 
                 <TotalDataNodes> 0 </TotalDataNodes> 
-                <SizeOfDataNodes> 49156 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 57348 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 3 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
@@ -265,7 +265,7 @@ Case 3: With -D chunk  option after record deleted:
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > t1_idx1_Primary </ChunkName> 
                 <TotalDataNodes> 1 </TotalDataNodes> 
-                <SizeOfDataNodes> 28256 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 32292 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 103 </Chunk Id> 
                 <TotalPages> 10 </TotalPages> 
@@ -274,10 +274,10 @@ Case 3: With -D chunk  option after record deleted:
                 <SizeOfDataNodes> 16 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 104 </Chunk Id> 
-                <TotalPages> 3 </TotalPages> 
+                <TotalPages> 6 </TotalPages> 
                 <ChunkName >  </ChunkName> 
                 <TotalDataNodes> 3 </TotalDataNodes> 
-                <SizeOfDataNodes> 4088 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 4092 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
   </User Chunk >
 </Chunk information>
@@ -290,19 +290,19 @@ Case 4: With -D chunk  option after compact statement :
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > UserChunkTableId </ChunkName> 
                 <TotalDataNodes> 4 </TotalDataNodes> 
-                <SizeOfDataNodes> 112 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 116 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 1 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > LockTableHashBucketId </ChunkName> 
                 <TotalDataNodes> 1 </TotalDataNodes> 
-                <SizeOfDataNodes> 57348 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 65540 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 2 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > LockTableMutexId </ChunkName> 
                 <TotalDataNodes> 0 </TotalDataNodes> 
-                <SizeOfDataNodes> 49156 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 57348 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 3 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
@@ -388,7 +388,7 @@ Case 4: With -D chunk  option after compact statement :
                 <TotalPages> 1 </TotalPages> 
                 <ChunkName > t1_idx1_Primary </ChunkName> 
                 <TotalDataNodes> 1 </TotalDataNodes> 
-                <SizeOfDataNodes> 28256 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 32292 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 103 </Chunk Id> 
                 <TotalPages> 4 </TotalPages> 
@@ -397,10 +397,10 @@ Case 4: With -D chunk  option after compact statement :
                 <SizeOfDataNodes> 16 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 104 </Chunk Id> 
-                <TotalPages> 2 </TotalPages> 
+                <TotalPages> 4 </TotalPages> 
                 <ChunkName >  </ChunkName> 
                 <TotalDataNodes> 3 </TotalDataNodes> 
-                <SizeOfDataNodes> 4088 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 4092 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
   </User Chunk >
 </Chunk information>

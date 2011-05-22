@@ -4,7 +4,7 @@ Case 1: -d option with no table
   <Database Name>  SYSTEMDB </Database Name>
   <Max Size> 1048576 </Max Size>
   <First Page> 17d7c000 </First Page>
-  <Total Pages> 113 </Total Pages>
+  <Total Pages> 111 </Total Pages>
   <Used Normal Pages> 13 </Used Normal Pages>
   <Used Merged Pages> 2 </Used Merged Pages>
   <Chunks Used> 15 </Chunks Used>
@@ -21,7 +21,7 @@ Case 1: -d option with no table
   </UndoLogs>
 </TransactionTable>
 <LockTable>
-  <TotalBuckets> 2017  </TotalBuckets>
+  <TotalBuckets> 2048  </TotalBuckets>
   <UsedBuckets> 0  </UsedBuckets>
   <TotalLockNodes> 0  </TotalLockNodes>
 </LockTable>
@@ -43,7 +43,7 @@ Case 2: -d option with 1 table
   <Database Name>  SYSTEMDB </Database Name>
   <Max Size> 1048576 </Max Size>
   <First Page> 17d7c000 </First Page>
-  <Total Pages> 113 </Total Pages>
+  <Total Pages> 111 </Total Pages>
   <Used Normal Pages> 13 </Used Normal Pages>
   <Used Merged Pages> 2 </Used Merged Pages>
   <Chunks Used> 15 </Chunks Used>
@@ -60,7 +60,7 @@ Case 2: -d option with 1 table
   </UndoLogs>
 </TransactionTable>
 <LockTable>
-  <TotalBuckets> 2017  </TotalBuckets>
+  <TotalBuckets> 2048  </TotalBuckets>
   <UsedBuckets> 0  </UsedBuckets>
   <TotalLockNodes> 0  </TotalLockNodes>
 </LockTable>
@@ -81,7 +81,7 @@ Case 3: -d option after removing table
   <Database Name>  SYSTEMDB </Database Name>
   <Max Size> 1048576 </Max Size>
   <First Page> 17d7c000 </First Page>
-  <Total Pages> 113 </Total Pages>
+  <Total Pages> 111 </Total Pages>
   <Used Normal Pages> 13 </Used Normal Pages>
   <Used Merged Pages> 2 </Used Merged Pages>
   <Chunks Used> 15 </Chunks Used>
@@ -98,7 +98,7 @@ Case 3: -d option after removing table
   </UndoLogs>
 </TransactionTable>
 <LockTable>
-  <TotalBuckets> 2017  </TotalBuckets>
+  <TotalBuckets> 2048  </TotalBuckets>
   <UsedBuckets> 0  </UsedBuckets>
   <TotalLockNodes> 0  </TotalLockNodes>
 </LockTable>
