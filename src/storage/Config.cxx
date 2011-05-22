@@ -399,7 +399,7 @@ void Config::print()
     printf(" getLockRetries %d\n", getLockRetries());
     printf(" useCache %d\n", useCache());
     printf(" getDSN %s\n", getDSN());
-    printf(" No of rows to Fetch from TDB %d\n", getNoOfRowsToFetchFromTDB());
+    printf(" getNoOfRowsToFetchFromTDB %d\n", getNoOfRowsToFetchFromTDB());
     printf(" getDsConfigFile %s\n",getDsConfigFile());
     printf(" getTableConfigFile %s\n", getTableConfigFile());
     printf(" isTwoWayCache %d\n", useTwoWayCache());
