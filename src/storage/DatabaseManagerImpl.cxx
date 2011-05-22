@@ -1364,7 +1364,21 @@ DbRetVal DatabaseManagerImpl::createTreeIndex(const char *indName, const char *t
         return ErrSysInternal;
     }
     delete[] fptr;
+    rv = createIndexNodeForRecords(tblName, tupleptr, chunk);
+    if (rv != OK)
+    {
+        dropIndex(indName);
+        systemDatabase_->releaseCheckpointMutex();
+        return rv;
+    }
     systemDatabase_->releaseCheckpointMutex();
+    logFinest(Conf::logger, "Creating TreeIndex %s on %s rv:%d",
+                                   indName, tblName, rv);
+    return OK;
+}
+DbRetVal DatabaseManagerImpl::createIndexNodeForRecords(const char* tblName,
+                              void *tupleptr, void *chunk)
+{
     //TODO::if tuples already present in this table, then create tree index '
     //nodes
     TableImpl *tbl = (TableImpl *) openTable(tblName);
@@ -1373,8 +1387,6 @@ DbRetVal DatabaseManagerImpl::createTreeIndex(const char *indName, const char *t
         return ErrSysInternal;
     }
     if (! tbl->numTuples()) {
-        printDebug(DM_Database, "Creating Tree Index Name:%s tblname:%s node size:%x",indName, tblName, nodeSize);
-        logFinest(Conf::logger, "Creating TreeIndex %s on %s with node size %d",indName, tblName, nodeSize);
         closeTable(tbl);
         return OK;
     }
@@ -1389,19 +1401,15 @@ DbRetVal DatabaseManagerImpl::createTreeIndex(const char *indName, const char *t
     void *recPtr = NULL;
     ChunkIterator chIter = ((Chunk *)chunk)->getIterator();
     tbl->setLoading(true);
+    DbRetVal rv = OK;
     while ((recPtr = chIter.nextElement()) != NULL) {
         rv = tbl->insertIndexNode(*tbl->trans, tupleptr, indxInfo, recPtr);
         if (rv == ErrUnique) {
-            dropIndex(indName);
             closeTable(tbl);
             return rv;
         }
     }
     closeTable(tbl);
-    printDebug(DM_Database, "Creating Tree Index Name:%s tblname:%s node size:%x",
-                                   indName, tblName, nodeSize);
-    logFinest(Conf::logger, "Creating TreeIndex %s on %s with node size %d",
-                                   indName, tblName, nodeSize);
     return OK;
 }
 
@@ -1445,8 +1453,9 @@ DbRetVal DatabaseManagerImpl::createTrieIndex(const char *indName, const char *t
     }
     chunkInfo->setChunkName(indName);
     hChunk->setChunkName(indName);
+    void *tupleptr = NULL;
     rv = updateIndexCatalogTables(indName,tptr, fptr, fldList, isUnique,
-                                  chunkInfo, hChunk );
+                                  chunkInfo, hChunk , tupleptr);
     delete[] fptr;
     if (OK != rv) {
         printError(ErrSysInternal, "Catalog table updation failed");
@@ -1455,8 +1464,22 @@ DbRetVal DatabaseManagerImpl::createTrieIndex(const char *indName, const char *t
         systemDatabase_->releaseCheckpointMutex();
         return rv;
     }
+
+    void *chunk = NULL;
+    void *vcchunk = NULL;
+    CatalogTableTABLE cTable(systemDatabase_);
+    cTable.getChunkAndTblPtr(tblName, chunk, tptr, vcchunk);
+    //create index nodes if records already exist in the table
+    rv = createIndexNodeForRecords(tblName, tupleptr, chunk);
+    if (rv != OK)
+    {
+        dropIndex(indName);
+        systemDatabase_->releaseCheckpointMutex();
+        return rv;
+    }
     systemDatabase_->releaseCheckpointMutex();
-    //TODO:: create index nodes if records already exist in the table
+    logFinest(Conf::logger, "Creating TrieIndex %s on %s rv:%d",
+                                   indName, tblName, rv);
     return OK;
 }
 DbRetVal DatabaseManagerImpl::validateIndex(const char *tblName, 
@@ -1507,9 +1530,10 @@ DbRetVal DatabaseManagerImpl::validateIndex(const char *tblName,
 
 DbRetVal DatabaseManagerImpl::updateIndexCatalogTables(const char *indName,
                         void *tptr, char **fptr, FieldNameList &fldList, 
-                        bool isUnique, Chunk* chunkInfo, Chunk* hChunk ) 
+                        bool isUnique, Chunk* chunkInfo, Chunk* hChunk,
+                        void *&tupleptr ) 
 {
-    void *tupleptr = NULL;
+    //void *tupleptr = NULL;
     CatalogTableINDEX cIndex(systemDatabase_);
     DbRetVal rv = cIndex.insert(indName, tptr, fldList.size(), isUnique,
                         chunkInfo, 0, hChunk, tupleptr);

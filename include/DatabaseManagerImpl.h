@@ -89,11 +89,13 @@ class DllExport DatabaseManagerImpl : public DatabaseManager
     DbRetVal writeSchemaFile();
     DbRetVal updateIndexCatalogTables(const char *indName,void *tptr,
                         char **fptr, FieldNameList &fldList, bool isUnique,
-                        Chunk* chunkInfo, Chunk* hChunk);
+                        Chunk* chunkInfo, Chunk* hChunk, void *&tupleptr);
     DbRetVal validateIndex(const char *tblName, FieldNameList &fldList, 
                            void **tptr, char ***fptr, bool isPrimary);
     DbRetVal removeIndexCatalogTables(const char *name, void *&chunk, void *&hchunk, void *&tptr);
     DbRetVal removeIndexChunks(void* chunk, void* hchunk, IndexType iType);
+    DbRetVal createIndexNodeForRecords(const char* tblName, void* tupleptr, 
+                                       void *chunk);
 
     public:
 
