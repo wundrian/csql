@@ -35,7 +35,7 @@ DbRetVal insert(DatabaseManager *dbMgr, int val, bool isSleep)
     ret = table->insertTuple();
     if (ret != 0) { dbMgr->closeTable(table);  return ErrLockTimeOut; }
     printf("Inserted tuple : %d %s\n", val, name);
-    if (isSleep) ::sleep(5);
+    if (isSleep) os::sleep(5);
     dbMgr->closeTable(table);
     return OK;
 }
@@ -62,7 +62,7 @@ DbRetVal select(DatabaseManager *dbMgr, int val, bool isSleep, bool checkUpd=fal
         return ErrUnknown; 
     }
     printf("ThreadID: %lu Tuple %d %s\n", os::getthrid(), id, name);
-    if (isSleep) ::sleep(5);
+    if (isSleep) os::sleep(5);
     dbMgr->closeTable(table);
     if ( checkUpd && strcmp(name, "KANCHANA") != 0)  return ErrUnknown; 
     return OK;
@@ -91,7 +91,7 @@ DbRetVal update(DatabaseManager *dbMgr, int val, bool isSleep, char *updname = N
     if (rv != OK) { dbMgr->closeTable(table); return ErrUnknown; }
     printf("ThreadID: %lu Updated Tuple %d %s\n", os::getthrid(), id, name);
 
-    if (isSleep) ::sleep(2);
+    if (isSleep) os::sleep(5);
     dbMgr->closeTable(table);
     return OK;
 }
@@ -117,7 +117,7 @@ DbRetVal remove(DatabaseManager *dbMgr, int val, bool isSleep)
     if (rv != OK) { dbMgr->closeTable(table); return ErrUnknown; }
     printf("ThreadID: %lu Deleted Tuple %d %s\n", os::getthrid(), id, name);
 
-    if (isSleep) ::sleep(2);
+    if (isSleep) os::sleep(5);
     dbMgr->closeTable(table);
     return OK;
 }

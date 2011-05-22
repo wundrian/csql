@@ -71,6 +71,7 @@ void* runTest1(void *message)
 }
 void* runTest2(void *message)
 {
+    os::sleep(1);
     Connection conn;
     DbRetVal rv = conn.open("root", "manager");
     if (rv != OK) { printf("Error during connection %d\n", rv); return NULL; }
@@ -84,7 +85,7 @@ void* runTest2(void *message)
 
     if (rv != OK) return NULL;
     printf("Thread and pid is %d %lu\n", os::getpid(), os::getthrid());
-
+    os::sleep(1);
     p2RetVal = new int();
     *p2RetVal = 0;
     rv = update(dbMgr, 100, true, "RITHISH");

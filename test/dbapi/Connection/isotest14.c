@@ -63,6 +63,7 @@ void* runTest1(void *message)
 }
 void* runTest2(void *message)
 {
+    os::sleep(1);
     Connection conn;
     DbRetVal rv = conn.open("root", "manager");
     if (rv != OK) { printf("Error during connection %d\n", rv); return NULL; }
