@@ -723,18 +723,21 @@ DbRetVal DatabaseManagerImpl::dropTable(const char *name)
         systemDatabase_->releaseCheckpointMutex();
         return ErrSysInternal;
     }
+    txnMgr()->rollback(lockMgr());
+    txnMgr()->startTransaction(lockMgr(), READ_COMMITTED);
     Transaction **trans = ProcessManager::getThreadTransAddr(systemDatabase_->procSlot);
     rv = lMgr_->getExclusiveLock(chunk, trans);
     if (rv !=OK)
     {
         systemDatabase_->releaseCheckpointMutex();
+        txnMgr()->rollback(lockMgr());
         printError(ErrLockTimeOut, "Unable to acquire exclusive lock on the table\n");
         return rv;
     }
-
     rv = cTable.remove(name, chunk, tptr);
     if (OK != rv) {
         systemDatabase_->releaseCheckpointMutex();
+	txnMgr()->rollback(lockMgr());
         printError(ErrSysInternal, "Unable to update catalog table TABLE");
         return ErrSysInternal;
     }
@@ -745,6 +748,7 @@ DbRetVal DatabaseManagerImpl::dropTable(const char *name)
     rv = cField.remove(tptr);
     if (OK != rv) {
         systemDatabase_->releaseCheckpointMutex();
+	txnMgr()->rollback(lockMgr());
         printError(ErrSysInternal, "Unable to update catalog table FIELD");
         return ErrSysInternal;
     }
@@ -753,6 +757,7 @@ DbRetVal DatabaseManagerImpl::dropTable(const char *name)
     rv = deleteUserChunk((Chunk*)chunk);
     if (OK != rv) {
         systemDatabase_->releaseCheckpointMutex();
+	txnMgr()->rollback(lockMgr());
         printError(rv, "Unable to delete the chunk");
         return rv;
     }
@@ -762,6 +767,7 @@ DbRetVal DatabaseManagerImpl::dropTable(const char *name)
         rv = deleteUserChunk((Chunk*)vcchunk);
         if (OK != rv) {
             systemDatabase_->releaseCheckpointMutex();
+	    txnMgr()->rollback(lockMgr());
             printError(rv, "Unable to delete the chunk");
             return rv;
         }
@@ -783,7 +789,7 @@ DbRetVal DatabaseManagerImpl::dropTable(const char *name)
     systemDatabase_->releaseCheckpointMutex();
     printDebug(DM_Database, "Deleted Table %s" , name);
     logFinest(Conf::logger, "Deleted Table %s" , name);
-    rv = lMgr_->releaseLock(chunk);
+    rv = txnMgr()->commit(lockMgr());
     if (rv !=OK)
     {
         printError(ErrLockTimeOut, "Unable to release exclusive lock on the table\n");
@@ -834,15 +840,14 @@ Table* DatabaseManagerImpl::openTable(const char *name,bool checkpkfk)
     table->setTableInfo(tTuple->tblName_, tTuple->tblID_, tTuple->length_,
                         tTuple->numFlds_, tTuple->numIndexes_, 
                         tTuple->chunkPtr_, tTuple->varcharChunkPtr_);
-    /*rv = table->lock(true); //take shared lock
+    rv = table->lock(true); //take shared lock
     if (rv !=OK)
     {
         printError(ErrLockTimeOut, "Unable to acquire shared lock on the table\n");
         systemDatabase_->releaseAllocDatabaseMutex();
         delete table;
         return NULL;
-    }*/
-
+    }
 
     if (tTuple->numFlds_ <= 32) 
     { 
@@ -1004,7 +1009,7 @@ void DatabaseManagerImpl::closeTable(Table *table)
 {
     printDebug(DM_Database,"Closing table handle: %x", table);
     if (NULL == table) return;
-    //table->unlock();
+    table->unlock();
  /*   TableImpl *fkTbl =NULL;
     ListIterator tblIter = ((TableImpl*)table)->tblList.getIterator();
     tblIter.reset();
