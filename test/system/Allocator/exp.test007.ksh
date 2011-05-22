@@ -21,7 +21,7 @@ Case 1: -d option with no table
   </UndoLogs>
 </TransactionTable>
 <LockTable>
-  <TotalBuckets> 2048  </TotalBuckets>
+  <TotalBuckets> 2017  </TotalBuckets>
   <UsedBuckets> 0  </UsedBuckets>
   <TotalLockNodes> 0  </TotalLockNodes>
 </LockTable>
@@ -359,7 +359,7 @@ Table Dropped
   </UndoLogs>
 </TransactionTable>
 <LockTable>
-  <TotalBuckets> 2048  </TotalBuckets>
+  <TotalBuckets> 2017  </TotalBuckets>
   <UsedBuckets> 0  </UsedBuckets>
   <TotalLockNodes> 0  </TotalLockNodes>
 </LockTable>

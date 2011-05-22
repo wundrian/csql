@@ -21,7 +21,7 @@ Case 1: -d option with no table
   </UndoLogs>
 </TransactionTable>
 <LockTable>
-  <TotalBuckets> 2048  </TotalBuckets>
+  <TotalBuckets> 2017  </TotalBuckets>
   <UsedBuckets> 0  </UsedBuckets>
   <TotalLockNodes> 0  </TotalLockNodes>
 </LockTable>
@@ -61,7 +61,7 @@ Case 2: -d option with 1 table
   </UndoLogs>
 </TransactionTable>
 <LockTable>
-  <TotalBuckets> 2048  </TotalBuckets>
+  <TotalBuckets> 2017  </TotalBuckets>
   <UsedBuckets> 0  </UsedBuckets>
   <TotalLockNodes> 0  </TotalLockNodes>
 </LockTable>
@@ -99,7 +99,7 @@ Case 3: -d option after removing table
   </UndoLogs>
 </TransactionTable>
 <LockTable>
-  <TotalBuckets> 2048  </TotalBuckets>
+  <TotalBuckets> 2017  </TotalBuckets>
   <UsedBuckets> 0  </UsedBuckets>
   <TotalLockNodes> 0  </TotalLockNodes>
 </LockTable>
