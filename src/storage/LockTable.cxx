@@ -27,11 +27,13 @@ LockTable::LockTable()
 LockTable::~LockTable()
 {
 }
+
 void LockTable::setDb(Database *sysDb_)
 {
     systemDatabase_ = sysDb_;
     lockBuckets = systemDatabase_->getLockHashBuckets();
 }
+
 Bucket* LockTable::getLockBucket(void *tuple)
 {
    unsigned long key =(unsigned long)tuple ;
@@ -110,6 +112,7 @@ void LockTable::printDebugInfo()
    printf("</LockTable>\n");
 
 }
+
 LockHashNode* LockTable::getLockNode(void *tuple, DbRetVal &rv, bool takeMutex)
 {
    curBucket = getLockBucket(tuple);
@@ -163,6 +166,7 @@ DbRetVal LockTable::addNewLockNode(void *tuple, Transaction **trans,
    (*trans)->insertIntoHasList(systemDatabase_, newNode);
    return OK;
 }
+
 DbRetVal LockTable::releaseLock(LockHashNode *node)
 {
     DbRetVal rv = OK;
@@ -191,7 +195,7 @@ LockHashNode* LockTable::allocLockNode(LockInfo &info, void *tuple, DbRetVal *rv
 {
     //allocate lock node
     Chunk *chunk = systemDatabase_->getSystemDatabaseChunk(LockTableId);
-    LockHashNode *node = NULL; //(LockHashNode*)chunk->allocate(systemDatabase_, rv);
+    LockHashNode *node = NULL; 
     int tries=0;
     int totalTries = Conf::config.getMutexRetries();
     while (tries < totalTries)
@@ -216,12 +220,14 @@ LockHashNode* LockTable::allocLockNode(LockInfo &info, void *tuple, DbRetVal *rv
     node->next_ = NULL;
     return node;
 }
+
 void LockTable::deallocLockNode(LockHashNode *node)
 {
     Chunk *chunk = systemDatabase_->getSystemDatabaseChunk(LockTableId);
     chunk->free(systemDatabase_, node);
     return;
 }
+
 DbRetVal LockTable::deallocLockNode(LockHashNode *node, Bucket *bucket)
 {
     Chunk *chunk = systemDatabase_->getSystemDatabaseChunk(LockTableId);
@@ -253,6 +259,7 @@ DbRetVal LockTable::deallocLockNode(LockHashNode *node, Bucket *bucket)
     printError(ErrSysFatal, "Fatal: Lock node not found in bucket");
     return ErrSysFatal;
 }
+
 DbRetVal LockTable::getBucketMutex()
 {
     int procSlot = systemDatabase_->procSlot;
@@ -274,6 +281,7 @@ DbRetVal LockTable::getBucketMutex()
     if (tries >= totalTries) return ErrLockTimeOut;
     return OK;
 }
+
 void LockTable::releaseBucketMutex()
 {
     curBucket->mutex_.releaseLock(systemDatabase_->procSlot);

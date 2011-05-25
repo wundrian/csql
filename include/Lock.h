@@ -109,6 +109,8 @@ class DllExport LockManager
                                      Bucket *bucket, LockInfo &info);
     DbRetVal addNewNodeToBucket(void *tuple, Transaction **trans, 
                                      Bucket *bucket, LockInfo &info);
+    DbRetVal retrySharedLock(Transaction **trans, 
+                                     LockHashNode *node);
     DbRetVal retryExclusiveLock(Transaction **trans, 
                                      LockHashNode *node);
     DbRetVal takeXLockNotInUse(Transaction **trans, LockHashNode *node);

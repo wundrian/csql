@@ -28,13 +28,16 @@ void TransactionManager::printUsageStatistics()
     int i=0, usedCount =0, freeCount =0, undoLogCount=0;
     for (; i < Conf::config.getMaxProcs(); i++)
     {
-            if (iter->status_ == TransNotUsed || iter->status_ == TransReserved) freeCount++; 
-            else 
-            { 
-                usedCount++;
-                undoLogCount += iter->noOfUndoLogs();
-            }
-            iter++;
+        if (iter->status_ == TransNotUsed || iter->status_ == TransReserved) 
+        {
+            freeCount++; 
+        }
+        else 
+        { 
+            usedCount++;
+            undoLogCount += iter->noOfUndoLogs();
+        }
+        iter++;
     }
     printf("<TransactionTable>\n");
     printf("  <UsedSlots> %d </UsedSlots>\n", usedCount);
@@ -54,14 +57,17 @@ void TransactionManager::printDebugInfo(Database *sysdb)
     printf("<TransactionTable>\n");
     for (; i < Conf::config.getMaxProcs(); i++)
     {
-            if (iter->status_ == TransNotUsed || iter->status_ == TransReserved) freeCount++; 
-            else 
-            { 
-                usedCount++;
-                undoLogCount += iter->noOfUndoLogs();
-                iter->printDebugInfo(sysdb);
-            }
-            iter++;
+        if (iter->status_ == TransNotUsed || iter->status_ == TransReserved)
+        {
+            freeCount++; 
+        }
+        else 
+        { 
+            usedCount++;
+            undoLogCount += iter->noOfUndoLogs();
+            iter->printDebugInfo(sysdb);
+        }
+        iter++;
     }
 
     printf("  <UsedSlots> %d </UsedSlots>\n", usedCount);
@@ -84,13 +90,13 @@ DbRetVal TransactionManager::startTransaction(LockManager *lMgr, IsolationLevel 
     if (NULL != trans)
     {
         trans->printTotalNodes();
-        // 
         if (trans->status_ != TransReserved) return ErrAlready;
         else if (trans->status_ == TransReserved) 
         { 
             //the previous transaction shall be used again
             //trans->status_ = TransRunning;
-            if ( 0 != Mutex::CASGen(&trans->status_, TransReserved, TransRunning)) {
+            if ( 0 != Mutex::CASGen(&trans->status_, TransReserved, TransRunning)) 
+            {
                 printError(ErrLockTimeOut, "unable to get lock to reuse the transaction");
                 return ErrLockTimeOut;
             }
@@ -216,6 +222,7 @@ DbRetVal TransactionManager::rollback(LockManager *lockManager, Transaction *t)
     logFinest(Conf::logger, "Transaction Aborted:%x", trans);
     return OK;
 }
+
 bool TransactionManager::isTransactionConsistent(Database *sysdb)
 {
     DbRetVal rv = sysdb->getTransTableMutex();

@@ -92,11 +92,11 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
        lockTable.releaseBucketMutex();
        return rv;
    }
-   LockHashNode *cachedLockNode = NULL;
+   LockHashNode *node = NULL;
    if (iter->lInfo_.noOfReaders_ == -1)
    {
        iter->lInfo_.waitReaders_++;
-       cachedLockNode = iter;
+       node = iter;
        (*trans)->updateWaitLock(iter);
        printDebug(DM_Lock, "lock node:%x exclusive locked",iter);
    }
@@ -105,7 +105,7 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
        if(iter->lInfo_.waitWriters_ >0)
        {
            iter->lInfo_.waitReaders_++;
-           cachedLockNode = iter;
+           node = iter;
            (*trans)->updateWaitLock(iter);
            printDebug(DM_Lock, "lock node:%x Writers waiting.",iter);
        }
@@ -128,6 +128,11 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
        return OK;
    }
    lockTable.releaseBucketMutex();
+   return retrySharedLock(trans, node);
+}
+
+DbRetVal LockManager::retrySharedLock(Transaction **trans, LockHashNode *node )
+{
    int tries = 0;
    int ret = 0;
    struct timeval timeout;
@@ -146,22 +151,22 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
            (*trans)->removeWaitLock();
            return ErrLockTimeOut;
        }
-       if (cachedLockNode->lInfo_.noOfReaders_ == 0)
+       if (node->lInfo_.noOfReaders_ == 0)
        {
            //if there are waiters allow then to take the lock
-           if (cachedLockNode->lInfo_.waitWriters_ <0)
+           if (node->lInfo_.waitWriters_ <0)
            {
-               (*trans)->insertIntoHasList(systemDatabase_, cachedLockNode);
-               cachedLockNode->lInfo_.noOfReaders_++;
-               cachedLockNode->lInfo_.waitReaders_--;
+               (*trans)->insertIntoHasList(systemDatabase_, node);
+               node->lInfo_.noOfReaders_++;
+               node->lInfo_.waitReaders_--;
                lockTable.releaseBucketMutex();
                (*trans)->removeWaitLock();
                printDebug(DM_Lock, "LockManager::getSharedLock End");
                return OK;
            }
-       } else if (cachedLockNode->lInfo_.noOfReaders_ == -1)
+       } else if (node->lInfo_.noOfReaders_ == -1)
        {
-           if ((*trans)->findInHasList(systemDatabase_, cachedLockNode))
+           if ((*trans)->findInHasList(systemDatabase_, node))
            {
                lockTable.releaseBucketMutex();
                (*trans)->removeWaitLock();
@@ -171,26 +176,24 @@ DbRetVal LockManager::getSharedLock(void *tuple, Transaction **trans)
        } else
        {
            DbRetVal rv =OK;
-           (*trans)->insertIntoHasList(systemDatabase_, cachedLockNode);
-           cachedLockNode->lInfo_.noOfReaders_++;
-           cachedLockNode->lInfo_.waitReaders_--;
+           (*trans)->insertIntoHasList(systemDatabase_, node);
+           node->lInfo_.noOfReaders_++;
+           node->lInfo_.waitReaders_--;
            lockTable.releaseBucketMutex();
            (*trans)->removeWaitLock();
            printDebug(DM_Lock, "LockManager::getSharedLock End");
            return OK;
        }
-
        lockTable.releaseBucketMutex();
        os::select(0, 0, 0, 0, &timeout);
        tries++;
-       printDebug(DM_Lock, "Trying to lock the lock node:%x iteration:%d",cachedLockNode, tries);
+       printDebug(DM_Lock, "Trying to lock the lock node:%x iteration:%d",node, tries);
    }
    printDebug(DM_Lock, "Mutex is waiting for long time:May be deadlock");
    printDebug(DM_Lock, "LockManager::getSharedLock End");
    printError(ErrLockTimeOut, "Unable to acquire lock for long time.Timed out");
    (*trans)->removeWaitLock();
    return ErrLockTimeOut;
-
 }
 DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
 {
