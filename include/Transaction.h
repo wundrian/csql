@@ -89,6 +89,10 @@ class TreeUndoLogInfo
 };
 class TrieUndoLogInfo:public HashUndoLogInfo
 {
+    public:
+
+    void **bucketPtr_;
+    TrieUndoLogInfo() { bucketPtr_ = NULL; }
 };
 
 class DllExport Transaction

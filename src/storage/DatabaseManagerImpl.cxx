@@ -1811,7 +1811,32 @@ void DatabaseManagerImpl::printTreeIndexNodeInfo(char *name, bool flag)
         if(hchunk) ((TreeNode*) hchunk)->displayAll(offset);
     }
 }
+DbRetVal DatabaseManagerImpl::printIndexDebugInfo(char *name)
+{
+    CatalogTableINDEX cIndex(systemDatabase_);
+    DbRetVal rv = OK;
+    void *chunk = NULL, *hchunk = NULL;
+    void *tptr =NULL;
+    rv = cIndex.get(name, chunk, hchunk, tptr);
+    if (OK != rv) return rv;
+    IndexType iType = CatalogTableINDEX::getType(tptr);
+    if(hashIndex == iType) {
+    }
+    else if (treeIndex == iType) {
+        CINDEX *iptr = (CINDEX*)tptr;
+        TreeNode *start = (TreeNode*) iptr->hashNodeChunk_;
+        start->displayAll(0);
+    }
+    else if (trieIndex == iType) {
+        ChunkIterator citer = CatalogTableINDEX::getIterator(tptr);
+        TrieNode* start = (TrieNode*)citer.nextElement();
+        if(start) TrieIndex::displayAll(start);
+    }
+    else
+        printf("Unknown Index\n");
 
+
+}
 DbRetVal DatabaseManagerImpl::printIndexInfo(char *name)
 {
     CatalogTableINDEX cIndex(systemDatabase_);

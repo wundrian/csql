@@ -168,8 +168,8 @@ class TrieIndex: public Index
     static void computeHashValues(DataType type, void *key, char *in, int length=0);
     static DbRetVal insertLogicalUndoLog(Database *sysdb, void *info);
     static DbRetVal deleteLogicalUndoLog(Database *sysdb, void *info);
-    void displayAll(TrieNode *node, int level =1);
-    void printTrieNode(TrieNode *node, int level);
+    static void displayAll(TrieNode *node, int level =1);
+    static void printTrieNode(TrieNode *node, int level);
     private:
     DbRetVal addToValueList(Database*, void**, Chunk*, IndexInfo*, void*, void*);
     DbRetVal removeFromValueList(Database*, void**, Chunk*, void*, void*);

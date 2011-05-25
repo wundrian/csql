@@ -50,7 +50,7 @@ int main(int argc, char **argv)
     password [0] = '\0';
     int c = 0, opt = 0;
     char name[IDENTIFIER_LENGTH];
-    while ((c = getopt(argc, argv, "u:p:T:I:D:licdsS?")) != EOF) 
+    while ((c = getopt(argc, argv, "u:p:T:I:D:vlicdsS?")) != EOF) 
     {
         switch (c)
         {
@@ -69,6 +69,11 @@ int main(int argc, char **argv)
                          else printf("Use -I IndexName -S\n"); 
                          break;  }//print db usage statistics
             case '?' : { opt = 10; break; } //print help 
+            case 'v' : {
+                           if (opt == 5) opt = 15;
+                           else if (opt == 6) opt=16;
+                           break;
+                       }
             default: opt=1; //list all the tables
 
         }
@@ -251,6 +256,14 @@ int main(int argc, char **argv)
         dbMgr->printTreeIndexNodeInfo(name, true);
     } else if (opt == 12){
         dbMgr->printTreeIndexNodeInfo(name,false);
+    } else if (opt ==15) {
+    } else if (opt ==16) {
+        rv = dbMgr->printIndexDebugInfo(name);
+        if (rv != OK)
+        {
+           printf("  <Index Not Found> %s </Index Not Found>\n", name);
+           ret =1;
+        }
     }
     iter.reset();
     while (iter.hasElement()) delete iter.nextElement();

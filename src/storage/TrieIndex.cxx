@@ -154,9 +154,10 @@ DbRetVal TrieIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     //create logical undo log
     TrieUndoLogInfo hInfo;
     hInfo.metaData_ = tbl->db_->getMetaDataPtr();
-    hInfo.bucket_ = NULL;
+    hInfo.bucketPtr_ = ptr;
     hInfo.tuple_ = tuple;
     hInfo.keyPtr_ = keyPtr;
+    hInfo.hChunk_ = hIdxNodeChunk;
 
     if (!loadFlag) {
         rv = tr->appendLogicalTrieUndoLog(tbl->sysDB_, InsertTrieIndexOperation, &hInfo, sizeof(TrieUndoLogInfo));
@@ -213,7 +214,8 @@ DbRetVal TrieIndex::removeFromValueList(Database *db, void **ptr, Chunk *hIdxNod
     DbRetVal rv = OK;
     if (!head)
     {
-        printError(rv, "Trie value list head is empty");
+        rv = ErrSysFatal;
+        printError(rv, "Fatal:Trie value list head is empty");
         return rv;
     }
     else
@@ -276,9 +278,10 @@ DbRetVal TrieIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     //create logical undo log
     TrieUndoLogInfo hInfo;
     hInfo.metaData_ = tbl->db_->getMetaDataPtr();
-    hInfo.bucket_ = NULL;
+    hInfo.bucketPtr_ = ptr;
     hInfo.tuple_ = tuple;
     hInfo.keyPtr_ = keyPtr;
+    hInfo.hChunk_ = hIdxNodeChunk;
 
     if (!loadFlag) {
         rv = tr->appendLogicalTrieUndoLog(tbl->sysDB_, DeleteTrieIndexOperation, &hInfo, sizeof(TrieUndoLogInfo));
@@ -290,6 +293,7 @@ DbRetVal TrieIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
 DbRetVal TrieIndex::update(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *indInfo, void *tuple, bool loadFlag)
 {
     DbRetVal rv = OK;
+    printError(ErrNotYet, "Not Yet Implemented");
     return rv;
 }
 
@@ -300,9 +304,32 @@ DbRetVal TrieIndex::insertLogicalUndoLog(Database *sysdb, void *data)
     Database db;
     db.setMetaDataPtr((DatabaseMetaData *) info->metaData_);
     db.setProcSlot(sysdb->procSlot);
-    IndexNode *head = (IndexNode *)((Bucket *)info->bucket_)->bucketList_;
+    void **bkt =  info->bucketPtr_;
+    IndexNode *head = (IndexNode *)*bkt;
     BucketList list(head);
-    DbRetVal rv = list.insert(hChunk, &db, info->keyPtr_, info->tuple_);
+    DbRetVal rv = OK;
+    if (!head)
+    {
+        printDebug(DM_TrieIndex, "TrieIndex insert head is empty");
+        IndexNode *firstNode= NULL;
+        firstNode= (IndexNode*) hChunk->tryAllocate(sysdb, &rv);
+        if (firstNode == NULL){
+            printError(rv, "Unable to allocate index node for Trie index after retry");
+            return rv;
+        }
+        firstNode->ptrToKey_ = info->keyPtr_;
+        firstNode->ptrToTuple_ = info->tuple_;
+        firstNode->next_ = NULL;
+        if (0 != Mutex::CASL((long*)bkt, 0, (long)firstNode)) {
+            printError(ErrLockTimeOut, "Trie Index bucket lock timeout.. retry");
+            hChunk->free(sysdb, firstNode);
+            return ErrLockTimeOut;
+        }
+        printDebug(DM_TrieIndex, "TrieIndex insert new node %x in empty bucket", head);
+        return OK;
+    }
+
+    rv = list.insert(hChunk, sysdb, info->keyPtr_, info->tuple_);
     if (rv != OK)
     {
         printError(ErrLockTimeOut, "Unable to add to bucket..retry\n");
@@ -318,12 +345,14 @@ DbRetVal TrieIndex::deleteLogicalUndoLog(Database *sysdb, void *data)
     Database db;
     db.setMetaDataPtr((DatabaseMetaData *)info->metaData_);
     db.setProcSlot(sysdb->procSlot);
-    IndexNode *head = (IndexNode *)((Bucket *)info->bucket_)->bucketList_;
+    void **bkt = info->bucketPtr_;
+    IndexNode *head = (IndexNode *)*bkt;
     BucketList list(head);
     DbRetVal rc = list.remove(hChunk, &db, info->keyPtr_);
+    *bkt = list.getBucketListHead();
     if (SplCase == rc) {
-        if (0 != Mutex::CASL((long*)& (((Bucket *)info->bucket_)->bucketList_),
-            (long)(((Bucket *)info->bucket_)->bucketList_),
+        if (0 != Mutex::CASL((long*)bkt,
+            (long)*bkt,
             (long)list.getBucketListHead()))
          {
              printError(ErrLockTimeOut, "Unable to set the head of trie index bucket\n");
@@ -331,7 +360,7 @@ DbRetVal TrieIndex::deleteLogicalUndoLog(Database *sysdb, void *data)
          }
 
     }else if (rc != OK) {
-         printError(ErrLockTimeOut, "Unable to remove hash index node");
+         printError(ErrLockTimeOut, "Unable to remove trie index node");
          return ErrLockTimeOut;
     }
     return OK;

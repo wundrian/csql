@@ -148,6 +148,7 @@ class DllExport DatabaseManagerImpl : public DatabaseManager
     DbRetVal checkPoint();
     DbRetVal recover();
     DbRetVal printIndexInfo(char *name);
+    DbRetVal printIndexDebugInfo(char *name);
     void printTreeIndexNodeInfo(char *name,bool flag);
     friend class SessionImpl;
 };
