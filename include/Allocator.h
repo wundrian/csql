@@ -186,9 +186,11 @@ class Chunk
     void printMutexInfo() { chunkMutex_.print(); }
 
     long getTotalDataNodes();
+    long getVarTotalDataNodes();
     int totalPages();
     int totalDirtyPages();
     int compact(int procSlot);
+    void varCompact();
 
     private:
 
@@ -196,20 +198,24 @@ class Chunk
     int getChunkMutex(int procSlot);
     int releaseChunkMutex(int procSlot);
     int destroyMutex();
-    int createDataBucket(Page *page, size_t totalSize, size_t needSize, int pslot);
-    int splitDataBucket(VarSizeInfo *varInfo, size_t needSize, int pslot, DbRetVal *status);
-    void* varSizeFirstFitAllocate(size_t size, int pslot, DbRetVal *status);
-    void freeForLargeAllocator(void *ptr, int pslot);
-    void freeForVarSizeAllocator(Database *db, void *ptr, int pslot);
 
-    void* allocateForLargeDataSize(Database *db);
     void* allocateFromFirstPage(Database *db, int noOfDataNodes, DbRetVal *status);
     void* allocateFromNewPage(Database *db, DbRetVal *status);
 
-    void* allocateForLargeDataSize(Database *db, size_t size);
+
+    int createDataBucket(Page *page, size_t totalSize, size_t needSize, int pslot);
+    int splitDataBucket(VarSizeInfo *varInfo, size_t needSize, int pslot, DbRetVal *status);
+    void* varSizeFirstFitAllocate(size_t size, int pslot, DbRetVal *status);
+    void freeForVarSizeAllocator(Database *db, void *ptr, int pslot);
+    void* allocateForVarLargeSize(PageInfo *pInfo, size_t size, int offset);
     void* allocFromNewPageForVarSize(Database *db, size_t size, int pslot,
                                      DbRetVal *status);
     void* allocateFromCurPageForVarSize(size_t size, int pslot, DbRetVal *status);
+
+    void* allocateForLargeDataSize(Database *db);
+    void* allocateForLargeDataSize(Database *db, size_t size);
+    void freeForLargeAllocator(void *ptr, int pslot);
+
     void setPageDirty(Database *db, void *ptr);
     void setPageDirty(PageInfo *pInfo);
 

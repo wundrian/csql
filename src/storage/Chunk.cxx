@@ -592,26 +592,7 @@ int Chunk::compact(int procSlot)
     pageInfo = (PageInfo*)pageInfo->nextPage_;
     if (0 == allocSize_) 
     {
-      while( pageInfo != NULL )
-      {
-        bool flag = false;
-        VarSizeInfo *varInfo = (VarSizeInfo*)(((char*)pageInfo) +
-                                            sizeof(PageInfo));
-        while ((char*) varInfo < ((char*)pageInfo + PAGE_SIZE))
-        {
-            if (1 == varInfo->isUsed_) {flag=true; break;}
-            varInfo = (VarSizeInfo*)((char*)varInfo + sizeof(VarSizeInfo)
-                                   +varInfo->size_);
-        }
-        if (!flag) {
-            printDebug(DM_VarAlloc,"Freeing unused page in varsize allocator %x\n", pageInfo);
-            prevPage->nextPage_ = pageInfo->nextPage_;
-            pageInfo->isUsed_ = 0;
-        }
-        prevPage = pageInfo;
-        pageInfo = (PageInfo*)(((PageInfo*)pageInfo)->nextPage_) ;
-        printDebug(DM_VarAlloc,"compact iter %x\n", pageInfo);
-      }
+        varCompact();
     }else if (allocSize_ < PAGE_SIZE)
     {
       while( pageInfo != NULL )

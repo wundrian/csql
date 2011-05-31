@@ -399,8 +399,12 @@ long Chunk::getVarTotalDataNodes()
     return totalNodes;
 }
 
-void Chunk:varCompact()
+void Chunk::varCompact()
 {
+   PageInfo* pageInfo = ((PageInfo*)firstPage_);
+   PageInfo* prevPage = pageInfo;
+   //first page is not null as it is already checked in Chunk::compact
+   pageInfo = (PageInfo*)pageInfo->nextPage_;
    while( pageInfo != NULL )
    {
       bool flag = false;
