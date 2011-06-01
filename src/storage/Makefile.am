@@ -7,7 +7,7 @@ libcsql_la_SOURCES = Util.cxx FixedHeapAllocator.cxx VarHeapAllocator.cxx \
 	Config.cxx TableConfig.cxx HashMap.cxx\
 	CatalogTables.cxx CatalogTablesIdx.cxx CatalogTablesFk.cxx \
 	ChunkIterator.cxx Condition.cxx Connection.cxx Database.cxx \
-	DatabaseManagerImpl.cxx DataType.cxx \
+	DatabaseManagerImpl.cxx DatabaseRecovery.cxx DataType.cxx \
 	Debug.cxx FieldList.cxx Index.cxx LockManager.cxx \
 	LockTable.cxx Logger.cxx Mutex.cxx os.cxx \
 	PageInfo.cxx PredicateImpl.cxx SessionImpl.cxx \
