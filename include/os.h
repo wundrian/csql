@@ -39,6 +39,7 @@
 #define LOG_ROLLOVER_SIZE 20*1024*1024
 #define SIGCSQL1 SIGUSR1
 #define MIN_VARCHAR_ALLOC_SIZE 30
+#define MAP_ADDR_VALUE 399998976L
 
 #define BIT(x) (1 << (x))
 #define SETBITS(x,y) ((x) |= (y))
