@@ -25,7 +25,7 @@
 #include<Lock.h>
 #include<Debug.h>
 #include<Config.h>
-#include<TableConfig.h>
+//#include<TableConfig.h>
 #include<Process.h>
 
 
@@ -848,7 +848,7 @@ DbRetVal DatabaseManagerImpl::writeSchemaFile()
         }
         fNameIter.reset();
         while (fNameIter.hasElement())
-            delete ((FieldName *) fNameIter.nextElement());
+            delete ((Identifier *) fNameIter.nextElement());
         fNameList.reset();
 
         fprintf(fp, ");\n");
@@ -859,7 +859,7 @@ DbRetVal DatabaseManagerImpl::writeSchemaFile()
     ListIterator tIter = tableList.getIterator();
     tIter.reset();
     while (tIter.hasElement())
-        delete ((FieldName *) tIter.nextElement());
+        delete ((Identifier *) tIter.nextElement());
     tableList.reset();
 
     fclose(fp);

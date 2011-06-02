@@ -4,7 +4,6 @@ lib_LTLIBRARIES = libcsql.la
 libcsql_la_LDFLAGS = -avoid-version -module
 libcsql_la_SOURCES = BucketIter.cxx TreeIter.cxx BucketList.cxx \
 	Chunk.cxx VarChunk.cxx \
-	TableConfig.cxx \
 	CatalogTables.cxx CatalogTablesIdx.cxx CatalogTablesFk.cxx \
 	ChunkIterator.cxx Condition.cxx Connection.cxx Database.cxx \
 	DatabaseManagerImpl.cxx DbMgrTableImpl.cxx DbMgrIndexImpl.cxx \

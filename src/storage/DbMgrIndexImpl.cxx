@@ -25,7 +25,6 @@
 #include<Lock.h>
 #include<Debug.h>
 #include<Config.h>
-#include<TableConfig.h>
 #include<Process.h>
 
 DbRetVal DatabaseManagerImpl::renameIndex(const char *oldName,const char *newName)

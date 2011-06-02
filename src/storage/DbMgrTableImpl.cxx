@@ -25,7 +25,6 @@
 #include<Lock.h>
 #include<Debug.h>
 #include<Config.h>
-#include<TableConfig.h>
 #include<Process.h>
 
 //-1 -> Unable to create chunk. No memory
