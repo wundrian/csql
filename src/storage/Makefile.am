@@ -7,7 +7,8 @@ libcsql_la_SOURCES = BucketIter.cxx TreeIter.cxx BucketList.cxx \
 	TableConfig.cxx \
 	CatalogTables.cxx CatalogTablesIdx.cxx CatalogTablesFk.cxx \
 	ChunkIterator.cxx Condition.cxx Connection.cxx Database.cxx \
-	DatabaseManagerImpl.cxx DatabaseRecovery.cxx  \
+	DatabaseManagerImpl.cxx DbMgrTableImpl.cxx DbMgrIndexImpl.cxx \
+	DbMgrFkImpl.cxx DatabaseRecovery.cxx  \
 	FieldList.cxx Index.cxx LockManager.cxx \
 	LockTable.cxx  \
 	PageInfo.cxx PredicateImpl.cxx SessionImpl.cxx \
