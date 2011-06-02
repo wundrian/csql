@@ -1,0 +1,26 @@
+INCLUDES = -I$(top_srcdir)/include $(all_includes) -I$(top_srcdir)/src/sql
+METASOURCES = AUTO
+bin_PROGRAMS = csqlserver csqlsqlserver csqlcheckpointserver 
+
+csqlserver_LDADD = $(top_builddir)/src/storage/libcsql.la 
+csqlserver_LDFLAGS = -lcrypt -lrt -lpthread -ldl
+csqlserver_SOURCES = csqlserver.cxx
+
+csqlsqlserver_LDADD = $(top_builddir)/src/sql/libcsqlsql.la \
+	$(top_builddir)/src/base/libcsqlbase.la \
+	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la \
+	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/storage/libcsql.la 
+csqlsqlserver_LDFLAGS = -lcrypt -lrt -lpthread -ldl
+csqlsqlserver_SOURCES = csqlsqlserver.cxx
+
+csqlcheckpointserver_LDADD = $(top_builddir)/src/storage/libcsql.la \
+	$(top_builddir)/src/base/libcsqlbase.la \
+	$(top_builddir)/src/sql/libcsqlsql.la \
+	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la 
+csqlcheckpointserver_LDFLAGS = -lcrypt -lodbc -lrt -lpthread -ldl
+csqlcheckpointserver_SOURCES = csqlcheckpointserver.cxx
+

@@ -11,9 +11,8 @@ cp src/jdbc/Makefile.am.full src/jdbc/Makefile.am
 cp src/Makefile.am.full src/Makefile.am
 
 make -f Makefile.cvs
-./configure --prefix=`pwd`/install CXXFLAGS="-g  -I$JDK_HOME/include -I$JDK_HOME/include/linux"
-#./configure --prefix=`pwd`/install CXXFLAGS="-g  -I$JDK_HOME/include -I$JDK_HOME/include/linux -Wno-write-strings"
-#./configure --prefix=`pwd`/install CXXFLAGS=-g
+./configure --prefix=`pwd`/install CXXFLAGS="-g  -I$JDK_HOME/include -I$JDK_HOME/include/linux -Wno-write-strings"
+#./configure --prefix=`pwd`/install CXXFLAGS="-O2  -I$JDK_HOME/include -I$JDK_HOME/include/linux -Wno-write-strings"
 libtoolavailable=`which libtool`
 if [ -z "$libtoolavailable" ]
 then
