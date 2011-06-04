@@ -2,7 +2,7 @@ INCLUDES = -I$(top_srcdir)/include $(all_includes) -I$(top_srcdir)/src/sql
 METASOURCES = AUTO
 bin_PROGRAMS = csqlserver csqlsqlserver csqlcacheserver csqlasyncserver csqlcheckpointserver 
 
-csqlserver_LDADD = $(top_builddir)/src/storage/libcsql.la  \
+csqlserver_LDADD = $(top_builddir)/src/storage/libcsqlstorage.la  \
 	$(top_builddir)/src/base/libcsqlbase.la \
 	$(top_builddir)/src/sql/libcsqlsql.la \
         $(top_builddir)/src/sqllog/libcsqlsqllog.la \
@@ -23,7 +23,7 @@ csqlasyncserver_LDADD = $(top_builddir)/src/sql/libcsqlsql.la \
 	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la \
 	$(top_builddir)/src/network/libcsqlnw.la \
 	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
-	$(top_builddir)/src/storage/libcsql.la 
+	$(top_builddir)/src/storage/libcsqlstorage.la 
 csqlasyncserver_LDFLAGS = -lrt -lpthread -lcrypt -lodbc  -ldl
 csqlasyncserver_SOURCES = csqlasyncserver.cxx
 
@@ -36,11 +36,11 @@ csqlsqlserver_LDADD = $(top_builddir)/src/sql/libcsqlsql.la \
 	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la \
 	$(top_builddir)/src/network/libcsqlnw.la \
 	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
-	$(top_builddir)/src/storage/libcsql.la 
+	$(top_builddir)/src/storage/libcsqlstorage.la 
 csqlsqlserver_LDFLAGS = -lrt -lpthread -lcrypt -lodbc -ldl
 csqlsqlserver_SOURCES = csqlsqlserver.cxx
 
-csqlcacheserver_LDADD = $(top_builddir)/src/storage/libcsql.la  \
+csqlcacheserver_LDADD = $(top_builddir)/src/storage/libcsqlstorage.la  \
 	$(top_builddir)/src/base/libcsqlbase.la \
 	$(top_builddir)/src/sql/libcsqlsql.la \
         $(top_builddir)/src/sqllog/libcsqlsqllog.la \
@@ -52,7 +52,7 @@ csqlcacheserver_LDADD = $(top_builddir)/src/storage/libcsql.la  \
 csqlcacheserver_LDFLAGS = -lcrypt -lodbc -lrt -lpthread -ldl
 csqlcacheserver_SOURCES = csqlcacheserver.cxx
 
-csqlcheckpointserver_LDADD = $(top_builddir)/src/storage/libcsql.la \
+csqlcheckpointserver_LDADD = $(top_builddir)/src/storage/libcsqlstorage.la \
 	$(top_builddir)/src/base/libcsqlbase.la \
 	$(top_builddir)/src/sql/libcsqlsql.la \
 	$(top_builddir)/src/sqllog/libcsqlsqllog.la \

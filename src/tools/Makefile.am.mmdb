@@ -2,7 +2,7 @@ INCLUDES = -I$(top_srcdir)/include $(all_includes) -I$(top_srcdir)/src/sql
 METASOURCES = AUTO
 bin_PROGRAMS = csql icsql catalog csqldump redo recover
 csql_SOURCES = isql.cxx
-csql_LDADD = $(top_builddir)/src/storage/libcsql.la \
+csql_LDADD = $(top_builddir)/src/storage/libcsqlstorage.la \
 	$(top_builddir)/src/base/libcsqlbase.la \
 	$(top_builddir)/src/sql/libcsqlsql.la \
 	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
@@ -12,7 +12,7 @@ csql_LDFLAGS = -lrt -lpthread -lcrypt -lreadline -lcurses -ldl
 
 icsql_SOURCES = isql.cxx
 icsql_CPPFLAGS = -DNO_READLINE_LIB
-icsql_LDADD = $(top_builddir)/src/storage/libcsql.la \
+icsql_LDADD = $(top_builddir)/src/storage/libcsqlstorage.la \
 	$(top_builddir)/src/base/libcsqlbase.la \
         $(top_builddir)/src/sql/libcsqlsql.la \
         $(top_builddir)/src/sqllog/libcsqlsqllog.la \
@@ -22,7 +22,7 @@ icsql_LDFLAGS = -lrt -lpthread -lcrypt -lodbc -ldl
 
 
 redo_SOURCES = redo.cxx
-redo_LDADD = $(top_builddir)/src/storage/libcsql.la \
+redo_LDADD = $(top_builddir)/src/storage/libcsqlstorage.la \
 	$(top_builddir)/src/base/libcsqlbase.la \
 	$(top_builddir)/src/sql/libcsqlsql.la \
 	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
@@ -31,7 +31,7 @@ redo_LDADD = $(top_builddir)/src/storage/libcsql.la \
 redo_LDFLAGS = -lrt -lpthread -lcrypt -ldl
 
 recover_SOURCES = recover.cxx
-recover_LDADD = $(top_builddir)/src/storage/libcsql.la \
+recover_LDADD = $(top_builddir)/src/storage/libcsqlstorage.la \
 	$(top_builddir)/src/base/libcsqlbase.la \
 	$(top_builddir)/src/sql/libcsqlsql.la \
 	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
@@ -40,7 +40,7 @@ recover_LDADD = $(top_builddir)/src/storage/libcsql.la \
 recover_LDFLAGS = -lrt -lpthread -lcrypt -ldl
 
 catalog_SOURCES = catalog.cxx
-catalog_LDADD = $(top_builddir)/src/storage/libcsql.la \
+catalog_LDADD = $(top_builddir)/src/storage/libcsqlstorage.la \
 	$(top_builddir)/src/base/libcsqlbase.la \
 	$(top_builddir)/src/sql/libcsqlsql.la \
 	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
@@ -53,6 +53,6 @@ csqldump_LDADD = $(top_builddir)/src/sql/libcsqlsql.la \
 	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la \
 	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
 	$(top_builddir)/src/network/libcsqlnw.la \
-	$(top_builddir)/src/storage/libcsql.la 
+	$(top_builddir)/src/storage/libcsqlstorage.la 
 csqldump_LDFLAGS = -lrt -lpthread -lcrypt -ldl
 csqldump_SOURCES = csqldump.cxx
