@@ -384,8 +384,9 @@ DbRetVal DatabaseManagerImpl::createTreeIndex(const char *indName, const char *t
     rv = createIndexNodeForRecords(tblName, tupleptr, chunk);
     if (rv != OK)
     {
-        dropIndex(indName);
+        //dropIndex again takes checkpoint mutex so releasing it here
         systemDatabase_->releaseCheckpointMutex();
+        dropIndex(indName);
         return rv;
     }
     systemDatabase_->releaseCheckpointMutex();

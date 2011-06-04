@@ -783,7 +783,7 @@ DbRetVal TreeNode::insertRecordIntoNodeAndArrangeFirstLevel(Database * db, Index
                        if (info->isUnique) 
                        {
                           iter->mutex_.releaseShareLock(db->procSlot);
-                          fstLevel->mutex_.releaseShareLock(db->procSlot);
+                          //fstLevel->mutex_.releaseShareLock(db->procSlot);
                           printError(ErrUnique, "Unique constraint violation");
                           return ErrUnique;
                        }
