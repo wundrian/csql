@@ -21,7 +21,7 @@ endif
 
 
 INCL=  -I$(CSQL_INSTALL_ROOT)/install/include -I../../../include
-LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcacheload -lcsqlgw -lcsqlnw -lcsqlodbcadapter -lcsqlsqlnw   -lcsql -lcsqlsql -lcsqlsqllog
+LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcacheload -lcsqlgw -lcsqlnw -lcsqlodbcadapter -lcsqlsqlnw   -lcsqlstorage -lcsqlbase -lcsqlsql -lcsqlsqllog
 
  
 TARGETS = \

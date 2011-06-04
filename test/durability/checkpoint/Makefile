@@ -21,7 +21,7 @@ endif
 
 
 INCL= -I$(CSQL_INSTALL_ROOT)/include -I../../../include
-LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsql -lcsqlfault
+LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlstorage -lcsqlbase -lcsqlfault
 
 TARGETS = takechkpt
        

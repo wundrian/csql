@@ -20,7 +20,7 @@ ifeq ($(OSNAME), FreeBSD)
 endif
 
 INCL=  -I$(CSQL_INSTALL_ROOT)/install/include -I../../../include
-LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlgw -lcsqlnw -lcsqlodbcadapter -lcsqlsqlnw   -lcacheload -lcsql -lcsqlsql -lcsqlsqllog
+LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlgw -lcsqlnw -lcsqlodbcadapter -lcsqlsqlnw   -lcacheload -lcsqlstorage -lcsqlbase -lcsqlsql -lcsqlsqllog
 
 
 TARGETS = \

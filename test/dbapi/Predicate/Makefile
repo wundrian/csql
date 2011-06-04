@@ -22,7 +22,7 @@ endif
 
 
 INCL= -I$(CSQL_INSTALL_ROOT)/include -I../../../include
-LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsql
+LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlstorage -lcsqlbase
 
 TARGETS = \
         test001 test001a test002 test002a\

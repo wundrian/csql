@@ -23,7 +23,7 @@ endif
 
 JAVAC = javac -g:none
 INCL= -I$(CSQL_INSTALL_ROOT)/include -I../../include
-LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlodbc -lcsqlsql -lcsqlsqllog -lcsql -lcsqlnw -lcsqlodbcadapter -lcsqlfault
+LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlodbc -lcsqlsql -lcsqlsqllog -lcsqlstorage -lcsqlbase -lcsqlnw -lcsqlodbcadapter -lcsqlfault
 
 TARGETS = test002 stmtTest3 test004 stmtTest5 stmtTest6 stmtTest7 stmtTest8 \
 	stmtTest9 stmtTest10 stmtTest11 test012 test013 test013a test013b

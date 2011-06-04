@@ -25,7 +25,7 @@ endif
 
 JAVAC = javac -g:none
 INCL= -I$(CSQL_INSTALL_ROOT)/include -I../../include
-LIBS= -L/home/prabatuty/myroot/lib -L$(CSQL_INSTALL_ROOT)/lib -L/usr/local/lib -lcsqlsql -lcsqlsqllog -lcsql -lcsqlnw -lodbc -lcsqlgw -lcacheload   -lcsqlsqlnw -lcsqlodbcadapter 
+LIBS= -L/home/prabatuty/myroot/lib -L$(CSQL_INSTALL_ROOT)/lib -L/usr/local/lib -lcsqlsql -lcsqlsqllog -lcsqlstorage -lcsqlbase -lcsqlnw -lodbc -lcsqlgw -lcacheload   -lcsqlsqlnw -lcsqlodbcadapter 
 
 TARGETS = \
         SQLAdapterTest 

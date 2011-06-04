@@ -22,9 +22,9 @@ endif
 
 INCL=  -I$(CSQL_INSTALL_ROOT)/include -I../../../../include
 ifeq ($(BUILDTYPE), MMDB)
-LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlsql -lcsql -lcsqlsqllog -lcsqlnw -lcsqlsqlnw -lcsqlsqlnw  
+LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlsql -lcsqlstorage -lcsqlbase -lcsqlsqllog -lcsqlnw -lcsqlsqlnw -lcsqlsqlnw  
 else
-LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlsql -lcsql -lcsqlsqllog -lcsqlnw -lcacheload -lcsqlsqlnw -lcsqlgw -lcsqlsqlnw   -lcsqlodbcadapter
+LIBS= -L$(CSQL_INSTALL_ROOT)/lib -lcsqlsql -lcsqlstorage -lcsqlbase -lcsqlsqllog -lcsqlnw -lcacheload -lcsqlsqlnw -lcsqlgw -lcsqlsqlnw   -lcsqlodbcadapter
 endif
 
 TARGETS = \
