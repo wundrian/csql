@@ -1,4 +1,4 @@
-[?1034hCSQL>create table t1(f1 int,f2 int);
+CSQL>create table t1(f1 int,f2 int);
 Statement Executed
 CSQL>insert into t1 values(12,23);
 Statement Executed: Rows Affected = 1

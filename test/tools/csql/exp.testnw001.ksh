@@ -1,5 +1,5 @@
 Case 1: With no option:
-[?1034hCSQL>quit;
+CSQL>quit;
 Case 2: With ? option:
 Usage: csql [ [-u username] [-p passwd] ] [ [-H hostname] [-P port] ]
             [-s sqlfile] 
@@ -16,5 +16,5 @@ Case 5: With wrong password :
 failed
 Case 6: With correct user name  and password :
 Network CSql
-[?1034hCSQL>quit;
+CSQL>quit;
 passed
