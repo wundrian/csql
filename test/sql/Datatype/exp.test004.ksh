@@ -27,7 +27,7 @@ echo select * from t1;
 Statement Executed: Rows Affected = 1
 Statement Executed: Rows Affected = 1
 echo insert into t2 values('CSQL3',30);
-Statement execute failed with error -35
+Statement execute failed with error -34
 echo select * from t2;
 ---------------------------------------------------------
 	t2.f1	t2.f2	
@@ -36,7 +36,7 @@ echo select * from t2;
 	CSQL2	20	
 	
 echo delete from t1 where f1='CSQL1';
-Statement execute failed with error -36
+Statement execute failed with error -35
 echo select * from t1;
 ---------------------------------------------------------
 	t1.f1	t1.f2	
