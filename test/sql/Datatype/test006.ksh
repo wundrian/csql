@@ -4,8 +4,7 @@
 # create table t2 (f1 varchar(10), f2 smallint);
 # create index idx1 on t1(f1)tree;
 # create index idx2 on t2(f1)tree unique;
-# insert records into both the tables.
-# t2.f1 field should not allow duplicate records.
+# Error out saying varchar not supported for tree index
 #
 CREATEFILE=${PWD}/sql/Datatype/csql.conf
 REL_PATH=.
