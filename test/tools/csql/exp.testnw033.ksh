@@ -105,7 +105,7 @@ echo SELECT * FROM T4;
 	5	3	
 	
 echo UPDATE T4 SET f2=200,f1=0 WHERE f2=20;
-Statement prepare failed with error -21
+Statement prepare failed with error -33
 echo SELECT * FROM T4;
 ---------------------------------------------------------
 	T4.f1	T4.f2	
@@ -117,7 +117,7 @@ echo SELECT * FROM T4;
 	5	3	
 	
 echo UPDATE T4 SET f2=300,f1=30 WHERE f1<=2;
-Statement prepare failed with error -21
+Statement prepare failed with error -33
 echo SELECT * FROM T4;
 ---------------------------------------------------------
 	T4.f1	T4.f2	
@@ -225,7 +225,7 @@ echo SELECT * FROM T6;
 	5	3	
 	
 echo UPDATE T6 SET f2=200,f1=0 WHERE f2=20;
-Statement prepare failed with error -21
+Statement prepare failed with error -33
 echo SELECT * FROM T6;
 ---------------------------------------------------------
 	T6.f1	T6.f2	
@@ -237,7 +237,7 @@ echo SELECT * FROM T6;
 	5	3	
 	
 echo UPDATE T6 SET f2=300,f1=30 WHERE f1<=2;
-Statement prepare failed with error -21
+Statement prepare failed with error -33
 echo SELECT * FROM T6;
 ---------------------------------------------------------
 	T6.f1	T6.f2	
@@ -310,7 +310,7 @@ echo SELECT * FROM T7;
 	1	2	3	
 	
 echo UPDATE T7 SET f3=30,f2=20,f1=0 where f1=1;
-Statement prepare failed with error -21
+Statement prepare failed with error -33
 echo UPDATE T7 SET f3=30,f2=20 where f1=1;
 Statement Executed: Rows Affected = 1
 echo SELECT * FROM T7;
@@ -324,21 +324,29 @@ Statement Executed: Rows Affected = 1
 echo DELETE FROM T7 WHERE f3<=3;
 Statement Executed: Rows Affected = 1
 echo CREATE TABLE T8(f1 BIGINT AUTO_INCREMENT,f2 BIGINT,f3 BIGINT,PRIMARY KEY(f1));
-Statement execute failed with error -4
+Statement execute failed with error -8
 echo INSERT INTO T8 VALUES(1,2,3);
-Statement prepare failed with error -5
+Statement execute failed with error -21
 echo SELECT * FROM T8;
-Statement prepare failed with error -5
+---------------------------------------------------------
+	T8.f1	T8.f2	T8.f3	
+---------------------------------------------------------
+	1	20	30	
+	
 echo UPDATE T8 SET f3=30,f2=20,f1=0 where f1=1;
-Statement prepare failed with error -5
+Statement prepare failed with error -21
 echo UPDATE T8 SET f3=30,f2=20 where f1=1;
-Statement prepare failed with error -5
+Statement Executed: Rows Affected = 1
 echo SELECT * FROM T8;
-Statement prepare failed with error -5
+---------------------------------------------------------
+	T8.f1	T8.f2	T8.f3	
+---------------------------------------------------------
+	1	20	30	
+	
 echo INSERT INTO T8 VALUES(2,4,3);
-Statement prepare failed with error -5
+Statement Executed: Rows Affected = 1
 echo DELETE FROM T8 WHERE f3<=3;
-Statement prepare failed with error -5
+Statement Executed: Rows Affected = 1
 echo CREATE TABLE T9(f1 BIGINT AUTO_INCREMENT,f2 BIGINT,f3 BIGINT);
 Statement Executed
 echo CREATE INDEX idx1 ON T9(f1,f2) UNIQUE;

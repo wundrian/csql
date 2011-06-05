@@ -104,7 +104,7 @@ echo SELECT * FROM T4;
 	5	3	
 	
 echo UPDATE T4 SET f2=200,f1=0 WHERE f2=20;
-Statement prepare failed with error -21
+Statement prepare failed with error -33
 echo SELECT * FROM T4;
 ---------------------------------------------------------
 	T4.f1	T4.f2	
@@ -116,7 +116,7 @@ echo SELECT * FROM T4;
 	5	3	
 	
 echo UPDATE T4 SET f2=300,f1=30 WHERE f1<=2;
-Statement prepare failed with error -21
+Statement prepare failed with error -33
 echo SELECT * FROM T4;
 ---------------------------------------------------------
 	T4.f1	T4.f2	
@@ -224,7 +224,7 @@ echo SELECT * FROM T6;
 	5	3	
 	
 echo UPDATE T6 SET f2=200,f1=0 WHERE f2=20;
-Statement prepare failed with error -21
+Statement prepare failed with error -33
 echo SELECT * FROM T6;
 ---------------------------------------------------------
 	T6.f1	T6.f2	
@@ -236,7 +236,7 @@ echo SELECT * FROM T6;
 	5	3	
 	
 echo UPDATE T6 SET f2=300,f1=30 WHERE f1<=2;
-Statement prepare failed with error -21
+Statement prepare failed with error -33
 echo SELECT * FROM T6;
 ---------------------------------------------------------
 	T6.f1	T6.f2	
@@ -309,7 +309,7 @@ echo SELECT * FROM T7;
 	1	2	3	
 	
 echo UPDATE T7 SET f3=30,f2=20,f1=0 where f1=1;
-Statement prepare failed with error -21
+Statement prepare failed with error -33
 echo UPDATE T7 SET f3=30,f2=20 where f1=1;
 Statement Executed: Rows Affected = 1
 echo SELECT * FROM T7;
