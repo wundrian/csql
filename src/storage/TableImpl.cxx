@@ -1374,15 +1374,20 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
             {
                 AllDataType::increment(colPtr, &tempAutoVal , def->type_);
                 AllDataType::copyVal(ptrToAuto,colPtr, def->type_,
-                                                                 def->length_);
+                                                       def->length_);
                 colPtr = colPtr + def->length_;
                 fldpos++;
             }else {
-                if(AllDataType::compareVal(def->bindVal_, &tempAutoVal, OpGreaterThan,
-                                                                 def->type_)) {
+                if(AllDataType::compareVal(def->bindVal_, &tempAutoVal, 
+                                           OpGreaterThan, def->type_)) 
+                {
                     AllDataType::copyVal(ptrToAuto,def->bindVal_, def->type_,
                                                                  def->length_);
                 }
+                AllDataType::copyVal(colPtr, def->bindVal_, def->type_,
+                                                       def->length_);
+                colPtr = colPtr + def->length_;
+                fldpos++;
             }
             releaseTableMutex();
             continue;

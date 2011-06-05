@@ -30,9 +30,7 @@ DbRetVal TupleIterator::setPlan()
         if(iter.hasElement())
         {
            FieldDef *def = iter.nextElement();
-//           keyPtr = (char*)predImpl->valPtrForIndexField(def->fldName_, hIdxInfo->isUnique);
-  //         op = predImpl->opForIndexField(def->fldName_);
-          keyPtr = (char*)predImpl->opAndValPtrForIndexField(def->fldName_, hIdxInfo->isUnique,op);
+           keyPtr = (char*)predImpl->opAndValPtrForIndexField(def->fldName_, hIdxInfo->isUnique,op);
         }
         CINDEX *iptr = (CINDEX*) hIdxInfo->indexPtr;
         TreeNode *fstNode=(TreeNode *)iptr->hashNodeChunk_;

@@ -485,6 +485,7 @@ void PredicateImpl::evaluateForTable(bool &result, char *tuple)
         {
             rhs->evaluateForTable(rhsResult, tuple);
             if(rhsResult == false && OpAnd == logicalOp) {//do early return
+                result = false;
                 return;
             }
         } else rhsResult = true;
@@ -605,9 +606,9 @@ void PredicateImpl::evaluateForTable(bool &result, char *tuple)
     //printf(" val1 %d val2 %d\n", *(int*)val1, *(int*)val2);
     if (type != typeVarchar) 
         result = AllDataType::compareVal(val1, val2, compOp, type,length);
-    else result = AllDataType::compareVal((void *) *(long *) val1, val2, 
+    else 
+        result = AllDataType::compareVal((void *) *(long *) val1, val2, 
                                                          compOp, type,length);
-    //if (!result && val3) AllDataType::copyVal(val3, 
     return;
 }
 void* PredicateImpl::getValIfPointLookupOnInt(int &offset)
@@ -1023,7 +1024,8 @@ void* PredicateImpl::opAndValPtrForIndexField(const char *fname, bool isUnique,C
     {
         op = compOp;
         if (isUnique && compOp != OpLessThan && 
-              compOp != OpLessThanEquals) isPushedDown = true;
+              compOp != OpLessThanEquals &&
+              compOp != OpNotEquals ) isPushedDown = true;
         if (operand) return operand; else return *(void**)operandPtr;
     }
     op = OpInvalidComparisionOp; 
