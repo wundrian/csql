@@ -96,6 +96,8 @@ class DllExport DatabaseManagerImpl : public DatabaseManager
     DbRetVal removeIndexChunks(void* chunk, void* hchunk, IndexType iType);
     DbRetVal createIndexNodeForRecords(const char* tblName, void* tupleptr, 
                                        void *chunk);
+    void initMutexes(Database *db);
+    size_t computeSysDbOffset();
 
     public:
 

@@ -79,12 +79,6 @@ DbRetVal DatabaseManagerImpl::closeSystemDatabase()
 DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
 {
     bool isMmapNeeded = Conf::config.useMmap();
-/*    
-    if (isMmapNeeded && !Conf::config.useDurability()) {
-        printError(ErrBadArg, "If MMAP is set to true. Durability must be true.");
-        return ErrBadArg;
-    }
-*/
     file_desc fd = (file_desc)-1;
     char cmd[1024];
     char dbMapFile[MAX_FILE_LEN];
@@ -115,13 +109,14 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
     if (!isMmapNeeded || (isMmapNeeded && 0 == strcmp(name, SYSTEMDB))) {
         shm_id = os::shm_create(key, size, 0660);  
         if (-1 == shm_id) {
-            if (errno == EEXIST) 
+            if (errno == EEXIST) {
 #if (defined MMDB && defined EMBED)
                 printError(ErrOS, "One application is already running.");
-            return ErrOS;
+                return ErrOS;
 #else
                 printError(ErrOS, "Shared Memory already exists");
 #endif
+            }
             printError(ErrOS, "Shared memory create failed");
             exit(0);
         }
@@ -135,19 +130,6 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
 
 
         sprintf(dbMapFile, "%s/db.chkpt.data%d", Conf::config.getDbFile(), chkptID);
-        /*if (FILE *file = fopen(dbMapFile, "r")) {
-            fclose(file);
-            sprintf(cmd, "cp %s %s/db.chkpt.data", dbMapFile, Conf::config.getDbFile());
-            int ret = system(cmd);
-            if (ret != 0) { 
-                printError(ErrOS, "could not copy data file to map file");
-                return ErrOS;
-            }
-        }
-        sprintf(dbMapFile, "%s/db.chkpt.data", Conf::config.getDbFile());
-        */
-
-        
         fd = os::openFile(dbMapFile, fileOpenCreat, 0660);
         if ((file_desc) -1 == fd) { 
             printError(ErrOS, "Mmap file could not be opened");
@@ -199,17 +181,11 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
         memset(shm_ptr, 0, size );
     }*/
 
-    //TODO:for user database do not have transtable and processtable mutex
     db_->setMetaDataPtr((DatabaseMetaData*)rtnAddr);
     db_->setDatabaseID(1);
     db_->setName(name);
     db_->setMaxSize(size);
-    db_->setNoOfChunks(0);
-    db_->initAllocDatabaseMutex();
-    db_->initTransTableMutex();
-    db_->initCheckpointMutex();
-    db_->initProcessTableMutex();
-    db_->initPrepareStmtMutex();
+    initMutexes(db_);
     db_->setUniqueChunkID(100);                        
     //compute the first page after book keeping information
     size_t offset = os::alignLong(sizeof (DatabaseMetaData));
@@ -217,9 +193,7 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
     if (0 == strcmp(name, SYSTEMDB))
     {
         db_->setCanTakeCheckPoint(true);
-        offset = offset + os::alignLong( MAX_CHUNKS  * sizeof (Chunk));
-        offset = offset + os::alignLong( Conf::config.getMaxProcs()   * sizeof(Transaction));
-        offset = offset + os::alignLong( Conf::config.getMaxProcs() * sizeof(ThreadInfo));
+        offset = computeSysDbOffset();
     }
     int multiple = os::floor(offset / PAGE_SIZE);
     char *curPage = (((char*)rtnAddr) + ((multiple + 1) * PAGE_SIZE));
@@ -227,9 +201,26 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
     db_->setCurrentPage(curPage);
     db_->setFirstPage(curPage);
 
-    if (0 == strcmp(name, SYSTEMDB)) return OK;
-
     return OK;
+}
+size_t DatabaseManagerImpl::computeSysDbOffset()
+{
+    size_t offset = os::alignLong(sizeof (DatabaseMetaData));
+    offset = offset + os::alignLong(MAX_CHUNKS  * sizeof (Chunk));
+    offset = offset + os::alignLong(Conf::config.getMaxProcs() * sizeof(Transaction));
+    offset = offset + os::alignLong(Conf::config.getMaxProcs() * sizeof(ThreadInfo));
+    return offset;
+}
+void DatabaseManagerImpl::initMutexes(Database *db_)
+{
+    //TODO:for user database do not have transtable and processtable mutex
+    db_->setNoOfChunks(0);
+    db_->initAllocDatabaseMutex();
+    db_->initTransTableMutex();
+    db_->initCheckpointMutex();
+    db_->initProcessTableMutex();
+    db_->initPrepareStmtMutex();
+    return;
 }
 
 DbRetVal DatabaseManagerImpl::deleteDatabase(const char *name)
