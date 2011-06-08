@@ -7,11 +7,11 @@ libcsqlstorage_la_SOURCES = BucketIter.cxx TreeIter.cxx BucketList.cxx \
 	CatalogTables.cxx CatalogTablesIdx.cxx CatalogTablesFk.cxx \
 	ChunkIterator.cxx Condition.cxx Connection.cxx Database.cxx \
 	DatabaseManagerImpl.cxx DbMgrTableImpl.cxx DbMgrIndexImpl.cxx \
-	DbMgrFkImpl.cxx DatabaseRecovery.cxx  \
+	DbMgrFkImpl.cxx DatabaseRecovery.cxx  TableDef.cxx \
 	FieldList.cxx Index.cxx LockManager.cxx \
-	LockTable.cxx  \
-	PageInfo.cxx PredicateImpl.cxx SessionImpl.cxx \
-	TableDef.cxx TableImpl.cxx Transaction.cxx \
+	LockTable.cxx  SessionImpl.cxx Transaction.cxx \
+	PageInfo.cxx PredicateImpl.cxx PredicateEvalImpl.cxx \
+	TableImpl.cxx TableImplModifyOp.cxx TableImplReadOp.cxx \
 	TransactionManager.cxx TupleIterator.cxx \
 	UserManagerImpl.cxx HashIndex.cxx TreeIndex.cxx TrieIndex.cxx \
 	Process.cxx AggTableImpl.cxx JoinTableImpl.cxx \
