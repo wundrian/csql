@@ -1,2 +1,60 @@
 Code Reorg
 ----------
+1.AggTableImpl
+	::execute
+	::insertOrGetAggNode
+2.DatabaseManagerImpl
+	::createDatabase
+	::openDatabase
+	::checkPoint, ::writeSchemaFile ->can it be moved to Recover.cpp
+3.DatabaseRecovery
+	::checkPoint
+	::filterAndRemoveStmtLogs
+	::writeDirtyPages
+4.DbMgrFkImpl
+	::createForeignKey
+5.DbMgrIndexImpl
+	::createHashIndex
+	::createTreeIndex
+6.DbMgrTableImpl
+	::createTable
+	::dropTable
+	::openTable
+7.HashIndex
+	::insert
+	::remove
+	::update
+8.JoinTableImpl
+	::optimize
+	::pushPredicate
+	::execute needs more comments as it is difficult to understand
+9.OrderByTree
+	::insertSpecialCaseDataNode
+10.OrderTableImpl
+	needs more comments as it is difficult to understand
+11.PredicateEvalImpl.cxx
+	needs more comments as it is difficult to understand
+12.TableImpl
+	::copyValuesFromBindBuffer
+13.TableImplModifyOp
+	::insertTuple
+	::deleteTuple
+	::updateTuple
+	::isPkTableHasRecord
+	::isFkTableHasRecord
+14.TableImplReadOp
+	::createPlan
+	::fetchAgg
+15.TreeIndex
+	::insert
+16.TreeIter
+	::next
+	::locateNode
+17.TreeNode
+	::insertNodeIntoFirstLevel
+	::insertRecordIntoNodeAndArrangeFirstLevel
+	::insert
+18.TupleIteraotr
+	::open
+	::next
+
