@@ -102,6 +102,7 @@ int FieldList::size()
     }
     return size;
 }
+
 //-1->if val is passed NULL
 //-2->if fld is not present
 DbRetVal FieldList::updateBindVal(const char *fldName, void *val, 
@@ -126,6 +127,7 @@ DbRetVal FieldList::updateBindVal(const char *fldName, void *val,
     printError(ErrNotFound, "Field not present in the list");
     return ErrNotFound;
 }
+
 void *FieldList::getBindField(const char *fldName)
 {
 	FieldNode *iter = head;
@@ -140,6 +142,7 @@ void *FieldList::getBindField(const char *fldName)
 	printError(ErrNotFound, "Field not present in the list");
     	return NULL;
 }
+
 void FieldList::fillFieldInfo(int fldpos, void *inp)
 {
     int pos=0;
@@ -215,6 +218,7 @@ int FieldList::getFieldOffset(const char *fldName)
         }
         return -1;
 }
+
 int FieldList::getFieldOffset(int fldpos)
 {
     if (fldpos < 1) return -1;
@@ -318,6 +322,7 @@ DbRetVal FieldNameList::append(const char *name)
     it->next = newNode;
     return OK;
 }
+
 //-1 -> if there is nothing in list
 //-2 -> if it is not present in list
 DbRetVal FieldNameList::remove(const char* name)

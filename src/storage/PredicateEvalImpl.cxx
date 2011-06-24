@@ -151,6 +151,7 @@ DbRetVal PredicateImpl::evaluateLogicalForTable(bool &result, char *tuple)
     }
     return OK;
 }
+
 void PredicateImpl::evaluateForTable(bool &result, char *tuple)
 {
     if (!isNoLeftRight) {

@@ -213,6 +213,7 @@ void JoinTableImpl::printPlan(int space)
     printf("%s </RIGHT>\n", spaceBuf);
     printf("%s </JOIN-NODE>\n", spaceBuf);
 }
+
 DbRetVal JoinTableImpl::execute()
 {
     //if (!leftTableHdl->getName())  printf("execute called with isFirstCall %d\n", isFirstCall);
@@ -245,6 +246,7 @@ DbRetVal JoinTableImpl::execute()
     isFirstFetch = true;
     return OK;
 }
+
 void* JoinTableImpl::fetch()
 {
     //if (!leftTableHdl->getName())  printf("fetch called\n");
@@ -264,6 +266,7 @@ void* JoinTableImpl::fetch()
     //if (!leftTableHdl->getName())  printf("rec value is %x\n", rec);
     return rec;
 }
+
 void* JoinTableImpl::fetchInt()
 {
     PredicateImpl* predImpl = (PredicateImpl*) pred;
@@ -340,6 +343,7 @@ void* JoinTableImpl::fetchRightFail()
     copyValuesToBindBuffer(NULL);
     return rec;
 }
+
 void* JoinTableImpl::fetch(DbRetVal &rv)
 {
     rv = OK; 
@@ -372,6 +376,7 @@ DbRetVal JoinTableImpl::copyValuesToBindBuffer(void *elem)
     }
     return OK;
 }
+
 DbRetVal JoinTableImpl::getFieldInfo(const char* fldname, FieldInfo *&info)
 {
     DbRetVal retCode = OK, retCode1 =OK;
@@ -395,6 +400,7 @@ long JoinTableImpl::numTuples()
 {
     return 0;
 }
+
 DbRetVal JoinTableImpl::closeScan()
 {
     //if (leftTableHdl && leftTableHdl->getName()) leftTableHdl->closeScan();
@@ -431,12 +437,14 @@ DbRetVal JoinTableImpl::close()
     delete this;
     return OK;
 }
+
 void* JoinTableImpl::getBindFldAddr(const char *name)
 {
     void* bindAddr = leftTableHdl->getBindFldAddr(name);
     if (bindAddr) return bindAddr;
     return rightTableHdl->getBindFldAddr(name);
 }
+
 List JoinTableImpl::getFieldNameList()
 {
     List fldNameList;
@@ -460,6 +468,7 @@ List JoinTableImpl::getFieldNameList()
     rightList.reset();
     return fldNameList;
 }
+
 bool JoinTableImpl::isTableInvolved(char *tableName)
 {
     //printf("isTableInvolved called in join for %s\n", tableName);
@@ -468,6 +477,7 @@ bool JoinTableImpl::isTableInvolved(char *tableName)
     isInvolved = rightTableHdl->isTableInvolved(tableName);
     return isInvolved;
 }
+
 void* JoinTableImpl::getBindedBuf(char* tName, char* fName)
 {
     ListIterator iter = projList.getIterator();
@@ -483,6 +493,7 @@ void* JoinTableImpl::getBindedBuf(char* tName, char* fName)
     }
     return NULL;
 }
+
 bool JoinTableImpl::pushPredicate(Predicate *pr)
 {
     //printf("PRABA::pushPredicate called\n");
@@ -576,6 +587,7 @@ bool JoinTableImpl::pushPredicate(Predicate *pr)
     }
     return pushed;
 }
+
 void JoinTableImpl::setPredicate(Predicate *pr)
 {
     if (NULL == pred) { pred = pr; return; }
@@ -587,6 +599,7 @@ void JoinTableImpl::setPredicate(Predicate *pr)
     pred = newPred;
     return;
 }
+
 bool JoinTableImpl::isFldNull(const char *name)
 {
     bool ret = false;
@@ -621,6 +634,7 @@ bool JoinTableImpl::isFldNull(const char *name)
     }
     return ret;
 }
+
 //same as above expect it does not check for isRecordFound flag
 //as it is set only after predicate evaluate
 bool JoinTableImpl::isFldNullInt(const char *name)

@@ -21,22 +21,9 @@
 DbRetVal BucketList::insert(Chunk *chunk, Database *db, void *key, void*tuple)
 {
     DbRetVal rv = OK;
-    IndexNode *newNode;// (IndexNode*) chunk->allocate(db, &rv);
-    int tries=0;
-    int totalTries = Conf::config.getMutexRetries();
-    while (tries < totalTries)
-    {
-        rv = OK;
-        newNode= (IndexNode*) chunk->allocate(db, &rv);
-        if (newNode !=NULL) break;
-        if (rv != ErrLockTimeOut) 
-        {
-            printError(rv, "Unable to allocate hash index node");
-            return rv;
-        }
-        //printError (ErrWarning, "Hash Node Alloc: LockTimeOut Retry:%d", tries);
-        tries++;
-    }
+    IndexNode *newNode = NULL;
+    rv = OK;
+    newNode= (IndexNode*) chunk->tryAllocate(db, &rv);
     if (newNode == NULL){
         printError(rv, "Unable to allocate hash index node after %d retry", Conf::config.getMutexRetries());
         return rv;
@@ -71,6 +58,7 @@ DbRetVal BucketList::insert(Chunk *chunk, Database *db, void *key, void*tuple)
     if (rv != OK) printError(ErrSysFatal, "rv is not OK %d\n", rv);
     return rv;
 }
+
 void BucketList::print()
 {
     if (NULL == head) return ;
@@ -82,6 +70,7 @@ void BucketList::print()
     }
     return;
 }
+
 //Returns 2 if the head itself is removed.
 DbRetVal BucketList::remove(Chunk *chunk, Database *db, void *keyPtr)
 {

@@ -195,6 +195,7 @@ DbRetVal LockManager::retrySharedLock(Transaction **trans, LockHashNode *node )
    (*trans)->removeWaitLock();
    return ErrLockTimeOut;
 }
+
 DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
 {
    if (trans == NULL) {
@@ -238,6 +239,7 @@ DbRetVal LockManager::getExclusiveLock(void *tuple, Transaction **trans)
    lockTable.releaseBucketMutex();
    return retryExclusiveLock(trans, node);
 }
+
 bool LockManager::takeXLockOneReader(Transaction **trans, LockHashNode *node)
 {
    bool satisfy = false;
@@ -252,6 +254,7 @@ bool LockManager::takeXLockOneReader(Transaction **trans, LockHashNode *node)
    }
    return satisfy;
 }
+
 bool LockManager::takeXLockOneWriter(Transaction **trans, LockHashNode *node)
 {
    bool satisfy = false;
@@ -264,6 +267,7 @@ bool LockManager::takeXLockOneWriter(Transaction **trans, LockHashNode *node)
    }
    return satisfy;
 }
+
 DbRetVal LockManager::takeXLockNotInUse(Transaction **trans, LockHashNode *node)
 {
    (*trans)->insertIntoHasList(systemDatabase_, node);
@@ -272,6 +276,7 @@ DbRetVal LockManager::takeXLockNotInUse(Transaction **trans, LockHashNode *node)
    (*trans)->removeWaitLock();
    return OK;
 }
+
 DbRetVal LockManager::retryExclusiveLock(Transaction **trans,  LockHashNode *node )
 {
    int tries = 0;
@@ -323,6 +328,7 @@ DbRetVal LockManager::retryExclusiveLock(Transaction **trans,  LockHashNode *nod
    printError(ErrLockTimeOut, "Unable to acquire lock for long time.Timed out");
    return ErrLockTimeOut;
 }
+
 DbRetVal LockManager::releaseLock(void *tuple)
 {
    printDebug(DM_Lock, "LockManager:releaseLock Start");

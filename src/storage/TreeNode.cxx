@@ -39,6 +39,7 @@ long long TreeNode::getTotalElements()
     }
     return totalElement;
 }
+
 void TreeNode::displayAll(int fldOffset)
 {
     DbRetVal rv=OK;
@@ -70,6 +71,7 @@ void TreeNode::displayAll(int fldOffset)
     }
     printf("</TreeNode Info>\n");
 }
+
 void TreeNode::displayAll()
 {
     DbRetVal rv=OK;
@@ -771,6 +773,7 @@ TreeNode* TreeNode::locateNode(Database *db, TreeNode *iter, void *tuple, IndexI
     return iter;
    
 }
+
 TreeNode *TreeNode::locateNodeFromFirstLevel(TreeNode *ftnode, IndexInfo *indInfo,void *tuple, int *pos)
 {
     HashIndexInfo *info = (HashIndexInfo*) indInfo;

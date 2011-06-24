@@ -48,6 +48,7 @@ DbRetVal TupleIterator::setPlan()
     if(predImpl) predImpl->setIfNoLeftRight();
     return OK;
 }
+
 DbRetVal TupleIterator::open()
 {
     PredicateImpl *predImpl = (PredicateImpl*) pred_;

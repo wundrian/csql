@@ -33,6 +33,7 @@ PredicateImpl::~PredicateImpl()
 //    if (lhs)  {delete lhs; lhs = NULL; }
 //    if (rhs) { delete rhs; rhs = NULL; }
 }
+
 void PredicateImpl::print(int space)
 {
     char spaceBuf[IDENTIFIER_LENGTH];
@@ -107,6 +108,7 @@ void PredicateImpl::setTerm(const char* fName1, ComparisionOp op, void *opnd)
     operand2 =NULL;
     operand2Ptr = NULL;
 }
+
 void  PredicateImpl::setTerm(Expression *exp, ComparisionOp op, void **opnd)
 {
     compOp = op;
@@ -119,6 +121,7 @@ void  PredicateImpl::setTerm(Expression *exp, ComparisionOp op, void **opnd)
     operand2Ptr = NULL;
     lExp = exp;
 }
+
 void  PredicateImpl::setTerm(Expression *exp1, ComparisionOp op, Expression *exp2)
 {
     compOp = op;
@@ -132,6 +135,7 @@ void  PredicateImpl::setTerm(Expression *exp1, ComparisionOp op, Expression *exp
     lExp = exp1;
     rExp = exp2;
 }
+
 void PredicateImpl::setTerm(Expression *exp, ComparisionOp  op, const char *fName2 )
 {
     strcpy(fldName2, fName2);
@@ -175,6 +179,7 @@ void PredicateImpl::setTerm(const char* fName1, ComparisionOp op, void **opnd)
     operand2 =NULL;
     operand2Ptr = NULL;
 }
+
 void PredicateImpl::setTerm(const char* fName1, ComparisionOp op, void **opnd, AggType aType)
 {
     strcpy(fldName1, fName1);
@@ -212,6 +217,7 @@ void PredicateImpl::setParent(PredicateImpl *pImpl)
    parent = pImpl;
    return;
 }
+
 void PredicateImpl::setTerm(Predicate *p1, LogicalOp op, Predicate *p2 )
 {
     if (p2 == NULL && op != OpNot || op == OpNot && p2 != NULL) 
@@ -237,6 +243,7 @@ void PredicateImpl::setTable(Table *tbl)
         rhs->setTable(tbl);
    table = tbl;
 }
+
 void PredicateImpl::setIfNoLeftRight()
 {
     if (NULL != lhs)
@@ -259,6 +266,7 @@ void PredicateImpl::setTuple(void *tpl)
          rhs->setTuple(tpl);
     tuple = tpl;
 }
+
 void PredicateImpl::setProjectionList(List *lst)
 {
     if (NULL != lhs)
@@ -268,6 +276,7 @@ void PredicateImpl::setProjectionList(List *lst)
     projList = lst;
     isBindBufSet = false;
 }
+
 bool PredicateImpl::isSingleTerm()
 {
     if (NULL == lhs  && NULL == rhs && comp2Op == OpInvalidComparisionOp) 
@@ -300,6 +309,7 @@ bool PredicateImpl::appendIfSameFld(char *fName, ComparisionOp op, void *buf)
     } 
     return false;
 }
+
 bool PredicateImpl::isIsNullInvolved()
 {
     bool lhsResult = true, rhsResult = true;
@@ -318,6 +328,7 @@ bool PredicateImpl::isIsNullInvolved()
     }
     return false;
 }
+
 bool PredicateImpl::isNotOrInvolved()
 {
     bool lhsResult = true, rhsResult = true;
@@ -365,6 +376,7 @@ void* PredicateImpl::getValIfPointLookupOnInt(int &offset)
     }
     return val;
 }
+
 void* PredicateImpl::getVal1IfBetweenOnInt(int &offset)
 { //perf opt
     if (NULL != lhs && NULL != rhs) return NULL;
@@ -382,6 +394,7 @@ void* PredicateImpl::getVal1IfBetweenOnInt(int &offset)
     }
     return val;
 }
+
 void* PredicateImpl::getVal2IfBetweenOnInt(int &offset)
 { //perf opt
     if (NULL != lhs && NULL != rhs) return NULL;
@@ -669,6 +682,7 @@ void* PredicateImpl::valPtrForIndexField(const char *fname, bool isUnique)
     }
     return NULL;
 }
+
 ComparisionOp PredicateImpl::opForIndexField(const char *fname)
 {
     ComparisionOp lhsRet= OpInvalidComparisionOp, rhsRet= OpInvalidComparisionOp;
@@ -691,6 +705,7 @@ ComparisionOp PredicateImpl::opForIndexField(const char *fname)
     }
     return OpInvalidComparisionOp;
 }
+
 PredicateImpl* PredicateImpl::getTablePredicate()
 {
     PredicateImpl *lhsRet = NULL, *rhsRet = NULL;
@@ -721,6 +736,7 @@ PredicateImpl* PredicateImpl::getTablePredicate()
     } 
     return NULL;
 }
+
 PredicateImpl* PredicateImpl::getJoinPredicate()
 {
     PredicateImpl *lhsRet = NULL, *rhsRet = NULL;
@@ -749,6 +765,7 @@ PredicateImpl* PredicateImpl::getJoinPredicate()
     } 
     return NULL;
 }
+
 void PredicateImpl::removeIfNotNecessary()
 {
     if (NULL != lhs)
@@ -808,6 +825,7 @@ void PredicateImpl::removeIfNotNecessary()
     }
     return;
 }
+
 bool PredicateImpl::isDummyPredicate()
 {
     if (NULL == lhs && NULL == rhs && NULL == parent
@@ -817,6 +835,7 @@ bool PredicateImpl::isDummyPredicate()
     else
         return false;
 }
+
 PredicateImpl* PredicateImpl::getIfOneSidedPredicate()
 {
     if (logicalOp != OpAnd) return NULL;

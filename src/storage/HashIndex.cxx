@@ -112,51 +112,57 @@ bool HashIndex::checkForUniqueKey(IndexNode *head, HashIndexInfo *info, void *tu
     if (!head) return false;
     int offset = info->fldOffset;
     DataType type = info->type;
-        BucketList list(head);
-        BucketIter iter = list.getIterator();
-        IndexNode *node;
-        void *bucketTuple;
-        printDebug(DM_HashIndex, "HashIndex insert Checking for unique");
-        bool res = false;
+    BucketList list(head);
+    BucketIter iter = list.getIterator();
+    IndexNode *node;
+    void *bucketTuple;
+    printDebug(DM_HashIndex, "HashIndex insert Checking for unique");
+    bool res = false;
 
-        while((node = iter.next()) != NULL)
-        {
-            bucketTuple = node->ptrToTuple_;
-            if (type == typeComposite) {
-                FieldIterator fldIter = info->idxFldList.getIterator();
-                int i = 0;
-                while (fldIter.hasElement()) {
-                    FieldDef *def = fldIter.nextElement();
-                    if (def->type_ != typeVarchar) {
-                        res = AllDataType::compareVal(
-                              (char *)bucketTuple + def->offset_,
-                                          (char *)tuple + def->offset_,
+    while((node = iter.next()) != NULL)
+    {
+       bucketTuple = node->ptrToTuple_;
+       if (type == typeComposite) {
+          FieldIterator fldIter = info->idxFldList.getIterator();
+          int i = 0;
+          while (fldIter.hasElement()) {
+             FieldDef *def = fldIter.nextElement();
+             if (def->type_ != typeVarchar) {
+                res = AllDataType::compareVal(
+                      (char *)bucketTuple + def->offset_,
+                      (char *)tuple + def->offset_,
+                      OpEquals, def->type_, def->length_);
+             } else {
+                char *tvcptr = (char *) *(long *)
+                                   ((char *)tuple + def->offset_);
+                char *btvcptr = (char *) *(long *)
+                                   ((char *)bucketTuple + def->offset_);
+                res = AllDataType::compareVal(tvcptr, btvcptr,
                                            OpEquals, def->type_, def->length_);
-                    } else {
-                        char *tvcptr = (char *) *(long *)
-                                                ((char *)tuple + def->offset_);
-                        char *btvcptr = (char *) *(long *)
-                                         ((char *)bucketTuple + def->offset_);
-                        res = AllDataType::compareVal(tvcptr, btvcptr,
-                                           OpEquals, def->type_, def->length_);
-                    }
-                    if (!res) break;
-                }
-            }
-            else {
-                if (type != typeVarchar)
-                    res = AllDataType::compareVal((void*)((char*)bucketTuple +offset), (void*)((char*)tuple +offset), OpEquals,type, info->compLength);
-                else res = AllDataType::compareVal((void*)*(long *)((char*)bucketTuple +offset), (void*)*(long *)((char*)tuple +offset), OpEquals,type, info->compLength);
-            }
-            if (res)
-            {
-                if (type == typeLongLong)
-                   printError(ErrUnique, "Unique key violation for id:%lld",*(long long*) ((char*)tuple +offset) );
-                else
-                   printError(ErrUnique, "Unique key violation");
-                return true;
-            }
-        }
+             }
+             if (!res) break;
+          }
+       }
+       else {
+          if (type != typeVarchar)
+             res = AllDataType::compareVal((void*)((char*)bucketTuple +offset), 
+                                  (void*)((char*)tuple +offset), OpEquals,
+                                  type, info->compLength);
+          else 
+             res = AllDataType::compareVal((void*)*(long *)((char*)bucketTuple +offset), 
+                                           (void*)*(long *)((char*)tuple +offset), 
+                                            OpEquals,type, info->compLength);
+       }
+       if (res)
+       {
+          if (type == typeLongLong)
+             printError(ErrUnique, "Unique key violation for id:%lld",
+                                    *(long long*) ((char*)tuple +offset) );
+          else
+             printError(ErrUnique, "Unique key violation");
+          return true;
+       }
+    }
     return false;
 }
 

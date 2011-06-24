@@ -31,6 +31,7 @@ OrderTableImpl::OrderTableImpl()
     orderBuffer = NULL;
     isPlanCreated=false;
 }
+
 OrderTableImpl::~OrderTableImpl()
 {
     //free memory allocated. make sure that field buffers are freed only once.
@@ -51,6 +52,7 @@ OrderTableImpl::~OrderTableImpl()
     tableHdl = NULL;
     if (orderBuffer) ::free(orderBuffer);
 }
+
 void *OrderTableImpl::getBindFldAddr(const char *name)
 {
     printError(ErrBadCall, "OrderTableImpl getBindFldAdddr not implemented\n"); 
@@ -62,6 +64,7 @@ DbRetVal OrderTableImpl::bindFld(const char *name, void *val, bool dummy)
     printError(ErrBadCall, "OrderTableImpl bindFld not implemented\n"); 
     return ErrBadCall;
 }
+
 DbRetVal OrderTableImpl::setOrderBy(const char *fldname, bool isDesc)
 {
     FieldInfo *info = new FieldInfo();
@@ -116,6 +119,7 @@ DbRetVal OrderTableImpl::setOrderBy(const char *fldname, bool isDesc)
     delete info;
     return OK;
 }
+
 OrderByType OrderTableImpl::getOrderType()
 {
     ListIterator oiter = fldOrderByList.getIterator();
@@ -168,6 +172,7 @@ void OrderTableImpl::checkAndSetSortAlgorithm()
     }
     return;
 }
+
 DbRetVal OrderTableImpl::execute()
 {
     nullValues = 0;
@@ -189,6 +194,7 @@ DbRetVal OrderTableImpl::execute()
     sortIter = sortTree.getListIterator();
     return OK;
 }
+
 int OrderTableImpl::computeOrderBySize()
 {
     ListIterator oiter = fldOrderByList.getIterator();
@@ -201,6 +207,7 @@ int OrderTableImpl::computeOrderBySize()
     }
     return nodeOffset;
 }
+
 DbRetVal OrderTableImpl::insertDistinct()
 {
     char *elem = orderBuffer;
@@ -302,6 +309,7 @@ DbRetVal OrderTableImpl::insert()
     if (rv == ErrUnique) ::free (element);
     return OK;
 }
+
 void* OrderTableImpl::fetch()
 {
     void *elem = sortIter.nextElement();
@@ -310,6 +318,7 @@ void* OrderTableImpl::fetch()
     return elem;
 
 }
+
 void* OrderTableImpl::fetch(DbRetVal &rv)
 {
     rv = OK;
@@ -329,6 +338,7 @@ void* OrderTableImpl::fetchNoBind(DbRetVal &rv)
     rv = OK;
     return fetchNoBind();
 }
+
 DbRetVal OrderTableImpl::setOrderByList(List oList)
 {
     ListIterator fIter = oList.getIterator();
@@ -340,6 +350,7 @@ DbRetVal OrderTableImpl::setOrderByList(List oList)
     }
     return OK;
 }
+
 DbRetVal OrderTableImpl::copyValuesToBindBuffer(void *elem)
 {
     //Iterate through the bind list and copy the value here
@@ -359,6 +370,7 @@ DbRetVal OrderTableImpl::copyValuesToBindBuffer(void *elem)
     }
     return OK;
 }
+
 void OrderTableImpl::setNullableForProj()
 {
     ListIterator fIter = fldProjList.getIterator();
@@ -378,6 +390,7 @@ void OrderTableImpl::setNullableForProj()
     delete info;
     return;
 }
+
 bool OrderTableImpl::isFldNull(const char *fldName)
 {
     int pos = 0;
@@ -393,6 +406,7 @@ bool OrderTableImpl::isFldNull(const char *fldName)
     }
     return isFldNull(pos);
 }
+
 bool OrderTableImpl::isFldNull(int projPos)
 {
     if (BITSET(nullValues, projPos)) return true;
@@ -403,6 +417,7 @@ long OrderTableImpl::numTuples()
 {
     return tableHdl->numTuples();
 }
+
 DbRetVal OrderTableImpl::closeScan()
 {
     sortIter.reset();
@@ -424,6 +439,7 @@ DbRetVal OrderTableImpl::close()
     delete this;
     return OK;
 }
+
 void OrderTableImpl::printPlan(int space)
 {
     char spaceBuf[IDENTIFIER_LENGTH];

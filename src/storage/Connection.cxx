@@ -29,10 +29,12 @@ Connection::~Connection()
     }
     Index::destroy();
 }
+
 char *Connection::getUserName() 
 { 
    return session->getUserName(); 
 }
+
 DbRetVal Connection::open(const char *username, const char *password)
 {
     os::umask(002);
@@ -100,6 +102,7 @@ DbRetVal Connection::rollback()
     if (session == NULL) return ErrNoConnection;
     return session->rollback();
 }
+
 DbRetVal Connection::getExclusiveLock()
 {
     if (session == NULL) return ErrNoConnection;

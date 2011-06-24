@@ -131,6 +131,7 @@ DbRetVal DatabaseManagerImpl::createTable(const char *name, TableDef &def)
     logFinest(Conf::logger, "Table Created %s" , name);
     return OK;
 }
+
 DbRetVal DatabaseManagerImpl::renameTable(const char *oldName,const char *newName)
 {
     void *chunk = NULL;

@@ -165,6 +165,7 @@ DbRetVal TrieIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
     }
     return rv;
 }
+
 DbRetVal TrieIndex::addToValueList(Database *db, void **ptr, Chunk *hIdxNodeChunk, 
                                    IndexInfo *info, void *tuple, void *keyPtr)
 {
@@ -365,6 +366,7 @@ DbRetVal TrieIndex::deleteLogicalUndoLog(Database *sysdb, void *data)
     }
     return OK;
 }
+
 void TrieIndex::displayAll(TrieNode *start, int level)
 {
    printTrieNode(start, level);
@@ -374,6 +376,7 @@ void TrieIndex::displayAll(TrieNode *start, int level)
        if (start->next_[i]) displayAll(start->next_[i], level);
    }
 }
+
 void TrieIndex::printTrieNode(TrieNode *node, int level)
 {
     printf("Trie %x Level %d child:", node, level);

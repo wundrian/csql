@@ -22,11 +22,13 @@ TableDef::~TableDef()
 {
     reset();
 }
+
 void TableDef::reset()
 {
     fldList.removeAll();
     fldCount = 0;
 }
+
 int TableDef::addField(const char *name,  DataType type, size_t length,
                  const void *defaultValue, bool notNull, bool autoIn)
 {

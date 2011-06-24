@@ -49,11 +49,13 @@ void DatabaseManagerImpl::createTransactionManager()
     tMgr_->setFirstTrans(systemDatabase_->getSystemDatabaseTrans(0));
     return;
 }
+
 void DatabaseManagerImpl::setProcSlot()
 {
     systemDatabase_->setProcSlot(procSlot);
     db_->setProcSlot(procSlot);
 }
+
 DbRetVal DatabaseManagerImpl::openSystemDatabase()
 {
     DbRetVal rv = openDatabase(SYSTEMDB);
@@ -203,6 +205,7 @@ DbRetVal DatabaseManagerImpl::createDatabase(const char *name, size_t size)
 
     return OK;
 }
+
 size_t DatabaseManagerImpl::computeSysDbOffset()
 {
     size_t offset = os::alignLong(sizeof (DatabaseMetaData));
@@ -211,6 +214,7 @@ size_t DatabaseManagerImpl::computeSysDbOffset()
     offset = offset + os::alignLong(Conf::config.getMaxProcs() * sizeof(ThreadInfo));
     return offset;
 }
+
 void DatabaseManagerImpl::initMutexes(Database *db_)
 {
     //TODO:for user database do not have transtable and processtable mutex
@@ -230,13 +234,13 @@ DbRetVal DatabaseManagerImpl::deleteDatabase(const char *name)
     {
         shm_id = os::shm_open(Conf::config.getSysDbKey(), 100, 0660);
         os::shm_remove(shm_id);
-		delete systemDatabase_;
-		systemDatabase_ = NULL;
+        delete systemDatabase_;
+        systemDatabase_ = NULL;
     } else {
         shm_id = os::shm_open(Conf::config.getUserDbKey(), 100, 0660);
         os::shm_remove(shm_id);
-		delete db_;
-		db_ = NULL;
+        delete db_;
+        db_ = NULL;
     }
     return OK;
 }
@@ -566,10 +570,12 @@ void DatabaseManagerImpl::printDebugTransInfo()
 {
     tMgr_->printDebugInfo(systemDatabase_);
 }
+
 void DatabaseManagerImpl::printDebugProcInfo()
 {
     pMgr_->printDebugInfo();
 }
+
 void DatabaseManagerImpl::printDebugMutexInfo()
 {
     Database *db = sysDb();
@@ -609,6 +615,7 @@ void DatabaseManagerImpl::printDebugMutexInfo()
     printf("</Chunk Mutexes>\n");
     lMgr_->printMutexInfo();
 }
+
 void DatabaseManagerImpl::printDebugChunkInfo()
 {
     Database *db = sysDb();
@@ -652,6 +659,7 @@ void DatabaseManagerImpl::printDebugChunkInfo()
     printf("</Chunk information>\n");
     return;
 }
+
 ChunkIterator DatabaseManagerImpl::getSystemTableIterator(CatalogTableID id)
 {
     Chunk *fChunk = systemDatabase_->getSystemDatabaseChunk(id);
@@ -720,10 +728,14 @@ DbRetVal DatabaseManagerImpl::pasteRecords(char *tblName, void *buffer)
 }
 
 void DatabaseManagerImpl::setCanTakeCheckPoint(bool ctcp)
-{ systemDatabase_->setCanTakeCheckPoint(ctcp); }
+{ 
+    systemDatabase_->setCanTakeCheckPoint(ctcp); 
+}
 
 bool DatabaseManagerImpl::getCanTakeCheckPoint()
-{ return systemDatabase_->getCanTakeCheckPoint(); }
+{ 
+    return systemDatabase_->getCanTakeCheckPoint(); 
+}
 
 DbRetVal DatabaseManagerImpl::checkPoint()
 {

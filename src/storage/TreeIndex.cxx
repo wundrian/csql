@@ -73,6 +73,7 @@ DbRetVal TreeIndex::deleteLogicalUndoLog(Database *sysdb, void *data)
     delete info;
     return rv;
 }
+
 DbRetVal TreeIndex::insertLogicalUndoLog(Database *sysdb, void *data)
 {
     DbRetVal rc = OK;
@@ -157,6 +158,7 @@ DbRetVal TreeIndex::insertLogicalUndoLog(Database *sysdb, void *data)
     return rc;
 
 }
+
 DbRetVal TreeIndex::insert(TableImpl *tbl, Transaction *tr, void *indexPtr, IndexInfo *indInfo, void *tuple, bool undoFlag)
 {
     HashIndexInfo *info = (HashIndexInfo*) indInfo;
@@ -318,6 +320,7 @@ DbRetVal TreeIndex::remove(TableImpl *tbl, Transaction *tr, void *indexPtr, Inde
    }
    return rc;
 }
+
 void TreeIndex::removeNode(Database *db,void *indexPtr,TreeNode *fltnode, TreeNode *node,int pos)
 {
     CINDEX *iptr = (CINDEX*)indexPtr;
@@ -468,6 +471,7 @@ DbRetVal TreeIndex::getTreeNodeMutex(TreeNode *node, int procSlot, bool isX)
     return OK;
 
 }
+
 DbRetVal TreeIndex::upgradeTreeNodeMutex(TreeNode *node, int procSlot)
 {
     struct timeval timeout, timeval;

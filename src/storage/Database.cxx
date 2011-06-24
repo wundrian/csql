@@ -43,20 +43,24 @@ long Database::getCurrentSize()
     return metaData_->curSize_;
 
 }
+
 Page* Database::getCurrentPage()
 {
     return metaData_->curPage_;
 
 }
+
 Page* Database::getFirstPage()
 {
     return metaData_->firstPage_;
 
 }
+
 int Database::getNoOfChunks()
 {
     return metaData_->noOfChunks_;
 }
+
 Chunk* Database::getHashIndexChunk()
 {
     return metaData_->hashIndexChunk_;
@@ -66,31 +70,38 @@ void Database::setDatabaseID(int id)
 {
     metaData_->dbID_ = id;
 }
+
 void Database::setName(const char *name)
 {
     strcpy(metaData_->dbName_ , name);
 }
+
 void Database::setCurrentSize(long size)
 {
     metaData_->curSize_ = size;
 }
+
 void Database::setCurrentPage(Page *page)
 {
     //metaData_->curPage_ = page;
     Mutex::CASL((long*)&metaData_->curPage_, (long)metaData_->curPage_, (long)page);
 }
+
 void Database::setFirstPage(Page *page)
 {
     metaData_->firstPage_ = page;
 }
+
 void Database::setMaxSize(long size)
 {
     metaData_->maxSize_ = size;
 }
+
 void Database::setNoOfChunks(int chunks)
 {
     metaData_->noOfChunks_ = chunks;
 }
+
 void Database::setHashIndexChunk(Chunk *ch)
 {
     metaData_->hashIndexChunk_ = ch;
@@ -105,10 +116,12 @@ void Database::printDebugMutexInfo()
    metaData_->dbPrepareStmtMutex_.print();
    metaData_->chunkUniqueID_.print();
 }
+
 int Database::initAllocDatabaseMutex()
 {
     return metaData_->dbAllocMutex_.init("allocdb");
 }
+
 DbRetVal Database::getAllocDatabaseMutex(bool procAccount) 
 {
     struct timeval timeout, timeval;
@@ -129,6 +142,7 @@ DbRetVal Database::getAllocDatabaseMutex(bool procAccount)
     if (tries >= totalTries) return ErrLockTimeOut;
     return OK;
 }
+
 DbRetVal Database::releaseAllocDatabaseMutex(bool procAccount)
 {
     metaData_->dbAllocMutex_.releaseLock(procSlot, procAccount);
@@ -139,6 +153,7 @@ int Database::initPrepareStmtMutex()
 {
     return metaData_->dbPrepareStmtMutex_.init("prepstmt");
 }
+
 DbRetVal Database::getPrepareStmtMutex(bool procAccount) 
 {
     struct timeval timeout, timeval;
@@ -160,6 +175,7 @@ DbRetVal Database::getPrepareStmtMutex(bool procAccount)
     return OK;
 
 }
+
 DbRetVal Database::releasePrepareStmtMutex(bool procAccount)
 {
     metaData_->dbPrepareStmtMutex_.releaseLock(procSlot, procAccount);
@@ -170,6 +186,7 @@ int Database::initTransTableMutex()
 {
     return metaData_->dbTransTableMutex_.init("transtable");
 }
+
 DbRetVal Database::getTransTableMutex()
 {
     struct timeval timeout, timeval;
@@ -191,6 +208,7 @@ DbRetVal Database::getTransTableMutex()
     return OK;
 
 }
+
 DbRetVal Database::releaseTransTableMutex()
 {
     metaData_->dbTransTableMutex_.releaseLock(procSlot);
@@ -203,6 +221,7 @@ int Database::initProcessTableMutex()
 {
     return metaData_->dbProcTableMutex_.init("proctable");
 }
+
 DbRetVal Database::getProcessTableMutex(bool procAccount)
 {
     struct timeval timeout, timeval;
@@ -224,6 +243,7 @@ DbRetVal Database::getProcessTableMutex(bool procAccount)
     return OK;
 
 }
+
 DbRetVal Database::releaseProcessTableMutex(bool procAccount)
 {
     metaData_->dbProcTableMutex_.releaseLock(procSlot, procAccount);
@@ -234,6 +254,7 @@ int Database::initCheckpointMutex()
 {
     return metaData_->ckptMutex_.init("checkpoint");
 }
+
 DbRetVal Database::getSCheckpointMutex(bool procAccount)
 {
     struct timeval timeout, timeval;
@@ -255,6 +276,7 @@ DbRetVal Database::getSCheckpointMutex(bool procAccount)
     return OK;
 
 }
+
 DbRetVal Database::getXCheckpointMutex(bool procAccount)
 {
     struct timeval timeout, timeval;
@@ -276,6 +298,7 @@ DbRetVal Database::getXCheckpointMutex(bool procAccount)
     return OK;
 
 }
+
 DbRetVal Database::releaseCheckpointMutex(bool procAccount)
 {
     metaData_->ckptMutex_.releaseShareLock(procSlot, procAccount);
@@ -535,6 +558,7 @@ void Database::createAllCatalogTables()
     createSystemTables();
     createMetaDataTables();
 }
+
 void Database::createSystemTables()
 {
     createSystemDatabaseChunk(FixedSizeAllocator,
@@ -553,6 +577,7 @@ void Database::createSystemTables()
     createSystemDatabaseChunk(VariableSizeAllocator,
                                   0, UndoLogTableID);
 }
+
 void Database::createMetaDataTables()
 {
     createSystemDatabaseChunk(FixedSizeAllocator,
@@ -620,6 +645,7 @@ Bucket* Database::getLockHashBuckets()
     ChunkIterator iter = tChunk->getIterator();
     return (Bucket*)iter.nextElement();
 }
+
 void Database::setUniqueChunkID(int id)
 {
     (metaData_->chunkUniqueID_).setID(id);

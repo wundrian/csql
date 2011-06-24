@@ -36,6 +36,7 @@ AggTableImpl::AggTableImpl()
     optGrpIntNoNull = false;
     grpBindBuf = NULL;
 }
+
 AggTableImpl::~AggTableImpl()
 {
     //free memory allocated. make sure that field buffers are freed only once.
@@ -63,6 +64,7 @@ AggTableImpl::~AggTableImpl()
     tableHdl = NULL;
     ::free(grpFldBuffer);
 }
+
 void *AggTableImpl::getBindFldAddr(const char *name)
 {
     printError(ErrBadCall, "AggTableImpl getBindFldAdddr not implemented\n"); 
@@ -74,6 +76,7 @@ DbRetVal AggTableImpl::bindFld(const char *name, void *val, bool dummy)
     printError(ErrBadCall, "AggTableImpl bindFld not implemented\n"); 
     return ErrBadCall;
 }
+
 DbRetVal AggTableImpl::bindFld(const char *fldname, AggType aggType, void *val)
 {
     FieldInfo *info = new FieldInfo();
@@ -125,6 +128,7 @@ DbRetVal AggTableImpl::bindFld(const char *fldname, AggType aggType, void *val)
     delete info;
     return OK;
 }
+
 DbRetVal AggTableImpl::setGroup(const char *fldname, void *val)
 {
     FieldInfo *info = new FieldInfo();
@@ -185,6 +189,7 @@ bool AggTableImpl::isFldPresentInGrp(char *fname)
     }
     return false;
 }
+
 int AggTableImpl::getAggOffset(char *fname, AggType aggType)
 {
    ListIterator iter = fldList.getIterator();
@@ -237,6 +242,7 @@ DbRetVal AggTableImpl::copyValuesFromGrpBindBuf(char *buffer, char *fname)
     }
     return OK;
 }
+
 DbRetVal AggTableImpl::optimize()
 {
    AggFldDef *grpFld=NULL;
@@ -254,6 +260,7 @@ DbRetVal AggTableImpl::optimize()
    }
    return OK;
 }
+
 DbRetVal AggTableImpl::execute()
 {
     ListIterator iter = fldList.getIterator();
@@ -401,6 +408,7 @@ void* AggTableImpl::getGroupValueBuffer()
    memcpy(offset, &grpNullInfo, sizeof(int));
    return grpFldBuffer;
 }
+
 void* AggTableImpl::insertOrGetAggNode()
 {
     char *element;
@@ -486,6 +494,7 @@ void* AggTableImpl::fetch()
     return NULL;
 
 }
+
 void* AggTableImpl::fetch(DbRetVal &rv)
 {
     rv = OK;
@@ -554,6 +563,7 @@ long AggTableImpl::numTuples()
 {
     return aggNodes.size();
 }
+
 DbRetVal AggTableImpl::closeScan()
 {
     aggNodeIter.reset();
@@ -593,6 +603,7 @@ bool AggTableImpl::isFldNull(const char *name)
     }
     return isFldNull(colpos);
 }
+
 void AggTableImpl::printPlan(int space)
 {
     char spaceBuf[IDENTIFIER_LENGTH];

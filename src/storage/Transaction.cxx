@@ -51,6 +51,7 @@ DbRetVal Transaction::insertIntoHasList(Database *sysdb, LockHashNode *node)
     logFinest(Conf::logger, "Added locknode:%x to hasLockList", hasNode->node_);
     return OK;
 }
+
 void Transaction::printTotalNodes()
 {
     TransHasNode *iter = hasLockList_;
@@ -62,6 +63,7 @@ void Transaction::printTotalNodes()
     }
     //printf("TOTAL Lock Nodes %d\n", cnt);
 }
+
 DbRetVal Transaction::removeFromHasList(Database *sysdb, void *tuple)
 {
     Chunk *chunk = sysdb->getSystemDatabaseChunk(TransHasTableId);
@@ -118,6 +120,7 @@ DbRetVal Transaction::releaseAllLocks(LockManager *lockManager_)
     hasLockList_ = NULL;
     return OK;
 }
+
 bool Transaction::findInHasList(Database *sysdb, LockHashNode *node)
 {
     TransHasNode *iter  = hasLockList_;
@@ -167,6 +170,7 @@ DbRetVal Transaction::appendLogicalHashUndoLog(Database *sysdb, OperationType ty
     printDebug(DM_Transaction, "creating logical undo log and append %x optype:%d", logInfo, type);
     return rv;
 }
+
 DbRetVal Transaction::appendLogicalTreeUndoLog(Database *sysdb, OperationType type, void *data, size_t size)
 {
     DbRetVal rv = OK;
@@ -178,6 +182,7 @@ DbRetVal Transaction::appendLogicalTreeUndoLog(Database *sysdb, OperationType ty
     printDebug(DM_Transaction, "creating logical undo log and append %x optype:%d", logInfo, type);
     return rv;
 }
+
 DbRetVal Transaction::appendLogicalTrieUndoLog(Database *sysdb, OperationType type, void *data, size_t size)
 {
     DbRetVal rv = OK;
@@ -254,6 +259,7 @@ int Transaction::noOfUndoLogs()
     }
     return count;
 }
+
 void Transaction::printDebugInfo(Database *sysdb)
 {
    printf("<TransactionInfo>\n");
@@ -295,6 +301,7 @@ void Transaction::printDebugInfo(Database *sysdb)
    printf("</TransactionInfo>\n");
    return ;
 }
+
 DbRetVal Transaction::removeUndoLogs(Database *sysdb)
 {
     Chunk *chunk = sysdb->getSystemDatabaseChunk(UndoLogTableID);
@@ -305,7 +312,6 @@ DbRetVal Transaction::removeUndoLogs(Database *sysdb)
     }
     return OK;
 }
-
 
 DbRetVal Transaction::applyUndoLogs(Database *sysdb)
 {
@@ -401,6 +407,7 @@ DbRetVal Transaction::applyUndoLogs(Database *sysdb)
     }
     return OK;
 }
+
 DbRetVal Transaction::handleVarcharUndoInsert(Database *sysdb, char *ptr)
 {
     // ptr  will have following info encapsulated.
@@ -459,6 +466,7 @@ DbRetVal Transaction::handleVarcharUndoDelete(Database *sysdb, char *ptr)
     }
     return rv;
 }
+
 DbRetVal Transaction::handleVarcharUndoUpdate(Database *sysdb, char *ptr, void *ptrToTuple)
 {
     // logInfo->data_ will have following info encapsulated.

@@ -30,6 +30,7 @@ void PageInfo::setPageAsFree()
     if (ret != 0) printError(ErrSysFatal, "Fatal:CAS Failed");
     return;
 }
+
 void PageInfo::setPageAsUsed(size_t offset)
 {
     int ret = Mutex::CAS(&isUsed_, isUsed_,1);
@@ -51,6 +52,7 @@ void PageInfo::setPageAsUsed(size_t offset)
     }
     return;
 }
+
 void PageInfo::setFirstPageAsUsed()
 {
     int ret = Mutex::CASGen(&isUsed_, 0,1);

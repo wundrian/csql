@@ -594,6 +594,7 @@ DbRetVal DatabaseManagerImpl::removeIndexCatalogTables(const char *name, void *&
     printDebug(DM_Database, "Removing from INDEXFIELD %s",name);
     return OK;
 }
+
 DbRetVal DatabaseManagerImpl::removeIndexChunks(void* chunk, void* hchunk, IndexType iType)
 {
     DbRetVal rv = deleteUserChunk((Chunk*)chunk);
@@ -714,6 +715,7 @@ DbRetVal DatabaseManagerImpl::printIndexDebugInfo(char *name)
 
 
 }
+
 DbRetVal DatabaseManagerImpl::printIndexInfo(char *name)
 {
     CatalogTableINDEX cIndex(systemDatabase_);

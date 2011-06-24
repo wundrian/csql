@@ -37,6 +37,7 @@ void Expression::setTuple(void *tpl)
 
     tuple = tpl;
 }
+
 void Expression::setFunctionType(FunctionType type)
 {
     if(NULL!=lhs)
@@ -45,6 +46,7 @@ void Expression::setFunctionType(FunctionType type)
         rhs->setFunctionType(type);
     fType = type;
 }
+
 void Expression::setExpr(Expression* exp1, FunctionType type,Expression* exp2) 
 {
     lhs = exp1;
@@ -52,6 +54,7 @@ void Expression::setExpr(Expression* exp1, FunctionType type,Expression* exp2)
     setFunctionType(type);
     arOp=unKnownOperator;
 }
+
 void Expression::setExpr(void *cVal,bool flag)
 {
     arOp=unKnownOperator;
@@ -77,9 +80,9 @@ void Expression::setExpr(char const *name)
 
 void Expression::setExpr(Expression *exp1, ArithOperator op, Expression *exp2)
 {
-        lhs = exp1;
-        rhs = exp2;
-        arOp = op;
+    lhs = exp1;
+    rhs = exp2;
+    arOp = op;
 }
 
 void *Expression::evaluate(DataType type,bool &result)
@@ -143,6 +146,7 @@ void *Expression::evaluate(DataType type,bool &result)
         solve(lhsResult, rhsResult, type, arOp);
         return lhsResult;
     }
+    return NULL;
     
 }
 
@@ -604,6 +608,7 @@ bool Expression::isSingleTerm()
     if (NULL==lhs && NULL==rhs ) return true; 
     else false;
 }
+
 void Expression::memFree()
 {
     if(lhs!=NULL)
@@ -628,6 +633,7 @@ void Expression::convertStrToVal(DataType type)
     }    
 
 }
+
 void Expression::freeVal()
 {
     if(lhs!=NULL)

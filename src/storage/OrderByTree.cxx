@@ -107,12 +107,14 @@ DbRetVal OrderByTree::insertDataNode(void *data)
     projMap.insert(data);
     return OK;
 }
+
 bool OrderByTree::find(void *data)
 {
     void *element = projMap.find(data);
     if (element) return true;
     return false;
 }
+
 int OrderByTree::compare(void *element1,void *element2,int size)
 {
     return os::memcmp(element1,element2,size);
@@ -122,6 +124,7 @@ ListIterator OrderByTree::getListIterator()
 {
     return dataNode.getIterator();
 }
+
 void OrderByTree::removeAll()
 {
      dataNode.reset();

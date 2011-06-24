@@ -633,6 +633,7 @@ int Chunk::totalPages()
     }
     return totPages;
 }
+
 int Chunk::totalDirtyPages()
 {
     PageInfo* pageInfo = ((PageInfo*)firstPage_);
@@ -655,18 +656,22 @@ int Chunk::initMutex(int id)
        sprintf(mutName, "Chunk:%d",id);
     return chunkMutex_.init(mutName);
 }
+
 int Chunk::getChunkMutex(int procSlot)
 {
     return chunkMutex_.getLock(procSlot);
 }
+
 int Chunk::releaseChunkMutex(int procSlot)
 {
     return chunkMutex_.releaseLock(procSlot);
 }
+
 int Chunk::destroyMutex()
 {
     return chunkMutex_.destroy();
 }
+
 void Chunk::setChunkNameForSystemDB(int id)
 {
     strcpy(chunkName,ChunkName[id]);

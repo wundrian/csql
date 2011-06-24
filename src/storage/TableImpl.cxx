@@ -36,6 +36,7 @@ void Table::getFieldNameAlone(char *fname, char *name) {
     if (dotFound) strcpy(name, ++fullname); else strcpy(name, fname);
 
 }
+
 void Table::getTableNameAlone(char *fname, char *name) {
     strcpy(name, fname);
     char *start = name;
@@ -67,6 +68,7 @@ int TableImpl::getFldPos(char *name)
 {
     return fldList_.getFieldPosition(name);
 }
+
 void TableImpl::setAliasName(char *name)
 {
     strcpy(aliasName, name);
@@ -110,6 +112,7 @@ IndexType TableImpl::getIndexType(char *fName, int *pos)
    *(int*)pos = -1;
    return unknownIndex;
 }
+
 void TableImpl::addPredicate(char *fName, ComparisionOp op, void *buf)
 {
     char fieldName[IDENTIFIER_LENGTH];
@@ -143,6 +146,7 @@ DbRetVal TableImpl::trySharedLock(void *curTuple, Transaction **trans)
     }
     return lockRet;
 }
+
 DbRetVal TableImpl::tryExclusiveLock(void *curTuple, Transaction **trans)
 {
     DbRetVal lockRet = OK;
@@ -453,6 +457,7 @@ List TableImpl::getFieldNameList()
     } 
     return fldNameList;
 }
+
 DbRetVal TableImpl::close()
 {
     if (iter) { iter->close(); delete iter; iter = NULL; }
@@ -506,6 +511,7 @@ DbRetVal TableImpl::takeTableMutex()
     if (tries >= totalTries) return ErrLockTimeOut;
     return OK;
 }
+
 DbRetVal TableImpl::releaseTableMutex()
 {
     sysDB_->releaseAllocDatabaseMutex();
@@ -532,6 +538,7 @@ DbRetVal TableImpl::lock(bool shared)
 */
     return ret;
 }
+
 DbRetVal TableImpl::unlock()
 {
 /*
@@ -571,6 +578,7 @@ void *TableImpl::getBindFldAddr(const char *name)
 {
 	return fldList_.getBindField(name);
 }
+
 bool TableImpl::isTableInvolved(char  *tblName)
 {
     //printf("Table isTableInvolved called for %s with %s\n", tblName, getName());
@@ -602,6 +610,7 @@ void TableImpl::setPredicate(Predicate *pred)
     pred_ = newPred;
     return;
 }
+
 void TableImpl::printPlan(int space)
 {
     char spaceBuf[IDENTIFIER_LENGTH];
@@ -614,6 +623,7 @@ void TableImpl::printPlan(int space)
     if (pred) pred->print(space+2);
     printf("%s </TABLE-NODE>\n", spaceBuf);
 }
+
 void TableImpl::printSQLForeignString()
 {
     DbRetVal rv=OK;
@@ -669,6 +679,7 @@ void TableImpl::printSQLForeignString()
     }
     return;
 }
+
 DbRetVal TableImpl::compact()
 {
     DbRetVal rv=OK;

@@ -61,7 +61,6 @@ DbRetVal SessionImpl::initSystemDatabase()
         return rv;
     }
 
-
     db->createAllCatalogTables();
 
     //create the default dba user
@@ -72,7 +71,6 @@ DbRetVal SessionImpl::initSystemDatabase()
         db->releaseCheckpointMutex();
         return rv;
     }
-
     rv = cUser.insert(DBAUSER, DBAPASS);
     if (OK != rv)
     {
@@ -124,7 +122,7 @@ DbRetVal SessionImpl::open(const char *username, const char *password)
 {
 #if (defined MMDB) && (defined EMBED)
     openEmbeddedConnection(username, password);
-# else 
+#else 
     DbRetVal rv = OK;
     rv = readConfigFile();
     if (rv != OK)
@@ -213,6 +211,7 @@ DbRetVal SessionImpl::getExclusiveLock()
    isXTaken = true;
    return rv;
 }
+
 DbRetVal SessionImpl::close()
 {
 # if (defined MMDB) && (defined EMBED)
@@ -316,7 +315,6 @@ DbRetVal SessionImpl::commit()
     return OK;
 }
 
-
 DbRetVal SessionImpl::rollback()
 {
     DbRetVal rv = OK;
@@ -354,6 +352,7 @@ DbRetVal SessionImpl::readConfigFile()
     if (rv != 0) return ErrSysInit;
     return OK;
 }
+
 Database* SessionImpl::getSystemDatabase()
 {
     return dbMgr->sysDb();

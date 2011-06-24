@@ -20,15 +20,18 @@ Condition::Condition()
 {
     pred = NULL;
 }
+
 void Condition::reset()
 {
     //if (pred) {delete pred;}
     pred =  NULL;
 }
+
 Condition::~Condition()
 {
     reset();
 }
+
 void Condition::setTerm(const char* fName1, ComparisionOp op,
                         const char *fName2)
 {

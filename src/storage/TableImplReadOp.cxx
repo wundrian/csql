@@ -187,6 +187,7 @@ void* TableImpl::fetch()
     copyValuesToBindBuffer(curTuple_);
     return curTuple_;
 }
+
 void* TableImpl::fetch(DbRetVal &rv)
 {
     fetchNoBind(rv);
@@ -318,6 +319,7 @@ void* TableImpl::fetchNoBind(DbRetVal &rv)
     }
     return curTuple_;
 }
+
 DbRetVal TableImpl::fetchAgg(const char * fldName, AggType aType, void *buf, bool &noRec)
 {
    FieldInfo *info = new FieldInfo();

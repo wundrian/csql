@@ -162,6 +162,7 @@ DbRetVal Database::checkPoint()
     }
     return OK;
 }
+
 DbRetVal Database::filterAndRemoveStmtLogs()
 {
     struct stat st;
@@ -259,6 +260,7 @@ DbRetVal Database::filterAndRemoveStmtLogs()
     ret = system(cmd);
     return rv;
 }
+
 int Database::getCheckpointID()
 {
     int id=0;
@@ -270,6 +272,7 @@ int Database::getCheckpointID()
     fclose(fp);
     return id;
 }
+
 void Database::setCheckpointID(int id)
 {
     char curCkptFile[MAX_FILE_LEN];
@@ -285,7 +288,6 @@ void Database::setCheckpointID(int id)
     fclose(fp);
     return;
 }
-
 
 //used only by the user database not the system database
 DbRetVal Database::recoverUserDB()

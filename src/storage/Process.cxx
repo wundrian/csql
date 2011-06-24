@@ -106,6 +106,7 @@ DbRetVal ProcessManager::registerThread()
     systemDatabase->releaseProcessTableMutex(false);
     return OK;
 }
+
 DbRetVal ProcessManager::deregisterThread(int procSlot)
 {
     //mutex.getLock(-1, false);

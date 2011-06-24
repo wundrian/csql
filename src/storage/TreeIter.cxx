@@ -64,6 +64,7 @@ void* TreeIter::prev()
    rec = (char**)((char *)rec + ((nodeOffset) * sizeof(void **)));
    return *rec;
 }
+
 void TreeIter::nextNode()
 {
     if (recordsOver) return ;
@@ -197,6 +198,7 @@ void* TreeIter::next()
     }
     return NULL;
 }
+
 void* TreeIter::locateNode()
 {
     TreeNode *tnode=NULL;
