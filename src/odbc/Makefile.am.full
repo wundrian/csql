@@ -2,7 +2,7 @@ INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/src/sql -I$(top_srcdir)/inclu
 METASOURCES = AUTO
 lib_LTLIBRARIES = libcsqlodbc.la
 libcsqlodbc_la_LDFLAGS = -avoid-version -module \
-    -L$(top_srcdir)/src/storage -lcsql \
+    -L$(top_srcdir)/src/storage -lcsqlstorage \
     -L$(top_srcdir)/src/network -lcsqlnw \
     -L$(top_srcdir)/src/sql -lcsqlsql \
     -L$(top_srcdir)/src/sqlnetwork -lcsqlsqlnw \
