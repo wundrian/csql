@@ -205,8 +205,10 @@ int AggTableImpl::getAggOffset(char *fname, AggType aggType)
        else {
            if (projDef->aType == AGG_AVG) 
                offset = offset + sizeof (double)+ sizeof(int);
-           else if (projDef->aType == AGG_COUNT) offset = offset + sizeof(int);
-           else offset = offset + projDef->length;
+           else if (projDef->aType == AGG_COUNT) 
+               offset = offset + sizeof(int);
+           else 
+               offset = offset + os::align(projDef->length);
        }
     }
     printError(ErrSysFatal, "Aggregate condition not found in projection list %s", fname);
@@ -221,7 +223,7 @@ int AggTableImpl::computeGrpNodeSize()
    while (iter.hasElement())
    {
       grpFld=(AggFldDef *)iter.nextElement();
-      totalGrpNodeSize=totalGrpNodeSize + grpFld->length;      
+      totalGrpNodeSize=totalGrpNodeSize + os::align(grpFld->length);      
    }   
    return totalGrpNodeSize;
 }
@@ -279,7 +281,7 @@ DbRetVal AggTableImpl::execute()
             aggNodeSize += sizeof(int);//for count 
         } 
         else if (def->aType == AGG_COUNT) aggNodeSize += sizeof(int);
-        else aggNodeSize += def->length;
+        else aggNodeSize += os::align(def->length);
     }
     void *tuple = NULL;
     int offset=0;
@@ -302,7 +304,7 @@ DbRetVal AggTableImpl::execute()
                if (def->aType == AGG_AVG) 
                    offset = offset + sizeof(double) + sizeof(int);
                else if (def->aType == AGG_COUNT) offset += sizeof(int);
-               else offset = offset + def->length;
+               else offset = offset + os::align(def->length);
                colpos++;
                continue;
            }
@@ -356,8 +358,10 @@ DbRetVal AggTableImpl::execute()
            clearFldNull(colpos);
            if (def->aType == AGG_AVG) 
                offset = offset + sizeof(double) + sizeof(int);
-           else if (def->aType == AGG_COUNT) offset += sizeof(int);
-           else offset = offset + def->length;
+           else if (def->aType == AGG_COUNT) 
+               offset += sizeof(int);
+           else 
+              offset = offset + os::align(def->length);
            colpos++;
         }
         memcpy(nullInfo, &prjNullInfo, sizeof(long long));
@@ -378,8 +382,10 @@ DbRetVal AggTableImpl::execute()
             offset = offset + sizeof(double) + sizeof(int);
             continue;
         }
-        else if (def->aType == AGG_COUNT) offset += sizeof(int);
-        else offset = offset + def->length;
+        else if (def->aType == AGG_COUNT) 
+            offset += sizeof(int);
+        else 
+            offset = offset + os::align(def->length);
     }
     aggNodeIter.reset();
     tableHdl->closeScan();
@@ -402,7 +408,7 @@ void* AggTableImpl::getGroupValueBuffer()
    {
         if (def->isNullable && tableHdl->isFldNull(def->fldName)) markFldNull(colpos); 
         else AllDataType::copyVal(offset, def->bindBuf, def->type, def->length);
-        offset = offset + def->length;
+        offset = offset + os::align(def->length);
         colpos++;
    }
    memcpy(offset, &grpNullInfo, sizeof(int));
@@ -437,7 +443,7 @@ void* AggTableImpl::insertOrGetAggNode()
                                                            markFldNull(colpos);
          else 
              AllDataType::copyVal(offset, def->bindBuf, def->type,def->length);
-         offset = offset + def->length;
+         offset = offset + os::align(def->length);
          colpos++;
     }
     memcpy(offset, &grpNullInfo, sizeof(int));
@@ -469,8 +475,10 @@ void* AggTableImpl::insertOrGetAggNode()
          }
          if (def->aType == AGG_AVG)
              offset = offset + sizeof(double) + sizeof(int);
-         else if (def->aType == AGG_COUNT) offset += sizeof(int);
-         else offset = offset + def->length;
+         else if (def->aType == AGG_COUNT) 
+             offset += sizeof(int);
+         else 
+            offset = offset + os::align(def->length);
     }
     aggNodes.append(element);
     aggNodeMap.insert(element);
@@ -534,8 +542,10 @@ DbRetVal AggTableImpl::copyValuesToBindBuffer(void *elem)
         if (isFldNull(colpos)) {
             if (def->aType == AGG_AVG) 
                 colPtr += sizeof(double) + sizeof(int);
-            else if (def->aType == AGG_COUNT) colPtr += sizeof(int);
-            else colPtr += def->length;
+            else if (def->aType == AGG_COUNT) 
+                colPtr += sizeof(int);
+            else 
+                colPtr += os::align(def->length);
             colpos++;
             continue;
         }    
@@ -551,7 +561,7 @@ DbRetVal AggTableImpl::copyValuesToBindBuffer(void *elem)
             else {
                  AllDataType::copyVal(def->appBuf, colPtr, def->type, 
                                                                   def->length);
-                 colPtr = colPtr + def->length;
+                 colPtr = colPtr + os::align(def->length);
             }
         }
         colpos++;
