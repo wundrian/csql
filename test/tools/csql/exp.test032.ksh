@@ -46,7 +46,7 @@ echo select * from t1 where f1=10 and f2=6 and f3=10;
 	t1.f1	t1.f2	t1.f3	
 ---------------------------------------------------------
 	
-CREATE TABLE t1 (f1 INT  NOT NULL , f2 CHAR (12) NOT NULL , f3 INT );
+CREATE TABLE t1 (f1 INT  NOT NULL , f2 CHAR (10) NOT NULL , f3 INT );
 CREATE INDEX idx on t1 (  f1  ,f2  )  HASH  UNIQUE;
 INSERT INTO t1 VALUES(1, '1',1);
 INSERT INTO t1 VALUES(2, '1',2);

@@ -26,7 +26,7 @@ Statement execute failed with error -16
       <FieldInfo>
         <FieldName> f1 </FieldName>
         <Type> 4 </Type>
-        <Length> 4 </Length>
+        <Length> 1 </Length>
         <Primary> 0 </Primary>
         <Null> 0 </Null>
         <Default> 0 </Default>
@@ -35,7 +35,7 @@ Statement execute failed with error -16
       <FieldInfo>
         <FieldName> f2 </FieldName>
         <Type> 3 </Type>
-        <Length> 4 </Length>
+        <Length> 2 </Length>
         <Primary> 0 </Primary>
         <Null> 0 </Null>
         <Default> 0 </Default>
@@ -62,7 +62,7 @@ Statement execute failed with error -16
       <FieldInfo>
         <FieldName> f5 </FieldName>
         <Type> 30 </Type>
-        <Length> 12 </Length>
+        <Length> 11 </Length>
         <Primary> 0 </Primary>
         <Null> 0 </Null>
         <Default> 0 </Default>
@@ -71,7 +71,7 @@ Statement execute failed with error -16
       <FieldInfo>
         <FieldName> f6 </FieldName>
         <Type> 32 </Type>
-        <Length> 12 </Length>
+        <Length> 10 </Length>
         <Primary> 0 </Primary>
         <Null> 0 </Null>
         <Default> 0 </Default>
@@ -80,7 +80,7 @@ Statement execute failed with error -16
       <FieldInfo>
         <FieldName> f7 </FieldName>
         <Type> 11 </Type>
-        <Length> 4 </Length>
+        <Length> 3 </Length>
         <Primary> 0 </Primary>
         <Null> 0 </Null>
         <Default> 0 </Default>

@@ -22,7 +22,7 @@ echo show tables;
       <FieldInfo>
         <FieldName> f2 </FieldName>
         <Type> 32 </Type>
-        <Length> 12 </Length>
+        <Length> 11 </Length>
         <Primary> 0 </Primary>
         <Null> 0 </Null>
         <Default> 0 </Default>
@@ -31,7 +31,7 @@ echo show tables;
       <FieldInfo>
         <FieldName> f3 </FieldName>
         <Type> 30 </Type>
-        <Length> 12 </Length>
+        <Length> 10 </Length>
         <Primary> 0 </Primary>
         <Null> 0 </Null>
         <Default> 0 </Default>
@@ -40,7 +40,7 @@ echo show tables;
       <FieldInfo>
         <FieldName> f4 </FieldName>
         <Type> 32 </Type>
-        <Length> 12 </Length>
+        <Length> 10 </Length>
         <Primary> 0 </Primary>
         <Null> 0 </Null>
         <Default> 0 </Default>
@@ -52,7 +52,7 @@ echo show tables;
       <FieldInfo>
         <FieldName> f2 </FieldName>
         <Type> 32 </Type>
-        <Length> 12 </Length>
+        <Length> 11 </Length>
         <Primary> 0 </Primary>
         <Null> 0 </Null>
         <Default> 0 </Default>
@@ -61,7 +61,7 @@ echo show tables;
       <FieldInfo>
         <FieldName> f1 </FieldName>
         <Type> 0 </Type>
-        <Length> 4 </Length>
+        <Length> 3 </Length>
         <Primary> 0 </Primary>
         <Null> 0 </Null>
         <Default> 0 </Default>
@@ -70,7 +70,7 @@ echo show tables;
       <FieldInfo>
         <FieldName> f4 </FieldName>
         <Type> 32 </Type>
-        <Length> 12 </Length>
+        <Length> 11 </Length>
         <Primary> 0 </Primary>
         <Null> 0 </Null>
         <Default> 0 </Default>

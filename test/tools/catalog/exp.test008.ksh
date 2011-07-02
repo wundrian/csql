@@ -136,7 +136,7 @@ Case 2: With -D chunk option after table creation:
                 <TotalPages> 1250 </TotalPages> 
                 <ChunkName > t1 </ChunkName> 
                 <TotalDataNodes> 4999 </TotalDataNodes> 
-                <SizeOfDataNodes> 2016 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 2020 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 102 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
@@ -259,7 +259,7 @@ Case 3: With -D chunk  option after record deleted:
                 <TotalPages> 1250 </TotalPages> 
                 <ChunkName > t1 </ChunkName> 
                 <TotalDataNodes> 1000 </TotalDataNodes> 
-                <SizeOfDataNodes> 2016 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 2020 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 102 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 
@@ -382,7 +382,7 @@ Case 4: With -D chunk  option after compact statement :
                 <TotalPages> 252 </TotalPages> 
                 <ChunkName > t1 </ChunkName> 
                 <TotalDataNodes> 1000 </TotalDataNodes> 
-                <SizeOfDataNodes> 2016 </SizeOfDataNodes> 
+                <SizeOfDataNodes> 2020 </SizeOfDataNodes> 
                 <Allocation Type> FixedSizeAllocator </Allocation Type>
         <Chunk Id> 102 </Chunk Id> 
                 <TotalPages> 1 </TotalPages> 

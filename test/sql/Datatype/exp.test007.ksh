@@ -14,7 +14,7 @@ echo show tables;
       <FieldInfo>
         <FieldName> F1 </FieldName>
         <Type> 32 </Type>
-        <Length> 12 </Length>
+        <Length> 11 </Length>
         <Primary> 0 </Primary>
         <Null> 0 </Null>
         <Default> 0 </Default>
@@ -23,7 +23,7 @@ echo show tables;
       <FieldInfo>
         <FieldName> f2 </FieldName>
         <Type> 2 </Type>
-        <Length> 8 </Length>
+        <Length> 7 </Length>
         <Primary> 0 </Primary>
         <Null> 0 </Null>
         <Default> 0 </Default>

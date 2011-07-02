@@ -57,7 +57,7 @@ echo select * from t2;
       <FieldInfo>
         <FieldName> f1 </FieldName>
         <Type> 32 </Type>
-        <Length> 12 </Length>
+        <Length> 11 </Length>
         <Primary> 1 </Primary>
         <Null> 1 </Null>
         <Default> 0 </Default>
@@ -66,7 +66,7 @@ echo select * from t2;
       <FieldInfo>
         <FieldName> f2 </FieldName>
         <Type> 0 </Type>
-        <Length> 4 </Length>
+        <Length> 3 </Length>
         <Primary> 0 </Primary>
         <Null> 0 </Null>
         <Default> 0 </Default>
@@ -78,7 +78,7 @@ echo select * from t2;
       <FieldInfo>
         <FieldName> f1 </FieldName>
         <Type> 32 </Type>
-        <Length> 12 </Length>
+        <Length> 11 </Length>
         <Primary> 0 </Primary>
         <Null> 0 </Null>
         <Default> 0 </Default>
@@ -87,7 +87,7 @@ echo select * from t2;
       <FieldInfo>
         <FieldName> f2 </FieldName>
         <Type> 2 </Type>
-        <Length> 8 </Length>
+        <Length> 7 </Length>
         <Primary> 0 </Primary>
         <Null> 0 </Null>
         <Default> 0 </Default>
