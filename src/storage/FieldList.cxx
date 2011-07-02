@@ -167,7 +167,10 @@ DbRetVal FieldList::getFieldInfo(const char *fldName, FieldInfo *&info)
     {
         //the above is for count(*) 
         strcpy(info->fldName , iter->fldDef.fldName_);
-        info->length = iter->fldDef.length_;
+        if (info->type == typeString || info->type == typeVarchar)
+            info->length = iter->fldDef.length_ -1;
+        else
+            info->length = iter->fldDef.length_;
         info->type   = iter->fldDef.type_;
         info->offset = iter->fldDef.offset_;
         info->isDefault = iter->fldDef.isDefault_;
@@ -185,7 +188,10 @@ DbRetVal FieldList::getFieldInfo(const char *fldName, FieldInfo *&info)
         if (0 == strcmp(iter->fldDef.fldName_, fldName))
         {
             strcpy(info->fldName , iter->fldDef.fldName_);
-            info->length = iter->fldDef.length_;
+            if (info->type == typeString || info->type == typeVarchar)
+                info->length = iter->fldDef.length_ -1;
+            else
+                info->length = iter->fldDef.length_;
             info->type   = iter->fldDef.type_;
             info->offset = iter->fldDef.offset_;
             info->isDefault = iter->fldDef.isDefault_;
@@ -213,7 +219,8 @@ int FieldList::getFieldOffset(const char *fldName)
         }
         if (iter->fldDef.type_ != typeVarchar)
             offset = offset + iter->fldDef.length_;
-        else offset = offset + sizeof(void *);
+        else 
+            offset = offset + sizeof(void *);
         iter = iter ->next;
         }
         return -1;
@@ -266,8 +273,10 @@ int FieldList::getTupleSize()
     int offset = 0;
     while(iter != NULL)
     {
-        if (iter->fldDef.type_ == typeVarchar) offset += sizeof(void *);
-        else offset = offset + iter->fldDef.length_;
+        if (iter->fldDef.type_ == typeVarchar) 
+            offset += sizeof(void *);
+        else 
+            offset = offset + iter->fldDef.length_;
         iter = iter->next;
     }
     return offset;

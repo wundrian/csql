@@ -81,6 +81,8 @@ int TableDef::addField(const char *name,  DataType type, size_t length,
     fldDef.isNull_ = notNull;
     fldDef.isAutoIncrement_ = autoIn;
     //os::memset(fldDef.autoVal_,0, DEFAULT_VALUE_BUF_LENGTH);
+
+    /*PRABA:COMMENTED
     switch(type)
     {
         case typeString :
@@ -92,6 +94,8 @@ int TableDef::addField(const char *name,  DataType type, size_t length,
             fldDef.length_ = os::align(AllDataType::size(type));
             break;
     }
+    */
+    if (type == typeBinary) fldDef.length_ = os::align(length);
     fldDef.offset_ = fldList.getTupleSize();
     int ret = fldList.append(fldDef);
     if (0 == ret)  fldCount++;
@@ -117,8 +121,12 @@ size_t TableDef::getTupleSize()
     while (iter.hasElement())
     {
         FieldDef *def = iter.nextElement();
-        if (def->type_ == typeVarchar) length += sizeof (void *);
-        else length = length + def->length_;
+        if (def->type_ == typeVarchar) 
+            length += sizeof (void *);
+        else if (def->type_ == typeString) 
+            length += os::align(def->length_);
+        else 
+            length = length + def->length_;
     }
     return length;
 }

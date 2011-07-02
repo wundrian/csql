@@ -227,6 +227,7 @@ class DllExport Table
     virtual ~Table() { }
  
     virtual void setLoading(bool flag){};
+    virtual DbRetVal getQualifiedName(const char *fldname, char *qualName)=0;
 
     //non virtual functions
     static void getFieldNameAlone(char *fname, char *name);

@@ -209,6 +209,7 @@ class DllExport TableImpl:public Table
         else
             return ErrNotExists;
     }
+    DbRetVal getQualifiedName(const char *fldname, char *qualName);
 
     List getFieldNameList();
 

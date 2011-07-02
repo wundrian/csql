@@ -9,7 +9,7 @@
 #include<os.h>
 #include<ErrorType.h>
 #include<FaultTest.h>
-#define DEBUG 1
+//#define DEBUG 1
 extern int DebugDM_Alloc;
 extern int DebugDM_VarAlloc;
 extern int DebugDM_Mutex;

@@ -53,6 +53,9 @@ class DllExport OrderTableImpl:public Table
     virtual ~OrderTableImpl();
     DbRetVal getFieldInfo(const char *fieldName,  FieldInfo *&info)
         { return tableHdl->getFieldInfo(fieldName, info); }
+    DbRetVal getQualifiedName(const char *fieldName,  char *qualName)
+        { return tableHdl->getQualifiedName(fieldName, qualName); }
+
     void setTable(Table *impl){ tableHdl = impl;}
     Table* getTableHdl(){ return tableHdl; }
     DbRetVal closeScan();

@@ -59,11 +59,20 @@ DbRetVal JoinTableImpl::bindFld(const char *fldname, void *val, bool dummy)
             delete info;
             return ErrBadCall;
         }
+        if (strcmp(elem->fieldName, fieldName)==0 &&
+            strcmp(elem->tableName, "") ==0) 
+        {
+            printError(ErrBadCall, "Field already binded %s\n", fldname);
+            delete info;
+            return ErrBadCall;
+        }
     }
     JoinProjFieldInfo *def = new JoinProjFieldInfo();
     strcpy(def->tableName, tableName);
     strcpy(def->fieldName, fieldName);
     strcpy(def->tabFieldName, fldname);
+    if (strcmp (tableName, "") == 0)
+        getQualifiedName(fldname, def->tabFieldName);
     def->appBuf = val;
     DbRetVal rv = getFieldInfo(fldname, info);
     if ( OK != rv) {
@@ -374,6 +383,14 @@ DbRetVal JoinTableImpl::copyValuesToBindBuffer(void *elem)
             AllDataType::copyVal(def->appBuf, def->bindBuf, def->type, def->length);
         }
     }
+    return OK;
+}
+DbRetVal JoinTableImpl::getQualifiedName(const char *fldname, char *qualName)
+{
+    if (leftTableHdl != NULL)
+        leftTableHdl->getQualifiedName(fldname, qualName);
+    if (rightTableHdl != NULL)
+        rightTableHdl->getQualifiedName(fldname, qualName);
     return OK;
 }
 

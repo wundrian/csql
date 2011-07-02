@@ -74,7 +74,7 @@ DbRetVal OrderTableImpl::setOrderBy(const char *fldname, bool isDesc)
     strcpy(orderFld->fldName, fldname);
     orderFld->type = info->type;
     //orderFld->length = info->length;
-    orderFld->length = AllDataType::size(info->type, info->length);
+    orderFld->length = os::align(AllDataType::size(info->type, info->length));
     orderFld->bindBuf = NULL;
     orderFld->isDesc = isDesc;
 
@@ -155,7 +155,7 @@ void OrderTableImpl::checkAndSetSortAlgorithm()
     while (iter.hasElement())
     {
         fValue = (FieldValue*) iter.nextElement();
-        projSize = projSize + fValue->length;
+        projSize = projSize + os::align(fValue->length);
     }
     OrderByFldDef *ordFld=NULL;
     bool optGrpIntNoNull= false;
@@ -203,7 +203,7 @@ int OrderTableImpl::computeOrderBySize()
     while (oiter.hasElement())
     {
         oFldDef = (OrderByFldDef*) oiter.nextElement();
-        nodeOffset = nodeOffset + oFldDef->length;
+        nodeOffset = nodeOffset + os::align(oFldDef->length);
     }
     return nodeOffset;
 }
@@ -224,7 +224,7 @@ DbRetVal OrderTableImpl::insertDistinct()
         else
             AllDataType::copyVal(elem+nodeOffset, oFldDef->bindBuf,
                                  oFldDef->type, oFldDef->length);
-        nodeOffset = nodeOffset + oFldDef->length;
+        nodeOffset = nodeOffset + os::align(oFldDef->length);
         i++;
     }
     AllDataType::copyVal(elem+nodeOffset, &orderNullValues, typeInt,
@@ -280,7 +280,7 @@ DbRetVal OrderTableImpl::insert()
         else 
             AllDataType::copyVal(element+nodeOffset, oFldDef->bindBuf, 
                                  oFldDef->type, oFldDef->length);
-        nodeOffset = nodeOffset + oFldDef->length;
+        nodeOffset = nodeOffset + os::align(oFldDef->length);
         i++;
     }
     AllDataType::copyVal(element+nodeOffset, &orderNullValues, typeInt, 
@@ -300,7 +300,7 @@ DbRetVal OrderTableImpl::insert()
         else
             AllDataType::copyVal(element+nodeOffset, fValue->value, 
                                         fValue->type, fValue->length);
-        nodeOffset = nodeOffset + fValue->length;
+        nodeOffset = nodeOffset + os::align(fValue->length);
         i++;
     }
     AllDataType::copyVal(ptrToCopyNullValues, &nullValues, typeLongLong,
@@ -365,7 +365,7 @@ DbRetVal OrderTableImpl::copyValuesToBindBuffer(void *elem)
         def = (FieldValue*) fIter.nextElement();
         if (NULL != def->value) {
              AllDataType::copyVal(def->value, colPtr, def->type, def->length);
-             colPtr = colPtr + def->length;
+             colPtr = colPtr + os::align(def->length);
         }
     }
     return OK;

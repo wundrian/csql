@@ -111,6 +111,9 @@ DbRetVal AlterTblStatement::resolveForAddDropColumn()
         }
         else { 
             bindFieldValues[fcount-1] = valBuf;
+            if (info->type == typeVarchar || info->type == typeString)
+                info->length++;
+
             ret = tblDef.addField(fldName,info->type, info->length, info->defaultValueBuf, info->isNull, info->isAutoIncrement);
             if( 0 != ret )
             {
@@ -143,6 +146,10 @@ DbRetVal AlterTblStatement::resolveForAddDropColumn()
         {
             name = (FieldName*)nIter.nextElement();
             if (strcmp(name->fldName, fDef->fldName_) == 0) fDef->isNull_ = true;
+        }
+        if (fDef->type_ == typeVarchar || fDef->type_ == typeString) {
+            fDef->length_++;
+            //varchar and char require \0 to be stored at the end
         }
         if (!fDef->isDefault_ || fDef->isDefault_ && fDef->defaultValueBuf_[0] == '\0')  {
            ret = tblDef.addField(fDef->fldName_, fDef->type_, fDef->length_,

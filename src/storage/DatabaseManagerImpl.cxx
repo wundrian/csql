@@ -842,9 +842,11 @@ DbRetVal DatabaseManagerImpl::writeSchemaFile()
                 firstField = false;
             } else
                 fprintf(fp, ", %s %s ", fieldName, AllDataType::getSQLString(info->type));
-            if (info->type == typeString || info->type == typeVarchar || 
-                                                      info->type == typeBinary)
+            if (info->type == typeString || info->type == typeVarchar )
+                fprintf(fp, "(%d)",info->length-1);
+            else if ( info->type == typeBinary)
                 fprintf(fp, "(%d)",info->length);
+            
             if (info->isNull) fprintf(fp, " NOT NULL ");
             if (info->isDefault) fprintf(fp, " DEFAULT '%s' ", info->defaultValueBuf);
             if (info->isAutoIncrement) fprintf(fp, " AUTO_INCREMENT ");

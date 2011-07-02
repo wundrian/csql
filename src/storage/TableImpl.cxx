@@ -49,6 +49,15 @@ void Table::getTableNameAlone(char *fname, char *name) {
     if (!dotFound) strcpy(start, "");
     return;
 }
+DbRetVal TableImpl::getQualifiedName(const char *fldname, char *qualName)
+{
+    FieldInfo *info = new FieldInfo();
+    DbRetVal rv = getFieldInfo(fldname,info);
+    if (rv == OK)
+        sprintf(qualName, "%s.%s", getName(), fldname);
+    return rv;
+}
+
 
 DbRetVal TableImpl::bindFld(const char *name, void *val, bool isNullExpl)
 {

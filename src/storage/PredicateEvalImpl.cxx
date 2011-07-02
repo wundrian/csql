@@ -391,7 +391,7 @@ DbRetVal PredicateImpl::evaluate(bool &result)
       return OK;
 
     }
-    printf("PRABA::wrong method call\n");
+    printf("FATAL::wrong method call\n");
     //the below code works only for single table 
     val1= (char*)tuple + offset1;
     if(offset2 != -1 && operand == NULL && operandPtr == NULL)

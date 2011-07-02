@@ -110,6 +110,7 @@ class DllExport JoinTableImpl:public Table
     virtual ~JoinTableImpl();
 
     DbRetVal getFieldInfo(const char *fieldName,  FieldInfo *&info);
+    DbRetVal getQualifiedName(const char *fldname, char *qualName);
 
     void setTable(Table *left, Table *right)
     { leftTableHdl = left; rightTableHdl = right; }

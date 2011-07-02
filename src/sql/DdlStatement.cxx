@@ -149,8 +149,12 @@ DbRetVal CreateTblStatement::resolve()
             printf("Check SQL Syntax: .\n");
             return  rv;
         }
+        if (fDef->type_ == typeVarchar || fDef->type_ == typeString) {
+            fDef->length_++;
+            //varchar and char require \0 to be stored at the end
+        }
         /* To check char field and restrict it for the max length 8kb(8000)  */
-        if( (fDef->type_ == 30) && (fDef->length_ > 8000) ){
+        if( (fDef->type_ == typeString) && (fDef->length_ > 8000) ){
             printError(ErrBadRange,"Char data type length should be less than 8kb(8000).");
             return ErrBadRange;
         }

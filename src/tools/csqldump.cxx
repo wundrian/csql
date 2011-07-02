@@ -153,9 +153,9 @@ int main(int argc, char **argv)
                 } else
                     printf(", %s %s ", fieldName, 
                                         AllDataType::getSQLString(info->type));
-                if (info->type == typeString) printf("(%d)",info->length );
+                if (info->type == typeString) printf("(%d)",info->length-1 );
                 if (info->type == typeBinary) printf("(%d)",info->length);
-                if (info->type == typeVarchar) printf("(%d)",info->length);
+                if (info->type == typeVarchar) printf("(%d)",info->length-1);
                 if (info->isNull) printf(" NOT NULL ");
                 if (info->isDefault) printf(" DEFAULT '%s' ", 
                                                         info->defaultValueBuf);
@@ -269,7 +269,8 @@ int main(int argc, char **argv)
             else
                 printf(", %s %s ", fieldName, 
                                         AllDataType::getSQLString(info->type));
-            if (info->type == typeString) printf("(%d)",info->length);
+            if (info->type == typeString) printf("(%d)",info->length-1);
+            if (info->type == typeVarchar) printf("(%d)",info->length-1);
             if (info->type == typeBinary) printf("(%d)",info->length);
             if (info->isNull) printf(" NOT NULL ");
             if (info->isDefault) printf(" DEFAULT '%s' ", 

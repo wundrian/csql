@@ -91,6 +91,8 @@ class DllExport AggTableImpl:public Table
     virtual ~AggTableImpl();
     DbRetVal getFieldInfo(const char *fieldName,  FieldInfo *&info)
         { return tableHdl->getFieldInfo(fieldName, info); }
+    DbRetVal getQualifiedName(const char *fieldName,  char *qualName)
+        { return tableHdl->getQualifiedName(fieldName, qualName); }
     void* insertOrGetAggNode();
     void setTable(Table *impl){ tableHdl = impl;}
     Table* getTableHdl(){ return tableHdl; }
