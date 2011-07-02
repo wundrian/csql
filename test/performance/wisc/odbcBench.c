@@ -194,7 +194,8 @@ long long int onePerSel(SQLHANDLE henv, SQLHANDLE hdbc, SQLHANDLE hstmt)
    int uni2;
    char str1[52];
    char str2[52];
-   int val[] = {1, 5, 10, 50, 100, 500, 1000, 5000 ,7500, 9500};
+   //int val[] = {1, 5, 10, 50, 100, 500, 1000, 5000 ,7500, 9500};
+   int val[10] = {1, 5, 10, 50, 100, 250, 500, 750, 900, 999};
    int tempTermVar=0;
    int tempTermVar2=0;
    char tempval[124]="Value";
@@ -256,7 +257,8 @@ long long int runReadTest (SQLHANDLE henv, SQLHANDLE hdbc,SQLHANDLE hstmt,bool f
   char str1[52];
   char str2[52];
 
-  int val[] = {1, 10, 100, 500, 1000, 5000 ,7500, 8000, 9000, 9999};
+  //int val[] = {1, 10, 100, 500, 1000, 5000 ,7500, 8000, 9000, 9999};
+  int val[10] = {1, 5, 10, 50, 100, 250, 500, 750, 900, 999};
   int tempTermVar=0;
   char tempval[52]="Value";
   int rc;
