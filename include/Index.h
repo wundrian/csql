@@ -49,27 +49,90 @@ class TrieNode
 };
 
 class IndexInfo;
+
+/**
+* @class TreeNode
+* @brief Represents node in tree index.
+*	 It is actually a doubly linked list node which contains information such as minimum key value pointer, maximum key value pointer and total number of elements.
+*
+* TreeNode represents node in tree index and it is guarded by a mutex.
+* Any modifications to tree node should be done only after acquiring 
+* its associated mutex. At the end array of pointers to next level tree nodes(in case of intermediate node) / tuple is stored(in case of leaf nodes)
+* <br/>
+*
+*/
+
 class TreeNode
 {
     public:
-    Mutex mutex_;
-    void *min_;
-    void *max_;
-    int noElements_;
-    TreeNode *next_;
-    TreeNode *prev_;
-    int balance_;
+    Mutex mutex_; 	/**< Mutex guarding this node */
+    void *min_;   	/**< Ptr to node having minimum value in this node */
+    void *max_;         /**< Ptr to node having maximum value in this node */
+    int noElements_;    /**< total number of elements in this node */
+    TreeNode *next_;    /**< ptr to next tree node in same level */
+    TreeNode *prev_;    /**< ptr to previous tree node in same level */
+    int balance_;       /**< Reserved. Not currently used */
     //Note::after this array of pointer to tuples are stored
+
     long long getTotalElements();
-    TreeNode* locateNode(Database *db,TreeNode *iter, void *tuple, IndexInfo *indInfo,DbRetVal &rv);
-    TreeNode *locateNodeFromFirstLevel(TreeNode *ftnode,IndexInfo *indInfo,void *tuple,int *nodepos);
-    DbRetVal insertNodeIntoFirstLevel(Database * db, IndexInfo * indInfo, void* indexPtr, TreeNode * newNode,int nodepos);
+
+    
+    /**
+    *  @brief insert node into the tree, by traversing and locating the right node
+    *  
+    *  Detailed description comes here
+    *  Detailed desc continues here
+    *  @param db  pointer to Database
+    *  @param info pointer to tuple under search
+    *  @param indexPtr  ptr to INDEX structure
+    *  @param tuple pointer to tuple under search
+    *  @return DbRetVal error code when function returns
+    */
     DbRetVal insert(Database *db, IndexInfo *info, void *indexPtr, void *tuple);
-    DbRetVal insertRecordIntoNodeAndArrangeFirstLevel(Database * db, IndexInfo * indInfo, void* iptr, void * tuple, TreeNode * fstLevel,int nodepos);
+
+    /**
+    *  @brief remove node from the tree, by traversing and locating the right node
+    *  
+    *  @param db  pointer to Database
+    *  @param info pointer to tuple under search
+    *  @param indexPtr  ptr to INDEX structure
+    *  @param tuple pointer to tuple to be removed
+    *  @return DbRetVal error code when function returns
+    */
     DbRetVal remove(Database *db, IndexInfo *info, void *indexPtr, void *tuple);
+
+    /**
+    *  @brief update node in the tree, by traversing and locating the right node
+    *  
+    *  @param db  pointer to Database
+    *  @param info pointer to tuple under search
+    *  @param indexPtr  ptr to INDEX structure
+    *  @param tuple pointer to tuple to be updated
+    *  @return DbRetVal error code when function returns
+    */
     DbRetVal update(Database *db, IndexInfo *info, void *indexPtr, void *tuple);
+
     void displayAll();
     void displayAll(int offset);
+
+    private:
+
+    /**
+    *  @brief locate node where tuple resides by traversing the tree nodes
+    *  
+    *  Detailed description comes here
+    *  Detailed desc continues here
+    *  @param db  pointer to Database
+    *  @param iter  TreeNode pointer
+    *  @param tuple pointer to tuple under search
+    *  @param indInfo pointer to tuple under search
+    *  @param rv OUT param which will contain error code when this function returns with any error
+    *  @return TreeNode* pointer to TreeNode which contains the tuple under search
+    */
+    TreeNode* locateNode(Database *db,TreeNode *iter, void *tuple, IndexInfo *indInfo,DbRetVal &rv);
+    TreeNode *locateNodeFromFirstLevel(TreeNode *ftnode,IndexInfo *indInfo,void *tuple,int *nodepos);
+    DbRetVal insertRecordIntoNodeAndArrangeFirstLevel(Database * db, IndexInfo * indInfo, void* iptr, void * tuple, TreeNode * fstLevel,int nodepos);
+    DbRetVal insertNodeIntoFirstLevel(Database * db, IndexInfo * indInfo, void* indexPtr, TreeNode * newNode,int nodepos);
 };
 
 class BucketIter
