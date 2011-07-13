@@ -133,6 +133,7 @@ class TreeNode
     TreeNode *locateNodeFromFirstLevel(TreeNode *ftnode,IndexInfo *indInfo,void *tuple,int *nodepos);
     DbRetVal insertRecordIntoNodeAndArrangeFirstLevel(Database * db, IndexInfo * indInfo, void* iptr, void * tuple, TreeNode * fstLevel,int nodepos);
     DbRetVal insertNodeIntoFirstLevel(Database * db, IndexInfo * indInfo, void* indexPtr, TreeNode * newNode,int nodepos);
+    friend class TreeIndex;
 };
 
 class BucketIter
