@@ -497,7 +497,6 @@ DbRetVal Database::createSystemDatabaseChunk(AllocType type, size_t size, int id
 
     chunk->firstPage_ = chunk->curPage_;
     PageInfo* firstPageInfo = ((PageInfo*)chunk->firstPage_);
-    firstPageInfo->setFirstPageAsUsed();
     chunk->setChunkID(id);
     chunk->setAllocType(type);
     chunk->initMutex(id);
@@ -506,7 +505,10 @@ DbRetVal Database::createSystemDatabaseChunk(AllocType type, size_t size, int id
     {
         int multiple = os::floor(chunk->allocSize_ / PAGE_SIZE);
         int offset = ((multiple + 1) * PAGE_SIZE);
-        firstPageInfo->nextPageAfterMerge_ = ((char*)firstPageInfo)+ offset;
+        firstPageInfo->setPageAsUsed(offset);
+    }
+    else {
+        firstPageInfo->setPageAsUsed(chunk->allocSize_);
     }
 
     if (0 == size)

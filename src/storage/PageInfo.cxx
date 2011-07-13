@@ -37,7 +37,7 @@ void PageInfo::setPageAsUsed(size_t offset)
     if (ret != 0) printError(ErrSysFatal, "Fatal:CAS Failed");
     InUse flagToSet=0;
     SETBIT(flagToSet, HAS_SPACE);
-    ret = Mutex::CASGen(&flags , flags, flagToSet);;
+    ret = Mutex::CASGen(&flags, flags, flagToSet);;
     if (ret != 0) printError(ErrSysFatal, "Fatal:CAS Failed");
     ret = Mutex::CASL((long*)&nextPage_, (long)nextPage_, 0);
     if (ret != 0) printError(ErrSysFatal, "Fatal:CAS Failed");
@@ -53,18 +53,3 @@ void PageInfo::setPageAsUsed(size_t offset)
     return;
 }
 
-void PageInfo::setFirstPageAsUsed()
-{
-    int ret = Mutex::CASGen(&isUsed_, 0,1);
-    if (ret != 0) printError(ErrSysFatal, "Fatal:CAS Failed");
-    InUse flagToSet=0;
-    SETBIT(flagToSet, HAS_SPACE);
-    ret = Mutex::CASGen(&flags , flags, flagToSet);;
-    if (ret != 0) printError(ErrSysFatal, "Fatal:CAS Failed");
-    ret = Mutex::CASL((long*)&nextPageAfterMerge_, (long)nextPageAfterMerge_, 0);
-    if (ret != 0) printError(ErrSysFatal, "Fatal:CAS Failed");
-    //nextPage_ = NULL;
-    ret = Mutex::CASL((long*)&nextPage_, (long)nextPage_, 0);
-    if (ret != 0) printError(ErrSysFatal, "Fatal:CAS Failed");
-    return;
-}

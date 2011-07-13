@@ -20,7 +20,7 @@
 #include<ErrorType.h>
 #include<Config.h>
 
-typedef void Page;
+typedef void Page; 
 
 enum AllocType
 {
@@ -33,34 +33,44 @@ enum AllocType
 class VarSizeInfo
 {
     public:
-    InUse size_;
-    InUse isUsed_;
+    InUse size_;   /**< size of the allocated node */
+    InUse isUsed_; /**< bit to represent whether this node is under use */
 };
-
-//Each Page has this info.
-//pages are of size PAGE_SIZE normally.
-//If data size is more than PAGE_SIZE then
-//contigous pages are merged and those pages wont
-//have this info in them.Only the start page where that
-//data is stored will have this info
-//This object is stored at the start of each page
 #define HAS_SPACE 1
 #define IS_DIRTY  2
+
+/**
+* @brief Page Header Info
+* 
+* Database is divided into equal size parts(PAGE_SIZE) called pages. Each page contains page header (PageInfo) to store information related to pages such as whether it is in use, next used page for chunk, etc
+*
+* If data size is more than PAGE_SIZE then contigous pages are merged and those pages wont have page header info(pageInfo) in them. Only the start page where that data is stored will have header information. This object is stored at the start of each page unless it is a merged page.
+*/
 
 class PageInfo
 {
      public:
-     InUse isUsed_;
-     InUse flags; //stores hasFreeSpace and isDirty
+     InUse isUsed_; /**< specifies whether this page is in use */
+     InUse flags; /**< stores hasFreeSpace and isDirty flags */
 
-     Page *nextPageAfterMerge_; //used only in case of
-     //where pages are merged to store data which are more than
-     //PAGE_SIZE.
-     //More detail about how it is used is found in Database::getFreePage
+     Page *nextPageAfterMerge_; /**<used only in case of merged pages */
 
-     Page *nextPage_; //next page in the same chunk
-     void setPageAsUsed(size_t offset);
-     void setFirstPageAsUsed();
+     Page *nextPage_; /**<points to the next page in the same chunk */
+
+
+    /**
+    *  @brief set page used flag 
+    *
+    *  @param offset size of chunk in case of fixed size. For size greater than PAGE_SIZE, it will be aligned by PAGE_SIZE. Default value zero
+    *  @return void 
+    */
+    void setPageAsUsed(size_t offset=0);
+
+    /**
+    *  @brief set page as unused 
+    *
+    *  @return void 
+    */
      void setPageAsFree();
 
 };
