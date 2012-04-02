@@ -18,3 +18,4 @@ install/
 .cproject
 classtmp
 .project
+cscope.out
