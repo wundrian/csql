@@ -66,11 +66,12 @@ DbRetVal SqlLogStatement::prepare(char *stmtstr)
     } 
     if (!isNonSelectDML(stmtstr)) { isNonSelDML = false; return rv;}
     char *tblName = NULL;
+#ifndef MMDB
     if (innerStmt) {
         tblName = innerStmt->getTableName();
-        unsigned int mode = TableConf::config.getTableMode(tblName);
         if (TableConf::config.isTableCached(mode)) isCached = true;
     }
+#endif
     isPrepared = true;
     if (strncasecmp(stmtstr,"CACHE", 5) == 0 ||
                                       strncasecmp(stmtstr,"UNCACHE", 7) == 0) {
