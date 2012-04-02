@@ -2,5 +2,5 @@
 #define BUILD_H
 #define CSQL
 #define LINUX
-#define i686
+#define x86_64
 #endif

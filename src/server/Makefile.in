@@ -15,7 +15,6 @@
 
 @SET_MAKE@
 
-
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
@@ -34,9 +33,11 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-subdir = src/odbc
-DIST_COMMON = $(noinst_HEADERS) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in
+bin_PROGRAMS = csqlserver$(EXEEXT) csqlsqlserver$(EXEEXT) \
+	csqlcacheserver$(EXEEXT) csqlasyncserver$(EXEEXT) \
+	csqlcheckpointserver$(EXEEXT)
+subdir = src/server
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.in
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -44,22 +45,84 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
-am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
-am__vpath_adj = case $$p in \
-    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
-    *) f=$$p;; \
-  esac;
-am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
-am__installdirs = "$(DESTDIR)$(libdir)"
-libLTLIBRARIES_INSTALL = $(INSTALL)
-LTLIBRARIES = $(lib_LTLIBRARIES)
-libcsqlodbc_la_LIBADD =
-am_libcsqlodbc_la_OBJECTS = odbcCommon.lo odbcDbc.lo odbcDesc.lo \
-	odbcError.lo odbcEnv.lo odbcState.lo odbcStmt.lo
-libcsqlodbc_la_OBJECTS = $(am_libcsqlodbc_la_OBJECTS)
-libcsqlodbc_la_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
+am__installdirs = "$(DESTDIR)$(bindir)"
+binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
+PROGRAMS = $(bin_PROGRAMS)
+am_csqlasyncserver_OBJECTS = csqlasyncserver.$(OBJEXT)
+csqlasyncserver_OBJECTS = $(am_csqlasyncserver_OBJECTS)
+csqlasyncserver_DEPENDENCIES = $(top_builddir)/src/sql/libcsqlsql.la \
+	$(top_builddir)/src/base/libcsqlbase.la \
+	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la \
+	$(top_builddir)/src/cache/libcacheload.la \
+	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+	$(top_builddir)/src/storage/libcsqlstorage.la
+csqlasyncserver_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
-	$(CXXFLAGS) $(libcsqlodbc_la_LDFLAGS) $(LDFLAGS) -o $@
+	$(CXXFLAGS) $(csqlasyncserver_LDFLAGS) $(LDFLAGS) -o $@
+am_csqlcacheserver_OBJECTS = csqlcacheserver.$(OBJEXT)
+csqlcacheserver_OBJECTS = $(am_csqlcacheserver_OBJECTS)
+csqlcacheserver_DEPENDENCIES =  \
+	$(top_builddir)/src/storage/libcsqlstorage.la \
+	$(top_builddir)/src/base/libcsqlbase.la \
+	$(top_builddir)/src/sql/libcsqlsql.la \
+	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la \
+	$(top_builddir)/src/cache/libcacheload.la \
+	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la
+csqlcacheserver_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
+	$(CXXFLAGS) $(csqlcacheserver_LDFLAGS) $(LDFLAGS) -o $@
+am_csqlcheckpointserver_OBJECTS = csqlcheckpointserver.$(OBJEXT)
+csqlcheckpointserver_OBJECTS = $(am_csqlcheckpointserver_OBJECTS)
+csqlcheckpointserver_DEPENDENCIES =  \
+	$(top_builddir)/src/storage/libcsqlstorage.la \
+	$(top_builddir)/src/base/libcsqlbase.la \
+	$(top_builddir)/src/sql/libcsqlsql.la \
+	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la \
+	$(top_builddir)/src/cache/libcacheload.la \
+	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la
+csqlcheckpointserver_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
+	$(CXXFLAGS) $(csqlcheckpointserver_LDFLAGS) $(LDFLAGS) -o $@
+am_csqlserver_OBJECTS = csqlserver.$(OBJEXT)
+csqlserver_OBJECTS = $(am_csqlserver_OBJECTS)
+csqlserver_DEPENDENCIES =  \
+	$(top_builddir)/src/storage/libcsqlstorage.la \
+	$(top_builddir)/src/base/libcsqlbase.la \
+	$(top_builddir)/src/sql/libcsqlsql.la \
+	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la \
+	$(top_builddir)/src/cache/libcacheload.la \
+	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la
+csqlserver_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
+	$(CXXFLAGS) $(csqlserver_LDFLAGS) $(LDFLAGS) -o $@
+am_csqlsqlserver_OBJECTS = csqlsqlserver.$(OBJEXT)
+csqlsqlserver_OBJECTS = $(am_csqlsqlserver_OBJECTS)
+csqlsqlserver_DEPENDENCIES = $(top_builddir)/src/sql/libcsqlsql.la \
+	$(top_builddir)/src/base/libcsqlbase.la \
+	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la \
+	$(top_builddir)/src/cache/libcacheload.la \
+	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+	$(top_builddir)/src/storage/libcsqlstorage.la
+csqlsqlserver_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
+	$(CXXFLAGS) $(csqlsqlserver_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -72,9 +135,12 @@ CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(libcsqlodbc_la_SOURCES)
-DIST_SOURCES = $(libcsqlodbc_la_SOURCES)
-HEADERS = $(noinst_HEADERS)
+SOURCES = $(csqlasyncserver_SOURCES) $(csqlcacheserver_SOURCES) \
+	$(csqlcheckpointserver_SOURCES) $(csqlserver_SOURCES) \
+	$(csqlsqlserver_SOURCES)
+DIST_SOURCES = $(csqlasyncserver_SOURCES) $(csqlcacheserver_SOURCES) \
+	$(csqlcheckpointserver_SOURCES) $(csqlserver_SOURCES) \
+	$(csqlsqlserver_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -201,24 +267,70 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/src/sql -I$(top_srcdir)/include/odbc $(all_includes) 
+INCLUDES = -I$(top_srcdir)/include $(all_includes) -I$(top_srcdir)/src/sql
 METASOURCES = AUTO
-lib_LTLIBRARIES = libcsqlodbc.la
-libcsqlodbc_la_LDFLAGS = -avoid-version -module \
-    -L$(top_srcdir)/src/storage -lcsqlstorage \
-    -L$(top_srcdir)/src/sql -lcsqlsql \
-    -L$(top_srcdir)/src/network -lcsqlnw \
-    -L$(top_srcdir)/src/sqlnetwork -lcsqlsqlnw \
-    -L$(top_srcdir)/src/sqllog -lcsqlsqllog \
-	-lcrypt
+csqlserver_LDADD = $(top_builddir)/src/storage/libcsqlstorage.la  \
+	$(top_builddir)/src/base/libcsqlbase.la \
+	$(top_builddir)/src/sql/libcsqlsql.la \
+        $(top_builddir)/src/sqllog/libcsqlsqllog.la \
+        $(top_builddir)/src/network/libcsqlnw.la \
+        $(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+        $(top_builddir)/src/gateway/libcsqlgw.la \
+        $(top_builddir)/src/cache/libcacheload.la \
+        $(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la 
 
-libcsqlodbc_la_SOURCES = odbcCommon.cxx odbcDbc.cxx odbcDesc.cxx \
-odbcError.cxx odbcEnv.cxx odbcState.cxx \
-odbcStmt.cxx
+csqlserver_LDFLAGS = -lrt -lpthread -lcrypt -lodbc  -ldl
+csqlserver_SOURCES = csqlserver.cxx
+csqlasyncserver_LDADD = $(top_builddir)/src/sql/libcsqlsql.la \
+	$(top_builddir)/src/base/libcsqlbase.la \
+	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la \
+	$(top_builddir)/src/cache/libcacheload.la \
+	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+	$(top_builddir)/src/storage/libcsqlstorage.la 
 
-noinst_HEADERS = odbcCommon.h odbcDbc.h odbcDesc.h \
-odbcEnv.h odbcError.h odbcStmt.h
+csqlasyncserver_LDFLAGS = -lrt -lpthread -lcrypt -lodbc  -ldl
+csqlasyncserver_SOURCES = csqlasyncserver.cxx
+csqlsqlserver_LDADD = $(top_builddir)/src/sql/libcsqlsql.la \
+	$(top_builddir)/src/base/libcsqlbase.la \
+	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la \
+	$(top_builddir)/src/cache/libcacheload.la \
+	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+	$(top_builddir)/src/storage/libcsqlstorage.la 
 
+csqlsqlserver_LDFLAGS = -lrt -lpthread -lcrypt -lodbc -ldl
+csqlsqlserver_SOURCES = csqlsqlserver.cxx
+csqlcacheserver_LDADD = $(top_builddir)/src/storage/libcsqlstorage.la  \
+	$(top_builddir)/src/base/libcsqlbase.la \
+	$(top_builddir)/src/sql/libcsqlsql.la \
+        $(top_builddir)/src/sqllog/libcsqlsqllog.la \
+        $(top_builddir)/src/network/libcsqlnw.la \
+        $(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+        $(top_builddir)/src/gateway/libcsqlgw.la \
+        $(top_builddir)/src/cache/libcacheload.la \
+        $(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la 
+
+csqlcacheserver_LDFLAGS = -lcrypt -lodbc -lrt -lpthread -ldl
+csqlcacheserver_SOURCES = csqlcacheserver.cxx
+csqlcheckpointserver_LDADD = $(top_builddir)/src/storage/libcsqlstorage.la \
+	$(top_builddir)/src/base/libcsqlbase.la \
+	$(top_builddir)/src/sql/libcsqlsql.la \
+	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la \
+	$(top_builddir)/src/cache/libcacheload.la \
+	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la 
+
+csqlcheckpointserver_LDFLAGS = -lcrypt -lodbc -lrt -lpthread -ldl
+csqlcheckpointserver_SOURCES = csqlcheckpointserver.cxx
 all: all-am
 
 .SUFFIXES:
@@ -232,9 +344,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  src/odbc/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  src/server/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  src/odbc/Makefile
+	  $(AUTOMAKE) --gnu  src/server/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -252,35 +364,49 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-install-libLTLIBRARIES: $(lib_LTLIBRARIES)
+install-binPROGRAMS: $(bin_PROGRAMS)
 	@$(NORMAL_INSTALL)
-	test -z "$(libdir)" || $(MKDIR_P) "$(DESTDIR)$(libdir)"
-	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
-	  if test -f $$p; then \
-	    f=$(am__strip_dir) \
-	    echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(libLTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) '$$p' '$(DESTDIR)$(libdir)/$$f'"; \
-	    $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(libLTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) "$$p" "$(DESTDIR)$(libdir)/$$f"; \
+	test -z "$(bindir)" || $(MKDIR_P) "$(DESTDIR)$(bindir)"
+	@list='$(bin_PROGRAMS)'; for p in $$list; do \
+	  p1=`echo $$p|sed 's/$(EXEEXT)$$//'`; \
+	  if test -f $$p \
+	     || test -f $$p1 \
+	  ; then \
+	    f=`echo "$$p1" | sed 's,^.*/,,;$(transform);s/$$/$(EXEEXT)/'`; \
+	   echo " $(INSTALL_PROGRAM_ENV) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(binPROGRAMS_INSTALL) '$$p' '$(DESTDIR)$(bindir)/$$f'"; \
+	   $(INSTALL_PROGRAM_ENV) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(binPROGRAMS_INSTALL) "$$p" "$(DESTDIR)$(bindir)/$$f" || exit 1; \
 	  else :; fi; \
 	done
 
-uninstall-libLTLIBRARIES:
+uninstall-binPROGRAMS:
 	@$(NORMAL_UNINSTALL)
-	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
-	  p=$(am__strip_dir) \
-	  echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f '$(DESTDIR)$(libdir)/$$p'"; \
-	  $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f "$(DESTDIR)$(libdir)/$$p"; \
+	@list='$(bin_PROGRAMS)'; for p in $$list; do \
+	  f=`echo "$$p" | sed 's,^.*/,,;s/$(EXEEXT)$$//;$(transform);s/$$/$(EXEEXT)/'`; \
+	  echo " rm -f '$(DESTDIR)$(bindir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(bindir)/$$f"; \
 	done
 
-clean-libLTLIBRARIES:
-	-test -z "$(lib_LTLIBRARIES)" || rm -f $(lib_LTLIBRARIES)
-	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
-	  dir="`echo $$p | sed -e 's|/[^/]*$$||'`"; \
-	  test "$$dir" != "$$p" || dir=.; \
-	  echo "rm -f \"$${dir}/so_locations\""; \
-	  rm -f "$${dir}/so_locations"; \
+clean-binPROGRAMS:
+	@list='$(bin_PROGRAMS)'; for p in $$list; do \
+	  f=`echo $$p|sed 's/$(EXEEXT)$$//'`; \
+	  echo " rm -f $$p $$f"; \
+	  rm -f $$p $$f ; \
 	done
-libcsqlodbc.la: $(libcsqlodbc_la_OBJECTS) $(libcsqlodbc_la_DEPENDENCIES) 
-	$(libcsqlodbc_la_LINK) -rpath $(libdir) $(libcsqlodbc_la_OBJECTS) $(libcsqlodbc_la_LIBADD) $(LIBS)
+csqlasyncserver$(EXEEXT): $(csqlasyncserver_OBJECTS) $(csqlasyncserver_DEPENDENCIES) 
+	@rm -f csqlasyncserver$(EXEEXT)
+	$(csqlasyncserver_LINK) $(csqlasyncserver_OBJECTS) $(csqlasyncserver_LDADD) $(LIBS)
+csqlcacheserver$(EXEEXT): $(csqlcacheserver_OBJECTS) $(csqlcacheserver_DEPENDENCIES) 
+	@rm -f csqlcacheserver$(EXEEXT)
+	$(csqlcacheserver_LINK) $(csqlcacheserver_OBJECTS) $(csqlcacheserver_LDADD) $(LIBS)
+csqlcheckpointserver$(EXEEXT): $(csqlcheckpointserver_OBJECTS) $(csqlcheckpointserver_DEPENDENCIES) 
+	@rm -f csqlcheckpointserver$(EXEEXT)
+	$(csqlcheckpointserver_LINK) $(csqlcheckpointserver_OBJECTS) $(csqlcheckpointserver_LDADD) $(LIBS)
+csqlserver$(EXEEXT): $(csqlserver_OBJECTS) $(csqlserver_DEPENDENCIES) 
+	@rm -f csqlserver$(EXEEXT)
+	$(csqlserver_LINK) $(csqlserver_OBJECTS) $(csqlserver_LDADD) $(LIBS)
+csqlsqlserver$(EXEEXT): $(csqlsqlserver_OBJECTS) $(csqlsqlserver_DEPENDENCIES) 
+	@rm -f csqlsqlserver$(EXEEXT)
+	$(csqlsqlserver_LINK) $(csqlsqlserver_OBJECTS) $(csqlsqlserver_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -288,13 +414,11 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/odbcCommon.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/odbcDbc.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/odbcDesc.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/odbcEnv.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/odbcError.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/odbcState.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/odbcStmt.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/csqlasyncserver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/csqlcacheserver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/csqlcheckpointserver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/csqlserver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/csqlsqlserver.Po@am__quote@
 
 .cxx.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -398,9 +522,9 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(LTLIBRARIES) $(HEADERS)
+all-am: Makefile $(PROGRAMS)
 installdirs:
-	for dir in "$(DESTDIR)$(libdir)"; do \
+	for dir in "$(DESTDIR)$(bindir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -429,8 +553,7 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic clean-libLTLIBRARIES clean-libtool \
-	mostlyclean-am
+clean-am: clean-binPROGRAMS clean-generic clean-libtool mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -456,7 +579,7 @@ install-dvi: install-dvi-am
 
 install-dvi-am:
 
-install-exec-am: install-libLTLIBRARIES
+install-exec-am: install-binPROGRAMS
 
 install-html: install-html-am
 
@@ -496,23 +619,23 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-libLTLIBRARIES
+uninstall-am: uninstall-binPROGRAMS
 
 .MAKE: install-am install-strip
 
-.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libLTLIBRARIES clean-libtool ctags distclean \
-	distclean-compile distclean-generic distclean-libtool \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-dvi \
+.PHONY: CTAGS GTAGS all all-am check check-am clean clean-binPROGRAMS \
+	clean-generic clean-libtool ctags distclean distclean-compile \
+	distclean-generic distclean-libtool distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-binPROGRAMS install-data install-data-am install-dvi \
 	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am \
-	install-libLTLIBRARIES install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags uninstall uninstall-am uninstall-libLTLIBRARIES
+	install-html-am install-info install-info-am install-man \
+	install-pdf install-pdf-am install-ps install-ps-am \
+	install-strip installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
+	pdf pdf-am ps ps-am tags uninstall uninstall-am \
+	uninstall-binPROGRAMS
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

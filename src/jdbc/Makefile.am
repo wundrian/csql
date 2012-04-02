@@ -7,10 +7,7 @@ libcsqljdbc_la_LDFLAGS = -avoid-version -module \
 		-L$(top_srcdir)/src/sql -lcsqlsql \
 		-L$(top_srcdir)/src/sqlnetwork -lcsqlsqlnw \
 		-L$(top_srcdir)/src/sqllog -lcsqlsqllog \
-		-L$(top_srcdir)/src/adapter -lcsqlodbcadapter \
-		-L$(top_srcdir)/src/gateway -lcsqlgw \
-		-L$(top_builddir)/src/cache -lcacheload \
--lcrypt 
+-lcrypt
 libcsqljdbc_la_SOURCES = JSqlConnection.cxx JSqlStatement.cxx
 
 noinst_HEADERS = JSqlConnection.h JSqlStatement.h
