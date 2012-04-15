@@ -58,9 +58,11 @@ typedef void (*sighandler_t)(int);
 #include <sys/stat.h>
 #include <math.h>
 #include <string.h>
+#include <string>
 #include <stdlib.h>
 #include <limits.h>
 #include <signal.h>
+#include <assert.h>
 
 
 #if defined(SOLARIS) || defined(LINUX) || defined(FreeBSD)
