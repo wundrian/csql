@@ -530,6 +530,41 @@ class CompactTblStatement : public DdlStatement
     ~CompactTblStatement(){}
 };
 
+class DclStatementImpl : public Statement
+{
+public:
+    DclStatementImpl();
+    ~DclStatementImpl();
+    
+    DbRetVal execute(int &rowsAffected);
+    DbRetVal resolve() {return OK; }
+    
+    /* must implement complete interface */
+    DbRetVal setParam(int paramNo, void *value) { return ErrBadCall; }
+    DbRetVal setShortParam(int paramNo, short value) { return ErrBadCall; }
+    DbRetVal setIntParam(int paramNo, int value) { return ErrBadCall; }
+    DbRetVal setLongParam(int paramNo, long value) { return ErrBadCall; }
+    DbRetVal setLongLongParam(int paramNo, long long value) { return ErrBadCall; }
+    DbRetVal setByteIntParam(int paramNo, ByteInt value) { return ErrBadCall; }
+    DbRetVal setFloatParam(int paramNo, float value) { return ErrBadCall; }
+    DbRetVal setDoubleParam(int paramNo, double value) { return ErrBadCall; }
+    DbRetVal setStringParam(int paramNo, char *value) { return ErrBadCall; }
+    DbRetVal setDateParam(int paramNo, Date value) { return ErrBadCall; }
+    DbRetVal setTimeParam(int paramNo, Time value) { return ErrBadCall; }
+    DbRetVal setTimeStampParam(int paramNo, TimeStamp value) {  return ErrBadCall;}
+    DbRetVal setBinaryParam(int paramNo, void *value, int length) {  return ErrBadCall;}
+    DbRetVal getFieldInfo(const char *tblName, const char *fldName, FieldInfo *&info){return ErrBadCall; }
+    List getFieldNameList(const char *tblName, DbRetVal &rv) {
+        List dummylist; rv = ErrBadCall; return dummylist;
+    }
+    bool isFldNull(int pos){  return false;}
+    bool isFldNull(char *fldName ){ return false;}
+    int getFldPos(char *name){ return -1;}
+    long long getLastInsertedVal(DbRetVal &rv){ rv = ErrBadCall; return 0;}
+    DbRetVal setNull(int pos){ return ErrBadCall;}
+    ResultSetPlan getResultSetPlan(){ ResultSetPlan dummy; return dummy;}
+};
+
 class StatementFactory
 {
     public:

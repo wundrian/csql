@@ -45,7 +45,8 @@ enum StatementType
     UserStatement,
     MgmtStatement,
     AlterStatement,
-    TruncateStatement
+    TruncateStatement,
+    DclStatement
 };
 #endif
 
@@ -161,6 +162,19 @@ class UserNode
     UserNodeType type;
 };
 
+enum DclType
+{
+    REVOKEACCESS=0, /* can't name them REVOKE, GRANT as this conflicts with parser tokens */
+    GRANTACCESS
+};
+
+class DclInfoNode
+{
+public:
+    char userName[IDENTIFIER_LENGTH];
+    DclType type;
+};
+
 class DllExport ParsedData
 {
     private:
@@ -205,6 +219,7 @@ class DllExport ParsedData
     List updFldValList;
 
     //stores the where clause condition for SELECT, UPDATE and DELETE
+    // also used for GRANT ... RESTRICT TO command
     Condition predicate;
     Condition havingPredicate;
     List predList;
@@ -213,6 +228,8 @@ class DllExport ParsedData
     FieldDef fldDef;
     //User Management
     UserNode *userNode;
+    // Rights Management
+    DclInfoNode *dclNode;
     //stores list of fields for CREATE TABLE
     FieldList creFldList;
     //Foreign Key storage
@@ -246,10 +263,11 @@ class DllExport ParsedData
     int offset;
     bool isWorthyToCache;
     FunctionType ftype;
+    
     public:
     ParsedData() { limit = 0;  offset= 0; paramCounter = 0; stmtType = UnknownStatement;  isDistinct = false; isExplain=false;
                  isUnique = false; isPrimary = false; isAutoIncrement=false ;indexType = hashIndex; plan = Normal; bucketSize=0; isForeign=false; hCondFld=false; vCondFld=false;pkFld=false;forceOption=false; direct=false; uncache=false; noschema=false; dsn=false; 
-    shouldCreateTbl=false; userNode = NULL; isWorthyToCache=false; ftype = UNKNOWN_FUNCTION;
+    shouldCreateTbl=false; userNode = NULL; dclNode = NULL; isWorthyToCache=false; ftype = UNKNOWN_FUNCTION;
     } 
     void setFunctionType(FunctionType type) { ftype = type; }
     FunctionType getFunctionType(){ return ftype;}
@@ -262,6 +280,9 @@ class DllExport ParsedData
     UserNodeType getUserType() { return userNode->type; }
     void dropUserNode(char *name);
     void alterUserNode(char *name, char *password);
+    
+    void grantDclNode(const std::string userName);
+    void revokeDclNode(const std::string userName);
 
     void setCreateTbl(){ shouldCreateTbl=true; }
     bool getCreateTbl(){ return shouldCreateTbl; }

@@ -57,7 +57,7 @@ am_libcsqlsql_la_OBJECTS = dmlyacc.lo dmllex.lo ParsedData.lo \
 	SelStatement.lo InsStatement.lo UpdStatement.lo \
 	DelStatement.lo DdlStatement.lo CopyTblStatement.lo \
 	MetadataStatement.lo SqlStatement.lo StatementFactory.lo \
-	SqlFactory.lo AlterTblStatement.lo
+	SqlFactory.lo AlterTblStatement.lo DclStatementImpl.lo
 libcsqlsql_la_OBJECTS = $(am_libcsqlsql_la_OBJECTS)
 libcsqlsql_la_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
@@ -229,7 +229,8 @@ libcsqlsql_la_LDFLAGS = -avoid-version -module \
 libcsqlsql_la_SOURCES = dmlyacc.yxx dmllex.lxx ParsedData.cxx SelStatement.cxx \
 	InsStatement.cxx UpdStatement.cxx DelStatement.cxx \
 	DdlStatement.cxx CopyTblStatement.cxx MetadataStatement.cxx \
-	SqlStatement.cxx  StatementFactory.cxx SqlFactory.cxx AlterTblStatement.cxx
+	SqlStatement.cxx  StatementFactory.cxx SqlFactory.cxx AlterTblStatement.cxx \
+	DclStatementImpl.cxx
 
 libcsqlsql_a_LIBADD = $(top_builddir)/src/storage/libcsqlstorage.la 
 all: all-am
@@ -303,6 +304,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AlterTblStatement.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CopyTblStatement.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DclStatementImpl.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DdlStatement.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DelStatement.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/InsStatement.Plo@am__quote@

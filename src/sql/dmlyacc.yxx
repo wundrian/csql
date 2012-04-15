@@ -32,7 +32,7 @@ void yyerror(const char* Msg);
 %token <stringval> CACHE CONDITION FIELDLIST PK DIRECT DSN UNCACHE NOSCHEMA
 %token <stringval> INT_TYPE LONG_TYPE SHORT_TYPE DOUBLE_TYPE TIMESTAMP_TYPE DATE_TYPE CHAR_TYPE TIME_TYPE BIGINT_TYPE FLOAT_TYPE TINYINT_TYPE BINARY_TYPE VARCHAR_TYPE
 %token <stringval> DATE_DIFF DATE_ADD DATE_SUB HOUR MINUTE SECOND YEAR MONTH DAY INTERVAL TIME_DIFF TIME_ADD TIME_SUB TIMESTAMP_DIFF TIMESTAMP_ADD TIMESTAMP_SUB EXTRACT NOW
-%token <stringval> USER PASSWORD ALTER FLUSH ADD COLUMN MODIFY RENAME TO
+%token <stringval> USER PASSWORD ALTER FLUSH ADD COLUMN MODIFY RENAME TO GRANT RESTRICT REVOKE
 %token <stringval> MIN MAX AVG SUM COUNT GROUP BY HAVING ORDER ASC DESC DISTINCT
 %token ';' ',' '(' ')'
 %type <stringval> ident field value not_opt doub_value num_value 
@@ -50,6 +50,7 @@ command:  select_statement { YYACCEPT; }
         | cache_statement { YYACCEPT; }
         | copy_table_statement { YYACCEPT; }
         | user_manager_statement { YYACCEPT; }
+        | grant_statement { YYACCEPT; }
 	| management_statement { YYACCEPT; }
 	| alter_statement { YYACCEPT; }
         | other {YYACCEPT;}
@@ -128,6 +129,30 @@ user_manager_statement: CREATE USER ident PASSWORD STRING semicolon_opt
             free($6);
 	}
         ;
+priviledge_list : priviledge_list priviledge_list_L
+        | priviledge
+        ;
+priviledge_list_L : ',' priviledge
+    ;
+priviledge : SELECT | INSERT | UPDATE | DELETE
+    ;
+restrict_opt : RESTRICT TO conditions
+    |
+    ;
+grant_statement : GRANT priviledge ON ident TO ident restrict_opt semicolon_opt
+    {
+            parsedData->setStmtType(DclStatement);
+            parsedData->setTableName($4);
+            parsedData->grantDclNode($6);
+    }
+    ;
+revoke_statement : REVOKE priviledge ON ident FROM ident semicolon_opt
+    {
+            parsedData->setStmtType(DclStatement);
+            parsedData->setTableName($4);
+            parsedData->revokeDclNode($6);
+    }
+    ;
 copy_table_statement: CREATE TABLE ident AS SELECT opt_distinct field_list FROM table_list where_clause_opt group_by_opt having_opt order_by_opt limit_opt semicolon_opt
         {
             parsedData->setStmtType(CopyTableStatement);

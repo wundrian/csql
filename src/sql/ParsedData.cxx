@@ -618,3 +618,21 @@ void ParsedData::alterUserNode(char *name, char *password)
     strcpy(userNode->passName, password);
     userNode->type = ALTERUSER;
 }
+
+void ParsedData::grantDclNode(const std::string userName)
+{
+    assert(userName.length() < IDENTIFIER_LENGTH);
+    
+    dclNode = new DclInfoNode();
+    userName.copy(dclNode->userName, IDENTIFIER_LENGTH - 1, 0);
+    dclNode->type = GRANTACCESS;
+}
+
+void ParsedData::revokeDclNode(const std::string userName)
+{
+    assert(userName.length() < IDENTIFIER_LENGTH);
+    
+    dclNode = new DclInfoNode();
+    userName.copy(dclNode->userName, IDENTIFIER_LENGTH - 1, 0);
+    dclNode->type = REVOKEACCESS;
+}

@@ -65,6 +65,9 @@ Statement* StatementFactory::getStatement(ParsedData *data)
         case TruncateStatement:
             stmt = new TruncateTblStatement();
             break;
+        case DclStatement:
+            stmt = new DclStatementImpl();
+            break;
     }
     stmt->setParsedData(data);
     return stmt;

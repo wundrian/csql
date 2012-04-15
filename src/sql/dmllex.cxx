@@ -997,6 +997,9 @@ YY_RULE_SETUP
                 if(strcasecmp(yytext,"EXTRACT") ==0) token = EXTRACT;
                 if(strcasecmp(yytext,"TRUNCATE") ==0) token = TRUNCATE;
                 if(strcasecmp(yytext,"NOW") ==0) token = NOW;
+                if(strcasecmp(yytext,"GRANT") ==0) token = GRANT;
+                if(strcasecmp(yytext,"REVOKE") ==0) token = REVOKE;
+                if(strcasecmp(yytext,"RESTRICT") ==0) token = RESTRICT;
                 if( token == FIELD )
                     yylval.stringval = strdup((const char*)yytext);
                 else
@@ -1007,7 +1010,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 215 "dmllex.lxx"
+#line 218 "dmllex.lxx"
 { ECHO;
                 yylval.stringval = strdup((const char*)yytext);
                 return (NUMBER_STRING);
@@ -1015,7 +1018,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 220 "dmllex.lxx"
+#line 223 "dmllex.lxx"
 {   ECHO;
                 yylval.stringval = strdup((const char*)yytext);
                 return (DOUBLE);
@@ -1023,7 +1026,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 225 "dmllex.lxx"
+#line 228 "dmllex.lxx"
 {   ECHO;
                 yylval.stringval = strdup((const char*)yytext);
                 return (BINARY_STRING);
@@ -1031,7 +1034,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 229 "dmllex.lxx"
+#line 232 "dmllex.lxx"
 {
                 yylval.stringval = strdup((const char*)yytext);
                 return(PARAMETER);
@@ -1040,22 +1043,22 @@ YY_RULE_SETUP
 case 10:
 /* rule 10 can match eol */
 YY_RULE_SETUP
-#line 233 "dmllex.lxx"
+#line 236 "dmllex.lxx"
 { ECHO; }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 234 "dmllex.lxx"
+#line 237 "dmllex.lxx"
 { ECHO; }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 235 "dmllex.lxx"
+#line 238 "dmllex.lxx"
 { ECHO; }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 236 "dmllex.lxx"
+#line 239 "dmllex.lxx"
 { ECHO; }
 	YY_BREAK
 
@@ -1064,20 +1067,20 @@ YY_RULE_SETUP
 case 14:
 /* rule 14 can match eol */
 YY_RULE_SETUP
-#line 241 "dmllex.lxx"
+#line 244 "dmllex.lxx"
 { ECHO; }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 243 "dmllex.lxx"
+#line 246 "dmllex.lxx"
 { ECHO; return yytext[0]; }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 246 "dmllex.lxx"
+#line 249 "dmllex.lxx"
 ECHO;
 	YY_BREAK
-#line 1081 "dmllex.cxx"
+#line 1084 "dmllex.cxx"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2075,7 +2078,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 246 "dmllex.lxx"
+#line 249 "dmllex.lxx"
 
 
 

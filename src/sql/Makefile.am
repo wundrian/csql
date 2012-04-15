@@ -9,6 +9,7 @@ libcsqlsql_la_LDFLAGS = -avoid-version -module \
 libcsqlsql_la_SOURCES = dmlyacc.yxx dmllex.lxx ParsedData.cxx SelStatement.cxx \
 	InsStatement.cxx UpdStatement.cxx DelStatement.cxx \
 	DdlStatement.cxx CopyTblStatement.cxx MetadataStatement.cxx \
-	SqlStatement.cxx  StatementFactory.cxx SqlFactory.cxx AlterTblStatement.cxx
+	SqlStatement.cxx  StatementFactory.cxx SqlFactory.cxx AlterTblStatement.cxx \
+	DclStatementImpl.cxx
 
 libcsqlsql_a_LIBADD = $(top_builddir)/src/storage/libcsqlstorage.la 
