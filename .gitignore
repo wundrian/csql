@@ -19,3 +19,4 @@ install/
 classtmp
 .project
 cscope.out
+/nbproject/private/
