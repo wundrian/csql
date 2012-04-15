@@ -34,7 +34,9 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = csql$(EXEEXT) icsql$(EXEEXT) catalog$(EXEEXT) \
-	csqldump$(EXEEXT) redo$(EXEEXT) recover$(EXEEXT)
+	cachetable$(EXEEXT) csqldump$(EXEEXT) cacheverify$(EXEEXT) \
+	redo$(EXEEXT) recover$(EXEEXT) checkpoint$(EXEEXT) \
+	csqlds$(EXEEXT) applyofflinelogs$(EXEEXT)
 subdir = src/tools
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -47,6 +49,51 @@ CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
+am_applyofflinelogs_OBJECTS = applyofflinelogs.$(OBJEXT)
+applyofflinelogs_OBJECTS = $(am_applyofflinelogs_OBJECTS)
+applyofflinelogs_DEPENDENCIES =  \
+	$(top_builddir)/src/storage/libcsqlstorage.la \
+	$(top_builddir)/src/base/libcsqlbase.la \
+	$(top_builddir)/src/sql/libcsqlsql.la \
+	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la \
+	$(top_builddir)/src/cache/libcacheload.la \
+	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la
+applyofflinelogs_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
+	$(CXXFLAGS) $(applyofflinelogs_LDFLAGS) $(LDFLAGS) -o $@
+am_cachetable_OBJECTS = cachetable.$(OBJEXT)
+cachetable_OBJECTS = $(am_cachetable_OBJECTS)
+cachetable_DEPENDENCIES =  \
+	$(top_builddir)/src/storage/libcsqlstorage.la \
+	$(top_builddir)/src/base/libcsqlbase.la \
+	$(top_builddir)/src/sql/libcsqlsql.la \
+	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la \
+	$(top_builddir)/src/cache/libcacheload.la \
+	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la
+cachetable_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
+	$(CXXFLAGS) $(cachetable_LDFLAGS) $(LDFLAGS) -o $@
+am_cacheverify_OBJECTS = cacheverify.$(OBJEXT)
+cacheverify_OBJECTS = $(am_cacheverify_OBJECTS)
+cacheverify_DEPENDENCIES = $(top_builddir)/src/sql/libcsqlsql.la \
+	$(top_builddir)/src/base/libcsqlbase.la \
+	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la \
+	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+	$(top_builddir)/src/cache/libcacheload.la \
+	$(top_builddir)/src/storage/libcsqlstorage.la
+cacheverify_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
+	$(CXXFLAGS) $(cacheverify_LDFLAGS) $(LDFLAGS) -o $@
 am_catalog_OBJECTS = catalog.$(OBJEXT)
 catalog_OBJECTS = $(am_catalog_OBJECTS)
 catalog_DEPENDENCIES = $(top_builddir)/src/storage/libcsqlstorage.la \
@@ -54,10 +101,28 @@ catalog_DEPENDENCIES = $(top_builddir)/src/storage/libcsqlstorage.la \
 	$(top_builddir)/src/sql/libcsqlsql.la \
 	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
 	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la \
+	$(top_builddir)/src/cache/libcacheload.la \
 	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la
 catalog_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(catalog_LDFLAGS) $(LDFLAGS) -o $@
+am_checkpoint_OBJECTS = checkpoint.$(OBJEXT)
+checkpoint_OBJECTS = $(am_checkpoint_OBJECTS)
+checkpoint_DEPENDENCIES =  \
+	$(top_builddir)/src/storage/libcsqlstorage.la \
+	$(top_builddir)/src/base/libcsqlbase.la \
+	$(top_builddir)/src/sql/libcsqlsql.la \
+	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la \
+	$(top_builddir)/src/cache/libcacheload.la \
+	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la
+checkpoint_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
+	$(CXXFLAGS) $(checkpoint_LDFLAGS) $(LDFLAGS) -o $@
 am_csql_OBJECTS = isql.$(OBJEXT)
 csql_OBJECTS = $(am_csql_OBJECTS)
 csql_DEPENDENCIES = $(top_builddir)/src/storage/libcsqlstorage.la \
@@ -65,17 +130,31 @@ csql_DEPENDENCIES = $(top_builddir)/src/storage/libcsqlstorage.la \
 	$(top_builddir)/src/sql/libcsqlsql.la \
 	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
 	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la \
+	$(top_builddir)/src/cache/libcacheload.la \
 	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la
 csql_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(csql_LDFLAGS) $(LDFLAGS) -o $@
+am_csqlds_OBJECTS = csqlds.$(OBJEXT)
+csqlds_OBJECTS = $(am_csqlds_OBJECTS)
+csqlds_DEPENDENCIES = $(top_builddir)/src/storage/libcsqlstorage.la \
+	$(top_builddir)/src/base/libcsqlbase.la
+csqlds_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+	--mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
+	$(csqlds_LDFLAGS) $(LDFLAGS) -o $@
 am_csqldump_OBJECTS = csqldump.$(OBJEXT)
 csqldump_OBJECTS = $(am_csqldump_OBJECTS)
 csqldump_DEPENDENCIES = $(top_builddir)/src/sql/libcsqlsql.la \
 	$(top_builddir)/src/base/libcsqlbase.la \
-	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la \
 	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
 	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la \
+	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/cache/libcacheload.la \
+	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
 	$(top_builddir)/src/storage/libcsqlstorage.la
 csqldump_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
@@ -87,6 +166,9 @@ icsql_DEPENDENCIES = $(top_builddir)/src/storage/libcsqlstorage.la \
 	$(top_builddir)/src/sql/libcsqlsql.la \
 	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
 	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la \
+	$(top_builddir)/src/cache/libcacheload.la \
 	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la
 icsql_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
@@ -98,6 +180,9 @@ recover_DEPENDENCIES = $(top_builddir)/src/storage/libcsqlstorage.la \
 	$(top_builddir)/src/sql/libcsqlsql.la \
 	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
 	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la \
+	$(top_builddir)/src/cache/libcacheload.la \
 	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la
 recover_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
@@ -109,6 +194,9 @@ redo_DEPENDENCIES = $(top_builddir)/src/storage/libcsqlstorage.la \
 	$(top_builddir)/src/sql/libcsqlsql.la \
 	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
 	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la \
+	$(top_builddir)/src/cache/libcacheload.la \
 	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la
 redo_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
@@ -125,10 +213,16 @@ CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(catalog_SOURCES) $(csql_SOURCES) $(csqldump_SOURCES) \
-	$(icsql_SOURCES) $(recover_SOURCES) $(redo_SOURCES)
-DIST_SOURCES = $(catalog_SOURCES) $(csql_SOURCES) $(csqldump_SOURCES) \
-	$(icsql_SOURCES) $(recover_SOURCES) $(redo_SOURCES)
+SOURCES = $(applyofflinelogs_SOURCES) $(cachetable_SOURCES) \
+	$(cacheverify_SOURCES) $(catalog_SOURCES) \
+	$(checkpoint_SOURCES) $(csql_SOURCES) $(csqlds_SOURCES) \
+	$(csqldump_SOURCES) $(icsql_SOURCES) $(recover_SOURCES) \
+	$(redo_SOURCES)
+DIST_SOURCES = $(applyofflinelogs_SOURCES) $(cachetable_SOURCES) \
+	$(cacheverify_SOURCES) $(catalog_SOURCES) \
+	$(checkpoint_SOURCES) $(csql_SOURCES) $(csqlds_SOURCES) \
+	$(csqldump_SOURCES) $(icsql_SOURCES) $(recover_SOURCES) \
+	$(redo_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -261,11 +355,14 @@ csql_SOURCES = isql.cxx
 csql_LDADD = $(top_builddir)/src/storage/libcsqlstorage.la \
 	$(top_builddir)/src/base/libcsqlbase.la \
 	$(top_builddir)/src/sql/libcsqlsql.la \
-	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
-	$(top_builddir)/src/network/libcsqlnw.la \
-	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la 
+        $(top_builddir)/src/sqllog/libcsqlsqllog.la \
+        $(top_builddir)/src/network/libcsqlnw.la \
+        $(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+        $(top_builddir)/src/gateway/libcsqlgw.la \
+        $(top_builddir)/src/cache/libcacheload.la \
+        $(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la 
 
-csql_LDFLAGS = -lrt -lpthread -lcrypt -lreadline -lcurses -ldl
+csql_LDFLAGS = -lrt -lpthread -lcrypt -lodbc -lreadline -lcurses -ldl
 icsql_SOURCES = isql.cxx
 icsql_CPPFLAGS = -DNO_READLINE_LIB
 icsql_LDADD = $(top_builddir)/src/storage/libcsqlstorage.la \
@@ -273,45 +370,115 @@ icsql_LDADD = $(top_builddir)/src/storage/libcsqlstorage.la \
         $(top_builddir)/src/sql/libcsqlsql.la \
         $(top_builddir)/src/sqllog/libcsqlsqllog.la \
         $(top_builddir)/src/network/libcsqlnw.la \
+        $(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+        $(top_builddir)/src/gateway/libcsqlgw.la \
+        $(top_builddir)/src/cache/libcacheload.la \
         $(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la
 
-icsql_LDFLAGS = -lrt -lpthread -lcrypt -lodbc -ldl
+icsql_LDFLAGS = -lrt -lpthread -lcrypt -lodbc  -ldl
 redo_SOURCES = redo.cxx
-redo_LDADD = $(top_builddir)/src/storage/libcsqlstorage.la \
+redo_LDADD = $(top_builddir)/src/storage/libcsqlstorage.la  \
+	$(top_builddir)/src/base/libcsqlbase.la \
+	$(top_builddir)/src/sql/libcsqlsql.la \
+	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
+        $(top_builddir)/src/network/libcsqlnw.la \
+        $(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+        $(top_builddir)/src/gateway/libcsqlgw.la \
+        $(top_builddir)/src/cache/libcacheload.la \
+        $(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la
+
+redo_LDFLAGS = -lrt -lpthread -lcrypt -lodbc -lreadline -lcurses -ldl
+applyofflinelogs_SOURCES = applyofflinelogs.cxx
+applyofflinelogs_LDADD = $(top_builddir)/src/storage/libcsqlstorage.la \
 	$(top_builddir)/src/base/libcsqlbase.la \
 	$(top_builddir)/src/sql/libcsqlsql.la \
 	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
 	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la \
+	$(top_builddir)/src/cache/libcacheload.la \
 	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la 
 
-redo_LDFLAGS = -lrt -lpthread -lcrypt -ldl
+applyofflinelogs_LDFLAGS = -lrt -lpthread -lcrypt -lodbc -ldl
 recover_SOURCES = recover.cxx
-recover_LDADD = $(top_builddir)/src/storage/libcsqlstorage.la \
+recover_LDADD = $(top_builddir)/src/storage/libcsqlstorage.la  \
 	$(top_builddir)/src/base/libcsqlbase.la \
 	$(top_builddir)/src/sql/libcsqlsql.la \
-	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
-	$(top_builddir)/src/network/libcsqlnw.la \
-	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la
+        $(top_builddir)/src/sqllog/libcsqlsqllog.la \
+        $(top_builddir)/src/network/libcsqlnw.la \
+        $(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+        $(top_builddir)/src/gateway/libcsqlgw.la \
+        $(top_builddir)/src/cache/libcacheload.la \
+        $(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la 
 
-recover_LDFLAGS = -lrt -lpthread -lcrypt -ldl
+recover_LDFLAGS = -lcrypt -lrt -lpthread -lodbc -ldl
+checkpoint_SOURCES = checkpoint.cxx
+checkpoint_LDADD = $(top_builddir)/src/storage/libcsqlstorage.la  \
+	$(top_builddir)/src/base/libcsqlbase.la \
+	$(top_builddir)/src/sql/libcsqlsql.la \
+        $(top_builddir)/src/sqllog/libcsqlsqllog.la \
+        $(top_builddir)/src/network/libcsqlnw.la \
+        $(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+        $(top_builddir)/src/gateway/libcsqlgw.la \
+        $(top_builddir)/src/cache/libcacheload.la \
+        $(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la 
+
+checkpoint_LDFLAGS = -lcrypt -lrt -lpthread -lcrypt -lodbc -ldl
 catalog_SOURCES = catalog.cxx
-catalog_LDADD = $(top_builddir)/src/storage/libcsqlstorage.la \
+catalog_LDADD = $(top_builddir)/src/storage/libcsqlstorage.la  \
 	$(top_builddir)/src/base/libcsqlbase.la \
 	$(top_builddir)/src/sql/libcsqlsql.la \
-	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
-	$(top_builddir)/src/network/libcsqlnw.la \
-	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la
+        $(top_builddir)/src/sqllog/libcsqlsqllog.la \
+        $(top_builddir)/src/network/libcsqlnw.la \
+        $(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+        $(top_builddir)/src/gateway/libcsqlgw.la \
+        $(top_builddir)/src/cache/libcacheload.la \
+        $(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la 
 
-catalog_LDFLAGS = -lcrypt -ldl
-csqldump_LDADD = $(top_builddir)/src/sql/libcsqlsql.la \
+catalog_LDFLAGS = -lcrypt -lrt -ldl
+cachetable_LDADD = $(top_builddir)/src/storage/libcsqlstorage.la  \
 	$(top_builddir)/src/base/libcsqlbase.la \
-	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la \
+	$(top_builddir)/src/sql/libcsqlsql.la \
+        $(top_builddir)/src/sqllog/libcsqlsqllog.la \
+        $(top_builddir)/src/network/libcsqlnw.la \
+        $(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+        $(top_builddir)/src/gateway/libcsqlgw.la \
+        $(top_builddir)/src/cache/libcacheload.la \
+        $(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la 
+
+cachetable_LDFLAGS = -lcrypt -lodbc -lrt -ldl
+cachetable_SOURCES = cachetable.cxx
+cacheverify_LDADD = $(top_builddir)/src/sql/libcsqlsql.la \
+	$(top_builddir)/src/base/libcsqlbase.la \
 	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
 	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la \
+	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+	$(top_builddir)/src/cache/libcacheload.la \
 	$(top_builddir)/src/storage/libcsqlstorage.la 
 
-csqldump_LDFLAGS = -lrt -lpthread -lcrypt -ldl
+cacheverify_LDFLAGS = -lrt -lpthread -lcrypt -lodbc -ldl
+cacheverify_SOURCES = cacheverify.cxx
+csqldump_LDADD = $(top_builddir)/src/sql/libcsqlsql.la \
+	$(top_builddir)/src/base/libcsqlbase.la \
+	$(top_builddir)/src/sqllog/libcsqlsqllog.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/gateway/libcsqlgw.la \
+	$(top_builddir)/src/sqlnetwork/libcsqlsqlnw.la \
+	$(top_builddir)/src/network/libcsqlnw.la \
+	$(top_builddir)/src/cache/libcacheload.la \
+	$(top_builddir)/src/adapter/libcsqlodbcadapter.la \
+	$(top_builddir)/src/storage/libcsqlstorage.la 
+
+csqldump_LDFLAGS = -lrt -lpthread -lcrypt -lodbc -ldl
 csqldump_SOURCES = csqldump.cxx
+csqlds_LDADD = $(top_builddir)/src/storage/libcsqlstorage.la \
+	$(top_builddir)/src/base/libcsqlbase.la 
+
+csqlds_LDFLAGS = -lcrypt -ldl
+csqlds_SOURCES = csqlds.cxx
 all: all-am
 
 .SUFFIXES:
@@ -373,12 +540,27 @@ clean-binPROGRAMS:
 	  echo " rm -f $$p $$f"; \
 	  rm -f $$p $$f ; \
 	done
+applyofflinelogs$(EXEEXT): $(applyofflinelogs_OBJECTS) $(applyofflinelogs_DEPENDENCIES) 
+	@rm -f applyofflinelogs$(EXEEXT)
+	$(applyofflinelogs_LINK) $(applyofflinelogs_OBJECTS) $(applyofflinelogs_LDADD) $(LIBS)
+cachetable$(EXEEXT): $(cachetable_OBJECTS) $(cachetable_DEPENDENCIES) 
+	@rm -f cachetable$(EXEEXT)
+	$(cachetable_LINK) $(cachetable_OBJECTS) $(cachetable_LDADD) $(LIBS)
+cacheverify$(EXEEXT): $(cacheverify_OBJECTS) $(cacheverify_DEPENDENCIES) 
+	@rm -f cacheverify$(EXEEXT)
+	$(cacheverify_LINK) $(cacheverify_OBJECTS) $(cacheverify_LDADD) $(LIBS)
 catalog$(EXEEXT): $(catalog_OBJECTS) $(catalog_DEPENDENCIES) 
 	@rm -f catalog$(EXEEXT)
 	$(catalog_LINK) $(catalog_OBJECTS) $(catalog_LDADD) $(LIBS)
+checkpoint$(EXEEXT): $(checkpoint_OBJECTS) $(checkpoint_DEPENDENCIES) 
+	@rm -f checkpoint$(EXEEXT)
+	$(checkpoint_LINK) $(checkpoint_OBJECTS) $(checkpoint_LDADD) $(LIBS)
 csql$(EXEEXT): $(csql_OBJECTS) $(csql_DEPENDENCIES) 
 	@rm -f csql$(EXEEXT)
 	$(csql_LINK) $(csql_OBJECTS) $(csql_LDADD) $(LIBS)
+csqlds$(EXEEXT): $(csqlds_OBJECTS) $(csqlds_DEPENDENCIES) 
+	@rm -f csqlds$(EXEEXT)
+	$(csqlds_LINK) $(csqlds_OBJECTS) $(csqlds_LDADD) $(LIBS)
 csqldump$(EXEEXT): $(csqldump_OBJECTS) $(csqldump_DEPENDENCIES) 
 	@rm -f csqldump$(EXEEXT)
 	$(csqldump_LINK) $(csqldump_OBJECTS) $(csqldump_LDADD) $(LIBS)
@@ -398,7 +580,12 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/applyofflinelogs.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cachetable.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cacheverify.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/catalog.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/checkpoint.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/csqlds.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/csqldump.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/icsql-isql.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/isql.Po@am__quote@

@@ -92,7 +92,7 @@ CPPFLAGS =
 CXX = g++
 CXXCPP = g++ -E
 CXXDEPMODE = depmode=gcc3
-CXXFLAGS = -g  -DMMDB -DEMBED -I/etc/java-config-2/current-system-vm/include -I/etc/java-config-2/current-system-vm/include/linux -Wno-write-strings
+CXXFLAGS = -g  -I/etc/java-config-2/current-system-vm/include -I/etc/java-config-2/current-system-vm/include/linux -Wno-write-strings
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps

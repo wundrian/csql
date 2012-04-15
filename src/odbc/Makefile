@@ -93,7 +93,7 @@ CPPFLAGS =
 CXX = g++
 CXXCPP = g++ -E
 CXXDEPMODE = depmode=gcc3
-CXXFLAGS = -g  -DMMDB -DEMBED -I/etc/java-config-2/current-system-vm/include -I/etc/java-config-2/current-system-vm/include/linux -Wno-write-strings
+CXXFLAGS = -g  -I/etc/java-config-2/current-system-vm/include -I/etc/java-config-2/current-system-vm/include/linux -Wno-write-strings
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
@@ -206,11 +206,14 @@ METASOURCES = AUTO
 lib_LTLIBRARIES = libcsqlodbc.la
 libcsqlodbc_la_LDFLAGS = -avoid-version -module \
     -L$(top_srcdir)/src/storage -lcsqlstorage \
-    -L$(top_srcdir)/src/sql -lcsqlsql \
     -L$(top_srcdir)/src/network -lcsqlnw \
+    -L$(top_srcdir)/src/sql -lcsqlsql \
     -L$(top_srcdir)/src/sqlnetwork -lcsqlsqlnw \
     -L$(top_srcdir)/src/sqllog -lcsqlsqllog \
-	-lcrypt
+    -L$(top_srcdir)/src/adapter -lcsqlodbcadapter \
+    -L$(top_srcdir)/src/gateway -lcsqlgw \
+    -L$(top_builddir)/src/cache -lcacheload \
+-lcrypt
 
 libcsqlodbc_la_SOURCES = odbcCommon.cxx odbcDbc.cxx odbcDesc.cxx \
 odbcError.cxx odbcEnv.cxx odbcState.cxx \
@@ -219,6 +222,7 @@ odbcStmt.cxx
 noinst_HEADERS = odbcCommon.h odbcDbc.h odbcDesc.h \
 odbcEnv.h odbcError.h odbcStmt.h
 
+libcsqlodbc_a_LIBADD = $(top_builddir)/src/odbc/libcsqlodbc.la
 all: all-am
 
 .SUFFIXES:
