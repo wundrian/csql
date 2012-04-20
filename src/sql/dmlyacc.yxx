@@ -129,24 +129,27 @@ user_manager_statement: CREATE USER ident PASSWORD STRING semicolon_opt
             free($6);
 	}
         ;
-priviledge_list : priviledge_list priviledge_list_L
-        | priviledge
-        ;
-priviledge_list_L : ',' priviledge
+privilege_list : privilege_list privilege_list_L
+    | privilege
     ;
-priviledge : SELECT | INSERT | UPDATE | DELETE
+privilege_list_L : ',' privilege
+    ;
+privilege : SELECT | INSERT | UPDATE | DELETE
+    {
+        parsedData->insertPrivilege($1);
+    }
     ;
 restrict_opt : RESTRICT TO conditions
     |
     ;
-grant_statement : GRANT priviledge ON ident TO ident restrict_opt semicolon_opt
+grant_statement : GRANT privilege_list ON ident TO ident restrict_opt semicolon_opt
     {
             parsedData->setStmtType(DclStatement);
             parsedData->setTableName($4);
             parsedData->grantDclNode($6);
     }
     ;
-revoke_statement : REVOKE priviledge ON ident FROM ident semicolon_opt
+revoke_statement : REVOKE privilege ON ident FROM ident semicolon_opt
     {
             parsedData->setStmtType(DclStatement);
             parsedData->setTableName($4);

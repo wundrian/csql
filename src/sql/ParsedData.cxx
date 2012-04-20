@@ -255,6 +255,17 @@ Predicate* ParsedData::insertPredicate(Predicate *p1, LogicalOp op, Predicate *p
     predList.append(pImpl);
     return (Predicate*) pImpl;
 }
+
+int ParsedData::insertPrivilege(const char* priv)
+{
+    if (0 == strcasecmp(priv, "SELECT")) privileges |= PRIV_SELECT;
+    else if (0 == strcasecmp(priv, "UPDATE")) privileges |= PRIV_UPDATE;
+    else if (0 == strcasecmp(priv, "INSERT")) privileges |= PRIV_INSERT;
+    else if (0 == strcasecmp(priv, "DELETE")) privileges |= PRIV_DELETE;
+   
+    return privileges;
+}
+
 void ParsedData::init()
 {
     tableNameList.init();

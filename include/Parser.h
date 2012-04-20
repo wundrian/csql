@@ -168,6 +168,14 @@ enum DclType
     GRANTACCESS
 };
 
+enum PrivilegeType
+{
+    PRIV_SELECT = 1,
+    PRIV_INSERT = 2,
+    PRIV_UPDATE = 4,
+    PRIV_DELETE = 8
+};
+
 class DclInfoNode
 {
 public:
@@ -230,6 +238,7 @@ class DllExport ParsedData
     UserNode *userNode;
     // Rights Management
     DclInfoNode *dclNode;
+    unsigned char privileges; // can't store in dclNode (may not be allocated when this is used)
     //stores list of fields for CREATE TABLE
     FieldList creFldList;
     //Foreign Key storage
@@ -281,8 +290,11 @@ class DllExport ParsedData
     void dropUserNode(char *name);
     void alterUserNode(char *name, char *password);
     
-    void grantDclNode(const std::string userName);
-    void revokeDclNode(const std::string userName);
+    void grantDclNode(const char* userName);
+    void revokeDclNode(const char* userName);
+    int insertPrivilege(const char* priv);
+    unsigned char getPrivileges(){ return privileges; }
+    
 
     void setCreateTbl(){ shouldCreateTbl=true; }
     bool getCreateTbl(){ return shouldCreateTbl; }
@@ -378,7 +390,7 @@ class DllExport ParsedData
     List getForeignKeyList(){ return foreignKeyList;}
     List getPkFieldNameList(){return pkFieldNameList;}
     List getFkFieldNameList(){return fkFieldNameList;}
-
+    
     void setDistinct() { isDistinct = true;}
     bool getDistinct() { return isDistinct; }
     void setExplain() { isExplain=true; }
