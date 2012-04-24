@@ -193,12 +193,12 @@ class CACCESS
     char dbName_[IDENTIFIER_LENGTH];
 };
 
-class CGRANT
+struct CGRANT
 {
     char userName_[IDENTIFIER_LENGTH];
     unsigned char privileges; /* a bit mask of PrivilegeType, consider using bitset<> here to allow more than 8 privileges */
     int tblID_; /* table id of the table */
-    Predicate predicate_; /* the row level restriction predicate applied to WHERE clauses, if any */
+    Predicate *predicate_; /* the row level restriction predicate applied to WHERE clauses, if any */
     
     /* map of fieldNames to condition values (needed for leaf nodes in predicate) */
     FieldConditionValMap conditionValues; 

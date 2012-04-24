@@ -522,9 +522,9 @@ DbRetVal CatalogTableGRANT::insert(unsigned char priv, int tblId, const char *us
     grantInfo->tblID_ = tblId;
     grantInfo->privileges = priv;
     
-    grantInfo->conditionValues = new FieldConditionValMap(conditionValues);
-    grantInfo->predicate = condition->deepCopy(grantInfo->conditionValues);
-    if (NULL == grantInfo->predicate) {
+    grantInfo->conditionValues = FieldConditionValMap(conditionValues);
+    grantInfo->predicate_ = condition->deepCopy(grantInfo->conditionValues);
+    if (NULL == grantInfo->predicate_) {
         printError(ErrNoMemory, "Failed to allocate space for grant predicate");
         return ErrNoMemory;
     }
@@ -568,7 +568,7 @@ DbRetVal CatalogTableGRANT::getPredicate(int tblId, const char *userName, Predic
         if (0 == memcmp(elem->userName_, userName, IDENTIFIER_LENGTH)
                 && tblId == elem->tblID_)
         {
-            pred = elem->predicate;
+            pred = elem->predicate_;
             //pred = elem->predicate->deepCopy(); // maybe can be relaxed to assignment?
         }
     }
