@@ -120,7 +120,7 @@ class DllExport Predicate
     virtual void setTerm(Expression *exp1, ComparisionOp op, Expression *exp2) = 0;
     virtual void print(int space)=0;
 
-    virtual Predicate* deepCopy(const FieldConditionValMap &conditionValues) const = 0;
+    virtual Predicate* deepCopy(FieldConditionValMap &conditionValues) const = 0;
     
     virtual ~Predicate(){}
 };

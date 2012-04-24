@@ -80,7 +80,7 @@ class DllExport UserManager
      * @param pred (optional) row level restriction predicate
      * @return status code (OK or error indicator)
      */
-    virtual int grantPrivilege(unsigned char priv, int tblId, const Predicate* pred)=0;
+    virtual int grantPrivilege(unsigned char priv, int tblId, const Predicate* pred, FieldConditionValMap &conditionValues)=0;
     
     /**
      * Revoke the given bitmask of privileges on a table from a certain user.

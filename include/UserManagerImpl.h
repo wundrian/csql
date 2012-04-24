@@ -43,7 +43,7 @@ class DllExport UserManagerImpl: public UserManager
     int changePassword(const char *userName, const char* newPasswd);
     List getAllUserNames(int *rv=NULL);
 
-    int grantPrivilege(unsigned char priv, int tblId, const Predicate* pred);
+    int grantPrivilege(unsigned char priv, int tblId, const Predicate* pred, FieldConditionValMap &conditionValues);
     int revokePrivilege(unsigned char priv, int tblId);
 };
 

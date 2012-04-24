@@ -106,7 +106,7 @@ List UserManagerImpl::getAllUserNames(int *retval)
 }
 
 int UserManagerImpl::grantPrivilege(unsigned char priv, int tblId,
-        const Predicate *pred, const FieldConditionValMap &conditionValues)
+        const Predicate *pred, FieldConditionValMap &conditionValues)
 {
     CatalogTableGRANT cGrant(systemDatabase_);
     int ret = cGrant.insert(priv, tblId, userName, pred, conditionValues);

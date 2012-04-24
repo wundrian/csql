@@ -150,7 +150,7 @@ class DllExport PredicateImpl:public Predicate
      * 
      * @return NULL if not enough memory is available. A copy of this instance otherwise.
      */
-    Predicate* deepCopy(const FieldConditionValMap &conditionValues) const;
+    Predicate* deepCopy(FieldConditionValMap &conditionValues) const;
 };
 
 #endif

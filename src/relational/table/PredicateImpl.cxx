@@ -850,7 +850,7 @@ PredicateImpl* PredicateImpl::getIfOneSidedPredicate()
     return NULL;
 }
 
-Predicate* PredicateImpl::deepCopy(const FieldConditionValMap &conditionValues) const
+Predicate* PredicateImpl::deepCopy(FieldConditionValMap &conditionValues) const
 {
     try {
         PredicateImpl *p = new PredicateImpl();
