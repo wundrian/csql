@@ -857,10 +857,10 @@ Predicate* PredicateImpl::deepCopy(FieldConditionValMap &conditionValues) const
         
         /* we know deepCopy() on PredicateImpls results in the same type! */
         if (NULL != lhs)
-            p->lhs = (PredicateImpl*)lhs->deepCopyInternal();
+            p->lhs = (PredicateImpl*)lhs->deepCopy(conditionValues);
         
         if (NULL != rhs)
-            p->rhs = (PredicateImpl*)rhs->deepCopyInternal();
+            p->rhs = (PredicateImpl*)rhs->deepCopy(conditionValues);
        
         p->compOp = this->compOp;
         p->comp2Op = this->comp2Op;
@@ -875,21 +875,22 @@ Predicate* PredicateImpl::deepCopy(FieldConditionValMap &conditionValues) const
 
         if (NULL != operandPtr || NULL != operand2Ptr) {
             if (NULL == table) {
-                printError("Table not set on Predicate during deepCopy");
+                printError(ErrBadCall, "Table not set on Predicate during deepCopy");
                 return NULL; // FIXME: are we leaking lhs/rhs here?
             }
             
-            std::string fName = new std::string(fldName1, IDENTIFIER_LENGTH);
-            FieldConditionValMap::const_iterator it = conditionValues.find(fName);
+            std::string fName = std::string(fldName1, IDENTIFIER_LENGTH);
+            FieldConditionValMap::iterator it = conditionValues.find(fName);
             if (it == conditionValues.end()) {
-                printError(ErrInvalidExpr, "Table does not contain field %s referenced in condition", fName);
+                printError(ErrInvalidExpr, "Table does not contain field %s referenced in condition", fName.c_str());
                 return NULL;
             }
             
             // Do NOT copy this.operand as it is only used in a JoinTable Predicate
             // (which is not the goal right now and only complicates things)
-            if (NULL != operandPtr)
-                p->operandPtr = &it->second->value;
+            if (NULL != operandPtr) {
+                p->operandPtr = &(it->second.value);
+            }
 
             if (NULL != operand2Ptr) {
                 /* this is one of the reasons FieldConditionValMap is actually a MultiMap:
@@ -902,7 +903,7 @@ Predicate* PredicateImpl::deepCopy(FieldConditionValMap &conditionValues) const
                     return NULL;
                 }
                 
-                p->operand2Ptr = &it->second->value;
+                p->operand2Ptr = &it->second.value;
             }
         }
         
