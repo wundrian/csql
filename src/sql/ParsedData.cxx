@@ -256,7 +256,7 @@ Predicate* ParsedData::insertPredicate(Predicate *p1, LogicalOp op, Predicate *p
     return (Predicate*) pImpl;
 }
 
-int ParsedData::insertPrivilege(const char* priv)
+int ParsedData::insertPrivilege(const char *priv)
 {
     if (0 == strcasecmp(priv, "SELECT")) privileges |= PRIV_SELECT;
     else if (0 == strcasecmp(priv, "UPDATE")) privileges |= PRIV_UPDATE;
@@ -630,20 +630,16 @@ void ParsedData::alterUserNode(char *name, char *password)
     userNode->type = ALTERUSER;
 }
 
-void ParsedData::grantDclNode(const std::string userName)
+void ParsedData::grantDclNode(const char* userName)
 {
-    assert(userName.length() < IDENTIFIER_LENGTH);
-    
     dclNode = new DclInfoNode();
-    userName.copy(dclNode->userName, IDENTIFIER_LENGTH - 1, 0);
+    strncpy(dclNode->userName, userName, IDENTIFIER_LENGTH);
     dclNode->type = GRANTACCESS;
 }
 
-void ParsedData::revokeDclNode(const std::string userName)
+void ParsedData::revokeDclNode(const char* userName)
 {
-    assert(userName.length() < IDENTIFIER_LENGTH);
-    
     dclNode = new DclInfoNode();
-    userName.copy(dclNode->userName, IDENTIFIER_LENGTH - 1, 0);
+    strncpy(dclNode->userName, userName, IDENTIFIER_LENGTH);
     dclNode->type = REVOKEACCESS;
 }

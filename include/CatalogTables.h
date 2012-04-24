@@ -23,12 +23,14 @@
 #include<Debug.h>
 #include<Util.h>
 
+#include <ParserDataTypes.h>
 
 extern char ChunkName[MAX_CHUNKS][CHUNK_NAME_LEN];
 class FieldList;
 class FieldNameList;
 class FieldIterator;
 class ChunkIterator;
+class Predicate;
 
 enum ObjectType
 {
@@ -75,6 +77,7 @@ enum CatalogTableID
     IndexFieldTableId= 16,
     ForeignKeyTableId= 17,
     ForeignKeyFieldTableId= 18,
+    GrantTableId     = 19,
     LastCatalogID = 25 //marks the end of catalog chunk ID.
 };
 
@@ -188,6 +191,32 @@ class CACCESS
     public:
     char userName_[IDENTIFIER_LENGTH];
     char dbName_[IDENTIFIER_LENGTH];
+};
+
+struct CGRANT
+{
+    char userName_[IDENTIFIER_LENGTH];
+    unsigned char privileges; /* a bit mask of PrivilegeType, consider using bitset<> here to allow more than 8 privileges */
+    int tblID_; /* table id of the table */
+    Predicate *predicate_; /* the row level restriction predicate applied to WHERE clauses, if any */
+    
+    /* map of fieldNames to condition values (needed for leaf nodes in predicate) */
+    FieldConditionValMap conditionValues; 
+};
+
+class CatalogTableGRANT
+{
+    Database *systemDatabase_;
+    public:
+    CatalogTableGRANT(Database *db) : systemDatabase_(db) {}
+
+    /* returns -1 on error */
+    DbRetVal insert(unsigned char priv, int tblId, const char *userName, 
+        const Predicate *pred, const FieldConditionValMap &conditionValues);
+    DbRetVal remove(unsigned char priv, int tblId, const char *userName);
+    
+    /* predicate is an OUT (and OUT only!) parameter */
+    DbRetVal getPredicate(int tblID, const char *userName, Predicate *predicate) const;
 };
 
 class CDATABASEFILE

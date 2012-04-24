@@ -533,11 +533,17 @@ class CompactTblStatement : public DdlStatement
 class DclStatementImpl : public Statement
 {
 public:
-    DclStatementImpl();
-    ~DclStatementImpl();
+    DclStatementImpl() {};
+    ~DclStatementImpl() {};
     
     DbRetVal execute(int &rowsAffected);
     DbRetVal resolve() {return OK; }
+    
+    void setUserManager(UserManager *mgr, const char *user)
+    { 
+        usrMgr = mgr;
+        strncpy(userName, user, IDENTIFIER_LENGTH);
+    }
     
     /* must implement complete interface */
     DbRetVal setParam(int paramNo, void *value) { return ErrBadCall; }
@@ -563,6 +569,10 @@ public:
     long long getLastInsertedVal(DbRetVal &rv){ rv = ErrBadCall; return 0;}
     DbRetVal setNull(int pos){ return ErrBadCall;}
     ResultSetPlan getResultSetPlan(){ ResultSetPlan dummy; return dummy;}
+    
+private:
+    UserManager* usrMgr;
+    char userName[IDENTIFIER_LENGTH];
 };
 
 class StatementFactory

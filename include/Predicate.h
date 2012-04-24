@@ -18,20 +18,11 @@
 #define PREDICATE_H
 #include<Expression.h>
 #include<DataType.h>
+#include <ParserDataTypes.h>
+
 class PredicateImpl;
 class Predicate;
-#ifndef AGGTYPE
-enum AggType
-{
-    AGG_MIN = 1,
-    AGG_MAX,
-    AGG_SUM,
-    AGG_AVG,
-    AGG_COUNT,
-    AGG_UNKNOWN
-};
-#define AGGTYPE
-#endif
+
 
 
 /**
@@ -106,15 +97,11 @@ class DllExport Condition
 };
 
 /**
-* @class Predicate
-*
-* @brief Represents a single term in the condition.
-* Condition is logical expression composed of terms and logical operators. This 
-* represents the leaf of the logical expression tree. This is designed using composite 
-* design pattern
-*
-* 
-*/
+ * @class Predicate
+ * @brief Represents a single term in the condition.
+ * Predicate instance(s) represent all terms in the condition. Predicates can be
+ * nested to form a tree structure.
+ */
 class DllExport Predicate
 {
     public:
@@ -132,6 +119,9 @@ class DllExport Predicate
     virtual void setTerm(Expression *exp, ComparisionOp op, const char *fName2) = 0;
     virtual void setTerm(Expression *exp1, ComparisionOp op, Expression *exp2) = 0;
     virtual void print(int space)=0;
+
+    virtual Predicate* deepCopy(FieldConditionValMap &conditionValues) const = 0;
+    
     virtual ~Predicate(){}
 };
 

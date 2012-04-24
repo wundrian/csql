@@ -28,8 +28,8 @@ class DllExport PredicateImpl:public Predicate
     char fldName1[IDENTIFIER_LENGTH];
     char fldName2[IDENTIFIER_LENGTH];
     ComparisionOp compOp;
-    void *operand;
-    void **operandPtr;
+    void *operand; // != NULL if PredicateImpl is a leaf node (i.e. a value comparison) and PredicateImpl belongs to JoinTable
+    void **operandPtr; // != NULL if PredicateImpl is a leaf node (i.e. a value comparison)
     LogicalOp logicalOp;
     PredicateImpl *lhs;
     PredicateImpl *rhs;
@@ -60,6 +60,7 @@ class DllExport PredicateImpl:public Predicate
     //This will be set before calling evaluate
     Table *table;
     bool isNull;
+    
     public:
     PredicateImpl()
     {
@@ -142,6 +143,14 @@ class DllExport PredicateImpl:public Predicate
     void* getVal1IfBetweenOnInt(int &offset);
     void* getVal2IfBetweenOnInt(int &offset);
     void solveForProjList(Table *tab);
+    
+    /**
+     * Copy term left and right hand side into a newly allocated Predicate, including operator.
+     * This function is recursive.
+     * 
+     * @return NULL if not enough memory is available. A copy of this instance otherwise.
+     */
+    Predicate* deepCopy(FieldConditionValMap &conditionValues) const;
 };
 
 #endif

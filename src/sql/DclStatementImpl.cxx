@@ -7,9 +7,6 @@
 
 #include <Statement.h>
 
-DclStatementImpl::DclStatementImpl() {}
-DclStatementImpl::~DclStatementImpl() {}
-
 DbRetVal DclStatementImpl::execute(int &rowsAffected)
 {
     DbRetVal rv = OK;

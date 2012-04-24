@@ -279,6 +279,12 @@ DbRetVal SqlStatement::prepareInt(char *stmtstr)
         UserTblStatement *ustmt = (UserTblStatement *)stmt;
         ustmt->setUserManager(userMgr,sqlCon->getConnObject().getUserName());      
     }
+    if (parsedData->getStmtType() == DclStatement)
+    {
+        UserManager* userMgr = sqlCon->getConnObject().getUserManager();
+        DclStatementImpl *dclStmt = (DclStatementImpl *)stmt;
+        dclStmt->setUserManager(userMgr,sqlCon->getConnObject().getUserName());      
+    }
     rv = stmt->resolve();
     if (rv != OK)
     {

@@ -849,3 +849,65 @@ PredicateImpl* PredicateImpl::getIfOneSidedPredicate()
     }
     return NULL;
 }
+
+Predicate* PredicateImpl::deepCopy(FieldConditionValMap &conditionValues) const
+{
+    try {
+        PredicateImpl *p = new PredicateImpl();
+        
+        /* we know deepCopy() on PredicateImpls results in the same type! */
+        if (NULL != lhs)
+            p->lhs = (PredicateImpl*)lhs->deepCopy(conditionValues);
+        
+        if (NULL != rhs)
+            p->rhs = (PredicateImpl*)rhs->deepCopy(conditionValues);
+       
+        p->compOp = this->compOp;
+        p->comp2Op = this->comp2Op;
+        p->logicalOp = this->logicalOp;
+        
+        /* got a leaf node? */
+        if (NULL != fldName1)
+            strncpy(p->fldName1, this->fldName1, IDENTIFIER_LENGTH);
+       
+        if (NULL != fldName2)
+            strncpy(p->fldName2, this->fldName2, IDENTIFIER_LENGTH);
+
+        if (NULL != operandPtr || NULL != operand2Ptr) {
+            if (NULL == table) {
+                printError(ErrBadCall, "Table not set on Predicate during deepCopy");
+                return NULL; // FIXME: are we leaking lhs/rhs here?
+            }
+            
+            std::string fName = std::string(fldName1, IDENTIFIER_LENGTH);
+            FieldConditionValMap::iterator it = conditionValues.find(fName);
+            if (it == conditionValues.end()) {
+                printError(ErrInvalidExpr, "Table does not contain field %s referenced in condition", fName.c_str());
+                return NULL;
+            }
+            
+            // Do NOT copy this.operand as it is only used in a JoinTable Predicate
+            // (which is not the goal right now and only complicates things)
+            if (NULL != operandPtr) {
+                p->operandPtr = &(it->second.value);
+            }
+
+            if (NULL != operand2Ptr) {
+                /* this is one of the reasons FieldConditionValMap is actually a MultiMap:
+                 * operand2Ptr is only used if this Predicate is of the form BETWEEN val1 AND val2
+                 * with the corresponding values inserted after another using the same fieldName
+                 * WE RELY ON FieldConditionValMap HAVING A STABLE INSERT()!
+                 */
+                if (conditionValues.end() == ++it) {
+                    printError(ErrSysFatal, "Expecting two values for BETWEEN predicate, but found only one.");
+                    return NULL;
+                }
+                
+                p->operand2Ptr = &it->second.value;
+            }
+        }
+        
+        return p;
+    } catch (std::bad_alloc&){ return NULL; }
+    return NULL;
+}

@@ -25,6 +25,8 @@
 #include <os.h>
 #include <Util.h>
 #include <Function.h>
+#include <ParserDataTypes.h>
+
 #ifndef STMT_TYPE
 #define STMT_TYPE
 enum StatementType
@@ -68,21 +70,6 @@ struct FieldValue
     bool isUnique;
     bool isAutoIncrement;
     bool isDefault;
-};
-
-
-struct ConditionValue
-{
-    char *parsedString;
-    void *value;
-    int paramNo; // 0 ->not a param. It stores the param position
-    DataType type;
-    AggType aType;
-    int length;
-    bool opLike;
-    bool isNullable;
-    char fName[IDENTIFIER_LENGTH];
-    bool isFunctionInvolve;
 };
 
 struct FieldName
@@ -226,8 +213,7 @@ class DllExport ParsedData
     //value in the SET clause of UPDATE statement is stored here.
     List updFldValList;
 
-    //stores the where clause condition for SELECT, UPDATE and DELETE
-    // also used for GRANT ... RESTRICT TO command
+    //stores the where clause condition for SELECT, UPDATE, DELETE, GRANT
     Condition predicate;
     Condition havingPredicate;
     List predList;
