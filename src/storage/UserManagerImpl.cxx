@@ -73,7 +73,7 @@ int UserManagerImpl::changePassword(const char *usrName, const char* newPasswd)
     if (0 != ret)
     {
         printError(ErrSysInternal,
-                   "Catalog table updation failed for user %s",usrName);
+                   "Catalog table update failed for user %s",usrName);
         return ErrSysInternal;
     }
     logFine(Conf::logger, "Password changed for  %s" ,usrName);
@@ -89,7 +89,7 @@ int UserManagerImpl::changePassword(const char* newPasswd)
     if (0 != ret)
     {
         printError(ErrSysInternal,
-                   "Catalog table updation failed");
+                   "Catalog table update failed");
         return ErrSysInternal;
     }
     logFine(Conf::logger, "Password changed for  %s" ,userName);
@@ -105,4 +105,33 @@ List UserManagerImpl::getAllUserNames(int *retval)
     return cUser.getUserList();
 }
 
+int UserManagerImpl::grantPrivilege(unsigned char priv, int tblId,
+        const Predicate *pred, const FieldConditionValMap &conditionValues)
+{
+    CatalogTableGRANT cGrant(systemDatabase_);
+    int ret = cGrant.insert(priv, tblId, userName, pred, conditionValues);
+    
+    if (OK != ret)
+    {
+        printError(ErrSysInternal, "Granting privilege failed");
+        return ErrSysInternal;
+    }
+    
+    logFine(Conf::logger, "Granted privileges %d on table %d to %s", priv, tblId, userName);
+    return OK;
+}
 
+int UserManagerImpl::revokePrivilege(unsigned char priv, int tblId)
+{
+    CatalogTableGRANT cGrant(systemDatabase_);
+    int ret = cGrant.remove(priv, tblId, userName);
+    
+    if (OK != ret)
+    {
+        printError(ErrSysInternal, "Revoking privilege failed");
+        return ErrSysInternal;
+    }
+    
+    logFine(Conf::logger, "Revoked privileges %d on table %d from %s", priv, tblId, userName);
+    return OK;
+}

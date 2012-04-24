@@ -84,6 +84,7 @@ struct ConditionValue
     char fName[IDENTIFIER_LENGTH];
     bool isFunctionInvolve;
 };
+typedef std::multimap<std::string, ConditionValue> FieldConditionValMap;
 
 struct FieldName
 {
@@ -226,8 +227,7 @@ class DllExport ParsedData
     //value in the SET clause of UPDATE statement is stored here.
     List updFldValList;
 
-    //stores the where clause condition for SELECT, UPDATE and DELETE
-    // also used for GRANT ... RESTRICT TO command
+    //stores the where clause condition for SELECT, UPDATE, DELETE, GRANT
     Condition predicate;
     Condition havingPredicate;
     List predList;

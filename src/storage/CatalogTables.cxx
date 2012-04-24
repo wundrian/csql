@@ -35,7 +35,8 @@ char ChunkName[MAX_CHUNKS][CHUNK_NAME_LEN]={
 	"IndexTableId",
 	"IndexFieldTableId",
 	"ForeignKeyTableId",
-	"ForeignKeyFieldTableId"
+	"ForeignKeyFieldTableId",
+        "GrantTableId"
 	};
 
 
@@ -480,4 +481,94 @@ DbRetVal CatalogTableUSER::changePass(const char *name, const char *pass)
     }
     printError(ErrNotExists,"User %s not exists in catalog table", name);
     return ErrNotExists;
+}
+
+DbRetVal CatalogTableGRANT::insert(unsigned char priv, int tblId, const char *userName, 
+        const Predicate *condition, const FieldConditionValMap &conditionValues)
+{
+    Chunk *tChunk = systemDatabase_->getSystemDatabaseChunk(GrantTableId);
+    DbRetVal rv = OK;
+    
+    ChunkIterator iter = tChunk->getIterator();
+    void *data = NULL;
+    while ((data = iter.nextElement())!= NULL)
+    {
+        CGRANT* elem = (CGRANT*)data;
+        if (0 == memcmp(elem->userName_, userName, IDENTIFIER_LENGTH)
+                && elem->tblID_ == tblId)
+        {
+            if ((elem->privileges | priv) == elem->privileges)
+            {
+                printError(ErrNoEffect, "Privileges are already granted");
+                return OK;
+            }
+            
+            // we're adding privileges
+            elem->privileges |= priv;
+            return OK;
+        }
+    }
+    
+    // okay, no privileges on this table at all, create a new chunk
+    CGRANT* grantInfo = (CGRANT*)tChunk->allocate(systemDatabase_, &rv);
+    if (NULL == grantInfo)
+    {
+        printError(rv, "Could not allocate memory chunk for GRANT catalog table");
+        return rv;
+    }
+    
+    strncpy(grantInfo->userName_, userName, IDENTIFIER_LENGTH);
+    grantInfo->tblID_ = tblId;
+    grantInfo->privileges = priv;
+    
+    grantInfo->conditionValues = new FieldConditionValMap(conditionValues);
+    grantInfo->predicate = condition->deepCopy(grantInfo->conditionValues);
+    if (NULL == grantInfo->predicate) {
+        printError(ErrNoMemory, "Failed to allocate space for grant predicate");
+        return ErrNoMemory;
+    }
+    
+    return OK;
+}
+
+DbRetVal CatalogTableGRANT::remove(unsigned char priv, int tblId, const char* userName)
+{
+    Chunk* tChunk = systemDatabase_->getSystemDatabaseChunk(GrantTableId);
+    ChunkIterator iter = tChunk->getIterator();
+    void* data = NULL;
+    while ((data = iter.nextElement())!= NULL)
+    {
+        CGRANT* elem = (CGRANT*)data;
+        if (0 == memcmp(elem->userName_, userName, IDENTIFIER_LENGTH)
+                && elem->tblID_ == tblId)
+        {
+            // remove all privileges?
+            if (0 == (elem->privileges & priv)) {
+                tChunk->free(systemDatabase_, data);
+                return OK;
+            }
+            
+            // only remove part of the privileges
+            elem->privileges &= ~priv;
+        }
+    }
+    printError(ErrNotExists,"User %s not exists in catalog table", userName);
+    return ErrNotExists;
+}
+
+DbRetVal CatalogTableGRANT::getPredicate(int tblId, const char *userName, Predicate* pred) const
+{
+    Chunk* tChunk = systemDatabase_->getSystemDatabaseChunk(GrantTableId);
+    ChunkIterator iter = tChunk->getIterator();
+    void* data = NULL;
+    while ((data = iter.nextElement()) != NULL)
+    {
+        CGRANT* elem = (CGRANT*)data;
+        if (0 == memcmp(elem->userName_, userName, IDENTIFIER_LENGTH)
+                && tblId == elem->tblID_)
+        {
+            pred = elem->predicate;
+            //pred = elem->predicate->deepCopy(); // maybe can be relaxed to assignment?
+        }
+    }
 }

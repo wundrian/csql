@@ -31,7 +31,6 @@
 * <br/>
 * 
 */
-
 class DllExport UserManager
 {
     public:
@@ -67,5 +66,25 @@ class DllExport UserManager
 
     virtual List getAllUserNames(int *rv=0)=0;
     virtual ~UserManager(){};
+    
+    /**
+     * Grant a bitmask of privileges on a table to a certain user.
+     * The privilege may be further restricted by a predicate clause.
+     * 
+     * @param priv The list of privileges to grant (must be a bitmask of PrivilegeType)
+     * @param tblId The id of the table to grant priv on
+     * @param pred (optional) row level restriction predicate
+     * @return status code (OK or error indicator)
+     */
+    virtual int grantPrivilege(unsigned char priv, int tblId, const Predicate* pred)=0;
+    
+    /**
+     * Revoke the given bitmask of privileges on a table from a certain user.
+     * 
+     * @param priv The list of privileges to be revoked (must be a bitmask of PrivilegeType)
+     * @param tblId The id of the table to act on
+     * @return status code (OK or error indicator)
+     */
+    virtual int revokePrivilege(unsigned char priv, int tblId)=0;
 };
 #endif
