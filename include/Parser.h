@@ -25,6 +25,8 @@
 #include <os.h>
 #include <Util.h>
 #include <Function.h>
+#include <ParserDataTypes.h>
+
 #ifndef STMT_TYPE
 #define STMT_TYPE
 enum StatementType
@@ -69,22 +71,6 @@ struct FieldValue
     bool isAutoIncrement;
     bool isDefault;
 };
-
-
-struct ConditionValue
-{
-    char *parsedString;
-    void *value;
-    int paramNo; // 0 ->not a param. It stores the param position
-    DataType type;
-    AggType aType;
-    int length;
-    bool opLike;
-    bool isNullable;
-    char fName[IDENTIFIER_LENGTH];
-    bool isFunctionInvolve;
-};
-typedef std::multimap<std::string, ConditionValue> FieldConditionValMap;
 
 struct FieldName
 {

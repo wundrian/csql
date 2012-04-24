@@ -18,6 +18,7 @@
 #include<Allocator.h>
 #include<Field.h>
 #include<Debug.h>
+#include <Predicate.h>
 
 char ChunkName[MAX_CHUNKS][CHUNK_NAME_LEN]={
 	"UserChunkTableId",

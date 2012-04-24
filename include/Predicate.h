@@ -18,20 +18,11 @@
 #define PREDICATE_H
 #include<Expression.h>
 #include<DataType.h>
+#include <ParserDataTypes.h>
+
 class PredicateImpl;
 class Predicate;
-#ifndef AGGTYPE
-enum AggType
-{
-    AGG_MIN = 1,
-    AGG_MAX,
-    AGG_SUM,
-    AGG_AVG,
-    AGG_COUNT,
-    AGG_UNKNOWN
-};
-#define AGGTYPE
-#endif
+
 
 
 /**

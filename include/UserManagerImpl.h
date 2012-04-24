@@ -17,6 +17,7 @@
 #define USER_MANAGER_IMPL_H
 #include<UserManager.h>
 #include<os.h>
+#include <ParserDataTypes.h>
 class Database;
 class DllExport UserManagerImpl: public UserManager
 {

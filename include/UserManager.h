@@ -16,6 +16,10 @@
 #ifndef USER_MANAGER_H
 #define USER_MANAGER_H
 #include<Util.h>
+#include <ParserDataTypes.h>
+
+class Predicate;
+
 /**
 * @class UserManager
 *
