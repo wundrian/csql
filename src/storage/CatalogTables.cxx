@@ -20,6 +20,8 @@
 #include<Debug.h>
 #include <Predicate.h>
 
+#include "Parser.h"
+
 char ChunkName[MAX_CHUNKS][CHUNK_NAME_LEN]={
 	"UserChunkTableId",
 	"LockTableHashBucketId",
@@ -522,7 +524,7 @@ DbRetVal CatalogTableGRANT::insert(unsigned char priv, int tblId, const char *us
     grantInfo->tblID_ = tblId;
     grantInfo->privileges = priv;
     
-    grantInfo->conditionValues = FieldConditionValMap(conditionValues);
+    grantInfo->conditionValues = conditionValues; // copy assignment!
     grantInfo->predicate_ = condition->deepCopy(grantInfo->conditionValues);
     if (NULL == grantInfo->predicate_) {
         printError(ErrNoMemory, "Failed to allocate space for grant predicate");
@@ -553,11 +555,11 @@ DbRetVal CatalogTableGRANT::remove(unsigned char priv, int tblId, const char* us
             elem->privileges &= ~priv;
         }
     }
-    printError(ErrNotExists,"User %s not exists in catalog table", userName);
+    printError(ErrNotExists,"User %s does exist in catalog table", userName);
     return ErrNotExists;
 }
 
-DbRetVal CatalogTableGRANT::getPredicate(int tblId, const char *userName, Predicate* pred) const
+unsigned char CatalogTableGRANT::getPrivileges(int tblId, const char* userName)
 {
     Chunk* tChunk = systemDatabase_->getSystemDatabaseChunk(GrantTableId);
     ChunkIterator iter = tChunk->getIterator();
@@ -568,8 +570,28 @@ DbRetVal CatalogTableGRANT::getPredicate(int tblId, const char *userName, Predic
         if (0 == memcmp(elem->userName_, userName, IDENTIFIER_LENGTH)
                 && tblId == elem->tblID_)
         {
-            pred = elem->predicate_;
-            //pred = elem->predicate->deepCopy(); // maybe can be relaxed to assignment?
+            return elem->privileges;
         }
     }
+    
+    return PRIV_NONE;
+}
+
+DbRetVal CatalogTableGRANT::getPredicate(int tblId, const char *userName, Predicate* pred, FieldConditionValMap &conditionValues) const
+{
+    Chunk* tChunk = systemDatabase_->getSystemDatabaseChunk(GrantTableId);
+    ChunkIterator iter = tChunk->getIterator();
+    void* data = NULL;
+    while ((data = iter.nextElement()) != NULL)
+    {
+        CGRANT* elem = (CGRANT*)data;
+        if (0 == memcmp(elem->userName_, userName, IDENTIFIER_LENGTH)
+                && tblId == elem->tblID_)
+        {
+            conditionValues = elem->conditionValues;
+            pred = elem->predicate_->deepCopy(conditionValues);
+        }
+    }
+    
+    return OK;
 }

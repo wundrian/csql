@@ -215,8 +215,9 @@ class CatalogTableGRANT
         const Predicate *pred, const FieldConditionValMap &conditionValues);
     DbRetVal remove(unsigned char priv, int tblId, const char *userName);
     
-    /* predicate is an OUT (and OUT only!) parameter */
-    DbRetVal getPredicate(int tblID, const char *userName, Predicate *predicate) const;
+    /* predicate and conditionValues are OUT (and OUT only!) parameters */
+    DbRetVal getPredicate(int tblID, const char *userName, Predicate *predicate, FieldConditionValMap &conditionValues) const;
+    unsigned char getPrivileges(int tblId, const char *userName);
 };
 
 class CDATABASEFILE
