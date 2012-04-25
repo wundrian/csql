@@ -537,7 +537,7 @@ public:
     ~DclStatementImpl() {};
     
     DbRetVal execute(int &rowsAffected);
-    DbRetVal resolve() {return OK; }
+    DbRetVal resolve();
     
     /**
      * Set UserManager instance (called from upper layer SqlStatement)
@@ -576,6 +576,7 @@ public:
     ResultSetPlan getResultSetPlan(){ ResultSetPlan dummy; return dummy;}
     
 private:
+    int mapConditionValueList(List values, FieldConditionValMap &result);
     UserManager* usrMgr;
     char userName[IDENTIFIER_LENGTH];
 };
