@@ -281,6 +281,7 @@ class DllExport ParsedData
     void revokeDclNode(const char* userName);
     int insertPrivilege(const char* priv);
     unsigned char getPrivileges(){ return privileges; }
+    DclInfoNode* getDclInfoNode(){ return dclNode; }
     
 
     void setCreateTbl(){ shouldCreateTbl=true; }
