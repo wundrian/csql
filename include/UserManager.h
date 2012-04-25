@@ -90,5 +90,24 @@ class DllExport UserManager
      * @return status code (OK or error indicator)
      */
     virtual int revokePrivilege(unsigned char priv, int tblId)=0;
+    
+    /**
+     * This ONLY returns true if the current user has ALL permissions in priv on tblId, a subset is not sufficient.
+     * 
+     * @param priv The privileges the current user should have as a bitmask
+     * @param tblId The id of the table the current user should have privileges on
+     * @return true if the current user has priv on tblId
+     */
+    virtual bool isAuthorized(unsigned char priv, int tblId) const =0;
+    
+    /**
+     * Grab the Predicate constraining the current user on table tblId.
+     * If pred equals the NULL-Pointer, conditionValues must be disregarded.
+     * 
+     * @param tblId Identifies the table to get restrictions for
+     * @param pred An OUT parameter that gets a copy of the restriction for table tblId
+     * @return status code (OK or error indicator)
+     */
+    virtual int getTableRestriction(int tblId, Predicate *pred, FieldConditionValMap &conditionValues)=0;
 };
 #endif

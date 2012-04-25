@@ -135,3 +135,23 @@ int UserManagerImpl::revokePrivilege(unsigned char priv, int tblId)
     logFine(Conf::logger, "Revoked privileges %d on table %d from %s", priv, tblId, userName);
     return OK;
 }
+
+bool UserManagerImpl::isAuthorized(unsigned char priv, int tblId) const
+{
+    CatalogTableGRANT cGrant(systemDatabase_);
+    return (priv == (cGrant.getPrivileges(tblId, userName) & priv));
+}
+
+int UserManagerImpl::getTableRestriction(int tblId, Predicate* pred, FieldConditionValMap& conditionValues)
+{
+    CatalogTableGRANT cGrant(systemDatabase_);
+    DbRetVal ret = cGrant.getPredicate(tblId, userName, pred, conditionValues);
+    
+    if (OK != ret)
+    {
+        printError(ret, "Failed to get table restriction for user %s", userName);
+        return ret;
+    }
+    
+    return OK;
+}

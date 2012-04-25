@@ -45,6 +45,8 @@ class DllExport UserManagerImpl: public UserManager
 
     int grantPrivilege(unsigned char priv, int tblId, const Predicate* pred, FieldConditionValMap &conditionValues);
     int revokePrivilege(unsigned char priv, int tblId);
+    bool isAuthorized(unsigned char priv, int tblId) const;
+    int getTableRestriction(int tblId, Predicate *pred, FieldConditionValMap &conditionValues);
 };
 
 
