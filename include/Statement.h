@@ -539,6 +539,11 @@ public:
     DbRetVal execute(int &rowsAffected);
     DbRetVal resolve() {return OK; }
     
+    /**
+     * Set UserManager instance (called from upper layer SqlStatement)
+     * @param mgr the connection's UserManager instance. You are not responsible for managing this pointer!
+     * @param user Name of the currently logged in user.
+     */
     void setUserManager(UserManager *mgr, const char *user)
     { 
         usrMgr = mgr;
