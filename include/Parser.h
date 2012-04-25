@@ -157,6 +157,7 @@ enum DclType
 
 enum PrivilegeType
 {
+    PRIV_NONE = 0,
     PRIV_SELECT = 1,
     PRIV_INSERT = 2,
     PRIV_UPDATE = 4,
