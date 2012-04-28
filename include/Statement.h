@@ -23,11 +23,23 @@
 #include "CacheTableLoader.h"
 class Statement
 {
-    protected:
+protected:
     ParsedData *parsedData;
     DatabaseManager *dbMgr;
+    char userName[IDENTIFIER_LENGTH];
+    UserManager *usrMgr;
 
-    public:
+public:
+    /**
+     * Set UserManager instance (called from upper layer SqlStatement)
+     * @param mgr the connection's UserManager instance. You are not responsible for managing this pointer!
+     * @param user Name of the currently logged in user.
+     */
+    void setUserManager(UserManager *mgr, const char *user)
+    { 
+        usrMgr = mgr;
+        strncpy(userName, user, IDENTIFIER_LENGTH);
+    }
     void setParsedData(ParsedData *pData) {  parsedData = pData; }
     void setDbMgr(DatabaseManager *dbmgr) { dbMgr = dbmgr; }
 
@@ -481,15 +493,12 @@ class CacheTblStatement : public DdlStatement
 class UserTblStatement : public DdlStatement
 {
     public:
-    char userName[IDENTIFIER_LENGTH];
-    UserManager *usrMgr;
+    
     UserNodeType uType;
     DbRetVal execute(int &rowsAffected);
     DbRetVal resolve();
-    void setUserManager(UserManager *mgr,char *user){ usrMgr = mgr; strcpy(userName,user);}
-    UserTblStatement(){ usrMgr = NULL;}
-    //~UserTblStatement(){ delete usrMgr;}
-
+    
+    UserTblStatement(){ }
 };
 class AlterTblStatement : public DdlStatement
 {
@@ -539,17 +548,6 @@ public:
     DbRetVal execute(int &rowsAffected);
     DbRetVal resolve();
     
-    /**
-     * Set UserManager instance (called from upper layer SqlStatement)
-     * @param mgr the connection's UserManager instance. You are not responsible for managing this pointer!
-     * @param user Name of the currently logged in user.
-     */
-    void setUserManager(UserManager *mgr, const char *user)
-    { 
-        usrMgr = mgr;
-        strncpy(userName, user, IDENTIFIER_LENGTH);
-    }
-    
     /* must implement complete interface */
     DbRetVal setParam(int paramNo, void *value) { return ErrBadCall; }
     DbRetVal setShortParam(int paramNo, short value) { return ErrBadCall; }
@@ -577,8 +575,7 @@ public:
     
 private:
     int mapConditionValueList(List values, FieldConditionValMap &result);
-    UserManager* usrMgr;
-    char userName[IDENTIFIER_LENGTH];
+    TableImpl *table;
 };
 
 class StatementFactory
