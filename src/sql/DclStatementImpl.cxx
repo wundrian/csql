@@ -15,10 +15,19 @@ int DclStatementImpl::mapConditionValueList(List values, FieldConditionValMap& r
         
         result.insert(std::make_pair(std::string(el->fName), *el));
     }
+    
+    return result.size();
 }
 
 DbRetVal DclStatementImpl::resolve()
 {
+    table = dbMgr->openTable(parsedData->getTableName());
+    if (NULL == table)
+    {
+        printError(ErrBadArg, "Table %s does not exist. Can't grant privileges on it.", parsedData->getTableName());
+        return ErrBadArg;
+    }
+    
     return OK;
 }
 
@@ -26,17 +35,26 @@ DbRetVal DclStatementImpl::execute(int &rowsAffected)
 {
     DbRetVal rv = OK;
     
+    if (NULL == table)
+    {
+        rv = ErrBadCall;
+        printError(rv, "Table %s not open when it should be.", parsedData->getTableName());
+        return rv; // no table to cleanup
+    }
+    
     if (NULL == usrMgr)
     {
-        printError(ErrBadCall, "UserManager should be set before executing DclStatements.");
-        return ErrBadCall;
+        rv = ErrBadCall;
+        printError(rv, "UserManager should be set before executing DclStatements.");
+        goto cleanup;
     }
     
     const DclInfoNode *infoNode = parsedData->getDclInfoNode();
     if (NULL == infoNode)
     {
-        printError(ErrBadCall, "DclInfoNode was NULL when it shouldn't be.");
-        return ErrBadCall;
+        rv = ErrBadCall;
+        printError(rv, "DclInfoNode was NULL when it shouldn't be.");
+        goto cleanup;
     }
     
     FieldConditionValMap conditionValues;
@@ -45,12 +63,21 @@ DbRetVal DclStatementImpl::execute(int &rowsAffected)
     if (GRANTACCESS == infoNode->type)
     {
         Condition *c = parsedData->getCondition();
-        usrMgr->grantPrivilege(parsedData->getPrivileges(), 0, (NULL != c ? c->getPredicate() : NULL), conditionValues);
+        rv = (DbRetVal)usrMgr->grantPrivilege(parsedData->getPrivileges(), table->getId(), (NULL != c ? c->getPredicate() : NULL), conditionValues);
     }
     else if (REVOKEACCESS == infoNode->type)
     {
-        return ErrBadCall; // not yet implemented.
+        rv = (DbRetVal)usrMgr->revokePrivilege(parsedData->getPrivileges(), table->getId());
+    }
+    else
+    {
+        rv = ErrBadCall;
+        printError(rv, "Operation not supported.");
+        goto cleanup;
     }
     
-    return rv;
+    cleanup:
+            dbMgr->closeTable(table);
+            return rv;
+            
 }
