@@ -275,6 +275,7 @@ class DllExport TableImpl:public Table
     DbRetVal compact();
     DbRetVal compactIndexNode( void *indexPtr);
     char* getName() { return tblName_; }
+    int getId() { return tblID_; }
     char* getAliasName() { return aliasName; }
     void setAliasName(char *name);
     void setTableInfo(char *name, int tblid, size_t  length,
