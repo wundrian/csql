@@ -17,6 +17,8 @@
 #include <Statement.h>
 #include <Info.h>
 
+#include "PredicateImpl.h"
+
 UpdStatement::UpdStatement()
 {
     parsedData = NULL; 
@@ -435,17 +437,57 @@ DbRetVal UpdStatement::resolve()
         return ErrNotExists;
     }
 
-    table->setCondition(parsedData->getCondition());
-
-    DbRetVal rv = resolveForAssignment();
-    if (rv != OK) 
+    DbRetVal rv = OK;
+    
+    if (usrMgr->isAuthorized(PRIV_UPDATE, ((TableImpl*)table)->getId()))
     {
-        //TODO::free memory allocated for params
-        table->setCondition(NULL);
-        dbMgr->closeTable(table);
-        table = NULL;
+        Predicate *pred = NULL;
+        FieldConditionValMap predValues;
+        if (OK != (rv = (DbRetVal)usrMgr->getTableRestriction(((TableImpl*)table)->getId(), pred, predValues)))
+        {
+            goto cleanupAndExit;
+        }
+        
+        // do additional restrictions apply? if so, add them to the existing condition
+        if (NULL != pred)
+        {
+            List conditionValues = parsedData->getConditionValueList();
+            for (FieldConditionValMap::iterator it = predValues.begin(); it != predValues.end(); ++it)
+            {
+                conditionValues.append(&it->second);
+            }
+                
+            if (NULL != parsedData->getCondition())
+            {
+                Predicate *finalPred = new PredicateImpl();
+                finalPred->setTerm(parsedData->getCondition()->getPredicate(), OpAnd, pred);
+                parsedData->setCondition(finalPred);
+            }
+            else
+            {
+                parsedData->setCondition(pred);
+            }
+        }
     }
-    return rv;
+    else
+    {
+        rv = ErrNoPrivilege;
+        goto cleanupAndExit;
+    }
+        
+    table->setCondition(parsedData->getCondition());
+    
+    rv = resolveForAssignment();
+    
+    cleanupAndExit:
+        if (rv != OK) 
+        {
+            //TODO::free memory allocated for params
+            table->setCondition(NULL);
+            dbMgr->closeTable(table);
+            table = NULL;
+        }
+        return rv;
 }
 
 DbRetVal UpdStatement::resolveForAssignment()
