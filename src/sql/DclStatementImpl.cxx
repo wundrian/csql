@@ -21,7 +21,7 @@ int DclStatementImpl::mapConditionValueList(List values, FieldConditionValMap& r
 
 DbRetVal DclStatementImpl::resolve()
 {
-    table = dbMgr->openTable(parsedData->getTableName());
+    table = (TableImpl*)dbMgr->openTable(parsedData->getTableName());
     if (NULL == table)
     {
         printError(ErrBadArg, "Table %s does not exist. Can't grant privileges on it.", parsedData->getTableName());
@@ -46,7 +46,8 @@ DbRetVal DclStatementImpl::execute(int &rowsAffected)
     {
         rv = ErrBadCall;
         printError(rv, "UserManager should be set before executing DclStatements.");
-        goto cleanup;
+        dbMgr->closeTable(table);
+        return rv;
     }
     
     const DclInfoNode *infoNode = parsedData->getDclInfoNode();
@@ -54,7 +55,8 @@ DbRetVal DclStatementImpl::execute(int &rowsAffected)
     {
         rv = ErrBadCall;
         printError(rv, "DclInfoNode was NULL when it shouldn't be.");
-        goto cleanup;
+        dbMgr->closeTable(table);
+        return rv;
     }
     
     FieldConditionValMap conditionValues;
@@ -73,11 +75,9 @@ DbRetVal DclStatementImpl::execute(int &rowsAffected)
     {
         rv = ErrBadCall;
         printError(rv, "Operation not supported.");
-        goto cleanup;
     }
     
-    cleanup:
-            dbMgr->closeTable(table);
-            return rv;
+    dbMgr->closeTable(table);
+    return rv;
             
 }
