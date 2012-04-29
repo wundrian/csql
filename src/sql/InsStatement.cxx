@@ -293,7 +293,16 @@ DbRetVal InsStatement::resolve()
         printError(ErrNotExists, "Unable to open the table:Table not exists");
         return ErrNotExists;
     }
- 
+
+    if (!usrMgr->isAuthorized(PRIV_INSERT, ((TableImpl*)table)->getId()))
+    {
+        dbMgr->closeTable(table);
+        table = NULL;
+        printError(ErrNoPrivilege, "User %*s is not authorized to insert into table %s.", 
+                IDENTIFIER_LENGTH, userName, table->getName());
+        return ErrNoPrivilege;
+    }
+    
     List fieldNameList;
     //check whether filed list is specified
     if( 0 == parsedData->getFieldNameList().size() )
