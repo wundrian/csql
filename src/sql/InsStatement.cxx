@@ -298,8 +298,7 @@ DbRetVal InsStatement::resolve()
     {
         dbMgr->closeTable(table);
         table = NULL;
-        printError(ErrNoPrivilege, "User %*s is not authorized to insert into table %s.", 
-                IDENTIFIER_LENGTH, userName, table->getName());
+        printError(ErrNoPrivilege, "User is not authorized to insert into table.");
         return ErrNoPrivilege;
     }
     

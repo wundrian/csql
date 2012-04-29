@@ -556,6 +556,7 @@ void Database::createAllCatalogTables()
     // chunk id 12->TABLE
     // chunk id 13->FIELD
     // chunk id 14->ACCESS
+    // chunk id 16->GRANT
 
     createSystemTables();
     createMetaDataTables();
