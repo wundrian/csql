@@ -18,6 +18,8 @@
 #include <TableImpl.h>
 #include <OrderTableImpl.h>
 
+#include "PredicateImpl.h"
+
 SelStatement::SelStatement()
 {
     parsedData = NULL; 
@@ -282,6 +284,7 @@ DbRetVal SelStatement::openTables()
     if (dbMgr == NULL) return ErrNoConnection;
     JoinTableImpl *jHdl = NULL;
     Table *tHdl = NULL, *prevHdl = NULL;
+    PredicateImpl *grantRestrictions = NULL;
     isJoin = false;
     //check whether all the table exists
     ListIterator titer = parsedData->getTableNameList().getIterator();
@@ -315,6 +318,28 @@ DbRetVal SelStatement::openTables()
             if (prevHdl) delete prevHdl;
             return ErrNoPrivilege;
         }
+        else 
+        {
+            // add additional restrictions here, so we don't have to jump through
+            // hoops to get at the TableImpls again
+            PredicateImpl *p;
+            FieldConditionValMap condValues;
+            usrMgr->getTableRestriction(tImpl->getId(), p, condValues);
+            
+            if (NULL != p)
+            {
+                if (NULL != grantRestrictions)
+                {
+                    PredicateImpl *intermediatePred = new PredicateImpl();
+                    intermediatePred->setTerm(grantRestrictions, OpAnd, p);
+                    grantRestrictions = intermediatePred;
+                }
+                else
+                {
+                    grantRestrictions = p;
+                }
+            }
+        }
         
         if (NULL != prevHdl) 
         { 
@@ -335,6 +360,7 @@ DbRetVal SelStatement::openTables()
         prevHdl = tHdl;
     }
 
+    if (NULL != grantRestrictions) parsedData->setCondition(grantRestrictions);
     if (isJoin) table = jHdl; else table = tHdl;
     return OK;
 }
