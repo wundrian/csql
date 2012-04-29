@@ -594,7 +594,7 @@ void Database::createMetaDataTables()
     createSystemDatabaseChunk(FixedSizeAllocator,
                                   sizeof(CACCESS), AccessTableId);
     createSystemDatabaseChunk(FixedSizeAllocator,
-                                  sizeof(CGRANT), AccessTableId);
+                                  sizeof(CGRANT), GrantTableId);
     createSystemDatabaseChunk(FixedSizeAllocator,
                                   sizeof(CINDEX), IndexTableId);
     createSystemDatabaseChunk(FixedSizeAllocator,
