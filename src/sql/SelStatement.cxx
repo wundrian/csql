@@ -306,6 +306,16 @@ DbRetVal SelStatement::openTables()
         }
         TableImpl *tImpl=  (TableImpl*) tHdl;
         tImpl->setAliasName(t->aliasName);
+        
+        // check if user has SELECT privileges on the table
+        if (!usrMgr->isAuthorized(PRIV_SELECT, tImpl->getId()))
+        {
+            printError(ErrNoPrivilege, "User does not have SELECT privileges on table %s",
+                    t->tblName);
+            if (prevHdl) delete prevHdl;
+            return ErrNoPrivilege;
+        }
+        
         if (NULL != prevHdl) 
         { 
             isJoin = true;
@@ -332,6 +342,7 @@ DbRetVal SelStatement::resolve()
 {
     DbRetVal rv = openTables();
     if (rv != OK) return rv;
+    
     //get the fieldname list and validate field names
     ListIterator iter = parsedData->getFieldNameList().getIterator();
     FieldName *name = NULL;
