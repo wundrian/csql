@@ -51,6 +51,7 @@ command:  select_statement { YYACCEPT; }
         | copy_table_statement { YYACCEPT; }
         | user_manager_statement { YYACCEPT; }
         | grant_statement { YYACCEPT; }
+        | revoke_statement { YYACCEPT; }
 	| management_statement { YYACCEPT; }
 	| alter_statement { YYACCEPT; }
         | other {YYACCEPT;}
@@ -146,6 +147,7 @@ grantee_list : grantee_list grantee_list_L
 grantee_list_L : ',' grantee
     ;
 grantee : ident { parsedData->insertGrantee($1); }
+    ;
 grant_statement : GRANT privilege_list ON ident TO grantee_list where_clause_opt semicolon_opt
     {
             parsedData->setStmtType(DclStatement);
@@ -153,7 +155,7 @@ grant_statement : GRANT privilege_list ON ident TO grantee_list where_clause_opt
             parsedData->constructDclNodes(GRANTACCESS);
     }
     ;
-revoke_statement : REVOKE privilege ON ident FROM grantee_list semicolon_opt
+revoke_statement : REVOKE privilege_list ON ident FROM grantee_list semicolon_opt
     {
             parsedData->setStmtType(DclStatement);
             parsedData->setTableName($4);
@@ -1106,7 +1108,7 @@ ddl_statement: CREATE TABLE ident '(' create_defn_list_con ')' semicolon_opt
         }
         ;
 opt_ind_type:
-        | HASH  opt_constr_type
+        HASH  opt_constr_type
         {
             parsedData->setIndexType(hashIndex);
         }
@@ -1124,7 +1126,7 @@ opt_ind_type:
         }
         ;
 opt_constr_type:
-        | UNIQUE 
+        UNIQUE 
         {
             parsedData->setUnique(true);
         }
