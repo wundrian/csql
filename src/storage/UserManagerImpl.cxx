@@ -146,7 +146,7 @@ bool UserManagerImpl::isAuthorized(unsigned char priv, int tblId) const
             || (priv == (cGrant.getPrivileges(tblId, userName) & priv)));
 }
 
-int UserManagerImpl::getTableRestriction(int tblId, Predicate* pred, FieldConditionValMap& conditionValues)
+int UserManagerImpl::getTableRestriction(int tblId, Predicate *&pred, FieldConditionValMap& conditionValues)
 {
     CatalogTableGRANT cGrant(systemDatabase_);
     DbRetVal ret = cGrant.getPredicate(tblId, userName, pred, conditionValues);

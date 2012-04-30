@@ -221,7 +221,7 @@ class CatalogTableGRANT
     DbRetVal remove(unsigned char priv, int tblId, std::string userName);
     
     /* predicate and conditionValues are OUT (and OUT only!) parameters */
-    DbRetVal getPredicate(int tblID, const char *userName, Predicate *predicate, FieldConditionValMap &conditionValues) const;
+    DbRetVal getPredicate(int tblID, const char *userName, Predicate *&predicate, FieldConditionValMap &conditionValues) const;
     unsigned char getPrivileges(int tblId, const char *userName);
 };
 

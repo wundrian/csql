@@ -599,7 +599,7 @@ unsigned char CatalogTableGRANT::getPrivileges(int tblId, const char* userName)
     return PRIV_NONE;
 }
 
-DbRetVal CatalogTableGRANT::getPredicate(int tblId, const char *userName, Predicate* pred, FieldConditionValMap &conditionValues) const
+DbRetVal CatalogTableGRANT::getPredicate(int tblId, const char *userName, Predicate *&pred, FieldConditionValMap &conditionValues) const
 {
     Chunk* tChunk = systemDatabase_->getSystemDatabaseChunk(GrantTableId);
     ChunkIterator iter = tChunk->getIterator();

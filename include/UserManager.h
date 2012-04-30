@@ -111,6 +111,6 @@ class DllExport UserManager
      * @param pred An OUT parameter that gets a copy of the restriction for table tblId or NULL if there aren't any.
      * @return status code (OK or error indicator)
      */
-    virtual int getTableRestriction(int tblId, Predicate *pred, FieldConditionValMap &conditionValues)=0;
+    virtual int getTableRestriction(int tblId, Predicate *&pred, FieldConditionValMap &conditionValues)=0;
 };
 #endif

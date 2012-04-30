@@ -284,7 +284,7 @@ DbRetVal SelStatement::openTables()
     if (dbMgr == NULL) return ErrNoConnection;
     JoinTableImpl *jHdl = NULL;
     Table *tHdl = NULL, *prevHdl = NULL;
-    PredicateImpl *grantRestrictions = NULL;
+    Predicate *grantRestrictions = NULL;
     isJoin = false;
     //check whether all the table exists
     ListIterator titer = parsedData->getTableNameList().getIterator();
@@ -322,7 +322,7 @@ DbRetVal SelStatement::openTables()
         {
             // add additional restrictions here, so we don't have to jump through
             // hoops to get at the TableImpls again
-            PredicateImpl *p;
+            Predicate *p;
             FieldConditionValMap condValues;
             usrMgr->getTableRestriction(tImpl->getId(), p, condValues);
             
