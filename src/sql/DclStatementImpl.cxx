@@ -50,31 +50,22 @@ DbRetVal DclStatementImpl::execute(int &rowsAffected)
         return rv;
     }
     
-    const DclInfoNode *infoNode = parsedData->getDclInfoNode();
-    if (NULL == infoNode)
-    {
-        rv = ErrBadCall;
-        printError(rv, "DclInfoNode was NULL when it shouldn't be.");
-        dbMgr->closeTable(table);
-        return rv;
-    }
-    
     FieldConditionValMap conditionValues;
     mapConditionValueList(parsedData->getConditionValueList(), conditionValues);
     
-    if (GRANTACCESS == infoNode->type)
+    const std::vector<DclInfoNode> infoNodes = parsedData->getDclInfoNodes();
+    for (std::vector<DclInfoNode>::const_iterator it = infoNodes.begin(); it != infoNodes.end(); ++it)
     {
-        Condition *c = parsedData->getCondition();
-        rv = (DbRetVal)usrMgr->grantPrivilege(parsedData->getPrivileges(), table->getId(), (NULL != c ? c->getPredicate() : NULL), conditionValues);
-    }
-    else if (REVOKEACCESS == infoNode->type)
-    {
-        rv = (DbRetVal)usrMgr->revokePrivilege(parsedData->getPrivileges(), table->getId());
-    }
-    else
-    {
-        rv = ErrBadCall;
-        printError(rv, "Operation not supported.");
+        if (GRANTACCESS == it->type)
+        {
+            Condition *c = parsedData->getCondition();
+            rv = (DbRetVal)usrMgr->grantPrivilege(it->privs, table->getId(), it->userName,
+                    (NULL != c ? c->getPredicate() : NULL), conditionValues);
+        }
+        else if (REVOKEACCESS == it->type)
+        {
+            rv = (DbRetVal)usrMgr->revokePrivilege(it->privs, table->getId(), it->userName);
+        }
     }
     
     dbMgr->closeTable(table);

@@ -76,20 +76,23 @@ class DllExport UserManager
      * The privilege may be further restricted by a predicate clause.
      * 
      * @param priv The list of privileges to grant (must be a bitmask of PrivilegeType)
-     * @param tblId The id of the table to grant priv on
+     * @param tblId The id of the table to grant privileges on
+     * @param grantee The name of the user to grant privileges to
      * @param pred (optional) row level restriction predicate
+     * @param conditionValues concrete values for pred
      * @return status code (OK or error indicator)
      */
-    virtual int grantPrivilege(unsigned char priv, int tblId, const Predicate* pred, FieldConditionValMap &conditionValues)=0;
+    virtual int grantPrivilege(unsigned char priv, int tblId, std::string grantee, const Predicate* pred, FieldConditionValMap &conditionValues)=0;
     
     /**
      * Revoke the given bitmask of privileges on a table from a certain user.
      * 
      * @param priv The list of privileges to be revoked (must be a bitmask of PrivilegeType)
      * @param tblId The id of the table to act on
+     * @param grantee The name of the user to revoke privileges from
      * @return status code (OK or error indicator)
      */
-    virtual int revokePrivilege(unsigned char priv, int tblId)=0;
+    virtual int revokePrivilege(unsigned char priv, int tblId, std::string grantee)=0;
     
     /**
      * This ONLY returns true if the current user has ALL permissions in priv on tblId, a subset is not sufficient.

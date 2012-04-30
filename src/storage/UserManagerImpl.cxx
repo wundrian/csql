@@ -105,11 +105,11 @@ List UserManagerImpl::getAllUserNames(int *retval)
     return cUser.getUserList();
 }
 
-int UserManagerImpl::grantPrivilege(unsigned char priv, int tblId,
+int UserManagerImpl::grantPrivilege(unsigned char priv, int tblId, std::string grantee,
         const Predicate *pred, FieldConditionValMap &conditionValues)
 {
     CatalogTableGRANT cGrant(systemDatabase_);
-    int ret = cGrant.insert(priv, tblId, userName, pred, conditionValues);
+    int ret = cGrant.insert(priv, tblId, grantee, pred, conditionValues);
     
     if (OK != ret)
     {
@@ -117,14 +117,14 @@ int UserManagerImpl::grantPrivilege(unsigned char priv, int tblId,
         return ErrSysInternal;
     }
     
-    logFine(Conf::logger, "Granted privileges %d on table %d to %s", priv, tblId, userName);
+    logFine(Conf::logger, "Granted privileges %d on table %d to %s", priv, tblId, grantee.c_str());
     return OK;
 }
 
-int UserManagerImpl::revokePrivilege(unsigned char priv, int tblId)
+int UserManagerImpl::revokePrivilege(unsigned char priv, int tblId, std::string grantee)
 {
     CatalogTableGRANT cGrant(systemDatabase_);
-    int ret = cGrant.remove(priv, tblId, userName);
+    int ret = cGrant.remove(priv, tblId, grantee);
     
     if (OK != ret)
     {

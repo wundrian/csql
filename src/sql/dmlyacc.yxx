@@ -140,18 +140,24 @@ privilege :
     | UPDATE { parsedData->insertPrivilege(PRIV_UPDATE); }
     | DELETE { parsedData->insertPrivilege(PRIV_DELETE); }
     ;
-grant_statement : GRANT privilege_list ON ident TO ident where_clause_opt semicolon_opt
+grantee_list : grantee_list grantee_list_L
+    | grantee
+    ;
+grantee_list_L : ',' grantee
+    ;
+grantee : ident { parsedData->insertGrantee($1); }
+grant_statement : GRANT privilege_list ON ident TO grantee_list where_clause_opt semicolon_opt
     {
             parsedData->setStmtType(DclStatement);
             parsedData->setTableName($4);
-            parsedData->grantDclNode($6);
+            parsedData->constructDclNodes(GRANTACCESS);
     }
     ;
-revoke_statement : REVOKE privilege ON ident FROM ident semicolon_opt
+revoke_statement : REVOKE privilege ON ident FROM grantee_list semicolon_opt
     {
             parsedData->setStmtType(DclStatement);
             parsedData->setTableName($4);
-            parsedData->revokeDclNode($6);
+            parsedData->constructDclNodes(REVOKEACCESS);
     }
     ;
 copy_table_statement: CREATE TABLE ident AS SELECT opt_distinct field_list FROM table_list where_clause_opt group_by_opt having_opt order_by_opt limit_opt semicolon_opt

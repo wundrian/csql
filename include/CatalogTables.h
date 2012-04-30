@@ -200,7 +200,7 @@ struct CGRANT
     int tblID_; /* table id of the table */
     Predicate *predicate_; /* the row level restriction predicate applied to WHERE clauses, if any */
     
-    /* map of fieldNames to condition values (needed for leaf nodes in predicate) */
+    /* map of fieldNames to condition values (needed for leaf nodes in predicate_) */
     FieldConditionValMap conditionValues; 
 };
 
@@ -211,9 +211,9 @@ class CatalogTableGRANT
     CatalogTableGRANT(Database *db) : systemDatabase_(db) {}
 
     /* returns -1 on error */
-    DbRetVal insert(unsigned char priv, int tblId, const char *userName, 
+    DbRetVal insert(unsigned char priv, int tblId, std::string userName, 
         const Predicate *pred, const FieldConditionValMap &conditionValues);
-    DbRetVal remove(unsigned char priv, int tblId, const char *userName);
+    DbRetVal remove(unsigned char priv, int tblId, std::string userName);
     
     /* predicate and conditionValues are OUT (and OUT only!) parameters */
     DbRetVal getPredicate(int tblID, const char *userName, Predicate *predicate, FieldConditionValMap &conditionValues) const;

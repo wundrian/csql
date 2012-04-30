@@ -8,6 +8,7 @@
 #define UTIL_H
 #include<ErrorType.h>
 #include<Debug.h>
+#include <vector>
 enum UniqueIDType {
     STMT_ID=0,
     TXN_ID

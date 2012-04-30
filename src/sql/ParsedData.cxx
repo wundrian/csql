@@ -17,6 +17,9 @@
 #include <Parser.h>
 #include <CSql.h>
 #include<PredicateImpl.h>
+#include <vector>
+
+#include "AbsSqlStatement.h"
 
 
 void ParsedData::insertValue(char *val)
@@ -254,11 +257,6 @@ Predicate* ParsedData::insertPredicate(Predicate *p1, LogicalOp op, Predicate *p
     pImpl->setTerm(p1, op, p2);
     predList.append(pImpl);
     return (Predicate*) pImpl;
-}
-
-unsigned char ParsedData::insertPrivilege(PrivilegeType priv)
-{
-    return (privileges |= priv);
 }
 
 void ParsedData::init()
@@ -625,16 +623,10 @@ void ParsedData::alterUserNode(char *name, char *password)
     userNode->type = ALTERUSER;
 }
 
-void ParsedData::grantDclNode(const char* userName)
+void ParsedData::constructDclNodes(DclType type)
 {
-    dclNode = new DclInfoNode();
-    strncpy(dclNode->userName, userName, IDENTIFIER_LENGTH);
-    dclNode->type = GRANTACCESS;
-}
-
-void ParsedData::revokeDclNode(const char* userName)
-{
-    dclNode = new DclInfoNode();
-    strncpy(dclNode->userName, userName, IDENTIFIER_LENGTH);
-    dclNode->type = REVOKEACCESS;
+    for (std::vector<std::string>::const_iterator it = granteeList.begin(); it != granteeList.end(); ++it)
+    {
+        dclNodes.push_back(DclInfoNode(type, *it, privileges));
+    }
 }

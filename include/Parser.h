@@ -164,11 +164,14 @@ enum PrivilegeType
     PRIV_DELETE = 8
 };
 
-class DclInfoNode
+struct DclInfoNode
 {
-public:
-    char userName[IDENTIFIER_LENGTH];
+    DclInfoNode(DclType type, std::string userName, unsigned char privs)
+    : type(type), privs(privs), userName(userName) {}
+    
+    std::string userName;
     DclType type;
+    unsigned char privs;
 };
 
 class DllExport ParsedData
@@ -224,8 +227,9 @@ class DllExport ParsedData
     //User Management
     UserNode *userNode;
     // Rights Management
-    DclInfoNode *dclNode;
-    unsigned char privileges; // can't store in dclNode (may not be allocated when this is used)
+    std::vector<DclInfoNode> dclNodes; // filled by constructDclNodes() from granteeList
+    std::vector<std::string> granteeList; // list of users to GRANT rights to
+    unsigned char privileges; // can't store in dclNodes (may not be allocated when this is used)
     //stores list of fields for CREATE TABLE
     FieldList creFldList;
     //Foreign Key storage
@@ -263,7 +267,7 @@ class DllExport ParsedData
     public:
     ParsedData() { limit = 0;  offset= 0; paramCounter = 0; stmtType = UnknownStatement;  isDistinct = false; isExplain=false;
                  isUnique = false; isPrimary = false; isAutoIncrement=false ;indexType = hashIndex; plan = Normal; bucketSize=0; isForeign=false; hCondFld=false; vCondFld=false;pkFld=false;forceOption=false; direct=false; uncache=false; noschema=false; dsn=false; 
-    shouldCreateTbl=false; userNode = NULL; dclNode = NULL; isWorthyToCache=false; ftype = UNKNOWN_FUNCTION;
+    shouldCreateTbl=false; userNode = NULL; isWorthyToCache=false; ftype = UNKNOWN_FUNCTION;
     } 
     void setFunctionType(FunctionType type) { ftype = type; }
     FunctionType getFunctionType(){ return ftype;}
@@ -277,11 +281,14 @@ class DllExport ParsedData
     void dropUserNode(char *name);
     void alterUserNode(char *name, char *password);
     
-    void grantDclNode(const char* userName);
-    void revokeDclNode(const char* userName);
-    int insertPrivilege(PrivilegeType priv);
-    unsigned char getPrivileges(){ return privileges; }
-    DclInfoNode* getDclInfoNode(){ return dclNode; }
+    /**
+     * 
+     * @param userName
+     */
+    void constructDclNodes(DclType type);
+    void insertPrivilege(PrivilegeType priv) { privileges |= (unsigned char)priv; }
+    void insertGrantee(const char *userName) { granteeList.push_back(std::string(userName)); }
+    const std::vector<DclInfoNode>& getDclInfoNodes() const { return dclNodes; }
     
 
     void setCreateTbl(){ shouldCreateTbl=true; }

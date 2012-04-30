@@ -486,9 +486,16 @@ DbRetVal CatalogTableUSER::changePass(const char *name, const char *pass)
     return ErrNotExists;
 }
 
-DbRetVal CatalogTableGRANT::insert(unsigned char priv, int tblId, const char *userName, 
+DbRetVal CatalogTableGRANT::insert(unsigned char priv, int tblId, std::string userName, 
         const Predicate *condition, const FieldConditionValMap &conditionValues)
 {
+    // are we granting any privileges at all?
+    if (!priv)
+    {
+        printError(ErrSyntaxError, "No privileges selected to grant. Choose at least one.");
+        return ErrSyntaxError;
+    }
+    
     Chunk *tChunk = systemDatabase_->getSystemDatabaseChunk(GrantTableId);
     DbRetVal rv = OK;
     
@@ -497,7 +504,7 @@ DbRetVal CatalogTableGRANT::insert(unsigned char priv, int tblId, const char *us
     while ((data = iter.nextElement())!= NULL)
     {
         CGRANT* elem = (CGRANT*)data;
-        if (0 == memcmp(elem->userName_, userName, IDENTIFIER_LENGTH)
+        if (0 == strncmp(elem->userName_, userName.c_str(), IDENTIFIER_LENGTH)
                 && elem->tblID_ == tblId)
         {
             if ((elem->privileges | priv) == elem->privileges)
@@ -520,21 +527,20 @@ DbRetVal CatalogTableGRANT::insert(unsigned char priv, int tblId, const char *us
         return rv;
     }
     
-    strncpy(grantInfo->userName_, userName, IDENTIFIER_LENGTH);
+    strncpy(grantInfo->userName_, userName.c_str(), IDENTIFIER_LENGTH);
     grantInfo->tblID_ = tblId;
     grantInfo->privileges = priv;
     
     grantInfo->conditionValues = conditionValues; // copy assignment!
-    grantInfo->predicate_ = condition->deepCopy(grantInfo->conditionValues);
-    if (NULL == grantInfo->predicate_) {
-        printError(ErrNoMemory, "Failed to allocate space for grant predicate");
-        return ErrNoMemory;
+    if (NULL != condition)
+    {
+        grantInfo->predicate_ = condition->deepCopy(grantInfo->conditionValues);
     }
     
     return OK;
 }
 
-DbRetVal CatalogTableGRANT::remove(unsigned char priv, int tblId, const char* userName)
+DbRetVal CatalogTableGRANT::remove(unsigned char priv, int tblId, std::string userName)
 {
     Chunk* tChunk = systemDatabase_->getSystemDatabaseChunk(GrantTableId);
     ChunkIterator iter = tChunk->getIterator();
@@ -542,7 +548,7 @@ DbRetVal CatalogTableGRANT::remove(unsigned char priv, int tblId, const char* us
     while ((data = iter.nextElement())!= NULL)
     {
         CGRANT* elem = (CGRANT*)data;
-        if (0 == memcmp(elem->userName_, userName, IDENTIFIER_LENGTH)
+        if (0 == strncmp(elem->userName_, userName.c_str(), IDENTIFIER_LENGTH)
                 && elem->tblID_ == tblId)
         {
             // remove all privileges?
@@ -555,7 +561,7 @@ DbRetVal CatalogTableGRANT::remove(unsigned char priv, int tblId, const char* us
             elem->privileges &= ~priv;
         }
     }
-    printError(ErrNotExists,"User %s does exist in catalog table", userName);
+    printError(ErrNotExists,"User %s does exist in catalog table", userName.c_str());
     return ErrNotExists;
 }
 
