@@ -16,6 +16,9 @@
 #include <os.h>
 #include <Statement.h>
 #include <Info.h>
+
+#include "PredicateImpl.h"
+
 DelStatement::DelStatement()
 {
     parsedData = NULL; 
@@ -256,17 +259,57 @@ DbRetVal DelStatement::resolve()
         return ErrNotExists;
     }
 
+    DbRetVal rv = OK;
+    if (usrMgr->isAuthorized(PRIV_UPDATE, ((TableImpl*)table)->getId()))
+    {
+        Predicate *pred = NULL;
+        FieldConditionValMap predValues;
+        if (OK != (rv = (DbRetVal)usrMgr->getTableRestriction(((TableImpl*)table)->getId(), pred, predValues)))
+        {
+            goto cleanupAndExit;
+        }
+        
+        // do additional restrictions apply? if so, add them to the existing condition
+        if (NULL != pred)
+        {
+            List conditionValues = parsedData->getConditionValueList();
+            for (FieldConditionValMap::iterator it = predValues.begin(); it != predValues.end(); ++it)
+            {
+                conditionValues.append(&it->second);
+            }
+                
+            if (NULL != parsedData->getCondition())
+            {
+                Predicate *finalPred = new PredicateImpl();
+                finalPred->setTerm(parsedData->getCondition()->getPredicate(), OpAnd, pred);
+                parsedData->setCondition(finalPred);
+            }
+            else
+            {
+                parsedData->setCondition(pred);
+            }
+        }
+    }
+    else
+    {
+        rv = ErrNoPrivilege;
+        printError(rv, "User not authorized to delete from table.");
+        goto cleanupAndExit;
+    }
+    
     table->setCondition(parsedData->getCondition());
 
-    DbRetVal rv = resolveForCondition();
-    if (rv != OK) 
-    {
-        //TODO::free memory allocated for params
-        table->setCondition(NULL);
-        dbMgr->closeTable(table);
-        table = NULL;
-    }
-    return rv;
+    rv = resolveForCondition();
+    
+    cleanupAndExit:
+        if (rv != OK) 
+        {
+            //TODO::free memory allocated for params
+            table->setCondition(NULL);
+            dbMgr->closeTable(table);
+            table = NULL;
+        }
+        return rv;
 }
 
 
