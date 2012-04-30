@@ -17,10 +17,7 @@
 #include <Parser.h>
 #include <CSql.h>
 #include<PredicateImpl.h>
-#include <vector>
-
-#include "AbsSqlStatement.h"
-
+#include <Util.h>
 
 void ParsedData::insertValue(char *val)
 {
