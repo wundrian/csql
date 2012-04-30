@@ -44,7 +44,7 @@ char ChunkName[MAX_CHUNKS][CHUNK_NAME_LEN]={
 
 
 DbRetVal CatalogTableTABLE::insert(const char *name, int id, size_t size,
-                    int numFlds, void* chunk, void *&tptr, void *vcchunk)
+                    int numFlds, void* chunk, void *&tptr, void *vcchunk, const char *ownerName)
 {
     Chunk *tChunk = systemDatabase_->getSystemDatabaseChunk(TableTableId);
     DbRetVal rv = OK;
@@ -57,6 +57,7 @@ DbRetVal CatalogTableTABLE::insert(const char *name, int id, size_t size,
     }
     CTABLE *tableInfo = (CTABLE*)tptr;
     strcpy(tableInfo->tblName_, name);
+    strcpy(tableInfo->owner_, ownerName);
     tableInfo->tblID_ = id;
     tableInfo->length_ = size;
     tableInfo->numFlds_ = numFlds;
@@ -203,6 +204,21 @@ DbRetVal CatalogTableTABLE::setChunkPtr(const char *name, void *firstPage, void 
     }
     //table not found in TABLE
     return ErrNotFound;
+}
+
+bool CatalogTableTABLE::isOwner(int tblId, const char* userName)
+{
+    Chunk *chk = systemDatabase_->getSystemDatabaseChunk(TableTableId);
+    ChunkIterator iter = chk->getIterator();;
+    void *tptr;
+    while (NULL != (tptr = iter.nextElement()))
+    {
+         if (tblId == ((CTABLE*)tptr)->tblID_)
+         {
+             return (0 == strcmp(userName, ((CTABLE*)tptr)->owner_));
+         }
+    }
+    return false;
 }
 
 List CatalogTableTABLE::getTableList()
@@ -594,10 +610,23 @@ DbRetVal CatalogTableGRANT::getPredicate(int tblId, const char *userName, Predic
         if (0 == memcmp(elem->userName_, userName, IDENTIFIER_LENGTH)
                 && tblId == elem->tblID_)
         {
-            conditionValues = elem->conditionValues;
-            pred = elem->predicate_->deepCopy(conditionValues);
+            if (NULL == elem->predicate_)
+            {
+                pred = NULL;
+            }
+            else 
+            {
+                conditionValues = elem->conditionValues;
+                pred = elem->predicate_->deepCopy(conditionValues);
+            }
+            return OK; // no point in looking further
         }
     }
+    
+    // we got here because we haven't found any restrictions.
+    // at this point user may be owner or not a privileged user. Either way,
+    // he got no Predicate we can return, signal this to the caller
+    pred = NULL;
     
     return OK;
 }

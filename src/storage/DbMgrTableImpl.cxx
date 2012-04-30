@@ -101,7 +101,7 @@ DbRetVal DatabaseManagerImpl::createTable(const char *name, TableDef &def)
         vcptr->setChunkName(name);
     }
     rv = cTable.insert(name, tblID, sizeofTuple,
-                                   def.getFieldCount(), ptr, tptr, vcptr);
+                                   def.getFieldCount(), ptr, tptr, vcptr, userName);
     if (OK != rv)
     {
         deleteUserChunk(ptr);

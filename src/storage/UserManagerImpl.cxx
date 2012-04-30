@@ -132,14 +132,18 @@ int UserManagerImpl::revokePrivilege(unsigned char priv, int tblId, std::string 
         return ErrSysInternal;
     }
     
-    logFine(Conf::logger, "Revoked privileges %d on table %d from %s", priv, tblId, userName);
+    logFine(Conf::logger, "Revoked privileges %d on table %d from %s", priv, tblId, grantee.c_str());
     return OK;
 }
 
 bool UserManagerImpl::isAuthorized(unsigned char priv, int tblId) const
 {
     CatalogTableGRANT cGrant(systemDatabase_);
-    return (priv == (cGrant.getPrivileges(tblId, userName) & priv));
+    CatalogTableTABLE cTable(systemDatabase_);
+    
+    /* owner is always granted access to her tables */
+    return (cTable.isOwner(tblId, userName)
+            || (priv == (cGrant.getPrivileges(tblId, userName) & priv)));
 }
 
 int UserManagerImpl::getTableRestriction(int tblId, Predicate* pred, FieldConditionValMap& conditionValues)

@@ -59,10 +59,13 @@ class DllExport DatabaseManagerImpl : public DatabaseManager
 
     ProcessManager *pMgr_;
     int procSlot;
- 
+
+    // userName is the currently logged in user
+    const char *userName;
+    
     //only SessionImpl creates object of this class
     DatabaseManagerImpl() { systemDatabase_ = NULL; tMgr_ = NULL; lMgr_ =  NULL; 
-                            pMgr_ = NULL; db_ = NULL; }
+                            pMgr_ = NULL; db_ = NULL; userName = NULL; }
     ~DatabaseManagerImpl();
 
     DbRetVal openSystemDatabase();
@@ -105,6 +108,7 @@ class DllExport DatabaseManagerImpl : public DatabaseManager
     Database* sysDb() { return systemDatabase_; }
     void setSysDb(Database *db) { systemDatabase_ = db; }
     void setDb(Database *db) { db_ = db; }
+    void setUserName(const char *usrName) { userName = usrName; }
 
     void setProcSlot();
     TransactionManager* txnMgr() { return tMgr_; }

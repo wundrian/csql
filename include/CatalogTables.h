@@ -86,6 +86,7 @@ class CTABLE
 {
     public:
     char tblName_[IDENTIFIER_LENGTH];
+    char owner_[IDENTIFIER_LENGTH];
     int tblID_;
     size_t length_; //length of the tuple
     int numFlds_;
@@ -104,7 +105,8 @@ class CatalogTableTABLE
     //Last argument is OUT parameter which will contain the
     //pointer to the inserted tuple
     DbRetVal insert(const char *name, int id, size_t size,
-                     int numFlds, void* chunk, void *&tptr, void *vcchunk);
+                     int numFlds, void* chunk, void *&tptr, void *vcchunk,
+                     const char *ownerName);
 
     //Second argument is OUT parameter which will contain the
     //chunk pointer of this table
@@ -115,6 +117,7 @@ class CatalogTableTABLE
     DbRetVal renameIndex(const char *oldName,const char *newName);
     DbRetVal getChunkAndTblPtr(const char *name, void *&chunk, void *&tptr, void*&vcchunk);
     DbRetVal setChunkPtr(const char *name, void *firstPage, void *curPage);
+    bool isOwner(int tblId, const char *userName);
     List getTableList();
 };
 
@@ -202,6 +205,8 @@ struct CGRANT
     
     /* map of fieldNames to condition values (needed for leaf nodes in predicate_) */
     FieldConditionValMap conditionValues; 
+    
+    CGRANT() : privileges(0), tblID_(-1), predicate_(NULL) {}
 };
 
 class CatalogTableGRANT

@@ -108,7 +108,7 @@ class DllExport UserManager
      * If pred equals the NULL-Pointer, conditionValues must be disregarded.
      * 
      * @param tblId Identifies the table to get restrictions for
-     * @param pred An OUT parameter that gets a copy of the restriction for table tblId
+     * @param pred An OUT parameter that gets a copy of the restriction for table tblId or NULL if there aren't any.
      * @return status code (OK or error indicator)
      */
     virtual int getTableRestriction(int tblId, Predicate *pred, FieldConditionValMap &conditionValues)=0;

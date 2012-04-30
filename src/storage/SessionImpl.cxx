@@ -194,6 +194,7 @@ DbRetVal SessionImpl::authenticate(const char *username, const char *password)
         printError(ErrNoPrivilege,"User Authentication failed");
         return ErrNoPrivilege;
     }
+    dbMgr->setUserName(username);
     return OK;
 }
 DbRetVal SessionImpl::getExclusiveLock()
