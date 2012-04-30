@@ -6,6 +6,7 @@
  */
 
 #include <Statement.h>
+#include "PredicateImpl.h"
 
 int DclStatementImpl::mapConditionValueList(List values, FieldConditionValMap& result)
 {
@@ -59,8 +60,11 @@ DbRetVal DclStatementImpl::execute(int &rowsAffected)
         if (GRANTACCESS == it->type)
         {
             Condition *c = parsedData->getCondition();
+            Predicate *p = (NULL != c ? c->getPredicate() : NULL);
+            if (NULL != p) ((PredicateImpl*)p)->setTable(table);
+
             rv = (DbRetVal)usrMgr->grantPrivilege(it->privs, table->getId(), it->userName,
-                    (NULL != c ? c->getPredicate() : NULL), conditionValues);
+                    p, conditionValues);
         }
         else if (REVOKEACCESS == it->type)
         {

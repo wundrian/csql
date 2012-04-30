@@ -868,10 +868,10 @@ Predicate* PredicateImpl::deepCopy(FieldConditionValMap &conditionValues) const
         
         /* got a leaf node? */
         if (NULL != fldName1)
-            strncpy(p->fldName1, this->fldName1, IDENTIFIER_LENGTH);
+            strcpy(p->fldName1, this->fldName1);
        
         if (NULL != fldName2)
-            strncpy(p->fldName2, this->fldName2, IDENTIFIER_LENGTH);
+            strcpy(p->fldName2, this->fldName2);
 
         if (NULL != operandPtr || NULL != operand2Ptr) {
             if (NULL == table) {
@@ -879,7 +879,7 @@ Predicate* PredicateImpl::deepCopy(FieldConditionValMap &conditionValues) const
                 return NULL; // FIXME: are we leaking lhs/rhs here?
             }
             
-            std::string fName = std::string(fldName1, IDENTIFIER_LENGTH);
+            std::string fName = std::string(fldName1);
             FieldConditionValMap::iterator it = conditionValues.find(fName);
             if (it == conditionValues.end()) {
                 printError(ErrInvalidExpr, "Table does not contain field %s referenced in condition", fName.c_str());
