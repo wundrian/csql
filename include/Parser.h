@@ -279,7 +279,7 @@ class DllExport ParsedData
     
     void grantDclNode(const char* userName);
     void revokeDclNode(const char* userName);
-    int insertPrivilege(const char* priv);
+    int insertPrivilege(PrivilegeType priv);
     unsigned char getPrivileges(){ return privileges; }
     DclInfoNode* getDclInfoNode(){ return dclNode; }
     

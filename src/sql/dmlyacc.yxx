@@ -134,10 +134,11 @@ privilege_list : privilege_list privilege_list_L
     ;
 privilege_list_L : ',' privilege
     ;
-privilege : SELECT | INSERT | UPDATE | DELETE
-    {
-        parsedData->insertPrivilege($1);
-    }
+privilege : 
+    SELECT { parsedData->insertPrivilege(PRIV_SELECT); }
+    | INSERT { parsedData->insertPrivilege(PRIV_INSERT); }
+    | UPDATE { parsedData->insertPrivilege(PRIV_UPDATE); }
+    | DELETE { parsedData->insertPrivilege(PRIV_DELETE); }
     ;
 grant_statement : GRANT privilege_list ON ident TO ident where_clause_opt semicolon_opt
     {
