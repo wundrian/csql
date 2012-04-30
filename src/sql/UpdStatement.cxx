@@ -472,6 +472,7 @@ DbRetVal UpdStatement::resolve()
     else
     {
         rv = ErrNoPrivilege;
+        printError(rv, "User not authorized to update this table.");
         goto cleanupAndExit;
     }
         
