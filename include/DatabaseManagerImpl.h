@@ -76,9 +76,6 @@ class DllExport DatabaseManagerImpl : public DatabaseManager
     void createLockManager();
     void createTransactionManager();
 
-    Chunk* createUserChunk(size_t size = 0);
-    DbRetVal deleteUserChunk(Chunk *chunk);
-
     
     DbRetVal createHashIndex(const char *indName, const char *tableName,
                         FieldNameList &fldList, int bucketSize, bool isUnique, bool isPrimary = false);
@@ -109,6 +106,12 @@ class DllExport DatabaseManagerImpl : public DatabaseManager
     void setSysDb(Database *db) { systemDatabase_ = db; }
     void setDb(Database *db) { db_ = db; }
     void setUserName(const char *usrName) { userName = usrName; }
+
+    /* only public for DclStatementImpl so they can store GRANTs,
+     * TODO maybe move this to a seperate SysDb class?
+     */
+    Chunk* createUserChunk(size_t size = 0);
+    DbRetVal deleteUserChunk(Chunk *chunk);
 
     void setProcSlot();
     TransactionManager* txnMgr() { return tMgr_; }
