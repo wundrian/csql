@@ -34,7 +34,7 @@ class Predicate;
 
 enum ObjectType
 {
-    Tbl	 = 0,
+    Tbl  = 0,
     hIdx = 1,
     tIdx = 2,
 };

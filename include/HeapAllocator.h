@@ -83,7 +83,7 @@ class DllExport HashMapNode
    void *elem;
    HashMapNode *next;
    HashMapNode() { elem = NULL; next = NULL; }
-   void print() { printf("elem:%x next %x\n", elem, next); }
+   void print() { printf("elem:%p next %p\n", elem, next); }
 };
 class DllExport HashMap
 {

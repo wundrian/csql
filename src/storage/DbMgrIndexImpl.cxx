@@ -678,7 +678,7 @@ void DatabaseManagerImpl::printTreeIndexNodeInfo(char *name, bool flag)
     IndexType iType = CatalogTableINDEX::getType(tptr);
     if (treeIndex != iType)
     {
-       printf("%s is not a tree index\n ");
+       printf("%s is not a tree index\n ", name);
        return;
     }
     Chunk *ch = (Chunk*) chunk;
@@ -745,9 +745,9 @@ DbRetVal DatabaseManagerImpl::printIndexInfo(char *name)
     if(hashIndex == iType){
         ch = (Chunk*) hchunk;
         printf("  <TotalPages> %d </TotalPages>\n", ch->totalPages());
-        printf("  <TotalNodes> %d </TotalNodes>\n", ch->getTotalDataNodes());
+        printf("  <TotalNodes> %ld </TotalNodes>\n", ch->getTotalDataNodes());
     } else if (treeIndex == iType) {
-        printf("  <TotalNodes> %d </TotalNodes>\n", ch->getTotalDataNodes());
+        printf("  <TotalNodes> %ld </TotalNodes>\n", ch->getTotalDataNodes());
         if(hchunk)
             printf("  <TotalElements> %lld </TotalElements>\n",((TreeNode*) hchunk)->getTotalElements());
         else
@@ -756,11 +756,11 @@ DbRetVal DatabaseManagerImpl::printIndexInfo(char *name)
     {
         printf(" <TrieNodes> \n");
         printf("  <TotalPages> %d </TotalPages>\n", ch->totalPages());
-        printf("  <TotalNodes> %d </TotalNodes>\n", ch->getTotalDataNodes());
+        printf("  <TotalNodes> %ld </TotalNodes>\n", ch->getTotalDataNodes());
         printf(" </TrieNodes> \n <TrieValues>\n");
         ch = (Chunk*) hchunk;
         printf("  <TotalPages> %d </TotalPages>\n", ch->totalPages());
-        printf("  <TotalNodes> %d </TotalNodes>\n", ch->getTotalDataNodes());
+        printf("  <TotalNodes> %ld </TotalNodes>\n", ch->getTotalDataNodes());
         printf(" </TrieValues>\n");
     } else 
     {

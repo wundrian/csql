@@ -139,7 +139,7 @@ DbRetVal verifyCount(const char *tblName, long numTuples)
     printf("-------------------+-------------------+-------------------+\n");
     printf("  Data             |  In CSQL          |  In TargetDB      |\n");
     printf("-------------------+-------------------+-------------------+\n");
-    printf("  No. Of Records   |  %-6ld           |  %-6ld           |\n", numTuples, count1);
+    printf("  No. Of Records   |  %-6lld           |  %-6ld           |\n", numTuples, count1);
     printf("-------------------+-------------------+-------------------+\n");
     delete adStmt; 
     adConn->disconnect();

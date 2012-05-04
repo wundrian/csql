@@ -843,9 +843,9 @@ DbRetVal DatabaseManagerImpl::writeSchemaFile()
             } else
                 fprintf(fp, ", %s %s ", fieldName, AllDataType::getSQLString(info->type));
             if (info->type == typeString || info->type == typeVarchar )
-                fprintf(fp, "(%d)",info->length-1);
+                fprintf(fp, "(%zd)",info->length-1);
             else if ( info->type == typeBinary)
-                fprintf(fp, "(%d)",info->length);
+                fprintf(fp, "(%zd)",info->length);
             
             if (info->isNull) fprintf(fp, " NOT NULL ");
             if (info->isDefault) fprintf(fp, " DEFAULT '%s' ", info->defaultValueBuf);

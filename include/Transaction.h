@@ -59,7 +59,7 @@ class UndoLogInfo
        printf("<UndoLogInfo>\n");
        printf("  <Size> %d </Size>\n", size_);
        printf("  <OperationType> %d </OperationType>\n", opType_);
-       printf("  <TuplePtr> %x </TuplePtr>\n", (void *) *(long *)data_);
+       printf("  <TuplePtr> %p </TuplePtr>\n", (void *) *(long *)data_);
        printf("</UndoLogInfo>\n");
 
     }

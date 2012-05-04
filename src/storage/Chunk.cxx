@@ -684,8 +684,8 @@ void Chunk::print()
     if (Conf::config.useDurability())
         printf("                <DirtyPages> %d </DirtyPages> \n",totalDirtyPages());
     printf("                <ChunkName > %s </ChunkName> \n",getChunkName());
-    printf("                <TotalDataNodes> %d </TotalDataNodes> \n",getTotalDataNodes());
-    printf("                <SizeOfDataNodes> %d </SizeOfDataNodes> \n",getSize());
+    printf("                <TotalDataNodes> %ld </TotalDataNodes> \n",getTotalDataNodes());
+    printf("                <SizeOfDataNodes> %zd </SizeOfDataNodes> \n",getSize());
     printf("                <Allocation Type> ");
     if(allocType_==0)
     {

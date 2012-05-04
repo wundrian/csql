@@ -82,11 +82,11 @@ void TreeNode::displayAll()
     printf("<TreeNode count>\n");
     while(iter != NULL)
     {
-        printf("    <First Level Node> %d <Total Elements> %d </Total Elements> <Mutex> %x %d </Mutex></First Level Node>\n", count, iter->noElements_, &iter->mutex_, iter->mutex_.getLockVal()); 
+        printf("    <First Level Node> %d <Total Elements> %d </Total Elements> <Mutex> %p %d </Mutex></First Level Node>\n", count, iter->noElements_, &iter->mutex_, iter->mutex_.getLockVal()); 
         for(int i=0;i< iter->noElements_;i++)
         {
              tnode = (TreeNode *)*((char**)((char*)((char*)iter + sizeof(TreeNode))+ ((i)*sizeof(void *))));
-             printf("      <Second Level Node %d> %d <Mutex> %x %d</Mutex> </Second Level Node>\n",i, tnode->noElements_, &tnode->mutex_, tnode->mutex_.getLockVal());
+             printf("      <Second Level Node %d> %d <Mutex> %p %d</Mutex> </Second Level Node>\n",i, tnode->noElements_, &tnode->mutex_, tnode->mutex_.getLockVal());
              totalElement += tnode->noElements_;
         }
         iter=iter->next_;

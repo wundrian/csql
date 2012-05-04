@@ -307,7 +307,7 @@ class HashIndexInfo :public IndexInfo
     Bucket* buckets;
     void print() 
     {
-        printf("HashIndexInfo indexPtr:%x noOfBuckets:%d buckets:%x \n",indexPtr, noOfBuckets, buckets);
+        printf("HashIndexInfo indexPtr:%p noOfBuckets:%d buckets:%p \n",indexPtr, noOfBuckets, buckets);
     }
     ~HashIndexInfo() { idxFldList.removeAll(); }
 };

@@ -196,11 +196,11 @@ DbRetVal TableImpl::getCheckpointMutex()
 void TableImpl::printInfo()
 {
     printf("  <TableName> %s </TableName>\n", tblName_);
-    printf("  <TupleCount> %d </TupleCount>\n", numTuples());
+    printf("  <TupleCount> %ld </TupleCount>\n", numTuples());
     printf("  <PagesUsed> %d </PagesUsed>\n", pagesUsed());
-    printf("  <SpaceUsed> %d </SpaceUsed>\n", spaceUsed());
+    printf("  <SpaceUsed> %ld </SpaceUsed>\n", spaceUsed());
     printf("  <Indexes> %d <Indexes>\n", numIndexes_);
-    printf("  <TupleLength> %d </TupleLength>\n", length_);
+    printf("  <TupleLength> %ld </TupleLength>\n", length_);
     printf("  <Fields> %d </Fields>\n", numFlds_);
     printf("  <Indexes>\n");
     for (int i =0; i<numIndexes_; i++)

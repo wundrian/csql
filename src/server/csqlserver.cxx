@@ -65,7 +65,7 @@ DbRetVal releaseAllResources(Database *sysdb, ThreadInfo *info )
     {
         if (info->has_[i] != NULL) 
         {
-            printf("Dead Procs: %d %lu holding mutex %x %s \n", info->pid_, info->thrid_, info->has_[i], info->has_[i]->name);
+            printf("Dead Procs: %d %lu holding mutex %p %s \n", info->pid_, info->thrid_, info->has_[i], info->has_[i]->name);
             logFine(Conf::logger, "Dead Procs: %d %lu holding mutex %x %s \n", info->pid_, info->thrid_, info->has_[i], info->has_[i]->name);
             //TODO::recovery of mutexes 
             sysdb->recoverMutex(info->has_[i]);
@@ -77,7 +77,7 @@ DbRetVal releaseAllResources(Database *sysdb, ThreadInfo *info )
     LockManager *lm = new LockManager(sysdb);
     if (info->thrTrans_.trans_ != NULL && info->thrTrans_.trans_->status_ == TransRunning)
     {
-        printf("Rollback Transaction %x\n", info->thrTrans_.trans_);
+        printf("Rollback Transaction %p\n", info->thrTrans_.trans_);
         tm->rollback(lm, info->thrTrans_.trans_);
         info->thrTrans_.trans_->status_ = TransNotUsed;
     }

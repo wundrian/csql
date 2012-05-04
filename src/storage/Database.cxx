@@ -430,7 +430,7 @@ void Database::printStatistics()
     printf("<DatabaseStatistics>\n");
     printf("  <Database Name>  %s </Database Name>\n", getName());
     printf("  <Max Size> %ld </Max Size>\n", getMaxSize());
-    printf("  <First Page> %x </First Page>\n", getFirstPage());
+    printf("  <First Page> %p </First Page>\n", getFirstPage());
     while(isValidAddress((char*) pageInfo))
     {
         if (pageInfo == NULL) break;

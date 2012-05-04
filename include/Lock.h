@@ -42,7 +42,7 @@ class LockHashNode
     void print() 
     { 
         printf("<Lock Node>\n");
-        printf("  <Tuple> %x </Tuple>\n", ptrToTuple_);
+        printf("  <Tuple> %p </Tuple>\n", ptrToTuple_);
         printf("  <NoOfReaders> %d </NoOfReaders>\n", lInfo_.noOfReaders_);
         printf("  <WaitReaders> %x </WaitReaders>\n", lInfo_.waitReaders_);
         printf("  <WaitWriters> %x </WaitWriters>\n", lInfo_.waitWriters_);

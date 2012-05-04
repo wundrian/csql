@@ -557,7 +557,7 @@ DbRetVal writeToConfResFile(void *data, int len, void *stmtBuckets, char *dsn)
             node = (StmtNode *) it.nextElement();
             if(stmtId == node->stmtId) break;
         }
-        printf("DEBUG:node = %x\n", node);
+        printf("DEBUG:node = %p\n", node);
         ExecType type = (ExecType) (*(int *) ptr);
         ptr += sizeof(int);
         if (type == SETPARAM) {

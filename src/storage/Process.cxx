@@ -42,7 +42,7 @@ void ThreadTrans::print()
     printf("<THREADTRANS>\n");
     printf("  <PID> %d </PID>\n", pid_);
     printf("  <THRID> %lu </THRID>\n", thrid_);
-    printf("  <TRANSACTION> %x </TRANSACTION>\n");
+    printf("  <TRANSACTION> %p </TRANSACTION>\n", trans_);
     printf("</THREADTRANS>\n");
 }
 void ThreadInfo::print()
@@ -50,9 +50,9 @@ void ThreadInfo::print()
     printf("<THREADINFO>\n");
     printf("  <PID> %d </PID>\n", pid_);
     printf("  <THRID> %lu </THRID>\n", thrid_);
-    printf("  <WAIT> %x </WAIT>\n", want_);
+    printf("  <WAIT> %p </WAIT>\n", want_);
     printf("  <MUTEXLIST>\n");
-    for (int i =0; i <MAX_MUTEX_PER_THREAD; i++) if (has_[i]) printf("    <MUTEX> %x </MUTEX>\n", has_[i]);
+    for (int i =0; i <MAX_MUTEX_PER_THREAD; i++) if (has_[i]) printf("    <MUTEX> %p </MUTEX>\n", has_[i]);
     printf("  </MUTEXLIST>\n");
     printf("  <TRANSLIST>\n");
     thrTrans_.print();

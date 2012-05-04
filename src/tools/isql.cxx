@@ -339,8 +339,8 @@ void printVariables()
   printf(" SITE_ID\t\t\t= %d\n",Conf::config.getSiteID());
   printf(" PAGE_SIZE\t\t\t= %d Byte\n",Conf::config.getPageSize());
   printf(" MAX_PROCS\t\t\t= %d\n",Conf::config.getMaxProcs());
-  printf(" MAX_SYS_DB_SIZE\t\t= %d MB\n",(Conf::config.getMaxSysDbSize()/1048576));
-  printf(" MAX_DB_SIZE\t\t\t= %d MB\n",(Conf::config.getMaxDbSize()/1048576));
+  printf(" MAX_SYS_DB_SIZE\t\t= %ld MB\n",(Conf::config.getMaxSysDbSize()/1048576));
+  printf(" MAX_DB_SIZE\t\t\t= %ld MB\n",(Conf::config.getMaxDbSize()/1048576));
   printf(" SYS_DB_KEY\t\t\t= %d\n",Conf::config.getSysDbKey());
   printf(" USER_DB_KEY\t\t\t= %d\n",Conf::config.getUserDbKey());
   printf(" LOG_LEVEL\t\t\t= %d\n",Conf::config.getLogLevel());

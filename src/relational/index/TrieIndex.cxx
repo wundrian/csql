@@ -48,7 +48,7 @@ void TrieIndex::computeHashValues(DataType type, void *key, char *in, int length
         in[i] = -1;
     }else if (typeLongLong == type) {
         long val = *(long*)key;
-        sprintf(in, "%lld", val);
+        sprintf(in, "%ld", val);
         int i=0;
         while (in[i] != '\0')
         {
@@ -379,15 +379,15 @@ void TrieIndex::displayAll(TrieNode *start, int level)
 
 void TrieIndex::printTrieNode(TrieNode *node, int level)
 {
-    printf("Trie %x Level %d child:", node, level);
+    printf("Trie %p Level %d child:", node, level);
     for (int i=0; i < TRIE_SIZE; i++)
     {
-        printf("%x ", node->next_[i]);
+        printf("%p ", node->next_[i]);
     }
     printf("bucket:", node);
     for (int i=0; i < TRIE_SIZE; i++)
     {
-        printf("%x ", node->head_[i]);
+        printf("%p ", node->head_[i]);
         if ( node->head_[i]) {
             printf("{ ");
             BucketList list(node->head_[i]);

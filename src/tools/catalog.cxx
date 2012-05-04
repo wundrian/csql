@@ -147,7 +147,7 @@ int main(int argc, char **argv)
                  printf("      <FieldInfo>\n");
                  printf("        <FieldName> %s </FieldName>\n", fieldName);
                  printf("        <Type> %d </Type>\n", info->type);
-                 printf("        <Length> %d </Length>\n", info->length);
+                 printf("        <Length> %zd </Length>\n", info->length);
                  printf("        <Primary> %d </Primary>\n", info->isPrimary);
                  printf("        <Null> %d </Null>\n", info->isNull);
                  printf("        <Default> %d </Default>\n", info->isDefault);
