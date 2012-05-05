@@ -201,23 +201,20 @@ struct CGRANT
     char userName_[IDENTIFIER_LENGTH];
     unsigned char privileges; /* a bit mask of PrivilegeType, consider using bitset<> here to allow more than 8 privileges */
     int tblID_; /* table id of the table */
-    Predicate *predicate_; /* the row level restriction predicate applied to WHERE clauses, if any */
+    void *predPtr; /* containing PredicateImpls and ConditionValues for an additional WHERE clause */
     
-    /* map of fieldNames to condition values (needed for leaf nodes in predicate_) */
-    FieldConditionValMap conditionValues; 
-    
-    CGRANT() : privileges(0), tblID_(-1), predicate_(NULL) {}
+    CGRANT() : privileges(0), tblID_(-1), predPtr(NULL) {}
 };
 
 class CatalogTableGRANT
 {
     Database *systemDatabase_;
+
     public:
     CatalogTableGRANT(Database *db) : systemDatabase_(db) {}
 
     /* returns -1 on error */
-    DbRetVal insert(unsigned char priv, int tblId, std::string userName, 
-        const Predicate *pred, const FieldConditionValMap &conditionValues);
+    DbRetVal insert(unsigned char priv, int tblId, std::string userName, void *predPtr);
     DbRetVal remove(unsigned char priv, int tblId, std::string userName);
     
     /* predicate and conditionValues are OUT (and OUT only!) parameters */

@@ -575,6 +575,7 @@ public:
     
 private:
     int mapConditionValueList(List values, FieldConditionValMap &result);
+    DbRetVal createAndPopulatePredicateChunk(void *&dataPtr);
     TableImpl *table;
 };
 

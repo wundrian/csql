@@ -78,11 +78,10 @@ class DllExport UserManager
      * @param priv The list of privileges to grant (must be a bitmask of PrivilegeType)
      * @param tblId The id of the table to grant privileges on
      * @param grantee The name of the user to grant privileges to
-     * @param pred (optional) row level restriction predicate
-     * @param conditionValues concrete values for pred
+     * @param predPtr Pages of raw data containing a serialized version of additional restrictions
      * @return status code (OK or error indicator)
      */
-    virtual int grantPrivilege(unsigned char priv, int tblId, std::string grantee, const Predicate* pred, FieldConditionValMap &conditionValues)=0;
+    virtual int grantPrivilege(unsigned char priv, int tblId, std::string grantee, void *predPtr)=0;
     
     /**
      * Revoke the given bitmask of privileges on a table from a certain user.

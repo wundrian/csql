@@ -37,6 +37,14 @@ struct ConditionValue
     bool isNullable;
     char fName[IDENTIFIER_LENGTH];
     bool isFunctionInvolve;
+
+    /**
+     * Calculate total size in bytes of this structure, including all things it is pointing to.
+     * This does NOT include stuff pointed to by this.value, as it may be
+     * reconstructed using this.parsedString
+     * @return size_t
+     */
+    size_t sizeTotal() const { return sizeof(ConditionValue) + (sizeof(char) * (strlen(parsedString) + 1 /* for '\0' */)); }
 };
 typedef std::multimap<std::string, ConditionValue> FieldConditionValMap;
 

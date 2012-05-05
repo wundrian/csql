@@ -850,64 +850,68 @@ PredicateImpl* PredicateImpl::getIfOneSidedPredicate()
     return NULL;
 }
 
-Predicate* PredicateImpl::deepCopy(FieldConditionValMap &conditionValues) const
+PredicateImpl::Serialized* PredicateImpl::serialize(void *storePtr) const
 {
-    try {
-        PredicateImpl *p = new PredicateImpl();
-        
-        /* we know deepCopy() on PredicateImpls results in the same type! */
-        if (NULL != lhs)
-            p->lhs = (PredicateImpl*)lhs->deepCopy(conditionValues);
-        
-        if (NULL != rhs)
-            p->rhs = (PredicateImpl*)rhs->deepCopy(conditionValues);
-       
-        p->compOp = this->compOp;
-        p->comp2Op = this->comp2Op;
-        p->logicalOp = this->logicalOp;
-        
-        /* got a leaf node? */
-        if (NULL != fldName1)
-            strcpy(p->fldName1, this->fldName1);
-       
-        if (NULL != fldName2)
-            strcpy(p->fldName2, this->fldName2);
+    Serialized storage = { compOp, logicalOp, type };
+    strncpy(storage.fldName1, fldName1, IDENTIFIER_LENGTH);
+    strncpy(storage.fldName2, fldName2, IDENTIFIER_LENGTH);
 
-        if (NULL != operandPtr || NULL != operand2Ptr) {
-            if (NULL == table) {
-                printError(ErrBadCall, "Table not set on Predicate during deepCopy");
-                return NULL; // FIXME: are we leaking lhs/rhs here?
-            }
-            
-            std::string fName = std::string(fldName1);
-            FieldConditionValMap::iterator it = conditionValues.find(fName);
-            if (it == conditionValues.end()) {
-                printError(ErrInvalidExpr, "Table does not contain field %s referenced in condition", fName.c_str());
-                return NULL;
-            }
-            
-            // Do NOT copy this.operand as it is only used in a JoinTable Predicate
-            // (which is not the goal right now and only complicates things)
-            if (NULL != operandPtr) {
-                p->operandPtr = &(it->second.value);
-            }
+    Serialized *storagePtr = (Serialized*)memcpy(storePtr, &storage, sizeof(Serialized));
 
-            if (NULL != operand2Ptr) {
-                /* this is one of the reasons FieldConditionValMap is actually a MultiMap:
-                 * operand2Ptr is only used if this Predicate is of the form BETWEEN val1 AND val2
-                 * with the corresponding values inserted after another using the same fieldName
-                 * WE RELY ON FieldConditionValMap HAVING A STABLE INSERT()!
-                 */
-                if (conditionValues.end() == ++it) {
-                    printError(ErrSysFatal, "Expecting two values for BETWEEN predicate, but found only one.");
-                    return NULL;
-                }
-                
-                p->operand2Ptr = &it->second.value;
-            }
+    if (NULL != lhs)
+        storagePtr->lhs = lhs->serialize(storagePtr + 1);
+
+    if (NULL != rhs)
+        storagePtr->rhs = rhs->serialize(storagePtr + 2);
+
+    return storagePtr;
+}
+
+int PredicateImpl::treeSize() const
+{
+    return 1 + (NULL != lhs ? lhs->treeSize() : 0) + (NULL != rhs ? rhs->treeSize() : 0);
+}
+
+PredicateImpl* PredicateImpl::unserialize(void *readPtr, FieldConditionValMap &conditionValues)
+{
+    if (SERIALIZED_VERSION != *((char*)readPtr)) return NULL;
+
+    Serialized *storagePtr = (Serialized*)((char *)readPtr + 1);
+    PredicateImpl *pred = new PredicateImpl();
+    
+    pred->compOp = storagePtr->compOp;
+    pred->logicalOp = storagePtr->logicalOp;
+    pred->type   = storagePtr->type;
+
+    strcpy(pred->fldName1, storagePtr->fldName1);
+    strcpy(pred->fldName2, storagePtr->fldName2);
+
+    // when we have a second fieldName, there's no ConditionValue around
+    if (OpInvalidComparisionOp != pred->compOp && 0 == strlen(pred->fldName2))
+    {
+        FieldConditionValMap::iterator it = conditionValues.find(std::string(pred->fldName1));
+        if (it == conditionValues.end())
+        {
+            printError(ErrSysInternal, "Expecting a stored ConditionValue for Predicate but got none."); // shouldn't happen
+            delete pred;
+            return NULL;
         }
-        
-        return p;
-    } catch (std::bad_alloc&){ return NULL; }
-    return NULL;
+
+        pred->operandPtr = &it->second.value;
+    }
+    
+
+    if (NULL != storagePtr->lhs)
+    {
+        pred->lhs = PredicateImpl::unserialize(storagePtr->lhs, conditionValues);
+        pred->lhs->setParent(pred);
+    }
+
+    if (NULL != storagePtr->rhs)
+    {
+        pred->rhs = PredicateImpl::unserialize(storagePtr->rhs, conditionValues);
+        pred->rhs->setParent(pred);
+    }
+
+    return pred;
 }

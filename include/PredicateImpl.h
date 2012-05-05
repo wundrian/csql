@@ -24,7 +24,26 @@ class List;
 class AggTableImpl;
 class DllExport PredicateImpl:public Predicate
 {
+    /* this is a subset of members in PredicateImpl that actually
+     * need to be serialized
+     *
+     * It is only used by serialize/unserialize
+     */
+    struct Serialized
+    {
+        ComparisionOp compOp;
+        LogicalOp logicalOp;
+        DataType type;
+
+        char fldName1[IDENTIFIER_LENGTH];
+        char fldName2[IDENTIFIER_LENGTH];
+
+        Serialized *lhs;
+        Serialized *rhs;
+    };
+
     //Members set during initialization of the term
+    //Strings are required to be null terminated as given by the parser
     char fldName1[IDENTIFIER_LENGTH];
     char fldName2[IDENTIFIER_LENGTH];
     ComparisionOp compOp;
@@ -62,6 +81,12 @@ class DllExport PredicateImpl:public Predicate
     bool isNull;
     
     public:
+    // version information
+    static const char SERIALIZED_VERSION = 1;
+
+    // serialized structure + one byte version information
+    static const size_t SERIALIZED_SIZE = sizeof(Serialized);
+
     PredicateImpl()
     {
         strcpy(fldName1, ""); strcpy(fldName2, ""); 
@@ -145,12 +170,37 @@ class DllExport PredicateImpl:public Predicate
     void solveForProjList(Table *tab);
     
     /**
-     * Copy term left and right hand side into a newly allocated Predicate, including operator.
-     * This function is recursive.
-     * 
-     * @return NULL if not enough memory is available. A copy of this instance otherwise.
+     * Write a subset of this node to the location pointed to by storePtr.
+     * Recurse into lhs and rhs in this order.
+     *
+     * Right now, serialize will NOT support Predicates involving Expressions.
+     *
+     * The callee is responsible for memory management for storePtr.
+     * Be sure to allocate SERIALIZED_SIZE * this->treeSize() bytes at
+     * storePtr.
+     *
+     * @param storePtr where to store the serialized form of this instance
+     * @return storePtr
      */
-    Predicate* deepCopy(FieldConditionValMap &conditionValues) const;
+    Serialized* serialize(void *storePtr) const;
+
+    /**
+     * Count the number of elements rooted at this instance of the tree (including the root).
+     */
+    int treeSize() const;
+
+    /**
+     * Construct an initialized PredicateImpl instance from the given readPtr.
+     *
+     * For this to work, readPtr MUST point to a structure allocated with the
+     * same version of SERIALIZED_VERSION. If this isn't the case,
+     * nothing will be allocated and a NULL pointer returned.
+     *
+     * @param readPtr start of a serialized PredicateImpl instance
+     * @param conditionValues read-only map that provides the ConditionValue list needed to resurrect operandPtr
+     * @return a (partly) initialized PredicateImpl instance
+     */
+    static PredicateImpl* unserialize(void *readPtr, FieldConditionValMap &conditionValues);
 };
 
 #endif

@@ -18,9 +18,9 @@
 #include<Allocator.h>
 #include<Field.h>
 #include<Debug.h>
-#include <Predicate.h>
 
 #include "Parser.h"
+#include "PredicateImpl.h"
 
 char ChunkName[MAX_CHUNKS][CHUNK_NAME_LEN]={
 	"UserChunkTableId",
@@ -502,8 +502,7 @@ DbRetVal CatalogTableUSER::changePass(const char *name, const char *pass)
     return ErrNotExists;
 }
 
-DbRetVal CatalogTableGRANT::insert(unsigned char priv, int tblId, std::string userName, 
-        const Predicate *condition, const FieldConditionValMap &conditionValues)
+DbRetVal CatalogTableGRANT::insert(unsigned char priv, int tblId, std::string userName, void *pred)
 {
     // are we granting any privileges at all?
     if (!priv)
@@ -547,11 +546,7 @@ DbRetVal CatalogTableGRANT::insert(unsigned char priv, int tblId, std::string us
     grantInfo->tblID_ = tblId;
     grantInfo->privileges = priv;
     
-    grantInfo->conditionValues = conditionValues; // copy assignment!
-    if (NULL != condition)
-    {
-        grantInfo->predicate_ = condition->deepCopy(grantInfo->conditionValues);
-    }
+    if (NULL != pred) grantInfo->predPtr = pred;
     
     return OK;
 }
@@ -569,6 +564,7 @@ DbRetVal CatalogTableGRANT::remove(unsigned char priv, int tblId, std::string us
         {
             // remove all privileges?
             if (0 == (elem->privileges & priv)) {
+                // TODO free the predPtr if available (via the Chunk that holds it?)
                 tChunk->free(systemDatabase_, data);
                 return OK;
             }
@@ -610,15 +606,39 @@ DbRetVal CatalogTableGRANT::getPredicate(int tblId, const char *userName, Predic
         if (0 == memcmp(elem->userName_, userName, IDENTIFIER_LENGTH)
                 && tblId == elem->tblID_)
         {
-            if (NULL == elem->predicate_)
+            if (NULL != elem->predPtr)
+            {
+                /* first: grab the list of ConditionValue, save them in conditionValues */
+                // TODO: what if data spans more than one page? are pages continous?
+                char *dataPtr = (char*)elem->predPtr;
+                for (unsigned int i = *((unsigned int*)dataPtr); i > 0; --i)
+                {
+                    dataPtr += sizeof(unsigned int);
+
+                    ConditionValue cPtr = *((ConditionValue*)dataPtr);
+                    dataPtr += sizeof(ConditionValue);
+
+                    cPtr.parsedString = strdup(dataPtr);
+
+                    if (NULL == cPtr.parsedString)
+                    {
+                        printError(ErrNoMemory, "No memory available to add additional restrictions");
+                        return ErrNoMemory;
+                    }
+                    
+                    conditionValues.insert(std::make_pair(std::string(cPtr.fName), cPtr));
+
+                    dataPtr += strlen(cPtr.parsedString) + 1;
+                }
+
+                /* second: reconstruct all PredicateImpl instances */
+                pred = PredicateImpl::unserialize(dataPtr, conditionValues);
+            }
+            else
             {
                 pred = NULL;
             }
-            else 
-            {
-                conditionValues = elem->conditionValues;
-                pred = elem->predicate_->deepCopy(conditionValues);
-            }
+
             return OK; // no point in looking further
         }
     }
