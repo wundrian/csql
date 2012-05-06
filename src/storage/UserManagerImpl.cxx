@@ -106,10 +106,10 @@ List UserManagerImpl::getAllUserNames(int *retval)
 }
 
 int UserManagerImpl::grantPrivilege(unsigned char priv, int tblId, std::string grantee,
-        void *predPtr)
+        const PredicateImpl *rootPred, const FieldConditionValMap &conditionValues)
 {
     CatalogTableGRANT cGrant(systemDatabase_);
-    int ret = cGrant.insert(priv, tblId, grantee, predPtr);
+    int ret = cGrant.insert(priv, tblId, grantee, rootPred, conditionValues);
     
     if (OK != ret)
     {

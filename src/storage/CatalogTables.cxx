@@ -23,28 +23,28 @@
 #include "PredicateImpl.h"
 
 char ChunkName[MAX_CHUNKS][CHUNK_NAME_LEN]={
-	"UserChunkTableId",
-	"LockTableHashBucketId",
-	"LockTableMutexId",
-	"LockTableId",
-	"TransHasTableId",
-	"UndoLogTableId",
-	"","","","",
-	"DatabaseTableId",
-	"UserTableId",
-	"TableTableId",
-	"FieldTableId",
-	"AccessTableId",
-	"IndexTableId",
-	"IndexFieldTableId",
-	"ForeignKeyTableId",
-	"ForeignKeyFieldTableId",
+    "UserChunkTableId",
+    "LockTableHashBucketId",
+    "LockTableMutexId",
+    "LockTableId",
+    "TransHasTableId",
+    "UndoLogTableId",
+    "","","","",
+    "DatabaseTableId",
+    "UserTableId",
+    "TableTableId",
+    "FieldTableId",
+    "AccessTableId",
+    "IndexTableId",
+    "IndexFieldTableId",
+    "ForeignKeyTableId",
+    "ForeignKeyFieldTableId",
         "GrantTableId"
-	};
+    };
 
 
 DbRetVal CatalogTableTABLE::insert(const char *name, int id, size_t size,
-                    int numFlds, void* chunk, void *&tptr, void *vcchunk, const char *ownerName)
+                    int numFlds, void* chunk, void *&tptr, void *vcchunk, Chunk *grantsPtr, const char *ownerName)
 {
     Chunk *tChunk = systemDatabase_->getSystemDatabaseChunk(TableTableId);
     DbRetVal rv = OK;
@@ -64,6 +64,7 @@ DbRetVal CatalogTableTABLE::insert(const char *name, int id, size_t size,
     tableInfo->numIndexes_ = 0;
     tableInfo->chunkPtr_ = chunk;
     tableInfo->varcharChunkPtr_ = vcchunk;
+    tableInfo->grantsPtr_ = grantsPtr;
     printDebug(DM_SystemDatabase,"One Row inserted into TABLE %x %s",tptr, name);
     return OK;
 }
@@ -186,6 +187,23 @@ DbRetVal CatalogTableTABLE::getChunkAndTblPtr(const char *name,
     return ErrNotFound;
 }
 
+DbRetVal CatalogTableTABLE::getGrantsPtr(const int tblId, Chunk *&grantsPtr) const
+{
+    Chunk *chk = systemDatabase_->getSystemDatabaseChunk(TableTableId);
+    ChunkIterator iter = chk->getIterator();;
+    CTABLE *tptr;
+
+    while (NULL != (tptr = (CTABLE*)iter.nextElement()))
+    {
+        if (tptr->tblID_ == tblId)
+        {
+            grantsPtr = tptr->grantsPtr_;
+            return OK;
+        }
+    }
+
+    return ErrNotFound;
+}
 
 DbRetVal CatalogTableTABLE::setChunkPtr(const char *name, void *firstPage, void *curPage)
 {
@@ -502,7 +520,8 @@ DbRetVal CatalogTableUSER::changePass(const char *name, const char *pass)
     return ErrNotExists;
 }
 
-DbRetVal CatalogTableGRANT::insert(unsigned char priv, int tblId, std::string userName, void *pred)
+DbRetVal CatalogTableGRANT::insert(unsigned char priv, int tblId, std::string userName,
+            const PredicateImpl *rootPred, const FieldConditionValMap &conditionValues)
 {
     // are we granting any privileges at all?
     if (!priv)
@@ -534,7 +553,15 @@ DbRetVal CatalogTableGRANT::insert(unsigned char priv, int tblId, std::string us
         }
     }
     
-    // okay, no privileges on this table at all, create a new chunk
+    /* okay, no privileges on this table at all, create a new chunk */
+    Chunk *grantsPtr = NULL;
+    CatalogTableTABLE tables(systemDatabase_);
+    if (OK != tables.getGrantsPtr(tblId, grantsPtr))
+    {
+        printError(rv, "Unable to find table for id %d", tblId);
+        return rv;
+    }
+
     CGRANT* grantInfo = (CGRANT*)tChunk->allocate(systemDatabase_, &rv);
     if (NULL == grantInfo)
     {
@@ -546,7 +573,15 @@ DbRetVal CatalogTableGRANT::insert(unsigned char priv, int tblId, std::string us
     grantInfo->tblID_ = tblId;
     grantInfo->privileges = priv;
     
-    if (NULL != pred) grantInfo->predPtr = pred;
+    if (NULL != rootPred)
+    {
+        rv = createPredicateChunk(rootPred, conditionValues, grantsPtr, grantInfo->predPtr);
+        if (OK != rv)
+        {
+            tChunk->free(systemDatabase_, grantInfo);
+            return rv;
+        }
+    }
     
     return OK;
 }
@@ -648,5 +683,57 @@ DbRetVal CatalogTableGRANT::getPredicate(int tblId, const char *userName, Predic
     // he got no Predicate we can return, signal this to the caller
     pred = NULL;
     
+    return OK;
+}
+
+DbRetVal CatalogTableGRANT::createPredicateChunk(const PredicateImpl *rootPred, const FieldConditionValMap &conditionValues,
+            Chunk *predChunk, void *&dataPtr)
+{
+    /* first step: calculate total space needed to store ConditionValue list and serialized PredicateImpl tree */
+    size_t allocSize = 1 /*PredicateImpl::SERIALIZED_VERSION */
+      + sizeof(unsigned int) /* ConditionValue list size */
+      + PredicateImpl::SERIALIZED_SIZE * rootPred->treeSize(); /* nodes */
+    
+    for (FieldConditionValMap::const_iterator it = conditionValues.begin(); it != conditionValues.end(); ++it)
+    {
+        allocSize += it->second.sizeTotal();
+    }
+
+    /* second: allocate enough memory, take care not to loose the data pointer! */
+    DbRetVal rv = OK;
+    dataPtr = predChunk->allocate(systemDatabase_, allocSize, &rv);
+    if (OK != rv)
+    {
+        dataPtr = NULL;
+        printError(rv, "Unable to allocate predChunk memory for condition values.");
+        return rv;
+    }
+    
+    /* this loop copies all ConditionValue instances into predChunk.
+     * Note how they are seperated by the first '\0' after offset + sizeof(ConditionValue)
+     *
+     * To make it easier to reconstruct the list, save the list length at the start
+     *
+     * We need to reconstruct the whole list every time we use the predChunk, so
+     * there's no benefit to store all ConditionValue instances first in the
+     * predChunk (so they make an indexable array)
+     */
+    *((unsigned int*)dataPtr) = conditionValues.size();
+    int offset = sizeof(unsigned int);
+    for (FieldConditionValMap::const_iterator it = conditionValues.begin(); it != conditionValues.end(); ++it)
+    {
+        (void) memcpy((char*)dataPtr + offset, &it->second, sizeof(ConditionValue));
+
+        offset += sizeof(ConditionValue);
+
+        int strLen = strlen(it->second.parsedString) + 1;
+        (void) memcpy((char*)dataPtr + offset, it->second.parsedString, strLen);
+        offset += strLen;
+    }
+
+    /* finally, PredicateImpl can take care of serializing itself to dataPtr */
+    *((char *)dataPtr + offset) = PredicateImpl::SERIALIZED_VERSION;
+    rootPred->serialize((char*)dataPtr + offset + 1);
+
     return OK;
 }

@@ -100,8 +100,19 @@ DbRetVal DatabaseManagerImpl::createTable(const char *name, TableDef &def)
         printDebug(DM_Database,"Created UserChunk for Varchar:%x", vcptr);
         vcptr->setChunkName(name);
     }
+
+    Chunk *grantsPtr = createUserChunk();
+    if (NULL == grantsPtr)
+    {
+        deleteUserChunk(ptr);
+        if (NULL != vcptr) deleteUserChunk(vcptr);
+        systemDatabase_->releaseCheckpointMutex();
+        printError(ErrNoResource, "Unable to create user chunk for varchar");
+        return ErrNoResource;
+    }
+    
     rv = cTable.insert(name, tblID, sizeofTuple,
-                                   def.getFieldCount(), ptr, tptr, vcptr, userName);
+                                   def.getFieldCount(), ptr, tptr, vcptr, grantsPtr, userName);
     if (OK != rv)
     {
         deleteUserChunk(ptr);

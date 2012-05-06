@@ -24,6 +24,7 @@
 #include<Util.h>
 
 #include <ParserDataTypes.h>
+#include "PredicateImpl.h"
 
 extern char ChunkName[MAX_CHUNKS][CHUNK_NAME_LEN];
 class FieldList;
@@ -93,7 +94,7 @@ class CTABLE
     int numIndexes_;
     void* chunkPtr_;
     void* varcharChunkPtr_;
-
+    Chunk *grantsPtr_;
 };
 
 class CatalogTableTABLE
@@ -106,7 +107,7 @@ class CatalogTableTABLE
     //pointer to the inserted tuple
     DbRetVal insert(const char *name, int id, size_t size,
                      int numFlds, void* chunk, void *&tptr, void *vcchunk,
-                     const char *ownerName);
+                     Chunk *grantsPtr, const char *ownerName);
 
     //Second argument is OUT parameter which will contain the
     //chunk pointer of this table
@@ -116,6 +117,7 @@ class CatalogTableTABLE
     DbRetVal renameTable(const char *oldName,const char *newName);
     DbRetVal renameIndex(const char *oldName,const char *newName);
     DbRetVal getChunkAndTblPtr(const char *name, void *&chunk, void *&tptr, void*&vcchunk);
+    DbRetVal getGrantsPtr(const int tblId, Chunk *&grantsPtr) const;
     DbRetVal setChunkPtr(const char *name, void *firstPage, void *curPage);
     bool isOwner(int tblId, const char *userName);
     List getTableList();
@@ -210,11 +212,14 @@ class CatalogTableGRANT
 {
     Database *systemDatabase_;
 
+    DbRetVal createPredicateChunk(const PredicateImpl *rootPred, const FieldConditionValMap &conditionValues,
+                Chunk *predChunk, void *&dataPtr);
+
     public:
     CatalogTableGRANT(Database *db) : systemDatabase_(db) {}
 
     /* returns -1 on error */
-    DbRetVal insert(unsigned char priv, int tblId, std::string userName, void *predPtr);
+    DbRetVal insert(unsigned char priv, int tblId, std::string userName, const PredicateImpl *rootPred, const FieldConditionValMap &conditionValues);
     DbRetVal remove(unsigned char priv, int tblId, std::string userName);
     
     /* predicate and conditionValues are OUT (and OUT only!) parameters */
