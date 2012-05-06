@@ -32,7 +32,7 @@ void yyerror(const char* Msg);
 %token <stringval> CACHE CONDITION FIELDLIST PK DIRECT DSN UNCACHE NOSCHEMA
 %token <stringval> INT_TYPE LONG_TYPE SHORT_TYPE DOUBLE_TYPE TIMESTAMP_TYPE DATE_TYPE CHAR_TYPE TIME_TYPE BIGINT_TYPE FLOAT_TYPE TINYINT_TYPE BINARY_TYPE VARCHAR_TYPE
 %token <stringval> DATE_DIFF DATE_ADD DATE_SUB HOUR MINUTE SECOND YEAR MONTH DAY INTERVAL TIME_DIFF TIME_ADD TIME_SUB TIMESTAMP_DIFF TIMESTAMP_ADD TIMESTAMP_SUB EXTRACT NOW
-%token <stringval> USER PASSWORD ALTER FLUSH ADD COLUMN MODIFY RENAME TO GRANT REVOKE
+%token <stringval> USER PASSWORD ALTER FLUSH ADD COLUMN MODIFY RENAME TO GRANT REVOKE ALL PRIVILEGES
 %token <stringval> MIN MAX AVG SUM COUNT GROUP BY HAVING ORDER ASC DESC DISTINCT
 %token ';' ',' '(' ')'
 %type <stringval> ident field value not_opt doub_value num_value 
@@ -140,6 +140,13 @@ privilege :
     | INSERT { parsedData->insertPrivilege(PRIV_INSERT); }
     | UPDATE { parsedData->insertPrivilege(PRIV_UPDATE); }
     | DELETE { parsedData->insertPrivilege(PRIV_DELETE); }
+    | ALL PRIVILEGES
+        { 
+            parsedData->insertPrivilege(PRIV_SELECT);
+            parsedData->insertPrivilege(PRIV_INSERT);
+            parsedData->insertPrivilege(PRIV_UPDATE);
+            parsedData->insertPrivilege(PRIV_DELETE);
+        }
     ;
 grantee_list : grantee_list grantee_list_L
     | grantee

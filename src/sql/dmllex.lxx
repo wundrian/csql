@@ -206,6 +206,8 @@ operator        "<"|">"|">="|"<="|"="|"\!="|"<>"|"LIKE"|"like"
                 if(strcasecmp(yytext,"NOW") ==0) token = NOW;
                 if(strcasecmp(yytext,"GRANT") ==0) token = GRANT;
                 if(strcasecmp(yytext,"REVOKE") ==0) token = REVOKE;
+                if(strcasecmp(yytext,"ALL") ==0) token = ALL;
+                if(strcasecmp(yytext,"PRIVILEGES") ==0) token = PRIVILEGES;
                 if( token == FIELD )
                     yylval.stringval = strdup((const char*)yytext);
                 else

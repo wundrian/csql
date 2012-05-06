@@ -148,18 +148,20 @@
      TO = 365,
      GRANT = 366,
      REVOKE = 367,
-     MIN = 368,
-     MAX = 369,
-     AVG = 370,
-     SUM = 371,
-     COUNT = 372,
-     GROUP = 373,
-     BY = 374,
-     HAVING = 375,
-     ORDER = 376,
-     ASC = 377,
-     DESC = 378,
-     DISTINCT = 379
+     ALL = 368,
+     PRIVILEGES = 369,
+     MIN = 370,
+     MAX = 371,
+     AVG = 372,
+     SUM = 373,
+     COUNT = 374,
+     GROUP = 375,
+     BY = 376,
+     HAVING = 377,
+     ORDER = 378,
+     ASC = 379,
+     DESC = 380,
+     DISTINCT = 381
    };
 #endif
 /* Tokens.  */
@@ -273,18 +275,20 @@
 #define TO 365
 #define GRANT 366
 #define REVOKE 367
-#define MIN 368
-#define MAX 369
-#define AVG 370
-#define SUM 371
-#define COUNT 372
-#define GROUP 373
-#define BY 374
-#define HAVING 375
-#define ORDER 376
-#define ASC 377
-#define DESC 378
-#define DISTINCT 379
+#define ALL 368
+#define PRIVILEGES 369
+#define MIN 370
+#define MAX 371
+#define AVG 372
+#define SUM 373
+#define COUNT 374
+#define GROUP 375
+#define BY 376
+#define HAVING 377
+#define ORDER 378
+#define ASC 379
+#define DESC 380
+#define DISTINCT 381
 
 
 
@@ -304,7 +308,7 @@ typedef union YYSTYPE
 
 
 /* Line 1685 of yacc.c  */
-#line 308 "dmlyacc.h"
+#line 312 "dmlyacc.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
