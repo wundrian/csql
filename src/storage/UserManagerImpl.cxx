@@ -109,8 +109,16 @@ int UserManagerImpl::grantPrivilege(unsigned char priv, int tblId, std::string g
         const PredicateImpl *rootPred, const FieldConditionValMap &conditionValues)
 {
     CatalogTableGRANT cGrant(systemDatabase_);
+    CatalogTableTABLE cTable(systemDatabase_);
+
+    if (!isDba || !cTable.isOwner(tblId, userName))
+    {
+        printError(ErrNoPrivilege, "Only DBA or owner can grant privileges on table");
+        return ErrNoPrivilege;
+    }
+
     int ret = cGrant.insert(priv, tblId, grantee, rootPred, conditionValues);
-    
+
     if (OK != ret)
     {
         printError(ErrSysInternal, "Granting privilege failed");
@@ -124,6 +132,14 @@ int UserManagerImpl::grantPrivilege(unsigned char priv, int tblId, std::string g
 int UserManagerImpl::revokePrivilege(unsigned char priv, int tblId, std::string grantee)
 {
     CatalogTableGRANT cGrant(systemDatabase_);
+    CatalogTableTABLE cTable(systemDatabase_);
+
+    if (!isDba || !cTable.isOwner(tblId, userName))
+    {
+        printError(ErrNoPrivilege, "Only DBA or owner can revoke privileges on table");
+        return ErrNoPrivilege;
+    }
+
     int ret = cGrant.remove(priv, tblId, grantee);
     
     if (OK != ret)
