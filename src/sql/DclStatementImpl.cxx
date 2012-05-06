@@ -8,16 +8,22 @@
 #include <Statement.h>
 #include "PredicateImpl.h"
 
-int DclStatementImpl::mapConditionValueList(List values, FieldConditionValMap& result)
+DbRetVal DclStatementImpl::mapConditionValueList(List values, FieldConditionValMap& result)
 {
     ListIterator it = values.getIterator();
     while (it.hasElement()) {
         ConditionValue *el = (ConditionValue *)it.nextElement();
+
+        if (0 == strcmp("?", el->parsedString))
+        {
+            printError(ErrSyntaxError, "Positional parameters are not allowed in a GRANT statement");
+            return ErrSyntaxError;
+        }
         
         result.insert(std::make_pair(std::string(el->fName), *el));
     }
     
-    return result.size();
+    return OK;
 }
 
 DbRetVal DclStatementImpl::resolve()
@@ -60,7 +66,11 @@ DbRetVal DclStatementImpl::execute(int &rowsAffected)
             PredicateImpl *rootPred = (NULL != c ? (PredicateImpl*)c->getPredicate() : NULL);
 
             FieldConditionValMap conditionValues;
-            mapConditionValueList(parsedData->getConditionValueList(), conditionValues);
+            if (OK != (rv = mapConditionValueList(parsedData->getConditionValueList(), conditionValues)))
+            {
+                dbMgr->closeTable(table);
+                return rv;
+            }
 
             rv = (DbRetVal)usrMgr->grantPrivilege(it->privs, table->getId(), it->userName, rootPred, conditionValues);
         }

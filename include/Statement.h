@@ -574,8 +574,7 @@ public:
     ResultSetPlan getResultSetPlan(){ ResultSetPlan dummy; return dummy;}
     
 private:
-    int mapConditionValueList(List values, FieldConditionValMap &result);
-    DbRetVal createAndPopulatePredicateChunk(void *&dataPtr);
+    DbRetVal mapConditionValueList(List values, FieldConditionValMap &result);
     TableImpl *table;
 };
 
