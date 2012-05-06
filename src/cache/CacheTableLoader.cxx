@@ -1330,7 +1330,7 @@ DbRetVal CacheTableLoader::prepareCreateTableStatement(char *crtTblStmt, SQLHSTM
                         ptr += strlen(ptr);
                         if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY)
                         {
-                            sprintf(ptr, "(%d) NOT NULL",colLength+1);
+                            sprintf(ptr, "(%u) NOT NULL",(unsigned int)colLength+1);
                         } else { sprintf(ptr, " NOT NULL"); }
                             ptr += strlen(ptr);
                     } else {
@@ -1340,7 +1340,7 @@ DbRetVal CacheTableLoader::prepareCreateTableStatement(char *crtTblStmt, SQLHSTM
                         ptr += strlen(ptr);
                         if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY)
                         {
-                            sprintf(ptr, "(%d) NOT NULL",colLength+1);
+                            sprintf(ptr, "(%u) NOT NULL",(unsigned int)colLength+1);
                         } else { sprintf(ptr, " NOT NULL"); }
                         ptr += strlen(ptr);
                     }
@@ -1360,7 +1360,7 @@ DbRetVal CacheTableLoader::prepareCreateTableStatement(char *crtTblStmt, SQLHSTM
                                                        colType,colLength,scale,tdbName)));
                         ptr += strlen(ptr);
                         if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) {
-                            sprintf(ptr, "(%d)",colLength+1);
+                            sprintf(ptr, "(%u)",(unsigned int)colLength+1);
                             ptr += strlen(ptr);
                         }
                     } else {
@@ -1369,7 +1369,7 @@ DbRetVal CacheTableLoader::prepareCreateTableStatement(char *crtTblStmt, SQLHSTM
                                                          colType,colLength,scale,tdbName)));
                         ptr += strlen(ptr);
                         if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) {
-                            sprintf(ptr, "(%d)",colLength+1);
+                            sprintf(ptr, "(%u)",(unsigned int)colLength+1);
                             ptr += strlen(ptr);
                         }
                     }
@@ -1383,7 +1383,7 @@ DbRetVal CacheTableLoader::prepareCreateTableStatement(char *crtTblStmt, SQLHSTM
                                                        colType,colLength,scale,tdbName)));
                         ptr += strlen(ptr);
                         if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) {
-                            sprintf(ptr, "(%d) NOT NULL",colLength+1);
+                            sprintf(ptr, "(%u) NOT NULL",(unsigned int)colLength+1);
                         } else { sprintf(ptr, " NOT NULL"); }
                         ptr += strlen(ptr);
                     } else {
@@ -1392,7 +1392,7 @@ DbRetVal CacheTableLoader::prepareCreateTableStatement(char *crtTblStmt, SQLHSTM
                                                          colType,colLength,scale,tdbName)));
                         ptr += strlen(ptr);
                         if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) {
-                            sprintf(ptr, "(%d) NOT NULL",colLength+1);
+                            sprintf(ptr, "(%u) NOT NULL",(unsigned int)colLength+1);
                         } else { sprintf(ptr, " NOT NULL"); }
                         ptr += strlen(ptr);
                     }
@@ -1410,7 +1410,7 @@ DbRetVal CacheTableLoader::prepareCreateTableStatement(char *crtTblStmt, SQLHSTM
                                                colType,colLength,scale,tdbName)));
                 ptr += strlen(ptr);
                 if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) {
-                    sprintf(ptr, "(%d) NOT NULL",colLength+1);
+                    sprintf(ptr, "(%u) NOT NULL",(unsigned int)colLength+1);
                 } else { sprintf(ptr, " NOT NULL"); }
                 ptr += strlen(ptr);
             } else {
@@ -1419,7 +1419,7 @@ DbRetVal CacheTableLoader::prepareCreateTableStatement(char *crtTblStmt, SQLHSTM
                                                  colType,colLength, scale, tdbName)));
                 ptr += strlen(ptr);
                 if (colType == SQL_CHAR || colType == SQL_VARCHAR || colType == SQL_BINARY) {
-                    sprintf(ptr, "(%d) NOT NULL",colLength+1);
+                    sprintf(ptr, "(%u) NOT NULL",(unsigned int)colLength+1);
                 } else { sprintf(ptr, " NOT NULL"); }
                 ptr += strlen(ptr);
             }
