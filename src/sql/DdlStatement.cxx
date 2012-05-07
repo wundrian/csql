@@ -396,7 +396,7 @@ DbRetVal TruncateTblStatement::resolve()
         return ErrNotExists;
     }
 
-	if (!usrMgr->isAuthorized(PRIV_DELETE, table->getId()))
+	if (!usrMgr->isAuthorized(PRIV_DELETE, ((TableImpl*)table)->getId()))
 	{
 		printError(ErrNoPrivilege, "Permission denied");
 		return ErrNoPrivilege;
