@@ -260,7 +260,7 @@ DbRetVal DelStatement::resolve()
     }
 
     DbRetVal rv = OK;
-    if (usrMgr->isAuthorized(PRIV_UPDATE, ((TableImpl*)table)->getId()))
+    if (usrMgr->isAuthorized(PRIV_DELETE, ((TableImpl*)table)->getId()))
     {
         Predicate *pred = NULL;
         FieldConditionValMap predValues;
