@@ -588,27 +588,30 @@ DbRetVal CatalogTableGRANT::insert(unsigned char priv, int tblId, std::string us
 
 DbRetVal CatalogTableGRANT::remove(unsigned char priv, int tblId, std::string userName)
 {
-    Chunk* tChunk = systemDatabase_->getSystemDatabaseChunk(GrantTableId);
+    Chunk *tChunk = systemDatabase_->getSystemDatabaseChunk(GrantTableId);
     ChunkIterator iter = tChunk->getIterator();
-    void* data = NULL;
-    while ((data = iter.nextElement())!= NULL)
+    CGRANT *elem = NULL;
+    while ((elem = (CGRANT*)iter.nextElement())!= NULL)
     {
-        CGRANT* elem = (CGRANT*)data;
-        if (0 == strncmp(elem->userName_, userName.c_str(), IDENTIFIER_LENGTH)
-                && elem->tblID_ == tblId)
+        if (0 == userName.compare(elem->userName_) && elem->tblID_ == tblId)
         {
-            // remove all privileges?
-            if (0 == (elem->privileges & priv)) {
-                // TODO free the predPtr if available (via the Chunk that holds it?)
-                tChunk->free(systemDatabase_, data);
+            // remove all privileges (priv dominates elem->privileges)?
+            if (elem->privileges == (elem->privileges & priv)) {
+				// TODO free the predPtr if available (via the Chunk
+				// that holds it: iterate over table->grantsPtr and
+				// check for the unique chunk id)
+                tChunk->free(systemDatabase_, elem);
                 return OK;
             }
             
             // only remove part of the privileges
             elem->privileges &= ~priv;
+
+			// (userName, tblId) is the PK for this table, we can quit looking
+			return OK;
         }
     }
-    printError(ErrNotExists,"User %s does exist in catalog table", userName.c_str());
+    printError(ErrNotExists,"User %s does not exist in catalog table", userName.c_str());
     return ErrNotExists;
 }
 
