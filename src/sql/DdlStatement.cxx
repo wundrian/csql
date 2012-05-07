@@ -395,6 +395,13 @@ DbRetVal TruncateTblStatement::resolve()
         printError(ErrNotExists, "Unable to open the table:Table not exists");
         return ErrNotExists;
     }
+
+	if (!usrMgr->isAuthorized(PRIV_DELETE, table->getId()))
+	{
+		printError(ErrNoPrivilege, "Permission denied");
+		return ErrNoPrivilege;
+	}
+
     return rv;
 }
 
