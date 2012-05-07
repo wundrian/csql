@@ -332,6 +332,13 @@ DbRetVal DropTblStatement::execute(int &rowsAffected)
         return ErrNoPrivilege;
     }
 #endif
+
+	if (!usrMgr->isAuthorized(PRIV_DROP, tab))
+	{
+		printError(ErrNoPrivilege, "You are not allowed to DROP table %s", tab);
+		return ErrNoPrivilege;
+	}
+
     rv = dbMgr->dropTable(parsedData->getTableName());
     if (rv == OK) dbMgr->sendSignal(SIGCSQL1);
     return rv;

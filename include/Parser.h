@@ -161,7 +161,8 @@ enum PrivilegeType
     PRIV_SELECT = 1,
     PRIV_INSERT = 2,
     PRIV_UPDATE = 4,
-    PRIV_DELETE = 8
+    PRIV_DELETE = 8,
+	PRIV_DROP   = 16
 };
 
 struct DclInfoNode

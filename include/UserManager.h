@@ -103,6 +103,7 @@ class DllExport UserManager
      * @return true if the current user has priv on tblId
      */
     virtual bool isAuthorized(unsigned char priv, int tblId) const =0;
+    virtual bool isAuthorized(unsigned char priv, const char *tblName) const =0;
     
     /**
      * Grab the Predicate constraining the current user on table tblId.

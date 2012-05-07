@@ -162,6 +162,17 @@ bool UserManagerImpl::isAuthorized(unsigned char priv, int tblId) const
             || (priv == (cGrant.getPrivileges(tblId, userName) & priv)));
 }
 
+bool UserManagerImpl::isAuthorized(unsigned char priv, const char *tblName) const
+{
+	void *chunkPtr, *tablePtr, *vcChunkPtr;
+    CatalogTableTABLE cTable(systemDatabase_);
+
+	if (OK != cTable.getChunkAndTblPtr(tblName, chunkPtr, tablePtr, vcChunkPtr))
+		return false;
+
+	return isAuthorized(priv, ((CTABLE*)tablePtr)->tblID_);
+}
+
 int UserManagerImpl::getTableRestriction(int tblId, Predicate *&pred, FieldConditionValMap& conditionValues)
 {
     CatalogTableGRANT cGrant(systemDatabase_);
