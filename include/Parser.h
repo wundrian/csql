@@ -268,7 +268,7 @@ class DllExport ParsedData
     public:
     ParsedData() { limit = 0;  offset= 0; paramCounter = 0; stmtType = UnknownStatement;  isDistinct = false; isExplain=false;
                  isUnique = false; isPrimary = false; isAutoIncrement=false ;indexType = hashIndex; plan = Normal; bucketSize=0; isForeign=false; hCondFld=false; vCondFld=false;pkFld=false;forceOption=false; direct=false; uncache=false; noschema=false; dsn=false; 
-    shouldCreateTbl=false; userNode = NULL; isWorthyToCache=false; ftype = UNKNOWN_FUNCTION;
+    shouldCreateTbl=false; userNode = NULL; isWorthyToCache=false; ftype = UNKNOWN_FUNCTION; privileges = 0;
     } 
     void setFunctionType(FunctionType type) { ftype = type; }
     FunctionType getFunctionType(){ return ftype;}
