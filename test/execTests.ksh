@@ -28,7 +28,7 @@ restart_csqlserver() {
    fi
    
    echo "csqlserver killed PID=${SERVER_PID}" >>$TEST_LOG
-   rm $DBFILE/*
+   rm $DBFILE/* 2>/dev/null
    sleep 1
    $CSQL_INSTALL_ROOT/bin/csqlserver >${SERVOUT} &
    SERVER_PID=$!
@@ -85,7 +85,7 @@ then
 fi
 DBFILE=/tmp/csql/db
 CACHECONFFILE=`grep TABLE_CONFIG_FILE $CSQL_CONFIG_FILE| awk -F= '{ print $2}'`
-rm $DBFILE/*
+rm $DBFILE/* 2>/dev/null
 rm $CACHECONFFILE
 touch $CACHECONFFILE
 echo $DBFILE
@@ -266,7 +266,7 @@ killcsqlsqlserver
 kill -9 ${SERVER_PID}
 ipcrm -M 2222 -M 3333 -M 1947
 echo "csqlserver killed PID=${SERVER_PID}" >>${TEST_LOG}
-rm $DBFILE/*
+rm $DBFILE/* 2>/dev/null
 
 exit 0
 #---------------------------------------------------------------------
@@ -277,7 +277,7 @@ dummy_restart_csqlserver() {
    kill -9 ${SERVER_PID}
    ipcrm -M 2222 -M 3333 -M 1947
    echo "csqlserver killed PID=${SERVER_PID}" >>$TEST_LOG
-   rm $DBFILE/*
+   rm $DBFILE/* 2>/dev/null
    $CSQL_INSTALL_ROOT/bin/csqlserver >${SERVOUT} &
    SERVER_PID=$!
    echo "csqlserver restarted with PID=${SERVER_PID}" >>$TEST_LOG
