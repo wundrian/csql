@@ -80,10 +80,10 @@ class DllExport UserManager
      * @param tblId The id of the table to grant privileges on
      * @param grantee The name of the user to grant privileges to
      * @param rootPred the root of a tree of PredicateImpls containing additional restrictions for the granted privilige(s)
-     * @param conditionValues possibly empty map of values for leaf nodes of rootPred
+     * @param conditionValues List as provided by ParsedData::conditionValueList
      * @return status code (OK or error indicator)
      */
-    virtual int grantPrivilege(unsigned char priv, int tblId, std::string grantee, const PredicateImpl *rootPred, const FieldConditionValMap &conditionValues)=0;
+    virtual int grantPrivilege(unsigned char priv, int tblId, std::string grantee, const PredicateImpl *rootPred, List conditionValues)=0;
     
     /**
      * Revoke the given bitmask of privileges on a table from a certain user.
@@ -111,8 +111,9 @@ class DllExport UserManager
      * 
      * @param tblId Identifies the table to get restrictions for
      * @param pred An OUT parameter that gets a copy of the restriction for table tblId or NULL if there aren't any.
+     * @param conditionValues link to ParsedData::conditionValueList
      * @return status code (OK or error indicator)
      */
-    virtual int getTableRestriction(int tblId, Predicate *&pred, FieldConditionValMap &conditionValues)=0;
+    virtual int getTableRestriction(int tblId, Predicate *&pred, List conditionValues)=0;
 };
 #endif

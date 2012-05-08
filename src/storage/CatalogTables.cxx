@@ -521,7 +521,7 @@ DbRetVal CatalogTableUSER::changePass(const char *name, const char *pass)
 }
 
 DbRetVal CatalogTableGRANT::insert(unsigned char priv, int tblId, std::string userName,
-            const PredicateImpl *rootPred, const FieldConditionValMap &conditionValues)
+            const PredicateImpl *rootPred, List conditionValues)
 {
     // are we granting any privileges at all?
     if (!priv)
@@ -597,9 +597,9 @@ DbRetVal CatalogTableGRANT::remove(unsigned char priv, int tblId, std::string us
         {
             // remove all privileges (priv dominates elem->privileges)?
             if (elem->privileges == (elem->privileges & priv)) {
-				// TODO free the predPtr if available (via the Chunk
-				// that holds it: iterate over table->grantsPtr and
-				// check for the unique chunk id)
+                // TODO free the predPtr if available (via the Chunk
+                // that holds it: iterate over table->grantsPtr and
+                // check for the unique chunk id)
                 tChunk->free(systemDatabase_, elem);
                 return OK;
             }
@@ -607,8 +607,8 @@ DbRetVal CatalogTableGRANT::remove(unsigned char priv, int tblId, std::string us
             // only remove part of the privileges
             elem->privileges &= ~priv;
 
-			// (userName, tblId) is the PK for this table, we can quit looking
-			return OK;
+            // (userName, tblId) is the PK for this table, we can quit looking
+            return OK;
         }
     }
     printError(ErrNotExists,"User %s does not exist in catalog table", userName.c_str());
@@ -633,44 +633,24 @@ unsigned char CatalogTableGRANT::getPrivileges(int tblId, const char* userName)
     return PRIV_NONE;
 }
 
-DbRetVal CatalogTableGRANT::getPredicate(int tblId, const char *userName, Predicate *&pred, FieldConditionValMap &conditionValues) const
+DbRetVal CatalogTableGRANT::getPredicate(int tblId, const char *userName, Predicate *&pred, List &cVals) const
 {
     Chunk* tChunk = systemDatabase_->getSystemDatabaseChunk(GrantTableId);
     ChunkIterator iter = tChunk->getIterator();
-    void* data = NULL;
-    while ((data = iter.nextElement()) != NULL)
+    CGRANT *elem = NULL;
+    while ((elem = (CGRANT*)iter.nextElement()) != NULL)
     {
-        CGRANT* elem = (CGRANT*)data;
         if (0 == memcmp(elem->userName_, userName, IDENTIFIER_LENGTH)
                 && tblId == elem->tblID_)
         {
             if (NULL != elem->predPtr)
             {
-                /* first: grab the list of ConditionValue, save them in conditionValues */
-                // TODO: what if data spans more than one page? are pages continous?
-                char *dataPtr = (char*)elem->predPtr;
-                for (unsigned int i = *((unsigned int*)dataPtr); i > 0; --i)
+                if (PredicateImpl::SERIALIZED_VERSION != *((char*)elem->predPtr))
                 {
-                    dataPtr += sizeof(unsigned int);
-
-                    ConditionValue cPtr = *((ConditionValue*)dataPtr);
-                    dataPtr += sizeof(ConditionValue);
-
-                    cPtr.parsedString = strdup(dataPtr);
-
-                    if (NULL == cPtr.parsedString)
-                    {
-                        printError(ErrNoMemory, "No memory available to add additional restrictions");
-                        return ErrNoMemory;
-                    }
-                    
-                    conditionValues.insert(std::make_pair(std::string(cPtr.fName), cPtr));
-
-                    dataPtr += strlen(cPtr.parsedString) + 1;
+                    pred = NULL;
+                    return ErrSysInternal;
                 }
-
-                /* second: reconstruct all PredicateImpl instances */
-                pred = PredicateImpl::unserialize(dataPtr, conditionValues);
+                pred = PredicateImpl::unserialize(((char*)elem->predPtr) + 1, cVals);
             }
             else
             {
@@ -689,22 +669,28 @@ DbRetVal CatalogTableGRANT::getPredicate(int tblId, const char *userName, Predic
     return OK;
 }
 
-DbRetVal CatalogTableGRANT::createPredicateChunk(const PredicateImpl *rootPred, const FieldConditionValMap &conditionValues,
+DbRetVal CatalogTableGRANT::createPredicateChunk(const PredicateImpl *rootPred, List conditionValues,
             Chunk *predChunk, void *&dataPtr)
 {
     /* first step: calculate total space needed to store ConditionValue list and serialized PredicateImpl tree */
-    size_t allocSize = 1 /*PredicateImpl::SERIALIZED_VERSION */
-      + sizeof(unsigned int) /* ConditionValue list size */
+    const size_t arraySize = 1 /*PredicateImpl::SERIALIZED_VERSION */
       + PredicateImpl::SERIALIZED_SIZE * rootPred->treeSize(); /* nodes */
+    size_t varSize = 0; /* for parsedString from ConditionValues */
     
-    for (FieldConditionValMap::const_iterator it = conditionValues.begin(); it != conditionValues.end(); ++it)
+    ConditionValMap cValues;
+    ListIterator it = conditionValues.getIterator();
+    ConditionValue *cValue;
+    while (NULL != (cValue = (ConditionValue*)it.nextElement()))
     {
-        allocSize += it->second.sizeTotal();
+        // no need to copy parsedString, it will be around for the rest of the statement runtime
+        // and be copied by PredicateImpl::serialize before that
+        cValues.insert(std::make_pair(&cValue->value, *cValue));
+        varSize += strlen(cValue->parsedString) + 1;
     }
 
     /* second: allocate enough memory, take care not to loose the data pointer! */
     DbRetVal rv = OK;
-    dataPtr = predChunk->allocate(systemDatabase_, allocSize, &rv);
+    dataPtr = predChunk->allocate(systemDatabase_, arraySize + varSize, &rv);
     if (OK != rv)
     {
         dataPtr = NULL;
@@ -712,31 +698,9 @@ DbRetVal CatalogTableGRANT::createPredicateChunk(const PredicateImpl *rootPred, 
         return rv;
     }
     
-    /* this loop copies all ConditionValue instances into predChunk.
-     * Note how they are seperated by the first '\0' after offset + sizeof(ConditionValue)
-     *
-     * To make it easier to reconstruct the list, save the list length at the start
-     *
-     * We need to reconstruct the whole list every time we use the predChunk, so
-     * there's no benefit to store all ConditionValue instances first in the
-     * predChunk (so they make an indexable array)
-     */
-    *((unsigned int*)dataPtr) = conditionValues.size();
-    int offset = sizeof(unsigned int);
-    for (FieldConditionValMap::const_iterator it = conditionValues.begin(); it != conditionValues.end(); ++it)
-    {
-        (void) memcpy((char*)dataPtr + offset, &it->second, sizeof(ConditionValue));
-
-        offset += sizeof(ConditionValue);
-
-        int strLen = strlen(it->second.parsedString) + 1;
-        (void) memcpy((char*)dataPtr + offset, it->second.parsedString, strLen);
-        offset += strLen;
-    }
-
-    /* finally, PredicateImpl can take care of serializing itself to dataPtr */
-    *((char *)dataPtr + offset) = PredicateImpl::SERIALIZED_VERSION;
-    rootPred->serialize((char*)dataPtr + offset + 1);
+    /* finally, PredicateImpl can take care of serializing itself  (and cValues!) to dataPtr */
+    *((char *)dataPtr) = PredicateImpl::SERIALIZED_VERSION;
+    rootPred->serialize((char*)dataPtr + 1, cValues, ((char*)dataPtr + arraySize + 1));
 
     return OK;
 }

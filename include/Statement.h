@@ -574,7 +574,6 @@ public:
     ResultSetPlan getResultSetPlan(){ ResultSetPlan dummy; return dummy;}
     
 private:
-    DbRetVal mapConditionValueList(List values, FieldConditionValMap &result);
     TableImpl *table;
 };
 

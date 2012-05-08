@@ -212,18 +212,18 @@ class CatalogTableGRANT
 {
     Database *systemDatabase_;
 
-    DbRetVal createPredicateChunk(const PredicateImpl *rootPred, const FieldConditionValMap &conditionValues,
+    DbRetVal createPredicateChunk(const PredicateImpl *rootPred, List conditionValues,
                 Chunk *predChunk, void *&dataPtr);
 
     public:
     CatalogTableGRANT(Database *db) : systemDatabase_(db) {}
 
     /* returns -1 on error */
-    DbRetVal insert(unsigned char priv, int tblId, std::string userName, const PredicateImpl *rootPred, const FieldConditionValMap &conditionValues);
+    DbRetVal insert(unsigned char priv, int tblId, std::string userName, const PredicateImpl *rootPred, List conditionValues);
     DbRetVal remove(unsigned char priv, int tblId, std::string userName);
     
     /* predicate and conditionValues are OUT (and OUT only!) parameters */
-    DbRetVal getPredicate(int tblID, const char *userName, Predicate *&predicate, FieldConditionValMap &conditionValues) const;
+    DbRetVal getPredicate(int tblID, const char *userName, Predicate *&pred, List &cVals) const;
     unsigned char getPrivileges(int tblId, const char *userName);
 };
 

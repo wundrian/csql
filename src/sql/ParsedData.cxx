@@ -435,9 +435,9 @@ void ParsedData::reset()
     limit =0;
     offset =0;
     ftype = UNKNOWN_FUNCTION;
-	privileges = 0;
-	dclNodes.clear();
-	granteeList.clear();
+    privileges = 0;
+    dclNodes.clear();
+    granteeList.clear();
 }
 void ParsedData::clearFieldNameList()
 {

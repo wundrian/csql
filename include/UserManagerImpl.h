@@ -43,11 +43,11 @@ class DllExport UserManagerImpl: public UserManager
     int changePassword(const char *userName, const char* newPasswd);
     List getAllUserNames(int *rv=NULL);
 
-    int grantPrivilege(unsigned char priv, int tblId, std::string grantee, const PredicateImpl *rootPred, const FieldConditionValMap &conditionValues);
+    int grantPrivilege(unsigned char priv, int tblId, std::string grantee, const PredicateImpl *rootPred, List conditionValues);
     int revokePrivilege(unsigned char priv, int tblId, std::string grantee);
     bool isAuthorized(unsigned char priv, int tblId) const;
     bool isAuthorized(unsigned char priv, const char *tblName) const;
-    int getTableRestriction(int tblId, Predicate *&pred, FieldConditionValMap &conditionValues);
+    int getTableRestriction(int tblId, Predicate *&pred, List conditionValues);
 };
 
 

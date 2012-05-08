@@ -850,19 +850,37 @@ PredicateImpl* PredicateImpl::getIfOneSidedPredicate()
     return NULL;
 }
 
-PredicateImpl::Serialized* PredicateImpl::serialize(void *storePtr) const
+PredicateImpl::Serialized* PredicateImpl::serialize(void *storePtr, const ConditionValMap &valMap, char *pStrPtr) const
 {
     Serialized storage = { compOp, logicalOp, type };
     strncpy(storage.fldName1, fldName1, IDENTIFIER_LENGTH);
     strncpy(storage.fldName2, fldName2, IDENTIFIER_LENGTH);
 
+    if (NULL != operandPtr)
+    {
+        // leaf node with the need for a value pointer
+        ConditionValMap::const_iterator ci = valMap.find(operandPtr);
+        if (ci == valMap.end())
+        {
+            printError(ErrSysInternal, "Unable to find value for operandPtr");
+            return NULL; // shouldn't happen
+        }
+
+        storage.opLike = ci->second.opLike;
+        storage.isNullable = ci->second.isNullable;
+        storage.isFunctionInvolve = ci->second.isFunctionInvolve;
+        storage.parsedString = strcpy(pStrPtr, ci->second.parsedString);
+
+        pStrPtr += strlen(storage.parsedString) + 1;
+    }
+
     Serialized *storagePtr = (Serialized*)memcpy(storePtr, &storage, sizeof(Serialized));
 
     if (NULL != lhs)
-        storagePtr->lhs = lhs->serialize(storagePtr + 1);
+        storagePtr->lhs = lhs->serialize(storagePtr + 1, valMap, pStrPtr);
 
     if (NULL != rhs)
-        storagePtr->rhs = rhs->serialize(storagePtr + 2);
+        storagePtr->rhs = rhs->serialize(storagePtr + 2, valMap, pStrPtr);
 
     return storagePtr;
 }
@@ -872,11 +890,9 @@ int PredicateImpl::treeSize() const
     return 1 + (NULL != lhs ? lhs->treeSize() : 0) + (NULL != rhs ? rhs->treeSize() : 0);
 }
 
-PredicateImpl* PredicateImpl::unserialize(void *readPtr, FieldConditionValMap &conditionValues)
+PredicateImpl* PredicateImpl::unserialize(void *readPtr, List &conditionValues)
 {
-    if (SERIALIZED_VERSION != *((char*)readPtr)) return NULL;
-
-    Serialized *storagePtr = (Serialized*)((char *)readPtr + 1);
+    Serialized *storagePtr = (Serialized*)readPtr;
     PredicateImpl *pred = new PredicateImpl();
     
     pred->compOp = storagePtr->compOp;
@@ -889,18 +905,19 @@ PredicateImpl* PredicateImpl::unserialize(void *readPtr, FieldConditionValMap &c
     // when we have a second fieldName, there's no ConditionValue around
     if (OpInvalidComparisionOp != pred->compOp && 0 == strlen(pred->fldName2))
     {
-        FieldConditionValMap::iterator it = conditionValues.find(std::string(pred->fldName1));
-        if (it == conditionValues.end())
-        {
-            printError(ErrSysInternal, "Expecting a stored ConditionValue for Predicate but got none."); // shouldn't happen
-            delete pred;
-            return NULL;
-        }
+        ConditionValue *cv = new ConditionValue();
+        cv->type   = storagePtr->type;
+        cv->opLike = storagePtr->opLike;
+        cv->isNullable = storagePtr->isNullable;
+        cv->isFunctionInvolve = storagePtr->isFunctionInvolve;
 
-        pred->operandPtr = &it->second.value;
+        strncpy(cv->fName, storagePtr->fldName1, IDENTIFIER_LENGTH);
+        cv->parsedString = strdup(storagePtr->parsedString);
+        conditionValues.append(cv);
+
+        pred->operandPtr = &cv->value;
     }
     
-
     if (NULL != storagePtr->lhs)
     {
         pred->lhs = PredicateImpl::unserialize(storagePtr->lhs, conditionValues);

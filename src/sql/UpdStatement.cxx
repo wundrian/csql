@@ -442,8 +442,7 @@ DbRetVal UpdStatement::resolve()
     if (usrMgr->isAuthorized(PRIV_UPDATE, ((TableImpl*)table)->getId()))
     {
         Predicate *pred = NULL;
-        FieldConditionValMap predValues;
-        if (OK != (rv = (DbRetVal)usrMgr->getTableRestriction(((TableImpl*)table)->getId(), pred, predValues)))
+        if (OK != (rv = (DbRetVal)usrMgr->getTableRestriction(((TableImpl*)table)->getId(), pred, parsedData->getConditionValueList())))
         {
             goto cleanupAndExit;
         }
@@ -451,12 +450,6 @@ DbRetVal UpdStatement::resolve()
         // do additional restrictions apply? if so, add them to the existing condition
         if (NULL != pred)
         {
-            List conditionValues = parsedData->getConditionValueList();
-            for (FieldConditionValMap::iterator it = predValues.begin(); it != predValues.end(); ++it)
-            {
-                conditionValues.append(&it->second);
-            }
-                
             if (NULL != parsedData->getCondition())
             {
                 Predicate *finalPred = new PredicateImpl();

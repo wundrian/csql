@@ -8,24 +8,6 @@
 #include <Statement.h>
 #include "PredicateImpl.h"
 
-DbRetVal DclStatementImpl::mapConditionValueList(List values, FieldConditionValMap& result)
-{
-    ListIterator it = values.getIterator();
-    while (it.hasElement()) {
-        ConditionValue *el = (ConditionValue *)it.nextElement();
-
-        if (0 == strcmp("?", el->parsedString))
-        {
-            printError(ErrSyntaxError, "Positional parameters are not allowed in a GRANT statement");
-            return ErrSyntaxError;
-        }
-        
-        result.insert(std::make_pair(std::string(el->fName), *el));
-    }
-    
-    return OK;
-}
-
 DbRetVal DclStatementImpl::resolve()
 {
     table = (TableImpl*)dbMgr->openTable(parsedData->getTableName());
@@ -65,14 +47,7 @@ DbRetVal DclStatementImpl::execute(int &rowsAffected)
             Condition *c = parsedData->getCondition();
             PredicateImpl *rootPred = (NULL != c ? (PredicateImpl*)c->getPredicate() : NULL);
 
-            FieldConditionValMap conditionValues;
-            if (OK != (rv = mapConditionValueList(parsedData->getConditionValueList(), conditionValues)))
-            {
-                dbMgr->closeTable(table);
-                return rv;
-            }
-
-            rv = (DbRetVal)usrMgr->grantPrivilege(it->privs, table->getId(), it->userName, rootPred, conditionValues);
+            rv = (DbRetVal)usrMgr->grantPrivilege(it->privs, table->getId(), it->userName, rootPred, parsedData->getConditionValueList());
         }
         else if (REVOKEACCESS == it->type)
         {

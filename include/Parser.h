@@ -137,7 +137,7 @@ enum AlterTableType
     ALTERMODIFY,
     ALTERFIELDRENAME,
     ALTERTABLERENAME,
-	ALTERINDEXRENAME
+    ALTERINDEXRENAME
 };
 
 
@@ -162,7 +162,7 @@ enum PrivilegeType
     PRIV_INSERT = 2,
     PRIV_UPDATE = 4,
     PRIV_DELETE = 8,
-	PRIV_DROP   = 16
+    PRIV_DROP   = 16
 };
 
 struct DclInfoNode
@@ -291,7 +291,6 @@ class DllExport ParsedData
     void insertGrantee(const char *userName) { granteeList.push_back(std::string(userName)); }
     const std::vector<DclInfoNode>& getDclInfoNodes() const { return dclNodes; }
     
-
     void setCreateTbl(){ shouldCreateTbl=true; }
     bool getCreateTbl(){ return shouldCreateTbl; }
 
@@ -333,9 +332,9 @@ class DllExport ParsedData
     bool getAutoIncreament();
     void insertValue(char *value);
     void insertInValue(char *value);
-	// third parameter is to avoid conflict between '?' between like operand and parameterized value in sql statement.
-	// eg: select * from t1 where f1 = ? and f2 like '_ti%';
-	// _ is converted to ? before it is processed
+    // third parameter is to avoid conflict between '?' between like operand and parameterized value in sql statement.
+    // eg: select * from t1 where f1 = ? and f2 like '_ti%';
+    // _ is converted to ? before it is processed
     void** insertCondValueAndGetPtr(char *fName, char *value, bool opLike=false, AggType atp=AGG_UNKNOWN, bool isInHaving=false,bool function=false);
     void insertCondValue(char *fldName); //For Predecate t1.f1=t2.f1
     void insertUpdateValue(char *fldName, char *value);

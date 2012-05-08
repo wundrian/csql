@@ -323,8 +323,7 @@ DbRetVal SelStatement::openTables()
             // add additional restrictions here, so we don't have to jump through
             // hoops to get at the TableImpls again
             Predicate *p;
-            FieldConditionValMap condValues;
-            usrMgr->getTableRestriction(tImpl->getId(), p, condValues);
+            usrMgr->getTableRestriction(tImpl->getId(), p, parsedData->getConditionValueList());
             
             if (NULL != p)
             {

@@ -8,6 +8,7 @@
 #ifndef PARSERDATATYPES_H
 #define	PARSERDATATYPES_H
 
+#include <list>
 #include <map>
 #include <string>
 #include <DataType.h>
@@ -47,5 +48,6 @@ struct ConditionValue
     size_t sizeTotal() const { return sizeof(ConditionValue) + (sizeof(char) * (strlen(parsedString) + 1 /* for '\0' */)); }
 };
 typedef std::multimap<std::string, ConditionValue> FieldConditionValMap;
+typedef std::map<void const * const *, ConditionValue> ConditionValMap;
 
 #endif	/* PARSERDATATYPES_H */

@@ -24,16 +24,21 @@ class List;
 class AggTableImpl;
 class DllExport PredicateImpl:public Predicate
 {
-    /* this is a subset of members in PredicateImpl that actually
-     * need to be serialized
+    /* this is a subset of members that actually need to be serialized.
      *
-     * It is only used by serialize/unserialize
+     * This includes all relevant members of ConditionValue because I'm tired
+     * of the error-prone reconstructing of this.value
      */
     struct Serialized
     {
         ComparisionOp compOp;
         LogicalOp logicalOp;
         DataType type;
+
+        bool opLike;
+        bool isNullable;
+        bool isFunctionInvolve;
+        char *parsedString;
 
         char fldName1[IDENTIFIER_LENGTH];
         char fldName2[IDENTIFIER_LENGTH];
@@ -171,18 +176,21 @@ class DllExport PredicateImpl:public Predicate
     
     /**
      * Write a subset of this node to the location pointed to by storePtr.
-     * Recurse into lhs and rhs in this order.
+     * Do a left-first traversal of the predicate tree to ensure
+     * proper pickup of ConditionValues.
      *
      * Right now, serialize will NOT support Predicates involving Expressions.
      *
      * The callee is responsible for memory management for storePtr.
      * Be sure to allocate SERIALIZED_SIZE * this->treeSize() bytes at
-     * storePtr.
+     * storePtr (plus possible storage for parsedStrings from ConditionValues)
      *
      * @param storePtr where to store the serialized form of this instance
+     * @param valMap conditionValueList indexed by value Pointer
+     * @param pStrPtr pointer to where val.parsedString should be stored
      * @return storePtr
      */
-    Serialized* serialize(void *storePtr) const;
+    Serialized* serialize(void *storePtr, const ConditionValMap &valMap, char *pStrPtr) const;
 
     /**
      * Count the number of elements rooted at this instance of the tree (including the root).
@@ -197,10 +205,10 @@ class DllExport PredicateImpl:public Predicate
      * nothing will be allocated and a NULL pointer returned.
      *
      * @param readPtr start of a serialized PredicateImpl instance
-     * @param conditionValues read-only map that provides the ConditionValue list needed to resurrect operandPtr
+     * @param cVals link to ParsedData::conditionValueList so we can resurrect ConditionValues
      * @return a (partly) initialized PredicateImpl instance
      */
-    static PredicateImpl* unserialize(void *readPtr, FieldConditionValMap &conditionValues);
+    static PredicateImpl* unserialize(void *readPtr, List &cVals);
 };
 
 #endif
