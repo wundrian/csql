@@ -450,7 +450,7 @@ DbRetVal UpdStatement::resolve()
         // do additional restrictions apply? if so, add them to the existing condition
         if (NULL != pred)
         {
-            if (NULL != parsedData->getCondition())
+            if (NULL != parsedData->getCondition() && NULL != parsedData->getCondition()->getPredicate())
             {
                 Predicate *finalPred = new PredicateImpl();
                 finalPred->setTerm(parsedData->getCondition()->getPredicate(), OpAnd, pred);
