@@ -47,7 +47,7 @@ class DllExport UserManagerImpl: public UserManager
     int revokePrivilege(unsigned char priv, int tblId, std::string grantee);
     bool isAuthorized(unsigned char priv, int tblId) const;
     bool isAuthorized(unsigned char priv, const char *tblName) const;
-    int getTableRestriction(int tblId, Predicate *&pred, List conditionValues);
+    int getTableRestriction(int tblId, Predicate *&pred, List &conditionValues);
 };
 
 

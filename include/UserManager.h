@@ -114,6 +114,6 @@ class DllExport UserManager
      * @param conditionValues link to ParsedData::conditionValueList
      * @return status code (OK or error indicator)
      */
-    virtual int getTableRestriction(int tblId, Predicate *&pred, List conditionValues)=0;
+    virtual int getTableRestriction(int tblId, Predicate *&pred, List &conditionValues)=0;
 };
 #endif
