@@ -9,7 +9,7 @@ TEST_PW="test"
 
 exitStatus()
 {
-    #rm -f "${MY_PATH}/"*.sql
+    rm -f "${MY_PATH}/"*.sql
     echo "Test $1"
     exit $2;  
 }
