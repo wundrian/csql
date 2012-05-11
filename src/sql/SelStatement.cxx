@@ -327,6 +327,13 @@ DbRetVal SelStatement::openTables()
             
             if (NULL != p)
             {
+				DbRetVal rv = OK;
+				if (OK != (rv = parsedData->prefixConditionValuesWithTableName(tImpl)))
+					return rv;
+
+				if (OK != (rv = ((PredicateImpl*)p)->prefixWithTableName(tImpl)))
+					return rv;
+
                 if (NULL != grantRestrictions)
                 {
                     PredicateImpl *intermediatePred = new PredicateImpl();

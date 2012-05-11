@@ -630,3 +630,19 @@ void ParsedData::constructDclNodes(DclType type)
         dclNodes.push_back(DclInfoNode(type, *it, privileges));
     }
 }
+
+DbRetVal ParsedData::prefixConditionValuesWithTableName(TableImpl *table)
+{
+	if (NULL == table) return ErrBadArg;
+	
+	ConditionValue *cv = NULL;
+	ListIterator it = conditionValueList.getIterator();
+	char tmpFld[IDENTIFIER_LENGTH];
+	while (NULL != (cv = (ConditionValue*)it.nextElement()))
+	{
+		table->getFieldNameAlone(cv->fName, tmpFld);
+		table->getQualifiedName(tmpFld, cv->fName);
+	}
+
+	return OK;
+}

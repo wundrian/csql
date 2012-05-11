@@ -932,3 +932,26 @@ PredicateImpl* PredicateImpl::unserialize(void *readPtr, List &conditionValues)
 
     return pred;
 }
+
+DbRetVal PredicateImpl::prefixWithTableName(TableImpl *table)
+{
+	if (NULL == table) return ErrBadArg;
+
+	if (NULL != lhs) lhs->prefixWithTableName(table);
+	if (NULL != rhs) rhs->prefixWithTableName(table);
+
+	char tmpFld[IDENTIFIER_LENGTH];
+	if (0 < strlen(fldName1))
+	{
+		table->getFieldNameAlone(fldName1, tmpFld);
+		table->getQualifiedName(tmpFld, fldName1);
+	}
+
+	if (0 < strlen(fldName2))
+	{
+		table->getFieldNameAlone(fldName2, tmpFld);
+		table->getQualifiedName(tmpFld, fldName2);
+	}
+
+	return OK;
+}

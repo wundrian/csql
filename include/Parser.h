@@ -290,6 +290,7 @@ class DllExport ParsedData
     void insertPrivilege(PrivilegeType priv) { privileges |= (unsigned char)priv; }
     void insertGrantee(const char *userName) { granteeList.push_back(std::string(userName)); }
     const std::vector<DclInfoNode>& getDclInfoNodes() const { return dclNodes; }
+	DbRetVal prefixConditionValuesWithTableName(TableImpl *table);
     
     void setCreateTbl(){ shouldCreateTbl=true; }
     bool getCreateTbl(){ return shouldCreateTbl; }
