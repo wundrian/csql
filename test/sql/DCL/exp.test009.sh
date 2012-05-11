@@ -14,10 +14,7 @@ Statement Executed: Rows Affected = 1
 	1	1	
 	1	2	
 	1	3	
-	2	1	
-	2	2	
-	2	3	
-
+	
 Statement Executed
 Statement Executed
 Statement Executed
