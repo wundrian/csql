@@ -28,7 +28,7 @@ class DllExport UserManagerImpl: public UserManager
 
     public:
 
-    UserManagerImpl(){}
+    UserManagerImpl() : isDba(false), systemDatabase_(NULL) { memset(userName, 0, IDENTIFIER_LENGTH); }
     ~UserManagerImpl(){}
 
     void setSysDb(Database *db) { systemDatabase_ = db; }
