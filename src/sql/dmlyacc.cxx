@@ -810,31 +810,31 @@ static const yytype_uint16 yyrline[] =
        0,    44,    44,    45,    46,    47,    48,    49,    50,    51,
       52,    53,    54,    55,    56,    57,    59,    66,    74,    80,
       89,    98,   107,   112,   119,   125,   133,   134,   136,   139,
-     140,   141,   142,   143,   151,   152,   154,   156,   158,   165,
-     172,   179,   186,   193,   198,   203,   209,   214,   219,   224,
-     229,   234,   240,   246,   250,   252,   256,   258,   259,   261,
-     263,   264,   270,   271,   272,   274,   288,   301,   305,   307,
-     308,   310,   311,   313,   319,   327,   328,   331,   332,   338,
-     345,   346,   352,   359,   367,   375,   376,   379,   380,   383,
-     385,   390,   395,   401,   407,   413,   419,   425,   431,   435,
-     439,   443,   444,   446,   453,   460,   468,   475,   482,   489,
-     500,   507,   514,   526,   534,   542,   547,   553,   558,   563,
-     569,   574,   579,   585,   592,   600,   609,   622,   624,   625,
-     627,   628,   630,   634,   638,   640,   641,   643,   644,   646,
-     648,   654,   655,   657,   659,   664,   669,   675,   683,   690,
-     691,   699,   715,   723,   730,   731,   739,   755,   764,   773,
-     782,   791,   802,   813,   824,   840,   866,   874,   882,   890,
-     900,   909,   913,   915,   920,   925,   931,   937,   942,   947,
-     952,   957,   962,   967,   971,   976,   977,   979,   980,   981,
-     982,   983,   984,   985,   998,   999,  1008,  1010,  1011,  1020,
-    1022,  1033,  1040,  1042,  1043,  1049,  1050,  1057,  1058,  1065,
-    1066,  1071,  1072,  1078,  1079,  1084,  1090,  1098,  1104,  1110,
-    1118,  1122,  1126,  1131,  1136,  1140,  1146,  1151,  1152,  1158,
-    1159,  1161,  1162,  1165,  1168,  1174,  1177,  1182,  1183,  1195,
-    1196,  1208,  1209,  1214,  1215,  1216,  1218,  1219,  1221,  1223,
-    1230,  1231,  1233,  1235,  1241,  1242,  1244,  1246,  1253,  1258,
-    1259,  1280,  1284,  1288,  1292,  1296,  1300,  1304,  1309,  1314,
-    1319,  1324,  1330,  1336
+     140,   141,   142,   143,   151,   152,   154,   156,   158,   166,
+     173,   180,   187,   194,   199,   204,   210,   215,   220,   225,
+     230,   235,   241,   247,   251,   253,   257,   259,   260,   262,
+     264,   265,   271,   272,   273,   275,   289,   302,   306,   308,
+     309,   311,   312,   314,   320,   328,   329,   332,   333,   339,
+     346,   347,   353,   360,   368,   376,   377,   380,   381,   384,
+     386,   391,   396,   402,   408,   414,   420,   426,   432,   436,
+     440,   444,   445,   447,   454,   461,   469,   476,   483,   490,
+     501,   508,   515,   527,   535,   543,   548,   554,   559,   564,
+     570,   575,   580,   586,   593,   601,   610,   623,   625,   626,
+     628,   629,   631,   635,   639,   641,   642,   644,   645,   647,
+     649,   655,   656,   658,   660,   665,   670,   676,   684,   691,
+     692,   700,   716,   724,   731,   732,   740,   756,   765,   774,
+     783,   792,   803,   814,   825,   841,   867,   875,   883,   891,
+     901,   910,   914,   916,   921,   926,   932,   938,   943,   948,
+     953,   958,   963,   968,   972,   977,   978,   980,   981,   982,
+     983,   984,   985,   986,   999,  1000,  1009,  1011,  1012,  1021,
+    1023,  1034,  1041,  1043,  1044,  1050,  1051,  1058,  1059,  1066,
+    1067,  1072,  1073,  1079,  1080,  1085,  1091,  1099,  1105,  1111,
+    1119,  1123,  1127,  1132,  1137,  1141,  1147,  1152,  1153,  1159,
+    1160,  1162,  1163,  1166,  1169,  1175,  1178,  1183,  1184,  1196,
+    1197,  1209,  1210,  1215,  1216,  1217,  1219,  1220,  1222,  1224,
+    1231,  1232,  1234,  1236,  1242,  1243,  1245,  1247,  1254,  1259,
+    1260,  1281,  1285,  1289,  1293,  1297,  1301,  1305,  1310,  1315,
+    1320,  1325,  1331,  1337
 };
 #endif
 
@@ -2471,7 +2471,7 @@ yyreduce:
 
 /* Line 1464 of yacc.c  */
 #line 156 "dmlyacc.yxx"
-    { parsedData->insertGrantee((yyvsp[(1) - (1)].stringval)); }
+    { parsedData->insertGrantee((yyvsp[(1) - (1)].stringval)); free((yyvsp[(1) - (1)].stringval)); }
     break;
 
   case 38:
@@ -2482,13 +2482,14 @@ yyreduce:
             parsedData->setStmtType(DclStatement);
             parsedData->setTableName((yyvsp[(4) - (8)].stringval));
             parsedData->constructDclNodes(GRANTACCESS);
+			free((yyvsp[(4) - (8)].stringval));
     }
     break;
 
   case 39:
 
 /* Line 1464 of yacc.c  */
-#line 166 "dmlyacc.yxx"
+#line 167 "dmlyacc.yxx"
     {
             parsedData->setStmtType(DclStatement);
             parsedData->setTableName((yyvsp[(4) - (7)].stringval));
@@ -2499,7 +2500,7 @@ yyreduce:
   case 40:
 
 /* Line 1464 of yacc.c  */
-#line 173 "dmlyacc.yxx"
+#line 174 "dmlyacc.yxx"
     {
             parsedData->setStmtType(CopyTableStatement);
             parsedData->setPKTableName((yyvsp[(3) - (15)].stringval));
@@ -2511,7 +2512,7 @@ yyreduce:
   case 41:
 
 /* Line 1464 of yacc.c  */
-#line 180 "dmlyacc.yxx"
+#line 181 "dmlyacc.yxx"
     {
             parsedData->setStmtType(CopyTableStatement);
             parsedData->setPKTableName((yyvsp[(3) - (15)].stringval));
@@ -2522,7 +2523,7 @@ yyreduce:
   case 42:
 
 /* Line 1464 of yacc.c  */
-#line 187 "dmlyacc.yxx"
+#line 188 "dmlyacc.yxx"
     {
             parsedData->setStmtType(CompactTableStatement);
             parsedData->setTableName((yyvsp[(3) - (3)].stringval));
@@ -2533,7 +2534,7 @@ yyreduce:
   case 43:
 
 /* Line 1464 of yacc.c  */
-#line 194 "dmlyacc.yxx"
+#line 195 "dmlyacc.yxx"
     {
             parsedData->setStmtType(MetaStatement);
             parsedData->setResultSetPlan(GetTables);
@@ -2543,7 +2544,7 @@ yyreduce:
   case 44:
 
 /* Line 1464 of yacc.c  */
-#line 199 "dmlyacc.yxx"
+#line 200 "dmlyacc.yxx"
     {
             parsedData->setStmtType(MetaStatement);
             parsedData->setResultSetPlan(GetColumns);
@@ -2553,7 +2554,7 @@ yyreduce:
   case 45:
 
 /* Line 1464 of yacc.c  */
-#line 204 "dmlyacc.yxx"
+#line 205 "dmlyacc.yxx"
     {
             parsedData->setStmtType(MetaStatement);
             parsedData->setResultSetPlan(GetIndexes);
@@ -2564,7 +2565,7 @@ yyreduce:
   case 46:
 
 /* Line 1464 of yacc.c  */
-#line 210 "dmlyacc.yxx"
+#line 211 "dmlyacc.yxx"
     {
             parsedData->setStmtType(MetaStatement);
             parsedData->setResultSetPlan(GetPriIndex);
@@ -2574,7 +2575,7 @@ yyreduce:
   case 47:
 
 /* Line 1464 of yacc.c  */
-#line 215 "dmlyacc.yxx"
+#line 216 "dmlyacc.yxx"
     {
             parsedData->setStmtType(MetaStatement);
             parsedData->setResultSetPlan(GetCatalogs);
@@ -2584,7 +2585,7 @@ yyreduce:
   case 48:
 
 /* Line 1464 of yacc.c  */
-#line 220 "dmlyacc.yxx"
+#line 221 "dmlyacc.yxx"
     {
             parsedData->setStmtType(MetaStatement);
             parsedData->setResultSetPlan(GetTableType);
@@ -2594,7 +2595,7 @@ yyreduce:
   case 49:
 
 /* Line 1464 of yacc.c  */
-#line 225 "dmlyacc.yxx"
+#line 226 "dmlyacc.yxx"
     {
             parsedData->setStmtType(MetaStatement);
             parsedData->setResultSetPlan(GetDataType);
@@ -2604,7 +2605,7 @@ yyreduce:
   case 50:
 
 /* Line 1464 of yacc.c  */
-#line 230 "dmlyacc.yxx"
+#line 231 "dmlyacc.yxx"
     {
             parsedData->setStmtType(MetaStatement);
             parsedData->setResultSetPlan(GetImportKey);
@@ -2614,7 +2615,7 @@ yyreduce:
   case 51:
 
 /* Line 1464 of yacc.c  */
-#line 235 "dmlyacc.yxx"
+#line 236 "dmlyacc.yxx"
     {
             parsedData->setStmtType(MetaStatement);
             parsedData->setResultSetPlan(GetExportKey);
@@ -2624,7 +2625,7 @@ yyreduce:
   case 52:
 
 /* Line 1464 of yacc.c  */
-#line 241 "dmlyacc.yxx"
+#line 242 "dmlyacc.yxx"
     {
             parsedData->setStmtType(SelectStatement);
             parsedData->setCacheWorthy(true);
@@ -2634,7 +2635,7 @@ yyreduce:
   case 53:
 
 /* Line 1464 of yacc.c  */
-#line 247 "dmlyacc.yxx"
+#line 248 "dmlyacc.yxx"
     {
            parsedData->setExplain();
 	}
@@ -2643,7 +2644,7 @@ yyreduce:
   case 55:
 
 /* Line 1464 of yacc.c  */
-#line 253 "dmlyacc.yxx"
+#line 254 "dmlyacc.yxx"
     { 
             parsedData->setDistinct();
         }
@@ -2652,7 +2653,7 @@ yyreduce:
   case 61:
 
 /* Line 1464 of yacc.c  */
-#line 265 "dmlyacc.yxx"
+#line 266 "dmlyacc.yxx"
     {
             parsedData->insertFieldAlias((char*)(yyvsp[(3) - (3)].stringval));
             free((char*)(yyvsp[(3) - (3)].stringval));
@@ -2662,7 +2663,7 @@ yyreduce:
   case 65:
 
 /* Line 1464 of yacc.c  */
-#line 275 "dmlyacc.yxx"
+#line 276 "dmlyacc.yxx"
     {
            parsedData->insertJoinType(INNER_JOIN);
            Condition *cond = parsedData->getCondition();
@@ -2681,7 +2682,7 @@ yyreduce:
   case 66:
 
 /* Line 1464 of yacc.c  */
-#line 289 "dmlyacc.yxx"
+#line 290 "dmlyacc.yxx"
     {
            parsedData->insertJoinType(LEFT_JOIN);
            Condition *cond = parsedData->getCondition();
@@ -2699,7 +2700,7 @@ yyreduce:
   case 67:
 
 /* Line 1464 of yacc.c  */
-#line 302 "dmlyacc.yxx"
+#line 303 "dmlyacc.yxx"
     {
             parsedData->insertJoinType(INNER_JOIN);
         }
@@ -2708,7 +2709,7 @@ yyreduce:
   case 73:
 
 /* Line 1464 of yacc.c  */
-#line 314 "dmlyacc.yxx"
+#line 315 "dmlyacc.yxx"
     {
             parsedData->insertJoinType(INNER_JOIN);
         }
@@ -2717,7 +2718,7 @@ yyreduce:
   case 74:
 
 /* Line 1464 of yacc.c  */
-#line 320 "dmlyacc.yxx"
+#line 321 "dmlyacc.yxx"
     {
             parsedData->setStmtType(InsertStatement);
             parsedData->setTableName((yyvsp[(3) - (9)].stringval)); 
@@ -2728,7 +2729,7 @@ yyreduce:
   case 78:
 
 /* Line 1464 of yacc.c  */
-#line 333 "dmlyacc.yxx"
+#line 334 "dmlyacc.yxx"
     {
             parsedData->insertValue((char*)(yyvsp[(1) - (1)].stringval));
             free((yyvsp[(1) - (1)].stringval));
@@ -2738,7 +2739,7 @@ yyreduce:
   case 79:
 
 /* Line 1464 of yacc.c  */
-#line 339 "dmlyacc.yxx"
+#line 340 "dmlyacc.yxx"
     {
             parsedData->insertValue((char*)(yyvsp[(2) - (2)].stringval));
             free((yyvsp[(2) - (2)].stringval));
@@ -2748,7 +2749,7 @@ yyreduce:
   case 81:
 
 /* Line 1464 of yacc.c  */
-#line 347 "dmlyacc.yxx"
+#line 348 "dmlyacc.yxx"
     {
             parsedData->insertInValue((char*)(yyvsp[(1) - (1)].stringval));
             free((yyvsp[(1) - (1)].stringval));
@@ -2758,7 +2759,7 @@ yyreduce:
   case 82:
 
 /* Line 1464 of yacc.c  */
-#line 353 "dmlyacc.yxx"
+#line 354 "dmlyacc.yxx"
     {
             parsedData->insertInValue((char*)(yyvsp[(2) - (2)].stringval));
             free((yyvsp[(2) - (2)].stringval));
@@ -2768,7 +2769,7 @@ yyreduce:
   case 83:
 
 /* Line 1464 of yacc.c  */
-#line 360 "dmlyacc.yxx"
+#line 361 "dmlyacc.yxx"
     {
             parsedData->setStmtType(DeleteStatement);
             parsedData->setTableName((yyvsp[(3) - (5)].stringval)); 
@@ -2779,7 +2780,7 @@ yyreduce:
   case 84:
 
 /* Line 1464 of yacc.c  */
-#line 368 "dmlyacc.yxx"
+#line 369 "dmlyacc.yxx"
     {
             parsedData->setStmtType(UpdateStatement);
             parsedData->setTableName((yyvsp[(2) - (6)].stringval)); 
@@ -2790,7 +2791,7 @@ yyreduce:
   case 90:
 
 /* Line 1464 of yacc.c  */
-#line 386 "dmlyacc.yxx"
+#line 387 "dmlyacc.yxx"
     {
            parsedData->insertUpdateExpression( (char*) (yyvsp[(1) - (3)].stringval), (Expression* ) (yyvsp[(3) - (3)].Expression));
            free( (yyvsp[(1) - (3)].stringval) ); free((yyvsp[(2) - (3)].stringval));
@@ -2800,7 +2801,7 @@ yyreduce:
   case 91:
 
 /* Line 1464 of yacc.c  */
-#line 391 "dmlyacc.yxx"
+#line 392 "dmlyacc.yxx"
     { 
             parsedData->insertUpdateValue( (char*) (yyvsp[(1) - (3)].stringval), (char*) (yyvsp[(3) - (3)].stringval));
             free( (yyvsp[(1) - (3)].stringval) ); free((yyvsp[(2) - (3)].stringval));free( (yyvsp[(3) - (3)].stringval) ); 
@@ -2810,7 +2811,7 @@ yyreduce:
   case 92:
 
 /* Line 1464 of yacc.c  */
-#line 396 "dmlyacc.yxx"
+#line 397 "dmlyacc.yxx"
     {
             parsedData->insertUpdateValue( (char*) (yyvsp[(1) - (3)].stringval), (char*) (yyvsp[(3) - (3)].stringval));
             free( (yyvsp[(1) - (3)].stringval) ); free((yyvsp[(2) - (3)].stringval));free( (yyvsp[(3) - (3)].stringval) );
@@ -2820,7 +2821,7 @@ yyreduce:
   case 93:
 
 /* Line 1464 of yacc.c  */
-#line 402 "dmlyacc.yxx"
+#line 403 "dmlyacc.yxx"
     {
             Expression* exp;
             exp=parsedData->insertExpression((Expression *)(yyvsp[(1) - (3)].Expression), division, (Expression *)(yyvsp[(3) - (3)].Expression));
@@ -2831,7 +2832,7 @@ yyreduce:
   case 94:
 
 /* Line 1464 of yacc.c  */
-#line 408 "dmlyacc.yxx"
+#line 409 "dmlyacc.yxx"
     {
             Expression* exp;
             exp=parsedData->insertExpression((Expression *)(yyvsp[(1) - (3)].Expression), modulus, (Expression *)(yyvsp[(3) - (3)].Expression));
@@ -2842,7 +2843,7 @@ yyreduce:
   case 95:
 
 /* Line 1464 of yacc.c  */
-#line 414 "dmlyacc.yxx"
+#line 415 "dmlyacc.yxx"
     {
             Expression* exp;
             exp=parsedData->insertExpression((Expression *)(yyvsp[(1) - (3)].Expression), multiplication, (Expression *)(yyvsp[(3) - (3)].Expression));
@@ -2853,7 +2854,7 @@ yyreduce:
   case 96:
 
 /* Line 1464 of yacc.c  */
-#line 420 "dmlyacc.yxx"
+#line 421 "dmlyacc.yxx"
     {
             Expression* exp;
             exp=parsedData->insertExpression((Expression *)(yyvsp[(1) - (3)].Expression), addition, (Expression *)(yyvsp[(3) - (3)].Expression));
@@ -2864,7 +2865,7 @@ yyreduce:
   case 97:
 
 /* Line 1464 of yacc.c  */
-#line 426 "dmlyacc.yxx"
+#line 427 "dmlyacc.yxx"
     {
             Expression* exp;
             exp=parsedData->insertExpression((Expression *)(yyvsp[(1) - (3)].Expression), subtraction, (Expression *)(yyvsp[(3) - (3)].Expression));
@@ -2875,7 +2876,7 @@ yyreduce:
   case 98:
 
 /* Line 1464 of yacc.c  */
-#line 432 "dmlyacc.yxx"
+#line 433 "dmlyacc.yxx"
     {
             (yyval.Expression)=(yyvsp[(2) - (3)].Expression);
         }
@@ -2884,7 +2885,7 @@ yyreduce:
   case 99:
 
 /* Line 1464 of yacc.c  */
-#line 436 "dmlyacc.yxx"
+#line 437 "dmlyacc.yxx"
     {
             (yyval.Expression) = (yyvsp[(2) - (2)].Expression);
         }
@@ -2893,7 +2894,7 @@ yyreduce:
   case 100:
 
 /* Line 1464 of yacc.c  */
-#line 440 "dmlyacc.yxx"
+#line 441 "dmlyacc.yxx"
     {
             (yyval.Expression) = (yyvsp[(2) - (2)].Expression);
         }
@@ -2902,7 +2903,7 @@ yyreduce:
   case 103:
 
 /* Line 1464 of yacc.c  */
-#line 447 "dmlyacc.yxx"
+#line 448 "dmlyacc.yxx"
     {
               Expression* exp;
               parsedData->setFunctionType(DATEDIFF);
@@ -2914,7 +2915,7 @@ yyreduce:
   case 104:
 
 /* Line 1464 of yacc.c  */
-#line 454 "dmlyacc.yxx"
+#line 455 "dmlyacc.yxx"
     {
 	         Expression* exp;
              parsedData->setFunctionType((*(FunctionType *)(yyvsp[(6) - (7)].FunctionType)));
@@ -2926,7 +2927,7 @@ yyreduce:
   case 105:
 
 /* Line 1464 of yacc.c  */
-#line 461 "dmlyacc.yxx"
+#line 462 "dmlyacc.yxx"
     {
              Expression* exp;
              //parsedData->setFunctionType((*(FunctionType *)$6));
@@ -2939,7 +2940,7 @@ yyreduce:
   case 106:
 
 /* Line 1464 of yacc.c  */
-#line 469 "dmlyacc.yxx"
+#line 470 "dmlyacc.yxx"
     {
               Expression* exp;
               parsedData->setFunctionType(TIMEDIFF);
@@ -2951,7 +2952,7 @@ yyreduce:
   case 107:
 
 /* Line 1464 of yacc.c  */
-#line 476 "dmlyacc.yxx"
+#line 477 "dmlyacc.yxx"
     {
              Expression* exp;
              parsedData->setFunctionType((*(FunctionType *)(yyvsp[(6) - (7)].FunctionType)));
@@ -2963,7 +2964,7 @@ yyreduce:
   case 108:
 
 /* Line 1464 of yacc.c  */
-#line 483 "dmlyacc.yxx"
+#line 484 "dmlyacc.yxx"
     {
              Expression* exp;
              parsedData->setFunctionType((FunctionType)((int)(*(FunctionType *)(yyvsp[(6) - (7)].FunctionType))+3));
@@ -2975,7 +2976,7 @@ yyreduce:
   case 109:
 
 /* Line 1464 of yacc.c  */
-#line 490 "dmlyacc.yxx"
+#line 491 "dmlyacc.yxx"
     {
               Expression* exp;
               int diff=0;
@@ -2991,7 +2992,7 @@ yyreduce:
   case 110:
 
 /* Line 1464 of yacc.c  */
-#line 501 "dmlyacc.yxx"
+#line 502 "dmlyacc.yxx"
     {
              Expression* exp;
              parsedData->setFunctionType((FunctionType)((int)(*(FunctionType *)(yyvsp[(6) - (7)].FunctionType))+12));
@@ -3003,7 +3004,7 @@ yyreduce:
   case 111:
 
 /* Line 1464 of yacc.c  */
-#line 508 "dmlyacc.yxx"
+#line 509 "dmlyacc.yxx"
     {
              Expression* exp;
              parsedData->setFunctionType((FunctionType)((int)(*(FunctionType *)(yyvsp[(6) - (7)].FunctionType))+15));
@@ -3015,7 +3016,7 @@ yyreduce:
   case 112:
 
 /* Line 1464 of yacc.c  */
-#line 515 "dmlyacc.yxx"
+#line 516 "dmlyacc.yxx"
     {
             FunctionType val = UNKNOWN_FUNCTION;
             //if((*(FunctionType *)$3) >=8)
@@ -3032,7 +3033,7 @@ yyreduce:
   case 113:
 
 /* Line 1464 of yacc.c  */
-#line 527 "dmlyacc.yxx"
+#line 528 "dmlyacc.yxx"
     {
             Expression* exp;
             parsedData->setFunctionType(DATEFROMTIMESTAMP);
@@ -3045,7 +3046,7 @@ yyreduce:
   case 114:
 
 /* Line 1464 of yacc.c  */
-#line 535 "dmlyacc.yxx"
+#line 536 "dmlyacc.yxx"
     {
             Expression* exp;
             parsedData->setFunctionType(TIMEFROMTIMESTAMP);
@@ -3057,7 +3058,7 @@ yyreduce:
   case 115:
 
 /* Line 1464 of yacc.c  */
-#line 543 "dmlyacc.yxx"
+#line 544 "dmlyacc.yxx"
     {
            FunctionType val = *(FunctionType *)(yyvsp[(1) - (1)].FunctionType);
            (yyval.FunctionType) = &val;
@@ -3067,7 +3068,7 @@ yyreduce:
   case 116:
 
 /* Line 1464 of yacc.c  */
-#line 548 "dmlyacc.yxx"
+#line 549 "dmlyacc.yxx"
     {
            FunctionType val = *(FunctionType *)(yyvsp[(1) - (1)].FunctionType);
            (yyval.FunctionType) = &val;
@@ -3077,7 +3078,7 @@ yyreduce:
   case 117:
 
 /* Line 1464 of yacc.c  */
-#line 554 "dmlyacc.yxx"
+#line 555 "dmlyacc.yxx"
     { 
              FunctionType val = TIMEADDWITHHOUR;
              (yyval.FunctionType) = &val;
@@ -3087,7 +3088,7 @@ yyreduce:
   case 118:
 
 /* Line 1464 of yacc.c  */
-#line 559 "dmlyacc.yxx"
+#line 560 "dmlyacc.yxx"
     {
              FunctionType val = TIMEADDWITHMIN;
              (yyval.FunctionType) = &val;
@@ -3097,7 +3098,7 @@ yyreduce:
   case 119:
 
 /* Line 1464 of yacc.c  */
-#line 564 "dmlyacc.yxx"
+#line 565 "dmlyacc.yxx"
     {
              FunctionType val = TIMEADDWITHSEC;
              (yyval.FunctionType) = &val;
@@ -3107,7 +3108,7 @@ yyreduce:
   case 120:
 
 /* Line 1464 of yacc.c  */
-#line 570 "dmlyacc.yxx"
+#line 571 "dmlyacc.yxx"
     {
 	        FunctionType val = DATEADDWITHYEAR;
             (yyval.FunctionType) = &val;
@@ -3117,7 +3118,7 @@ yyreduce:
   case 121:
 
 /* Line 1464 of yacc.c  */
-#line 575 "dmlyacc.yxx"
+#line 576 "dmlyacc.yxx"
     {
 	        FunctionType val = DATEADDWITHMON;
             (yyval.FunctionType) = &val;
@@ -3127,7 +3128,7 @@ yyreduce:
   case 122:
 
 /* Line 1464 of yacc.c  */
-#line 580 "dmlyacc.yxx"
+#line 581 "dmlyacc.yxx"
     {
             FunctionType val = DATEADDWITHDAY;
             (yyval.FunctionType) = &val;
@@ -3137,7 +3138,7 @@ yyreduce:
   case 123:
 
 /* Line 1464 of yacc.c  */
-#line 586 "dmlyacc.yxx"
+#line 587 "dmlyacc.yxx"
     {
             Expression* exp;
             exp=parsedData->insertExpression((char *)(yyvsp[(1) - (1)].stringval));
@@ -3149,7 +3150,7 @@ yyreduce:
   case 124:
 
 /* Line 1464 of yacc.c  */
-#line 593 "dmlyacc.yxx"
+#line 594 "dmlyacc.yxx"
     {
             Expression* exp;
             bool flag = false;
@@ -3162,7 +3163,7 @@ yyreduce:
   case 125:
 
 /* Line 1464 of yacc.c  */
-#line 601 "dmlyacc.yxx"
+#line 602 "dmlyacc.yxx"
     {
             Expression* exp;
             exp=parsedData->insertExpression("NULL");
@@ -3174,7 +3175,7 @@ yyreduce:
   case 126:
 
 /* Line 1464 of yacc.c  */
-#line 610 "dmlyacc.yxx"
+#line 611 "dmlyacc.yxx"
     {
            Condition *cond = parsedData->getCondition();
            Predicate *pred = cond->getPredicate();
@@ -3192,7 +3193,7 @@ yyreduce:
   case 132:
 
 /* Line 1464 of yacc.c  */
-#line 631 "dmlyacc.yxx"
+#line 632 "dmlyacc.yxx"
     {
             parsedData->setLimit(atoi((yyvsp[(2) - (2)].stringval)), 0);
         }
@@ -3201,7 +3202,7 @@ yyreduce:
   case 133:
 
 /* Line 1464 of yacc.c  */
-#line 635 "dmlyacc.yxx"
+#line 636 "dmlyacc.yxx"
     {
             parsedData->setLimit(atoi((yyvsp[(2) - (4)].stringval)), atoi((yyvsp[(4) - (4)].stringval)));
         }
@@ -3210,7 +3211,7 @@ yyreduce:
   case 140:
 
 /* Line 1464 of yacc.c  */
-#line 649 "dmlyacc.yxx"
+#line 650 "dmlyacc.yxx"
     {
             parsedData->insertGroupField((char*)(yyvsp[(1) - (1)].stringval));
             free( (yyvsp[(1) - (1)].stringval) );
@@ -3220,7 +3221,7 @@ yyreduce:
   case 144:
 
 /* Line 1464 of yacc.c  */
-#line 660 "dmlyacc.yxx"
+#line 661 "dmlyacc.yxx"
     {
             parsedData->insertOrderByField((char*)(yyvsp[(1) - (1)].stringval));
             free( (yyvsp[(1) - (1)].stringval) );
@@ -3230,7 +3231,7 @@ yyreduce:
   case 145:
 
 /* Line 1464 of yacc.c  */
-#line 665 "dmlyacc.yxx"
+#line 666 "dmlyacc.yxx"
     {
             parsedData->insertOrderByField((char*)(yyvsp[(1) - (2)].stringval));
             free( (yyvsp[(1) - (2)].stringval) );
@@ -3240,7 +3241,7 @@ yyreduce:
   case 146:
 
 /* Line 1464 of yacc.c  */
-#line 670 "dmlyacc.yxx"
+#line 671 "dmlyacc.yxx"
     {
             parsedData->insertOrderByField((char*)(yyvsp[(1) - (2)].stringval), true);
             free( (yyvsp[(1) - (2)].stringval) );
@@ -3250,7 +3251,7 @@ yyreduce:
   case 147:
 
 /* Line 1464 of yacc.c  */
-#line 676 "dmlyacc.yxx"
+#line 677 "dmlyacc.yxx"
     {
             Predicate *pred;
             pred = parsedData->insertPredicate((Predicate*) (yyvsp[(1) - (3)].predicate), OpOr, (Predicate*) (yyvsp[(3) - (3)].predicate));
@@ -3263,7 +3264,7 @@ yyreduce:
   case 148:
 
 /* Line 1464 of yacc.c  */
-#line 684 "dmlyacc.yxx"
+#line 685 "dmlyacc.yxx"
     {
             Predicate *pred;
             pred = parsedData->insertPredicate((Predicate*) (yyvsp[(1) - (3)].predicate), OpAnd, (Predicate*) (yyvsp[(3) - (3)].predicate));
@@ -3275,14 +3276,14 @@ yyreduce:
   case 149:
 
 /* Line 1464 of yacc.c  */
-#line 690 "dmlyacc.yxx"
+#line 691 "dmlyacc.yxx"
     { (yyval.predicate)=(yyvsp[(2) - (3)].predicate); }
     break;
 
   case 150:
 
 /* Line 1464 of yacc.c  */
-#line 692 "dmlyacc.yxx"
+#line 693 "dmlyacc.yxx"
     {
             Predicate *pred;
             pred = parsedData->insertPredicate((Predicate*) (yyvsp[(3) - (4)].predicate), OpNot, NULL);
@@ -3295,7 +3296,7 @@ yyreduce:
   case 151:
 
 /* Line 1464 of yacc.c  */
-#line 700 "dmlyacc.yxx"
+#line 701 "dmlyacc.yxx"
     {
             if( (yyvsp[(1) - (2)].stringval) == (char*) 1 )
             {
@@ -3315,7 +3316,7 @@ yyreduce:
   case 152:
 
 /* Line 1464 of yacc.c  */
-#line 716 "dmlyacc.yxx"
+#line 717 "dmlyacc.yxx"
     {
             Predicate *pred;
             pred = parsedData->insertPredicate((Predicate*) (yyvsp[(1) - (3)].predicate), OpOr, (Predicate*) (yyvsp[(3) - (3)].predicate));
@@ -3328,7 +3329,7 @@ yyreduce:
   case 153:
 
 /* Line 1464 of yacc.c  */
-#line 724 "dmlyacc.yxx"
+#line 725 "dmlyacc.yxx"
     {
             Predicate *pred;
             pred = parsedData->insertPredicate((Predicate*) (yyvsp[(1) - (3)].predicate), OpAnd, (Predicate*) (yyvsp[(3) - (3)].predicate));
@@ -3340,14 +3341,14 @@ yyreduce:
   case 154:
 
 /* Line 1464 of yacc.c  */
-#line 730 "dmlyacc.yxx"
+#line 731 "dmlyacc.yxx"
     { (yyval.predicate)=(yyvsp[(2) - (3)].predicate); }
     break;
 
   case 155:
 
 /* Line 1464 of yacc.c  */
-#line 732 "dmlyacc.yxx"
+#line 733 "dmlyacc.yxx"
     {
             Predicate *pred;
             pred = parsedData->insertPredicate((Predicate*) (yyvsp[(3) - (4)].predicate), OpNot, NULL);
@@ -3360,7 +3361,7 @@ yyreduce:
   case 156:
 
 /* Line 1464 of yacc.c  */
-#line 740 "dmlyacc.yxx"
+#line 741 "dmlyacc.yxx"
     {
             if( (yyvsp[(1) - (2)].stringval) == (char*) 1 )
             {
@@ -3380,7 +3381,7 @@ yyreduce:
   case 157:
 
 /* Line 1464 of yacc.c  */
-#line 756 "dmlyacc.yxx"
+#line 757 "dmlyacc.yxx"
     {
             ComparisionOp  op = AllDataType::getComparisionOperator((char*)(yyvsp[(5) - (6)].stringval));
             Predicate *pred;
@@ -3394,7 +3395,7 @@ yyreduce:
   case 158:
 
 /* Line 1464 of yacc.c  */
-#line 765 "dmlyacc.yxx"
+#line 766 "dmlyacc.yxx"
     {
             ComparisionOp  op = AllDataType::getComparisionOperator((char*)(yyvsp[(5) - (6)].stringval));
             Predicate *pred;
@@ -3408,7 +3409,7 @@ yyreduce:
   case 159:
 
 /* Line 1464 of yacc.c  */
-#line 774 "dmlyacc.yxx"
+#line 775 "dmlyacc.yxx"
     {
             ComparisionOp  op = AllDataType::getComparisionOperator((char*)(yyvsp[(5) - (6)].stringval));
             Predicate *pred;
@@ -3422,7 +3423,7 @@ yyreduce:
   case 160:
 
 /* Line 1464 of yacc.c  */
-#line 783 "dmlyacc.yxx"
+#line 784 "dmlyacc.yxx"
     {
             ComparisionOp  op = AllDataType::getComparisionOperator((char*)(yyvsp[(5) - (6)].stringval));
             Predicate *pred;
@@ -3436,7 +3437,7 @@ yyreduce:
   case 161:
 
 /* Line 1464 of yacc.c  */
-#line 792 "dmlyacc.yxx"
+#line 793 "dmlyacc.yxx"
     {
             ComparisionOp  op = AllDataType::getComparisionOperator((char*)(yyvsp[(5) - (6)].stringval));
             Predicate *pred;
@@ -3450,7 +3451,7 @@ yyreduce:
   case 162:
 
 /* Line 1464 of yacc.c  */
-#line 803 "dmlyacc.yxx"
+#line 804 "dmlyacc.yxx"
     {
             ComparisionOp  op = AllDataType::getComparisionOperator((char*)(yyvsp[(2) - (3)].stringval));
 			bool opLike = false;
@@ -3466,7 +3467,7 @@ yyreduce:
   case 163:
 
 /* Line 1464 of yacc.c  */
-#line 814 "dmlyacc.yxx"
+#line 815 "dmlyacc.yxx"
     {
             ComparisionOp  op = AllDataType::getComparisionOperator((char*)(yyvsp[(2) - (3)].stringval));
             Predicate *pred;
@@ -3481,7 +3482,7 @@ yyreduce:
   case 164:
 
 /* Line 1464 of yacc.c  */
-#line 825 "dmlyacc.yxx"
+#line 826 "dmlyacc.yxx"
     {
             void **ptr1 = parsedData->insertCondValueAndGetPtr((char*)(yyvsp[(1) - (6)].stringval), (char*)(yyvsp[(4) - (6)].stringval));
             void **ptr2 = parsedData->insertCondValueAndGetPtr((char*)(yyvsp[(1) - (6)].stringval), (char*)(yyvsp[(6) - (6)].stringval));
@@ -3502,7 +3503,7 @@ yyreduce:
   case 165:
 
 /* Line 1464 of yacc.c  */
-#line 841 "dmlyacc.yxx"
+#line 842 "dmlyacc.yxx"
     {
             ListIterator valIter = parsedData->getInValueList().getIterator();
             FieldValue *value1, *value2;
@@ -3533,7 +3534,7 @@ yyreduce:
   case 166:
 
 /* Line 1464 of yacc.c  */
-#line 867 "dmlyacc.yxx"
+#line 868 "dmlyacc.yxx"
     {
             Predicate *pred;
             parsedData->insertCondValue((char*) (yyvsp[(1) - (4)].stringval));
@@ -3546,7 +3547,7 @@ yyreduce:
   case 167:
 
 /* Line 1464 of yacc.c  */
-#line 875 "dmlyacc.yxx"
+#line 876 "dmlyacc.yxx"
     {
             Predicate *pred;
             parsedData->insertCondValue((char*) (yyvsp[(1) - (3)].stringval));
@@ -3559,7 +3560,7 @@ yyreduce:
   case 168:
 
 /* Line 1464 of yacc.c  */
-#line 883 "dmlyacc.yxx"
+#line 884 "dmlyacc.yxx"
     {
             ComparisionOp  op = AllDataType::getComparisionOperator((char*)(yyvsp[(2) - (3)].stringval));
             Predicate *pred;
@@ -3572,7 +3573,7 @@ yyreduce:
   case 169:
 
 /* Line 1464 of yacc.c  */
-#line 891 "dmlyacc.yxx"
+#line 892 "dmlyacc.yxx"
     {
 
             ComparisionOp  op = AllDataType::getComparisionOperator((char*)(yyvsp[(2) - (3)].stringval));
@@ -3587,7 +3588,7 @@ yyreduce:
   case 170:
 
 /* Line 1464 of yacc.c  */
-#line 901 "dmlyacc.yxx"
+#line 902 "dmlyacc.yxx"
     {
             ComparisionOp  op = AllDataType::getComparisionOperator((char*)(yyvsp[(2) - (3)].stringval));
             void **ptr = parsedData->insertCondValueAndGetPtr((char*)"dummy", (char*)(yyvsp[(3) - (3)].stringval), false, AGG_UNKNOWN, false, true);
@@ -3600,7 +3601,7 @@ yyreduce:
   case 171:
 
 /* Line 1464 of yacc.c  */
-#line 910 "dmlyacc.yxx"
+#line 911 "dmlyacc.yxx"
     { (yyval.stringval)=(char*) 1;
 	}
     break;
@@ -3608,14 +3609,14 @@ yyreduce:
   case 172:
 
 /* Line 1464 of yacc.c  */
-#line 913 "dmlyacc.yxx"
+#line 914 "dmlyacc.yxx"
     { (yyval.stringval)=(char*) 0; }
     break;
 
   case 173:
 
 /* Line 1464 of yacc.c  */
-#line 916 "dmlyacc.yxx"
+#line 917 "dmlyacc.yxx"
     {
             parsedData->insertTableName((char*)(yyvsp[(1) - (1)].stringval));
             free( (yyvsp[(1) - (1)].stringval) );
@@ -3625,7 +3626,7 @@ yyreduce:
   case 174:
 
 /* Line 1464 of yacc.c  */
-#line 921 "dmlyacc.yxx"
+#line 922 "dmlyacc.yxx"
     {
             parsedData->insertTableName((char*)(yyvsp[(1) - (3)].stringval), (char*)(yyvsp[(3) - (3)].stringval));
             free( (yyvsp[(1) - (3)].stringval) ); free((yyvsp[(3) - (3)].stringval));
@@ -3635,7 +3636,7 @@ yyreduce:
   case 175:
 
 /* Line 1464 of yacc.c  */
-#line 926 "dmlyacc.yxx"
+#line 927 "dmlyacc.yxx"
     {
             parsedData->insertTableName((char*)(yyvsp[(1) - (2)].stringval), (char*)(yyvsp[(2) - (2)].stringval));
             free( (yyvsp[(1) - (2)].stringval) ); free((yyvsp[(2) - (2)].stringval));
@@ -3645,7 +3646,7 @@ yyreduce:
   case 176:
 
 /* Line 1464 of yacc.c  */
-#line 932 "dmlyacc.yxx"
+#line 933 "dmlyacc.yxx"
     {
             parsedData->insertField((char*)(yyvsp[(1) - (1)].stringval));
             free( (yyvsp[(1) - (1)].stringval) );
@@ -3656,7 +3657,7 @@ yyreduce:
   case 177:
 
 /* Line 1464 of yacc.c  */
-#line 938 "dmlyacc.yxx"
+#line 939 "dmlyacc.yxx"
     { 
             parsedData->insertField((char*)(yyvsp[(3) - (4)].stringval), AGG_MIN);
             free( (yyvsp[(1) - (4)].stringval) );
@@ -3666,7 +3667,7 @@ yyreduce:
   case 178:
 
 /* Line 1464 of yacc.c  */
-#line 943 "dmlyacc.yxx"
+#line 944 "dmlyacc.yxx"
     { 
             parsedData->insertField((char*)(yyvsp[(3) - (4)].stringval), AGG_MAX);
             free( (yyvsp[(1) - (4)].stringval) );
@@ -3676,7 +3677,7 @@ yyreduce:
   case 179:
 
 /* Line 1464 of yacc.c  */
-#line 948 "dmlyacc.yxx"
+#line 949 "dmlyacc.yxx"
     { 
             parsedData->insertField((char*)(yyvsp[(3) - (4)].stringval), AGG_SUM);
             free( (yyvsp[(1) - (4)].stringval) );
@@ -3686,7 +3687,7 @@ yyreduce:
   case 180:
 
 /* Line 1464 of yacc.c  */
-#line 953 "dmlyacc.yxx"
+#line 954 "dmlyacc.yxx"
     { 
             parsedData->insertField((char*)(yyvsp[(3) - (4)].stringval), AGG_AVG);
             free( (yyvsp[(1) - (4)].stringval) );
@@ -3696,7 +3697,7 @@ yyreduce:
   case 181:
 
 /* Line 1464 of yacc.c  */
-#line 958 "dmlyacc.yxx"
+#line 959 "dmlyacc.yxx"
     { 
             parsedData->insertField((char*)(yyvsp[(3) - (4)].stringval), AGG_COUNT);
             free( (yyvsp[(1) - (4)].stringval) );
@@ -3706,7 +3707,7 @@ yyreduce:
   case 182:
 
 /* Line 1464 of yacc.c  */
-#line 963 "dmlyacc.yxx"
+#line 964 "dmlyacc.yxx"
     { 
             parsedData->insertField("*", AGG_COUNT);
             free( (yyvsp[(1) - (4)].stringval) );
@@ -3716,7 +3717,7 @@ yyreduce:
   case 183:
 
 /* Line 1464 of yacc.c  */
-#line 968 "dmlyacc.yxx"
+#line 969 "dmlyacc.yxx"
     { 
             parsedData->insertField("*");
         }
@@ -3725,7 +3726,7 @@ yyreduce:
   case 184:
 
 /* Line 1464 of yacc.c  */
-#line 972 "dmlyacc.yxx"
+#line 973 "dmlyacc.yxx"
     {
             parsedData->insertField("*");
         }
@@ -3734,49 +3735,49 @@ yyreduce:
   case 185:
 
 /* Line 1464 of yacc.c  */
-#line 976 "dmlyacc.yxx"
+#line 977 "dmlyacc.yxx"
     { (yyval.stringval) = (yyvsp[(1) - (1)].stringval); }
     break;
 
   case 186:
 
 /* Line 1464 of yacc.c  */
-#line 977 "dmlyacc.yxx"
+#line 978 "dmlyacc.yxx"
     { (yyval.stringval) = (yyvsp[(2) - (3)].stringval); }
     break;
 
   case 187:
 
 /* Line 1464 of yacc.c  */
-#line 979 "dmlyacc.yxx"
+#line 980 "dmlyacc.yxx"
     { (yyval.stringval) = (yyvsp[(1) - (1)].stringval); }
     break;
 
   case 189:
 
 /* Line 1464 of yacc.c  */
-#line 981 "dmlyacc.yxx"
+#line 982 "dmlyacc.yxx"
     { (yyval.stringval) = (yyvsp[(1) - (1)].stringval); }
     break;
 
   case 191:
 
 /* Line 1464 of yacc.c  */
-#line 983 "dmlyacc.yxx"
+#line 984 "dmlyacc.yxx"
     { (yyval.stringval) = (yyvsp[(1) - (1)].stringval); }
     break;
 
   case 192:
 
 /* Line 1464 of yacc.c  */
-#line 984 "dmlyacc.yxx"
+#line 985 "dmlyacc.yxx"
     { (yyval.stringval) = (char*) 0; }
     break;
 
   case 193:
 
 /* Line 1464 of yacc.c  */
-#line 986 "dmlyacc.yxx"
+#line 987 "dmlyacc.yxx"
     {
               char *str=(char*)malloc(20);
               time_t rawtime;
@@ -3793,14 +3794,14 @@ yyreduce:
   case 194:
 
 /* Line 1464 of yacc.c  */
-#line 998 "dmlyacc.yxx"
+#line 999 "dmlyacc.yxx"
     { (yyval.stringval) =  (yyvsp[(1) - (1)].stringval); }
     break;
 
   case 195:
 
 /* Line 1464 of yacc.c  */
-#line 1000 "dmlyacc.yxx"
+#line 1001 "dmlyacc.yxx"
     {
              char *n;
              n=(char*)malloc(30);
@@ -3814,21 +3815,21 @@ yyreduce:
   case 196:
 
 /* Line 1464 of yacc.c  */
-#line 1008 "dmlyacc.yxx"
+#line 1009 "dmlyacc.yxx"
     { (yyval.stringval) =  (yyvsp[(2) - (2)].stringval); }
     break;
 
   case 197:
 
 /* Line 1464 of yacc.c  */
-#line 1010 "dmlyacc.yxx"
+#line 1011 "dmlyacc.yxx"
     { (yyval.stringval) = (yyvsp[(1) - (1)].stringval); }
     break;
 
   case 198:
 
 /* Line 1464 of yacc.c  */
-#line 1012 "dmlyacc.yxx"
+#line 1013 "dmlyacc.yxx"
     {
              char *d;
              d=(char*)malloc(30);
@@ -3842,14 +3843,14 @@ yyreduce:
   case 199:
 
 /* Line 1464 of yacc.c  */
-#line 1020 "dmlyacc.yxx"
+#line 1021 "dmlyacc.yxx"
     { (yyval.stringval) = (yyvsp[(2) - (2)].stringval); }
     break;
 
   case 200:
 
 /* Line 1464 of yacc.c  */
-#line 1023 "dmlyacc.yxx"
+#line 1024 "dmlyacc.yxx"
     {
             if (!Conf::config.useCache())
             {
@@ -3865,7 +3866,7 @@ yyreduce:
   case 201:
 
 /* Line 1464 of yacc.c  */
-#line 1034 "dmlyacc.yxx"
+#line 1035 "dmlyacc.yxx"
     {
             parsedData->setStmtType(CacheTableStatement);
             parsedData->setUnCache(true);
@@ -3876,7 +3877,7 @@ yyreduce:
   case 204:
 
 /* Line 1464 of yacc.c  */
-#line 1044 "dmlyacc.yxx"
+#line 1045 "dmlyacc.yxx"
     {
             parsedData->setHCondFld(true);
             parsedData->setHCondition((char*)(yyvsp[(2) - (2)].stringval));
@@ -3886,7 +3887,7 @@ yyreduce:
   case 206:
 
 /* Line 1464 of yacc.c  */
-#line 1051 "dmlyacc.yxx"
+#line 1052 "dmlyacc.yxx"
     {
             parsedData->setVCondFld(true);
             parsedData->setVCondition((char*)(yyvsp[(2) - (2)].stringval));
@@ -3897,7 +3898,7 @@ yyreduce:
   case 208:
 
 /* Line 1464 of yacc.c  */
-#line 1059 "dmlyacc.yxx"
+#line 1060 "dmlyacc.yxx"
     {
             parsedData->setPkFld(true);
             parsedData->setIndexName((char*)(yyvsp[(2) - (2)].stringval));
@@ -3908,7 +3909,7 @@ yyreduce:
   case 210:
 
 /* Line 1464 of yacc.c  */
-#line 1067 "dmlyacc.yxx"
+#line 1068 "dmlyacc.yxx"
     {
             parsedData->setDirect(true);
          }
@@ -3917,7 +3918,7 @@ yyreduce:
   case 212:
 
 /* Line 1464 of yacc.c  */
-#line 1073 "dmlyacc.yxx"
+#line 1074 "dmlyacc.yxx"
     {
              parsedData->setDSN(true);
              parsedData->setPKTableName((char*)(yyvsp[(2) - (2)].stringval));
@@ -3928,7 +3929,7 @@ yyreduce:
   case 214:
 
 /* Line 1464 of yacc.c  */
-#line 1080 "dmlyacc.yxx"
+#line 1081 "dmlyacc.yxx"
     {
              parsedData->setNoSchema(true);
          }
@@ -3937,7 +3938,7 @@ yyreduce:
   case 215:
 
 /* Line 1464 of yacc.c  */
-#line 1085 "dmlyacc.yxx"
+#line 1086 "dmlyacc.yxx"
     {
             parsedData->setStmtType(CreateTableStatement);
             parsedData->setTableName((yyvsp[(3) - (7)].stringval)); 
@@ -3948,7 +3949,7 @@ yyreduce:
   case 216:
 
 /* Line 1464 of yacc.c  */
-#line 1091 "dmlyacc.yxx"
+#line 1092 "dmlyacc.yxx"
     {
             parsedData->setStmtType(CreateIndexStatement);
             parsedData->setIndexName((yyvsp[(3) - (12)].stringval)); 
@@ -3961,7 +3962,7 @@ yyreduce:
   case 217:
 
 /* Line 1464 of yacc.c  */
-#line 1099 "dmlyacc.yxx"
+#line 1100 "dmlyacc.yxx"
     {
             parsedData->setStmtType(DropTableStatement);
             parsedData->setTableName((yyvsp[(3) - (3)].stringval)); 
@@ -3972,7 +3973,7 @@ yyreduce:
   case 218:
 
 /* Line 1464 of yacc.c  */
-#line 1105 "dmlyacc.yxx"
+#line 1106 "dmlyacc.yxx"
     {
             parsedData->setStmtType(DropIndexStatement);
             parsedData->setIndexName((yyvsp[(3) - (3)].stringval)); 
@@ -3983,7 +3984,7 @@ yyreduce:
   case 219:
 
 /* Line 1464 of yacc.c  */
-#line 1111 "dmlyacc.yxx"
+#line 1112 "dmlyacc.yxx"
     {
             parsedData->setStmtType(TruncateStatement);
             parsedData->setTableName((yyvsp[(3) - (4)].stringval)); 
@@ -3994,7 +3995,7 @@ yyreduce:
   case 220:
 
 /* Line 1464 of yacc.c  */
-#line 1119 "dmlyacc.yxx"
+#line 1120 "dmlyacc.yxx"
     {
             parsedData->setIndexType(hashIndex);
         }
@@ -4003,7 +4004,7 @@ yyreduce:
   case 221:
 
 /* Line 1464 of yacc.c  */
-#line 1123 "dmlyacc.yxx"
+#line 1124 "dmlyacc.yxx"
     {
             parsedData->setIndexType(treeIndex);
         }
@@ -4012,7 +4013,7 @@ yyreduce:
   case 222:
 
 /* Line 1464 of yacc.c  */
-#line 1127 "dmlyacc.yxx"
+#line 1128 "dmlyacc.yxx"
     {
             parsedData->setIndexType(trieIndex);
         }
@@ -4021,7 +4022,7 @@ yyreduce:
   case 223:
 
 /* Line 1464 of yacc.c  */
-#line 1131 "dmlyacc.yxx"
+#line 1132 "dmlyacc.yxx"
     {
             parsedData->setIndexType(hashIndex);
         }
@@ -4030,7 +4031,7 @@ yyreduce:
   case 224:
 
 /* Line 1464 of yacc.c  */
-#line 1137 "dmlyacc.yxx"
+#line 1138 "dmlyacc.yxx"
     {
             parsedData->setUnique(true);
         }
@@ -4039,7 +4040,7 @@ yyreduce:
   case 225:
 
 /* Line 1464 of yacc.c  */
-#line 1141 "dmlyacc.yxx"
+#line 1142 "dmlyacc.yxx"
     {
             parsedData->setUnique(true);
             parsedData->setPrimary(true);
@@ -4049,7 +4050,7 @@ yyreduce:
   case 226:
 
 /* Line 1464 of yacc.c  */
-#line 1146 "dmlyacc.yxx"
+#line 1147 "dmlyacc.yxx"
     {
             parsedData->setUnique(false);
             parsedData->setPrimary(false);
@@ -4059,7 +4060,7 @@ yyreduce:
   case 228:
 
 /* Line 1464 of yacc.c  */
-#line 1153 "dmlyacc.yxx"
+#line 1154 "dmlyacc.yxx"
     {
             parsedData->setBucketSize(atoi((yyvsp[(2) - (2)].stringval)));
             free((yyvsp[(2) - (2)].stringval));
@@ -4069,7 +4070,7 @@ yyreduce:
   case 234:
 
 /* Line 1464 of yacc.c  */
-#line 1169 "dmlyacc.yxx"
+#line 1170 "dmlyacc.yxx"
     {
             parsedData->insertFldDef();
         }
@@ -4078,7 +4079,7 @@ yyreduce:
   case 236:
 
 /* Line 1464 of yacc.c  */
-#line 1178 "dmlyacc.yxx"
+#line 1179 "dmlyacc.yxx"
     {
             parsedData->setFldName((yyvsp[(1) - (1)].stringval));
             free((yyvsp[(1) - (1)].stringval));
@@ -4088,7 +4089,7 @@ yyreduce:
   case 238:
 
 /* Line 1464 of yacc.c  */
-#line 1184 "dmlyacc.yxx"
+#line 1185 "dmlyacc.yxx"
     {
             DbRetVal rv = parsedData->setFldLength(atoi((yyvsp[(2) - (3)].stringval)));
             if (rv != OK) {
@@ -4103,7 +4104,7 @@ yyreduce:
   case 240:
 
 /* Line 1464 of yacc.c  */
-#line 1197 "dmlyacc.yxx"
+#line 1198 "dmlyacc.yxx"
     {
             DbRetVal rv = parsedData->setDefaultValue((yyvsp[(2) - (2)].stringval));
             if(rv != OK){
@@ -4118,7 +4119,7 @@ yyreduce:
   case 242:
 
 /* Line 1464 of yacc.c  */
-#line 1210 "dmlyacc.yxx"
+#line 1211 "dmlyacc.yxx"
     {
             parsedData->setFldNotNull(true);
         }
@@ -4127,7 +4128,7 @@ yyreduce:
   case 249:
 
 /* Line 1464 of yacc.c  */
-#line 1224 "dmlyacc.yxx"
+#line 1225 "dmlyacc.yxx"
     {
             parsedData->setForeign(true);
             parsedData->setPKTableName((char*)(yyvsp[(7) - (10)].stringval));
@@ -4138,7 +4139,7 @@ yyreduce:
   case 253:
 
 /* Line 1464 of yacc.c  */
-#line 1236 "dmlyacc.yxx"
+#line 1237 "dmlyacc.yxx"
     {
            parsedData->insertFKField((char*)(yyvsp[(1) - (1)].stringval));
            free((yyvsp[(1) - (1)].stringval));
@@ -4148,7 +4149,7 @@ yyreduce:
   case 257:
 
 /* Line 1464 of yacc.c  */
-#line 1247 "dmlyacc.yxx"
+#line 1248 "dmlyacc.yxx"
     {
            parsedData->insertPKField((char*)(yyvsp[(1) - (1)].stringval));
            free((yyvsp[(1) - (1)].stringval));
@@ -4158,7 +4159,7 @@ yyreduce:
   case 258:
 
 /* Line 1464 of yacc.c  */
-#line 1254 "dmlyacc.yxx"
+#line 1255 "dmlyacc.yxx"
     {
            parsedData->setPrimary(true);
         }
@@ -4167,7 +4168,7 @@ yyreduce:
   case 260:
 
 /* Line 1464 of yacc.c  */
-#line 1260 "dmlyacc.yxx"
+#line 1261 "dmlyacc.yxx"
     {
            DataType type = parsedData->getFldType();
            if(type > 4)
@@ -4191,7 +4192,7 @@ yyreduce:
   case 261:
 
 /* Line 1464 of yacc.c  */
-#line 1281 "dmlyacc.yxx"
+#line 1282 "dmlyacc.yxx"
     {
             parsedData->setFldType(typeInt);
         }
@@ -4200,7 +4201,7 @@ yyreduce:
   case 262:
 
 /* Line 1464 of yacc.c  */
-#line 1285 "dmlyacc.yxx"
+#line 1286 "dmlyacc.yxx"
     {
             parsedData->setFldType(typeLong);
         }
@@ -4209,7 +4210,7 @@ yyreduce:
   case 263:
 
 /* Line 1464 of yacc.c  */
-#line 1289 "dmlyacc.yxx"
+#line 1290 "dmlyacc.yxx"
     {
             parsedData->setFldType(typeShort);
         }
@@ -4218,7 +4219,7 @@ yyreduce:
   case 264:
 
 /* Line 1464 of yacc.c  */
-#line 1293 "dmlyacc.yxx"
+#line 1294 "dmlyacc.yxx"
     {
             parsedData->setFldType(typeLongLong);
         }
@@ -4227,7 +4228,7 @@ yyreduce:
   case 265:
 
 /* Line 1464 of yacc.c  */
-#line 1297 "dmlyacc.yxx"
+#line 1298 "dmlyacc.yxx"
     {
             parsedData->setFldType(typeByteInt);
         }
@@ -4236,7 +4237,7 @@ yyreduce:
   case 266:
 
 /* Line 1464 of yacc.c  */
-#line 1301 "dmlyacc.yxx"
+#line 1302 "dmlyacc.yxx"
     {
             parsedData->setFldType(typeFloat);
         }
@@ -4245,7 +4246,7 @@ yyreduce:
   case 267:
 
 /* Line 1464 of yacc.c  */
-#line 1305 "dmlyacc.yxx"
+#line 1306 "dmlyacc.yxx"
     {
             parsedData->setFldType(typeDouble);
         }
@@ -4254,7 +4255,7 @@ yyreduce:
   case 268:
 
 /* Line 1464 of yacc.c  */
-#line 1310 "dmlyacc.yxx"
+#line 1311 "dmlyacc.yxx"
     {
             parsedData->setFldType(typeDate);
         }
@@ -4263,7 +4264,7 @@ yyreduce:
   case 269:
 
 /* Line 1464 of yacc.c  */
-#line 1315 "dmlyacc.yxx"
+#line 1316 "dmlyacc.yxx"
     {
             parsedData->setFldType(typeTime);
         }
@@ -4272,7 +4273,7 @@ yyreduce:
   case 270:
 
 /* Line 1464 of yacc.c  */
-#line 1320 "dmlyacc.yxx"
+#line 1321 "dmlyacc.yxx"
     {
             parsedData->setFldType(typeTimeStamp);
         }
@@ -4281,7 +4282,7 @@ yyreduce:
   case 271:
 
 /* Line 1464 of yacc.c  */
-#line 1325 "dmlyacc.yxx"
+#line 1326 "dmlyacc.yxx"
     {
             parsedData->setFldType(typeString);
             parsedData->setFldLength(2);
@@ -4291,7 +4292,7 @@ yyreduce:
   case 272:
 
 /* Line 1464 of yacc.c  */
-#line 1331 "dmlyacc.yxx"
+#line 1332 "dmlyacc.yxx"
     {
             parsedData->setFldType(typeVarchar);
             parsedData->setFldLength(2);
@@ -4301,7 +4302,7 @@ yyreduce:
   case 273:
 
 /* Line 1464 of yacc.c  */
-#line 1337 "dmlyacc.yxx"
+#line 1338 "dmlyacc.yxx"
     {
             parsedData->setFldType(typeBinary);
             parsedData->setFldLength(1);
@@ -4311,7 +4312,7 @@ yyreduce:
 
 
 /* Line 1464 of yacc.c  */
-#line 4315 "dmlyacc.cxx"
+#line 4316 "dmlyacc.cxx"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -4523,7 +4524,7 @@ yyreturn:
 
 
 /* Line 1684 of yacc.c  */
-#line 1342 "dmlyacc.yxx"
+#line 1343 "dmlyacc.yxx"
 
 
 extern int lexEof;

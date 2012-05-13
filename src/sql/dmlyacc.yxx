@@ -153,13 +153,14 @@ grantee_list : grantee_list grantee_list_L
     ;
 grantee_list_L : ',' grantee
     ;
-grantee : ident { parsedData->insertGrantee($1); }
+grantee : ident { parsedData->insertGrantee($1); free($1); }
     ;
 grant_statement : GRANT privilege_list ON ident TO grantee_list where_clause_opt semicolon_opt
     {
             parsedData->setStmtType(DclStatement);
             parsedData->setTableName($4);
             parsedData->constructDclNodes(GRANTACCESS);
+			free($4);
     }
     ;
 revoke_statement : REVOKE privilege_list ON ident FROM grantee_list semicolon_opt
