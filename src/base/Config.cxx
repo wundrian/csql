@@ -330,7 +330,7 @@ int Config::readAllValues(char *fileName)
 
     int hasData = 1;
     char buffer[1024];
-    char key[1024];
+    char key[1024] = {'\0'};
     char value[1024];
     while (hasData)
     {
