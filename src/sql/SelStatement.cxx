@@ -313,6 +313,7 @@ DbRetVal SelStatement::openTables()
         // check if user has SELECT privileges on the table
         if (!usrMgr->isAuthorized(PRIV_SELECT, tImpl->getId()))
         {
+			dbMgr->closeTable(tHdl);
             printError(ErrNoPrivilege, "User does not have SELECT privileges on table %s",
                     t->tblName);
             if (prevHdl) delete prevHdl;
