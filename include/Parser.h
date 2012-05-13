@@ -377,6 +377,7 @@ class DllExport ParsedData
     List getHavingFieldNameList() { return havingFieldNameList; }
     List getOrderFieldNameList() { return orderFieldNameList; }
     List& getConditionValueList() { return conditionValueList; }
+    List& getPredList() { return predList; }
     List getFieldValueList() { return fieldValueList; }
     List getInValueList() { return inValueList; }
     List getUpdateFieldValueList() { return updFldValList; }

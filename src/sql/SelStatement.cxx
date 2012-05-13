@@ -367,7 +367,11 @@ DbRetVal SelStatement::openTables()
         prevHdl = tHdl;
     }
 
-    if (NULL != grantRestrictions) parsedData->setCondition(grantRestrictions);
+    if (NULL != grantRestrictions)
+    {
+        parsedData->setCondition(grantRestrictions);
+        ((PredicateImpl*)grantRestrictions)->appendToList(parsedData->getPredList());
+    }
     if (isJoin) table = jHdl; else table = tHdl;
     return OK;
 }

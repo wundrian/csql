@@ -197,14 +197,22 @@ class DllExport PredicateImpl:public Predicate
      */
     int treeSize() const;
 
-	/**
-	 * Set the fieldName (if applicable) of the whole tree rooted at this
-	 * instance to the qualified Name as given by table->getQualifiedName
-	 *
-	 * @param table The instance this predicate(s) apply to
-	 * @return error code
-	 */
-	DbRetVal prefixWithTableName(TableImpl *table);
+    /**
+     * Set the fieldName (if applicable) of the whole tree rooted at this
+     * instance to the qualified Name as given by table->getQualifiedName
+     *
+     * @param table The instance this predicate(s) apply to
+     * @return error code
+     */
+    DbRetVal prefixWithTableName(TableImpl *table);
+
+    /**
+     * Output the tree of Predicates as a list, starting with the left leaf.
+     *
+     * @param predList where to add the Predicate instance pointers
+     * @return error code
+     */
+    DbRetVal appendToList(List &predList);
 
     /**
      * Construct an initialized PredicateImpl instance from the given readPtr.

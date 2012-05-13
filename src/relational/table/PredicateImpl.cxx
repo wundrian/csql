@@ -890,6 +890,15 @@ int PredicateImpl::treeSize() const
     return 1 + (NULL != lhs ? lhs->treeSize() : 0) + (NULL != rhs ? rhs->treeSize() : 0);
 }
 
+DbRetVal PredicateImpl::appendToList(List &predList)
+{
+    if (NULL != lhs) lhs->appendToList(predList);
+    if (NULL != rhs) rhs->appendToList(predList);
+
+    predList.append(this);
+    return OK;
+}
+
 PredicateImpl* PredicateImpl::unserialize(void *readPtr, List &conditionValues)
 {
     Serialized *storagePtr = (Serialized*)readPtr;
