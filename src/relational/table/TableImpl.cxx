@@ -53,6 +53,7 @@ DbRetVal TableImpl::getQualifiedName(const char *fldname, char *qualName)
 {
     FieldInfo *info = new FieldInfo();
     DbRetVal rv = getFieldInfo(fldname,info);
+    delete info;
     if (rv == OK)
         sprintf(qualName, "%s.%s", getName(), fldname);
     return rv;
@@ -289,7 +290,7 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
             case typeString:
                 if (NULL != def->bindVal_)
                 {
-		            if(!isInsert && isFldNull(fldpos)){clearNullBit(fldpos);}
+                    if(!isInsert && isFldNull(fldpos)){clearNullBit(fldpos);}
                 //    strncpy((char*)colPtr, (char*)def->bindVal_, def->length_);
                 //    *(((char*)colPtr) + (def->length_-1)) = '\0';
                     strcpy((char*)colPtr, (char*)def->bindVal_);
@@ -300,11 +301,11 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
             case typeBinary:
                 if (NULL != def->bindVal_ ) 
                 {
-		     if(!isInsert && isFldNull(fldpos)){clearNullBit(fldpos);}
-		     DbRetVal rv = AllDataType::strToValue(colPtr, 
+             if(!isInsert && isFldNull(fldpos)){clearNullBit(fldpos);}
+             DbRetVal rv = AllDataType::strToValue(colPtr, 
                              (char *) def->bindVal_, def->type_, def->length_);
                       if (rv != OK) return ErrBadArg;
-		} else if (!def->isNull_ && isInsert && !def->bindVal_) {
+        } else if (!def->isNull_ && isInsert && !def->bindVal_) {
                     setNullBit(fldpos);
                 }
                 colPtr = colPtr + def->length_;
@@ -332,7 +333,7 @@ DbRetVal TableImpl::copyValuesFromBindBuffer(void *tuplePtr, bool isInsert)
                 break;
             default:
                 if (NULL != def->bindVal_) {
-		            if(!isInsert && isFldNull(fldpos)){clearNullBit(fldpos);}
+                    if(!isInsert && isFldNull(fldpos)){clearNullBit(fldpos);}
                     AllDataType::copyVal(colPtr, def->bindVal_, def->type_);
                 } else { if (!def->isNull_ && isInsert) setNullBit(fldpos); }
                 colPtr = colPtr + def->length_;
@@ -585,7 +586,7 @@ TableImpl::~TableImpl()
 
 void *TableImpl::getBindFldAddr(const char *name)
 {
-	return fldList_.getBindField(name);
+    return fldList_.getBindField(name);
 }
 
 bool TableImpl::isTableInvolved(char  *tblName)
