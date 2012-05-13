@@ -850,7 +850,7 @@ PredicateImpl* PredicateImpl::getIfOneSidedPredicate()
     return NULL;
 }
 
-PredicateImpl::Serialized* PredicateImpl::serialize(void *storePtr, const ConditionValMap &valMap, char *pStrPtr) const
+PredicateImpl::Serialized* PredicateImpl::serialize(void *storePtr, const ConditionValMap &valMap, char *&pStrPtr) const
 {
     Serialized storage = { compOp, logicalOp, type };
     strncpy(storage.fldName1, fldName1, IDENTIFIER_LENGTH);

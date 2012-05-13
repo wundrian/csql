@@ -700,7 +700,8 @@ DbRetVal CatalogTableGRANT::createPredicateChunk(const PredicateImpl *rootPred, 
     
     /* finally, PredicateImpl can take care of serializing itself  (and cValues!) to dataPtr */
     *((char *)dataPtr) = PredicateImpl::SERIALIZED_VERSION;
-    rootPred->serialize((char*)dataPtr + 1, cValues, ((char*)dataPtr + arraySize + 1));
+	char *parsedStringPtr = ((char*)dataPtr + arraySize + 1);
+    rootPred->serialize((char*)dataPtr + 1, cValues, parsedStringPtr);
 
     return OK;
 }

@@ -190,7 +190,7 @@ class DllExport PredicateImpl:public Predicate
      * @param pStrPtr pointer to where val.parsedString should be stored
      * @return storePtr
      */
-    Serialized* serialize(void *storePtr, const ConditionValMap &valMap, char *pStrPtr) const;
+    Serialized* serialize(void *storePtr, const ConditionValMap &valMap, char *&pStrPtr) const;
 
     /**
      * Count the number of elements rooted at this instance of the tree (including the root).
