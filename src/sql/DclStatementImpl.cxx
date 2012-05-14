@@ -39,6 +39,13 @@ DbRetVal DclStatementImpl::execute(int &rowsAffected)
         return rv;
     }
     
+    if (OK != (rv = ((DatabaseManagerImpl*)dbMgr)->sysDb()->getXCheckpointMutex()))
+    {
+        printError(rv, "Unable to get exclusive access to system database.");
+        dbMgr->closeTable(table);
+        return rv;
+    }
+
     const std::vector<DclInfoNode> infoNodes = parsedData->getDclInfoNodes();
     for (std::vector<DclInfoNode>::const_iterator it = infoNodes.begin(); it != infoNodes.end(); ++it)
     {
@@ -57,6 +64,7 @@ DbRetVal DclStatementImpl::execute(int &rowsAffected)
         if (OK != rv) break;
     }
     
+    ((DatabaseManagerImpl*)dbMgr)->sysDb()->releaseCheckpointMutex();
     dbMgr->closeTable(table);
     return rv;
 }
