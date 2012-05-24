@@ -16,6 +16,7 @@
 #include<UserManagerImpl.h>
 #include<CatalogTables.h>
 #include<Debug.h>
+#include <NanoTimer.h>
 int UserManagerImpl::createUser(const char *name, const char *password)
 {
     if (!isDba)
@@ -154,23 +155,35 @@ int UserManagerImpl::revokePrivilege(unsigned char priv, int tblId, std::string 
 
 bool UserManagerImpl::isAuthorized(unsigned char priv, int tblId) const
 {
+    NanoTimer timer = NanoTimer();
+    timer.start();
+
     CatalogTableGRANT cGrant(systemDatabase_);
     CatalogTableTABLE cTable(systemDatabase_);
     
     /* owner is always granted access to her tables */
-    return (cTable.isOwner(tblId, userName)
+    bool allowed = (cTable.isOwner(tblId, userName)
             || (priv == (cGrant.getPrivileges(tblId, userName) & priv)));
+
+    timer.stop();
+    fprintf(stderr, "UserManagerImpl::isAuthorized took %lld ns to produce %d\n", timer.last(), allowed);
+    return allowed;
 }
 
 bool UserManagerImpl::isAuthorized(unsigned char priv, const char *tblName) const
 {
-	void *chunkPtr, *tablePtr, *vcChunkPtr;
+    NanoTimer timer = NanoTimer();
+    timer.start();
+    void *chunkPtr, *tablePtr, *vcChunkPtr;
     CatalogTableTABLE cTable(systemDatabase_);
 
-	if (OK != cTable.getChunkAndTblPtr(tblName, chunkPtr, tablePtr, vcChunkPtr))
-		return false;
+    if (OK != cTable.getChunkAndTblPtr(tblName, chunkPtr, tablePtr, vcChunkPtr))
+        goto out;
 
-	return isAuthorized(priv, ((CTABLE*)tablePtr)->tblID_);
+    out:
+    timer.stop();
+    fprintf(stderr, "UserManager::isAuthorized table lookup took %lld ns\n", timer.last());
+    return (NULL == tablePtr) || isAuthorized(priv, ((CTABLE*)tablePtr)->tblID_);
 }
 
 int UserManagerImpl::getTableRestriction(int tblId, Predicate *&pred, List &conditionValues)

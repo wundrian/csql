@@ -23,7 +23,9 @@ create user ${TEST_USER} password '${TEST_PW}';
 quit;" > "${MY_PATH}/as_root.sql"
 
 echo "
+SET TIMER ON;
 select * from t;
+SET TIMER OFF;
 insert into t values (1);
 update t set id = 1 where id = 1;
 delete from t where id = 1;

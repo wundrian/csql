@@ -23,7 +23,9 @@ create table s (id integer);
 create table t (id integer);
 grant select on t to ${TEST_USER} where id = 1;
 grant select on s to ${TEST_USER};
+SET TIMER ON;
 insert into t values (1);
+SET TIMER OFF;
 insert into t values (2);
 insert into s values (1);
 insert into s values (2);
@@ -31,7 +33,9 @@ insert into s values (3);
 quit;" > "${MY_PATH}/as_root.sql"
 
 echo "
+SET TIMER ON;
 select * from t, s;
+SET TIMER OFF;
 quit;" > "${MY_PATH}/as_usr.sql"
 
 echo "

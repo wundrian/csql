@@ -211,7 +211,7 @@ top_srcdir = @top_srcdir@
 INCLUDES = -I$(top_srcdir)/include $(all_includes)
 METASOURCES = AUTO
 lib_LTLIBRARIES = libcsqlstorage.la
-libcsqlstorage_la_LDFLAGS = -avoid-version -module
+libcsqlstorage_la_LDFLAGS = -avoid-version -module -lrt
 libcsqlstorage_la_SOURCES = BucketIter.cxx \
 	Chunk.cxx VarChunk.cxx BucketList.cxx\
 	CatalogTables.cxx CatalogTablesIdx.cxx CatalogTablesFk.cxx \
