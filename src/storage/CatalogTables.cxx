@@ -157,6 +157,8 @@ DbRetVal CatalogTableTABLE::remove(const char *name, void *&chunk, void *&tptr)
     }
     if (NULL != tptr)
     {
+        CatalogTableGRANT cGrant(systemDatabase_);
+        cGrant.dropAllForTable(((CTABLE*)tptr)->tblID_, ((CTABLE*)tptr)->grantsPtr_);
         tChunk->free(systemDatabase_, tptr);
         printDebug(DM_SystemDatabase,"One Row deleted from TABLE %x %s",tptr, name);
     }
@@ -613,6 +615,41 @@ DbRetVal CatalogTableGRANT::remove(unsigned char priv, int tblId, std::string us
     }
     printError(ErrNotExists,"User %s does not exist in catalog table", userName.c_str());
     return ErrNotExists;
+}
+
+DbRetVal CatalogTableGRANT::dropAllForTable(int tblId, Chunk *grantsChunk)
+{
+    Chunk *gChunk = systemDatabase_->getSystemDatabaseChunk(GrantTableId);
+    ChunkIterator iter = gChunk->getIterator();
+    CGRANT *data = NULL;
+    while (NULL != (data = (CGRANT*)iter.nextElement()))
+    {
+        if (data->tblID_ == tblId)
+        {
+            grantsChunk->free(systemDatabase_, data->predPtr);
+            gChunk->free(systemDatabase_, data);
+        }
+    }
+
+    return OK;
+}
+
+DbRetVal CatalogTableGRANT::dropAllForUser(const char *userName)
+{
+    Chunk *gChunk = systemDatabase_->getSystemDatabaseChunk(GrantTableId);
+    ChunkIterator iter = gChunk->getIterator();
+    CGRANT *data = NULL;
+    while (NULL != (data = (CGRANT*)iter.nextElement()))
+    {
+        if (0 == strcmp(data->userName_, userName))
+        {
+            //FIXME: leaking sizeof(*predPtr) here!
+            //grantsChunk->free(systemDatabase_, data->predPtr);
+            gChunk->free(systemDatabase_, data);
+        }
+    }
+
+    return OK;
 }
 
 unsigned char CatalogTableGRANT::getPrivileges(int tblId, const char* userName)

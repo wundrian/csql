@@ -31,7 +31,7 @@ void* Chunk::allocFromNewPageForVarSize(Database *db, size_t size, int pslot, Db
     {
        return vnode;
     }
-    printDebug(DM_Warning, "No free space in any of the pages already being used");
+    printError(ErrNoMemory, "No free space in any of the pages already being used");
     *rv =OK;
     DbRetVal ret = db->getAllocDatabaseMutex();
     if (ret != 0)
