@@ -188,6 +188,7 @@ DbRetVal DatabaseManagerImpl::renameField(const char *tableName,const char *oldN
 DbRetVal DatabaseManagerImpl::dropTable(const char *name)
 {
     void *chunk = NULL;
+    Chunk *grantChunk = NULL;
     void *tptr =NULL;
     void *vcchunk = NULL;
     DbRetVal rv = systemDatabase_->getXCheckpointMutex();
@@ -203,6 +204,14 @@ DbRetVal DatabaseManagerImpl::dropTable(const char *name)
         printError(ErrSysInternal, "Table %s does not exist", name);
         return ErrSysInternal;
     }
+
+    rv = cTable.getGrantsPtr(((CTABLE*)tptr)->tblID_, grantChunk);
+    if (OK != rv) {
+        systemDatabase_->releaseCheckpointMutex();
+        printError(ErrSysInternal, "Unable to get Grants for table %s", name);
+        return ErrSysInternal;
+    }
+
     CatalogTableFK cFK(systemDatabase_);
     int noOfRelation =cFK.getNumFkTable(tptr);
     if(noOfRelation)
@@ -225,7 +234,7 @@ DbRetVal DatabaseManagerImpl::dropTable(const char *name)
     rv = cTable.remove(name, chunk, tptr);
     if (OK != rv) {
         systemDatabase_->releaseCheckpointMutex();
-	txnMgr()->rollback(lockMgr());
+        txnMgr()->rollback(lockMgr());
         printError(ErrSysInternal, "Unable to update catalog table TABLE");
         return ErrSysInternal;
     }
@@ -236,7 +245,7 @@ DbRetVal DatabaseManagerImpl::dropTable(const char *name)
     rv = cField.remove(tptr);
     if (OK != rv) {
         systemDatabase_->releaseCheckpointMutex();
-	txnMgr()->rollback(lockMgr());
+        txnMgr()->rollback(lockMgr());
         printError(ErrSysInternal, "Unable to update catalog table FIELD");
         return ErrSysInternal;
     }
@@ -245,17 +254,26 @@ DbRetVal DatabaseManagerImpl::dropTable(const char *name)
     rv = deleteUserChunk((Chunk*)chunk);
     if (OK != rv) {
         systemDatabase_->releaseCheckpointMutex();
-	txnMgr()->rollback(lockMgr());
+        txnMgr()->rollback(lockMgr());
         printError(rv, "Unable to delete the chunk");
         return rv;
     }
     printDebug(DM_Database,"Deleted UserChunk:%x", chunk);
    
+    rv = deleteUserChunk(grantChunk);
+    if (OK != rv) {
+        systemDatabase_->releaseCheckpointMutex();
+        txnMgr()->rollback(lockMgr());
+        printError(rv, "Unable to delete the grant chunk");
+        return rv;
+    }
+    printDebug(DM_Database,"Deleted UserChunk for Grants:%x", grantChunk);
+
     if (vcchunk != NULL) {
         rv = deleteUserChunk((Chunk*)vcchunk);
         if (OK != rv) {
             systemDatabase_->releaseCheckpointMutex();
-	    txnMgr()->rollback(lockMgr());
+            txnMgr()->rollback(lockMgr());
             printError(rv, "Unable to delete the chunk");
             return rv;
         }

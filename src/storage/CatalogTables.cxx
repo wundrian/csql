@@ -158,7 +158,8 @@ DbRetVal CatalogTableTABLE::remove(const char *name, void *&chunk, void *&tptr)
     if (NULL != tptr)
     {
         CatalogTableGRANT cGrant(systemDatabase_);
-        cGrant.dropAllForTable(((CTABLE*)tptr)->tblID_, ((CTABLE*)tptr)->grantsPtr_);
+        cGrant.dropAllForTable(((CTABLE*)tptr)->tblID_);
+
         tChunk->free(systemDatabase_, tptr);
         printDebug(DM_SystemDatabase,"One Row deleted from TABLE %x %s",tptr, name);
     }
@@ -574,6 +575,7 @@ DbRetVal CatalogTableGRANT::insert(unsigned char priv, int tblId, std::string us
     strncpy(grantInfo->userName_, userName.c_str(), IDENTIFIER_LENGTH);
     grantInfo->tblID_ = tblId;
     grantInfo->privileges = priv;
+    grantInfo->predPtr = NULL; /* in case that rootPred == NULL */
     
     if (NULL != rootPred)
     {
@@ -617,7 +619,7 @@ DbRetVal CatalogTableGRANT::remove(unsigned char priv, int tblId, std::string us
     return ErrNotExists;
 }
 
-DbRetVal CatalogTableGRANT::dropAllForTable(int tblId, Chunk *grantsChunk)
+DbRetVal CatalogTableGRANT::dropAllForTable(int tblId)
 {
     Chunk *gChunk = systemDatabase_->getSystemDatabaseChunk(GrantTableId);
     ChunkIterator iter = gChunk->getIterator();
@@ -626,8 +628,8 @@ DbRetVal CatalogTableGRANT::dropAllForTable(int tblId, Chunk *grantsChunk)
     {
         if (data->tblID_ == tblId)
         {
-            grantsChunk->free(systemDatabase_, data->predPtr);
             gChunk->free(systemDatabase_, data);
+            // data->predPtr is freed in DatabaseManagerImpl::dropTable!
         }
     }
 
@@ -737,7 +739,7 @@ DbRetVal CatalogTableGRANT::createPredicateChunk(const PredicateImpl *rootPred, 
     
     /* finally, PredicateImpl can take care of serializing itself  (and cValues!) to dataPtr */
     *((char *)dataPtr) = PredicateImpl::SERIALIZED_VERSION;
-	char *parsedStringPtr = ((char*)dataPtr + arraySize + 1);
+    char *parsedStringPtr = ((char*)dataPtr + arraySize + 1);
     rootPred->serialize((char*)dataPtr + 1, cValues, parsedStringPtr);
 
     return OK;
