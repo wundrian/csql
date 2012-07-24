@@ -331,6 +331,19 @@ DbRetVal SqlStatement::execute(int &rowsAffected)
         return OK;
     }
     rv = stmt->execute(rowsAffected);
+
+    /* granting or dropping privileges might change PredicateImpls attached to cached Statements. */
+    if (OK == rv && parsedData->getStmtType() == DclStatement)
+    {
+        ListIterator iter= SqlConnection::connList.getIterator();
+        SqlConnection *conn = NULL;
+        while (iter.hasElement())
+        {
+            conn = (SqlConnection*) iter.nextElement();
+            conn->flushCacheStmt();
+        }
+    }
+
     if (rv == ErrAlready  && pData.getStmtType() == SelectStatement )  
     { //if previous scan is not closed, close it
         SelStatement *selStmt = (SelStatement*) stmt; 
