@@ -468,16 +468,19 @@ char getQueryFromFile(char *buf)
 {
     char    c, *bufBegin=buf;
     int charCnt=0;
-    while( (c=(char ) fgetc(fp)) != EOF && c != ';')
+	bool inString = false;
+    while( (c=(char ) fgetc(fp)) != EOF && (inString || c != ';'))
     {
         *buf++ = c; charCnt++; 
-	if( charCnt == SQL_STMT_LEN ) {
-            printf("SQL Statement length is greater than %d. "
-	    "Ignoring the statement.\n", SQL_STMT_LEN );
-            *bufBegin++ =';';
-            *bufBegin ='\0';
-	    return 0;
-	}
+		if( charCnt == SQL_STMT_LEN ) {
+			printf("SQL Statement length is greater than %d. "
+						"Ignoring the statement.\n", SQL_STMT_LEN );
+			*bufBegin++ =';';
+			*bufBegin ='\0';
+			return 0;
+		}
+		
+		if ('\'' == c) inString = !inString;
     }
     *buf++ = ';';
     *buf = '\0';
