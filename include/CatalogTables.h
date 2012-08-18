@@ -221,7 +221,7 @@ class CatalogTableGRANT
     /* returns -1 on error */
     DbRetVal insert(unsigned char priv, int tblId, std::string userName, const PredicateImpl *rootPred, List conditionValues);
     DbRetVal remove(unsigned char priv, int tblId, std::string userName);
-    DbRetVal dropAllForTable(int tblId, Chunk *grantsChunk);
+    DbRetVal dropAllForTable(int tblId);
     DbRetVal dropAllForUser(const char *userName);
     
     /* predicate and conditionValues are OUT (and OUT only!) parameters */
