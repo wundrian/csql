@@ -333,7 +333,7 @@ DbRetVal SqlStatement::execute(int &rowsAffected)
     rv = stmt->execute(rowsAffected);
 
     /* granting or dropping privileges might change PredicateImpls attached to cached Statements. */
-    if (OK == rv && parsedData->getStmtType() == DclStatement)
+    if (OK == rv && pData.getStmtType() == DclStatement)
     {
         ListIterator iter= SqlConnection::connList.getIterator();
         SqlConnection *conn = NULL;
