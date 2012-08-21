@@ -850,7 +850,13 @@ PredicateImpl* PredicateImpl::getIfOneSidedPredicate()
     return NULL;
 }
 
-PredicateImpl::Serialized* PredicateImpl::serialize(void *storePtr, const ConditionValMap &valMap, char *&pStrPtr) const
+void PredicateImpl::serialize(void *storePtr, const ConditionValMap &valMap, char *&pStrPtr) const
+{
+    Serialized *storagePtr = (Serialized *)storePtr;
+    serializeInner(storagePtr, valMap, pStrPtr);
+}
+
+void PredicateImpl::serializeInner(Serialized *&storePtr, const ConditionValMap &valMap, char *&pStrPtr) const
 {
     Serialized storage = { compOp, logicalOp, type };
     strncpy(storage.fldName1, fldName1, IDENTIFIER_LENGTH);
@@ -863,7 +869,7 @@ PredicateImpl::Serialized* PredicateImpl::serialize(void *storePtr, const Condit
         if (ci == valMap.end())
         {
             printError(ErrSysInternal, "Unable to find value for operandPtr");
-            return NULL; // shouldn't happen
+            return; // shouldn't happen
         }
 
         storage.opLike = ci->second.opLike;
@@ -874,15 +880,20 @@ PredicateImpl::Serialized* PredicateImpl::serialize(void *storePtr, const Condit
         pStrPtr += strlen(storage.parsedString) + 1;
     }
 
-    Serialized *storagePtr = (Serialized*)memcpy(storePtr, &storage, sizeof(Serialized));
+    memcpy(storePtr, &storage, sizeof(Serialized));
 
-    if (NULL != lhs)
-        storagePtr->lhs = lhs->serialize(storagePtr + 1, valMap, pStrPtr);
+    // must keep a reference to the current pointer or we don't know where to attach rhs
+    Serialized *nodePtr = storePtr; 
+    if (NULL != lhs) {
+        nodePtr->lhs = ++storePtr;
+        lhs->serializeInner(storePtr, valMap, pStrPtr);
+        /* after this is finished storePtr points to the left-most leaf of this subtree */
+    }
 
-    if (NULL != rhs)
-        storagePtr->rhs = rhs->serialize(storagePtr + 2, valMap, pStrPtr);
-
-    return storagePtr;
+    if (NULL != rhs) {
+        nodePtr->rhs = ++storePtr;
+        rhs->serializeInner(storePtr, valMap, pStrPtr);
+    }
 }
 
 int PredicateImpl::treeSize() const
