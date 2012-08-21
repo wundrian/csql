@@ -84,6 +84,10 @@ class DllExport PredicateImpl:public Predicate
     //This will be set before calling evaluate
     Table *table;
     bool isNull;
+
+    // needed so we can pass typed pointer-references
+    // reference passing is needed so binary tree serialization knows where to continue
+    void serializeInner(Serialized *&storePtr, const ConditionValMap &valMap, char *&pStrPtr) const;
     
     public:
     // version information
@@ -188,9 +192,8 @@ class DllExport PredicateImpl:public Predicate
      * @param storePtr where to store the serialized form of this instance
      * @param valMap conditionValueList indexed by value Pointer
      * @param pStrPtr pointer to where val.parsedString should be stored
-     * @return storePtr
      */
-    Serialized* serialize(void *storePtr, const ConditionValMap &valMap, char *&pStrPtr) const;
+    void serialize(void *storePtr, const ConditionValMap &valMap, char *&pStrPtr) const;
 
     /**
      * Count the number of elements rooted at this instance of the tree (including the root).
