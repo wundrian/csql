@@ -150,18 +150,23 @@
      REVOKE = 367,
      ALL = 368,
      PRIVILEGES = 369,
-     MIN = 370,
-     MAX = 371,
-     AVG = 372,
-     SUM = 373,
-     COUNT = 374,
-     GROUP = 375,
-     BY = 376,
-     HAVING = 377,
-     ORDER = 378,
-     ASC = 379,
-     DESC = 380,
-     DISTINCT = 381
+     FOR = 370,
+     OPTION = 371,
+     WITH = 372,
+     RESTRICT = 373,
+     CASCADE = 374,
+     MIN = 375,
+     MAX = 376,
+     AVG = 377,
+     SUM = 378,
+     COUNT = 379,
+     GROUP = 380,
+     BY = 381,
+     HAVING = 382,
+     ORDER = 383,
+     ASC = 384,
+     DESC = 385,
+     DISTINCT = 386
    };
 #endif
 /* Tokens.  */
@@ -277,18 +282,23 @@
 #define REVOKE 367
 #define ALL 368
 #define PRIVILEGES 369
-#define MIN 370
-#define MAX 371
-#define AVG 372
-#define SUM 373
-#define COUNT 374
-#define GROUP 375
-#define BY 376
-#define HAVING 377
-#define ORDER 378
-#define ASC 379
-#define DESC 380
-#define DISTINCT 381
+#define FOR 370
+#define OPTION 371
+#define WITH 372
+#define RESTRICT 373
+#define CASCADE 374
+#define MIN 375
+#define MAX 376
+#define AVG 377
+#define SUM 378
+#define COUNT 379
+#define GROUP 380
+#define BY 381
+#define HAVING 382
+#define ORDER 383
+#define ASC 384
+#define DESC 385
+#define DISTINCT 386
 
 
 
@@ -308,7 +318,7 @@ typedef union YYSTYPE
 
 
 /* Line 1685 of yacc.c  */
-#line 312 "dmlyacc.h"
+#line 322 "dmlyacc.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

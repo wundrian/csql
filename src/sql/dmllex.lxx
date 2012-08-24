@@ -208,6 +208,11 @@ operator        "<"|">"|">="|"<="|"="|"\!="|"<>"|"LIKE"|"like"
                 if(strcasecmp(yytext,"REVOKE") ==0) token = REVOKE;
                 if(strcasecmp(yytext,"ALL") ==0) token = ALL;
                 if(strcasecmp(yytext,"PRIVILEGES") ==0) token = PRIVILEGES;
+                if(strcasecmp(yytext,"FOR") ==0) token = FOR;
+                if(strcasecmp(yytext,"OPTION") ==0) token = OPTION;
+                if(strcasecmp(yytext,"WITH") ==0) token = WITH;
+                if(strcasecmp(yytext,"RESTRICT") ==0) token = RESTRICT;
+                if(strcasecmp(yytext,"CASCADE") ==0) token = CASCADE;
                 if( token == FIELD )
                     yylval.stringval = strdup((const char*)yytext);
                 else

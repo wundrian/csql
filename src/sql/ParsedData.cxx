@@ -627,7 +627,7 @@ void ParsedData::constructDclNodes(DclType type)
 {
     for (std::vector<std::string>::const_iterator it = granteeList.begin(); it != granteeList.end(); ++it)
     {
-        dclNodes.push_back(DclInfoNode(type, *it, privileges));
+        dclNodes.push_back(DclInfoNode(type, *it, privileges, withGrantOpt));
     }
 }
 

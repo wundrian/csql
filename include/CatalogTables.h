@@ -202,10 +202,11 @@ struct CGRANT
 {
     char userName_[IDENTIFIER_LENGTH];
     unsigned char privileges; /* a bit mask of PrivilegeType, consider using bitset<> here to allow more than 8 privileges */
+    unsigned char grantablePrivs; /* a bit mask of PrivilegeType as above, but these can be granted to other users */
     int tblID_; /* table id of the table */
     void *predPtr; /* containing PredicateImpls and ConditionValues for an additional WHERE clause */
     
-    CGRANT() : privileges(0), tblID_(-1), predPtr(NULL) {}
+    CGRANT() : privileges(0), grantablePrivs(0), tblID_(-1), predPtr(NULL) {}
 };
 
 class CatalogTableGRANT
@@ -219,7 +220,7 @@ class CatalogTableGRANT
     CatalogTableGRANT(Database *db) : systemDatabase_(db) {}
 
     /* returns -1 on error */
-    DbRetVal insert(unsigned char priv, int tblId, std::string userName, const PredicateImpl *rootPred, List conditionValues);
+    DbRetVal insert(unsigned char priv, bool grantable, int tblId, std::string userName, const PredicateImpl *rootPred, List conditionValues);
     DbRetVal remove(unsigned char priv, int tblId, std::string userName);
     DbRetVal dropAllForTable(int tblId);
     DbRetVal dropAllForUser(const char *userName);
@@ -227,6 +228,7 @@ class CatalogTableGRANT
     /* predicate and conditionValues are OUT (and OUT only!) parameters */
     DbRetVal getPredicate(int tblID, const char *userName, Predicate *&pred, List &cVals) const;
     unsigned char getPrivileges(int tblId, const char *userName);
+    unsigned char getGrantablePrivs(int tblId, const char *userName);
 };
 
 class CDATABASEFILE
