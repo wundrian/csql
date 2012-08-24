@@ -24,7 +24,7 @@ void yyerror(const char* Msg);
 %left '+' '-'
 %left '*' '/' '%'
 %nonassoc UMINUS
-%token <stringval> STRING FIELD NUMBER_STRING BINARY_STRING DOUBLE OPERATOR PARAMETER ALLTABLE DESCRIBE PRIMARYINFO AUTO_INCREMENT GETCATALOGS GETDATATYPES GETTABLETYPES IMPORTEDKEY EXPORTEDKEY
+%token <stringval> STRING FIELD NUMBER_STRING BINARY_STRING DOUBLE OPERATOR PARAMETER ALLTABLE DESCRIBE PRIMARYINFO AUTO_INCREMENT GETCATALOGS GETDATATYPES GETTABLETYPES IMPORTEDKEY EXPORTEDKEY 
 %token <stringval> SELECT FROM WHERE BETWEEN IN AND OR NOT AS LIMIT OFFSET INNER OUTER CROSS JOIN LEFT IS
 %token <stringval> INSERT INTO VALUES EXPLAIN PLAN
 %token <stringval> DELETE UPDATE SET NULL_VALUE
@@ -32,7 +32,7 @@ void yyerror(const char* Msg);
 %token <stringval> CACHE CONDITION FIELDLIST PK DIRECT DSN UNCACHE NOSCHEMA
 %token <stringval> INT_TYPE LONG_TYPE SHORT_TYPE DOUBLE_TYPE TIMESTAMP_TYPE DATE_TYPE CHAR_TYPE TIME_TYPE BIGINT_TYPE FLOAT_TYPE TINYINT_TYPE BINARY_TYPE VARCHAR_TYPE
 %token <stringval> DATE_DIFF DATE_ADD DATE_SUB HOUR MINUTE SECOND YEAR MONTH DAY INTERVAL TIME_DIFF TIME_ADD TIME_SUB TIMESTAMP_DIFF TIMESTAMP_ADD TIMESTAMP_SUB EXTRACT NOW
-%token <stringval> USER PASSWORD ALTER FLUSH ADD COLUMN MODIFY RENAME TO GRANT REVOKE ALL PRIVILEGES
+%token <stringval> USER PASSWORD ALTER FLUSH ADD COLUMN MODIFY RENAME TO GRANT REVOKE ALL PRIVILEGES FOR OPTION WITH RESTRICT CASCADE
 %token <stringval> MIN MAX AVG SUM COUNT GROUP BY HAVING ORDER ASC DESC DISTINCT
 %token ';' ',' '(' ')'
 %type <stringval> ident field value not_opt doub_value num_value 
@@ -155,7 +155,10 @@ grantee_list_L : ',' grantee
     ;
 grantee : ident { parsedData->insertGrantee($1); free($1); }
     ;
-grant_statement : GRANT privilege_list ON ident TO grantee_list where_clause_opt semicolon_opt
+with_grant_opt : 
+	| WITH GRANT OPTION { parsedData->withGrantOption(); }
+	;
+grant_statement : GRANT privilege_list ON ident TO grantee_list where_clause_opt with_grant_opt semicolon_opt
     {
             parsedData->setStmtType(DclStatement);
             parsedData->setTableName($4);

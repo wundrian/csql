@@ -54,11 +54,11 @@ DbRetVal DclStatementImpl::execute(int &rowsAffected)
             Condition *c = parsedData->getCondition();
             PredicateImpl *rootPred = (NULL != c ? (PredicateImpl*)c->getPredicate() : NULL);
 
-            rv = (DbRetVal)usrMgr->grantPrivilege(it->privs, table->getId(), it->userName, rootPred, parsedData->getConditionValueList());
+            rv = (DbRetVal)usrMgr->grantPrivilege(*it, table->getId(), rootPred, parsedData->getConditionValueList());
         }
         else if (REVOKEACCESS == it->type)
         {
-            rv = (DbRetVal)usrMgr->revokePrivilege(it->privs, table->getId(), it->userName);
+            rv = (DbRetVal)usrMgr->revokePrivilege(*it, table->getId());
         }
 
         if (OK != rv) break;

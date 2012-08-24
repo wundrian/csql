@@ -149,32 +149,6 @@ class UserNode
     UserNodeType type;
 };
 
-enum DclType
-{
-    REVOKEACCESS=0, /* can't name them REVOKE, GRANT as this conflicts with parser tokens */
-    GRANTACCESS
-};
-
-enum PrivilegeType
-{
-    PRIV_NONE = 0,
-    PRIV_SELECT = 1,
-    PRIV_INSERT = 2,
-    PRIV_UPDATE = 4,
-    PRIV_DELETE = 8,
-    PRIV_DROP   = 16
-};
-
-struct DclInfoNode
-{
-    DclInfoNode(DclType type, std::string userName, unsigned char privs)
-    : type(type), privs(privs), userName(userName) {}
-    
-    std::string userName;
-    DclType type;
-    unsigned char privs;
-};
-
 class DllExport ParsedData
 {
     private:
@@ -231,6 +205,7 @@ class DllExport ParsedData
     std::vector<DclInfoNode> dclNodes; // filled by constructDclNodes() from granteeList
     std::vector<std::string> granteeList; // list of users to GRANT rights to
     unsigned char privileges; // can't store in dclNodes (may not be allocated when this is used)
+    bool withGrantOpt;
     //stores list of fields for CREATE TABLE
     FieldList creFldList;
     //Foreign Key storage
@@ -282,15 +257,12 @@ class DllExport ParsedData
     void dropUserNode(char *name);
     void alterUserNode(char *name, char *password);
     
-    /**
-     * 
-     * @param userName
-     */
     void constructDclNodes(DclType type);
     void insertPrivilege(PrivilegeType priv) { privileges |= (unsigned char)priv; }
     void insertGrantee(const char *userName) { granteeList.push_back(std::string(userName)); }
     const std::vector<DclInfoNode>& getDclInfoNodes() const { return dclNodes; }
-	DbRetVal prefixConditionValuesWithTableName(TableImpl *table);
+    void withGrantOption() { withGrantOpt = true; }
+    DbRetVal prefixConditionValuesWithTableName(TableImpl *table);
     
     void setCreateTbl(){ shouldCreateTbl=true; }
     bool getCreateTbl(){ return shouldCreateTbl; }

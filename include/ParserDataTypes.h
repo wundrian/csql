@@ -6,7 +6,7 @@
  */
 
 #ifndef PARSERDATATYPES_H
-#define	PARSERDATATYPES_H
+#define PARSERDATATYPES_H
 
 #include <list>
 #include <map>
@@ -50,4 +50,37 @@ struct ConditionValue
 typedef std::multimap<std::string, ConditionValue> FieldConditionValMap;
 typedef std::map<void const * const *, ConditionValue> ConditionValMap;
 
-#endif	/* PARSERDATATYPES_H */
+enum DclType
+{
+    REVOKEACCESS=0, /* can't name them REVOKE, GRANT as this conflicts with parser tokens */
+    GRANTACCESS
+};
+
+enum PrivilegeType
+{
+    PRIV_NONE = 0,
+    PRIV_SELECT = 1,
+    PRIV_INSERT = 2,
+    PRIV_UPDATE = 4,
+    PRIV_DELETE = 8,
+    PRIV_DROP   = 16
+};
+
+/**
+ * Represents an argument container for Privilege Descriptor related information
+ */
+struct DclInfoNode
+{
+    DclInfoNode(DclType type, std::string userName, unsigned char privs, bool withGrantOpt)
+    : type(type), privs(privs), userName(userName), withGrantOpt(withGrantOpt) {}
+    
+    DclType type;
+    /* The name of the user to grant privileges to */
+    std::string userName;
+    /* The list of privileges to grant (must be a bitmask of PrivilegeType) */
+    unsigned char privs;
+    /* indicates whether grantee can grant the privilege himself */
+    bool withGrantOpt;
+};
+
+#endif  /* PARSERDATATYPES_H */

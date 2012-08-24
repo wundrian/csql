@@ -26,6 +26,12 @@ int UserManagerImpl::createUser(const char *name, const char *password)
         return ErrNoPrivilege;
     }
     int ret = 0;
+    
+    if (0 == strcmp(U_PUBLIC, name)) {
+        printError(ErrBadArg, "User name %s is reserved", U_PUBLIC);
+        return ErrBadArg;
+    }
+
     //add entry to USER table
     CatalogTableUSER cUser(systemDatabase_);
     ret = cUser.insert(name, password);
@@ -106,19 +112,20 @@ List UserManagerImpl::getAllUserNames(int *retval)
     return cUser.getUserList();
 }
 
-int UserManagerImpl::grantPrivilege(unsigned char priv, int tblId, std::string grantee,
-        const PredicateImpl *rootPred, List conditionValues)
+int UserManagerImpl::grantPrivilege(DclInfoNode info, int tblId, const PredicateImpl *rootPred, List conditionValues)
 {
     CatalogTableGRANT cGrant(systemDatabase_);
     CatalogTableTABLE cTable(systemDatabase_);
 
-    if (!isDba || !cTable.isOwner(tblId, userName))
+    if (!(isDba
+        || cTable.isOwner(tblId, userName)
+        || info.privs == (info.privs & cGrant.getGrantablePrivs(tblId, userName))))
     {
-        printError(ErrNoPrivilege, "Only DBA or owner can grant privileges on table");
+        printError(ErrNoPrivilege, "You are not authorized to grant privileges on table %d", tblId);
         return ErrNoPrivilege;
     }
 
-    int ret = cGrant.insert(priv, tblId, grantee, rootPred, conditionValues);
+    int ret = cGrant.insert(info.privs, info.withGrantOpt, tblId, info.userName, rootPred, conditionValues);
 
     if (OK != ret)
     {
@@ -126,22 +133,22 @@ int UserManagerImpl::grantPrivilege(unsigned char priv, int tblId, std::string g
         return ErrSysInternal;
     }
     
-    logFine(Conf::logger, "Granted privileges %d on table %d to %s", priv, tblId, grantee.c_str());
+    logFine(Conf::logger, "Granted privileges %d on table %d to %s", info.privs, tblId, info.userName.c_str());
     return OK;
 }
 
-int UserManagerImpl::revokePrivilege(unsigned char priv, int tblId, std::string grantee)
+int UserManagerImpl::revokePrivilege(DclInfoNode info, int tblId)
 {
     CatalogTableGRANT cGrant(systemDatabase_);
     CatalogTableTABLE cTable(systemDatabase_);
 
-    if (!isDba || !cTable.isOwner(tblId, userName))
+    if (!isDba && !cTable.isOwner(tblId, userName))
     {
-        printError(ErrNoPrivilege, "Only DBA or owner can revoke privileges on table");
+        printError(ErrNoPrivilege, "You are not authorized to revoke privileges on table %d", tblId);
         return ErrNoPrivilege;
     }
 
-    int ret = cGrant.remove(priv, tblId, grantee);
+    int ret = cGrant.remove(info.privs, tblId, info.userName);
     
     if (OK != ret)
     {
@@ -149,7 +156,7 @@ int UserManagerImpl::revokePrivilege(unsigned char priv, int tblId, std::string 
         return ErrSysInternal;
     }
     
-    logFine(Conf::logger, "Revoked privileges %d on table %d from %s", priv, tblId, grantee.c_str());
+    logFine(Conf::logger, "Revoked privileges %d on table %d from %s", info.privs, tblId, info.userName.c_str());
     return OK;
 }
 
@@ -163,10 +170,11 @@ bool UserManagerImpl::isAuthorized(unsigned char priv, int tblId) const
     
     /* owner is always granted access to her tables */
     bool allowed = (cTable.isOwner(tblId, userName)
-            || (priv == (cGrant.getPrivileges(tblId, userName) & priv)));
-
+            || (priv == (cGrant.getPrivileges(tblId, userName) & priv))
+            || (priv == (cGrant.getPrivileges(tblId, U_PUBLIC) & priv)));
     timer.stop();
     fprintf(stderr, "UserManagerImpl::isAuthorized took %lld ns to produce %d\n", timer.last(), allowed);
+
     return allowed;
 }
 
@@ -196,6 +204,23 @@ int UserManagerImpl::getTableRestriction(int tblId, Predicate *&pred, List &cond
         printError(ret, "Failed to get table restriction for user %s", userName);
         return ret;
     }
+
+    Predicate *publicPred;
+    ret = cGrant.getPredicate(tblId, U_PUBLIC, publicPred, conditionValues);
     
+    if (OK != ret)
+    {
+        if (NULL != publicPred) delete publicPred;
+        printError(ret, "Failed to get table restriction for user %s", U_PUBLIC);
+        return ret;
+    }
+
+    if (NULL != publicPred) {
+        PredicateImpl *pImpl = new PredicateImpl();
+        // the order MUST be the same as the deserialization calls above or conditionValues will get messed up
+        pImpl->setTerm(pred, OpOr, publicPred);
+        pred = pImpl;
+    }
+
     return OK;
 }

@@ -523,7 +523,7 @@ DbRetVal CatalogTableUSER::changePass(const char *name, const char *pass)
     return ErrNotExists;
 }
 
-DbRetVal CatalogTableGRANT::insert(unsigned char priv, int tblId, std::string userName,
+DbRetVal CatalogTableGRANT::insert(unsigned char priv, bool grantable, int tblId, std::string userName,
             const PredicateImpl *rootPred, List conditionValues)
 {
     // are we granting any privileges at all?
@@ -544,7 +544,8 @@ DbRetVal CatalogTableGRANT::insert(unsigned char priv, int tblId, std::string us
         if (0 == strncmp(elem->userName_, userName.c_str(), IDENTIFIER_LENGTH)
                 && elem->tblID_ == tblId)
         {
-            if ((elem->privileges | priv) == elem->privileges)
+            if ((grantable && ((elem->grantablePrivs | priv) == elem->grantablePrivs))
+                || (!grantable && ((elem->privileges | priv) == elem->privileges)))
             {
                 printError(ErrNoEffect, "Privileges are already granted");
                 return OK;
@@ -552,6 +553,8 @@ DbRetVal CatalogTableGRANT::insert(unsigned char priv, int tblId, std::string us
             
             // we're adding privileges
             elem->privileges |= priv;
+            if (grantable) elem->grantablePrivs |= priv;
+
             return OK;
         }
     }
@@ -575,6 +578,7 @@ DbRetVal CatalogTableGRANT::insert(unsigned char priv, int tblId, std::string us
     strncpy(grantInfo->userName_, userName.c_str(), IDENTIFIER_LENGTH);
     grantInfo->tblID_ = tblId;
     grantInfo->privileges = priv;
+    grantInfo->grantablePrivs = grantable ? priv : 0;
     grantInfo->predPtr = NULL; /* in case that rootPred == NULL */
     
     if (NULL != rootPred)
@@ -662,7 +666,7 @@ unsigned char CatalogTableGRANT::getPrivileges(int tblId, const char* userName)
     while ((data = iter.nextElement()) != NULL)
     {
         CGRANT* elem = (CGRANT*)data;
-        if (0 == memcmp(elem->userName_, userName, IDENTIFIER_LENGTH)
+        if (0 == strncmp(elem->userName_, userName, IDENTIFIER_LENGTH)
                 && tblId == elem->tblID_)
         {
             return elem->privileges;
@@ -672,6 +676,24 @@ unsigned char CatalogTableGRANT::getPrivileges(int tblId, const char* userName)
     return PRIV_NONE;
 }
 
+unsigned char CatalogTableGRANT::getGrantablePrivs(int tblId, const char *userName)
+{
+    Chunk* tChunk = systemDatabase_->getSystemDatabaseChunk(GrantTableId);
+    ChunkIterator iter = tChunk->getIterator();
+    void* data = NULL;
+    while ((data = iter.nextElement()) != NULL)
+    {
+        CGRANT* elem = (CGRANT*)data;
+        if (0 == strncmp(elem->userName_, userName, IDENTIFIER_LENGTH)
+                && tblId == elem->tblID_)
+        {
+            return elem->grantablePrivs;
+        }
+    }
+    
+    return false;
+}
+
 DbRetVal CatalogTableGRANT::getPredicate(int tblId, const char *userName, Predicate *&pred, List &cVals) const
 {
     Chunk* tChunk = systemDatabase_->getSystemDatabaseChunk(GrantTableId);
@@ -679,7 +701,7 @@ DbRetVal CatalogTableGRANT::getPredicate(int tblId, const char *userName, Predic
     CGRANT *elem = NULL;
     while ((elem = (CGRANT*)iter.nextElement()) != NULL)
     {
-        if (0 == memcmp(elem->userName_, userName, IDENTIFIER_LENGTH)
+        if (0 == strncmp(elem->userName_, userName, IDENTIFIER_LENGTH)
                 && tblId == elem->tblID_)
         {
             if (NULL != elem->predPtr)

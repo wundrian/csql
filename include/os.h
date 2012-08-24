@@ -27,6 +27,7 @@
 #define DBAPASS "manager"
 #define I_USER "i@1r4D_f$_a"
 #define I_PASS "a_$f_D4r1@i"
+#define U_PUBLIC "PUBLIC" /*! the reserved name for "all users" */
 #define DEFAULT_CONFIG_FILE "/etc/csql/csql.conf"
 #define LOCK_BUCKET_SIZE 2048
 #define STMT_BUCKET_SIZE 1023
